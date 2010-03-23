@@ -1,0 +1,64 @@
+
+<div id="buttons" style="padding-bottom:20px; ">
+
+<input type="button" value="add" onclick="new Ajax.Updater('member_list','/admin_workspace_groups/{{ws.pk}}/add/', {method:'get', onComplete:resize_win})" />
+<!--div id="add_a_user" style=" background:white; top: 130px; left: 132px;  width:150px; height:60px; display:none; z-index:10; position:absolute"></div-->
+
+    <input type="button" value="remove" onclick="remove_selected('/admin_workspace_remove_groups/{{ws.pk}}/','groups')"/>
+    <input type="button" value="set permissions" onclick="set_permissions('groups')"/>
+    
+    
+</div>
+
+<div style="display:block; float:left">
+Select: <a href="javascript:void(0)" onclick="select_all()">all</a> | <a href="javascript:void(0)" onclick="un_select_all()">none</a>    
+</div>
+    <div id="alert" style="display:block; float:left; color:red; padding-left:130px; "></div>
+<br>
+<form  id="form_list" action="/admin_workspace_remove_members/{{ws.pk}}/" method="POST">
+
+
+<table  style="width:100%">
+    <thead>
+        <tr>
+            
+           <th><br></th>
+           <th>name</th>
+        </tr>
+    </thead>
+    {%for group in groups%}
+        <tr>
+            <th style="width:20px">
+             
+                <input type="checkbox" id="group_{{group.pk}}" class='main_check' name="groups" value="{{group.pk}}" />
+            </th>
+            <th >
+                <a href="javascript:void(0)" onclick="$('admin').style.height= 'auto';  new Ajax.Updater('member_list','/admin_workspace_groups/{{ws.pk}}/{{group.pk}}/', 
+                {method:'get', 
+                onComplete:resize_win
+                })" >{{group}}</a>
+            
+            </th>
+            
+            <!--th>
+                <div id="buttons_{{group.pk}}"  class="buttons" style="display:none; text-align:right"  >
+                    <!--input class="button_permissions" type="button" id="{{group.pk}}_button_edit" name="groups_button" value="edit"  onclick="parent.adminwin.setURL('/admin_workspace_groups/{{ws.id}}/{{group.id}}')"/>
+                
+                    <input class="button_permissions" type="button" id="{{group.pk}}_button_permissions" name="permissions_button" value="show permissions" onclick="manage_permissions({{group.pk}}, 'groups')" 
+                    />
+                    
+                
+                    
+              
+               </div>
+               
+               <div id="permissions_{{group.pk}}" style="display:none; overflow:auto; height: 250px;" class="permissions_box"></div> 
+               
+        </th-->
+
+          
+        </tr>
+    {%endfor%}    
+</table>
+
+</form>

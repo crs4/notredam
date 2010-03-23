@@ -1,0 +1,1 @@
+[{"pk": 1, "model": "application.type", "fields": {"name": "image"}}, {"pk": 2, "model": "application.type", "fields": {"name": "movie"}}, {"pk": 3, "model": "application.type", "fields": {"name": "doc"}}, {"pk": 4, "model": "application.type", "fields": {"name": "audio"}}]
