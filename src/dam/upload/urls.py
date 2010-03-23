@@ -22,4 +22,5 @@ urlpatterns = patterns('',
     (r'^get_upload_url/$', 'dam.upload.views.get_upload_url'),
     (r'^get_metadata_upload/$', 'dam.upload.views.get_metadata_upload'),
     (r'^upload_finished/$', 'dam.upload.views.upload_finished'),
+    (r'^adobe_air_upload/$', 'dam.upload.views.adobe_air_upload'),
 )

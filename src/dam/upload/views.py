@@ -34,8 +34,9 @@ from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, Met
 from dam.variants.models import Variant,  ImagePreferences as VariantsPreference,  VariantAssociation
 from dam.treeview.models import Node
 from dam.treeview.views import _add_node
-from dam.batch_processor.models import MDTask
+from dam.batch_processor.models import MDTask, MachineState, Machine, Action
 
+from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
 from dam.application.views import get_component_url
 from dam.application.models import Type
@@ -46,14 +47,64 @@ import mimetypes
 import os.path, traceback
 import time
 
-from mediadart import toolkit
-
-
 def _uploaded_item(item,  workspace):
     uploaded = Node.objects.get(depth = 1,  label = 'Uploaded',  type = 'inbox',  workspace = workspace)
     time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
     node = Node.objects.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  workspace = workspace,  depth = 2)[0]
     node.items.add(item)
+
+def adobe_air_upload(request):
+
+    from mediadart.storage import Storage
+
+    workspace = Workspace.objects.all()[0]
+
+    print workspace
+
+    file_name = request.POST['file_name']
+    user = User.objects.all()[0]
+    type = guess_media_type(file_name)
+
+    storage = Storage('/tmp/prova/')
+    res_id = storage.add('/tmp/prova/imports/'+file_name)
+    
+    new_keywords = False
+
+    item_ctype = ContentType.objects.get_for_model(Item)
+    
+    item = Item.objects.create(uploader = user,  type = type)
+    item_id = item.pk
+    _uploaded_item(item,  workspace) 
+
+    item.workspaces.add(workspace)
+        
+    variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
+            
+    comp = _create_variant(variant,  item, workspace)
+    
+    comp.file_name=file_name
+    comp._id = res_id
+    
+    logger.debug('comp._id %s'%comp._id )
+    mime_type = mimetypes.guess_type(file_name)[0]
+    
+    ext = mime_type.split('/')[1]
+    comp.format= ext
+    comp.save()
+    
+    logger.debug('mime_type  %s'%mime_type )
+    
+    metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
+    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
+    orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
+    try:
+        generate_tasks(variant, workspace, item)
+    except Exception, ex:
+        traceback.print_exc(ex)
+        raise
+#    resp = simplejson.dumps({'new_keywords':new_keywords})
+    resp = simplejson.dumps({})
+    return HttpResponse(resp)
 
 
 @login_required
@@ -160,6 +211,9 @@ def _get_upload_url(res_id,  fsize, ext):
     """
     Get a MediaDART upload url
     """
+
+    from mediadart import toolkit
+
     t = toolkit.Toolkit(MEDIADART_CONF)
     s = t.get_storage()
     
@@ -275,6 +329,15 @@ def  copy_metadata(comp,  comp_source):
         logger.debug('metadata to cp %s'%metadata )
         MetadataValue.objects.create(schema = metadata.schema, xpath=metadata.xpath, content_object = comp,  value = metadata.value, language=metadata.language)
 
+def create_initial_state(state_def):
+    if state_def.get('action'):
+        new_action = Action.objects.create(**state_def.get('action'))
+        new_state = MachineState.objects.create(name=state_def.get('name'), action=new_action)        
+    else:
+        new_state = MachineState.objects.create(name=state_def.get('name'))        
+
+    return new_state
+    
 def _generate_tasks(variant, workspace, item,  component,  register_task,  force_generation,  check_for_existing):
     """
     Generates MediaDART tasks
@@ -299,6 +362,7 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
         variants_to_generate = [variant]
         feat_extr_orig = metadata_orig =  None
 
+        initial_state = {'name':'fake_state'}
         
     else:
         logger.debug('SOURCE VARIANT %s'%variant)
@@ -324,10 +388,16 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
             if variant_source == None or (variant.sources.get(workspace = workspace, destination = dest).rank  <= variant_source.sources.get(workspace = workspace, destination = dest).rank):
                 variants_to_generate.append(dest)
         logger.debug('REGISTER TASK %s'%register_task)
-        feat_extr_orig = MDTask.objects.create(component = source, task_type='feature_extraction', wait_for=register_task)    
-        metadata_orig = MDTask.objects.create(component = source, task_type='extract_metadata', wait_for=feat_extr_orig)    
-        if source.variant.name == 'thumbnail':
-            save_thumb = MDTask.objects.create(component=source, task_type="save_thumb", wait_for=register_task)
+
+        feat_extr_action = {'component':source, 'function':'extract_features'}
+        feat_extr_orig = {'name':'source_fe', 'action':feat_extr_action}
+                
+        initial_state = feat_extr_orig
+        
+#        feat_extr_orig = MDTask.objects.create(component = source, task_type='feature_extraction', wait_for=register_task)
+#        metadata_orig = MDTask.objects.create(component = source, task_type='extract_metadata', wait_for=feat_extr_orig)    
+#         if source.variant.name == 'thumbnail':
+#             save_thumb = MDTask.objects.create(component=source, task_type="save_thumb", wait_for=register_task)
         
     logger.debug('component %s'%component )    
     logger.debug('variants_to_generate  %s'%variants_to_generate )
@@ -335,13 +405,12 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
 #    feat_extr_orig = MDTask.objects.create(component = source, task_type='feature_extraction', wait_for=register_task)    
 #    metadata_orig = MDTask.objects.create(component = source, task_type='extract_metadata', wait_for=feat_extr_orig)    
 
+
     ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
     for v in variants_to_generate:       
         logger.debug('v = %s'%v)       
         logger.debug('ws %s'%workspace)
         variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = v) 
- 
-        
         
         logger.debug('variant association %s'%(variant_association.pk))
         vp = variant_association.preferences    
@@ -350,12 +419,24 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
             logger.debug('comp %s'%comp)
             if comp.imported:
 
-                feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=register_task)
-                extract_metadata = MDTask.objects.create(component=comp, task_type="extract_metadata", wait_for=feat_extr_task)
-                rights = MDTask.objects.create(component=comp, task_type="set_rights", wait_for=extract_metadata)
+                end = MachineState.objects.create(name='finished')
+                save_rights_action = Action.objects.create(component=comp, function='save_rights')
+                save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
+                fe_action = Action.objects.create(component=comp, function='extract_features')
+                fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
+                
+                my_cs = create_initial_state(initial_state)
+                my_cs.next_state = fe_state
+                my_cs.save()
+                
+                Machine.objects.create(current_state=my_cs, initial_state=my_cs)
+
+#                feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=register_task)
+#                extract_metadata = MDTask.objects.create(component=comp, task_type="extract_metadata", wait_for=feat_extr_task)
+#                rights = MDTask.objects.create(component=comp, task_type="set_rights", wait_for=extract_metadata)
         
-                if comp.variant.name == 'thumbnail':
-                    save_thumb = MDTask.objects.create(component=comp, task_type="save_thumb", wait_for=register_task)
+#                 if comp.variant.name == 'thumbnail':
+#                     save_thumb = MDTask.objects.create(component=comp, task_type="save_thumb", wait_for=register_task)
                 
                 continue
                 
@@ -449,21 +530,38 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
             logger.debug('cropping!')
         else:
             previous_task = register_task
-                
-        variant_task = MDTask.objects.create(component=comp, task_type="adaptation", wait_for=previous_task)
-        feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=variant_task)
-        extract_metadata = MDTask.objects.create(component=comp, task_type="extract_metadata", wait_for=feat_extr_task)
-        rights = MDTask.objects.create(component=comp, task_type="set_rights", wait_for=extract_metadata)
+
+        end = MachineState.objects.create(name='finished')
+
+        save_rights_action = Action.objects.create(component=comp, function='save_rights')
+        save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
+
+        fe_action = Action.objects.create(component=comp, function='extract_features')
+        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
+
+        adapt_action = Action.objects.create(component=comp, function='adapt_resource')
+        adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
+
+        my_cs = create_initial_state(initial_state)
+        my_cs.next_state = adapt_state
+        my_cs.save()
+        
+        Machine.objects.create(current_state=my_cs, initial_state=my_cs)
+ 
+#        variant_task = MDTask.objects.create(component=comp, task_type="adaptation", wait_for=previous_task)
+#        feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=variant_task)
+#        extract_metadata = MDTask.objects.create(component=comp, task_type="extract_metadata", wait_for=feat_extr_task)
+#        rights = MDTask.objects.create(component=comp, task_type="set_rights", wait_for=extract_metadata)
 
         logger.debug('added tast adapt, fe')
 
-        if comp.variant.name == 'thumbnail':
-            save_thumb = MDTask.objects.create(component=comp, task_type="save_thumb", wait_for=variant_task)
+#         if comp.variant.name == 'thumbnail':
+#             save_thumb = MDTask.objects.create(component=comp, task_type="save_thumb", wait_for=variant_task)
         
         comp.preferences = vp.copy()
         comp.source_id = source._id
         comp.save()
-        
+            
 def generate_tasks(variant, workspace, item,  upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
     """
