@@ -1,0 +1,44 @@
+{% extends "admin/workspace/permissions.html" %}
+{%block js%}
+    <script>        
+        //YAHOO.util.Event.onDOMReady(handleOnAvailableMember)
+		
+        
+    </script>
+{% endblock %}
+{% block subcontent %}
+			
+            <legend>
+			    member {{member.username}}
+            </legend>
+			
+			
+			 
+            <form id="admin_form" name="permissions" action="/admin_workspace_members/{{ws.id}}/{{member.id}}/" method="POST">
+				
+				
+                
+				
+				
+                
+                
+                    <fieldset>
+                    Permissions
+                        
+                    
+                    {{form.ws_permissions}}
+                </fieldset>
+                
+                <fieldset>Groups
+                <div style="overflow:auto">
+                {{form.groups}}
+                </div>
+                </fieldset>
+                
+                
+                <button class="button" onClick="save_member()">save</button>
+                <button class="button" onClick="parent.adminwin.setURL('/admin_workspace_permissions/members/{{ws.id}}/')">cancel</button>
+
+            </form>
+       
+{% endblock %}
