@@ -894,11 +894,28 @@ def _search_complex_query(complex_query,  items):
 
 
 def _search(request,  items, workspace = None):
+    
+    def search_node(node, sub_branch):        
+        if show_associated_items:
+            return items.filter(node = node)
+        else:
+            return items.filter(node__in = node.get_branch())
+        
+        
+    
+    
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
     
     show_associated_items = request.POST.get('show_associated_items')
-    node_id = request.POST.getlist('ode_id')
+    nodes_query = []
+    
+    nodes_query.extend(request.POST.getlist('keyword'))
+    nodes_query.extend(request.POST.getlist('collection'))
+    
+    
+    queries = []
+    
     complex_query = request.POST.get('complex_query')
     if not workspace:
         workspace = request.session['workspace']
@@ -908,20 +925,12 @@ def _search(request,  items, workspace = None):
         items = _search_complex_query(complex_query,  items)
         
     else:
-        if node_id:
-            logger.debug('--------node_id %s'%node_id)
-    #        nodes = Node.objects.filter(pk__in = node_id)
-    #        if node.depth != 0:           
-    #            items = items.filter(node =  node)
-
-
-    #        items = items.extra(select={'cnt': 'select count(*) as cnt from node_items where node_id in (%s)  group by item_id having cnt = 1'%','.join(node_id)}, where= ['cnt = 1'])
-            queries = []
-            for node in node_id:
-                queries.append(items.filter(node__pk = node))
+        if nodes_query:            
+            for node_id  in nodes_query:
+                node_kw = Node.objects.get(pk = node_id) 
+                queries.append(search_node(node, not show_associated_items))
             
-            logger.debug('queries %s'%queries)
-            items = reduce(and_,  queries)
+#            items = reduce(and_,  queries)
             
                 
         if query:
@@ -987,7 +996,6 @@ def _search(request,  items, workspace = None):
             logger.debug('multi_words %s'%multi_words)
             logger.debug('geo %s'%geo)
             
-            queries = []
             
             
             logger.debug('metadata_query %s'%metadata_query)
@@ -1022,10 +1030,8 @@ def _search(request,  items, workspace = None):
                     node = Node.objects.get_from_path(keyword,  'keyword')
                     logger.debug('node found %s'%node)
                     
-                    if show_associated_items:
-                        queries.append(items.filter(node = node))
-                    else:
-                        queries.append(items.filter(node__in = node.get_branch()))
+                    queries.append(search_node(node, not show_associated_items))
+                    
                 else:
                     logger.debug('without keywords')
     #                    searching for items without keyword
