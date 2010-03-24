@@ -1,0 +1,76 @@
+				<fieldset>
+					<legend>Watermarking  {{form.apply_watermarking}}</legend>
+                        {%comment%}
+						<span class="oneChoice">
+                            <label class="preField">Apply Watermarking</label>
+                            {{form.apply_watermarking}}
+                        </span>
+						{%endcomment%}
+						
+                        <span class="oneChoice">
+						<label class="preField">Type</label>
+							<span class="oneChoice">
+								 {{form.watermarking_type}}
+							</span>
+							<br/>
+						</span>
+                    
+											
+						<div class="label_position_watermarking">
+							<label class="preField">Position</label>
+						</div>
+						<div class="container_position_watermarking">
+							<div id="square1" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(1)"></div>
+							<div id="square2" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(2)"></div>
+							<div id="square3" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(3)"></div>
+							<div id="square4" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(4)"></div>
+							<div id="square5" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(5)"></div>
+							<div id="square6" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(6)"></div>
+							<div id="square7" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(7)"></div>
+							<div id="square8" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(8)"></div>
+							<div id="square9" class="position_watermarking" onclick="if($('id_apply_watermarking').checked) watermarking(9)"></div>
+						</div>
+                        {{form.watermarking_position}}
+						<br/>
+						<span class="oneChoice">				
+						<label class="preField">Transparency</label>{{form.watermarking_transparency}}
+						  <div style="float:right;  height:10px;width:100px; background:grey; margin-top:-15px;"  id="track_slider" class="slider">
+    <div style="width:10px;height:10px; background:red" class="handle"></div>
+  </div>
+<script language="javascript" type="text/javascript" src="/files/javascript/slider.js"> </script>
+<script language="javascript" type="text/javascript"> 
+set_slider()
+</script>
+                     
+						</span>
+						<br/>
+						<!--input id ="pos" name ="watermarking_position" type="text" style="visibility:hidden" value=""/--><br/>
+						<span class="oneChoice">
+						<label class="preField">Dimension</label>
+                        {{form.watermarking_dimension }}
+                        
+{%comment%}                     
+						</span>
+						<br/>
+						<span class="oneChoice">
+						<label class="preField">Font</label>
+                        {{form.watermarking_text_font}}
+
+						</span>
+						<br/>
+						<span class="oneChoice">	
+						<label class="preField">Style</label>
+						
+                        {{form.watermarking_text_style}}
+{%endcomment%}					
+
+						</span>
+						<br/>
+						<span class="oneChoice">	
+						<label class="preField">Insert text</label>
+							<!--input id="" type="text" name="" value=""/-->
+                            {{form.watermarking_text}}
+						</span>
+						<br/>
+						
+				</fieldset>
