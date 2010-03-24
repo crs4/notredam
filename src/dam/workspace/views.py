@@ -927,8 +927,17 @@ def _search(request,  items, workspace = None):
     else:
         if nodes_query:            
             for node_id  in nodes_query:
-                node_kw = Node.objects.get(pk = node_id) 
-                queries.append(search_node(node, not show_associated_items))
+                logger.debug(node_id)
+                node = Node.objects.filter(pk = node_id)
+                logger.debug('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa node %s'%node)
+                logger.debug('node.count() %s'%node.count())
+                if node.count() > 0:
+                    node = node[0] 
+                    queries.append(search_node(node, not show_associated_items))
+                    logger.debug('queries %s'%queries)
+                else:
+#                    return Item.objects.none()
+                    queries.append(Item.objects.none())
             
 #            items = reduce(and_,  queries)
             
@@ -1109,16 +1118,17 @@ def _search(request,  items, workspace = None):
             
             logger.debug('queries %s'%queries)
             
-            if queries:
-                if len(queries) == 1:
-                    items = queries[0]
-                else:
-                    
-    #                logger.debug(queries[1][0] == queries[2][0])
-                    
-                    items = reduce(operator.and_,  queries)
-                    logger.debug('items after AND %s ' %items)
+        logger.debug('queries %s'%queries )
+        if queries:
+            if len(queries) == 1:
+                items = queries[0]
+            else:
                 
+    #                logger.debug(queries[1][0] == queries[2][0])
+                
+                items = reduce(operator.and_,  queries)
+                logger.debug('items after AND %s ' %items)
+        
     items.distinct()       
     return items
 

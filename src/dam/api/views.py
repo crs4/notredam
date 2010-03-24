@@ -711,9 +711,8 @@ class WorkspaceResource(ModResource):
         
         workspace = Workspace.objects.get(pk = workspace_id)
         items = Item.objects.filter(workspaces__pk = workspace_id)
-        query =  request.POST.get('query')
-        if query:
-            items = _search(request,  items, workspace).distinct()
+        
+        items = _search(request,  items, workspace).distinct()
         
         if media_type:
             items = items.filter(type = media_type)
@@ -730,7 +729,7 @@ class WorkspaceResource(ModResource):
         
         
         totalCount = items.count()
-        if start and limit:
+        if start and limit and items.count():
             items = items[start:start + limit]
             
         items = items.distinct()
