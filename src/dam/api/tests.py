@@ -262,7 +262,26 @@ class WSTestCase(MyTestCase):
         self.assertTrue(len(resp_dict['items']) == 1)
         self.assertTrue(resp_dict['totalCount'] == 2)
         self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
-         
+        
+        
+    
+    def test_search_keywords(self):
+        workspace = Workspace.objects.get(pk = 1)
+        params = self.get_final_parameters({ 'keyword': 'test', 
+            'media_type': 'image', 
+            'start':0,
+            'limit':1,
+            'metadata': 'dc_description'
+          
+        }) 
+        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        print resp_dict
+#        self.assertTrue(len(resp_dict['items']) == 1)
+#        self.assertTrue(resp_dict['totalCount'] == 2)
+#        self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
+#         
         
         
         
