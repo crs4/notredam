@@ -1247,6 +1247,11 @@ def load_items(request, view_type=None, unlimited=False, ):
         thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
 
         default_language = get_metadata_default_language(user, workspace)
+
+        basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
+
+        if only_basket:
+            items = items.filter(pk__in=basket_items)
         
         for item in items:
             geotagged = 0
@@ -1286,7 +1291,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 "inprogress": inprogress, 
                 'thumb': thumb_ready, 
                 'type': smart_str(item.type),
-                'inbasket':__inbasket(user,item,workspace),
+                'inbasket': item.pk in basket_items,
                 'preview_available': preview_available,
                 #'inbasket':1,
                 "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))
@@ -1298,10 +1303,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 item_info['state'] = state_association.state.pk
                 logger.debug("item_info['state'] %s"%item_info['state'])
                 
-            if only_basket==1 and item_info['inbasket']==1 :
-              item_dict.append(item_info)
-            if only_basket ==0 :
-              item_dict.append(item_info) 
+            item_dict.append(item_info)
         
         res_dict = {"items": item_dict, "totalCount": str(total_count)}
 
