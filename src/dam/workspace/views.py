@@ -835,19 +835,27 @@ def get_workspaces(request):
             root = Node.objects.get(workspace = ws,  depth=0,  type = 'keyword')
             collection_root = Node.objects.get(workspace  = ws,  depth=0,  type = 'collection')
             inbox_root = Node.objects.get(workspace = ws,  depth=0,  type = 'inbox')
-            media_types_settings = DAMComponentSetting.objects.get(name='ws_media_types')
-            media_types_selected = get_user_setting_by_level(media_types_settings, ws)
-            media_types_selected = media_types_selected.split(',') 
-            logger.debug('media_types_selected %s'%media_types_selected)
+            
+            
             tmp = {
                 'pk': ws.pk,
                 'name': ws.name,
                 'description': ws.description,
-                'media_type': media_types_selected,
+#                'media_type': media_types_selected,
                 'root_id': root.pk,
                 'collections_root_id': collection_root.pk,
                 'inbox_root_id':inbox_root.pk
             }
+            
+            try:
+                media_types_settings = DAMComponentSetting.objects.get(name='ws_media_types')
+                media_types_selected = get_user_setting_by_level(media_types_settings, ws)
+                media_types_selected = media_types_selected.split(',') 
+                logger.debug('media_types_selected %s'%media_types_selected)
+                tmp['media_type'] = media_types_selected
+            except:
+                tmp['media_type'] = ['image', 'video', 'audio', 'doc']
+            
             resp['workspaces'].append(tmp)
             
         resp = simplejson.dumps(resp)
