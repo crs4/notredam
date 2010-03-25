@@ -830,7 +830,7 @@ function createMediaPanel(config, autoLoad) {
 	    layout:'border',
 	    items:[view, gmap_container],
 	    bbar: paginator,
-	    closable: config.closable,
+//	    closable: config.closable,
 //	    search: search,
 	     
 	    getMediaTypes: function(){
@@ -868,6 +868,45 @@ function createMediaPanel(config, autoLoad) {
 	    	return search;
 	    	
 	    },
+	    
+	    listeners: {
+	    	close: function(){
+	    		
+	    		var media_tabs = Ext.getCmp('media_tabs');
+	    		console.log('media_tabs.getActiveTab().title ' + media_tabs.getActiveTab().title);
+	    		console.log('closeee ' + media_tabs.items.items.length);
+	    		
+	    		if (media_tabs.items.items.length == 2){
+	    			
+	    			
+	    			var tab_closed = this;
+	    			
+	    			Ext.each(media_tabs.items.items, function(){
+		    			if (this != tab_closed){
+		    				Ext.get(media_tabs.getTabEl(this).id).removeClass(CLOSABLE_TAB_CLASS);
+		    				return false;
+		    			}
+		    		});
+	    			
+	    			
+	    			
+	    			
+	    		}
+	    	
+	    	},
+	    	afterrender: function(){
+	    		var media_tabs = Ext.getCmp('media_tabs');
+	    		if (media_tabs .items.items.length == 1){	    			
+	    			Ext.get(media_tabs.getTabEl(this).id).removeClass(CLOSABLE_TAB_CLASS);
+	    		}
+	    		else if (media_tabs.items.items.length == 2){
+	    			Ext.get(media_tabs.getTabEl(media_tabs.items.items[0]).id).addClass(CLOSABLE_TAB_CLASS);
+	    		}
+	    			
+	    	}
+	    	
+	    },
+	    
 	    tbar: new Ext.Toolbar({	
 	    	listeners:{
 	    		render: function(){
@@ -1282,8 +1321,8 @@ Ext.onReady(function(){
         id: 'media_tabs',
         enableTabScroll: true,
         plugins: [ Ext.ux.AddTabButton ],
-        createTab: function() { // Optional function which the plugin uses to create new tabs
-    		 
+        createTab: function() { // Optional function which the plugin uses to create new tabs    		
+    		
             return  createMediaPanel({
                 title:'New Tab',
                 media_type: ws_store.query('pk', ws.id).items[0].data.media_type,
@@ -1314,6 +1353,7 @@ Ext.onReady(function(){
     		
  		
             tabchange: function(tab_panel, tab){
+    			
     			var store = tab.getComponent(0).getStore();    			
     			if (!store.lastOptions && (tab.query == '' || tab.query)) //if tab not loaded yet, for example when you switch ws
     				set_query_on_store({query:tab.query, workspace_id: ws.id});
