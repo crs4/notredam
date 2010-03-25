@@ -22,6 +22,8 @@ var firstlayout = true;
 var metadata_structures = {};
 
 var old_selected_nodes = [];
+var CLOSABLE_TAB_CLASS = 'x-tab-strip-closable'; 
+
 
 if (window['loadFirebugConsole']) {
     window.loadFirebugConsole();
