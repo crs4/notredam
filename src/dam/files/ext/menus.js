@@ -652,6 +652,7 @@ Ext.onReady(function(){
     function create_toolbar(){
         var tb = new Ext.Toolbar();
         var style_tb = 'font-size: 11px; font-weight:bold; color:#15428B; font-family: sans-serif';
+        
 //        var style_tb = 'font-size: 12px; font-family: sans-serif';
         
         
