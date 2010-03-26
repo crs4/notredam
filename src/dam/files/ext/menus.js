@@ -651,25 +651,27 @@ Ext.onReady(function(){
     });
     function create_toolbar(){
         var tb = new Ext.Toolbar();
+        var style_tb = 'font-size: 11px; font-weight:bold; color:#15428B; font-family: sans-serif';
+//        var style_tb = 'font-size: 12px; font-family: sans-serif';
         
         
         tb.add({
-                text:'<span style="font-size: 12px; font-family: sans-serif">Object</span>',
+                text:'<span style="' + style_tb + '">Object</span>',
                 menu: menu, 
                 id: 'object_menu'
             }, '-',
             {
-                text:'<span style="font-size: 12px; font-family: sans-serif">Edit</span>',
+                text:'<span style="' + style_tb + '">Edit</span>',
                 menu: edit_menu,
                 style: '',
                 id: 'edit_menu'
             }, '-',
             {
-                text:'<span style="font-size: 12px; font-family: sans-serif">Workspace</span>',
+                text:'<span style="' + style_tb + '">Workspace</span>',
                 menu: ws_menu()
             }, '-',
             {
-                text:'<span style="font-size: 12px; font-family: sans-serif">Help</span>',
+                text:'<span style="' + style_tb + '">Help</span>',
                 menu: help 
             }
         );
