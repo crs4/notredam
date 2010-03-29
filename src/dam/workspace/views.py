@@ -1268,7 +1268,10 @@ def load_items(request, view_type=None, unlimited=False, ):
             if GeoInfo.objects.filter(item=item).count() > 0:
                 geotagged = 1
             
-            
+            item_in_basket = 0
+
+            if item.pk in basket_items:
+                item_in_basket = 1
              
             thumb_url,thumb_ready = _get_thumb_url(item, workspace, thumb_dict)
 #                thumb_component = item.component_set.get(workspace = workspace, variant__pk = thumb_dict[item.type]['pk'])
@@ -1297,7 +1300,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 "inprogress": inprogress, 
                 'thumb': thumb_ready, 
                 'type': smart_str(item.type),
-                'inbasket': item.pk in basket_items,
+                'inbasket': item_in_basket,
                 'preview_available': preview_available,
                 #'inbasket':1,
                 "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))
