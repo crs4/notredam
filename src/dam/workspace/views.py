@@ -1142,12 +1142,19 @@ def _search(request,  items, workspace = None):
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
+
+    only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
     
     items = workspace.items.filter(type__in = media_type).distinct().order_by('-creation_time')
 #    if media_type != 'all':
 #        items = workspace.items.filter(type=media_type).distinct().order_by('-creation_time')
 #    else:
 #        items = workspace.items.distinct().order_by('-creation_time')
+
+    basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
+
+    if only_basket:
+        items = items.filter(pk__in=basket_items)
 
     if request.POST.get('query') or request.POST.getlist('node_id') or request.POST.get('complex_query'):
         items = _search(request,  items)
@@ -1223,7 +1230,6 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         start = int(request.POST.get('start', 0))
         limit = int(request.POST.get('limit', 30))
-        only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))
 		
         if limit == 0:
             unlimited = True
@@ -1250,9 +1256,6 @@ def load_items(request, view_type=None, unlimited=False, ):
         default_language = get_metadata_default_language(user, workspace)
 
         basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
-
-        if only_basket:
-            items = items.filter(pk__in=basket_items)
         
         for item in items:
             geotagged = 0
