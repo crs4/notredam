@@ -1,0 +1,166 @@
+
+{%extends "admin/workspace/base.html"%}
+{%block js%}      
+<script>
+
+    //YAHOO.util.Event.onAvailable('members', )
+//	if (handleOnAvailable)
+//    	YAHOO.util.Event.onDOMReady(handleOnAvailable);
+    
+    document.observe("dom:loaded", function(){  
+               handleOnAvailable();
+               {%if ws.pk%}
+                if(document.getElementsByClassName('errorlist').length == 0){
+                    
+                    window.parent.document.getElementById('workspace_name').innerHTML = $('id_name').value;
+                    
+                    window.parent.document.getElementById('ws_{{ws.pk}}_name').innerHTML = $('id_name').value;
+                    $('ws_name').innerHTML = $('id_name').value;
+                
+                }
+                {%endif%}
+
+    
+    });
+    
+    
+    
+    function save(){set_selected_in_selectbox('members_to'); 
+        {%if ws.id%}
+            var form = document.getElementById('admin_form');
+            var action = form.action;
+        
+            
+            var ajax = new Ajax.Updater('popup_admin',action, {
+                postBody: form.serialize(),
+                evalScripts:true,
+                onComplete: function(){                                 
+                    handleOnAvailable();                                        
+                    if(document.getElementsByClassName('myerrors').length == 0){
+                        window.parent.document.getElementById('ws_' + {{ws.id}}).getElementsByTagName('a')[0].innerHTML=$('id_name').value
+                        window.parent.document.getElementById('workspace_name').innerHTML = $('id_name').value;
+                        $('ws_name').innerHTML = $('id_name').value;
+                        }
+                    window.scroll(0,0)  
+                                                                                         
+                }});
+        
+        
+        {%else%}
+            var form = document.getElementById('admin_form');
+            var action = form.action;
+            var ajax = new Ajax.Updater('popup_admin',action, {postBody: form.serialize(),evalScripts:true,
+            onComplete: function(o){
+                windows.scroll(0,0);
+                handleOnAvailable();
+            }
+           
+           });
+            
+                            
+    {%endif%}
+                            
+    }
+    
+   function delete_ws(){
+        var r = Dialog.confirm('Are you sure you want to delete the current workspace?', { className: 'alphacube' ,width:300, height:100,
+       
+        onOk:function(win) {
+        
+            new Ajax.Request('/delete_ws/{{ws.id}}/', {onComplete: function (o) {
+                    if (o.responseText != {{ws.pk}}) {
+                        window.parent.location = '/workspace/' +o.responseText+  '/'
+                        window.parent.adminwin.destroy()
+                        
+                    }
+                    else{
+                        //win.destroy()
+                        Windows.closeAll()
+                        Dialog.alert('Deletion failed, the workspace must be empty.', {className: 'alphacube', width:300, height:100})
+                        
+                    }
+                }
+        })
+        
+        }
+        
+        
+        })
+        
+        
+            
+        
+        
+        
+
+   }
+
+</script>
+{% endblock %}      
+
+
+
+{% block content %}
+
+            
+            <form id="admin_form" name="permissions" 
+            {%if ws.id%}
+                action="/admin_workspace/{{ws.id}}/" 
+            {%else%}
+                action="/admin_workspace/add/" 
+            {%endif%}
+            
+           method="POST" >
+                    
+						
+                    <fieldset style="padding-left:0;padding-right:0;width:675px;">
+					<!--legend>workspace info</legend-->
+					
+                    <div id="error_alert" style="visibility:hidden">Please correct the errors below</div>
+                    
+                    
+                   {%comment%}
+                    {%for field in form%}
+                        <div class="form-row">               
+                            {{field.label_tag}}
+                            {{field}}
+                            {% if field.errors %}<dd class="errors" >{{ field.errors }}</dd>{% endif %}
+                        </div>
+                    {%endfor%}
+					{%endcomment%}
+					
+							<div class="form_astable">
+						
+                        	{{form.as_p}}
+							{%if ws.id%}
+							<p class="">
+							<label class="" title="creator">Created by:</label>
+                             {{ws.creator}}
+                        	</p>
+							<p class="">
+							<label class="" title="creator">Created on:</label>
+                             {{ws.creation_date}}
+                        	</p>
+							<p class="">
+							<label class="" title="creator">Last info update:</label>
+                             {{ws.last_update}}
+                        	</p>
+							<p class="">
+							<label class="" title="uploader">Resources:</label>
+                             {{ws.items.all|length}}
+                        	</p>
+						
+							{%endif%}
+						</div>
+                    </fieldset> 
+                        
+                <input id="save_button" type="submit" name ="cmd" class="button" value="save" />
+                {%if ws.id%}    
+                    <input type="button" name ="cmd" class="button" value="cancel" onclick="parent.adminwin.close()"/>
+                            
+                {%endif%}
+
+            </form>
+        </div>
+
+{% endblock %}

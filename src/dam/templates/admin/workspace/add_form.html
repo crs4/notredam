@@ -1,0 +1,59 @@
+<form 
+{%if form_id%}
+    id="{{form_id}}" 
+{%else%}
+    id="id_form_permissions" 
+{%endif%}
+action="" method="POST">
+
+{%if notfieldset %}
+
+{%else%}
+    <fieldset >    
+{%endif%}
+ {%for field in form%}
+     
+        
+        {%if label%}
+			<label class="preField">{{label}}</label>
+        {%endif%}
+        
+        {%ifequal field.label  'Hidden'%}
+        <div style="display:none">
+            {{field}}
+        </div>
+        {%else%}
+            {{field}}
+        {%endifequal%}
+      
+        {%endfor%}
+
+ {%if button_function%}
+  
+        <input  type="button" name="cmd" 
+        value="{%if button_value%} {{button_value}}{%else%}save{%endif%}" 
+        
+        onclick="{{button_function}}">
+        {%comment%}
+        {%else%}
+        <br>
+        <input type="button" name="cmd"
+        value="save"        
+        onclick="        
+        {%if submit%}
+            $('form_list').action = '{{form_action}}';
+            $('form_list').submit();
+        {%else%}
+            save_permissions('{{form_action}}' {%if div%} ,'{{div}}'{%endif%}) 
+        {%endif%}
+        "/>
+        {%endcomment%}
+{%endif%}
+
+
+
+ {%if notfieldset %}
+{%else%}
+    </fieldset>    
+{%endif%}
+ </form>
