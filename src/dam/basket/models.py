@@ -1,14 +1,20 @@
+#########################################################################
 #
-# Licensed under the EUPL, Version 1.0
+# NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+# Email: labcontdigit@sardegnaricerche.it
+# Web: www.notre-dam.org
 #
-# You may obtain a copy of the License in your language at:
+# This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
 #
-# http://ec.europa.eu/idabc/7330
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
 #
-# Read also the LICENSE file included in this package for
-# more information.
-# file dam basket models.py
-##########################################################
+#########################################################################
 
 from django.db import models
 from django.contrib.auth.models import User
