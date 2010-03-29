@@ -30,6 +30,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.utils import simplejson
 from dam.basket.views import __inbasket
+from dam.basket.models import Basket
 from dam.repository.models import Item, Component, Container
 from dam.workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
