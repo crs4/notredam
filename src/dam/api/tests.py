@@ -302,8 +302,49 @@ class WSTestCase(MyTestCase):
         self.assertTrue(len(resp_dict['items']) == params['limit'])
         self.assertTrue(resp_dict['totalCount'] == collection.items.count())
         self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
+        
+    def test_search_smart_folders(self):
+        workspace = Workspace.objects.get(pk = 1)
+        smart_folder = SmartFolder.objects.get(pk = 1)
+        
+        params = self.get_final_parameters({ 
+            'smart_folder': smart_folder.pk, 
+            'media_type': 'image', 
+            'start':0,
+            'limit':1,
+            'metadata': 'dc_description'
+          
+        }) 
+        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        print resp_dict
+#        self.assertTrue(len(resp_dict['items']) == params['limit'])
+        self.assertTrue(resp_dict['totalCount'] == smart_folder.nodes.all()[0].items.count())
+#        self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
+    
 
 
+    def test_search_complex(self):
+        workspace = Workspace.objects.get(pk = 1)
+        params = self.get_final_parameters({ 
+            'keyword': 18,
+            'query': '"test prova"' ,
+            'media_type': 'image', 
+            'start':0,
+            'limit':1,
+            'metadata': 'dc_description'
+          
+        }) 
+        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        print resp_dict
+        self.assertTrue(len(resp_dict['items']) == 1)
+        self.assertTrue(resp_dict['totalCount'] == 1)
+    
+        
+        
     
     def test_search_collections_no_results(self):
         workspace = Workspace.objects.get(pk = 1)

@@ -909,6 +909,13 @@ def _search(request,  items, workspace = None):
         else:
             return items.filter(node__in = node.get_branch())
         
+    def search_smart_folder(smart_folder_node, items):
+        logger.debug('smart_folder_node %s'%smart_folder_node)
+                
+        complex_query = smart_folder_node.get_complex_query()
+        items = _search_complex_query(complex_query,  items)
+        return items
+        
         
     
     
@@ -921,7 +928,8 @@ def _search(request,  items, workspace = None):
     nodes_query.extend(request.POST.getlist('keyword'))
     nodes_query.extend(request.POST.getlist('collection'))
     
-    
+    smart_folders_query = request.POST.getlist('smart_folder')
+
     queries = []
     
     complex_query = request.POST.get('complex_query')
@@ -936,9 +944,7 @@ def _search(request,  items, workspace = None):
         if nodes_query:            
             for node_id  in nodes_query:
                 logger.debug(node_id)
-                node = Node.objects.filter(pk = node_id)
-                logger.debug('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa node %s'%node)
-                logger.debug('node.count() %s'%node.count())
+                node = Node.objects.filter(pk = node_id)                
                 if node.count() > 0:
                     node = node[0] 
                     queries.append(search_node(node, not show_associated_items))
@@ -946,10 +952,16 @@ def _search(request,  items, workspace = None):
                 else:
 #                    return Item.objects.none()
                     queries.append(Item.objects.none())
+                    
+        if smart_folders_query:
+            for smart_folder_id in smart_folders_query:                
+                smart_folder_node = SmartFolder.objects.get(pk = smart_folder_id)
+                queries.append(search_smart_folder(smart_folder_node, items))
+            
             
 #            items = reduce(and_,  queries)
             
-                
+#Text query                
         if query:
             
             logger.debug('query %s'%query)
@@ -1069,13 +1081,12 @@ def _search(request,  items, workspace = None):
 
             
     
-            if smart_folder:
+            if smart_folder:               
+                
                 logger.debug('smart_folder[0] %s'%smart_folder[0])
                 smart_folder_node = SmartFolder.objects.get(workspace = workspace,  label = smart_folder[0])
-                logger.debug('smart_folder_node %s'%smart_folder_node)
-                complex_query = smart_folder_node.get_complex_query()
-                items = _search_complex_query(complex_query,  items)
-                queries.append(items)
+                queries.append(search_smart_folder(smart_folder_node, items))
+                
 
             for robj in real_objects:
                 queries.append(items.filter(Q(real_objects__name = robj) & Q(real_objects__workspace=request.session['workspace'])))
