@@ -1143,6 +1143,8 @@ def _search(request,  items, workspace = None):
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
 
+    user = User.objects.get(pk=request.session['_auth_user_id'])
+
     only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
     
     items = workspace.items.filter(type__in = media_type).distinct().order_by('-creation_time')
