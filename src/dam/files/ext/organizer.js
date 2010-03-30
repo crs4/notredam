@@ -75,6 +75,9 @@ function  remove_from_basket(){
 
 function  clear_basket(){
 
+    var ac = Ext.getCmp('media_tabs').getActiveTab();
+    var view = ac.getComponent(0);
+
         Ext.Ajax.request({
             url:'/clear_basket/',
             params: {},
