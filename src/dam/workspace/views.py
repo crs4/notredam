@@ -30,6 +30,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.utils import simplejson
 from dam.basket.views import __inbasket
+from dam.basket.models import Basket
 from dam.repository.models import Item, Component, Container
 from dam.workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
@@ -1152,12 +1153,21 @@ def _search(request,  items, workspace = None):
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
+
+    user = User.objects.get(pk=request.session['_auth_user_id'])
+
+    only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
     
     items = workspace.items.filter(type__in = media_type).distinct().order_by('-creation_time')
 #    if media_type != 'all':
 #        items = workspace.items.filter(type=media_type).distinct().order_by('-creation_time')
 #    else:
 #        items = workspace.items.distinct().order_by('-creation_time')
+
+    basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
+
+    if only_basket:
+        items = items.filter(pk__in=basket_items)
 
     if request.POST.get('query') or request.POST.getlist('node_id') or request.POST.get('complex_query'):
         items = _search(request,  items)
@@ -1233,7 +1243,6 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         start = int(request.POST.get('start', 0))
         limit = int(request.POST.get('limit', 30))
-        only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))
 		
         if limit == 0:
             unlimited = True
@@ -1258,6 +1267,8 @@ def load_items(request, view_type=None, unlimited=False, ):
         thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
 
         default_language = get_metadata_default_language(user, workspace)
+
+        basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
         
         for item in items:
             geotagged = 0
@@ -1268,7 +1279,10 @@ def load_items(request, view_type=None, unlimited=False, ):
             if GeoInfo.objects.filter(item=item).count() > 0:
                 geotagged = 1
             
-            
+            item_in_basket = 0
+
+            if item.pk in basket_items:
+                item_in_basket = 1
              
             thumb_url,thumb_ready = _get_thumb_url(item, workspace, thumb_dict)
 #                thumb_component = item.component_set.get(workspace = workspace, variant__pk = thumb_dict[item.type]['pk'])
@@ -1297,7 +1311,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 "inprogress": inprogress, 
                 'thumb': thumb_ready, 
                 'type': smart_str(item.type),
-                'inbasket':__inbasket(user,item,workspace),
+                'inbasket': item_in_basket,
                 'preview_available': preview_available,
                 #'inbasket':1,
                 "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))
@@ -1309,10 +1323,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 item_info['state'] = state_association.state.pk
                 logger.debug("item_info['state'] %s"%item_info['state'])
                 
-            if only_basket==1 and item_info['inbasket']==1 :
-              item_dict.append(item_info)
-            if only_basket ==0 :
-              item_dict.append(item_info) 
+            item_dict.append(item_info)
         
         res_dict = {"items": item_dict, "totalCount": str(total_count)}
 
