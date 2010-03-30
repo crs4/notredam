@@ -22,6 +22,8 @@ var firstlayout = true;
 var metadata_structures = {};
 
 var old_selected_nodes = [];
+var CLOSABLE_TAB_CLASS = 'x-tab-strip-closable'; 
+
 
 if (window['loadFirebugConsole']) {
     window.loadFirebugConsole();
@@ -615,8 +617,7 @@ function do_search(v){
 };
 
 function create_tabs(ws_id, media_type){
-	console.log('media_type');
-	console.log(media_type);
+	
 	if (!media_type)
 		var media_type = ['image', 'audio', 'video', 'doc'];
 	

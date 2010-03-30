@@ -262,7 +262,8 @@ function switch_ws(current_record, ws_id){
     			title: this.data.name,    			
     			query: this.data.query,
     			media_type: this.data.media_type,
-                closable: count > 0
+    			closable: true
+//                closable: count > 0
 //                search_value: this.data.query || ''
     		});
     		count += 1;

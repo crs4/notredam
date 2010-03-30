@@ -30,6 +30,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.utils import simplejson
 from dam.basket.views import __inbasket
+from dam.basket.models import Basket
 from dam.repository.models import Item, Component, Container
 from dam.workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
@@ -835,19 +836,27 @@ def get_workspaces(request):
             root = Node.objects.get(workspace = ws,  depth=0,  type = 'keyword')
             collection_root = Node.objects.get(workspace  = ws,  depth=0,  type = 'collection')
             inbox_root = Node.objects.get(workspace = ws,  depth=0,  type = 'inbox')
-            media_types_settings = DAMComponentSetting.objects.get(name='ws_media_types')
-            media_types_selected = get_user_setting_by_level(media_types_settings, ws)
-            media_types_selected = media_types_selected.split(',') 
-            logger.debug('media_types_selected %s'%media_types_selected)
+            
+            
             tmp = {
                 'pk': ws.pk,
                 'name': ws.name,
                 'description': ws.description,
-                'media_type': media_types_selected,
+#                'media_type': media_types_selected,
                 'root_id': root.pk,
                 'collections_root_id': collection_root.pk,
                 'inbox_root_id':inbox_root.pk
             }
+            
+            try:
+                media_types_settings = DAMComponentSetting.objects.get(name='ws_media_types')
+                media_types_selected = get_user_setting_by_level(media_types_settings, ws)
+                media_types_selected = media_types_selected.split(',') 
+                logger.debug('media_types_selected %s'%media_types_selected)
+                tmp['media_type'] = media_types_selected
+            except:
+                tmp['media_type'] = ['image', 'video', 'audio', 'doc']
+            
             resp['workspaces'].append(tmp)
             
         resp = simplejson.dumps(resp)
@@ -866,7 +875,8 @@ def _search_complex_query(complex_query,  items):
                 items = items.exclude(node = node)
                 
             else:
-                items= items.filter(node = node)
+#                items= items.filter(node = node)
+                items = items.filter(node__in = node.get_branch())
             logger.debug('items %s'%items)
             
     else:
@@ -894,11 +904,36 @@ def _search_complex_query(complex_query,  items):
 
 
 def _search(request,  items, workspace = None):
+    
+    def search_node(node, sub_branch):        
+        if show_associated_items:
+            return items.filter(node = node)
+        else:
+            return items.filter(node__in = node.get_branch())
+        
+    def search_smart_folder(smart_folder_node, items):
+        logger.debug('smart_folder_node %s'%smart_folder_node)
+                
+        complex_query = smart_folder_node.get_complex_query()
+        items = _search_complex_query(complex_query,  items)
+        return items
+        
+        
+    
+    
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
     
     show_associated_items = request.POST.get('show_associated_items')
-    node_id = request.POST.getlist('ode_id')
+    nodes_query = []
+    
+    nodes_query.extend(request.POST.getlist('keyword'))
+    nodes_query.extend(request.POST.getlist('collection'))
+    
+    smart_folders_query = request.POST.getlist('smart_folder')
+
+    queries = []
+    
     complex_query = request.POST.get('complex_query')
     if not workspace:
         workspace = request.session['workspace']
@@ -908,22 +943,27 @@ def _search(request,  items, workspace = None):
         items = _search_complex_query(complex_query,  items)
         
     else:
-        if node_id:
-            logger.debug('--------node_id %s'%node_id)
-    #        nodes = Node.objects.filter(pk__in = node_id)
-    #        if node.depth != 0:           
-    #            items = items.filter(node =  node)
-
-
-    #        items = items.extra(select={'cnt': 'select count(*) as cnt from node_items where node_id in (%s)  group by item_id having cnt = 1'%','.join(node_id)}, where= ['cnt = 1'])
-            queries = []
-            for node in node_id:
-                queries.append(items.filter(node__pk = node))
+        if nodes_query:            
+            for node_id  in nodes_query:
+                logger.debug(node_id)
+                node = Node.objects.filter(pk = node_id)                
+                if node.count() > 0:
+                    node = node[0] 
+                    queries.append(search_node(node, not show_associated_items))
+                    logger.debug('queries %s'%queries)
+                else:
+#                    return Item.objects.none()
+                    queries.append(Item.objects.none())
+                    
+        if smart_folders_query:
+            for smart_folder_id in smart_folders_query:                
+                smart_folder_node = SmartFolder.objects.get(pk = smart_folder_id)
+                queries.append(search_smart_folder(smart_folder_node, items))
             
-            logger.debug('queries %s'%queries)
-            items = reduce(and_,  queries)
             
-                
+#            items = reduce(and_,  queries)
+            
+#Text query                
         if query:
             
             logger.debug('query %s'%query)
@@ -987,7 +1027,6 @@ def _search(request,  items, workspace = None):
             logger.debug('multi_words %s'%multi_words)
             logger.debug('geo %s'%geo)
             
-            queries = []
             
             
             logger.debug('metadata_query %s'%metadata_query)
@@ -1022,10 +1061,8 @@ def _search(request,  items, workspace = None):
                     node = Node.objects.get_from_path(keyword,  'keyword')
                     logger.debug('node found %s'%node)
                     
-                    if show_associated_items:
-                        queries.append(items.filter(node = node))
-                    else:
-                        queries.append(items.filter(node__in = node.get_branch()))
+                    queries.append(search_node(node, not show_associated_items))
+                    
                 else:
                     logger.debug('without keywords')
     #                    searching for items without keyword
@@ -1046,13 +1083,12 @@ def _search(request,  items, workspace = None):
 
             
     
-            if smart_folder:
+            if smart_folder:               
+                
                 logger.debug('smart_folder[0] %s'%smart_folder[0])
                 smart_folder_node = SmartFolder.objects.get(workspace = workspace,  label = smart_folder[0])
-                logger.debug('smart_folder_node %s'%smart_folder_node)
-                complex_query = smart_folder_node.get_complex_query()
-                items = _search_complex_query(complex_query,  items)
-                queries.append(items)
+                queries.append(search_smart_folder(smart_folder_node, items))
+                
 
             for robj in real_objects:
                 queries.append(items.filter(Q(real_objects__name = robj) & Q(real_objects__workspace=request.session['workspace'])))
@@ -1103,26 +1139,36 @@ def _search(request,  items, workspace = None):
             
             logger.debug('queries %s'%queries)
             
-            if queries:
-                if len(queries) == 1:
-                    items = queries[0]
-                else:
-                    
-    #                logger.debug(queries[1][0] == queries[2][0])
-                    
-                    items = reduce(operator.and_,  queries)
-                    logger.debug('items after AND %s ' %items)
+        logger.debug('queries %s'%queries )
+        if queries:
+            if len(queries) == 1:
+                items = queries[0]
+            else:
                 
+    #                logger.debug(queries[1][0] == queries[2][0])
+                
+                items = reduce(operator.and_,  queries)
+                logger.debug('items after AND %s ' %items)
+        
     items.distinct()       
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
+
+    user = User.objects.get(pk=request.session['_auth_user_id'])
+
+    only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
     
     items = workspace.items.filter(type__in = media_type).distinct().order_by('-creation_time')
 #    if media_type != 'all':
 #        items = workspace.items.filter(type=media_type).distinct().order_by('-creation_time')
 #    else:
 #        items = workspace.items.distinct().order_by('-creation_time')
+
+    basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
+
+    if only_basket:
+        items = items.filter(pk__in=basket_items)
 
     if request.POST.get('query') or request.POST.getlist('node_id') or request.POST.get('complex_query'):
         items = _search(request,  items)
@@ -1182,7 +1228,6 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         start = int(request.POST.get('start', 0))
         limit = int(request.POST.get('limit', 30))
-        only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))
 		
         if limit == 0:
             unlimited = True
@@ -1201,6 +1246,8 @@ def load_items(request, view_type=None, unlimited=False, ):
         thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
 
         default_language = get_metadata_default_language(user, workspace)
+
+        basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
         
         for item in items:
             geotagged = 0
@@ -1210,6 +1257,11 @@ def load_items(request, view_type=None, unlimited=False, ):
                 inprogress = 1
             if GeoInfo.objects.filter(item=item).count() > 0:
                 geotagged = 1
+            
+            item_in_basket = 0
+
+            if item.pk in basket_items:
+                item_in_basket = 1
              
             thumb_url,thumb_ready = _get_thumb_url(item, workspace)
 
@@ -1227,7 +1279,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 "inprogress": inprogress, 
                 'thumb': thumb_ready, 
                 'type': smart_str(item.type),
-                'inbasket':__inbasket(user,item,workspace),
+                'inbasket': item_in_basket,
                 'preview_available': preview_available,
                 #'inbasket':1,
                 "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))
@@ -1239,10 +1291,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 item_info['state'] = state_association.state.pk
                 logger.debug("item_info['state'] %s"%item_info['state'])
                 
-            if only_basket==1 and item_info['inbasket']==1 :
-              item_dict.append(item_info)
-            if only_basket ==0 :
-              item_dict.append(item_info) 
+            item_dict.append(item_info)
         
         res_dict = {"items": item_dict, "totalCount": str(total_count)}
 
