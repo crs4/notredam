@@ -73,29 +73,21 @@ def delete_item(request):
         items_id = items_commas
 
     logger.debug('items_id %s' %items_id)
-
-    from mediadart import toolkit
-        
-    t = toolkit.Toolkit(MEDIADART_CONF)
-    storage = t.get_storage()
         
     choose = request.POST.get('choose')
     inbox_deleted = None
     
     if choose == 'current_w':
         for item in items_id:
-            i = Item.objects.filter(pk=item)[0]
+            i = Item.objects.get(pk=item)
             i.workspaces.remove(cw)
             components = Component.objects.filter(item__pk=i.pk,workspace__pk=cw.pk)
             for c in components:
                 c.workspace.remove(cw)
                 
                 if c.workspace.all().count() == 0:
-                    if i.component_set.filter(_id=c.ID).count() == 1:
-                        storage.remove_resource(c.ID)
                     c.delete()
-            
-            
+
             inboxes = i.node_set.filter(type = 'inbox',  workspace = cw) #just to be sure, filter instead of get
             for inbox in inboxes:
             
@@ -108,7 +100,6 @@ def delete_item(request):
             if i.workspaces.all().count() == 0:
                 components = Component.objects.filter(item=i)
                 for c in components:
-                    storage.remove_resource(c.ID)
                     c.delete()
                 i.delete() 
                 
@@ -132,7 +123,6 @@ def delete_item(request):
             if i.workspaces.all().count() == 0:
                 components = Component.objects.filter(item=i)
                 for c in components:
-                    storage.remove_resource(c.ID)
                     c.delete()
                 i.delete() 
             

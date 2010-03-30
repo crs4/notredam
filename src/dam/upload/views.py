@@ -46,6 +46,7 @@ import logger
 import mimetypes
 import os.path, traceback
 import time
+import tempfile
 
 def _uploaded_item(item,  workspace):
     uploaded = Node.objects.get(depth = 1,  label = 'Uploaded',  type = 'inbox',  workspace = workspace)
@@ -105,6 +106,69 @@ def adobe_air_upload(request):
 #    resp = simplejson.dumps({'new_keywords':new_keywords})
     resp = simplejson.dumps({})
     return HttpResponse(resp)
+
+def flex_upload(request):
+
+    from mediadart.storage import Storage
+
+    workspace = Workspace.objects.all()[0]
+
+    print workspace
+
+    print request.POST
+
+    upload_file = request.FILES['upload_file']
+
+    user = User.objects.all()[0]
+    type = guess_media_type(upload_file.name)
+    
+    try:
+        register_resource = upload_file.temporary_file_path()
+    except:
+        destination = tempfile.NamedTemporaryFile(delete=False)
+        for chunk in upload_file.chunks():
+            destination.write(chunk)
+        destination.close()
+        register_resource = destination.name
+        
+    storage = Storage('/tmp/prova/')
+    res_id = storage.add(register_resource)
+
+    item_ctype = ContentType.objects.get_for_model(Item)
+    
+    item = Item.objects.create(uploader = user,  type = type)
+    item_id = item.pk
+    _uploaded_item(item,  workspace) 
+
+    item.workspaces.add(workspace)
+        
+    variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
+            
+    comp = _create_variant(variant,  item, workspace)
+    
+    comp.file_name=upload_file.name
+    comp._id = res_id
+    
+    logger.debug('comp._id %s'%comp._id )
+    mime_type = mimetypes.guess_type(upload_file.name)[0]
+    
+    ext = mime_type.split('/')[1]
+    comp.format= ext
+    comp.save()
+    
+    logger.debug('mime_type  %s'%mime_type )
+    
+    metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
+    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
+    orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
+    try:
+        generate_tasks(variant, workspace, item)
+    except Exception, ex:
+        traceback.print_exc(ex)
+        raise
+    resp = simplejson.dumps({})
+    return HttpResponse(resp)
+
 
 
 @login_required
