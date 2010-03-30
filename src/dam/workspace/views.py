@@ -41,7 +41,7 @@ from dam.application.views import get_component_url
 from dam.workspace.forms import AdminWorkspaceForm, AdminWorkspaceGroupsForm, AddMembersForm, AddMembersToGroupForm, SetPermissionsForm, SetGroupsForm
 from dam.application.models import Type
 from dam.geo_features.models import GeoInfo
-from dam.batch_processor.models import MDTask, MachineState
+from dam.batch_processor.models import MDTask, MachineState, Machine
 from dam.settings import GOOGLE_KEY, ROOT_PATH, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
@@ -1324,15 +1324,15 @@ def get_status(request):
 
     workspace = request.session.get('workspace', None) 
 
-    tasks_pending = MachineState.objects.filter(action__component__workspace=workspace)
-#    tasks_failed = MDTask.objects.filter(status=-1, component__workspace=workspace)
+    ws_tasks = Machine.objects.filter(current_state__action__component__workspace=workspace)
+    tasks_pending = ws_tasks.exclude(current_state__name='failed')
+    tasks_failed = ws_tasks.filter(current_state__name='failed')
 
-#    items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
-    items_pending = tasks_pending.values_list('action__component__item', flat=True).distinct()
+    items_failed = tasks_failed.values_list('current_state__action__component__item', flat=True).distinct()
+    items_pending = tasks_pending.values_list('current_state__action__component__item', flat=True).distinct()
 
     total_pending = items_pending.count()
-#    total_failed = items_failed.count()
-    total_failed = 0
+    total_failed = items_failed.count()
     
     update_items = {}
  
@@ -1350,7 +1350,7 @@ def get_status(request):
 
         my_caption = _get_thumb_caption(item, thumb_caption, default_language)
 
-        if tasks_pending.filter(action__component__item=item).count() > 0:
+        if tasks_pending.filter(current_state__action__component__item=item).count() > 0:
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
                               "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
         else:
