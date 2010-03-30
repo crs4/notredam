@@ -875,7 +875,8 @@ def _search_complex_query(complex_query,  items):
                 items = items.exclude(node = node)
                 
             else:
-                items= items.filter(node = node)
+#                items= items.filter(node = node)
+                items = items.filter(node__in = node.get_branch())
             logger.debug('items %s'%items)
             
     else:
