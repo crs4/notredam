@@ -42,7 +42,7 @@ from dam.application.views import get_component_url
 from dam.workspace.forms import AdminWorkspaceForm, AdminWorkspaceGroupsForm, AddMembersForm, AddMembersToGroupForm, SetPermissionsForm, SetGroupsForm
 from dam.application.models import Type
 from dam.geo_features.models import GeoInfo
-from dam.batch_processor.models import MDTask
+from dam.batch_processor.models import MDTask, MachineState, Machine
 from dam.settings import GOOGLE_KEY, ROOT_PATH, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
@@ -1198,27 +1198,11 @@ def _get_thumb_url(item, workspace, thumb_dict = None, absolute_url = False):
         thumb_ready = 1
     
     else:
-
-        try:
-
-            thumb_component = item.component_set.get(workspace = workspace, variant__pk = thumb_dict[item.type]['pk'])
-         
-            if thumb_component.imported and thumb_component.file_name:
-                logger.debug('thumb_component.file_name %s'%thumb_component.file_name)
-                ext = os.path.splitext(thumb_component.file_name)[1]
-            else:
-                ext = '.jpg'                    
-                                    
-            if os.path.isfile(os.path.join(THUMBS_DIR, thumb_component.ID + ext)):
-                thumb_ready = 1
-                thumb_url = '/files/thumbs/' + thumb_component.ID + ext
-
-            if absolute_url:
-                thumb_url = 'http://' + SERVER_PUBLIC_ADDRESS + thumb_url
-
-        except:
-            pass
-
+        url = get_component_url(workspace, item.pk, 'thumbnail', thumb=True)
+        if url:
+            thumb_ready = 1
+            thumb_url = url
+            
     return thumb_url,thumb_ready
 
 
@@ -1255,15 +1239,9 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         items_pks = [item.pk for item in items]
         
-        tasks_pending_obj = MDTask.objects.filter(Q(status__isnull=True) | Q(status = 0), component__workspace=workspace, component__item__pk__in=items_pks)     
-        tasks_pending = tasks_pending_obj.values_list('component__item',  flat=True)
-        
-        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('media_type__name',  'pk',  'default_url')
-        
-        thumb_dict = {}
-        for thumb in thumb_variants:
-            thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk'],  'default_url': thumb['default_url']}
-        
+        tasks_pending_obj = MachineState.objects.filter(action__component__workspace=workspace, action__component__item__pk__in=items_pks)     
+        tasks_pending = tasks_pending_obj.values_list('action__component__item',  flat=True)
+                
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
         thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
 
@@ -1285,24 +1263,13 @@ def load_items(request, view_type=None, unlimited=False, ):
             if item.pk in basket_items:
                 item_in_basket = 1
              
-            thumb_url,thumb_ready = _get_thumb_url(item, workspace, thumb_dict)
-#                thumb_component = item.component_set.get(workspace = workspace, variant__pk = thumb_dict[item.type]['pk'])
-# 
-#                if thumb_component.imported and thumb_component.file_name:
-#                    logger.debug('thumb_component.file_name %s'%thumb_component.file_name)
-#                    ext = os.path.splitext(thumb_component.file_name)[1]
-#                else:
-#                    ext = '.jpg'                    
-#                                        
-#                if os.path.isfile(os.path.join(THUMBS_DIR, thumb_component.ID + ext)):
-#                    thumb_ready = 1
-#                    thumb_url = '/files/thumbs/' + thumb_component.ID + ext
+            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
 
             states = item.stateitemassociation_set.filter(workspace = workspace)
 
             my_caption = _get_thumb_caption(item, thumb_caption, default_language)
             if inprogress:
-                preview_available = tasks_pending_obj.filter(component__variant__name = 'preview', component__item = item, task_type = 'adaptation').count()
+                preview_available = tasks_pending_obj.filter(action__component__variant__name = 'preview', action__component__item = item, action__function = 'adapt_resource').count()
             else:
                 preview_available = 0
             item_info = {
@@ -1406,26 +1373,17 @@ def get_status(request):
 
     workspace = request.session.get('workspace', None) 
 
-    tasks_pending = MDTask.objects.filter(Q(status__isnull=True) | Q(status = 0), component__workspace=workspace)
-    adapt_pending = tasks_pending.filter(task_type='adaptation').count()
-    feat_pending = tasks_pending.filter(task_type='feature_extraction').count()
-    metadata_pending = tasks_pending.filter(task_type='extract_metadata').count()
+    ws_tasks = Machine.objects.filter(current_state__action__component__workspace=workspace)
+    tasks_pending = ws_tasks.exclude(current_state__name='failed')
+    tasks_failed = ws_tasks.filter(current_state__name='failed')
 
-    tasks_failed = MDTask.objects.filter(status=-1, component__workspace=workspace)
-
-    items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
-    items_pending = tasks_pending.exclude(component__item__in=items_failed).values_list('component__item', flat=True).distinct()
+    items_failed = tasks_failed.values_list('current_state__action__component__item', flat=True).distinct()
+    items_pending = tasks_pending.values_list('current_state__action__component__item', flat=True).distinct()
 
     total_pending = items_pending.count()
     total_failed = items_failed.count()
-
-    update_items = {}
-
-    thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('media_type__name',  'pk',  'default_url')        
     
-    thumb_dict = {}
-    for thumb in thumb_variants:
-        thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk'],  'default_url': thumb['default_url']}
+    update_items = {}
  
     now = time.time()
 
@@ -1437,27 +1395,11 @@ def get_status(request):
     for i in items:
         item = Item.objects.get(pk=i)
 
-        thumb_ready = 0
-        thumb_url = NOTAVAILABLE
-        
-        if thumb_dict[item.type]['default_url']:
-            thumb_url = thumb_dict[item.type]['default_url']
-            thumb_ready = 1
-        else: 
-            thumb_component = item.component_set.get(workspace = workspace, variant__pk = thumb_dict[item.type]['pk'])            
-
-            if thumb_component.imported and thumb_component.file_name:
-                ext = os.path.splitext(thumb_component.file_name)[1]
-            else:
-                ext = '.jpg'
-            
-            if os.path.isfile(os.path.join(THUMBS_DIR, thumb_component.ID + ext)):
-                thumb_ready = 1
-                thumb_url = '/files/thumbs/' + thumb_component.ID + ext
+        thumb_url,thumb_ready = _get_thumb_url(item, workspace)
 
         my_caption = _get_thumb_caption(item, thumb_caption, default_language)
 
-        if tasks_pending.filter(component__item=item).count() > 0:
+        if tasks_pending.filter(current_state__action__component__item=item).count() > 0:
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
                               "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
         else:

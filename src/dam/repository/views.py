@@ -27,7 +27,6 @@ from dam.repository.models import Item, Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
 
-from mediadart import toolkit
 import logger
 from django.utils import simplejson
 
@@ -74,6 +73,8 @@ def delete_item(request):
         items_id = items_commas
 
     logger.debug('items_id %s' %items_id)
+
+    from mediadart import toolkit
         
     t = toolkit.Toolkit(MEDIADART_CONF)
     storage = t.get_storage()
