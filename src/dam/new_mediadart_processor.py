@@ -78,7 +78,7 @@ def adapt_resource(component, machine):
   
     adapter_proxy = Proxy('Adapter') 
 
-    item = Item.objects.get(component = component)
+    item = component.item
     workspace = component.workspace.all()[0] 
 
     variant = component.variant
@@ -129,9 +129,9 @@ def adapt_resource(component, machine):
 #         else:
 
         if watermark_enabled:
-            d = adapter_proxy.adapt_image(orig.ID, transcoding_format, max_w=max_dim, max_h=max_dim, watermark='/opt/mediadart/share/logo-s.png')
+            d = adapter_proxy.adapt_image(orig.ID, transcoding_format, dest_size=(max_dim, max_dim), watermark='/opt/mediadart/share/logo-s.png')
         else:
-            d = adapter_proxy.adapt_image(orig.ID, transcoding_format, max_w=max_dim, max_h=max_dim)
+            d = adapter_proxy.adapt_image(orig.ID, transcoding_format, dest_size=(max_dim, max_dim))
 
     elif item.type == 'movie':
 
@@ -141,7 +141,7 @@ def adapt_resource(component, machine):
             dim_y = vp.max_dim
             thumbnail_position = vp.video_position
 
-            d = adapter_proxy.extract_video_thumbnail(orig.ID, dim_x, dim_y, thumbnail_position, dim_x)
+            d = adapter_proxy.extract_video_thumbnail(orig.ID, thumb_size=(dim_x, dim_y))
 
         else:
 
@@ -161,7 +161,7 @@ def adapt_resource(component, machine):
 #                 #param_dict['watermark_left'] = 10
 #                 yield utils.wait_for_resource(vp.watermark_uri, 5)
                 
-            d = adapter_proxy.adapt_video2(orig.ID, preset_name,  param_dict)
+            d = adapter_proxy.adapt_video(orig.ID, preset_name,  param_dict)
             
 
     elif item.type == 'audio':
@@ -172,7 +172,7 @@ def adapt_resource(component, machine):
         for val in vp.values.all():
                 param_dict[val.parameter.name] = val.value
             
-        d = adapter_proxy.adapt_audio2(orig.ID, preset_name,  param_dict)
+        d = adapter_proxy.adapt_audio(orig.ID, preset_name,  param_dict)
     
     if item.type == 'doc':
  
@@ -181,7 +181,7 @@ def adapt_resource(component, machine):
         
         d = adapter_proxy.adapt_doc(orig.ID, transcoding_format,  max_size)
 
-    d.addCallbacks(save_and_extract_features, cb_error, callbackArgs=[component, machine])
+    d.addCallbacks(save_and_extract_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
 
     logger.debug("[Adaptation.end] component %s" % component.ID)
 
@@ -190,7 +190,6 @@ def adapt_resource(component, machine):
 def extract_features(component, machine):
 
     def save_features(result, component, machine):
-        print "call save_features %s", result
         save_component_features (component, result)
         machine_to_next_state(machine)
 
@@ -208,14 +207,10 @@ def extract_features(component, machine):
     if component.variant.auto_generated:
         extractor_list = [my_extractor]
     else:
-        extractor_list = [my_extractor]
-
-#        extractor_list = [my_extractor, 'xmp_extractor']
-
-    print extractor_list
+        extractor_list = [my_extractor, 'xmp_extractor']
 
     d = extractor_proxy.extract_features(component.ID, extractor_list)
-    d.addCallbacks(save_features, cb_error, callbackArgs=[component, machine])
+    d.addCallbacks(save_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
 
     logger.debug("[FeatureExtraction.end] component %s" % component.ID)
 
@@ -376,7 +371,6 @@ def save_component_features(component, features):
     MetadataValue.objects.filter(schema__in=delete_list, object_id=c.pk, content_type=ctype).delete()
 
     for x in metadata_list:
-        print x
         x.save()
 
     MetadataValue.objects.filter(schema__in=xmp_delete_list, object_id=c.pk, content_type=ctype).delete()
@@ -484,7 +478,8 @@ global running_sm
 running_sm = []
 lock = defer.DeferredLock()
 
-reactor.callLater(3, find_statemachine)
+#for i in xrange(3):
+reactor.callLater(2, find_statemachine)
 
 reactor.callLater(2, clean_task)
 
