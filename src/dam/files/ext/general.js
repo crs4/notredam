@@ -588,8 +588,12 @@ function setTabTitle(value,panel_id){
 	var media_tab = Ext.getCmp(panel_id);
 	
 	if(media_tab){
-		media_tab.setTitle(short_value);
-		media_tab.tabTip = value;
+		if (value.length > 0)
+            media_tab.setTitle(short_value);
+        
+        else
+            media_tab.setTitle('All Items');
+//		media_tab.tabTip = value;
 	}
 	
 };
