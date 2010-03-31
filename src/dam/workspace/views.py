@@ -923,7 +923,7 @@ def _search(request,  items, workspace = None):
     
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
-    
+    order_by = request.POST.get('order_by')
     show_associated_items = request.POST.get('show_associated_items')
     nodes_query = []
     
@@ -1151,6 +1151,31 @@ def _search(request,  items, workspace = None):
                 logger.debug('items after AND %s ' %items)
         
     items.distinct()       
+    
+    property = None
+    order_by= 'dc_title'
+    
+    if order_by:
+        logger.debug('order_by')
+        property_namespace, property_field_name = order_by.split('_')
+            
+        try:
+            property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
+        except MetadataProperty.DoesNotExist:
+            property = None
+            logger.debug('property for ordering not found')
+        
+    
+
+    
+    
+        if property:
+            language_settings = DAMComponentSetting.objects.get(name='supported_languages')
+            language_selected = get_user_setting_by_level(language_settings,workspace)
+            
+            items = items.extra(select={'metadata_to_order': 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language="%s" or language=null'%(property.id,  language_selected)}).order_by('metadata_to_order')
+            
+        
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
