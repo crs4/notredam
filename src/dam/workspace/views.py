@@ -923,7 +923,7 @@ def _search(request,  items, workspace = None):
     
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
-    order_by = request.POST.get('order_by')
+    order_by = request.POST.get('order_by',  'creation_date')
     order_mode = request.POST.get('order_mode',  'decrescent')
     
     show_associated_items = request.POST.get('show_associated_items')
@@ -1156,32 +1156,37 @@ def _search(request,  items, workspace = None):
     logger.debug('items before ordering: %s'%items)
     property = None
     
-    order_by= 'dc_title'
-    
     
     if order_by:
-        property_namespace, property_field_name = order_by.split('_')
+        if order_by == 'creation_date':
+            if order_mode == 'decrescent':
+                items = items.order_by('-creation_time')
+            else:
+                items = items.order_by('creation_time')
+                
+        else:
+            property_namespace, property_field_name = order_by.split('_')
+                
+            try:
+                property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
+            except MetadataProperty.DoesNotExist:
+                property = None
+                logger.debug('property for ordering not found')
             
-        try:
-            property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
-        except MetadataProperty.DoesNotExist:
-            property = None
-            logger.debug('property for ordering not found')
         
-    
 
-    
-    
-        if property:
-            language_settings = DAMComponentSetting.objects.get(name='supported_languages')
-            language_selected = get_user_setting_by_level(language_settings,workspace)
-            
-            items = items.extra(select={'metadata_to_order': 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language="%s" or language=null'%(property.id,  language_selected)})
-            
-            if order_mode == 'crescent':
-                items = items.order_by('-metadata_to_order')
-            else: 
-                items = items.order_by('metadata_to_order')
+        
+        
+            if property:
+                language_settings = DAMComponentSetting.objects.get(name='supported_languages')
+                language_selected = get_user_setting_by_level(language_settings,workspace)
+                
+                items = items.extra(select={'metadata_to_order': 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language="%s" or language=null'%(property.id,  language_selected)})
+                
+                if order_mode == 'crescent':
+                    items = items.order_by('-metadata_to_order')
+                else: 
+                    items = items.order_by('metadata_to_order')
     logger.debug('items at the end: %s'%items)
     return items
 
