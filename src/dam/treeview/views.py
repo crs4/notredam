@@ -493,7 +493,7 @@ def get_metadataschema_keyword_target(request):
 def get_item_nodes(request):
     items = request.POST.getlist('items')
     resp = {'nodes': []}
-    item_ids = ','.join(['"' + i  + '"' for i in items])
+    item_ids = ','.join([ i for i in items])
     query = 'select count(*) from node_items where node_items.node_id = node.id and item_id in (%s)'%item_ids
     logger.debug(query)
     nodes = Node.objects.filter(items__pk__in = items).extra({'count': query})
