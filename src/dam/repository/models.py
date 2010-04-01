@@ -105,7 +105,7 @@ class SearchManager(models.Manager):
 
 class Item(models.Model):
     """ Base model describing items. They can contain others items and components (see method 'add_child') and can be contained by containers """
-    _id = models.CharField(max_length=41, primary_key = True, db_column = 'id')
+    _id = models.CharField(max_length=41)
     owner =  models.CharField(max_length=50, null = True)
     uploader = models.ForeignKey(User)
     type =  models.CharField(max_length=20, null = True)

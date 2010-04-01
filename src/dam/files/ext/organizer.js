@@ -1541,18 +1541,6 @@ var search_box = {
         })
         };
         
-    var more_button = function(id){
-        Ext.get('basic_metadata_' + id).setStyle('display', 'none');
-        Ext.get('full_metadata_' + id).setStyle('display', 'block');
-        
-    };
-    
-    var less_button = function(id){
-        Ext.get('full_metadata_' + id).setStyle('display', 'none');
-        Ext.get('basic_metadata_' + id).setStyle('display', 'block');
-        
-    };
-        
         
     var basketMenu = new Ext.menu.Menu({id:'basketMenu',
     items: [
@@ -1782,59 +1770,38 @@ var search_box = {
                                                 '<tpl if="auto_generated == 1"><img id="generate_{pk}" ext:qtip="Generate" src="/files/images/icons/fam/cog.png" class="variant_button" onclick="variant_id=this.id.split(\'_\')[1];generate_variant(variant_id, \'{item_id}\')"/></tpl></span>',
                                                 
                                                 '<tpl if="work_in_progress == 0" >',                                                
-                                                        
                                                     
-                                                    '<div id="basic_metadata_{pk}"  style="padding-left:20px;" >',
-                                                        '<tpl for="data_basic">',
-                                                            '<p><b>{caption}:</b>',
-                                                            '<tpl if="value.properties === undefined">',
-                                                                '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
+                                                                
+                                                        '<div id="full_metadata_{pk}"  style="padding-left:20px;"  >',
+                                                            
+                                                            '<tpl for="data_basic">',
+                                                                '<p><b>{caption}:</b>',
+                                                                '<tpl if="value.properties === undefined">',
+                                                                    '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
+                                                                '</tpl>',
+                                                                '<tpl if="value.properties"><br/>',
+                                                                    '<tpl for="value.properties">',
+                                                                        '<b style="padding-left:20px;">{caption}:</b>',
+                                                                        '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
+                                                                    '</tpl></p>',
+                                                                '</tpl>',
                                                             '</tpl>',
-                                                            '<tpl if="value.properties"><br/>',
-                                                                '<tpl for="value.properties">',
-                                                                    '<b style="padding-left:20px;">{caption}:</b>',
-                                                                    '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
-                                                                '</tpl></p>',
-                                                            '</tpl>', 
-                                                        '</tpl>',
-                                                    
-                                                    '<tpl if="data_full.length &gt; 0">',
-                                                                '<p><a href="javascript:void(0)" onclick="more_button({pk})"> more...</a></p>',
-                                                    '</tpl>',
-                                                    ' </div>',
-                                                    '<tpl if="data_full.length &gt; 0">',
-                                                    
-                                                                
-                                                                '<div id="full_metadata_{pk}"  style="padding-left:20px; display:none" >',
-                                                                    
-                                                                    '<tpl for="data_basic">',
-                                                                        '<p><b>{caption}:</b>',
-                                                                        '<tpl if="value.properties === undefined">',
-                                                                            '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
-                                                                        '</tpl>',
-                                                                        '<tpl if="value.properties"><br/>',
-                                                                            '<tpl for="value.properties">',
-                                                                                '<b style="padding-left:20px;">{caption}:</b>',
-                                                                                '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
-                                                                            '</tpl></p>',
-                                                                        '</tpl>',
-                                                                    '</tpl>',
-                                                                
-                                                                    '<tpl for="data_full">',
-                                                                        '<p><b>{caption}:</b>',
-                                                                        '<tpl if="value.properties === undefined">',
-                                                                            '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
-                                                                        '</tpl>',
-                                                                        '<tpl if="value.properties"><br/>',
-                                                                            '<tpl for="value.properties">',
-                                                                                '<b style="padding-left:20px;">{caption}:</b>',
-                                                                                '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
-                                                                            '</tpl></p>',
-                                                                        '</tpl>',
-                                                                    '</tpl>',
-                                                                    '<p><a href="javascript:void(0)" onclick="less_button({pk})">less...</a></p>',
-                                                                '</div>',
-                                                        '</tpl>',
+                                                        
+                                                            '<tpl for="data_full">',
+                                                                '<p><b>{caption}:</b>',
+                                                                '<tpl if="value.properties === undefined">',
+                                                                    '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
+                                                                '</tpl>',
+                                                                '<tpl if="value.properties"><br/>',
+                                                                    '<tpl for="value.properties">',
+                                                                        '<b style="padding-left:20px;">{caption}:</b>',
+                                                                        '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
+                                                                    '</tpl></p>',
+                                                                '</tpl>',
+                                                            '</tpl>',
+                                                            
+                                                        '</div>',
+                                                        
                                                     '</tpl>'
                                                 )}
                                             
