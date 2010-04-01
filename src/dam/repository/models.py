@@ -895,7 +895,7 @@ class Tag(models.Model):
 class TaggedObject(models.Model):    
     """This class models the relation between user, tags and objects as items, containers and components """
     content_type = models.ForeignKey(ContentType)
-    object_id =models.CharField(max_length=41)
+    object_id =models.PositiveIntegerField()
     content_object = generic.GenericForeignKey()
     user = models.ForeignKey(User)
     tag = models.ForeignKey('Tag')

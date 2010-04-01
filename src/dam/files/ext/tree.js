@@ -161,7 +161,7 @@ function move_node(source, dest){
             	tree_loader.load(dest, function(){
                 
 	                dest.expand(); 
-	                
+	                var media_tab = Ext.getCmp('media_tabs').getActiveTab();
 	                var new_source = dest.findChild('text', source.text);                                    
 	                var query = media_tab.getSearch().getValue();
 	                
