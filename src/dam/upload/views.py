@@ -113,11 +113,11 @@ def flex_upload(request):
 
     workspace = Workspace.objects.all()[0]
 
-    print workspace
+    print request.FILES
 
-    print request.POST
+    upload_file = request.FILES['Filedata']
 
-    upload_file = request.FILES['upload_file']
+    print upload_file.name
 
     user = User.objects.all()[0]
     type = guess_media_type(upload_file.name)
@@ -138,7 +138,7 @@ def flex_upload(request):
     
     item = Item.objects.create(uploader = user,  type = type)
     item_id = item.pk
-    _uploaded_item(item,  workspace) 
+    _uploaded_item(item, workspace) 
 
     item.workspaces.add(workspace)
         
