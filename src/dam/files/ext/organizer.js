@@ -792,7 +792,42 @@ function createMediaPanel(config, autoLoad) {
 	    create_filter('doc')
 	    
 	];
-
+    
+    function create_order_by_button(id, text, pressed, query){
+        return new Ext.Button({         
+                id:id,
+                text: text,
+                pressed: pressed,
+                toggleGroup: 'order_by',
+                enableToggle: true,
+                iconCls:'sort_asc',
+                handler:function(){
+                    var order_mode;
+                    
+                    if(this.iconCls == 'sort_asc'){
+                            this.setIconClass('sort_desc');
+                            order_mode = 'decrescent';
+                        }
+                    else{
+                        this.setIconClass('sort_asc');
+                        order_mode = 'crescent'
+                    }
+                    Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
+                        params: {
+                            order_by: query,
+                            order_mode: order_mode
+                        }
+                    });
+                    this.toggle(true, true);
+                }
+        });
+        
+    };
+    
+    var order_by = [
+        create_order_by_button('order_by_title', 'Title', false, 'dc_title'),
+        create_order_by_button('order_by_creation_date', 'Creation Date', true, 'creation_date')
+    ];
 	
 	var show_all = new Ext.Button({
 	   text: 'Show All',
@@ -924,13 +959,16 @@ function createMediaPanel(config, autoLoad) {
 		      trigger,
 //		      ' ',		      
 		      show_all,
+            
 		      '-',
-		      {xtype: 'tbspacer', width: 5},
-		
-		      {xtype: 'tbspacer', width: 5},
+		      {xtype: 'tbspacer', width: 5},              
+              'Order By: ',
+              order_by,
 //		      {xtype: 'tbspacer', width: 20},
-		      filters,
-		      '->', 
+		     
+              
+		      '->',
+               filters,
 		//{
 		//    icon: '/files/images/icons/fam/application_view_list.png', // icons can also be specified inline
 		//    cls: 'x-btn-icon',

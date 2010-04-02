@@ -50,6 +50,8 @@ from dam.preferences.views import get_user_setting, get_user_setting_by_level
 from dam.metadata.models import MetadataProperty
 from dam.metadata.views import get_metadata_default_language
 
+from django.utils.datastructures import SortedDict
+
 import logger
 import time
 import operator
@@ -924,7 +926,7 @@ def _search(request,  items, workspace = None):
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
     order_by = request.POST.get('order_by',  'creation_date')
-    order_mode = request.POST.get('order_mode',  'decrescent')
+    order_mode = request.POST.get('order_mode',  'crescent')
     
     show_associated_items = request.POST.get('show_associated_items')
     nodes_query = []
@@ -1180,10 +1182,10 @@ def _search(request,  items, workspace = None):
             if property:
                 language_settings = DAMComponentSetting.objects.get(name='supported_languages')
                 language_selected = get_user_setting_by_level(language_settings,workspace)
+                logger.debug('language_selected %s'%language_selected)
+                items = items.extra(select=SortedDict([('metadata_to_order', 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s or language=null')]),  select_params = (str(property.id),  language_selected))
                 
-                items = items.extra(select={'metadata_to_order': 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language="%s" or language=null'%(property.id,  language_selected)})
-                
-                if order_mode == 'crescent':
+                if order_mode == 'decrescent':
                     items = items.order_by('-metadata_to_order')
                 else: 
                     items = items.order_by('metadata_to_order')
