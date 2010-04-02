@@ -190,3 +190,12 @@
     
     
 }
+
+.sort_asc {
+    background-image: url(/files/ext/resources/images/default/grid/sort_asc.gif) !important
+}
+
+.sort_desc {
+    background-image: url(/files/ext/resources/images/default/grid/sort_desc.gif) !important
+}
+
