@@ -794,15 +794,22 @@ function createMediaPanel(config, autoLoad) {
 	];
     
     function create_order_by_button(id, text, pressed, query){
-        return new Ext.Button({         
+        var iconCls;
+        if (pressed)
+            iconCls = 'sort_asc';
+        else
+            iconCls = '';
+        return {         
                 id:id,
                 text: text,
-                pressed: pressed,
-                toggleGroup: 'order_by',
-                enableToggle: true,
-                iconCls:'sort_asc',
+//                pressed: pressed,
+//                toggleGroup: 'order_by',
+//                enableToggle: true,
+                iconCls: iconCls,
                 handler:function(){
                     var order_mode;
+                    
+                    
                     
                     if(this.iconCls == 'sort_asc'){
                             this.setIconClass('sort_desc');
@@ -818,17 +825,67 @@ function createMediaPanel(config, autoLoad) {
                             order_mode: order_mode
                         }
                     });
-                    this.toggle(true, true);
+                    Ext.getCmp('order_by_button').setIconClass(this.iconCls);
+                    Ext.getCmp('order_by_button').setText(this.text);
+                    var current_btn = this;
+                    Ext.each(Ext.getCmp('order_by_button').menu.items.items, function(){
+                        if(this != current_btn)
+                            this.setIconClass('');
+                    });
+//                    this.toggle(true, true);
                 }
-        });
+        };
         
     };
     
-    var order_by = [
-        create_order_by_button('order_by_title', 'Title', false, 'dc_title'),
-        create_order_by_button('order_by_creation_date', 'Creation Date', true, 'creation_date')
+    
+    
+    var order_by_menu = [
+        create_order_by_button('order_by_creation_date', 'Date', true, 'creation_date'),
+        create_order_by_button('order_by_title', 'Title', false, 'dc_title')
     ];
 	
+//    
+//    var order_by_menu = [
+//        {
+//            text: 'Title',
+//            query: 'dc_title',
+//            iconCls:'sort_asc',
+//            handler:function(){
+//                    var order_mode;
+//                    
+//                    if(this.iconCls == 'sort_asc'){
+//                            this.setIconClass('sort_desc');
+//                            order_mode = 'decrescent';
+//                        }
+//                    else{
+//                        this.setIconClass('sort_asc');
+//                        order_mode = 'crescent'
+//                    }
+//                    Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
+//                        params: {
+//                            order_by: query,
+//                            order_mode: order_mode
+//                        }
+//                    });
+//                  
+//                }
+//            
+//            },
+//        {
+//            text: 'Date',
+//            query: 'creation_date'
+//        }
+//    ];
+//    
+    var order_by = new Ext.SplitButton({
+        id: 'order_by_button',
+        text: order_by_menu[0].text,
+        iconCls: order_by_menu[0].iconCls,
+        menu: order_by_menu
+        
+    });
+    
 	var show_all = new Ext.Button({
 	   text: 'Show All',
 		//			   icon: '/files/images/broom.png',

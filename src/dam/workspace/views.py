@@ -1181,7 +1181,9 @@ def _search(request,  items, workspace = None):
         
             if property:
                 language_settings = DAMComponentSetting.objects.get(name='supported_languages')
-                language_selected = get_user_setting_by_level(language_settings,workspace)
+#                language_selected = get_user_setting_by_level(language_settings,workspace)
+#                TODO: change when gui multilanguage ready
+                language_selected = 'en-US' 
                 logger.debug('language_selected %s'%language_selected)
                 items = items.extra(select=SortedDict([('metadata_to_order', 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s or language=null')]),  select_params = (str(property.id),  language_selected))
                 

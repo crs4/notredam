@@ -192,10 +192,12 @@
 }
 
 .sort_asc {
-    background-image: url(/files/ext/resources/images/default/grid/sort_asc.gif) !important
+    background-repeat: no-repeat !important;
+    background-image: url(/files/ext/resources/images/default/grid/col-move-bottom.gif) !important;
 }
 
 .sort_desc {
-    background-image: url(/files/ext/resources/images/default/grid/sort_desc.gif) !important
+    background-repeat: no-repeat !important;
+    background-image: url(/files/ext/resources/images/default/grid/col-move-top.gif)  !important;
 }
 
