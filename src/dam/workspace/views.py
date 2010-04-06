@@ -925,7 +925,7 @@ def _search(request,  items, workspace = None):
     
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
-    order_by = request.POST.get('order_by',  'creation_date')
+    order_by = request.POST.get('order_by',  'creation_time')
     order_mode = request.POST.get('order_mode',  'crescent')
     
     show_associated_items = request.POST.get('show_associated_items')
@@ -1160,17 +1160,20 @@ def _search(request,  items, workspace = None):
     
     
     if order_by:
-        if order_by == 'creation_date':
+        order_dict = {'creation_time': 'creation_time',  'file_size': 'component__size'}
+        if order_by in order_dict.keys():
+            
             if order_mode == 'decrescent':
-                items = items.order_by('-creation_time')
+                items = items.order_by('-%s'%order_dict[order_by])
             else:
-                items = items.order_by('creation_time')
-                
+                items = items.order_by('%s'%order_dict[order_by])
+        
+        
         else:
             property_namespace, property_field_name = order_by.split('_')
                 
             try:
-                property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
+                property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
             except MetadataProperty.DoesNotExist:
                 property = None
                 logger.debug('property for ordering not found')

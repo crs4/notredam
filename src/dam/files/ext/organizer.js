@@ -811,8 +811,9 @@ function createMediaPanel(config, autoLoad) {
     
     
     var order_by_menu = [
-        create_order_by_button('order_by_creation_date', 'Date', 'creation_date'),
-        create_order_by_button('order_by_title', 'Title', 'dc_title')
+        create_order_by_button('order_by_creation_date', 'Creation Date', 'creation_time'),
+        create_order_by_button('order_by_title', 'Title', 'dc_title'),
+        create_order_by_button('order_by_file_size', 'File Size', 'file_size')
     ];
 	
 //    
@@ -1020,6 +1021,7 @@ function createMediaPanel(config, autoLoad) {
               
 		      '->',
                filters,
+               '-',
 		//{
 		//    icon: '/files/images/icons/fam/application_view_list.png', // icons can also be specified inline
 		//    cls: 'x-btn-icon',
