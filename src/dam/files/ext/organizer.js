@@ -793,46 +793,16 @@ function createMediaPanel(config, autoLoad) {
 	    
 	];
     
-    function create_order_by_button(id, text, pressed, query){
-        var iconCls;
-        if (pressed)
-            iconCls = 'sort_asc';
-        else
-            iconCls = '';
+    function create_order_by_button(id, text, query){
+      
         return {         
                 id:id,
                 text: text,
-//                pressed: pressed,
-//                toggleGroup: 'order_by',
-//                enableToggle: true,
-                iconCls: iconCls,
+                query: query, 
                 handler:function(){
-                    var order_mode;
-                    
-                    
-                    
-                    if(this.iconCls == 'sort_asc'){
-                            this.setIconClass('sort_desc');
-                            order_mode = 'decrescent';
-                        }
-                    else{
-                        this.setIconClass('sort_asc');
-                        order_mode = 'crescent'
-                    }
-                    Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
-                        params: {
-                            order_by: query,
-                            order_mode: order_mode
-                        }
-                    });
-                    Ext.getCmp('order_by_button').setIconClass(this.iconCls);
                     Ext.getCmp('order_by_button').setText(this.text);
-                    var current_btn = this;
-                    Ext.each(Ext.getCmp('order_by_button').menu.items.items, function(){
-                        if(this != current_btn)
-                            this.setIconClass('');
-                    });
-//                    this.toggle(true, true);
+                    Ext.getCmp('order_by_button').query = this.query;
+                    Ext.getCmp('order_by_button').sort();
                 }
         };
         
@@ -841,8 +811,8 @@ function createMediaPanel(config, autoLoad) {
     
     
     var order_by_menu = [
-        create_order_by_button('order_by_creation_date', 'Date', true, 'creation_date'),
-        create_order_by_button('order_by_title', 'Title', false, 'dc_title')
+        create_order_by_button('order_by_creation_date', 'Date', 'creation_date'),
+        create_order_by_button('order_by_title', 'Title', 'dc_title')
     ];
 	
 //    
@@ -882,7 +852,31 @@ function createMediaPanel(config, autoLoad) {
         id: 'order_by_button',
         text: order_by_menu[0].text,
         iconCls: order_by_menu[0].iconCls,
-        menu: order_by_menu
+        query: order_by_menu[0].query,
+        menu: order_by_menu,
+        order_mode: 'crescent',
+        iconCls:'sort_asc',
+        sort: function(){
+            Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
+                params: {
+                    order_by: this.query,
+                    order_mode: this.order_mode
+                }
+            });
+            
+        },
+        handler: function(){
+           
+             if(this.iconCls == 'sort_asc'){
+                    this.setIconClass('sort_desc');
+                    this.order_mode = 'decrescent';
+                }
+            else{
+                this.setIconClass('sort_asc');
+                this.order_mode = 'crescent';
+            }
+            this.sort();
+        }
         
     });
     
