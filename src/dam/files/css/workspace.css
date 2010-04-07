@@ -190,3 +190,14 @@
     
     
 }
+
+.sort_asc {
+    background-repeat: no-repeat !important;
+    background-image: url(/files/ext/resources/images/default/grid/col-move-top.gif) !important;
+}
+
+.sort_desc {
+    background-repeat: no-repeat !important;
+    background-image: url(/files/ext/resources/images/default/grid/col-move-bottom.gif)  !important;
+}
+

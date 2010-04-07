@@ -116,18 +116,18 @@ Ext.override(Ext.tree.TreeNodeUI, {
          listeners:{
             beforeload: function(loader, node){              
                 
-                loader.baseParams.items = null;
+                loader.baseParams.items = [];
                 var tab = Ext.getCmp('media_tabs').getActiveTab();
                 
                 if (tab){
                 	var view = tab.getComponent(0);
-	                var item_id = [];
+	                
 	                var items = view.getSelectedNodes();
 	                if (items.length > 0){
 	                    for(var i = 0; i<items.length; i ++){
-	                        item_id.push(items[i].id);
+	                    	loader.baseParams.items .push(items[i].id);
 	                    }
-	                    loader.baseParams.items = item_id;
+//	                    loader.baseParams.items = item_id;
 	                    
 	                }
                 }
@@ -161,7 +161,7 @@ function move_node(source, dest){
             	tree_loader.load(dest, function(){
                 
 	                dest.expand(); 
-	                
+	                var media_tab = Ext.getCmp('media_tabs').getActiveTab();
 	                var new_source = dest.findChild('text', source.text);                                    
 	                var query = media_tab.getSearch().getValue();
 	                

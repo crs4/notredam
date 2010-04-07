@@ -701,7 +701,7 @@ class WorkspaceResource(ModResource):
         
         start = request.POST.get('start')
         limit = request.POST.get('limit')
-        order_by = request.POST.get('order_by')
+        
         metadata = request.POST.getlist('metadata')
         media_type = request.POST.get('media_type')
         logger.debug('metadata %s'%metadata)
@@ -735,28 +735,28 @@ class WorkspaceResource(ModResource):
         items = items.distinct()
         
 #        TODO: ordering
-        property = None
-        if order_by:
-            property_namespace, property_field_name = order_by.split('_')
-                
-            try:
-                property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
-            except MetadataProperty.DoesNotExist:
-                pass
-            
-        
-#        TODO: fix order by,  metadata value with the same schema and item can exist
-        property = None
-        
+#        property = None
+#        if order_by:
+#            property_namespace, property_field_name = order_by.split('_')
+#                
+#            try:
+#                property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
+#            except MetadataProperty.DoesNotExist:
+#                pass
+#            
+#        
+##        TODO: fix order by,  metadata value with the same schema and item can exist
+#        property = None
+#        
         item_res = ItemResource()
-        if property:
-            mvs = MetadataValue.objects.filter(schema = property, item__in = items).order_by('value').distinct()
-            for mv in mvs:
-                resp['items'].append(item_res._get_item_info(mv.content_object, workspace,variants, metadata))
-        else:
-            for item in items:
-                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
-        
+#        if property:
+#            mvs = MetadataValue.objects.filter(schema = property, item__in = items).order_by('value').distinct()
+#            for mv in mvs:
+#                resp['items'].append(item_res._get_item_info(mv.content_object, workspace,variants, metadata))
+#        else:
+        for item in items:
+            resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
+    
         resp['totalCount'] = totalCount
         json_resp = json.dumps(resp)
         return HttpResponse(json_resp)

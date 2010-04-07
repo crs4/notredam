@@ -174,7 +174,7 @@ class MetadataValue(models.Model):
     value = models.TextField()
     content_type = models.ForeignKey(ContentType)
     content_object = generic.GenericForeignKey()
-    object_id = models.CharField(max_length=64)
+    object_id = models.PositiveIntegerField()
     language = models.CharField(max_length=12, null=True, blank=True)
     
     def __str__(self):
