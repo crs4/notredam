@@ -926,7 +926,7 @@ def _search(request,  items, workspace = None):
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
     order_by = request.POST.get('order_by',  'creation_time')
-    order_mode = request.POST.get('order_mode',  'crescent')
+    order_mode = request.POST.get('order_mode',  'decrescent')
     
     show_associated_items = request.POST.get('show_associated_items')
     nodes_query = []
