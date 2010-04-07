@@ -54,8 +54,8 @@ function add_rating_stars(record){
     if (!rating_value)
         rating_value = 0;
         
-    var rating_id = 'rating_' + record.data.pk
-    var stars = new Ext.ux.StarRating(rating_id, { id:record.data.pk, totalStars: 5, average: rating_value } );
+    var rating_id = 'rating_' + parseInt(record.data.pk);
+    var stars = new Ext.ux.StarRating(rating_id, {totalStars: 5, average: rating_value } );
     stars.on( 'rate', function( o, x ){
        
         Ext.Ajax.request({

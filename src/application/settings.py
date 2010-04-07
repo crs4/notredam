@@ -13,7 +13,7 @@ SECRET = 'ffbae16973db789f74b3d84494f133d4dcb34267'
 API_KEY = 'c3dfbc0331175f01f6464683c7ecce05c7bad60f'
 USER_ID = 1
 ORIGINAL_VARIANTS={'image':1,  'video':10,  'audio': 6,  'doc':14}
-TAGS_NODE_ID = 241
+TAGS_NODE_ID = 18
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
