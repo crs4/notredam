@@ -63,6 +63,7 @@ class DAMComponentSetting(models.Model):
     component = models.ForeignKey(DAMComponent)
     type = models.CharField(max_length=16, choices=(('choice', 'choice'), ('int', 'int'), ('string','string'), ('boolean', 'boolean'), ('email', 'email'), ('multiple_choice', 'multiple_choice')))
     setting_level = models.CharField(max_length=16, default="S", choices=(('S', 'System'), ('U', 'User'), ('W','Workspace')))
+    is_preferences = models.BooleanField(default = True)
 
     def __unicode__(self):
         return "%s" % (self.name)
