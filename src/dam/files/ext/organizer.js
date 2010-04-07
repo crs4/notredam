@@ -624,8 +624,9 @@ var createPaginator = function(config) {
 
 
 function start_audio_player(panel_id){	
+//	var cls = 'myPlayer_' + panel_id;
 	
-	flowplayer("a.myPlayer_" + panel_id, "/files/flowplayer/flowplayer-3.1.4.swf", { 
+	flowplayer('a.' +cls_audio, "/files/flowplayer/flowplayer-3.1.4.swf", { 
         clip: { autoPlay: true},
         plugins: { 
             audio: { 
@@ -666,6 +667,14 @@ function start_audio_player(panel_id){
             	return false;
         }
     });
+	
+	Ext.each(Ext.query('.' + cls_audio), function(){
+		//removinf cls_audio, to avoid autoplay next call
+		
+		Ext.get(this.id).removeClass(cls_audio);
+		
+	});
+	
 };
 
 
@@ -792,8 +801,97 @@ function createMediaPanel(config, autoLoad) {
 	    create_filter('doc')
 	    
 	];
-
+    
+    function create_order_by_button(text, query){
+      
+        return {         
+                
+                text: text,
+                query: query, 
+                handler:function(){
+        			var order_by_button = Ext.getCmp('order_by_button_' + panel_id); 
+        			order_by_button.setText(this.text);
+        			order_by_button.query = this.query;
+        			order_by_button.sort();
+                }
+        };
+        
+    };
+    
+    
+    
+    var order_by_menu = [
+        create_order_by_button('Creation Date', 'creation_time'),
+        create_order_by_button('Title', 'dc_title'),
+        create_order_by_button('File Size', 'file_size')
+    ];
 	
+//    
+//    var order_by_menu = [
+//        {
+//            text: 'Title',
+//            query: 'dc_title',
+//            iconCls:'sort_asc',
+//            handler:function(){
+//                    var order_mode;
+//                    
+//                    if(this.iconCls == 'sort_asc'){
+//                            this.setIconClass('sort_desc');
+//                            order_mode = 'decrescent';
+//                        }
+//                    else{
+//                        this.setIconClass('sort_asc');
+//                        order_mode = 'crescent'
+//                    }
+//                    Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
+//                        params: {
+//                            order_by: query,
+//                            order_mode: order_mode
+//                        }
+//                    });
+//                  
+//                }
+//            
+//            },
+//        {
+//            text: 'Date',
+//            query: 'creation_date'
+//        }
+//    ];
+//    
+    var order_by = new Ext.SplitButton({
+        id: 'order_by_button_' + panel_id,
+        text: order_by_menu[0].text,
+        iconCls: order_by_menu[0].iconCls,
+        query: order_by_menu[0].query,
+        menu: order_by_menu,
+        order_mode: 'decrescent',
+        iconCls:'sort_desc',
+        sort: function(){
+            Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
+                params: {
+                    order_by: this.query,
+                    order_mode: this.order_mode
+                }
+            });
+            
+        },
+        handler: function(){
+           
+             if(this.iconCls == 'sort_asc'){
+                    this.setIconClass('sort_desc');
+                    this.order_mode = 'decrescent';
+                }
+            else{
+                this.setIconClass('sort_asc');
+                this.order_mode = 'crescent';
+            }
+            this.sort();
+        }
+        
+    });
+    
+    console.log('order_by.id ' + order_by.id );
 	var show_all = new Ext.Button({
 	   text: 'Show All',
 		//			   icon: '/files/images/broom.png',
@@ -924,13 +1022,15 @@ function createMediaPanel(config, autoLoad) {
 		      trigger,
 //		      ' ',		      
 		      show_all,
+            
 		      '-',
-		      {xtype: 'tbspacer', width: 5},
-		
-		      {xtype: 'tbspacer', width: 5},
-//		      {xtype: 'tbspacer', width: 20},
-		      filters,
-		      '->', 
+		      {xtype: 'tbspacer', width: 5},              
+              'Order By: ',
+              order_by,
+              '-',
+              {xtype: 'tbspacer', width: 5},
+              filters,              
+		      '->',               
 		//{
 		//    icon: '/files/images/icons/fam/application_view_list.png', // icons can also be specified inline
 		//    cls: 'x-btn-icon',
@@ -1216,15 +1316,8 @@ Ext.onReady(function(){
                 
                 success: function(data){                    
                     data = Ext.decode(data.responseText);                    
-                        
+                     
                     var sb = Ext.getCmp('dam_statusbar'); 
-/*					if (!sb.tip) {
-					    sb.tip = new Ext.QuickTip({
-							target: 'dam_statusbar',
-							text: 'prova'
-						});
-					}
-*/
 					
                     sb.showBusy({
                         iconCls: 'x-status-busy status_busy'
@@ -1279,6 +1372,10 @@ Ext.onReady(function(){
 //                        text = 'No tasks pending';
                         text = 'No items pending';
                         iconCls = 'status-ok';
+                        
+                        if (Ext.query('.'+ cls_audio).length > 0)
+                        	start_audio_player();
+                        
 //                        tip_text = text;
                     }
                     else {
@@ -1541,18 +1638,6 @@ var search_box = {
         })
         };
         
-    var more_button = function(id){
-        Ext.get('basic_metadata_' + id).setStyle('display', 'none');
-        Ext.get('full_metadata_' + id).setStyle('display', 'block');
-        
-    };
-    
-    var less_button = function(id){
-        Ext.get('full_metadata_' + id).setStyle('display', 'none');
-        Ext.get('basic_metadata_' + id).setStyle('display', 'block');
-        
-    };
-        
         
     var basketMenu = new Ext.menu.Menu({id:'basketMenu',
     items: [
@@ -1782,59 +1867,38 @@ var search_box = {
                                                 '<tpl if="auto_generated == 1"><img id="generate_{pk}" ext:qtip="Generate" src="/files/images/icons/fam/cog.png" class="variant_button" onclick="variant_id=this.id.split(\'_\')[1];generate_variant(variant_id, \'{item_id}\')"/></tpl></span>',
                                                 
                                                 '<tpl if="work_in_progress == 0" >',                                                
-                                                        
                                                     
-                                                    '<div id="basic_metadata_{pk}"  style="padding-left:20px;" >',
-                                                        '<tpl for="data_basic">',
-                                                            '<p><b>{caption}:</b>',
-                                                            '<tpl if="value.properties === undefined">',
-                                                                '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
+                                                                
+                                                        '<div id="full_metadata_{pk}"  style="padding-left:20px;"  >',
+                                                            
+                                                            '<tpl for="data_basic">',
+                                                                '<p><b>{caption}:</b>',
+                                                                '<tpl if="value.properties === undefined">',
+                                                                    '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
+                                                                '</tpl>',
+                                                                '<tpl if="value.properties"><br/>',
+                                                                    '<tpl for="value.properties">',
+                                                                        '<b style="padding-left:20px;">{caption}:</b>',
+                                                                        '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
+                                                                    '</tpl></p>',
+                                                                '</tpl>',
                                                             '</tpl>',
-                                                            '<tpl if="value.properties"><br/>',
-                                                                '<tpl for="value.properties">',
-                                                                    '<b style="padding-left:20px;">{caption}:</b>',
-                                                                    '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
-                                                                '</tpl></p>',
-                                                            '</tpl>', 
-                                                        '</tpl>',
-                                                    
-                                                    '<tpl if="data_full.length &gt; 0">',
-                                                                '<p><a href="javascript:void(0)" onclick="more_button({pk})"> more...</a></p>',
-                                                    '</tpl>',
-                                                    ' </div>',
-                                                    '<tpl if="data_full.length &gt; 0">',
-                                                    
-                                                                
-                                                                '<div id="full_metadata_{pk}"  style="padding-left:20px; display:none" >',
-                                                                    
-                                                                    '<tpl for="data_basic">',
-                                                                        '<p><b>{caption}:</b>',
-                                                                        '<tpl if="value.properties === undefined">',
-                                                                            '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
-                                                                        '</tpl>',
-                                                                        '<tpl if="value.properties"><br/>',
-                                                                            '<tpl for="value.properties">',
-                                                                                '<b style="padding-left:20px;">{caption}:</b>',
-                                                                                '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
-                                                                            '</tpl></p>',
-                                                                        '</tpl>',
-                                                                    '</tpl>',
-                                                                
-                                                                    '<tpl for="data_full">',
-                                                                        '<p><b>{caption}:</b>',
-                                                                        '<tpl if="value.properties === undefined">',
-                                                                            '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
-                                                                        '</tpl>',
-                                                                        '<tpl if="value.properties"><br/>',
-                                                                            '<tpl for="value.properties">',
-                                                                                '<b style="padding-left:20px;">{caption}:</b>',
-                                                                                '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
-                                                                            '</tpl></p>',
-                                                                        '</tpl>',
-                                                                    '</tpl>',
-                                                                    '<p><a href="javascript:void(0)" onclick="less_button({pk})">less...</a></p>',
-                                                                '</div>',
-                                                        '</tpl>',
+                                                        
+                                                            '<tpl for="data_full">',
+                                                                '<p><b>{caption}:</b>',
+                                                                '<tpl if="value.properties === undefined">',
+                                                                    '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
+                                                                '</tpl>',
+                                                                '<tpl if="value.properties"><br/>',
+                                                                    '<tpl for="value.properties">',
+                                                                        '<b style="padding-left:20px;">{caption}:</b>',
+                                                                        '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
+                                                                    '</tpl></p>',
+                                                                '</tpl>',
+                                                            '</tpl>',
+                                                            
+                                                        '</div>',
+                                                        
                                                     '</tpl>'
                                                 )}
                                             

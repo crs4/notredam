@@ -50,6 +50,8 @@ from dam.preferences.views import get_user_setting, get_user_setting_by_level
 from dam.metadata.models import MetadataProperty
 from dam.metadata.views import get_metadata_default_language
 
+from django.utils.datastructures import SortedDict
+
 import logger
 import time
 import operator
@@ -923,6 +925,8 @@ def _search(request,  items, workspace = None):
     
     logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
+    order_by = request.POST.get('order_by',  'creation_time')
+    order_mode = request.POST.get('order_mode',  'decrescent')
     
     show_associated_items = request.POST.get('show_associated_items')
     nodes_query = []
@@ -1151,6 +1155,46 @@ def _search(request,  items, workspace = None):
                 logger.debug('items after AND %s ' %items)
         
     items.distinct()       
+    logger.debug('items before ordering: %s'%items)
+    property = None
+    
+    
+    if order_by:
+        order_dict = {'creation_time': 'creation_time',  'file_size': 'component__size'}
+        if order_by in order_dict.keys():
+            
+            if order_mode == 'decrescent':
+                items = items.order_by('-%s'%order_dict[order_by])
+            else:
+                items = items.order_by('%s'%order_dict[order_by])
+        
+        
+        else:
+            property_namespace, property_field_name = order_by.split('_')
+                
+            try:
+                property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
+            except MetadataProperty.DoesNotExist:
+                property = None
+                logger.debug('property for ordering not found')
+            
+        
+
+        
+        
+            if property:
+                language_settings = DAMComponentSetting.objects.get(name='supported_languages')
+#                language_selected = get_user_setting_by_level(language_settings,workspace)
+#                TODO: change when gui multilanguage ready
+                language_selected = 'en-US' 
+                logger.debug('language_selected %s'%language_selected)
+                items = items.extra(select=SortedDict([('metadata_to_order', 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s or language=null')]),  select_params = (str(property.id),  language_selected))
+                
+                if order_mode == 'decrescent':
+                    items = items.order_by('-metadata_to_order')
+                else: 
+                    items = items.order_by('metadata_to_order')
+    logger.debug('items at the end: %s'%items)
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
@@ -1170,8 +1214,8 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-    if request.POST.get('query') or request.POST.getlist('node_id') or request.POST.get('complex_query'):
-        items = _search(request,  items)
+#    if request.POST.get('query') or request.POST.getlist('node_id') or request.POST.get('complex_query'):
+    items = _search(request,  items)
 
     total_count = items.count()
 
@@ -1403,8 +1447,9 @@ def get_status(request):
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
                               "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
         else:
+            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item = item, task_type = 'adaptation').count()
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'inprogress': 0, 'thumb': thumb_ready, 
-                              "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
+                              'preview_available': preview_available,"url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
 
 #    resp_dict = {'adapt': adapt_pending, 'feat': feat_pending, 'metadata': metadata_pending, 'items': update_items}
     resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
