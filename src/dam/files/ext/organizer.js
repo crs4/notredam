@@ -855,8 +855,8 @@ function createMediaPanel(config, autoLoad) {
         iconCls: order_by_menu[0].iconCls,
         query: order_by_menu[0].query,
         menu: order_by_menu,
-        order_mode: 'crescent',
-        iconCls:'sort_asc',
+        order_mode: 'decrescent',
+        iconCls:'sort_desc',
         sort: function(){
             Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
                 params: {
@@ -1016,12 +1016,10 @@ function createMediaPanel(config, autoLoad) {
 		      {xtype: 'tbspacer', width: 5},              
               'Order By: ',
               order_by,
-//		      {xtype: 'tbspacer', width: 20},
-		     
-              
-		      '->',
-               filters,
-               '-',
+              '-',
+              {xtype: 'tbspacer', width: 5},
+              filters,              
+		      '->',               
 		//{
 		//    icon: '/files/images/icons/fam/application_view_list.png', // icons can also be specified inline
 		//    cls: 'x-btn-icon',
