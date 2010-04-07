@@ -163,15 +163,17 @@ def flex_upload(request):
             descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
             default_language = get_metadata_default_language(user)
             save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
-    
+
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
+    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.pk, content_type=item_ctype, value=mime_type)
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
+
     try:
         generate_tasks(variant, workspace, item)
     except Exception, ex:
-        traceback.print_exc(ex)
+        print traceback.print_exc(ex)
         raise
+
     resp = simplejson.dumps({})
     return HttpResponse(resp)
 
@@ -217,25 +219,25 @@ def upload_finished(request):
 
         uploaded_by_schema = MetadataProperty.objects.filter(uploaded_by=True)
         for s in uploaded_by_schema:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
+            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.ID, content_type=item_ctype)
             m_value[0].value = item.uploader.username
             m_value[0].save()
     
         uploaded_on = MetadataProperty.objects.filter(creation_date=True)
         for s in uploaded_on:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
+            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.ID, content_type=item_ctype)
             m_value[0].value = str(item.creation_time)
             m_value[0].save()
     
         file_name_schema = MetadataProperty.objects.filter(file_name_target=True)
         for s in file_name_schema:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
+            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.ID, content_type=item_ctype)
             m_value[0].value = file_name
             m_value[0].save()
             
         owner = MetadataProperty.objects.filter(item_owner_target=True)
         for s in owner:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
+            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.ID, content_type=item_ctype)
             my_ws = item.workspaces.all()[0]
             if my_ws.creator:
                 creator = my_ws.creator.username
@@ -269,7 +271,7 @@ def upload_finished(request):
     logger.debug('mime_type  %s'%mime_type )
     
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.pk, content_type=item_ctype, value=mime_type)
+    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
     
     generate_tasks(variant, workspace, item,   upload_job_id=job_id, )
