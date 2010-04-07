@@ -1484,6 +1484,11 @@ def get_status(request):
         thumb_ready = 0
         thumb_url = NOTAVAILABLE
         
+        
+        
+        
+        
+        
         if thumb_dict[item.type]['default_url']:
             thumb_url = thumb_dict[item.type]['default_url']
             thumb_ready = 1
@@ -1502,11 +1507,13 @@ def get_status(request):
         my_caption = _get_thumb_caption(item, thumb_caption, default_language)
 
         if tasks_pending.filter(component__item=item).count() > 0:
+            
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
                               "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
         else:
+            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item = item, task_type = 'adaptation').count()
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'inprogress': 0, 'thumb': thumb_ready, 
-                              "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
+                              'preview_available': preview_available,"url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
 
 #    resp_dict = {'adapt': adapt_pending, 'feat': feat_pending, 'metadata': metadata_pending, 'items': update_items}
     resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}

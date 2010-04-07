@@ -624,8 +624,9 @@ var createPaginator = function(config) {
 
 
 function start_audio_player(panel_id){	
+//	var cls = 'myPlayer_' + panel_id;
 	
-	flowplayer("a.myPlayer_" + panel_id, "/files/flowplayer/flowplayer-3.1.4.swf", { 
+	flowplayer('a.' +cls_audio, "/files/flowplayer/flowplayer-3.1.4.swf", { 
         clip: { autoPlay: true},
         plugins: { 
             audio: { 
@@ -666,6 +667,14 @@ function start_audio_player(panel_id){
             	return false;
         }
     });
+	
+	Ext.each(Ext.query('.' + cls_audio), function(){
+		//removinf cls_audio, to avoid autoplay next call
+		
+		Ext.get(this.id).removeClass(cls_audio);
+		
+	});
+	
 };
 
 
@@ -1305,15 +1314,8 @@ Ext.onReady(function(){
                 
                 success: function(data){                    
                     data = Ext.decode(data.responseText);                    
-                        
+                     
                     var sb = Ext.getCmp('dam_statusbar'); 
-/*					if (!sb.tip) {
-					    sb.tip = new Ext.QuickTip({
-							target: 'dam_statusbar',
-							text: 'prova'
-						});
-					}
-*/
 					
                     sb.showBusy({
                         iconCls: 'x-status-busy status_busy'
@@ -1368,6 +1370,10 @@ Ext.onReady(function(){
 //                        text = 'No tasks pending';
                         text = 'No items pending';
                         iconCls = 'status-ok';
+                        
+                        if (Ext.query('.'+ cls_audio).length > 0)
+                        	start_audio_player();
+                        
 //                        tip_text = text;
                     }
                     else {
