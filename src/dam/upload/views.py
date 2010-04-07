@@ -69,8 +69,6 @@ def adobe_air_upload(request):
     storage = Storage('/tmp/prova/')
     res_id = storage.add('/tmp/prova/imports/'+file_name)
     
-    new_keywords = False
-
     item_ctype = ContentType.objects.get_for_model(Item)
     
     item = Item.objects.create(uploader = user,  type = type)
@@ -111,15 +109,15 @@ def flex_upload(request):
 
     from mediadart.storage import Storage
 
-    workspace = Workspace.objects.all()[0]
+    workspace = request.session.get('workspace')
+    user = User.objects.get(pk = request.session['_auth_user_id'])
 
-    print request.FILES
+    print request.POST
 
     upload_file = request.FILES['Filedata']
 
     print upload_file.name
 
-    user = User.objects.all()[0]
     type = guess_media_type(upload_file.name)
     
     try:
@@ -157,6 +155,14 @@ def flex_upload(request):
     comp.save()
     
     logger.debug('mime_type  %s'%mime_type )
+
+    for key in request.POST.keys():
+        if key.startswith('metadata'):
+            value = request.POST[key]
+            metadata_id = key.split('_')[-1]
+            descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
+            default_language = get_metadata_default_language(user)
+            save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
     
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
     metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
