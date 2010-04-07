@@ -802,16 +802,17 @@ function createMediaPanel(config, autoLoad) {
 	    
 	];
     
-    function create_order_by_button(id, text, query){
+    function create_order_by_button(text, query){
       
         return {         
-                id:id,
+                
                 text: text,
                 query: query, 
                 handler:function(){
-                    Ext.getCmp('order_by_button').setText(this.text);
-                    Ext.getCmp('order_by_button').query = this.query;
-                    Ext.getCmp('order_by_button').sort();
+        			var order_by_button = Ext.getCmp('order_by_button_' + panel_id); 
+        			order_by_button.setText(this.text);
+        			order_by_button.query = this.query;
+        			order_by_button.sort();
                 }
         };
         
@@ -820,9 +821,9 @@ function createMediaPanel(config, autoLoad) {
     
     
     var order_by_menu = [
-        create_order_by_button('order_by_creation_date', 'Creation Date', 'creation_time'),
-        create_order_by_button('order_by_title', 'Title', 'dc_title'),
-        create_order_by_button('order_by_file_size', 'File Size', 'file_size')
+        create_order_by_button('Creation Date', 'creation_time'),
+        create_order_by_button('Title', 'dc_title'),
+        create_order_by_button('File Size', 'file_size')
     ];
 	
 //    
@@ -859,7 +860,7 @@ function createMediaPanel(config, autoLoad) {
 //    ];
 //    
     var order_by = new Ext.SplitButton({
-        id: 'order_by_button',
+        id: 'order_by_button_' + panel_id,
         text: order_by_menu[0].text,
         iconCls: order_by_menu[0].iconCls,
         query: order_by_menu[0].query,
@@ -890,6 +891,7 @@ function createMediaPanel(config, autoLoad) {
         
     });
     
+    console.log('order_by.id ' + order_by.id );
 	var show_all = new Ext.Button({
 	   text: 'Show All',
 		//			   icon: '/files/images/broom.png',
