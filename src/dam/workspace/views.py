@@ -1447,7 +1447,7 @@ def get_status(request):
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
                               "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
         else:
-            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item = item, task_type = 'adaptation').count()
+            preview_available = tasks_pending.filter(current_state__action__component__variant__name = 'preview', current_state__action__component__item=item).count()
             update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'inprogress': 0, 'thumb': thumb_ready, 
                               'preview_available': preview_available,"url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
 
