@@ -260,8 +260,6 @@ var Upload = function() {
             }
         ];
 
-        console.log(this.metadata_upload_records);
-
         for(i = 0; i < this.metadata_upload_records.length; i++) {
             columns.push({
                 header: this.metadata_upload_records[i].name,
@@ -323,7 +321,31 @@ var Upload = function() {
                 text: 'Upload',
                 iconCls: 'upload',
                 handler: function() {
-                    obj.swfu.startUpload();
+                    
+                    var swfu = obj.swfu;
+
+            		var stats = swfu.getStats();
+                    var queued = stats.files_queued;
+                    
+                    Ext.Ajax.request({
+                        url:'/get_flex_upload_url/',
+                        params: {n: queued},
+                        success: function(resp){
+                            var resp_json = Ext.util.JSON.decode(resp.responseText)
+                            var urls = resp_json.urls;
+                            var file;
+                            for (var i=0; i < queued; i++) {
+                                file = obj.swfu.getFile(i);
+                                obj.swfu.addFileParam(file.id, 'unique_url', urls[i]);                                
+                                console.log(urls[i]);
+                            }
+                            
+                            obj.swfu.startUpload();
+                        },
+                        failure: function() {
+                            console.log('error retrieving urls');
+                        }
+                    });
                 }   
             }),
             {
