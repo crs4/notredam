@@ -41,6 +41,8 @@ from dam.workspace.decorators import permission_required
 from dam.application.views import get_component_url
 from dam.application.models import Type
 from dam.variants.views import _create_variant
+from dam.upload.models import UploadURL
+
 import logger
 
 import mimetypes
@@ -105,12 +107,35 @@ def adobe_air_upload(request):
     resp = simplejson.dumps({})
     return HttpResponse(resp)
 
+@login_required
+def get_flex_upload_url(request):
+
+    urls = []
+    n = request.POST['n']
+
+    workspace = request.session.get('workspace')
+    user = User.objects.get(pk = request.session['_auth_user_id'])    
+
+    for i in xrange(int(n)):
+        urls.append(UploadURL.objects.create(user=user, workspace=workspace).url)
+        
+    resp = simplejson.dumps({'urls': urls})
+    return HttpResponse(resp)
+    
 def flex_upload(request):
 
     from mediadart.storage import Storage
+    
+    print request.POST
+    
+    url = request.POST['unique_url']
+    
+    find_url = UploadURL.objects.get(url=url)
 
-    workspace = request.session.get('workspace')
-    user = User.objects.get(pk = request.session['_auth_user_id'])
+    user = find_url.user
+    workspace = find_url.workspace
+
+    find_url.delete()
 
     print request.POST
 
