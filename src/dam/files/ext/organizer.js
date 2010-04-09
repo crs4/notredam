@@ -1008,6 +1008,7 @@ function createMediaPanel(config, autoLoad) {
 	    	
 	    },
 	    
+	   
 	    tbar: new Ext.Toolbar({	
 	    	listeners:{
 	    		render: function(){
@@ -1058,8 +1059,6 @@ function createMediaPanel(config, autoLoad) {
 	    })
 	    
 	}, config));
-	
-	
 	
 	return p;
 
@@ -1414,7 +1413,7 @@ Ext.onReady(function(){
     runner.start(task);
  
 
-    var media_tabs  = new Ext.TabPanel({
+    var media_tabs = new Ext.TabPanel({
         region:'center',
         deferredRender:false,
         activeTab:0,
@@ -1425,7 +1424,8 @@ Ext.onReady(function(){
     		
             return  createMediaPanel({
                 title:'New Tab',
-                media_type: ws_store.query('pk', ws.id).items[0].data.media_type,
+//                media_type: ws_store.query('pk', ws.id).items[0].data.media_type,
+                media_type: Ext.getCmp('media_tabs').getActiveTab().getMediaTypes(),
                 closable: true
             });
         },

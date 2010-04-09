@@ -642,8 +642,8 @@ function createTemplate(panel_id, media_type){
 		
 		var audio_tpl_base = '<div class="thumb-wrap" id="{pk}" >';
 		audio_tpl_base += '<div class="thumb" >';
-			if (media_type.length > 1)
-				audio_tpl_base += '<span class="{type}_icon" style="height:32"></span>';
+//			if (media_type.length > 1)
+//				audio_tpl_base += '<span class="{type}_icon" style="height:32"></span>';
 			audio_tpl_base += '<tpl if="inprogress === 1"><span class="inprogress"></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>';
@@ -663,7 +663,7 @@ function createTemplate(panel_id, media_type){
 				audio_tpl_base += '</span>';
 			audio_tpl_base += '</tpl>';
 			audio_tpl_base += '</div>';           
-		audio_tpl_base += '<span>{shortName}</span></div>';
+		audio_tpl_base += '<span class="{type}_icon">{shortName}</span></div>';
 		
 		return audio_tpl_base;
 	};
@@ -675,14 +675,14 @@ function createTemplate(panel_id, media_type){
 	tpl_str += '<tpl if="type != \'audio\'">';    
 	tpl_str += '<div class="thumb-wrap" id="{pk}">';
 	tpl_str += '<div class="thumb">';
-	if (media_type.length > 1)
-		tpl_str += '<span class="{type}_icon"></span>'; 
+//	if (media_type.length > 1)
+//		tpl_str += '<span class="{type}_icon"></span>'; 
 	
 	tpl_str += '<tpl if="inprogress === 1"><span class="inprogress"></span></tpl>';
 	tpl_str += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 	tpl_str += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>'; 
 	tpl_str += '<!--img src="{url}" class="thumb-img"--><div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div></div>';                
-	tpl_str += '<span>{shortName}</span></div>';
+	tpl_str += '<span class="{type}_icon">{shortName}</span></div>';
 	tpl_str += '</tpl>';
 	tpl_str += '</tpl>';
 

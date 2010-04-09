@@ -850,14 +850,15 @@ def get_workspaces(request):
                 'inbox_root_id':inbox_root.pk
             }
             
-            try:
-                media_types_settings = DAMComponentSetting.objects.get(name='ws_media_types')
-                media_types_selected = get_user_setting_by_level(media_types_settings, ws)
-                media_types_selected = media_types_selected.split(',') 
-                logger.debug('media_types_selected %s'%media_types_selected)
-                tmp['media_type'] = media_types_selected
-            except:
-                tmp['media_type'] = ['image', 'video', 'audio', 'doc']
+#            if request.session.__contains__('media_type'):
+#                 media_types_selected = request.session['media_type']
+#            else:
+#                media_types_selected = ['image', 'video', 'audio', 'doc']
+#                request.session['media_type'] = media_types_selected  
+            
+            media_types_selected = ['image', 'video', 'audio', 'doc']
+            logger.debug('media_types_selected %s'%media_types_selected)
+            tmp['media_type'] = media_types_selected
             
             resp['workspaces'].append(tmp)
             
@@ -1277,9 +1278,14 @@ def load_items(request, view_type=None, unlimited=False, ):
         if  workspace_id:
             workspace = Workspace.objects.get(pk = workspace_id)
         else:
-            workspace = request.session['workspace']
-        
+            workspace = request.session['workspace']        
+
         media_type = request.POST.getlist('media_type')
+#        save media type on session
+#        request.session['media_type'] = list(media_type)
+            
+            
+        
 #        TODO: change movie - video, sigh 
         if 'video' in media_type:
             media_type.remove('video')

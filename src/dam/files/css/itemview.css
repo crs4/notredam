@@ -83,20 +83,20 @@ select{
 }
 
 
-.thumb .image_icon{
-	background: transparent url(/files/images/picture.png) no-repeat;
+.image_icon{
+	background: transparent url(/files/images/picture.png) no-repeat 100% 0;
 }
 
-.thumb .audio_icon{
-	background: transparent url(/files/images/music.png) no-repeat;
+.audio_icon{
+	background: transparent url(/files/images/music.png) 100% 0 no-repeat;
 }
 
-.thumb .doc_icon{
-	background: transparent url(/files/images/notebook.png) no-repeat;
+.doc_icon{
+	background: transparent url(/files/images/notebook.png) 100% 0 no-repeat;
 }
 
-.thumb .movie_icon{
-	background: transparent url(/files/images/movies.png) no-repeat;
+.movie_icon{
+	background: transparent url(/files/images/movies.png) 100% 0  no-repeat;
 }
 
 .thumb .geotagged{
