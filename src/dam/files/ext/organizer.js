@@ -831,7 +831,8 @@ function createMediaPanel(config, autoLoad) {
     var order_by_menu = [
         create_order_by_button('Creation Date', 'creation_time'),
         create_order_by_button('Title', 'dc_title'),
-        create_order_by_button('File Size', 'file_size')
+//        create_order_by_button('File Size', 'notredam_filesize'),
+//        create_order_by_button('Duration', 'notredam_duration')
     ];
 	
 

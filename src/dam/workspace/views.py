@@ -1161,7 +1161,7 @@ def _search(request,  items, workspace = None):
     
     
     if order_by:
-        order_dict = {'creation_time': 'creation_time',  'file_size': 'component__size'}
+        order_dict = {'creation_time': 'creation_time',  'file_size': 'component__size', 'duration': 'component__duration'}
         if order_by in order_dict.keys():
             
             if order_mode == 'decrescent':
