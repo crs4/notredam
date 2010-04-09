@@ -774,8 +774,16 @@ function createMediaPanel(config, autoLoad) {
 			xtype: 'checkbox',
 			boxLabel: capitalize(name),
 			listeners: {
-				check: function(){
-					var current_tab = Ext.getCmp('media_tabs').getActiveTab(); 
+				check: function(cb, checked){
+					
+			
+					var current_tab = Ext.getCmp('media_tabs').getActiveTab();
+					if (current_tab.getMediaTypes().length == 0){
+						this.suspendEvents();
+						this.setValue(true);
+						this.resumeEvents();
+						return;						
+					}
 					if (current_tab.getComponent(0).getStore().lastOptions)
 						current_tab.getComponent(0).getStore().reload();
 					
@@ -789,7 +797,7 @@ function createMediaPanel(config, autoLoad) {
 			cls: panel_id +'_filter',
 			width: 60,	
 			checked: checked
-		}
+		};
 		
 		
 	};
@@ -826,39 +834,7 @@ function createMediaPanel(config, autoLoad) {
         create_order_by_button('File Size', 'file_size')
     ];
 	
-//    
-//    var order_by_menu = [
-//        {
-//            text: 'Title',
-//            query: 'dc_title',
-//            iconCls:'sort_asc',
-//            handler:function(){
-//                    var order_mode;
-//                    
-//                    if(this.iconCls == 'sort_asc'){
-//                            this.setIconClass('sort_desc');
-//                            order_mode = 'decrescent';
-//                        }
-//                    else{
-//                        this.setIconClass('sort_asc');
-//                        order_mode = 'crescent'
-//                    }
-//                    Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
-//                        params: {
-//                            order_by: query,
-//                            order_mode: order_mode
-//                        }
-//                    });
-//                  
-//                }
-//            
-//            },
-//        {
-//            text: 'Date',
-//            query: 'creation_date'
-//        }
-//    ];
-//    
+
     var order_by = new Ext.SplitButton({
         id: 'order_by_button_' + panel_id,
         text: order_by_menu[0].text,
@@ -891,7 +867,6 @@ function createMediaPanel(config, autoLoad) {
         
     });
     
-    console.log('order_by.id ' + order_by.id );
 	var show_all = new Ext.Button({
 	   text: 'Show All',
 		//			   icon: '/files/images/broom.png',
