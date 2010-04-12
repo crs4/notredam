@@ -645,7 +645,7 @@ function start_audio_player(panel_id){
         
         onBeforeLoad: function(){
         	
-        	Ext.get(this.getParent().id).setStyle('margin-top', 75);
+//        	Ext.get(this.getParent().id).setStyle('margin-top', 80);
         	flowplayer('*').each(function(){
               if(this.isPlaying())
         		this.pause();
@@ -657,9 +657,9 @@ function start_audio_player(panel_id){
         onBeforeUnload: function(){
             
             if (this.forceUnload){
-            	var play_img = Ext.get(this.getParent().id);
-            	if (play_img)
-            		play_img.setStyle('margin-top', 40);
+//            	var play_img = Ext.get(this.getParent().id);
+//            	if (play_img)
+//            		play_img.setStyle('margin-top', 80);
             	this.forceUnload = false;
             	return true;
             	}

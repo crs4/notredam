@@ -164,8 +164,17 @@ select{
  .thumb .basket_icon{
  		background: transparent url(/files/images/ok.gif) no-repeat right top;
  }
+ 
+ 
+ .thumb-audio{
+        background: transparent url(/files/images/Music_Icon.png) no-repeat center center;
+ }	
  	
- 	
+div.thumb-play:hover{
+        background: transparent url(/files/images/play.png) no-repeat bottom center;
+ }  
+
+
 
 
 a.myPlayer { 
@@ -174,7 +183,7 @@ a.myPlayer {
     height:20px;  
     text-align:center; 
     
-    margin-top:40; 
+    margin-top:82; 
     display: block;
     
 } 
