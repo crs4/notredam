@@ -83,8 +83,14 @@ select{
 }
 
 
+.media_icon{
+    position:absolute; 
+    top:90;
+}
+
 .image_icon{
 	background: transparent url(/files/images/picture.png) no-repeat 100% 0;
+	
 }
 
 .audio_icon{
