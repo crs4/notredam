@@ -20,12 +20,16 @@ from django.core.management import setup_environ
 import settings
 setup_environ(settings)
 
+from twisted.internet.task import LoopingCall
 from twisted.internet import reactor, threads, defer 
 #import logger
 import datetime 
 import os.path
 import urllib
 import os
+import shutil
+import uuid
+import time
 
 os.environ['USE_TWISTED'] = '1'
 
@@ -49,6 +53,7 @@ logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/batch
 logger.setLevel(logging.DEBUG)
 
 from mediadart.storage import Storage
+from mediadart.storage import new_id
 from mediadart.mqueue.mqclient_twisted import Proxy
 
 def cb_error(result, component, machine):
@@ -65,11 +70,21 @@ def machine_to_next_state(machine):
         machine.save()
         execute_state(machine)
 
+def add(component, machine):
+    res_id = new_id(component.file_name)
+    print res_id
+    shutil.copy2(component._id, os.path.join('/tmp/prova/', res_id))
+    print 'copied!'
+    component._id = res_id
+    component.save()
+    machine_to_next_state(machine)
+
 def adapt_resource(component, machine):
 
     def save_and_extract_features(result, component, machine):
         if result:
-            component._id = result
+            dir, name = os.path.split(result)
+            component._id = name
             component.save()
 #            extract_features(component)
             machine_to_next_state(machine)
@@ -86,6 +101,8 @@ def adapt_resource(component, machine):
     source_variant = variant.get_source(workspace,  item)
     vp = variant.get_preferences(workspace)
     orig = source_variant.get_component(workspace = workspace,  item = item) 
+
+    dest_res_id = new_id()
         
     if item.type == 'image':
  
@@ -128,10 +145,12 @@ def adapt_resource(component, machine):
 
 #         else:
 
+        dest_res_id = dest_res_id + '.' + transcoding_format
+
         if watermark_enabled:
-            d = adapter_proxy.adapt_image(orig.ID, transcoding_format, dest_size=(max_dim, max_dim), watermark='/opt/mediadart/share/logo-s.png')
+            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=(max_dim, max_dim), watermark='/opt/mediadart/share/logo-s.png')
         else:
-            d = adapter_proxy.adapt_image(orig.ID, transcoding_format, dest_size=(max_dim, max_dim))
+            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=(max_dim, max_dim))
 
     elif item.type == 'movie':
 
@@ -141,12 +160,14 @@ def adapt_resource(component, machine):
             dim_y = vp.max_dim
             thumbnail_position = vp.video_position
 
-            d = adapter_proxy.extract_video_thumbnail(orig.ID, thumb_size=(dim_x, dim_y))
+            d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
 
         else:
 
             preset_name = vp.preset.name
             param_dict = {}
+
+            dest_res_id = dest_res_id + '.' + preset_name
             
             for val in vp.values.all():
                 if val.parameter.name == 'max_size':
@@ -161,25 +182,29 @@ def adapt_resource(component, machine):
 #                 #param_dict['watermark_left'] = 10
 #                 yield utils.wait_for_resource(vp.watermark_uri, 5)
                 
-            d = adapter_proxy.adapt_video(orig.ID, preset_name,  param_dict)
+            d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
             
 
     elif item.type == 'audio':
 
         preset_name = vp.preset.name
         param_dict = {}
+
+        dest_res_id = dest_res_id + '.' + preset_name
         
         for val in vp.values.all():
                 param_dict[val.parameter.name] = val.value
             
-        d = adapter_proxy.adapt_audio(orig.ID, preset_name,  param_dict)
+        d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
     
     if item.type == 'doc':
  
         transcoding_format = vp.codec
         max_size = vp.max_dim
         
-        d = adapter_proxy.adapt_doc(orig.ID, transcoding_format,  max_size)
+        dest_res_id = dest_res_id + '.' + transcoding_format
+        
+        d = adapter_proxy.adapt_doc(orig.ID, dest_res_id, max_size)
 
     d.addCallbacks(save_and_extract_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
 
@@ -389,7 +414,8 @@ def remove_sm(sm):
 def find_sm():
     try:
 
-        available_sm = Machine.objects.exclude(pk__in=running_sm).exclude(current_state__name='finished').exclude(current_state__name='failed')
+        available_sm = Machine.objects.filter(wait_for__current_state__name='finished') | Machine.objects.filter(wait_for__isnull=True)
+        available_sm = available_sm.exclude(pk__in=running_sm).exclude(current_state__name='finished').exclude(current_state__name='failed').exclude(current_state__name='fake')
 
         if available_sm.count() > 0:
             sm = available_sm[0].pk
@@ -407,14 +433,19 @@ def find_sm():
 
 @defer.inlineCallbacks
 def find_statemachine():
+    logger.debug('finding tasks...')
     machine = yield lock.run(find_sm)
 
     if machine is not None:
 
         execute_machine(machine)
-
-    reactor.callLater(2, find_statemachine)
-                                        
+        
+#    time.sleep(1)
+    
+#    reactor.callInThread(find_statemachine)
+ 
+    reactor.callLater(1, find_statemachine)
+ 
 def execute_state(machine):
 
     state = machine.current_state
@@ -443,20 +474,21 @@ def recursive_delete(state):
     except Exception, ex:
         print ex
         pass
-        
+                                                                                          
 def cleanup():
 
     finished = Machine.objects.filter(current_state__name='finished')
 
     for m in finished:
-        try:
-            recursive_delete(m.initial_state)
-            remove_sm(m.pk)
-        except:
-            continue
+        if m.machine_set.all().count() == m.machine_set.filter(current_state__name='finished').count():
+            try:
+                recursive_delete(m.initial_state)
+                remove_sm(m.pk)
+            except:
+                continue
+            finally:
+                m.delete()
             
-    finished.delete()
-    
 @defer.inlineCallbacks
 def clean_task():
 
@@ -471,17 +503,24 @@ def clean_task():
 
     reset_queries()
 
+#    time.sleep(2)
+
+#    reactor.callInThread(clean_task)
+
     reactor.callLater(2, clean_task)
-        
+
 global lock
 global running_sm
 running_sm = []
 lock = defer.DeferredLock()
 
-#for i in xrange(3):
-reactor.callLater(2, find_statemachine)
+#reactor.callInThread(find_statemachine)
+#reactor.callInThread(clean_task)
+
+reactor.callLater(3, find_statemachine)
 
 reactor.callLater(2, clean_task)
+
 
 reactor.run()
 

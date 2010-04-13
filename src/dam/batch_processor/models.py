@@ -57,3 +57,4 @@ class MachineState(models.Model):
 class Machine(models.Model):
     initial_state = models.ForeignKey(MachineState, related_name='initial')
     current_state = models.ForeignKey(MachineState)
+    wait_for = models.ForeignKey('self', null=True, blank=True)
