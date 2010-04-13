@@ -122,40 +122,15 @@ def get_flex_upload_url(request):
     resp = simplejson.dumps({'urls': urls})
     return HttpResponse(resp)
     
-def flex_upload(request):
-
-    from mediadart.storage import Storage
-    
-    print request.POST
-    
-    url = request.POST['unique_url']
-    
-    find_url = UploadURL.objects.get(url=url)
-
-    user = find_url.user
-    workspace = find_url.workspace
-
-    find_url.delete()
-
-    print request.POST
-
-    upload_file = request.FILES['Filedata']
-
-    print upload_file.name
+def save_uploaded_item(request, upload_file, user, workspace):
 
     type = guess_media_type(upload_file.name)
-    
-    try:
-        register_resource = upload_file.temporary_file_path()
-    except:
-        destination = tempfile.NamedTemporaryFile(delete=False)
-        for chunk in upload_file.chunks():
-            destination.write(chunk)
-        destination.close()
-        register_resource = destination.name
-        
-    storage = Storage('/tmp/prova/')
-    res_id = storage.add(register_resource)
+
+    destination = tempfile.NamedTemporaryFile(delete=False)
+    for chunk in upload_file.chunks():
+        destination.write(chunk)
+    destination.close()
+    register_resource = destination.name
 
     item_ctype = ContentType.objects.get_for_model(Item)
     
@@ -170,7 +145,7 @@ def flex_upload(request):
     comp = _create_variant(variant,  item, workspace)
     
     comp.file_name=upload_file.name
-    comp._id = res_id
+    comp._id = register_resource
     
     logger.debug('comp._id %s'%comp._id )
     mime_type = mimetypes.guess_type(upload_file.name)[0]
@@ -194,15 +169,42 @@ def flex_upload(request):
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
 
     try:
-        generate_tasks(variant, workspace, item)
+        generate_tasks(variant, workspace, item, 1)
     except Exception, ex:
         print traceback.print_exc(ex)
-        raise
+        raise    
+    
+def flex_upload(request):
+
+    from mediadart.storage import Storage
+    import threading
+
+    print request.POST
+    
+    url = request.POST['unique_url']
+    
+    find_url = UploadURL.objects.get(url=url)
+
+    user = find_url.user
+    workspace = find_url.workspace
+
+    find_url.delete()
+
+    print request.POST
+
+    upload_file = request.FILES['Filedata']
+
+    print upload_file.name
+
+    type = guess_media_type(upload_file.name)
+
+    t = threading.Thread(target=save_uploaded_item,
+            args=[request, upload_file, user, workspace])
+    t.setDaemon(True)
+    t.start()
 
     resp = simplejson.dumps({})
     return HttpResponse(resp)
-
-
 
 @login_required
 @permission_required('add_item')
@@ -457,10 +459,17 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
                 logger.debug('impossible to generate variant, no source found')
                 return 
         variants_to_generate = [variant]
-        feat_extr_orig = metadata_orig =  None
 
-        initial_state = {'name':'fake_state'}
-        
+        end = MachineState.objects.create(name='finished')
+
+        if register_task:
+            cs = register_task.initial_state
+            cs.next_state = end
+            cs.save()
+
+            initial_state = register_task
+        else:
+            initial_state = None
     else:
         logger.debug('SOURCE VARIANT %s'%variant)
         source = component
@@ -485,11 +494,20 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
             if variant_source == None or (variant.sources.get(workspace = workspace, destination = dest).rank  <= variant_source.sources.get(workspace = workspace, destination = dest).rank):
                 variants_to_generate.append(dest)
         logger.debug('REGISTER TASK %s'%register_task)
-
-        feat_extr_action = {'component':source, 'function':'extract_features'}
-        feat_extr_orig = {'name':'source_fe', 'action':feat_extr_action}
                 
-        initial_state = feat_extr_orig
+        end = MachineState.objects.create(name='finished')
+        feat_extr_action = Action.objects.create(component=source, function='extract_features')
+        feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
+        
+        if register_task:
+            cs = register_task.initial_state
+            cs.next_state = feat_extr_orig
+            cs.save()
+            initial_state = register_task
+        else:
+            fake_state = MachineState.objects.create(name='fake')
+            fake_state.next_state = register_state
+            initial_state = Machine.objects.create(current_state=fake_state, initial_state=feat_extr_orig)
         
 #        feat_extr_orig = MDTask.objects.create(component = source, task_type='feature_extraction', wait_for=register_task)
 #        metadata_orig = MDTask.objects.create(component = source, task_type='extract_metadata', wait_for=feat_extr_orig)    
@@ -521,12 +539,8 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
                 save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
                 fe_action = Action.objects.create(component=comp, function='extract_features')
                 fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
-                
-                my_cs = create_initial_state(initial_state)
-                my_cs.next_state = fe_state
-                my_cs.save()
-                
-                Machine.objects.create(current_state=my_cs, initial_state=my_cs)
+                                
+                Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=initial_state)
 
 #                feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=register_task)
 #                extract_metadata = MDTask.objects.create(component=comp, task_type="extract_metadata", wait_for=feat_extr_task)
@@ -639,11 +653,7 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
         adapt_action = Action.objects.create(component=comp, function='adapt_resource')
         adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
 
-        my_cs = create_initial_state(initial_state)
-        my_cs.next_state = adapt_state
-        my_cs.save()
-        
-        Machine.objects.create(current_state=my_cs, initial_state=my_cs)
+        Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=initial_state)
  
 #        variant_task = MDTask.objects.create(component=comp, task_type="adaptation", wait_for=previous_task)
 #        feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=variant_task)
@@ -658,6 +668,10 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
         comp.preferences = vp.copy()
         comp.source_id = source._id
         comp.save()
+        
+    if initial_state:
+        initial_state.current_state = initial_state.initial_state
+        initial_state.save()
             
 def generate_tasks(variant, workspace, item,  upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
@@ -680,16 +694,13 @@ def generate_tasks(variant, workspace, item,  upload_job_id = None, url = None, 
     if upload_job_id:
         component.imported = True
         component.save()
-        register_task = MDTask.objects.create(component=component, task_type='wait_for_upload', job_id=upload_job_id)  
-    elif url:
-        s = storage.Storage()
-        local_dir = s.get_local_data_directory()
-        filepath = url
-        component.uri = url
-        component.save()
-        register_task = MDTask.objects.create(component=component, task_type='register', filepath=filepath)
+        register_action = Action.objects.create(component=component, function='add')
+        register_state = MachineState.objects.create(name='comp_add', action=register_action)
+        fake_state = MachineState.objects.create(name='fake')
+        fake_state.next_state = register_state
+        register_task = Machine.objects.create(current_state=fake_state, initial_state=register_state)
     else:
-        register_task = None       
+        register_task = None
       
     
     if variant.shared and not variant.auto_generated and not check_for_existing: #the original... is shared by all the ws

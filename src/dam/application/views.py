@@ -136,11 +136,11 @@ def _get_resource_url(id):
 #     t = toolkit.Toolkit(MEDIADART_CONF)
 #     storage = t.get_storage()
 
-    storage = Storage('/tmp/prova/')
+    storage = Storage()
 
     try:
         if storage.exists(id):
-            url = '/storage/' + storage.relpath(id)
+            url = '/storage/' + id
         else:
             url = None
         logger.debug('URL %s' %url)
