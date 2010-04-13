@@ -83,20 +83,26 @@ select{
 }
 
 
-.thumb .image_icon{
-	background: transparent url(/files/images/picture.png) no-repeat;
+.media_icon{
+    position:absolute; 
+    top:90;
 }
 
-.thumb .audio_icon{
-	background: transparent url(/files/images/music.png) no-repeat;
+.image_icon{
+	background: transparent url(/files/images/picture.png) no-repeat 100% 0;
+	
 }
 
-.thumb .doc_icon{
-	background: transparent url(/files/images/notebook.png) no-repeat;
+.audio_icon{
+	background: transparent url(/files/images/music.png) 100% 0 no-repeat;
 }
 
-.thumb .movie_icon{
-	background: transparent url(/files/images/movies.png) no-repeat;
+.doc_icon{
+	background: transparent url(/files/images/notebook.png) 100% 0 no-repeat;
+}
+
+.movie_icon{
+	background: transparent url(/files/images/movies.png) 100% 0  no-repeat;
 }
 
 .thumb .geotagged{
@@ -158,8 +164,17 @@ select{
  .thumb .basket_icon{
  		background: transparent url(/files/images/ok.gif) no-repeat right top;
  }
+ 
+ 
+ .thumb-audio{
+        background: transparent url(/files/images/Music_Icon.png) no-repeat center center;
+ }	
  	
- 	
+div.thumb-play:hover{
+        background: transparent url(/files/images/play.png) no-repeat bottom center;
+ }  
+
+
 
 
 a.myPlayer { 
@@ -168,7 +183,7 @@ a.myPlayer {
     height:20px;  
     text-align:center; 
     
-    margin-top:40; 
+    margin-top:82; 
     display: block;
     
 } 
