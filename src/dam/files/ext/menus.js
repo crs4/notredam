@@ -587,6 +587,21 @@ Ext.onReady(function(){
                 menu: mv_ws_menu
             },
             {
+                text: 'Sync XMP...',
+                id: 'sync_xmp',
+                disabled: true,
+                handler: function() {
+                    var items = get_selected_items();
+                    Ext.Ajax.request({
+                        url: '/sync_component/',
+                        params: {items: items},
+                        success: function(data){
+
+                        }
+                    });                    
+                }
+            },
+            {
                 id:'remove_from_ws',
                 text: 'Delete',
                 disabled: true,

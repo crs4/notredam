@@ -250,16 +250,10 @@ function _show_details(data, active_tab, view, selNode){
     if(active_tab.id == 'metadata_panel' || active_tab.id == 'xmp_panel') {
         store = active_tab.getStore();
         
-        var items_param = "";
-        for (var i = 0; i < selNodes.length; i++) {
-            var item_data = view.store.getAt(view.store.find('pk', selNodes[i].id)).data;
-            items_param += item_data.pk + ',';
-        }
+        var items_param = get_selected_items();
     }
     
     else if(active_tab.id == 'preview_panel'){
-        
-        
         
         var store = Ext.getCmp('variant_summary').getStore();
         var preview = Ext.getCmp('summary_panel').body;
@@ -492,6 +486,8 @@ var showDetails = function(view){
         
         _show_details(data, active_tab, view, selNode);
         
+        Ext.getCmp('sync_xmp').enable();
+        
     } 
     else{
         cbs = Ext.DomQuery.select('input[class=x-tree-node-cb]');
@@ -513,6 +509,9 @@ var showDetails = function(view){
         var x_store = Ext.getCmp('xmp_panel').getStore();
         m_store.saveChangedRecords(Ext.getCmp('metadata_panel'));
         x_store.saveChangedRecords(Ext.getCmp('xmp_panel'));
+
+        Ext.getCmp('sync_xmp').disable();
+
 
     }
 

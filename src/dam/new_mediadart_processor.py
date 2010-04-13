@@ -43,6 +43,7 @@ from dam.variants.models import ImagePreferences,  VideoPreferences,  AudioPrefe
 
 from dam.metadata.models import MetadataProperty, Namespace, MetadataValue
 from dam.metadata.views import save_variants_rights
+from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
 from settings import INSTALLATIONPATH,  MEDIADART_CONF
 THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
@@ -78,7 +79,22 @@ def add(component, machine):
     component._id = res_id
     component.save()
     machine_to_next_state(machine)
+    
+def embed_xmp(component, machine):
+    
+    def embedding_cb(result, component, machine):
+        if result:
+            reset_modified_flag(component)
+            machine_to_next_state(machine)    
+    
+    xmp_embedder_proxy = Proxy('XMPEmbedder') 
 
+    metadata_dict = synchronize_metadata(component)
+
+    d = xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
+
+    d.addCallbacks(embedding_cb, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
+        
 def adapt_resource(component, machine):
 
     def save_and_extract_features(result, component, machine):
@@ -518,7 +534,6 @@ lock = defer.DeferredLock()
 #reactor.callInThread(clean_task)
 
 reactor.callLater(3, find_statemachine)
-
 reactor.callLater(2, clean_task)
 
 
