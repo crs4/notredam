@@ -1,8 +1,3 @@
-if (!window.google || !google.gears) {
-//    alert('without google gears');
-    parent.location.href = "http://gears.google.com/?action=install&message=Notre-dam Plugin Installation" +  "&return=/workspace/";
-}
-
 
         function error_handler(file_index, responseText){
 //            $j('#file_' + file_index + '_progress').css('color' , 'red');

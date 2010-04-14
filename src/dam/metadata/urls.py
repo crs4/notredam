@@ -31,5 +31,6 @@ urlpatterns = patterns('',
     (r'^ws_admin/save_ws_descriptors/$', 'dam.metadata.views.wsadmin_save_ws_descriptors'),
     (r'^ws_admin/config_descriptor_groups/$', 'dam.metadata.views.wsadmin_config_descriptor_groups'),
     (r'^ws_admin/set_default_descriptors/$', 'dam.metadata.views.wsadmin_set_default_descriptors'),
+    (r'^sync_component/$', 'dam.metadata.views.sync_component'),
 
 )
