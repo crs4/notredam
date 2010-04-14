@@ -1161,14 +1161,12 @@ def _search(request,  items, workspace = None):
     
     
     if order_by:
-        order_dict = {'creation_time': 'creation_time',  'file_size': 'component__size', 'duration': 'component__duration'}
-        if order_by in order_dict.keys():
-            
-            if order_mode == 'decrescent':
-                items = items.order_by('-%s'%order_dict[order_by])
-            else:
-                items = items.order_by('%s'%order_dict[order_by])
         
+        if order_by == 'creation_time':
+            pass
+        
+        elif order_by == 'size':            
+            items = items.extra(select={order_by: 'select size from component, variants_variant where item_id = item.id and variants_variant.name == "original" '})
         
         else:
             property_namespace, property_field_name = order_by.split('_')
@@ -1189,12 +1187,14 @@ def _search(request,  items, workspace = None):
 #                TODO: change when gui multilanguage ready
                 language_selected = 'en-US' 
                 logger.debug('language_selected %s'%language_selected)
-                items = items.extra(select=SortedDict([('metadata_to_order', 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s or language=null')]),  select_params = (str(property.id),  language_selected))
+                items = items.extra(select=SortedDict([(order_by, 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s or language=null')]),  select_params = (str(property.id),  language_selected))
                 
-                if order_mode == 'decrescent':
-                    items = items.order_by('-metadata_to_order')
-                else: 
-                    items = items.order_by('metadata_to_order')
+        if order_mode == 'decrescent':
+            items = items.order_by('-%s'%order_by)
+        else:
+            items = items.order_by('%s'%order_by)
+
+    
     logger.debug('items at the end: %s'%items)
     return items
 
