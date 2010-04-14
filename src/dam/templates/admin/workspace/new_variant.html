@@ -1,0 +1,18 @@
+<form 
+{%if variant.pk%}
+    action="/new_variant/{{ws.pk}}/{{media_type}}/{{variant.pk}}/" 
+{%else%}
+    action="/new_variant/{{ws.pk}}/{{media_type}}/" 
+{%endif%}
+
+method="POST" id="new_variant_form">
+      {%for field in form%}
+                <fieldset>
+                    <label>{{field.label_tag}}</label>
+                    {{field}}
+                    {% if field.errors %}<dd class="errors" >{{ field.errors }}</dd>{% endif %}
+                </fieldset>
+                    {%endfor%}
+<input type="submit" name="cmd" value="ok"/>
+<input type="button" name="cmd" value="cancel" onclick="parent.win.close()"/>
+</form>
