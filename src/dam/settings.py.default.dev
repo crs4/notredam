@@ -153,4 +153,5 @@ INSTALLED_APPS = (
 	'dam.eventmanager',
 	'dam.geo_features',
 	'dam.basket',
+	'dam.upload',
 )

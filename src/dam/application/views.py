@@ -39,7 +39,7 @@ from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS,  MEDIADART_CONF
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
 
-from mediadart import toolkit
+from mediadart.storage import Storage
 
 import os
 import cPickle as pickle
@@ -114,10 +114,13 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
             if component.uri:
                 return component.uri
 
-            t = toolkit.Toolkit(MEDIADART_CONF)
-            storage = t.get_storage()
+#            t = toolkit.Toolkit(MEDIADART_CONF)
+#            storage = t.get_storage()
             
-            url = storage.get_resource_url(component.ID)[0]
+#            url = storage.get_resource_url(component.ID)[0]
+            
+            url = _get_resource_url(component.ID)
+
         except Exception,ex:
             logger.exception( 'ex in get_component_url %s' %  ex )
             url = NOTAVAILABLE
@@ -130,11 +133,16 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
 
 
 def _get_resource_url(id):
-    t = toolkit.Toolkit(MEDIADART_CONF)
-    storage = t.get_storage()
+#     t = toolkit.Toolkit(MEDIADART_CONF)
+#     storage = t.get_storage()
+
+    storage = Storage()
 
     try:
-        url = storage.get_resource_url(id)[0]
+        if storage.exists(id):
+            url = '/storage/' + id
+        else:
+            url = None
         logger.debug('URL %s' %url)
     except:
         url = None
@@ -147,11 +155,9 @@ def redirect_to_resource(request, id):
     """
     Redirects to the resource url given by MediaDART
     """
-    t = toolkit.Toolkit(MEDIADART_CONF)
-    storage = t.get_storage()
 
     try:
-        url = storage.get_resource_url(id)[0]
+        url = _get_resource_url(id)
         logger.debug('URL %s' %url)
     except:
         url = NOTAVAILABLE    
@@ -179,8 +185,8 @@ def get_component(request, item_id, variant_name ,  redirect=False):
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'failure': True}))
     if redirect:
-        if request.GET.get('download',  0):
-            url = os.path.join(url, 'download/')
+#         if request.GET.get('download',  0):
+#             url = os.path.join(url, 'download/')
         return redirect_to(request, url)
     else:
         return HttpResponse(url)

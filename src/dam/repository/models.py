@@ -575,7 +575,7 @@ class Component(models.Model):
     #properties
 
     file_name = models.CharField(max_length=128, null=True, blank=True)
-    
+    modified_metadata = models.BooleanField(default = False)    
     
     def _get_id(self):
         return self._id

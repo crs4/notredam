@@ -34,6 +34,7 @@ urlpatterns = patterns('',
     (r'^mod_admin/(.*)', mod_admin.root), 
     (r'^files/thumbs/(?P<path>.*)$', 'django.views.static.serve', {'document_root': THUMBS_DIR}), 
     (r'^files/(?P<path>.*)$', 'django.views.static.serve', {'document_root': os.path.join(ROOT_PATH, 'files')}), 
+    (r'^storage/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/tmp/prova/'}), 
     
     (r'^', include('dam.application.urls')),
     (r'^', include('dam.geo_features.urls')),

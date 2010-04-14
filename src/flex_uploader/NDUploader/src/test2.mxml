@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml"
+						layout="absolute" xmlns:local="*"
+						showFlexChrome="false"
+						applicationComplete="onApplicationComplete();" width="800" height="600" backgroundColor="#FFFFFF">
+	<mx:Style source="test2.css"/>
+	<mx:Script>
+		<![CDATA[
+			import flash.events.NativeDragEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.FormItem;
+			import mx.controls.TextInput;
+			import mx.events.ListEvent;
+				
+			private var fileList:ArrayCollection;
+			
+			private function onApplicationComplete():void
+			{
+				this.addEventListener(NativeDragEvent.NATIVE_DRAG_ENTER,onDragIn);
+				this.addEventListener(NativeDragEvent.NATIVE_DRAG_DROP,onDrop);
+				
+				// Center the window
+				var initialBounds:Rectangle = new Rectangle((Screen.mainScreen.bounds.width / 2 - (this.width/2)), (Screen.mainScreen.bounds.height / 2 - (this.height/2)), this.width, this.height);
+				this.nativeWindow.bounds = initialBounds;
+				this.nativeWindow.visible = true;
+				
+				// Do some initialization
+				this.fileList = new ArrayCollection();
+				filesDataGrid.dataProvider = this.fileList;
+				
+			}
+				
+			private function onDragIn(event:NativeDragEvent):void{
+				NativeDragManager.acceptDragDrop(this);
+			}
+				
+			private function onDrop(event:NativeDragEvent):void{
+				NativeDragManager.dropAction = NativeDragActions.COPY;
+				var dropfiles:Array = event.clipboard.getData(ClipboardFormats.FILE_LIST_FORMAT) as Array;
+				addFiles(dropfiles);
+			}
+	
+			public function upload():void {
+				var uploader:Uploader = new Uploader(this.fileList);
+				uploader.doUpload();
+			}
+				
+			public function browse():void {
+				var homeDir:File = File.userDirectory;
+				homeDir.addEventListener(FileListEvent.SELECT_MULTIPLE, openFiles);
+				homeDir.browseForOpenMultiple("Choose the files");				
+			}
+				
+			private function openFiles(e:FileListEvent):void {
+				var files:Array = e.files;
+				addFiles(files);
+			}
+	
+			private function iterateFiles(handle:File):void
+			{
+				if (handle.isHidden || !handle.exists || handle.name.search(/^\..*$/) != -1) return;
+				
+				if (handle.isDirectory) {
+					var listing:Array = handle.getDirectoryListing();
+					for each(var f:File in listing) {
+						if (f.isHidden || !f.exists || f.name.search(/^\..*$/) != -1) continue;
+						
+						if (f.isDirectory) {
+							this.iterateFiles(f);
+						}
+						else {
+							this.fileList.addItem({filename:f.name, size: f.size, filepath: f.nativePath, status: 0, metadata: {}});
+						}
+					}
+				}
+				else {
+					this.fileList.addItem({filename:handle.name, size: handle.size, filepath: handle.nativePath, status: 0, metadata: {}});				
+				}
+			}
+							
+			private function addFiles(files:Array):void{
+				for each (var file:File in files) {
+					iterateFiles(file);
+				}
+			}
+			
+	
+			protected function formSave(event:FocusEvent):void {
+				var selections:Array = filesDataGrid.selectedItems;
+				for (var i:uint=0; i < selections.length; i++) {
+					var current:Object = selections[i];
+					current.metadata['title'] = form_title.text;
+					current.metadata['desc'] = form_desc.text;
+					current.metadata['keywords'] = form_keywords.text;
+					fileList.itemUpdated(current);
+				}
+			}
+			
+			protected function filesDataGrid_changeHandler(event:ListEvent):void
+			{
+				var selections:Array = event.target.selectedItems;
+				if (selections.length == 0) {
+					msgbox.text = "Select one or more items to edit metadata";
+					msgbox.parent.visible = true;
+				}
+				else if (selections.length == 1) {
+					msgbox.parent.visible = false;					
+				}
+				else {
+					msgbox.parent.visible = true;					
+					msgbox.text = "Multiple items selected"
+				}
+			}
+
+		]]>
+	</mx:Script>
+	<mx:TitleWindow x="10" y="10" width="778" height="578" layout="absolute" title="NotreDAM Uploader">
+		<mx:Image x="10" y="2" source="images/logo2.png" width="276" height="40"/>
+		<mx:Button x="314" y="47" label="Browse..." mouseDown="browse();"/>
+		<mx:Button x="393" y="47" label="Upload" mouseDown="upload();"/>
+		<mx:DataGrid id="filesDataGrid" x="10" y="90" width="436" height="427" editable="false" allowMultipleSelection="true" change="filesDataGrid_changeHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn headerText="Filename" dataField="filename"/>
+				<mx:DataGridColumn headerText="Size" dataField="size" width="50"/>
+				<mx:DataGridColumn itemRenderer="myProgressBar" dataField="status" headerText="Progress" width="180" paddingLeft="5"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:Panel title="Metadata" x="454" y="90" width="312" height="427">
+			<mx:Canvas width="310" height="31" backgroundColor="#99B3E4">
+				<mx:Text id="msgbox" text="Select one or more items to edit metadata" width="300" fontWeight="bold" y="6"/>
+			</mx:Canvas>
+			<mx:Form>
+				<mx:FormItem label="Title" >
+					<mx:TextInput id="form_title" focusOut="formSave(event);"/>
+				</mx:FormItem>
+				<mx:FormItem label="Description">
+					<mx:TextArea id="form_desc" focusOut="formSave(event);"/>
+				</mx:FormItem>
+				<mx:FormItem label="Keywords">
+					<mx:TextArea id="form_keywords" focusOut="formSave(event);"/>
+				</mx:FormItem>				
+			</mx:Form>		
+		</mx:Panel>
+	</mx:TitleWindow>
+</mx:WindowedApplication>
