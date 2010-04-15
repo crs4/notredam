@@ -1,0 +1,865 @@
+/*
+*
+* NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+* Email: labcontdigit@sardegnaricerche.it
+* Web: www.notre-dam.org
+*
+* This program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*/
+
+Ext.onReady(function(){
+    Ext.QuickTips.init();
+
+    var members_configuration = function() {
+
+        var current_ws = ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk;
+
+        var members_store = new Ext.data.JsonStore({
+            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", "edit_collection"],
+            root: 'elements',
+            baseParams: {ws_id: current_ws},
+            proxy : new Ext.data.HttpProxy({
+                method: 'POST',
+                url: '/get_ws_members/'
+            }),
+            autoLoad: true
+        });
+        
+        var booleditor = new Ext.grid.GridEditor(new Ext.form.ComboBox({
+            triggerAction: 'all',
+            typeAhead: true,
+            selectOnFocus: true,
+            valueField: 'data_value',
+            displayField: 'display_text',
+            lazyRender: true,
+            mode: 'local',
+            store: new Ext.data.ArrayStore({
+                fields: ['data_value', 'display_text'],
+                data: [[1, 'Yes'], [0, 'No']]
+            })
+
+        }));
+
+        var members_list = new Ext.grid.EditorGridPanel({
+            id: 'members_list',
+            store: members_store,
+			sm : new Ext.grid.RowSelectionModel(), 
+            viewConfig: {
+             forceFit: true
+            },
+            listeners: {
+                beforeedit: function(e) {
+                    if (!e.record.get('editable')){
+                        return false;                        
+                    }
+                }
+            },
+            loadMask: true,
+            columns: [{
+                header: 'Username',
+                dataIndex: 'name'
+            }, {
+                xtype: 'booleancolumn',
+                header: 'Is admin',
+                dataIndex: 'admin',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            }, {
+                header: 'Can edit metadata',
+                dataIndex: 'edit_metadata',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            }, {
+                header: 'Can add item',
+                dataIndex: 'add_item',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            }, {
+                header: 'Can remove item',
+                dataIndex: 'remove_item',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            }, {
+                header: 'Can edit catalogue',
+                dataIndex: 'edit_taxonomy',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            }, {
+                header: 'Can edit collections',
+                dataIndex: 'edit_collection',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            }]
+        });    
+
+        var members_panel = new Ext.Panel({
+                layout: 'fit',
+                items: [members_list],
+                tbar: [{				
+                    text: 'Add',
+                    iconCls: 'add_icon',
+                    handler: function() {
+
+                        var users_store = new Ext.data.JsonStore({
+                            fields: ["id", "name"],
+                            root: 'users',
+                            baseParams: {ws_id: current_ws},
+                            proxy : new Ext.data.HttpProxy({
+                                method: 'POST',
+                                url: '/get_available_users/'
+                            }),
+                            autoLoad: true
+                        });
+
+                        var list_users = new Ext.ListView({
+                            store: users_store,
+                            multiSelect: true,                            
+                            id: 'available_users',
+                            columns: [{
+                                header: 'Username',
+                                dataIndex: 'name'
+                            }]
+                        }); 
+
+                        var permissions_form = new Ext.form.FormPanel({
+                            region: 'south',
+                            bodyStyle:'padding:5px 5px 0',
+                            title: 'User permissions',
+                            labelWidth: 150, 
+                            defaults: {width: 100},
+                            height: 200,
+                            id: 'new_user_permissions',
+                            items: [{
+                                fieldLabel: 'Is admin',
+                                name: 'admin',                                
+                                xtype: 'checkbox'
+                            }, {
+                                fieldLabel: 'Can edit metadata',
+                                name: 'edit_metadata',
+                                xtype: 'checkbox'       
+                            }, {
+                                fieldLabel: 'Can add item',
+                                name: 'add_item',
+                                xtype: 'checkbox'       
+                            }, {
+                                fieldLabel: 'Can remove item',
+                                name: 'remove_item',
+                                xtype: 'checkbox'       
+                            }, {
+                                fieldLabel: 'Can edit catalogue',
+                                name: 'edit_taxonomy',
+                                xtype: 'checkbox'       
+                            }, {
+                                fieldLabel: 'Can edit collections',
+                                name: 'edit_collection',
+                                xtype: 'checkbox'       
+                            }]
+                        }); 
+
+                        var list_panel = new Ext.Panel({
+                            title: 'Available users (select to add)',
+                            region: 'center',
+                            items: [list_users]
+                        });
+                        
+                        var win = new Ext.Window({
+                            layout: 'border',
+                            plain: true,
+                            constrain: true,
+                            modal: true,
+                            width: 500,
+                            height: 500,
+                            title: 'Add user',
+                            id: 'add_user_win',
+                            items    : [list_panel, permissions_form ],
+                            buttons: [{
+                                text: 'Save',
+                                handler: function() {
+                                    var values = Ext.getCmp('new_user_permissions').getForm().getFieldValues();                                    
+                                    var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_collection: 0, edit_taxonomy: 0};
+                                    if (values.admin) {
+                                        perm_values.admin = 1;
+                                    }
+                                    if (values.edit_metadata) {
+                                        perm_values.edit_metadata = 1;
+                                    }
+                                    if (values.add_item) {
+                                        perm_values.add_item = 1;
+                                    }
+                                    if (values.remove_item) {
+                                        perm_values.remove_item = 1;
+                                    }
+                                    if (values.edit_taxonomy) {
+                                        perm_values.edit_taxonomy = 1;
+                                    }
+                                    if (values.edit_collection) {
+                                        perm_values.edit_collection = 1;
+                                    }
+                                    var selected = Ext.getCmp('available_users').getSelectedRecords();
+                                    if (selected.length == 0) {
+                                        Ext.MessageBox.alert('Error', 'Select one or more user(s) from the list');
+                                    }
+                                    else {
+                                        for (var x=0; x < selected.length; x++) {
+                                            var u_id = selected[x].get('id');
+                                            var u_name = selected[x].get('name');
+                                            perm_values.id = u_id;
+                                            perm_values.name = u_name;
+                                            Ext.getCmp('members_list').getStore().add(new Ext.data.Record(perm_values));
+                                        }
+                                        Ext.getCmp('add_user_win').close();
+                                    }
+                                }                            
+                            }, {
+                                text: 'Close',
+                                handler: function() {
+                                    Ext.getCmp('add_user_win').close();    
+                                }                            
+                            }]
+                        });
+                        users_store.on('load', function() {
+                            var members = Ext.getCmp('members_list').getStore();
+                            var members_already_chosen = [];
+                            var to_delete = [];
+                            for (var x=0; x < members.getCount(); x++) {
+                                members_already_chosen.push(members.getAt(x).get('id'));
+                            } 
+                            for (var x=0; x < this.getCount(); x++) {
+                                var r = this.getAt(x);
+                                for (var y=0; y<members_already_chosen.length; y++) {
+                                    if (r.get('id') == members_already_chosen[y]) {
+                                        to_delete.push(r);
+                                        break;
+                                    }
+                                }
+                            }
+                            for (var x=0; x < to_delete.length; x++) {
+                                this.remove(to_delete[x]);
+                            }
+                            
+                            if (this.getCount() > 0) {
+                                win.show();                            
+                            }
+                            else {
+                                Ext.MessageBox.alert('Error', 'No more users available');
+                            }
+                        });
+                    }
+                }, {
+                    text: 'Remove',
+                    iconCls: 'clear_icon',
+                    handler: function() {
+						var selection = Ext.getCmp('members_list').getSelectionModel().getSelections();
+						for (var s=0; s < selection.length; s++) {
+						    if (selection[s].get('editable')) {
+                                Ext.getCmp('members_list').getStore().remove(selection[s]);
+                            }
+                        }
+                    }
+                }]
+        });
+        var win = new Ext.Window({
+            layout: 'fit',
+            constrain: true,
+            plain: true,
+            modal: true,
+            width: 800,
+            height: 400,
+            id: 'members_conf',
+            title: 'Members configuration',
+            items    : [members_panel],
+            buttons: [{
+                text: 'Save',
+                handler: function() {
+                    var ws_members = Ext.getCmp('members_list').getStore();
+                    var permissions = [];
+                    for (var x = 0; x < ws_members.getCount(); x++) {
+                        permissions.push(ws_members.getAt(x).data);
+                    }
+					Ext.Ajax.request({
+				        url: '/save_members/',
+		                params: {ws_id: current_ws, permissions: Ext.encode(permissions)},
+				        success: function(data){
+                            Ext.MessageBox.alert('OK', 'Changes saved successfully.');
+				        },
+						failure: function() {
+							Ext.MessageBox.alert('Error', 'An error occured while saving configuration.');
+						}
+				    });                
+                }                            
+            }, {
+                text: 'Close',
+                handler: function() {
+                    Ext.getCmp('members_conf').close();    
+                }                            
+            }]            
+        });
+        
+        win.show();
+        
+    };
+    
+    var delete_items_selection = function(selected, multiple_ws) {
+
+        var on_delete_success = function(resp) {
+	        if (resp.inbox_to_reload){
+                var inbox = Ext.getCmp('inbox_tree');
+                var inbox_node = inbox.getRootNode().findChild( 'text', resp.inbox_to_reload);
+                var expanded = inbox_node.isExpanded();
+                inbox.getLoader().load(inbox_node, function(){
+                    if (expanded) {
+                        inbox_node.expand();
+                    }
+                });
+
+            }
+
+			Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload();
+            Ext.MessageBox.alert('Success', 'Object(s) deleted successfully.');
+
+		};
+
+        var form_url = '/delete_item/';
+
+        var buttons = [
+            {
+                text: 'OK', 
+                handler: function() {
+                    var f = Ext.getCmp('form').form;
+                    if (f.isValid()) {
+                        f.setValues({items_name:selected});
+                        f.submit({waitMsg:'Deleting...', method: "POST", success: function(form, action) {
+                            
+							var resp = Ext.decode(action.response.responseText);
+							on_delete_success(resp);
+
+				            Ext.getCmp('action_win').close();
+
+                            }, failure: function() {Ext.MessageBox.alert('Error', 'An error occured while removing items.');}});
+                    }else{
+                        Ext.MessageBox.alert('Error', 'Please fill all the fields and try again.');
+                    }
+                }
+            },{
+                text: 'Cancel',
+                handler: function() {
+                   Ext.getCmp('action_win').close();
+                }
+            }];
+
+        if (multiple_ws) {
+	       var removal_options = {
+	           xtype: 'radiogroup',
+	           fieldLabel: 'Delete from:',
+	           items: [
+	               {boxLabel: 'Current workspace', name: 'choose', inputValue: 'current_w', checked: true},
+	               {boxLabel: 'All workspaces', name: 'choose', inputValue: 'all_w'}
+	           ]
+	       };
+
+	       var items = [removal_options, new Ext.form.Hidden ({name: 'item_id', value: selected})];
+
+	       var form = new Ext.form.FormPanel({
+	           labelWidth: 65,
+	           url: form_url,
+	           bodyStyle:'padding:5px 5px 0',
+	           width: 350,
+	           height: 100,
+	           frame: true,
+	           id: 'form',
+	           items: items,
+	           buttons: buttons
+
+	       });
+
+	       var win = new Ext.Window({
+	           title: "Delete item(s)",
+	           closable: true, 
+                constrain: true,
+	           modal: true, 
+	           layout: 'fit',
+	           items: [form],
+	           id: 'action_win',
+	           listeners: {
+	               close: function() {Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload();}
+	           }
+	       });
+
+	       win.show();
+
+        }
+        else {
+	
+	        Ext.MessageBox.confirm('Confirm', 'Are you sure you want to delete the selected item(s)?', function(btn) {
+				if (btn == 'yes') {
+					Ext.Ajax.request({
+				        url: form_url,
+		                params: {item_id: selected, choose: 'current_w'},
+				        success: function(data){
+				            data = Ext.decode(data.responseText);
+							on_delete_success(data);
+				        },
+						failure: function() {
+							Ext.MessageBox.alert('Error', 'An error occured while removing items.');
+						}
+				    });
+				}
+            });
+	
+		}
+
+    };
+
+    var call_back_delete = function(btn){
+        if (btn == 'yes'){ 
+                                
+            Ext.Ajax.request({
+               url: '/delete_ws/' + ws.id + '/',
+               method: 'GET',
+                success: function(){
+                    ws.deleted = true;
+                    ws_store.load();
+                }
+            });
+        }
+        
+    };
+        
+    var switch_menu;
+    
+    
+    var states_menu = new Ext.menu.Menu({
+        id:'states_menu',
+        items: []        
+    });    
+            
+    var ws_menu =  function() {
+//        switch_menu = new Ext.menu.Menu({
+//            id: 'switch_ws_menu',
+//            items:[]
+//        });
+        
+        return new Ext.menu.Menu({
+            id: 'wsMenu',
+            items: [
+                {
+                    id: 'new_ws_menu',
+                    text: 'New',
+                    handler: function(){edit_ws(true);}
+    
+                },
+                
+                { id: 'delete_ws_menu',
+                    text: 'Delete',
+                    handler: function() {
+                        Ext.Ajax.request({
+                            url: '/get_n_items/',
+                            success: function(resp){
+                                var resp = Ext.decode(resp.responseText);
+                                if (resp.n_items) {
+                                    Ext.MessageBox.alert('Attention', 'Deletion failed. Current workspace is not empty, please move or delete the items before');
+                                }
+                                else {
+                                    Ext.MessageBox.confirm('Confirm', "Are you sure you remove this workspace? ", call_back_delete);
+                                }
+                            }
+                            
+                        });
+                    }
+                },
+//                {
+//                    id:'set_current_menu',
+//                    text: 'Set current',
+//                    
+////                    menu: switch_menu
+//                },
+                
+                 {
+                    id: 'preferences_menu',
+                    text: 'Configuration',
+                    menu:{
+                        items:[{
+                                text: 'Descriptors',
+                                handler: open_config_descriptors
+                            
+                            }, 
+                        { text: 'Members',                                                      
+                            handler: members_configuration                    
+                            
+                            }, { text: 'Preferences',
+                            handler: function(){ open_ws_pref(); }
+                        
+                            },
+                        { text: 'Variants',                                                      
+                            handler: variants_prefs 
+                            
+                            }
+                        ]
+                    }
+                }            
+            ]
+        });
+    };
+
+    var edit_menu = new Ext.menu.Menu({
+        id: 'editMenu',
+        items: [
+            {
+                text: 'Select All',
+                handler: function() {
+                    var view = Ext.getCmp('media_tabs').getActiveTab().getComponent(0);
+                    
+                    view.selectRange(view.getStore().lastOptions['start'], view.getStore().lastOptions.params['start']+view.getStore().lastOptions.params['limit']);
+                    
+                }
+            },
+            
+            {
+                text: 'Clear selection',
+                handler: function() {
+                    Ext.getCmp('media_tabs').getActiveTab().getComponent(0).clearSelections();
+
+                }
+            }
+           
+            ]
+        }
+    );
+    
+    var menu = new Ext.menu.Menu({
+        id: 'mainMenu',
+        items: [
+            {
+                id:'new_item_menu',
+                text: 'New',
+                handler: function() {
+                    calculatePageSize();
+                    var metadata_upload_store = new Ext.data.JsonStore({
+                        url:'/get_metadata_upload/',
+                        fields: ['name', 'pk'],
+                        root: 'schemas'
+                        });
+                    metadata_upload_store.load({
+                        callback: function(){
+                            var fields = [];
+                            this.each(function(){fields.push(this);});
+                            var up = new Upload(fields);
+                            up.openUpload();
+                            }
+                        });
+                }
+            }, {
+                text: 'Copy to...',
+                id: 'addto',
+                disabled: true,
+                menu:  cp_ws_menu
+            },
+            {
+                text: 'Move to...',
+                id: 'mvto',
+                disabled: true,
+                menu: mv_ws_menu
+            },
+            {
+                id:'remove_from_ws',
+                text: 'Delete',
+                disabled: true,
+                handler: function() {
+                    var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
+                    var selNodes= view.getSelectedNodes();
+                    if(selNodes && selNodes.length > 0){ 
+                        var selected_ids = [];
+                        for (var i=0; i < selNodes.length; i++) {
+                            var data = view.store.getAt(view.store.find('pk', selNodes[i].id)).data;
+                            selected_ids.push(data.pk);
+                        }
+
+						Ext.Ajax.request({
+					        url: '/check_item_wss/',
+			                params: {item_id: selected_ids},
+					        success: function(data){
+					            var data = Ext.decode(data.responseText);
+		                        delete_items_selection(selected_ids, data.multiple_ws);
+					        }
+					    });
+
+                    }
+                    else {
+                        Ext.MessageBox.alert('Error', 'Be serious man... you have selected no items!');
+                    }
+                }
+            },
+             {
+                text:'Set state to',
+                id: 'set_state_to',
+                menu: states_menu,
+                disabled: true
+            }
+            
+        ]
+    });
+
+    var help = new Ext.menu.Menu({
+        id: 'helpMenu',
+        items: [{
+            text: 'Tutorial',
+            handler: function() {
+                window.open('http://www.notre-dam.org/NotreDAM/QuickGuide.html', 'tutorial');
+            }
+        }, {
+            text: 'Info',
+            id: 'whoami',
+            handler: function() {
+                var win = new Ext.Window({
+                        constrain: true,
+                        modal: true,
+                        resizable: false,
+                        width: 400,
+                        title: 'NotreDAM Info',
+                        html: '<div>NotreDAM Beta, Copyright 2009, <a href="http://www.sardegnaricerche.it/" target="_blank">Sardegna Ricerche.</a></div><div>Web site: <a href="http://www.notre-dam.org/" target="_blank">http://www.notre-dam.org/</a></div><div>Email: <a href="mailto:labcontdigit@sardegnaricerche.it">labcontdigit@sardegnaricerche.it</a> </div><br/><div>NotreDAM is released under the <a href="http://www.gnu.org/licenses/gpl.html" target="_blank">GPL v.3 license</a>.</div><div>Open-sourced works used: <p><a href="http://www.extjs.com" target="_blank">ExtJS 3.0</a> (GPL v.3 license)</p><p><a href="http://www.flowplayer.org" target="_blank">FlowPlayer 3.1.5</a> (GPL v.3 license)</p><p><a href="http://www.famfamfam.com/lab/icons/silk/" target="_blank">Silk Icons</a> (Creative Commons Attribution)</p><p>MapIconMaker and DragZoom js script (Apache License 2.0)</p></div><br/><div>More information can be found in the license headers of the source files<br/> or in the LICENSE file included in this release.</div>'
+                            
+                });
+                win.show();
+            }
+        }]
+    });
+    function create_toolbar(){
+        var tb = new Ext.Toolbar();
+        var style_tb = 'font-size: 11px; font-weight:bold; color:#15428B; font-family: sans-serif';
+        
+//        var style_tb = 'font-size: 12px; font-family: sans-serif';
+        
+        
+        tb.add({
+                text:'<span style="' + style_tb + '">Object</span>',
+                menu: menu, 
+                id: 'object_menu'
+            }, '-',
+            {
+                text:'<span style="' + style_tb + '">Edit</span>',
+                menu: edit_menu,
+                style: '',
+                id: 'edit_menu'
+            }, '-',
+            {
+                text:'<span style="' + style_tb + '">Workspace</span>',
+                menu: ws_menu()
+            }, '-',
+            {
+                text:'<span style="' + style_tb + '">Help</span>',
+                menu: help 
+            }
+        );
+        tb.render('toolbar');
+        
+        switch_menu = new Ext.menu.Menu({
+            id: 'switch_ws_menu',
+            items:[],
+            listeners:{
+            	itemclick: function(item){
+            		Ext.getCmp('switch_ws_tb').setText(item.text );
+            	
+            	}
+            	
+            }
+        });
+        
+        var switch_ws_tb = new Ext.Toolbar({
+            cls: 'x-box-layout-ct custom-tb'
+            });
+        
+//        switch_ws_tb.add(new Ext.menu.TextItem({
+//        		text: 'Workspace:'
+//        	})
+//        );
+        
+        
+//        switch_ws_tb.add('Workspace: ');
+        switch_ws_tb.add({
+        		id: 'switch_ws_tb',
+        		text: '',
+                cls: 'switch-ws-button',
+        		menu: switch_menu,        	
+                tooltip: 'set current workspace'
+        });
+        switch_ws_tb.render('switch_ws_bar');
+
+//        var switch_ws_tb = new Ext.Button({
+//        	id: 'switch_ws_tb',
+////        	applyTo: 'switch_ws_bar',
+//        	text: '',
+//        	menu: switch_menu,  
+//        	
+//        });
+//        switch_ws_tb.render('switch_ws_bar');
+    }
+    
+    
+    create_toolbar();
+    
+    ws_store.on('load', function(){
+    	
+        if (ws.deleted){ //a ws has been just deleted        	            
+            var ws_record = ws_store.getAt(0);
+            switch_ws(ws_record);
+            ws.deleted = false;
+            }
+        
+        
+        Ext.getCmp('switch_ws_tb').setText(ws.name);        
+        switch_menu.removeAll();
+        
+            
+        
+        ws_store.each(function(r){
+            var checked;
+            if (ws.id == r.data.pk) {
+                checked = true;
+            }
+            else{
+                checked = false;
+                cp_ws_menu.add(
+                    new Ext.menu.Item({
+                        text: r.data.name,
+                        record: r,
+                        handler:function(ci){
+                            var selected_ids = get_selected_items();
+                            Ext.Ajax.request({
+                                url: '/add_items_to_ws/',
+                                params:{
+                                    ws_id: ci.record.data.pk,
+                                    remove:false,
+                                    item_id: selected_ids
+                                    
+                                    },
+                                success: function() {
+                                    Ext.MessageBox.alert('Success', 'Item(s) copied successfully.');
+                                }
+                                
+                            });
+                        }
+                    })
+                );
+            
+                mv_ws_menu.add(
+                    new Ext.menu.Item({
+                        text: r.data.name,
+                        record: r,
+                        handler:function(ci){
+                            var selected_ids = get_selected_items();
+                            Ext.Ajax.request({
+                                url: '/add_items_to_ws/',
+                                params:{
+                                    ws_id: ci.record.data.pk,
+                                    remove:true,
+                                    item_id: selected_ids
+                                    },
+                                success: function(){
+                                    var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];                                        
+                                    view.getStore().reload();
+                                    Ext.MessageBox.alert('Success', 'Item(s) moved successfully.');
+                                }
+                            });
+                        }
+                    })
+                );
+            }
+            
+            switch_menu.add(
+                new Ext.menu.CheckItem(
+                {
+                    text: r.data.name,
+                    checked: checked,
+                    group: 'ws_menu',
+                    handler: function(ci){switch_ws(ci.record);},
+                    record: r
+                })
+            );
+        });
+        
+    });
+
+    ws_state_store.on('load', function(){
+        ws_permissions_store.load();
+    
+        states_menu.removeAll();
+        
+        var set_state_to = Ext.getCmp('object_menu').menu.items.get('set_state_to');
+        if (this.getCount() > 0){
+            set_state_to.show();
+            this.each(function(r){            
+                this.add(
+                    new Ext.menu.CheckItem({
+                        text: r.data.name,
+                        record: r,
+                        id: 'state_' + r.data.pk,
+                        group:'states',
+                        handler:function(ci){
+                            var tab = Ext.getCmp('media_tabs').getActiveTab();
+                            var view = tab.getComponent(0);
+                            var selected_records =  view.getSelectedRecords();
+                            var items = [];
+                            for (var i = 0; i < selected_records.length; i++) {
+                                var item_data = selected_records[i].data;
+                                items.push(item_data.pk);
+                            }
+                            Ext.Ajax.request({
+                                url:'/set_state/',
+                                params:{
+                                    item_id:items,
+                                    state_id: ci.record.data.pk
+                                },
+                                scope: ci,
+                                success:function(){
+                                var state_id = this.id.split('_')[1];
+                                for (var i = 0; i < selected_records.length; i++) {
+                                    selected_records[i].set('state', state_id);                              
+                                    
+                                }
+                                showDetails(view);
+                                    
+                                    
+                                        
+                                }
+                            });
+                            
+                        }
+                    })
+                );
+            
+            
+            }, states_menu);
+    }
+    else
+        set_state_to.hide();
+    
+    }, ws_state_store);
+    
+
+});
