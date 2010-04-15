@@ -19,7 +19,7 @@ from django.db import models
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
-    actions = models.ManyToManyField('Action', through = 'Action2Script')
+    actions = models.ManyToManyField('Action', through = 'ActionToScript')
     workspace = models.ForeignKey('workspace.Workspace')
     event = models.ForeignKey('eventmanager.EventRegistration',  null = True,  blank = True)
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
@@ -31,19 +31,19 @@ class Action(models.Model):
     
 
 
-class ActionParameter(models.Model):
+class Parameter(models.Model):
     name = models.CharField(max_length = 50)
     caption = models.CharField(max_length = 100)
     
-class Action2Script(models.Model):
+class ActionToScript(models.Model):
     action = models.ForeignKey('Action')
     script = models.ForeignKey('Script')
-    parameters = models.ManyToManyField('Parameter2Action')
+    parameters= models.ManyToManyField('ParameterToAction',  related_name = 'parameter_values',  null = True,  blank = True)
     
     
-class Parameter2Action(models.Model):
-    parameter = models.ForeignKey('ActionParameter')
-    action2script = models.ForeignKey('Action2Script')
+class ParameterToAction(models.Model):
+    parameter = models.ForeignKey('Parameter')
+    ActionToScript = models.ForeignKey('ActionToScript')
     value = models.CharField(max_length = 50)
     
     
