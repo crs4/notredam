@@ -198,10 +198,12 @@ def flex_upload(request):
 
     type = guess_media_type(upload_file.name)
 
-    t = threading.Thread(target=save_uploaded_item,
-            args=[request, upload_file, user, workspace])
-    t.setDaemon(True)
-    t.start()
+    save_uploaded_item(request, upload_file, user, workspace)
+
+#     t = threading.Thread(target=save_uploaded_item,
+#             args=[request, upload_file, user, workspace])
+#     t.setDaemon(True)
+#     t.start()
 
     resp = simplejson.dumps({})
     return HttpResponse(resp)

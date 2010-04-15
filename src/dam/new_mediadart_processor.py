@@ -31,8 +31,6 @@ import shutil
 import uuid
 import time
 
-os.environ['USE_TWISTED'] = '1'
-
 from django.db.models import Q
 from django.db import reset_queries
 from django.contrib.contenttypes.models import ContentType
@@ -79,9 +77,9 @@ def add(component, machine):
     component._id = res_id
     component.save()
     machine_to_next_state(machine)
-    
+
 def embed_xmp(component, machine):
-    
+
     def embedding_cb(result, component, machine):
         if result:
             reset_modified_flag(component)
@@ -94,7 +92,7 @@ def embed_xmp(component, machine):
     d = xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
 
     d.addCallbacks(embedding_cb, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
-        
+
 def adapt_resource(component, machine):
 
     def save_and_extract_features(result, component, machine):
@@ -106,7 +104,7 @@ def adapt_resource(component, machine):
             machine_to_next_state(machine)
 
     logger.debug("[Adaptation.execute] component %s" % component.ID)
-  
+
     adapter_proxy = Proxy('Adapter') 
 
     item = component.item
