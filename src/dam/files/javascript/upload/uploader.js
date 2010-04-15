@@ -68,7 +68,6 @@ var Upload = function() {
             progressBar.updateProgress(value, value_text);
         }
 
-    
     };
 
     this.fileQueuedHandler = function(file) {
