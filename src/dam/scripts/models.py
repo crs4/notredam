@@ -19,32 +19,44 @@ from django.db import models
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
-    actions = models.ManyToManyField('Action', through = 'ActionToScript')
+    actions = models.ManyToManyField('Action', through = 'ActionScriptAssociation')
     workspace = models.ForeignKey('workspace.Workspace')
     event = models.ForeignKey('eventmanager.EventRegistration',  null = True,  blank = True)
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
     
-class Action(models.Model):
-    name = models.CharField(max_length = 50)
-    previous_action = models.ForeignKey('self',  null = True,  blank = True)
-    command = models.CharField(max_length = 200)
+    def __unicode__(self):
+        return unicode(self.name)
+        
     
-
+class Action(models.Model):
+  
+    name = models.CharField(max_length = 50)
+    command = models.CharField(max_length = 200)
+    media_type = models.ManyToManyField('application.Type')
+    
+    def __unicode__(self):
+        return unicode(self.name)
 
 class Parameter(models.Model):
     name = models.CharField(max_length = 50)
     caption = models.CharField(max_length = 100)
     
-class ActionToScript(models.Model):
+    def __unicode__(self):
+        return unicode(self.name)
+
+class ActionScriptAssociation(models.Model):
     action = models.ForeignKey('Action')
     script = models.ForeignKey('Script')
+    action_position = models.SmallIntegerField()
     parameters= models.ManyToManyField('ParameterToAction',  related_name = 'parameter_values',  null = True,  blank = True)
     
+    class Meta:
+        unique_together = ('script', 'action_position' )
     
 class ParameterToAction(models.Model):
     parameter = models.ForeignKey('Parameter')
-    ActionToScript = models.ForeignKey('ActionToScript')
+    ActionScriptAssociation = models.ForeignKey('ActionScriptAssociation')
     value = models.CharField(max_length = 50)
     
-    
-    
+    def __unicode__(self):
+        return unicode(self.parameter.name)
