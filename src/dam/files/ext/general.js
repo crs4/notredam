@@ -198,8 +198,10 @@ function get_selected_items(){
     if(selNodes && selNodes.length > 0){ 
         var selected_ids = [];
         for (var i=0; i < selNodes.length; i++) {
-            var data = view.store.getAt(view.store.find('pk', selNodes[i].id)).data;
+            console.log(selNodes[i].id);
+            var data = view.store.getAt(view.store.findExact('pk', selNodes[i].id)).data;
             selected_ids.push(data.pk);
+            console.log(data.pk);
         }
     
     }

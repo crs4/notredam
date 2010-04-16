@@ -70,12 +70,12 @@ def machine_to_next_state(machine):
         execute_state(machine)
 
 def add(component, machine):
-    res_id = new_id(component.file_name)
-    print res_id
-    shutil.copy2(component._id, os.path.join('/tmp/prova/', res_id))
-    print 'copied!'
-    component._id = res_id
-    component.save()
+#     res_id = new_id(component.file_name)
+#     print res_id
+#     shutil.copy2(component._id, os.path.join('/tmp/prova/', res_id))
+#     print 'copied!'
+#     component._id = res_id
+#     component.save()
     machine_to_next_state(machine)
 
 def embed_xmp(component, machine):

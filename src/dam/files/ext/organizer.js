@@ -178,7 +178,7 @@ var store_nodes_checked = new Ext.data.JsonStore({
 var current_item_selected;
 
 function showFullscreen(view, index, node, e){
-    var data = view.store.getAt(view.store.find('pk', node.id)).data;
+    var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
         
     Ext.Ajax.request({
         url:'/get_component_url/'+data.pk+'/fullscreen/',
@@ -470,7 +470,7 @@ var showDetails = function(view){
             set_state_to.enable();
         
         var selNode = selNodes[0];            
-        var data = view.store.getAt(view.store.find('pk', selNode.id)).data;
+        var data = view.store.getAt(view.store.findExact('pk', selNode.id)).data;
         if (selNodes.length == 1 && data.state){
             var state_id = 'state_' + data.state;
             var state= Ext.getCmp(state_id);
@@ -1304,8 +1304,8 @@ Ext.onReady(function(){
                         if (view) {
                             var store = view.getStore();
                             for (var i in update_items) {
-                                if (store.find('pk', i) != -1) {
-                                    var item_data = store.getAt(store.find('pk', i));
+                                if (store.findExact('pk', i) != -1) {
+                                    var item_data = store.getAt(store.findExact('pk', i));
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = update_items[i]['thumb'];
                                     for (var key in update_items[i]) {
