@@ -127,7 +127,7 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
 
     comp = _create_variant(variant,  item, workspace)
     
-    comp.file_name=file_name
+    comp.file_name = file_name
     comp._id = res_id
     
     mime_type = mimetypes.guess_type(file_name)[0]
@@ -162,7 +162,8 @@ def save_uploaded_item(request, upload_file, user, workspace):
 
     upload_file.rename(extension)
 
-    res_id = upload_file.get_filename()
+    uploaded_fname = upload_file.get_filename()
+    path, res_id = os.path.split(uploaded_fname)
     file_name = upload_file.name
     
     item_ctype = ContentType.objects.get_for_model(Item)
@@ -189,7 +190,8 @@ def save_uploaded_variant(request, upload_file, user, workspace):
 
     upload_file.rename(extension)
 
-    res_id = upload_file.get_filename()
+    uploaded_fname = upload_file.get_filename()
+    path, res_id = os.path.split(uploaded_fname)
     file_name = upload_file.name    
             
     save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
