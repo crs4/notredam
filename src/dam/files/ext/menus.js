@@ -560,19 +560,8 @@ Ext.onReady(function(){
                 text: 'New',
                 handler: function() {
                     calculatePageSize();
-                    var metadata_upload_store = new Ext.data.JsonStore({
-                        url:'/get_metadata_upload/',
-                        fields: ['name', 'pk'],
-                        root: 'schemas'
-                        });
-                    metadata_upload_store.load({
-                        callback: function(){
-                            var fields = [];
-                            this.each(function(){fields.push(this);});
-                            var up = new Upload(fields);
-                            up.openUpload();
-                            }
-                        });
+                    var up = new Upload();
+                    up.openUpload();
                 }
             }, {
                 text: 'Copy to...',
@@ -609,11 +598,7 @@ Ext.onReady(function(){
                     var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
                     var selNodes= view.getSelectedNodes();
                     if(selNodes && selNodes.length > 0){ 
-                        var selected_ids = [];
-                        for (var i=0; i < selNodes.length; i++) {
-                            var data = view.store.getAt(view.store.find('pk', selNodes[i].id)).data;
-                            selected_ids.push(data.pk);
-                        }
+                        var selected_ids = get_selected_items();
 
 						Ext.Ajax.request({
 					        url: '/check_item_wss/',

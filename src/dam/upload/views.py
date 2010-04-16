@@ -42,6 +42,7 @@ from dam.application.views import get_component_url
 from dam.application.models import Type
 from dam.variants.views import _create_variant
 from dam.upload.models import UploadURL
+from dam.upload.uploadhandler import StorageHandler
 
 import logger
 
@@ -122,16 +123,48 @@ def get_flex_upload_url(request):
     resp = simplejson.dumps({'urls': urls})
     return HttpResponse(resp)
     
+def save_uploaded_component(request, res_id, file_name, variant, item, user, workspace):
+
+    comp = _create_variant(variant,  item, workspace)
+    
+    comp.file_name=file_name
+    comp._id = res_id
+    
+    mime_type = mimetypes.guess_type(file_name)[0]
+        
+    ext = mime_type.split('/')[1]
+    comp.format = ext
+    comp.save()
+
+    default_language = get_metadata_default_language(user)
+    
+    for key in request.POST.keys():
+        if key.startswith('metadata'):
+            value = request.POST[key]
+            metadata_id = key.split('_')[-1]
+            descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
+            save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
+
+    metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
+    orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
+
+    try:
+        generate_tasks(variant, workspace, item, 1)
+    except Exception, ex:
+        print traceback.print_exc(ex)
+        raise    
+    
 def save_uploaded_item(request, upload_file, user, workspace):
 
     type = guess_media_type(upload_file.name)
 
-    destination = tempfile.NamedTemporaryFile(delete=False)
-    for chunk in upload_file.chunks():
-        destination.write(chunk)
-    destination.close()
-    register_resource = destination.name
+    fname, extension = os.path.splitext(upload_file.name)
 
+    upload_file.rename(extension)
+
+    res_id = upload_file.get_filename()
+    file_name = upload_file.name
+    
     item_ctype = ContentType.objects.get_for_model(Item)
     
     item = Item.objects.create(uploader = user,  type = type)
@@ -142,68 +175,65 @@ def save_uploaded_item(request, upload_file, user, workspace):
         
     variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
             
-    comp = _create_variant(variant,  item, workspace)
-    
-    comp.file_name=upload_file.name
-    comp._id = register_resource
-    
-    logger.debug('comp._id %s'%comp._id )
-    mime_type = mimetypes.guess_type(upload_file.name)[0]
-    
-    ext = mime_type.split('/')[1]
-    comp.format= ext
-    comp.save()
-    
-    logger.debug('mime_type  %s'%mime_type )
+    save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
 
-    for key in request.POST.keys():
-        if key.startswith('metadata'):
-            value = request.POST[key]
-            metadata_id = key.split('_')[-1]
-            descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
-            default_language = get_metadata_default_language(user)
-            save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
+def save_uploaded_variant(request, upload_file, user, workspace):
 
-    metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.pk, content_type=item_ctype, value=mime_type)
-    orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
+    variant_id = request.POST['variant_id']
+    item_id = request.POST['item_id']
 
-    try:
-        generate_tasks(variant, workspace, item, 1)
-    except Exception, ex:
-        print traceback.print_exc(ex)
-        raise    
+    variant =  Variant.objects.get(pk = variant_id)
+    item = Item.objects.get(pk = item_id)
     
-def flex_upload(request):
+    fname, extension = os.path.splitext(upload_file.name)
 
-    from mediadart.storage import Storage
-    import threading
+    upload_file.rename(extension)
 
-    print request.POST
-    
-    url = request.POST['unique_url']
-    
+    res_id = upload_file.get_filename()
+    file_name = upload_file.name    
+            
+    save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
+
+def get_user_ws_from_url(url):
+
     find_url = UploadURL.objects.get(url=url)
-
     user = find_url.user
     workspace = find_url.workspace
 
     find_url.delete()
 
-    print request.POST
+    return (user, workspace)
+    
+def upload_item(request):
 
+    from mediadart.storage import Storage
+
+    request.upload_handlers = [StorageHandler()]
+
+    print "ghirozza"
+    
+    url = request.POST['unique_url']
     upload_file = request.FILES['Filedata']
-
-    print upload_file.name
-
-    type = guess_media_type(upload_file.name)
+    
+    user, workspace = get_user_ws_from_url(url)
 
     save_uploaded_item(request, upload_file, user, workspace)
 
-#     t = threading.Thread(target=save_uploaded_item,
-#             args=[request, upload_file, user, workspace])
-#     t.setDaemon(True)
-#     t.start()
+    resp = simplejson.dumps({})
+    return HttpResponse(resp)
+
+def upload_variant(request):
+
+    from mediadart.storage import Storage
+
+    request.upload_handlers = [StorageHandler()]
+
+    url = request.POST['unique_url']    
+    upload_file = request.FILES['Filedata']
+    
+    user, workspace = get_user_ws_from_url(url)
+
+    save_uploaded_variant(request, upload_file, user, workspace)        
 
     resp = simplejson.dumps({})
     return HttpResponse(resp)

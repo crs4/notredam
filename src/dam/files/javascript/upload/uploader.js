@@ -1,5 +1,5 @@
 
-var Upload = function() {
+var Upload = function(upload_url, single_file, post_params, done_callback) {
 
     this.record_entries = [    
         {name:'queue_id', type: 'int'},    
@@ -292,12 +292,12 @@ var Upload = function() {
                         element.child('em').insertFirst({tag: 'span', id: 'btnUploadHolder'});                    
     
                         var settings_object = {
-                            upload_url : "/flex_upload/",
+                            upload_url : upload_url ? upload_url : "/upload_item/",
                             flash_url : "/files/javascript/swfupload/swfupload.swf",
-                            file_queue_limit : 0,
+                            file_upload_limit : single_file ? 1 : 0, 
                             button_placeholder_id: "btnUploadHolder",
                             button_window_mode: SWFUpload.WINDOW_MODE.TRANSPARENT,
-                            button_action : SWFUpload.BUTTON_ACTION.SELECT_FILES,
+                            button_action : single_file ? SWFUpload.BUTTON_ACTION.SELECT_FILE : SWFUpload.BUTTON_ACTION.SELECT_FILES,
                             button_width: element.getWidth(),
                             button_height: element.getHeight(),
                             file_queued_handler : obj.fileQueuedHandler,
@@ -306,6 +306,7 @@ var Upload = function() {
                             upload_success_handler: obj.uploadSuccessHandler,
                             queue_complete_handler: obj.queueCompleteHandler,
                             upload_start_handler: obj.uploadStartHandler,
+                            post_params: post_params ? post_params : {},
                             custom_settings: {
                                 uploader: obj
                             }
@@ -335,8 +336,7 @@ var Upload = function() {
                             var file;
                             for (var i=0; i < queued; i++) {
                                 file = obj.swfu.getFile(i);
-                                obj.swfu.addFileParam(file.id, 'unique_url', urls[i]);                                
-                                console.log(urls[i]);
+                                obj.swfu.addFileParam(file.id, 'unique_url', urls[i]);
                             }
                             
                             obj.swfu.startUpload();

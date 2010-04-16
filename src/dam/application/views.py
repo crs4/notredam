@@ -90,7 +90,6 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
     """
     Looks for the component named variant_name of the item item_id in the given workspace and returns the component url 
     """
-    logger.debug('variant_name %s'%variant_name)    
     
     item = Item.objects.get(pk = item_id)
 #    logger.debug('workspace.get_variants() %s'%workspace.get_variants())
