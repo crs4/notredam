@@ -19,44 +19,61 @@ from django.db import models
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
-    actions = models.ManyToManyField('Action', through = 'ActionScriptAssociation')
+    description = models.CharField(max_length= 200)
+    pipeline = models.TextField()
     workspace = models.ForeignKey('workspace.Workspace')
     event = models.ForeignKey('eventmanager.EventRegistration',  null = True,  blank = True)
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
     
     def __unicode__(self):
         return unicode(self.name)
+    
+    def create_state_machine(self):
+        pass
+    class Meta:
+        unique_together = ('name', 'workspace' )
+        
+class Action:
+    inputs_media_type = []
+    def __init__(self, inputs,parameters):
+        self.inputs = inputs
+        self.parameters = parameters
+    def execute(self):
+        pass
+    
+class Resize(Action):
+    inputs_media_type = []
         
     
-class Action(models.Model):
-  
-    name = models.CharField(max_length = 50)
-    command = models.CharField(max_length = 200)
-    media_type = models.ManyToManyField('application.Type')
-    
-    def __unicode__(self):
-        return unicode(self.name)
-
-class Parameter(models.Model):
-    name = models.CharField(max_length = 50)
-    caption = models.CharField(max_length = 100)
-    
-    def __unicode__(self):
-        return unicode(self.name)
-
-class ActionScriptAssociation(models.Model):
-    action = models.ForeignKey('Action')
-    script = models.ForeignKey('Script')
-    action_position = models.SmallIntegerField()
-    parameters= models.ManyToManyField('ParameterToAction',  related_name = 'parameter_values',  null = True,  blank = True)
-    
-    class Meta:
-        unique_together = ('script', 'action_position' )
-    
-class ParameterToAction(models.Model):
-    parameter = models.ForeignKey('Parameter')
-    ActionScriptAssociation = models.ForeignKey('ActionScriptAssociation')
-    value = models.CharField(max_length = 50)
-    
-    def __unicode__(self):
-        return unicode(self.parameter.name)
+#class Action(models.Model):  
+#    name = models.CharField(max_length = 50)
+#    command = models.CharField(max_length = 200)
+#    media_type = models.ManyToManyField('application.Type')
+#    parameters = models.ManyToManyField('Parameter')
+#    
+#    def __unicode__(self):
+#        return unicode(self.name)
+#
+#class Parameter(models.Model):
+#    name = models.CharField(max_length = 50)
+#    caption = models.CharField(max_length = 100)
+#    
+#    def __unicode__(self):
+#        return unicode(self.name)
+#
+#class ActionScriptAssociation(models.Model):
+#    action = models.ForeignKey('Action')
+#    script = models.ForeignKey('Script')
+#    action_position = models.SmallIntegerField()
+#    parameters= models.ManyToManyField('ParameterToAction',  related_name = 'parameter_values',  null = True,  blank = True)
+#    
+#    class Meta:
+#        unique_together = ('script', 'action_position' )
+#    
+#class ParameterToAction(models.Model):
+#    parameter = models.ForeignKey('Parameter')
+#    ActionScriptAssociation = models.ForeignKey('ActionScriptAssociation')
+#    value = models.CharField(max_length = 50)
+#    
+#    def __unicode__(self):
+#        return unicode(self.parameter.name)
