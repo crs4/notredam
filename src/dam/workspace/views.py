@@ -850,13 +850,20 @@ def get_workspaces(request):
                 'inbox_root_id':inbox_root.pk
             }
             
-#            if request.session.__contains__('media_type'):
-#                 media_types_selected = request.session['media_type']
-#            else:
-#                media_types_selected = ['image', 'video', 'audio', 'doc']
-#                request.session['media_type'] = media_types_selected  
+            default_media_types_selected = ['image', 'video', 'audio', 'doc']
+           
+            if request.session.__contains__('media_type'):  
+                              
+                if not request.session['media_type'].__contains__(ws.pk):
+                    request.session['media_type'][ws.pk] = default_media_types_selected  
+                                                  
+            else:                
+                request.session['media_type'] = {ws.pk: default_media_types_selected}  
             
-            media_types_selected = ['image', 'video', 'audio', 'doc']
+            request.session.modified = True
+            media_types_selected = request.session['media_type'][ws.pk]                  
+            
+#            media_types_selected = ['image', 'video', 'audio', 'doc']
             logger.debug('media_types_selected %s'%media_types_selected)
             tmp['media_type'] = media_types_selected
             
@@ -1281,10 +1288,20 @@ def load_items(request, view_type=None, unlimited=False, ):
             workspace = request.session['workspace']        
 
         media_type = request.POST.getlist('media_type')
+
+        logger.debug("request.session['media_type'] %s"%request.session['media_type']) 
+        
 #        save media type on session
-#        request.session['media_type'] = list(media_type)
+
+        if request.session.__contains__('media_type'):
+            request.session['media_type'][workspace.pk] = list(media_type)
+        else:
+            request.session['media_type']= {workspace.pk: list(media_type)}
             
-            
+        request.session.modified = True
+
+#            
+        logger.debug("request.session['media_type'] %s"%request.session['media_type'])    
         
 #        TODO: change movie - video, sigh 
         if 'video' in media_type:
