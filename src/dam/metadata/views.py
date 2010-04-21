@@ -40,10 +40,24 @@ from os import path
 import logger
 import re
 
+def add_sync_machine(component):
+
+    end = MachineState.objects.create(name='finished')
+
+    embed_action = Action.objects.create(component=component, function='embed_xmp')
+    embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action)
+
+    embed_state.next_state = end
+    embed_state.save()
+
+    embed_task = Machine.objects.create(current_state=embed_state, initial_state=embed_state)
+
 @login_required
 def sync_component(request):
 
     items = request.POST.getlist('items')
+    variants = request.POST.getlist('variants')
+
     workspace = request.session['workspace']
     
     for pk in items:
@@ -51,21 +65,17 @@ def sync_component(request):
         item = Item.objects.get(pk=pk)
     
         components = item.get_variants(workspace)
-    
-        original = components.filter(variant__name='original')[0]
-    
-        end = MachineState.objects.create(name='finished')
-    
-        embed_action = Action.objects.create(component=original, function='embed_xmp')
-        embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action)
-    
-        embed_state.next_state = end
-        embed_state.save()
-    
-        embed_task = Machine.objects.create(current_state=embed_state, initial_state=embed_state)
 
-    return HttpResponse('')
+        if 'all' in variants:
+            sync_comp = components
+        else:
+            sync_comp = components.filter(variant__name__in=variants)
+
+        for component in sync_comp:
+
+            add_sync_machine(component)
     
+    return HttpResponse('')
 
 def get_metadata_default_language(user, workspace=None):
     """
