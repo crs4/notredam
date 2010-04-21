@@ -157,7 +157,7 @@ class Pipe:
         
         
         actions_available = {}
-        
+        self.create_state_machine = False
         for subclass in BaseAction.__subclasses__():
             actions_available[subclass.__name__.lower()] = subclass
         
@@ -175,20 +175,22 @@ class Pipe:
                     params['source_variant'] = self.source_variant
                 
                 action = actions_available[type](params)
+                if isinstance(action, BaseMDAction):
+                    self.create_state_machine = True
             except:
                 raise ActionError('action %s does not exist'%type)
             self.actions.append(action)
             
         
     def execute(self, items):
-        adapt_parameters = {}  
-        for action in self.actions:
-            if isinstance(action, BaseMDAction):
-                adapt_parameters.update(action.get_adapt_parameters())
+          
+        create_state_machine = False
+        for action in self.actions:            
+                for item in items:                    
+                    action.execute(item)
         
-
-        
-        
+        if self.create_state_machine:
+            pass
 
 class BaseAction(object):
     required_params = []
@@ -203,6 +205,9 @@ class BaseAction(object):
                 
         self.parameters = parameters
        
+    def execute(self, item):
+        pass
+    
 class BaseMDAction(BaseAction):
     def get_adapt_parameters(self):
         pass
