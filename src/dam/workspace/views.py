@@ -171,7 +171,7 @@ def admin_workspace(request,  ws_id):
     ws = Workspace.objects.get(pk = ws_id)
     return _admin_workspace(request,  ws)
 
-def _create_workspace(ws, user,):
+def _create_workspace(ws, user):
     ws.creator = user 
     ws.save() 
     

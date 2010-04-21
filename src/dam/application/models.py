@@ -23,7 +23,7 @@ import hashlib
 
 class Type(models.Model):
     """
-    It contains the media type supported.
+    It contains the supported media type.
     """
     name =  models.CharField(max_length=30)
 

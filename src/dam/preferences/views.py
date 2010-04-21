@@ -94,6 +94,12 @@ def get_user_setting(user, setting, workspace=None):
     return value
  
 def _clear_preferences(obj, setting):
+    """
+    Returns the user value of the given setting, or the default value if user didn't make a choice yet  . 
+    @param user user instance of django.contrib.auth.User
+    @param setting setting instance of dam.preference.models.DAMComponentSetting
+    """
+
     if isinstance(obj, User):
         UserSetting.objects.filter(user=obj, component_setting=setting).delete()
     elif isinstance(obj, Workspace):
@@ -102,6 +108,14 @@ def _clear_preferences(obj, setting):
         SystemSetting.objects.filter(component_setting=setting).delete()
 
 def _create_preferences(obj, setting, value, choices):
+    """
+    Save the preference of the given obj (it can be a user, a workspace or None for system preferences)
+    @param obj an instance of django.contrib.auth.User or dam.workspace.models.Workspace or None
+    @param setting setting instance of dam.preference.models.DAMComponentSetting
+    @param value the value of the given setting
+    @param choices a list of choice
+    """
+
     if isinstance(obj, User):
         pref = UserSetting.objects.create(user=obj, component_setting=setting, value=value)
     elif isinstance(obj, Workspace):
@@ -113,6 +127,9 @@ def _create_preferences(obj, setting, value, choices):
         pref.user_choices.add(c)
 
 def _save_preference(request, obj):
+    """
+    Get the preference value from request.POST and save 
+    """
     for key in request.POST.keys():
         if key.startswith('pref__'):
             setting_id = key.split("__")[1]
@@ -142,6 +159,10 @@ def _save_preference(request, obj):
 
 @login_required
 def save_pref(request):
+    """
+    Save user preference
+    """
+
     try:
         user = User.objects.get(pk=request.session['_auth_user_id'])
         
@@ -154,6 +175,9 @@ def save_pref(request):
     
 @login_required
 def save_system_pref(request):
+    """
+    Save system preference (dam admin)
+    """
     try:
 
         _save_preference(request, None)
@@ -165,6 +189,9 @@ def save_system_pref(request):
 
 @login_required
 def save_ws_pref(request):
+    """
+    Save workspace preference
+    """
     try:
 
         workspace = request.session.get('workspace')
@@ -178,6 +205,9 @@ def save_ws_pref(request):
     
 @staff_member_required
 def get_admin_settings(request):
+    """
+    Get system settings (dam admin)
+    """
     settings = DAMComponentSetting.objects.all()
     data = {'prefs':[]}
     for s in settings:
@@ -188,6 +218,9 @@ def get_admin_settings(request):
 
 @login_required
 def get_ws_settings(request):
+    """
+    Get workspace settings
+    """
     workspace = request.session.get('workspace')
     settings = DAMComponentSetting.objects.filter(setting_level='W')
     data = {'prefs':[]}

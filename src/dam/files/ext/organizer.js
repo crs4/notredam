@@ -442,7 +442,7 @@ var showDetails = function(view){
         var edit_collection = ws_permissions_store.find('name', 'edit_collection') > -1;            
         var remove_item = ws_permissions_store.find('name', 'remove_item') > -1;
         var set_state = ws_permissions_store.find('name', 'set_state') > -1;
-            
+                        
         if (admin | remove_item){
             Ext.getCmp('mvto').enable();
             Ext.getCmp('remove_from_ws').enable();

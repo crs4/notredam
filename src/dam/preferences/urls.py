@@ -21,6 +21,9 @@ from django.conf.urls.defaults import *
 urlpatterns = patterns('',
     (r'^get_user_settings/$', 'dam.preferences.views.get_user_settings'),
     (r'^save_pref/$', 'dam.preferences.views.save_pref'),
+    (r'^save_system_pref/$', 'dam.preferences.views.save_system_pref'),
+    (r'^get_ws_settings/$', 'dam.preferences.views.get_ws_settings'),
+    (r'^save_ws_pref/$', 'dam.preferences.views.save_ws_pref'),    
     (r'^dam_admin/get_admin_settings/$', 'dam.preferences.views.get_admin_settings'),
     (r'^dam_admin/get_desc_groups/$', 'dam.preferences.views.damadmin_get_desc_groups'),
     (r'^dam_admin/get_desc_list/$', 'dam.preferences.views.damadmin_get_desc_list'),
@@ -49,8 +52,5 @@ urlpatterns = patterns('',
     (r'^dam_admin/get_ws_groups/$', 'dam.preferences.views.damadmin_get_ws_groups'),
     (r'^dam_admin/save_ws/$', 'dam.preferences.views.damadmin_save_ws'),
     (r'^dam_admin/delete_ws/$', 'dam.preferences.views.damadmin_delete_ws'),
-    (r'^save_system_pref/$', 'dam.preferences.views.save_system_pref'),
-    (r'^get_ws_settings/$', 'dam.preferences.views.get_ws_settings'),
-    (r'^save_ws_pref/$', 'dam.preferences.views.save_ws_pref'),
 
 )
