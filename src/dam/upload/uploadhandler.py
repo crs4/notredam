@@ -1,5 +1,5 @@
 """
-Base file upload handler classes, and the built-in concrete subclasses
+File upload handler classes
 """
 
 from django.core.files.uploadhandler import FileUploadHandler
@@ -10,7 +10,7 @@ import os
 
 class StorageUploadedFile(UploadedFile):
     """
-    A file uploaded to a temporary location (i.e. stream-to-disk).
+    An uploaded file will be saved to the mediaDART storage location
     """
     def __init__(self, name, content_type, size, charset):
         from mediadart.storage import new_id
@@ -40,7 +40,7 @@ class StorageUploadedFile(UploadedFile):
 
 class StorageHandler(FileUploadHandler):
     """
-    Upload handler that streams data into a storage file.
+    Upload handler that streams data into a file.
     """
     def __init__(self, *args, **kwargs):
         super(StorageHandler, self).__init__(*args, **kwargs)

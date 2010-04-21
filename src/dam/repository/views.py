@@ -56,13 +56,13 @@ def check_item_wss(request):
 
     return HttpResponse(simplejson.dumps({'success': True, 'multiple_ws': multiple_ws}))
 
-
 @login_required
 @permission_required('remove_item')
 def delete_item(request):
     """
-    Deletes an item from the current workspace or from all workspaces where the user is a member: these options are sent via request.POST
+    Delete an item from the current workspace or from all workspaces where the user is a member: these options are sent via request.POST
     """
+
     cw = request.session['workspace']
     user = User.objects.get(pk=request.session['_auth_user_id'])
     

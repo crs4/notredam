@@ -17,7 +17,7 @@
 #########################################################################
 
 """
-Preferences are dinamically managed by the developers. 
+Preferences are dinamically managed by developers. 
 They can add settings for each DAM Component and they will be automatically displayed to the user.
 It can be easily done by using the django admin.
 """

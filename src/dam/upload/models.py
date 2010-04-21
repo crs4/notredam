@@ -40,4 +40,3 @@ class UploadURL(models.Model):
 
 
 
-

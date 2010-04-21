@@ -239,7 +239,7 @@ def save_metadata_value(item_list, metadata, metadata_object, workspace, default
                 set_modified_flag(new_metadata[0],obj)
 
 @login_required
-#@decorators.permission_required('edit_metadata')
+@decorators.permission_required('edit_metadata')
 def save_metadata(request):
 
     """
@@ -411,7 +411,7 @@ def save_variants_rights(item, workspace, variant):
                 MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = comp,  value = m.value, language=m.language)
 
 @login_required
-#@decorators.permission_required('edit_metadata')
+@decorators.permission_required('edit_metadata')
 def save_descriptors(request):
 
     """
@@ -873,6 +873,9 @@ def get_metadata_structures(request):
 
 @login_required
 def get_metadata(request):
+    """
+    Get metadata for the given items
+    """
     item_list = request.POST.getlist('items')
     metadata_object = request.POST.get('obj', 'original')
     metadata_view = request.POST.get('advanced', False)

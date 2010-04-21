@@ -121,6 +121,7 @@ def _convert_dms_to_deg(gpscoordinate):
         return ''
     return str(coordinate)
 
+@login_required
 def get_markers(request):
     
     """
@@ -154,6 +155,9 @@ def get_markers(request):
     return HttpResponse(resp)
 
 def save_geo_coords(item, lat, lng):
+    """
+    Save geo coordinates of the given item
+    """
     metadata_lat = MetadataProperty.objects.filter(latitude_target=True)
     metadata_lng = MetadataProperty.objects.filter(longitude_target=True)
 
@@ -166,7 +170,7 @@ def save_geo_coords(item, lat, lng):
     for m in metadata_lng:
         item.metadata.create(schema=m, value=lng)
     
-
+@login_required
 def save_geoinfo(request):
 
     """

@@ -20,7 +20,6 @@ from django.contrib import admin
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from dam.workspace.views import _create_workspace
 from dam.workspace.models import Workspace
 from django import forms
 
