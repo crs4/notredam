@@ -19,28 +19,95 @@ from django.db import models
 from django.utils import simplejson
 
 
-"""    
+
+"""   
+{
+    action
+
+}
+
+
+
+ 
     {
-    variant: original, can be a list
-    output: preview, optional
+        
     event: upload, optional
     state: boh, optional
-    actions: [
-    {
-    type: resize,
-    parameters:{
-        height:100 
-    }        
-
-    },
-    {
-    type: watermark,
-    parameters:{
-        file: /p/a/t/h
-    }
+    pipes:[
     
-    }
-]}
+        {
+            id: preview_image,
+            media_type: 'image',
+            source_variant: 'original',
+            
+            actions: [
+                {
+                type: resize,
+                parameters:{
+                    height:100 
+                }        
+            
+                },
+                {
+                type: watermark,
+                parameters:{
+                    file: /p/a/t/h
+                },
+        
+                
+                },                
+                {
+                type: save_as_variant
+                parameters:{
+                    variant: preview
+                    }
+                    
+                
+                }
+            
+            ],
+           
+        }
+        
+        
+        ]
+    ]
+
+
+}
+
+
+ {
+        
+   
+    
+    media_type: 'image',
+    source: 'original',
+    
+    actions: [
+        {
+        type: resize,
+        parameters:{
+            height:100 
+        }        
+    
+        },
+        {
+        type: watermark,
+        parameters:{
+            file: /p/a/t/h
+        },
+
+        
+        }
+    
+    ],
+    output:[
+    
+    ]
+}
+
+
 """ 
 
 
@@ -56,19 +123,20 @@ class Script(models.Model):
     def __unicode__(self):
         return unicode(self.name)
     
-    def create_state_machine(self, items):
+    def execute(self, items):
         pipeline = simplejson.loads(self.pipeline)
-        adapt_parameters = {}
-        actions_available = {}
+        
+        pipes = pipeline.get('pipes', [])
+        
+        for pipe in pipes:
+            
+                                
+            
+        
         
         variant = pipeline['variant']
-        for subclass in BaseMDAction.__subclasses__():
-            actions_available[subclass.__name__.lower()] = subclass
-        for action in pipeline['actions']:
-            
-            type = action['type'].lower()            
-            if type in actions_available.keys():
-                pass
+        
+        
             
     class Meta:
         unique_together = ('name', 'workspace' )
@@ -80,38 +148,80 @@ class MissingActionParameters(Exception):
 class WrongInput(Exception):
   pass
 
-class BaseMDAction(object):
+class ActionError(Exception):
+    pass
+
+
+class Pipe:
+    def __init__(self, action_list,  media_type = None, source_variant = None ):
+        
+        
+        actions_available = {}
+        
+        for subclass in BaseAction.__subclasses__():
+            actions_available[subclass.__name__.lower()] = subclass
+        
+        
+        self.media_type = media_type
+        self.source_variant = source_variant
+        self.actions = []
+        
+        for action_dict in pipe.get('actions', []):
+            type = action_dict['type'].lower()
+            try:
+                
+                params = action_dict['params']
+                if self.source_variant: 
+                    params['source_variant'] = self.source_variant
+                
+                action = actions_available[type](params)
+            except:
+                raise ActionError('action %s does not exist'%type)
+            self.actions.append(action)
+            
+        
+    def execute(self, items):
+        adapt_parameters = {}  
+        for action in self.actions:
+            if isinstance(action, BaseMDAction):
+                adapt_parameters.update(action.get_adapt_parameters())
+        
+
+        
+        
+
+class BaseAction(object):
     required_params = []
     input_number = 1
     output_number = 1
-    def __init__(self, inputs,parameters):
-        if self.parameters.keys().sort() != required_params:
+    def __init__(self, **parameters):
+        if self.parameters.keys().sort() != required_params.sort():
             raise MissingActionParameters('action parameters are: %s; parameters passed are %s'%(self.required_params, parameters))
-        if isinstance(inputs, list):
-            if len(inputs) > self.input_number:
-                raise WrongInput('expected %s inputs, %s given'%self.input_number, len(inputs)) 
-        
-        self.input = input        
+#        if isinstance(inputs, list):
+#            if len(inputs) > self.input_number:
+#                raise WrongInput('expected %s inputs, %s given'%self.input_number, len(inputs)) 
+                
         self.parameters = parameters
-    
-    def validate(self):
+       
+class BaseMDAction(BaseAction):
+    def get_adapt_parameters(self):
         pass
-    
+
 class Resize(BaseMDAction):
     required_params = ['max_dim']
     
-    def validate(self):                
+    def get_adapt_parameters(self):                
         return {'max_dim': self.parameters['max_dim']}
     
 class Transcoding(BaseMDAction):
     required_params = ['format']
     
-    def validate(self):
+    def get_adapt_parameters(self):
         return {'output_file': self.input + '.' + self.parameters['format']}
 
 class Watermark(BaseMDAction):
     required_params = ['file']
-    def validate(self):
+    def get_adapt_parameters(self):
         return {'watermark':self.parameters['file']}
 
 
