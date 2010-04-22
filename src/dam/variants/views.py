@@ -29,7 +29,7 @@ from django.utils import simplejson
 
 from dam.settings import ROOT_PATH
 from dam.variants.models import Variant, ImagePreferences, AudioPreferences, VideoPreferences,  DocPreferences,  VariantAssociation,  ImagePreferencesForm, VideoPreferencesForm, AudioPreferencesForm,  DocPreferencesForm,  SourceVariant,  _create_parameters_json,  Preset
-from dam.application.models import Type
+from dam.repository.models import Type
 from dam.repository.models import Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required

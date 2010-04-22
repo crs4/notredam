@@ -20,7 +20,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Permission, Group
 
-from dam.repository.models import Item, Container,  Component
+from dam.repository.models import Item,  Component
 from dam.workflow.models import State, StateItemAssociation
 from django.db.models import Q
 from operator import and_, or_
@@ -41,7 +41,6 @@ class Workspace(models.Model):
     description = models.CharField(max_length=512)
     creator = models.ForeignKey(User,  blank = True,  null = True)
     members = models.ManyToManyField(User, related_name="workspaces",  blank=True)    
-    collections = models.ManyToManyField(Container, related_name="workspaces",  blank=True)
     items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
     creation_date= models.DateTimeField(  auto_now_add = True)
     last_update = models.DateTimeField( auto_now = True)

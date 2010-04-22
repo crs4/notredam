@@ -32,7 +32,7 @@ from django_restapi.responder import *
 
 from django.contrib.auth.models import Permission
 
-from dam.repository.models import Item,  Component,  Container,  _new_md_id
+from dam.repository.models import Type, Item,  Component,  _new_md_id
 from dam.workspace.models import Workspace,  WorkSpacePermissionAssociation, WorkSpacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
@@ -52,7 +52,6 @@ from workspace.forms import AdminWorkspaceForm
 from application.views import get_component_url, _get_resource_url
 
 from django.contrib.auth import authenticate,  login
-from application.models import Type
 
 #from django.contrib.sessions.backends.db import SessionStore
 

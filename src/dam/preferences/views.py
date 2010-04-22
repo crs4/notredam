@@ -27,7 +27,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
 from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, MetadataStructure, RightsValue, RightsXMPValue, Namespace
-from dam.application.models import Type
+from dam.repository.models import Type
 from dam.workspace.models import Workspace, WorkSpacePermissionAssociation, WorkspacePermissionsGroup, WorkSpacePermission
 
 import logger

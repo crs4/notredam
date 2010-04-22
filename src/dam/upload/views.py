@@ -27,7 +27,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from dam.repository.models import Item, Component,  _new_md_id
+from dam.repository.models import Type, Item, Component,  _new_md_id
 from dam.metadata.views import  get_metadata_default_language, save_descriptor_values, save_variants_rights
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant,  ImagePreferences as VariantsPreference,  VariantAssociation
@@ -38,7 +38,6 @@ from dam.batch_processor.models import MachineState, Machine, Action
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
 from dam.application.views import get_component_url
-from dam.application.models import Type
 from dam.variants.views import _create_variant
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
@@ -314,7 +313,6 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
     Generates MediaDART tasks
     """
 
-    from dam.application.models import Type
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
     if variant.auto_generated:
         variant_source = variant.get_source(workspace,  item)

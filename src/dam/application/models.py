@@ -21,16 +21,6 @@ from django.contrib.auth.models import User
 import time
 import hashlib
 
-class Type(models.Model):
-    """
-    It contains the supported media type.
-    """
-    name =  models.CharField(max_length=30)
-
-    def __str__(self):
-        return self.name
-        
-
 class VerificationUrl(models.Model):
     """ 
     Confirmation url sent to the user's email 
@@ -43,8 +33,4 @@ class VerificationUrl(models.Model):
         if not self.id and not self.url:            
             self.url = hashlib.sha1(unicode(time.time() )).hexdigest()
         super(VerificationUrl, self).save(*args, **kwargs)
-
-
-
-
 

@@ -21,7 +21,7 @@ from dam.application.admin import mod_admin
 from dam.workspace.views import Workspace, WorkspacePermissionsGroup, WorkSpacePermissionAssociation, WorkSpacePermission
 
 class WorkspaceAdmin(admin.ModelAdmin):
-    filter_horizontal = ('members','collections','items',)
+    filter_horizontal = ('members','items',)
     label = 'main'
     fieldsets = (
         (None, {
@@ -29,7 +29,7 @@ class WorkspaceAdmin(admin.ModelAdmin):
         }),
         ('Advanced options', {
             'classes': ('collapse',),
-            'fields': ('members','collections','items', 'states')
+            'fields': ('members','items', 'states')
         }),
     )
 
