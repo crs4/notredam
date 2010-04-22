@@ -113,17 +113,19 @@ def adapt_resource(component, machine):
     variant = component.variant
     
     source_variant = variant.get_source(workspace,  item)
-    vp = variant.get_preferences(workspace)
+
+#    vp = variant.get_preferences(workspace)
+    vp = component.get_parameters()
     orig = source_variant.get_component(workspace = workspace,  item = item) 
 
     dest_res_id = new_id()
         
     if item.type == 'image':
  
-        transcoding_format = vp.codec
-        max_dim = vp.max_dim 
-        cropping = vp.cropping
-        watermark_enabled = vp.watermarking
+        transcoding_format = vp['codec']
+        max_dim = vp['max_dim'] 
+        cropping = vp['cropping']
+        watermark_enabled = vp['watermarking']
 
 #         if cropping:
 # 
@@ -168,26 +170,30 @@ def adapt_resource(component, machine):
 
     elif item.type == 'movie':
 
-        if vp.media_type.name == "image":
+        if component.variant.media_type.name == "image":
 
-            dim_x = vp.max_dim
-            dim_y = vp.max_dim
-            thumbnail_position = vp.video_position
+            dim_x = vp['max_dim']
+            dim_y = vp['max_dim']
+            
 
             d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
 
         else:
 
-            preset_name = vp.preset.name
-            param_dict = {}
+            preset_name = vp['preset_name']
+
+            param_dict = vp
 
             dest_res_id = dest_res_id + '.' + preset_name
             
-            for val in vp.values.all():
-                if val.parameter.name == 'max_size':
-                    param_dict[val.parameter.name] = int(val.value)
+            for key, val in vp.items():
+                if key == 'preset_name':
+                    continue
+                
+                if key == 'max_size':
+                    param_dict[key] = int(val)
                 else:
-                    param_dict[val.parameter.name] = val.value
+                    param_dict[key] = val
                 
 #             if  vp.watermarking:
 #                 param_dict['watermark_uri'] = 'mediadart://' + vp.watermark_uri
@@ -201,20 +207,19 @@ def adapt_resource(component, machine):
 
     elif item.type == 'audio':
 
-        preset_name = vp.preset.name
-        param_dict = {}
+        
+        preset_name = vp['preset_name']        
+        param_dict = dict(vp)        
 
         dest_res_id = dest_res_id + '.' + preset_name
         
-        for val in vp.values.all():
-                param_dict[val.parameter.name] = val.value
-            
+        
         d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
     
     if item.type == 'doc':
  
-        transcoding_format = vp.codec
-        max_size = vp.max_dim
+        transcoding_format = vp['codec']
+        max_size = vp['max_dim']
         
         dest_res_id = dest_res_id + '.' + transcoding_format
         
