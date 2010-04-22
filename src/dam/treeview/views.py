@@ -29,9 +29,8 @@ from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  S
 from dam.workspace.decorators import permission_required, membership_required
 from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.workspace.models import Workspace
-from dam.repository.models import Item, Container, Component,  Container2Container
+from dam.repository.models import Item, Type, Component
 
-from dam.application.models import Type
 from django.utils import simplejson
 
 import cPickle as pickle

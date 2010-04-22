@@ -23,8 +23,6 @@ from django.contrib.contenttypes import generic
 from django.db import connection
 from datetime import datetime
 
-from dam.application.models import Type
-
 class MetadataLanguage(models.Model):
     """
     List of Languages compliant to RFC 3066
@@ -119,7 +117,7 @@ class MetadataProperty(models.Model):
     is_choice = models.CharField(max_length=15, choices=CHOICE_TYPES, default='not_choice')
     internal = models.BooleanField(default=False)
     editable = models.BooleanField(default=True)
-    media_type = models.ManyToManyField(Type, default='image' )
+    media_type = models.ManyToManyField('repository.Type', default='image' )
     keyword_target = models.BooleanField(default=False)
     is_searchable = models.BooleanField(default=False)
     is_variant = models.BooleanField(default=False)

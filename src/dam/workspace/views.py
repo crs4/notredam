@@ -31,7 +31,7 @@ from django.contrib.auth.models import User
 from django.utils import simplejson
 from dam.basket.views import __inbasket
 from dam.basket.models import Basket
-from dam.repository.models import Item, Component, Container
+from dam.repository.models import Item, Component
 from dam.workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
@@ -40,7 +40,7 @@ from dam.variants.models import Variant, VariantAssociation, VariantDefault, Ima
 from dam.upload.views import generate_tasks
 from dam.application.views import get_component_url
 from dam.workspace.forms import AdminWorkspaceForm, AdminWorkspaceGroupsForm, AddMembersForm, AddMembersToGroupForm, SetPermissionsForm, SetGroupsForm
-from dam.application.models import Type
+from dam.repository.models import Type
 from dam.geo_features.models import GeoInfo
 from dam.batch_processor.models import MDTask, MachineState, Machine
 from dam.settings import GOOGLE_KEY, ROOT_PATH, DATABASE_ENGINE
