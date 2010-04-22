@@ -560,19 +560,8 @@ Ext.onReady(function(){
                 text: 'New',
                 handler: function() {
                     calculatePageSize();
-                    var metadata_upload_store = new Ext.data.JsonStore({
-                        url:'/get_metadata_upload/',
-                        fields: ['name', 'pk'],
-                        root: 'schemas'
-                        });
-                    metadata_upload_store.load({
-                        callback: function(){
-                            var fields = [];
-                            this.each(function(){fields.push(this);});
-                            var up = new Upload(fields);
-                            up.openUpload();
-                            }
-                        });
+                    var up = new Upload();
+                    up.openUpload();
                 }
             }, {
                 text: 'Copy to...',
@@ -587,6 +576,74 @@ Ext.onReady(function(){
                 menu: mv_ws_menu
             },
             {
+                text: 'Sync XMP...',
+                id: 'sync_xmp',
+                disabled: true,
+                handler: function() {
+
+                    var variant_store = Ext.getCmp('variantMenu').store;
+                    var variants_list = [{boxLabel: 'All', name: 'all', checked: true}, {boxLabel: 'original', name: 'original'}];
+
+                    variant_store.each(function(r) {
+                        var variant = r.get('variant_name');
+                        variants_list.push({boxLabel: variant, name: variant});                        
+                    });
+
+                    var fp = new Ext.FormPanel({
+                        frame: true,
+                        labelWidth: 110,
+                        width: 400,
+                        height: 270,
+                        items: [
+                            {
+                                xtype: 'checkboxgroup',
+                                fieldLabel: 'Choose variants',
+                                columns: 3,
+                                items: variants_list
+                            }
+                        ],
+                        buttons: [{
+                            text: 'Sync',
+                            handler: function(){
+                               if(fp.getForm().isValid()){
+                                    var items = get_selected_items();
+                                    var chosen_variants = fp.getForm().getValues();
+                                    var chosen_list = [];
+                                    for (var x in chosen_variants) {
+                                        chosen_list.push(x);
+                                    }
+                                    Ext.Ajax.request({
+                                        url: '/sync_component/',
+                                        params: {items: items, variants: chosen_list},
+                                        success: function(data){
+                                            
+                                        }
+                                    });          
+                                }
+                            }
+                        },{
+                            text: 'Cancel',
+                            handler: function(){
+                                this.findParentByType('window').close();
+                            }
+                        }]
+                    });
+                                        
+                    var win = new Ext.Window({
+                        modal: true,
+                        resizable: false,
+                        constrain: true,
+                        width: 400,
+                        height: 300,
+                        title: 'Synchronize XMP',
+                        items: [fp]
+                    });
+
+                    win.show();
+
+                }
+            },
+            {
                 id:'remove_from_ws',
                 text: 'Delete',
                 disabled: true,
@@ -594,11 +651,7 @@ Ext.onReady(function(){
                     var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
                     var selNodes= view.getSelectedNodes();
                     if(selNodes && selNodes.length > 0){ 
-                        var selected_ids = [];
-                        for (var i=0; i < selNodes.length; i++) {
-                            var data = view.store.getAt(view.store.find('pk', selNodes[i].id)).data;
-                            selected_ids.push(data.pk);
-                        }
+                        var selected_ids = get_selected_items();
 
 						Ext.Ajax.request({
 					        url: '/check_item_wss/',

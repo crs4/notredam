@@ -24,6 +24,7 @@ from django.contrib.auth.models import User, Permission, Group
 
 from dam.metadata.models import MetadataValue,MetadataProperty
 from dam.workflow.models import State, StateItemAssociation
+
 import sha
 import random
 import logger
@@ -579,6 +580,9 @@ class Component(models.Model):
     
     #new
     parameters = models.TextField(null = True,  blank = True)
+
+    modified_metadata = models.BooleanField(default = False)    
+
     
     def _get_id(self):
         return self._id

@@ -178,7 +178,7 @@ var store_nodes_checked = new Ext.data.JsonStore({
 var current_item_selected;
 
 function showFullscreen(view, index, node, e){
-    var data = view.store.getAt(view.store.find('pk', node.id)).data;
+    var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
         
     Ext.Ajax.request({
         url:'/get_component_url/'+data.pk+'/fullscreen/',
@@ -250,16 +250,10 @@ function _show_details(data, active_tab, view, selNode){
     if(active_tab.id == 'metadata_panel' || active_tab.id == 'xmp_panel') {
         store = active_tab.getStore();
         
-        var items_param = "";
-        for (var i = 0; i < selNodes.length; i++) {
-            var item_data = view.store.getAt(view.store.find('pk', selNodes[i].id)).data;
-            items_param += item_data.pk + ',';
-        }
+        var items_param = get_selected_items();
     }
     
     else if(active_tab.id == 'preview_panel'){
-        
-        
         
         var store = Ext.getCmp('variant_summary').getStore();
         var preview = Ext.getCmp('summary_panel').body;
@@ -448,7 +442,7 @@ var showDetails = function(view){
         var edit_collection = ws_permissions_store.find('name', 'edit_collection') > -1;            
         var remove_item = ws_permissions_store.find('name', 'remove_item') > -1;
         var set_state = ws_permissions_store.find('name', 'set_state') > -1;
-            
+                        
         if (admin | remove_item){
             Ext.getCmp('mvto').enable();
             Ext.getCmp('remove_from_ws').enable();
@@ -476,7 +470,7 @@ var showDetails = function(view){
             set_state_to.enable();
         
         var selNode = selNodes[0];            
-        var data = view.store.getAt(view.store.find('pk', selNode.id)).data;
+        var data = view.store.getAt(view.store.findExact('pk', selNode.id)).data;
         if (selNodes.length == 1 && data.state){
             var state_id = 'state_' + data.state;
             var state= Ext.getCmp(state_id);
@@ -491,6 +485,8 @@ var showDetails = function(view){
         }           
         
         _show_details(data, active_tab, view, selNode);
+        
+        Ext.getCmp('sync_xmp').enable();
         
     } 
     else{
@@ -513,6 +509,9 @@ var showDetails = function(view){
         var x_store = Ext.getCmp('xmp_panel').getStore();
         m_store.saveChangedRecords(Ext.getCmp('metadata_panel'));
         x_store.saveChangedRecords(Ext.getCmp('xmp_panel'));
+
+        Ext.getCmp('sync_xmp').disable();
+
 
     }
 
@@ -1305,8 +1304,8 @@ Ext.onReady(function(){
                         if (view) {
                             var store = view.getStore();
                             for (var i in update_items) {
-                                if (store.find('pk', i) != -1) {
-                                    var item_data = store.getAt(store.find('pk', i));
+                                if (store.findExact('pk', i) != -1) {
+                                    var item_data = store.getAt(store.findExact('pk', i));
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = update_items[i]['thumb'];
                                     for (var key in update_items[i]) {

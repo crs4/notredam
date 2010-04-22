@@ -21,18 +21,16 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 class Registration(UserCreationForm):
+
     email = forms.EmailField()
     
     def __init__(self,  *args,  **kwargs):
         super(Registration,  self).__init__(*args,  **kwargs)
         self.fields['username'].help_text = "30 characters or fewer. Alphanumeric characters only (letters, digits and underscores). "
-    
    
     class Meta:
         model = User
         fields = ("username", "first_name", "last_name",  "email",)
-        
-
         
     def get_ordered_fields(self):
         return [self.fields['username']]

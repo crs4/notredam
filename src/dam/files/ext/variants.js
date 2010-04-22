@@ -51,15 +51,13 @@ function generate_variant(variant_id, item_id){
 
 function import_variant(variant_id){
     var variant = Ext.getCmp('variant_summary').getStore().query('pk', variant_id).items[0].data;
-    var up = new Upload([],'/get_upload_url/', true, function(){
-        //reload_variant(variant.item_id)
-        },
+    var up = new Upload('/upload_variant/', true,
         {variant_id:variant.pk, item_id:variant.item_id}
     );
     up.openUpload();    
     
 }
-                            
+
 var store_variant = new Ext.data.JsonStore({
         url: '/get_variants/',
         id:'store_variant',

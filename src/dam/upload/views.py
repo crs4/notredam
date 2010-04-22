@@ -27,116 +27,63 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from dam.settings import MEDIADART_CONF
 from dam.repository.models import Item, Component,  _new_md_id
 from dam.metadata.views import  get_metadata_default_language, save_descriptor_values, save_variants_rights
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant,  ImagePreferences as VariantsPreference,  VariantAssociation
 from dam.treeview.models import Node
 from dam.treeview.views import _add_node
-from dam.batch_processor.models import MDTask
+from dam.batch_processor.models import MachineState, Machine, Action
 
+from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
 from dam.application.views import get_component_url
 from dam.application.models import Type
 from dam.variants.views import _create_variant
+from dam.upload.models import UploadURL
+from dam.upload.uploadhandler import StorageHandler
+
+from mediadart.storage import Storage
+
 import logger
 
 import mimetypes
 import os.path, traceback
 import time
-
-from mediadart import toolkit
-
+import tempfile
 
 def _uploaded_item(item,  workspace):
+
     uploaded = Node.objects.get(depth = 1,  label = 'Uploaded',  type = 'inbox',  workspace = workspace)
     time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
     node = Node.objects.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  workspace = workspace,  depth = 2)[0]
     node.items.add(item)
 
+def adobe_air_upload(request):
 
-@login_required
-@permission_required('add_item')
-def upload_finished(request):
+    workspace = Workspace.objects.all()[0]
 
-    """
-    Create item, components and save metadata after upload and generate MediaDART tasks for the new uploaded item
-    """
-    workspace = request.session.get('workspace')
-    variant_id = request.POST.get('variant_id',  None)
-    item_id = request.POST.get('item_id')
     file_name = request.POST['file_name']
-    job_id = request.POST['job_id']
-    user = User.objects.get(pk = request.session['_auth_user_id'])
-    type = request.POST['type']
-    
-    new_keywords = False
+    user = User.objects.all()[0]
+    type = guess_media_type(file_name)
 
+    storage = Storage('/tmp/prova/')
+    res_id = storage.add('/tmp/prova/imports/'+file_name)
+    
     item_ctype = ContentType.objects.get_for_model(Item)
     
-    if not item_id:
-        item = Item.objects.create(uploader = user,  type = type)
-        item_id = item.pk
-        _uploaded_item(item,  workspace) 
-        
-        
-        metadata_list = {}
+    item = Item.objects.create(uploader = user,  type = type)
+    item_id = item.pk
+    _uploaded_item(item,  workspace) 
 
-        for key in request.POST.keys():
-            if key.startswith('metadata'):
-                value = request.POST[key]   
-                metadata_id = key.split('_')[-1]
-                logger.debug('metadata_id %s'%metadata_id )
-                descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
-                default_language = get_metadata_default_language(user)
-                save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
-
-        item.workspaces.add(workspace)
-
-        uploaded_by_schema = MetadataProperty.objects.filter(uploaded_by=True)
-        for s in uploaded_by_schema:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
-            m_value[0].value = item.uploader.username
-            m_value[0].save()
-    
-        uploaded_on = MetadataProperty.objects.filter(creation_date=True)
-        for s in uploaded_on:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
-            m_value[0].value = str(item.creation_time)
-            m_value[0].save()
-    
-        file_name_schema = MetadataProperty.objects.filter(file_name_target=True)
-        for s in file_name_schema:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
-            m_value[0].value = file_name
-            m_value[0].save()
-            
-        owner = MetadataProperty.objects.filter(item_owner_target=True)
-        for s in owner:
-            m_value = MetadataValue.objects.get_or_create(schema=s, object_id=item.pk, content_type=item_ctype)
-            my_ws = item.workspaces.all()[0]
-            if my_ws.creator:
-                creator = my_ws.creator.username
-            else:
-                my_ws.members.all()[0]
-                creator = my_ws.members.all()[0].username
-    
-            m_value[0].value = creator
-            m_value[0].save()
-    
-    else:            
-        item = Item.objects.get(pk = item_id)
+    item.workspaces.add(workspace)
         
-    if not variant_id:
-        variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
-    else:
-        variant =  Variant.objects.get(pk  = variant_id)     
+    variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
             
     comp = _create_variant(variant,  item, workspace)
     
     comp.file_name=file_name
-    comp._id = request.POST['res_id']
+    comp._id = res_id
     
     logger.debug('comp._id %s'%comp._id )
     mime_type = mimetypes.guess_type(file_name)[0]
@@ -148,72 +95,160 @@ def upload_finished(request):
     logger.debug('mime_type  %s'%mime_type )
     
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.pk, content_type=item_ctype, value=mime_type)
+    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
-    
-    generate_tasks(variant, workspace, item,   upload_job_id=job_id, )
+    try:
+        generate_tasks(variant, workspace, item)
+    except Exception, ex:
+        traceback.print_exc(ex)
+        raise
 #    resp = simplejson.dumps({'new_keywords':new_keywords})
     resp = simplejson.dumps({})
     return HttpResponse(resp)
 
-def _get_upload_url(res_id,  fsize, ext):
-    """
-    Get a MediaDART upload url
-    """
-    t = toolkit.Toolkit(MEDIADART_CONF)
-    s = t.get_storage()
-    
-    logger.debug('fsize %s'%fsize) 
-    logger.debug('ext %s'%ext) 
-    up_resp = s.get_upload_url(res_id, False, fsize, ext)
-    if up_resp:
-        resp = up_resp
-        resp['res_id'] = res_id
-        resp.pop('service_load')
-        resp.pop('id')
-
-        
-        job_id = resp['job_id']
-        return (resp,  job_id)
-        
-    else:
-        raise Exception
+def _get_upload_url(res_id, fsize, ext):
+    pass
 
 @login_required
-@permission_required('add_item')
-def get_upload_url(request):
+def get_flex_upload_url(request):
+    """
+    Generate unique upload urls (workaround for flash cookie bug)
+    """
+    urls = []
+    n = request.POST['n']
 
-    """
-    Checks if file media type is supported and get a new upload url from MediaDART
-    """
+    workspace = request.session.get('workspace')
+    user = User.objects.get(pk = request.session['_auth_user_id'])    
+
+    for i in xrange(int(n)):
+        urls.append(UploadURL.objects.create(user=user, workspace=workspace).url)
+        
+    resp = simplejson.dumps({'urls': urls})
+    return HttpResponse(resp)
     
-    try:
-        file_name = request.POST['file_name']
-        file_size = request.POST['file_size']
-        logger.debug('file_name %s'%file_name)
-        logger.debug('file_size %s'%file_size)
+def save_uploaded_component(request, res_id, file_name, variant, item, user, workspace):
+    """
+    Create component for the given item and generate mediadart tasks. 
+    Used only when user uploaded an item's variant
+    """
+    comp = _create_variant(variant,  item, workspace)
+    
+    comp.file_name = file_name
+    comp._id = res_id
+    
+    mime_type = mimetypes.guess_type(file_name)[0]
         
-        
-        try:
-            type = guess_media_type(file_name)
-            logger.debug('----type: %s'%type)
-        except Exception,  ex:
-            return HttpResponseServerError(ex)
-       
-        logger.debug('type from guess_media_type %s'%type)
-        sname, ext = os.path.splitext(file_name)
-        
-        res_id = _new_md_id()
-        resp,  job_id = _get_upload_url(res_id,  file_size, ext)
-        resp['type'] = type
-        resp = simplejson.dumps(resp)
-        
+    ext = mime_type.split('/')[1]
+    comp.format = ext
+    comp.save()
 
-        logger.debug('resp %s'%resp)
-        return HttpResponse(resp)
-    except:
-        logger.exception(traceback.format_exc())
-        raise
+    default_language = get_metadata_default_language(user)
+    
+    for key in request.POST.keys():
+        if key.startswith('metadata'):
+            value = request.POST[key]
+            metadata_id = key.split('_')[-1]
+            descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
+            save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
+
+    metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
+    orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
+
+    try:
+        generate_tasks(variant, workspace, item, 1)
+    except Exception, ex:
+        print traceback.print_exc(ex)
+        raise    
+    
+def save_uploaded_item(request, upload_file, user, workspace):
+
+    type = guess_media_type(upload_file.name)
+
+    fname, extension = os.path.splitext(upload_file.name)
+
+    upload_file.rename(extension)
+
+    uploaded_fname = upload_file.get_filename()
+    path, res_id = os.path.split(uploaded_fname)
+    file_name = upload_file.name
+    
+    item_ctype = ContentType.objects.get_for_model(Item)
+    
+    item = Item.objects.create(uploader = user,  type = type)
+    item_id = item.pk
+    _uploaded_item(item, workspace) 
+
+    item.workspaces.add(workspace)
+        
+    variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
+            
+    save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
+
+def save_uploaded_variant(request, upload_file, user, workspace):
+
+    variant_id = request.POST['variant_id']
+    item_id = request.POST['item_id']
+
+    variant =  Variant.objects.get(pk = variant_id)
+    item = Item.objects.get(pk = item_id)
+    
+    fname, extension = os.path.splitext(upload_file.name)
+
+    upload_file.rename(extension)
+
+    uploaded_fname = upload_file.get_filename()
+    path, res_id = os.path.split(uploaded_fname)
+    file_name = upload_file.name    
+            
+    save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
+
+def get_user_ws_from_url(url):
+    """
+    Retrieve user and workspace from the unique upload url
+    """
+
+    find_url = UploadURL.objects.get(url=url)
+    user = find_url.user
+    workspace = find_url.workspace
+
+    find_url.delete()
+
+    return (user, workspace)
+    
+def upload_item(request):
+
+    """
+    Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
+    """
+
+    request.upload_handlers = [StorageHandler()]
+    
+    url = request.POST['unique_url']
+    upload_file = request.FILES['Filedata']
+    
+    user, workspace = get_user_ws_from_url(url)
+
+    save_uploaded_item(request, upload_file, user, workspace)
+
+    resp = simplejson.dumps({})
+    return HttpResponse(resp)
+
+def upload_variant(request):
+    """
+    Used for uploading/replacing an item's variant. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
+    """
+
+    request.upload_handlers = [StorageHandler()]
+
+    url = request.POST['unique_url']    
+    upload_file = request.FILES['Filedata']
+    
+    user, workspace = get_user_ws_from_url(url)
+
+    save_uploaded_variant(request, upload_file, user, workspace)        
+
+    resp = simplejson.dumps({})
+    return HttpResponse(resp)
 
 @login_required
 def get_metadata_upload(request):
@@ -235,11 +270,10 @@ def get_metadata_upload(request):
 def guess_media_type (file):
 
     """
-    It tries to guess the media type of the uploaded file (image, movie or audio)
+    It tries to guess the media type of the uploaded file (image, movie, audio or doc)
     """
     
 #    mimetypes.init()
-    logger.debug('file %s'%file)
     mimetypes.add_type('video/flv','.flv')
     mimetypes.add_type('video/ts','.ts')
     mimetypes.add_type('video/mpeg4','.m4v')
@@ -247,7 +281,9 @@ def guess_media_type (file):
     mimetypes.add_type('image/nikon', '.nef')
     mimetypes.add_type('image/canon', '.cr2')
     mimetypes.add_type('image/digitalnegative', '.dng')
+    
     media_type = mimetypes.guess_type(file)
+    
     try:
         media_type = media_type[0][:media_type[0].find("/")]
         if media_type == 'video':
@@ -264,7 +300,6 @@ def guess_media_type (file):
         logger.debug('raise ex')
         raise Exception('unsupported media type')
 
-    logger.debug('media type %s'%media_type)
     return media_type
 
 def  copy_metadata(comp,  comp_source):
@@ -272,22 +307,20 @@ def  copy_metadata(comp,  comp_source):
     Copies metadata from comp_source to comp
     """
     for metadata in comp_source.metadata.all():
-        logger.debug('metadata to cp %s'%metadata )
         MetadataValue.objects.create(schema = metadata.schema, xpath=metadata.xpath, content_object = comp,  value = metadata.value, language=metadata.language)
 
+
+
 def _generate_tasks(variant, workspace, item,  component, params,  register_task,  force_generation,  check_for_existing):
+    
     """
     Generates MediaDART tasks
     """
 
     from dam.application.models import Type
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
-    logger.debug('VARIANT.pk %s'%variant.pk)
-    logger.debug('VARIANT %s'%variant)
-    logger.debug('ITEM.pk %s'%item.pk)
     if variant.auto_generated:
         variant_source = variant.get_source(workspace,  item)
-        logger.debug('SOURCE VARIANT %s'%variant_source)
         if variant_source:
             source = variant_source.get_component(workspace = workspace,  item = item) 
         else:
@@ -297,20 +330,23 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
                 logger.debug('impossible to generate variant, no source found')
                 return 
         variants_to_generate = [variant]
-        feat_extr_orig = metadata_orig =  None
 
-        
+        end = MachineState.objects.create(name='finished')
+
+        if register_task:
+            cs = register_task.initial_state
+            cs.next_state = end
+            cs.save()
+
+            initial_state = register_task
+        else:
+            initial_state = None
     else:
-        logger.debug('SOURCE VARIANT %s'%variant)
         source = component
         dests = Variant.objects.filter(destinations__workspace = workspace, destinations__source = variant)
-        logger.debug('DESTS %s'%dests)
         variants_to_generate = []
         for dest in dests:
             variant_source = dest.get_source(workspace,  item)
-            logger.debug('variant_source %s'%variant_source)
-            logger.debug('variant.sources.get(workspace = workspace, destination = dest).rank %s'%variant.sources.get(workspace = workspace, destination = dest).rank)
-            logger.debug('variant_source.sources.get(workspace = workspace, destination = dest).rank %s'%variant_source.sources.get(workspace = workspace, destination = dest).rank)
             
             # if source has been re-imported, do not add imported components to variants_to_generate
             
@@ -323,52 +359,46 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
 
             if variant_source == None or (variant.sources.get(workspace = workspace, destination = dest).rank  <= variant_source.sources.get(workspace = workspace, destination = dest).rank):
                 variants_to_generate.append(dest)
-        logger.debug('REGISTER TASK %s'%register_task)
-        feat_extr_orig = MDTask.objects.create(component = source, task_type='feature_extraction', wait_for=register_task)    
-        metadata_orig = MDTask.objects.create(component = source, task_type='extract_metadata', wait_for=feat_extr_orig)    
-        if source.variant.name == 'thumbnail':
-            save_thumb = MDTask.objects.create(component=source, task_type="save_thumb", wait_for=register_task)
+                
+        end = MachineState.objects.create(name='finished')
+        feat_extr_action = Action.objects.create(component=source, function='extract_features')
+        feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
         
-    logger.debug('component %s'%component )    
-    logger.debug('variants_to_generate  %s'%variants_to_generate )
-    
-#    feat_extr_orig = MDTask.objects.create(component = source, task_type='feature_extraction', wait_for=register_task)    
-#    metadata_orig = MDTask.objects.create(component = source, task_type='extract_metadata', wait_for=feat_extr_orig)    
-
+        if register_task:
+            cs = register_task.initial_state
+            cs.next_state = feat_extr_orig
+            cs.save()
+            initial_state = register_task
+        else:
+            fake_state = MachineState.objects.create(name='fake')
+            fake_state.next_state = register_state
+            initial_state = Machine.objects.create(current_state=fake_state, initial_state=feat_extr_orig)
+        
     ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
     for v in variants_to_generate:       
-        logger.debug('v = %s'%v)       
-        logger.debug('ws %s'%workspace)
         variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = v) 
- 
         
-        
-        logger.debug('variant association %s'%(variant_association.pk))
         vp = variant_association.preferences    
         try:
             comp = v.get_component(item = item,  workspace= workspace)
-            logger.debug('comp %s'%comp)
             if comp.imported:
 
-                feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=register_task)
-                extract_metadata = MDTask.objects.create(component=comp, task_type="extract_metadata", wait_for=feat_extr_task)
-                rights = MDTask.objects.create(component=comp, task_type="set_rights", wait_for=extract_metadata)
-        
-                if comp.variant.name == 'thumbnail':
-                    save_thumb = MDTask.objects.create(component=comp, task_type="save_thumb", wait_for=register_task)
-                
+                end = MachineState.objects.create(name='finished')
+                save_rights_action = Action.objects.create(component=comp, function='save_rights')
+                save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
+                fe_action = Action.objects.create(component=comp, function='extract_features')
+                fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
+                                
+                Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=initial_state)
+
                 continue
                 
             if not force_generation:
-                logger.debug('NOT FORCE GENERATION!!!!!!!!!')
             
 #                Just checking if same variants already exist
             
-                logger.debug('comp.source_id %s'%comp.source_id)
-                logger.debug('source._id %s'%source._id)
                 if comp.preferences and comp.preferences == vp and comp.source_id == source._id:
     #            variant already exists
-                    logger.debug('variant already exists!!!!!!!!!!!!!!!!!!!!!!!!!')
                     comp.save()
                     continue
         
@@ -386,10 +416,6 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
                         
                         if vp  == ws_prefs and source._id == ws_comp.source_id:
         #            variant already exists
-                            logger.debug('variant found in a other ws!!!')
-                            logger.debug('item_ws %s'%item_ws)
-                            logger.debug('ws_comp._id %s'%ws_comp._id)
-                            
                             
                             comp._id = ws_comp._id
                             copy_metadata(comp,  ws_comp)
@@ -413,7 +439,6 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
 
             
             else:
-                logger.debug('forcing generation')
                 comp.new_md_id()
                 
 #                    TODO: cancellare solo quelli che verranno ri estratti
@@ -422,11 +447,7 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
                 comp.save()
     
         except Component.DoesNotExist, ex:
-            logger.debug('+++++++++++++++++++++++++++++++++++--------------------------------------------------------------------------creating variant %s %d'%(v, v.pk))
             comp = _create_variant(v,  item, workspace)
-            #comp = Component.objects.create(item = item,  variant =v)
-            #comp.workspace.add(workspace)
-            #            save_variants_rights(comp, item, workspace, v)
         
         type= vp.mime_type.name
         if type =='image' or type =='doc':
@@ -446,24 +467,33 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
         
         if vp.media_type.name == 'image' and v.media_type == 'image' and vp.cropping and feat_extr_orig:
             previous_task = feat_extr_orig
-            logger.debug('cropping!')
         else:
             previous_task = register_task
-                
-        variant_task = MDTask.objects.create(component=comp, task_type="adaptation", wait_for=previous_task)
-        feat_extr_task = MDTask.objects.create(component=comp, task_type="feature_extraction", wait_for=variant_task)
-        extract_metadata = MDTask.objects.create(component=comp, task_type="extract_metadata", wait_for=feat_extr_task)
-        rights = MDTask.objects.create(component=comp, task_type="set_rights", wait_for=extract_metadata)
 
-        logger.debug('added tast adapt, fe')
+        end = MachineState.objects.create(name='finished')
 
-        if comp.variant.name == 'thumbnail':
-            save_thumb = MDTask.objects.create(component=comp, task_type="save_thumb", wait_for=variant_task)
-        
+        save_rights_action = Action.objects.create(component=comp, function='save_rights')
+        save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
+
+        fe_action = Action.objects.create(component=comp, function='extract_features')
+        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
+
+        adapt_action = Action.objects.create(component=comp, function='adapt_resource')
+        adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
+
+        Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=initial_state)
+         
         comp.preferences = vp.copy()
         comp.source_id = source._id
         comp.save()
         
+
+
+
+    if initial_state:
+        initial_state.current_state = initial_state.initial_state
+        initial_state.save()
+            
 def generate_tasks(variant, workspace, item, params, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
     """
@@ -474,35 +504,24 @@ def generate_tasks(variant, workspace, item, params, upload_job_id = None, url =
         component = variant.get_component(workspace,  item)    
         
     except Component.DoesNotExist:
-        logger.debug('Component.DoesNotExist')
         component = Component.objects.create(variant = variant,  item = item)
         component.workspace.add(workspace)
-    
-    logger.debug('component._id %s'%component._id)
-    
-    logger.debug('upload_job_id %s'%upload_job_id)
-    
+        
     if upload_job_id:
         component.imported = True
         component.save()
-        register_task = MDTask.objects.create(component=component, task_type='wait_for_upload', job_id=upload_job_id)  
-    elif url:
-        s = storage.Storage()
-        local_dir = s.get_local_data_directory()
-        filepath = url
-        component.uri = url
-        component.save()
-        register_task = MDTask.objects.create(component=component, task_type='register', filepath=filepath)
+        register_action = Action.objects.create(component=component, function='add')
+        register_state = MachineState.objects.create(name='comp_add', action=register_action)
+        fake_state = MachineState.objects.create(name='fake')
+        fake_state.next_state = register_state
+        register_task = Machine.objects.create(current_state=fake_state, initial_state=register_state)
     else:
-        register_task = None       
-      
+        register_task = None
     
     if variant.shared and not variant.auto_generated and not check_for_existing: #the original... is shared by all the ws
         wss = item.workspaces.all()
     else:
         wss = [workspace]
-        
-    logger.debug('wss %s'%wss)
     
     for ws in wss:
         _generate_tasks(variant, ws, item,  component, params,  register_task,  force_generation,  check_for_existing)            

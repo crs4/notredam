@@ -34,95 +34,88 @@ from dam.repository.models import Item
 
 import logger
 
-
 @login_required
 def reload_item(request):
- try:
- 	user = User.objects.get(pk=request.session['_auth_user_id'])
-	#user = User.objects.filter(username=str(username))[0]
-	logger.debug('user %s'%user)
-	workspace = request.session['workspace']
- 	logger.debug('workspace %s'%workspace)	
-	items_post = request.POST.getlist('items')
- 	logger.debug('items post %s'%items_post)
-	for i in range(len(items_post)) :
-		items = Item.objects.filter(pk=items_post[i])[0]
-		logger.debug('items %s'%items)
-		logger.debug(Basket.objects.filter(user=user,item=items,workspace=workspace))
-		if len( Basket.objects.filter(user=user,item=items,workspace=workspace))== 0 :
-			bas = Basket(user=user,item=items,workspace=workspace)	
-			logger.debug('bas %s'%bas)
-			bas.save()
-			logger.debug('salvato')	
-		#else : 
-		#	Basket.objects.filter(user=user,item=items,workspace=workspace)[0].delete()
-		#	logger.debug('delitato')
+    """
+    Add items to the current user basket
+    """
+
+    try:
+        user = User.objects.get(pk=request.session['_auth_user_id'])
+        workspace = request.session['workspace']
+        items_post = request.POST.getlist('items')
+        for i in items_post:
+            item = Item.objects.get(pk=i)
+            Basket.objects.get_or_create(user=user, item=item, workspace=workspace)
 	
- except Exception,  ex:
+    except Exception,  ex:
         logger.exception(ex)
         raise ex
- return HttpResponse(len(Basket.objects.all()))
+
+    return HttpResponse(Basket.objects.all().count())
 
 @login_required
 def remove_from_basket(request):
- try:
- 	logger.debug('remove from basket') 
+    """
+    Remove items from the current user basket
+    """
+
+    try:
+        items_post = request.POST.getlist('items')
  	
- 	user = User.objects.get(pk=request.session['_auth_user_id'])
-	#user = User.objects.filter(username=str(username))[0]
-	logger.debug('user %s'%user)
-	workspace = request.session['workspace']
- 	logger.debug('workspace %s'%workspace)	
-	items_post = request.POST.getlist('items')
- 	logger.debug('items post %s'%items_post)
-	for i in range(len(items_post)) :
-			items = Item.objects.filter(pk=items_post[i])[0]
-			Basket.objects.filter(user=user,item=items,workspace=workspace)[0].delete()
-			logger.debug('delitato')
+        user = User.objects.get(pk=request.session['_auth_user_id'])
+        workspace = request.session['workspace']
+
+        for item in items_post :
+            Basket.objects.get(user=user, item__pk=item, workspace=workspace).delete()
 	
- except Exception,  ex:
+    except Exception,  ex:
         logger.exception(ex)
         raise ex
- return HttpResponse(len(Basket.objects.filter(user=user,workspace=workspace)))
- 
+
+    return HttpResponse(Basket.objects.filter(user=user, workspace=workspace).count())
  
 @login_required
 def clear_basket(request):
- try:
- 	logger.debug('clear basket')
- 	user = User.objects.get(pk=request.session['_auth_user_id'])
-	#user = User.objects.filter(username=str(username))[0]
-	logger.debug('user %s'%user)
-	workspace = request.session['workspace'] 	
- 	all_b = Basket.objects.filter(user=user,workspace=workspace)
-	for i in range(len(all_b)) :
-			all_b[i].delete()
-			logger.debug('delitato')
-	
- except Exception,  ex:
+    """
+    Empty the basket for the current user  
+    """
+    try:
+        user = User.objects.get(pk=request.session['_auth_user_id'])
+        workspace = request.session['workspace'] 	
+        all_b = Basket.objects.filter(user=user, workspace=workspace)
+        all_b.delete()
+        
+    except Exception,  ex:
         logger.exception(ex)
         raise ex
- return HttpResponse(len(Basket.objects.all()  ))
 
+    return HttpResponse(Basket.objects.all().count())
+
+@login_required
 def basket_size(request):
- 	user = User.objects.get(pk=request.session['_auth_user_id'])
-	#user = User.objects.filter(username=str(username))[0]
-	logger.debug('user %s'%user)
-	workspace = request.session['workspace']
-	return HttpResponse(len(Basket.objects.filter(user=user,workspace=workspace)))
+    """
+    Return size of the current user basket
+    """
+    user = User.objects.get(pk=request.session['_auth_user_id'])
+    workspace = request.session['workspace']
+
+    return HttpResponse(Basket.objects.filter(user=user, workspace=workspace).count())
 
 def __inbasket(user,item,workspace):
-  try:
-    logger.debug('workspace %s'%workspace)
-    logger.debug('item %s'%item)
-    logger.debug('user %s'%user)
+    """
+    Check if the given item is in basket
+    """
 
-    if len( Basket.objects.filter(user=user,item=item,workspace=workspace))== 0 :
-		return 0
+    try:
+
+        if Basket.objects.filter(user=user, item=item, workspace=workspace).count()== 0 :
+            return 0
 	
-  except Exception,  ex:
+    except Exception,  ex:
         logger.exception(ex)
         return 0	
-  return 1
+
+    return 1
 
 

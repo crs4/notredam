@@ -39,15 +39,14 @@ from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS,  MEDIADART_CONF
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
 
-from mediadart import toolkit
+from mediadart.storage import Storage
 
 import os
 import cPickle as pickle
 import logger
 
-#NOTAVAILABLE = '/files/images/notavailable.jpg'
 NOTAVAILABLE = None
- 
+  
 def home(request, msg=None):
     """
     Always redirect user from http://host/ to http://host/workspace
@@ -77,6 +76,7 @@ def do_login(request):
     else:
         return HttpResponseForbidden("User or/and password wrong. Please check and try again.")
 
+@login_required
 def do_logout(request):
     """
     User logout
@@ -90,12 +90,9 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
     """
     Looks for the component named variant_name of the item item_id in the given workspace and returns the component url 
     """
-    logger.debug('variant_name %s'%variant_name)    
     
     item = Item.objects.get(pk = item_id)
-#    logger.debug('workspace.get_variants() %s'%workspace.get_variants())
     variant = workspace.get_variants().distinct().get(media_type__name =  item.type,  name = variant_name)
-#    logger.debug('variant.default_url %s'%variant.default_url)
     
     if thumb and variant.default_url:
         return variant.default_url
@@ -103,26 +100,20 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
     url = NOTAVAILABLE    
    
     if public_only:
-#        component = Component.objects.get(item__pk = item_id,  item__is_public = True, variant__name = component_name)
         pass
     else:
         try:
             component = variant.get_component(workspace,  item)
         
-#            logger.debug('component.uri %s'%component.uri)
-#            logger.debug('component.ID %s'%component.ID)
             if component.uri:
                 return component.uri
 
-            t = toolkit.Toolkit(MEDIADART_CONF)
-            storage = t.get_storage()
-            
-            url = storage.get_resource_url(component.ID)[0]
+            url = _get_resource_url(component.ID)
+
         except Exception,ex:
             logger.exception( 'ex in get_component_url %s' %  ex )
             url = NOTAVAILABLE
 
-        #        logger.debug( "Url da storage for component %s of item %s: %s" % (component.pk, item_id, url) )
     if url == NOTAVAILABLE and not redirect_if_not_available:
         return None
         
@@ -130,12 +121,17 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
 
 
 def _get_resource_url(id):
-    t = toolkit.Toolkit(MEDIADART_CONF)
-    storage = t.get_storage()
+    """
+    Returns resource path
+    """
+
+    storage = Storage()
 
     try:
-        url = storage.get_resource_url(id)[0]
-        logger.debug('URL %s' %url)
+        if storage.exists(id):
+            url = '/storage/' + id
+        else:
+            url = None
     except:
         url = None
     return url
@@ -147,12 +143,9 @@ def redirect_to_resource(request, id):
     """
     Redirects to the resource url given by MediaDART
     """
-    t = toolkit.Toolkit(MEDIADART_CONF)
-    storage = t.get_storage()
 
     try:
-        url = storage.get_resource_url(id)[0]
-        logger.debug('URL %s' %url)
+        url = _get_resource_url(id)
     except:
         url = NOTAVAILABLE    
     return redirect_to(request,  url)
@@ -179,12 +172,11 @@ def get_component(request, item_id, variant_name ,  redirect=False):
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'failure': True}))
     if redirect:
-        if request.GET.get('download',  0):
-            url = os.path.join(url, 'download/')
         return redirect_to(request, url)
     else:
         return HttpResponse(url)
 
+@login_required
 def redirect_to_component(request, item_id, variant_name,  ws_id = None):
     """
     Redirects to the component url
@@ -206,7 +198,6 @@ def registration(request):
         return user
 
     if request.method == 'POST': 
-        logger.debug('POST %s'%request.POST)
         form = Registration(request.POST) 
 
         if form.is_valid():
@@ -241,15 +232,13 @@ def confirm_user(request, url):
     """
     Confirms user registration and creates a new workspace for the new user
     """
+
     from dam.workspace.views import _create_workspace
+
     user = VerificationUrl.objects.get(url= url).user
     user.is_active = True
     user.save()
     logout(request)
-    logger.debug('user %s'%user)
-    logger.debug('user.username %s'%user.username)
-    logger.debug('user.password %s'%user.password)
-
 
     ws = Workspace(name=user.username)
     _create_workspace(ws,  user)

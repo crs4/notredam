@@ -22,7 +22,7 @@ from dam.workspace.models import Workspace
 from dam.repository.models import Item
 
 class Basket(models.Model):
-  user = models.ForeignKey(User)
-  item = models.ForeignKey(Item)
-  workspace = models.ForeignKey(Workspace)
+    user = models.ForeignKey(User)
+    item = models.ForeignKey(Item)
+    workspace = models.ForeignKey(Workspace)
 
