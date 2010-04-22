@@ -18,17 +18,17 @@
 
 from django.http import HttpResponse
 from django.db.models import Q
-from operator import and_, or_
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from dam.settings import MEDIADART_CONF
+from django.utils import simplejson
 
+from dam.settings import MEDIADART_CONF
 from dam.repository.models import Item, Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
 
 import logger
-from django.utils import simplejson
+from operator import and_, or_
 
 @login_required
 @permission_required('remove_item')
@@ -71,8 +71,6 @@ def delete_item(request):
 
     if len(items_commas) > 1:
         items_id = items_commas
-
-    logger.debug('items_id %s' %items_id)
         
     choose = request.POST.get('choose')
     inbox_deleted = None
@@ -107,7 +105,6 @@ def delete_item(request):
         q1 = Workspace.objects.filter( Q(workspacepermissionassociation__permission__codename = 'admin') | Q(workspacepermissionassociation__permission__codename = 'remove_item'), members = user,workspacepermissionassociation__users = user)
         q2 =  Workspace.objects.filter(Q(workspacepermissionsgroup__permissions__codename = 'admin') | Q(workspacepermissionsgroup__permissions__codename = 'remove_item'), members = user, workspacepermissionsgroup__users = user)
         wss = reduce(or_, [q1,q2])
-        logger.debug('wss %s'%wss)
 
         for item in items_id:
             i = Item.objects.filter(pk=item)[0]
@@ -118,7 +115,6 @@ def delete_item(request):
                     except Exception,e:
                         logger.debug( "errore eliminazione %s" % e )
                         pass
-
     
             if i.workspaces.all().count() == 0:
                 components = Component.objects.filter(item=i)

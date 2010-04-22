@@ -27,6 +27,7 @@ urlpatterns = patterns('',
     (r'^get_basic_descriptors/$', 'dam.metadata.views.get_basic_descriptors'),
     (r'^get_variants_menu_list/$', 'dam.metadata.views.get_variants_menu_list'),
     (r'^sync_component/$', 'dam.metadata.views.sync_component'),
+    
     (r'^ws_admin/config_descriptors/(.+)/$', 'dam.metadata.views.wsadmin_config_descriptors'),
     (r'^ws_admin/get_descriptor_properties/$', 'dam.metadata.views.wsadmin_get_descriptor_properties'),
     (r'^ws_admin/save_ws_descriptors/$', 'dam.metadata.views.wsadmin_save_ws_descriptors'),
