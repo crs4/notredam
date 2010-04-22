@@ -42,7 +42,7 @@ from dam.application.views import get_component_url
 from dam.workspace.forms import AdminWorkspaceForm, AdminWorkspaceGroupsForm, AddMembersForm, AddMembersToGroupForm, SetPermissionsForm, SetGroupsForm
 from dam.repository.models import Type
 from dam.geo_features.models import GeoInfo
-from dam.batch_processor.models import MDTask, MachineState, Machine
+from dam.batch_processor.models import MachineState, Machine
 from dam.settings import GOOGLE_KEY, ROOT_PATH, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting

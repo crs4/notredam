@@ -35,7 +35,7 @@ from django.db.models import Q
 from django.db import reset_queries
 from django.contrib.contenttypes.models import ContentType
 
-from dam.batch_processor.models import MDTask, Machine, MachineState, Action
+from dam.batch_processor.models import Machine, MachineState, Action
 from dam.repository.models import Item, Component
 from dam.variants.models import ImagePreferences,  VideoPreferences,  AudioPreferences
 
@@ -505,9 +505,6 @@ def cleanup():
             
 @defer.inlineCallbacks
 def clean_task():
-
-#    tasks_wait_for = MDTask.objects.filter(wait_for__isnull=False).values_list('wait_for', flat=True)
-#    tasks_to_check = MDTask.objects.filter(wait_for__isnull=True, job_id__isnull=False, status__isnull=True).exclude(id__in=tasks_wait_for)
 
     logger.debug("[CleanTask.execute]")
 
