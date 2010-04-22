@@ -311,7 +311,7 @@ def  copy_metadata(comp,  comp_source):
 
 
 
-def _generate_tasks(variant, workspace, item,  component, params,  register_task,  force_generation,  check_for_existing):
+def _generate_tasks(variant, workspace, item,  component, register_task,  force_generation,  check_for_existing):
     
     """
     Generates MediaDART tasks
@@ -378,7 +378,7 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
     for v in variants_to_generate:       
         variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = v) 
         
-        vp = variant_association.preferences    
+#        vp = variant_association.preferences    
         try:
             comp = v.get_component(item = item,  workspace= workspace)
             if comp.imported:
@@ -391,84 +391,89 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
                                 
                 Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=initial_state)
 
-                continue
-                
-            if not force_generation:
-            
-#                Just checking if same variants already exist
-            
-                if comp.preferences and comp.preferences == vp and comp.source_id == source._id:
-    #            variant already exists
-                    comp.save()
-                    continue
-        
-    #    Searching for some variant in others ws
-                
-                found_same_prefs = False
-                if v.is_global:
-                    for item_ws in item.workspaces.exclude(pk = workspace.pk):
-                        
-                        ws_prefs = v.variantassociation_set.get(workspace = item_ws ).preferences                    
-    #                        
-                        ws_comp = Component.objects.get(variant = v,  workspace = item_ws,  item = item)
-                        
-    #                    if comp.preferences and comp.preferences == ws_prefs and source._id == ws_comp.source_id:
-                        
-                        if vp  == ws_prefs and source._id == ws_comp.source_id:
-        #            variant already exists
-                            
-                            comp._id = ws_comp._id
-                            copy_metadata(comp,  ws_comp)
-                            comp.format = ws_comp.format
-                            comp.save()
-                            found_same_prefs = True
-                            break
-                if found_same_prefs:
-                    comp.save()
-                    continue
-        
-                
-                elif (comp.imported or comp.uri) :
-                    comp.save()
-                    continue
-                    
-                else:
-                    comp.new_md_id()
-                    comp.metadata.all().delete()
-                    comp.save()
-
-            
-            else:
-                comp.new_md_id()
-                
-#                    TODO: cancellare solo quelli che verranno ri estratti
-                comp.metadata.all().delete()
-#                save_variants_rights(comp, item, workspace, v)
-                comp.save()
+#                continue
+#                
+#            if not force_generation:
+#            
+##                Just checking if same variants already exist
+#            
+#                if comp.preferences and comp.preferences == vp and comp.source_id == source._id:
+#    #            variant already exists
+#                    comp.save()
+#                    continue
+#        
+#    #    Searching for some variant in others ws
+#                
+#                found_same_prefs = False
+#                if v.is_global:
+#                    for item_ws in item.workspaces.exclude(pk = workspace.pk):
+#                        
+#                        ws_prefs = v.variantassociation_set.get(workspace = item_ws ).preferences                    
+#    #                        
+#                        ws_comp = Component.objects.get(variant = v,  workspace = item_ws,  item = item)
+#                        
+#    #                    if comp.preferences and comp.preferences == ws_prefs and source._id == ws_comp.source_id:
+#                        
+#                        if vp  == ws_prefs and source._id == ws_comp.source_id:
+#        #            variant already exists
+#                            
+#                            comp._id = ws_comp._id
+#                            copy_metadata(comp,  ws_comp)
+#                            comp.format = ws_comp.format
+#                            comp.save()
+#                            found_same_prefs = True
+#                            break
+#                if found_same_prefs:
+#                    comp.save()
+#                    continue
+#        
+#                
+#                elif (comp.imported or comp.uri) :
+#                    comp.save()
+#                    continue
+#                    
+#                else:
+#                    comp.new_md_id()
+#                    comp.metadata.all().delete()
+#                    comp.save()
+#
+#            
+#            else:
+#                comp.new_md_id()
+#                
+##                    TODO: cancellare solo quelli che verranno ri estratti
+#                comp.metadata.all().delete()
+##                save_variants_rights(comp, item, workspace, v)
+#                comp.save()
     
         except Component.DoesNotExist, ex:
             comp = _create_variant(v,  item, workspace)
         
-        type= vp.mime_type.name
-        if type =='image' or type =='doc':
-            ext=vp.codec
-        elif type  =='movie':
-            type = 'video'
-            
-            ext=vp.preset.extension
-        elif type  =='audio':
-            ext=vp.preset.extension
         
-        comp.format = ext
-        comp.save()
         
-        mime_type=type+'/'+ext        
-        MetadataValue.objects.create(schema=ms_mimetype, content_object = comp, value=mime_type)
         
-        if vp.media_type.name == 'image' and v.media_type == 'image' and vp.cropping and feat_extr_orig:
-            previous_task = feat_extr_orig
-        else:
-            previous_task = register_task
+#        type = vp.mime_type.name
+#        
+#        if type =='image' or type =='doc':
+#            ext=vp.codec
+#        elif type  =='movie':
+#            type = 'video'
+#            
+#            ext=vp.preset.extension
+#        elif type  =='audio':
+#            ext=vp.preset.extension
+#        
+#        comp.format = ext
+#        comp.save()
+#        
+#        mime_type=type+'/'+ext        
+#        MetadataValue.objects.create(schema=ms_mimetype, content_object = comp, value=mime_type)
+        
+#        if vp.media_type.name == 'image' and v.media_type == 'image' and vp.cropping and feat_extr_orig:
+#            previous_task = feat_extr_orig
+#        else:
+#            previous_task = register_task
+
 
         end = MachineState.objects.create(name='finished')
 
@@ -494,18 +499,19 @@ def _generate_tasks(variant, workspace, item,  component, params,  register_task
         initial_state.current_state = initial_state.initial_state
         initial_state.save()
             
-def generate_tasks(variant, workspace, item, params, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
+def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
     """
     Generate MediaDART Tasks for the given variant, item and workspace
     """
     
-    try:
-        component = variant.get_component(workspace,  item)    
-        
-    except Component.DoesNotExist:
-        component = Component.objects.create(variant = variant,  item = item)
-        component.workspace.add(workspace)
+    component = variant.get_component(workspace,  item)
+#    try:
+#        component = variant.get_component(workspace,  item)    
+#        
+#    except Component.DoesNotExist:
+#        component = Component.objects.create(variant = variant,  item = item)
+#        component.workspace.add(workspace)
         
     if upload_job_id:
         component.imported = True

@@ -98,7 +98,13 @@ from variants.models import Variant
         parameters:{
             file: /p/a/t/h
         },
-
+        {
+         type:set_rights,
+         parameters:{
+             right: cc
+         }
+        
+        },
         
         }
     
@@ -187,15 +193,25 @@ class Pipe:
         adapt_parameters = {}
         variant = Variant.object.get(name = self.output_variant)
         for item in items:
-            for action in self.actions:            
+            
+            try:
+                component = variant.get_component(self.workspace,  item)    
+                    
+            except Component.DoesNotExist:
+                component = Component.objects.create(variant = variant,  item = item)
+                component.workspace.add(self.workspace)
+            
+            for action in self.actions:               
                                     
                     tmp = action.execute(item, variant)
                     if tmp:
                         adapt_parameters.update(tmp)
-                        
-        
-            if self.adaptation_task:                
-                generate_tasks(variant, self.workspace, item, adapt_parameters, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False)
+                    
+                
+            
+            if self.adaptation_task and adapt_parameters:
+                component.set_parameters(adapt_parameters)                                
+                generate_tasks(variant, self.workspace, item)
 
 class BaseAction(object):
     required_params = []

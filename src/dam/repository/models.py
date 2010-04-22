@@ -24,7 +24,7 @@ from django.contrib.auth.models import User, Permission, Group
 
 from dam.metadata.models import MetadataValue,MetadataProperty
 from dam.workflow.models import State, StateItemAssociation
-
+import urlparse
 import sha
 import random
 import logger
@@ -587,6 +587,18 @@ class Component(models.Model):
     def _get_id(self):
         return self._id
     ID = property(fget=_get_id)
+    
+    def set_parameters(self, params):
+        params_str = ''
+        for key in params.keys().sort():
+            params_str += '%s=%s&'%(key,params[key])
+        
+        self.parameters = params_str
+        self.save()
+        
+    def get_parameters(self):
+        return dict(urlparse.parse_qsl(self.parameters))
+        
     
     def _get_media_type(self):
         if self.variant.auto_generated:
