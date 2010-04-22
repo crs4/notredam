@@ -275,7 +275,7 @@ def  copy_metadata(comp,  comp_source):
         logger.debug('metadata to cp %s'%metadata )
         MetadataValue.objects.create(schema = metadata.schema, xpath=metadata.xpath, content_object = comp,  value = metadata.value, language=metadata.language)
 
-def _generate_tasks(variant, workspace, item,  component,  register_task,  force_generation,  check_for_existing):
+def _generate_tasks(variant, workspace, item,  component, params,  register_task,  force_generation,  check_for_existing):
     """
     Generates MediaDART tasks
     """
@@ -464,7 +464,7 @@ def _generate_tasks(variant, workspace, item,  component,  register_task,  force
         comp.source_id = source._id
         comp.save()
         
-def generate_tasks(variant, workspace, item,  upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
+def generate_tasks(variant, workspace, item, params, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
     """
     Generate MediaDART Tasks for the given variant, item and workspace
@@ -505,4 +505,4 @@ def generate_tasks(variant, workspace, item,  upload_job_id = None, url = None, 
     logger.debug('wss %s'%wss)
     
     for ws in wss:
-        _generate_tasks(variant, ws, item,  component,  register_task,  force_generation,  check_for_existing)            
+        _generate_tasks(variant, ws, item,  component, params,  register_task,  force_generation,  check_for_existing)            
