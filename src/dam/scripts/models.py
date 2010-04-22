@@ -252,27 +252,27 @@ class Watermark(BaseMDAction):
 
 
     
-    
-class Action(models.Model):
-    component = models.ForeignKey(Component)
-    function = models.CharField(max_length=64)
-
-    def __str__(self):
-        return "%s %s"  % (self.component.get_variant().name, self.function )
-
-class MachineState(models.Model):
-    name = models.CharField(max_length=64)
-    action = models.ForeignKey(Action, null=True, blank=True)
-    next_state =  models.ForeignKey('self', null=True, blank=True)
-
-    def copy(self):
-        initial = dict([(f.name, getattr(self, f.name)) for f in self._meta.fields if not isinstance(f, models.AutoField) and not f in self._meta.parents.values()])
-        return self.__class__(**initial)
-        
-class Machine(models.Model):
-    initial_state = models.ForeignKey(MachineState, related_name='initial')
-    current_state = models.ForeignKey(MachineState)
-    wait_for = models.ForeignKey('self', null=True, blank=True)
+#    
+#class Action(models.Model):
+#    component = models.ForeignKey('Component')
+#    function = models.CharField(max_length=64)
+#
+#    def __str__(self):
+#        return "%s %s"  % (self.component.get_variant().name, self.function )
+#
+#class MachineState(models.Model):
+#    name = models.CharField(max_length=64)
+#    action = models.ForeignKey(Action, null=True, blank=True)
+#    next_state =  models.ForeignKey('self', null=True, blank=True)
+#
+#    def copy(self):
+#        initial = dict([(f.name, getattr(self, f.name)) for f in self._meta.fields if not isinstance(f, models.AutoField) and not f in self._meta.parents.values()])
+#        return self.__class__(**initial)
+#        
+#class Machine(models.Model):
+#    initial_state = models.ForeignKey(MachineState, related_name='initial')
+#    current_state = models.ForeignKey(MachineState)
+#    wait_for = models.ForeignKey('self', null=True, blank=True)
 
         
     

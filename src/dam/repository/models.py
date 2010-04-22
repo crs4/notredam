@@ -597,7 +597,11 @@ class Component(models.Model):
         self.save()
         
     def get_parameters(self):
-        return dict(urlparse.parse_qsl(self.parameters))
+        logger.debug('self.parameters %s'%self.parameters)
+        if self.parameters:
+            return dict(urlparse.parse_qsl(self.parameters))
+        else:
+            return {}
         
     
     def _get_media_type(self):
