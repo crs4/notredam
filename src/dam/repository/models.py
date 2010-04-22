@@ -565,8 +565,9 @@ class Component(models.Model):
     variant = models.ForeignKey('variants.Variant')
     workspace = models.ManyToManyField('workspace.Workspace')    
 #    media_type = models.ForeignKey('application.Type')
-    item = models.ForeignKey('Item',  )
+    item = models.ForeignKey('Item')
     source_id = models.CharField(max_length=40,  null = True,  blank = True)
+    
     preferences = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType,  null = True, blank = True)
     object_id = models.PositiveIntegerField(null = True, blank = True)
@@ -576,7 +577,12 @@ class Component(models.Model):
     #properties
 
     file_name = models.CharField(max_length=128, null=True, blank=True)
+    
+    #new
+    parameters = models.TextField(null = True,  blank = True)
+
     modified_metadata = models.BooleanField(default = False)    
+
     
     def _get_id(self):
         return self._id
