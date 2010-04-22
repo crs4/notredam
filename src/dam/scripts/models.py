@@ -17,7 +17,8 @@
 #########################################################################
 from django.db import models
 from django.utils import simplejson
-
+from upload.views import generate_tasks
+from variants.models import Variant
 
 
 """   
@@ -81,9 +82,9 @@ from django.utils import simplejson
         
    
     
-    media_type: 'image',
-    source: 'original',
-    
+    media_type: image,
+    source: original,
+    output: preview,
     actions: [
         {
         type: resize,
@@ -102,15 +103,11 @@ from django.utils import simplejson
         }
     
     ],
-    output:[
-    
-    ]
+   
 }
 
 
 """ 
-
-
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
@@ -129,7 +126,7 @@ class Script(models.Model):
         pipes = pipeline.get('pipes', [])
         
         for pipe in pipes:
-            
+            pass
                                 
             
         
@@ -153,17 +150,19 @@ class ActionError(Exception):
 
 
 class Pipe:
-    def __init__(self, action_list,  media_type = None, source_variant = None ):
+    def __init__(self, action_list, workspace, media_type = None, source_variant = None, output_variant = None ):
         
         
         actions_available = {}
-        self.create_state_machine = False
+        self.adaptation_task = False
+        self.workspace = workspace
         for subclass in BaseAction.__subclasses__():
             actions_available[subclass.__name__.lower()] = subclass
-        
-        
+    
         self.media_type = media_type
         self.source_variant = source_variant
+        self.output_variant = output_variant
+        
         self.actions = []
         
         for action_dict in pipe.get('actions', []):
@@ -176,21 +175,27 @@ class Pipe:
                 
                 action = actions_available[type](params)
                 if isinstance(action, BaseMDAction):
-                    self.create_state_machine = True
+                    self.adaptation_task = True
             except:
                 raise ActionError('action %s does not exist'%type)
             self.actions.append(action)
             
         
     def execute(self, items):
-          
-        create_state_machine = False
-        for action in self.actions:            
-                for item in items:                    
-                    action.execute(item)
         
-        if self.create_state_machine:
-            pass
+        adaptation_task = False
+        adapt_parameters = {}
+        variant = Variant.object.get(name = self.output_variant)
+        for item in items:
+            for action in self.actions:            
+                                    
+                    tmp = action.execute(item, variant)
+                    if tmp:
+                        adapt_parameters.update(tmp)
+                        
+        
+            if self.adaptation_task:                
+                generate_tasks(variant, self.workspace, item, adapt_parameters, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False)
 
 class BaseAction(object):
     required_params = []
@@ -205,7 +210,7 @@ class BaseAction(object):
                 
         self.parameters = parameters
        
-    def execute(self, item):
+    def execute(self, item, variant):
         pass
     
 class BaseMDAction(BaseAction):
