@@ -221,17 +221,21 @@ def upload_item(request):
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
 
-    request.upload_handlers = [StorageHandler()]
+    try:
+        request.upload_handlers = [StorageHandler()]
+        
+        url = request.POST['unique_url']
+        upload_file = request.FILES['Filedata']
+        
+        user, workspace = get_user_ws_from_url(url)
     
-    url = request.POST['unique_url']
-    upload_file = request.FILES['Filedata']
+        save_uploaded_item(request, upload_file, user, workspace)
     
-    user, workspace = get_user_ws_from_url(url)
-
-    save_uploaded_item(request, upload_file, user, workspace)
-
-    resp = simplejson.dumps({})
-    return HttpResponse(resp)
+        resp = simplejson.dumps({})
+        return HttpResponse(resp)
+    except Exception, ex:
+        logger.error(ex)
+        raise ex
 
 def upload_variant(request):
     """
@@ -488,7 +492,7 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
 
         Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=initial_state)
          
-        comp.preferences = vp.copy()
+#        comp.preferences = vp.copy()
         comp.source_id = source._id
         comp.save()
         
@@ -530,4 +534,4 @@ def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  
         wss = [workspace]
     
     for ws in wss:
-        _generate_tasks(variant, ws, item,  component, params,  register_task,  force_generation,  check_for_existing)            
+        _generate_tasks(variant, ws, item,  component, register_task,  force_generation,  check_for_existing)            

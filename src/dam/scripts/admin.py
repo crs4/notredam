@@ -30,7 +30,7 @@ class ScriptAdmin(admin.ModelAdmin):
     inlines = [ActionScriptInline]
 
 admin.site.register(Script,  ScriptAdmin)
-admin.site.register(Action)
-#admin.site.register(ActionScriptAssociation)
-admin.site.register(Parameter)
-#admin.site.register(ParameterToAction)
+#admin.site.register(Action)
+##admin.site.register(ActionScriptAssociation)
+#admin.site.register(Parameter)
+##admin.site.register(ParameterToAction)
