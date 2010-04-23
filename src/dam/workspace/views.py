@@ -1210,7 +1210,8 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
 #    else:
 #        items = workspace.items.distinct().order_by('-creation_time')
 
-    basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
+    user_basket = Basket.get_basket(user, workspace)
+    basket_items = user_basket.items.all().values_list('pk', flat=True)
 
     if only_basket:
         items = items.filter(pk__in=basket_items)
@@ -1297,7 +1298,9 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         default_language = get_metadata_default_language(user, workspace)
 
-        basket_items = Basket.objects.filter(user=user, workspace=workspace).values_list('item__pk', flat=True)
+        user_basket = Basket.get_basket(user, workspace)
+
+        basket_items = user_basket.items.all().values_list('pk', flat=True)
         
         for item in items:
             geotagged = 0

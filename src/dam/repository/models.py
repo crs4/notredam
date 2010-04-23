@@ -20,7 +20,7 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import User, Permission, Group
+from django.contrib.auth.models import User
 
 from dam.metadata.models import MetadataValue,MetadataProperty
 from dam.workflow.models import State, StateItemAssociation
@@ -40,7 +40,7 @@ class Type(models.Model):
 
 class Item(models.Model):
 
-    """ Base model describing items. They can contain components (see method 'add_child') and can be contained by containers """
+    """ Base model describing items. They can contain components """
 
     _id = models.CharField(max_length=41)
     owner =  models.CharField(max_length=50, null = True)
@@ -190,7 +190,7 @@ class Component(models.Model):
     metadata = generic.GenericRelation(MetadataValue)
     
     variant = models.ForeignKey('variants.Variant')
-    workspace = models.ManyToManyField('workspace.Workspace')    
+    workspace = models.ManyToManyField('workspace.Workspace')
     item = models.ForeignKey('Item')
     source_id = models.CharField(max_length=40,  null = True,  blank = True)
     preferences = generic.GenericForeignKey()
@@ -258,7 +258,6 @@ class Component(models.Model):
 
         item_list = [self.item.pk]
         descriptors = {}
-        desc_group    
         for d in desc_group.descriptors.all():
             for p in d.properties.all():
                 schema_value = self.get_metadata_values(p)
