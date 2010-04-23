@@ -19,7 +19,7 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext, Context, loader
 from django.template.loader import render_to_string
-from django.http import HttpResponse,  HttpResponseServerError
+from django.http import HttpResponse, HttpResponseServerError
 from django.utils import simplejson
 from django.views.generic.simple import redirect_to
 from django.contrib.contenttypes.models import ContentType
@@ -27,12 +27,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from dam.repository.models import Type, Item, Component,  _new_md_id
-from dam.metadata.views import  get_metadata_default_language, save_descriptor_values, save_variants_rights
+from dam.repository.models import Type, Item, Component
+from dam.metadata.views import get_metadata_default_language, save_descriptor_values, save_variants_rights
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
-from dam.variants.models import Variant,  ImagePreferences as VariantsPreference,  VariantAssociation
+from dam.variants.models import Variant, ImagePreferences as VariantsPreference, VariantAssociation
 from dam.treeview.models import Node
-from dam.treeview.views import _add_node
 from dam.batch_processor.models import MachineState, Machine, Action
 
 from dam.workspace.models import Workspace
@@ -58,70 +57,31 @@ def _uploaded_item(item,  workspace):
     node = Node.objects.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  workspace = workspace,  depth = 2)[0]
     node.items.add(item)
 
-def adobe_air_upload(request):
+def _get_upload_url(user, workspace, number):
 
-    workspace = Workspace.objects.all()[0]
+    """
+    FIX: API NEED FIXING!!
+    """
 
-    file_name = request.POST['file_name']
-    user = User.objects.all()[0]
-    type = guess_media_type(file_name)
+    urls = []
 
-    storage = Storage('/tmp/prova/')
-    res_id = storage.add('/tmp/prova/imports/'+file_name)
-    
-    item_ctype = ContentType.objects.get_for_model(Item)
-    
-    item = Item.objects.create(uploader = user,  type = type)
-    item_id = item.pk
-    _uploaded_item(item,  workspace) 
+    for i in xrange(int(number)):
+        urls.append(UploadURL.objects.create(user=user, workspace=workspace).url)
 
-    item.workspaces.add(workspace)
-        
-    variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
-            
-    comp = _create_variant(variant,  item, workspace)
-    
-    comp.file_name=file_name
-    comp._id = res_id
-    
-    logger.debug('comp._id %s'%comp._id )
-    mime_type = mimetypes.guess_type(file_name)[0]
-    
-    ext = mime_type.split('/')[1]
-    comp.format= ext
-    comp.save()
-    
-    logger.debug('mime_type  %s'%mime_type )
-    
-    metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-    metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
-    orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
-    try:
-        generate_tasks(variant, workspace, item)
-    except Exception, ex:
-        traceback.print_exc(ex)
-        raise
-#    resp = simplejson.dumps({'new_keywords':new_keywords})
-    resp = simplejson.dumps({})
-    return HttpResponse(resp)
-
-def _get_upload_url(res_id, fsize, ext):
-    pass
+    return urls
 
 @login_required
-def get_flex_upload_url(request):
+def get_upload_url(request):
     """
     Generate unique upload urls (workaround for flash cookie bug)
     """
-    urls = []
     n = request.POST['n']
 
     workspace = request.session.get('workspace')
     user = User.objects.get(pk = request.session['_auth_user_id'])    
 
-    for i in xrange(int(n)):
-        urls.append(UploadURL.objects.create(user=user, workspace=workspace).url)
-        
+    urls = _get_upload_url(user, workspace, n)
+
     resp = simplejson.dumps({'urls': urls})
     return HttpResponse(resp)
     

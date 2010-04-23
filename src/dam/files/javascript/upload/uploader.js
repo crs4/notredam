@@ -328,7 +328,7 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
                     var queued = stats.files_queued;
                     
                     Ext.Ajax.request({
-                        url:'/get_flex_upload_url/',
+                        url:'/get_upload_url/',
                         params: {n: queued},
                         success: function(resp){
                             var resp_json = Ext.util.JSON.decode(resp.responseText)
