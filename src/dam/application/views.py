@@ -35,7 +35,7 @@ from dam.variants.models import Variant,  VariantAssociation
 from dam.repository.models import Item, Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
-from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS,  MEDIADART_CONF
+from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
 

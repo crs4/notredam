@@ -20,7 +20,9 @@ from django.db import models
 from dam.repository.models import Component, Item
 
 class Action(models.Model):
-
+    """
+    Method to call on a component (i.e. adapt_resource, extract_features, etc.)
+    """
     component = models.ForeignKey(Component)
     function = models.CharField(max_length=64)
 
@@ -28,6 +30,9 @@ class Action(models.Model):
         return "%s %s"  % (self.component.get_variant().name, self.function )
 
 class MachineState(models.Model):
+    """
+    Basic implementation of the state of a finite state machine
+    """
     name = models.CharField(max_length=64)
     action = models.ForeignKey(Action, null=True, blank=True)
     next_state =  models.ForeignKey('self', null=True, blank=True)
@@ -37,6 +42,10 @@ class MachineState(models.Model):
         return self.__class__(**initial)
         
 class Machine(models.Model):
+    """
+    Finite state machine implementation. Contains a reference to the current
+    machine state, to the initial state and to another state machine to wait for
+    """
     initial_state = models.ForeignKey(MachineState, related_name='initial')
     current_state = models.ForeignKey(MachineState)
     wait_for = models.ForeignKey('self', null=True, blank=True)
