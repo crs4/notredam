@@ -116,6 +116,7 @@ def adapt_resource(component, machine):
 
 #    vp = variant.get_preferences(workspace)
     vp = component.get_parameters()
+    logger.debug('vp %s'%vp)
     orig = source_variant.get_component(workspace = workspace,  item = item) 
 
     dest_res_id = new_id()
@@ -123,7 +124,8 @@ def adapt_resource(component, machine):
     if item.type == 'image':
  
         transcoding_format = vp.get('codec','jpg') #change to original format
-        max_dim = vp.get('max_dim', -1) 
+        max_dim = int(vp.get('max_dim', -1)) 
+        logger.debug('max_dim %s'%max_dim)
         cropping = vp.get('cropping', False)
         watermark_enabled = vp.get('watermarking', False)
 
