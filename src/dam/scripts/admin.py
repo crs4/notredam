@@ -22,14 +22,14 @@ from dam.application.admin import mod_admin
 from scripts.models import *
 
 
-class ActionScriptInline(admin.TabularInline):
-    model = ActionScriptAssociation
-    extra = 1
-    
-class ScriptAdmin(admin.ModelAdmin):
-    inlines = [ActionScriptInline]
-
-admin.site.register(Script,  ScriptAdmin)
+#class ActionScriptInline(admin.TabularInline):
+#    model = ActionScriptAssociation
+#    extra = 1
+#    
+#class ScriptAdmin(admin.ModelAdmin):
+#    inlines = [ActionScriptInline]
+#
+#admin.site.register(Script,  ScriptAdmin)
 #admin.site.register(Action)
 ##admin.site.register(ActionScriptAssociation)
 #admin.site.register(Parameter)

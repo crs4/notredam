@@ -590,7 +590,11 @@ class Component(models.Model):
     
     def set_parameters(self, params):
         params_str = ''
-        for key in params.keys().sort():
+        logger.debug('params %s'%params)
+        logger.debug('params.keys()%s'%params.keys())
+        keys = params.keys()
+        keys.sort()
+        for key in keys:
             params_str += '%s=%s&'%(key,params[key])
         
         self.parameters = params_str

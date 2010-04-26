@@ -122,10 +122,10 @@ def adapt_resource(component, machine):
         
     if item.type == 'image':
  
-        transcoding_format = vp['codec']
-        max_dim = vp['max_dim'] 
-        cropping = vp['cropping']
-        watermark_enabled = vp['watermarking']
+        transcoding_format = vp.get('codec','jpg') #change to original format
+        max_dim = vp.get('max_dim', -1) 
+        cropping = vp.get('cropping', False)
+        watermark_enabled = vp.get('watermarking', False)
 
 #         if cropping:
 # 

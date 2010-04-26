@@ -320,6 +320,7 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
     """
     Generates MediaDART tasks
     """
+    logger.debug('_generate_tasks')
 
     from dam.application.models import Type
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
@@ -508,7 +509,7 @@ def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  
     """
     Generate MediaDART Tasks for the given variant, item and workspace
     """
-    
+    logger.debug('generate_tasks')
     component = variant.get_component(workspace,  item)
 #    try:
 #        component = variant.get_component(workspace,  item)    
