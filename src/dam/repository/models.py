@@ -22,38 +22,22 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
-from dam.metadata.models import MetadataValue,MetadataProperty
 from dam.workflow.models import State, StateItemAssociation
 
 import sha
 import random
 import logger
 
-class Type(models.Model):
-    """
-    It contains the supported media type.
-    """
-    name =  models.CharField(max_length=30)
+from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
 
-    def __str__(self):
-        return self.name
+def _new_md_id():
+    return sha.new(str(random.random())).hexdigest()
 
-class Item(models.Model):
+class Item(AbstractItem):
 
     """ Base model describing items. They can contain components """
 
-    _id = models.CharField(max_length=41)
-    owner =  models.CharField(max_length=50, null = True)
-    uploader = models.ForeignKey(User)
-    type =  models.CharField(max_length=20, null = True)
-    privacy =  models.CharField(max_length=20, null = True)
-    state = models.DecimalField(decimal_places=0, max_digits=10, null = True)
-    creation_time = models.DateTimeField(auto_now_add = True)
-    update_time = models.DateTimeField(auto_now = True)
-    is_public = models.BooleanField(default=False)
-    metadata = generic.GenericRelation(MetadataValue)
-    title = models.CharField(max_length=128, null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    metadata = generic.GenericRelation('metadata.MetadataValue')
 
     class Meta:
         db_table = 'item'
@@ -63,7 +47,7 @@ class Item(models.Model):
         values = []
         original_component = Component.objects.get(item=self, variant__name='original', workspace=self.workspaces.all()[0])
         if metadataschema:
-            schema_value, delete, b = get_metadata_values([self.pk], metadataschema, set([self.type]), set([original_component.media_type.name]), [original_component.pk])
+            schema_value, delete, b = get_metadata_values([self.pk], metadataschema, set([self.type.name]), set([original_component.media_type.name]), [original_component.pk])
             if delete:
                 return None
             if schema_value:
@@ -76,7 +60,7 @@ class Item(models.Model):
         else:
             for m in self.metadata.all().distinct('schema').values('schema'):
                 prop = MetadataProperty.objects.get(pk=m['schema'])
-                schema_value, delete, b = get_metadata_values([self.pk], prop, set([self.type]), set([original_component.media_type.name]), [original_component.pk])
+                schema_value, delete, b = get_metadata_values([self.pk], prop, set([self.type.name]), set([original_component.media_type.name]), [original_component.pk])
                 if delete:
                     return None
                 if schema_value:
@@ -118,7 +102,7 @@ class Item(models.Model):
 
     def get_file_size(self):
         from dam.variants.models import Variant
-        orig = self.component_set.get(variant = Variant.objects.get(name = 'original', media_type__name = self.type))
+        orig = self.component_set.get(variant = Variant.objects.get(name = 'original', media_type = self.type))
         return float(orig.size)
 
     def get_states(self, workspace=None):
@@ -126,11 +110,11 @@ class Item(models.Model):
             return StateItemAssociation.objects.filter(item = self)
         else:
             return StateItemAssociation.get(item=self, workspace=workspace)
-                        
+
     def get_variants(self,  workspace):
         from dam.variants.models import Variant
-        return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(variantassociation__workspace__pk = workspace.pk), media_type__name = self.type),  workspace = workspace)
-                
+        return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(variantassociation__workspace__pk = workspace.pk), media_type = self.type),  workspace = workspace)
+
     def description(self):
         mydescription = self.metadata.get(schema__is_description = True, language ="it-IT")
         return mydescription.value
@@ -141,57 +125,23 @@ class Item(models.Model):
 #        mykeywords = self.metadata.filter(schema__keyword_target = True)
 #        for i in mykeywords:
 #            k.append(i.value)
-#        return mykeywords    
+#        return mykeywords
 
     def uploaded_by(self):
         try:
             return self.uploader.username
         except:
             return 'unknown'
-                
-    def _get_id(self):
-        return  self._id
-    
-    ID = property(fget=_get_id)
-        
-    def save(self, force_insert=False):
-        if self._id == '':
-            self._id = 'a' + sha.new(str(random.random())).hexdigest()
-        try:
-            models.Model.save(self, force_insert=force_insert)   
-        except:
-            self._id = ''
-            raise
-            
-    
-    def __str__(self):
-        return self.ID
-        
-def _new_md_id():
-        return sha.new(str(random.random())).hexdigest()
-        
-class Component(models.Model):
-    """ Base model describing components. They can be contained by items."""
-    _id = models.CharField(max_length=40,  db_column = 'md_id')
-    owner =  models.CharField(max_length=50, null = True)
-    type =  models.CharField(max_length=20, null = True)
-    state = models.DecimalField(decimal_places=0, max_digits=10, null = True)
-    creation_time = models.DateTimeField(auto_now = True)
-    update_time = models.DateTimeField(auto_now = True)
+                                
+class Component(AbstractComponent):
 
-    format = models.CharField(max_length=50, null = True)
-    width = models.DecimalField(decimal_places=0, max_digits=10,default = 0)
-    height = models.DecimalField(decimal_places=0, max_digits=10,default = 0)
-    bitrate = models.DecimalField(decimal_places=0, max_digits=10,default = 0)
-    duration = models.DecimalField(decimal_places=0, max_digits=10,default = 0, null = True)
-    size = models.DecimalField(decimal_places=0, max_digits=10, default = 0)
-    embedded_license = models.BooleanField(default = False)
-    condition_class = models.TextField( null = True)
-    metadata = generic.GenericRelation(MetadataValue)
+    """ Base model describing components. They can be contained by items."""
+
+    _id = models.CharField(max_length=40,  db_column = 'md_id')
+    metadata = generic.GenericRelation('metadata.MetadataValue')
     
     variant = models.ForeignKey('variants.Variant')
     workspace = models.ManyToManyField('workspace.Workspace')
-    item = models.ForeignKey('Item')
     source_id = models.CharField(max_length=40,  null = True,  blank = True)
     preferences = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType,  null = True, blank = True)
@@ -201,7 +151,8 @@ class Component(models.Model):
     imported = models.BooleanField(default = False) # if true related variant must not be regenarated from the original
     #properties
 
-    file_name = models.CharField(max_length=128, null=True, blank=True)
+    item = models.ForeignKey('repository.Item')
+
     modified_metadata = models.BooleanField(default = False)    
     
     class Meta:
@@ -232,7 +183,7 @@ class Component(models.Model):
         from dam.metadata.views import get_metadata_values
         values = []
         if metadataschema:
-            schema_value, delete, b = get_metadata_values([self.item.pk], metadataschema, set([self.item.type]), set([self.media_type.name]), [self.pk], self)
+            schema_value, delete, b = get_metadata_values([self.item.pk], metadataschema, set([self.item.type.name]), set([self.media_type.name]), [self.pk], self)
             if delete:
                 return None
             if schema_value:
@@ -245,7 +196,7 @@ class Component(models.Model):
         else:
             for m in self.metadata.all().distinct('schema').values('schema'):
                 prop = MetadataProperty.objects.get(pk=m['schema'])
-                schema_value, delete, b = get_metadata_values([self.item.pk], prop, set([self.item.type]), set([self.media_type.name]), [self.pk], self)
+                schema_value, delete, b = get_metadata_values([self.item.pk], prop, set([self.item.type.name]), set([self.media_type.name]), [self.pk], self)
                 if delete:
                     return None
                 if schema_value:
@@ -266,7 +217,6 @@ class Component(models.Model):
                     break
 
         return descriptors
-
     
     def get_variant(self):
         return self.variant

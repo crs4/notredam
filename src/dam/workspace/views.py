@@ -40,7 +40,7 @@ from dam.variants.models import Variant, VariantAssociation, VariantDefault, Ima
 from dam.upload.views import generate_tasks
 from dam.application.views import get_component_url
 from dam.workspace.forms import AdminWorkspaceForm, AdminWorkspaceGroupsForm, AddMembersForm, AddMembersToGroupForm, SetPermissionsForm, SetGroupsForm
-from dam.repository.models import Type
+from dam.framework.dam_repository.models import Type
 from dam.geo_features.models import GeoInfo
 from dam.batch_processor.models import MachineState, Machine
 from dam.settings import GOOGLE_KEY, ROOT_PATH, DATABASE_ENGINE
@@ -672,7 +672,7 @@ def admin_workspace_set_groups(request, ws_id,  user_id = None):
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     if ws not in item.workspaces.all():             
-        media_type = Type.objects.get(name = item.type)
+        media_type = Type.objects.get(name = item.type.name)
         item.workspaces.add(ws)
         
 #                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
@@ -701,7 +701,7 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
             
             
 #                    default_source_variant = comp.variant.get_source
-        ws_variants = Variant.objects.filter(variantassociation__workspace = ws,  auto_generated = True,  media_type__name = item.type)
+        ws_variants = Variant.objects.filter(variantassociation__workspace = ws,  auto_generated = True,  media_type = item.type)
         logger.debug('ws_variants %s'%ws_variants)
         
 #                logger.debug('item.component_set.filter(workspace = ws)[0].variant.pk %s' %item.component_set.filter(workspace = ws)[0].variant.pk)
@@ -1204,7 +1204,7 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
 
     only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
     
-    items = workspace.items.filter(type__in = media_type).distinct().order_by('-creation_time')
+    items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
 #    if media_type != 'all':
 #        items = workspace.items.filter(type=media_type).distinct().order_by('-creation_time')
 #    else:
@@ -1239,8 +1239,8 @@ def _get_thumb_url(item, workspace, thumb_dict = None, absolute_url = False):
             thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk'],  'default_url': thumb['default_url']}
     
 
-    if thumb_dict[item.type]['default_url']:
-        thumb_url = thumb_dict[item.type]['default_url']
+    if thumb_dict[item.type.name]['default_url']:
+        thumb_url = thumb_dict[item.type.name]['default_url']
         thumb_ready = 1
     
     else:
@@ -1331,7 +1331,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 "geotagged": geotagged, 
                 "inprogress": inprogress, 
                 'thumb': thumb_ready, 
-                'type': smart_str(item.type),
+                'type': smart_str(item.type.name),
                 'inbasket': item_in_basket,
                 'preview_available': preview_available,
                 #'inbasket':1,
