@@ -118,7 +118,7 @@ def adapt_resource(component, machine):
 
     dest_res_id = new_id()
         
-    if item.type == 'image':
+    if item.type.name == 'image':
  
         transcoding_format = vp.codec
         max_dim = vp.max_dim 
@@ -166,7 +166,7 @@ def adapt_resource(component, machine):
         else:
             d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=(max_dim, max_dim))
 
-    elif item.type == 'movie':
+    elif item.type.name == 'movie':
 
         if vp.media_type.name == "image":
 
@@ -199,7 +199,7 @@ def adapt_resource(component, machine):
             d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
             
 
-    elif item.type == 'audio':
+    elif item.type.name == 'audio':
 
         preset_name = vp.preset.name
         param_dict = {}
@@ -211,7 +211,7 @@ def adapt_resource(component, machine):
             
         d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
     
-    if item.type == 'doc':
+    if item.type.name == 'doc':
  
         transcoding_format = vp.codec
         max_size = vp.max_dim

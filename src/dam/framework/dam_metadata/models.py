@@ -23,17 +23,21 @@ from django.contrib.contenttypes import generic
 from django.db import connection
 from datetime import datetime
 
-class MetadataLanguage(models.Model):
+class AbstractMetadataLanguage(models.Model):
     """
     List of Languages compliant to RFC 3066
     """
     code = models.CharField(max_length=12)
     language = models.CharField(max_length=64)
     country = models.CharField(max_length=64)
+
+    class Meta:
+        abstract = True
+
     def __str__(self):
         return "%s:%s/%s" % (self.code, self.language, self.country)
 
-class Namespace(models.Model):
+class XMPNamespace(models.Model):
     """
     XMP Namespaces (es. Dublin Core, Xmp Basic, and so on)
     """
@@ -44,7 +48,7 @@ class Namespace(models.Model):
     def __str__(self):
         return "%s (%s)" % (self.name, self.uri)
 
-class MetadataProperty(models.Model):
+class XMPProperty(models.Model):
     """
     XMP Property (as defined in XMP Specification docs)
     """
@@ -104,11 +108,10 @@ class MetadataProperty(models.Model):
         ('CopyrightOwnerDetail','CopyrightOwnerDetail'),
         ('ImageCreatorDetail','ImageCreatorDetail'),
         ('ArtworkOrObjectDetails','ArtworkOrObjectDetails'),
-        ('filesize','filesize'),
-        
+        ('filesize','filesize'),        
         )
 
-    namespace = models.ForeignKey(Namespace)
+    namespace = models.ForeignKey(XMPNamespace)
     field_name = models.CharField(max_length=64)
     caption = models.CharField(max_length=128)
     description = models.CharField(max_length=256)
@@ -117,57 +120,34 @@ class MetadataProperty(models.Model):
     is_choice = models.CharField(max_length=15, choices=CHOICE_TYPES, default='not_choice')
     internal = models.BooleanField(default=False)
     editable = models.BooleanField(default=True)
-    media_type = models.ManyToManyField('dam_repository.Type', default='image' )
-    keyword_target = models.BooleanField(default=False)
-    is_searchable = models.BooleanField(default=False)
-    is_variant = models.BooleanField(default=False)
-    creation_date = models.BooleanField(default=False)
-    uploaded_by = models.BooleanField(default=False)
-    resource_format = models.BooleanField(default=False)
-    latitude_target = models.BooleanField(default=False)
-    longitude_target = models.BooleanField(default=False)
-    rights_target = models.BooleanField(default=False)
-    item_owner_target = models.BooleanField(default=False)
-    file_size_target = models.BooleanField(default=False)
-    file_name_target = models.BooleanField(default=False)
     
-    def __str__(self):
-        return "%s:%s" % (self.namespace.prefix, self.field_name)
-
+    if models.get_app('dam_repository'):
+        media_type = models.ManyToManyField('dam_repository.Type', default='image' )
+    else:
+        media_type = models.CharField(max_length=64, default='image')
+    
     class Meta:
         verbose_name_plural = "Metadata properties"
 
-class MetadataDescriptor(models.Model):
-    """
-    Descriptors are application-defined metadata used to 
-    simplify metadata editing
-    One descriptor is mapped to 1-N XMP Properties
-    """
-    name = models.CharField(max_length=128)
-    description = models.CharField(max_length=255)
-    properties = models.ManyToManyField(MetadataProperty)
-    custom = models.BooleanField(default=False)    
-    
     def __str__(self):
-        return "%s" % (self.name)
+        return "%s:%s" % (self.namespace.prefix, self.field_name)
 
-class MetadataStructure(models.Model):
+class XMPStructure(models.Model):
     """
     XMP Structure Definition (es. Dimensions is a structure
     containing 2 XMP Properties)
     """
     name = models.CharField(max_length=128)
-    properties = models.ManyToManyField(MetadataProperty)	
+    properties = models.ManyToManyField(XMPProperty)	
     
     def __str__(self):
         return "%s" % (self.name)
 
-
-class MetadataValue(models.Model):
+class XMPValue(models.Model):
     """
     Xmp property values are saved here
     """
-    schema = models.ForeignKey(MetadataProperty, null=True, blank=True)
+    schema = models.ForeignKey(XMPProperty, null=True, blank=True)
     xpath = models.TextField()
     value = models.TextField()
     content_type = models.ForeignKey(ContentType)
@@ -179,53 +159,14 @@ class MetadataValue(models.Model):
     def __str__(self):
         return "%s (%s)" % (self.schema.namespace, self.schema.field_name)
 
-class MetadataDescriptorGroup(models.Model):
-    """
-    Group of Metadata Descriptor
-    Special groups are basic_summary, specific basic, specific full and upload,
-    used in specific parts of DAM GUI
-    """
-    name = models.CharField(max_length=128)
-    descriptors = models.ManyToManyField(MetadataDescriptor)
-    basic_summary = models.BooleanField(default=False)
-    specific_basic = models.BooleanField(default=False)
-    specific_full = models.BooleanField(default=False)
-    upload = models.BooleanField(default=False)
-    workspace = models.ForeignKey('workspace.Workspace', null=True, blank=True) 
-    
-    def __str__(self):
-        return "%s" % (self.name)
-
-class MetadataPropertyChoice(models.Model):
+class XMPPropertyChoice(models.Model):
     """
     Choice values of an XMP Property 
     """
     value = models.CharField(max_length=128)
     description = models.CharField(max_length=255, null=True, blank=True)
-    choice_property = models.ForeignKey(MetadataProperty, related_name='property_choices')
+    choice_property = models.ForeignKey(XMPProperty, related_name='property_choices')
     
     def __str__(self):
         return "%s (%s)" % (self.value, self.choice_property)
 
-class RightsXMPValue(models.Model):
-    """
-    XMP value to be set for a specific license choice
-    """
-    value = models.CharField(max_length=128)
-    xmp_property = models.ForeignKey(MetadataProperty)
-    
-    def __str__(self):
-        return "%s (%s)" % (self.value, self.xmp_property)
-
-class RightsValue(models.Model):
-    """
-    Rights values (es. all rights reserved, Creative Commons Attribution, ...)
-    It automatically sets values for the XMP Properties as defined in 
-    xmp_values list
-    """
-    value = models.CharField(max_length=255)
-    xmp_values = models.ManyToManyField(RightsXMPValue)
-    components = models.ManyToManyField('repository.Component', related_name='comp_rights', null=True, blank=True)
-    
-    def __str__(self):
-        return "%s" % (self.value)

@@ -27,7 +27,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from dam.repository.models import Type, Item, Component
+from dam.repository.models import Item, Component
+from dam.framework.dam_repository.models import Type
 from dam.metadata.views import get_metadata_default_language, save_descriptor_values, save_variants_rights
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant, ImagePreferences as VariantsPreference, VariantAssociation
@@ -122,7 +123,7 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
 def save_uploaded_item(request, upload_file, user, workspace):
 
     type = guess_media_type(upload_file.name)
-
+    
     fname, extension = os.path.splitext(upload_file.name)
 
     upload_file.rename(extension)
@@ -132,14 +133,18 @@ def save_uploaded_item(request, upload_file, user, workspace):
     file_name = upload_file.name
     
     item_ctype = ContentType.objects.get_for_model(Item)
+
+    media_type = Type.objects.get(name=type)
     
-    item = Item.objects.create(uploader = user,  type = type)
+    item = Item.objects.create(owner = user, uploader = user,  type = media_type)
     item_id = item.pk
     _uploaded_item(item, workspace) 
 
     item.workspaces.add(workspace)
         
-    variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
+    print item.workspaces.all()    
+        
+    variant = Variant.objects.get(name = 'original',  media_type__name = type)
             
     save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
 
@@ -184,11 +189,11 @@ def upload_item(request):
     
     url = request.POST['unique_url']
     upload_file = request.FILES['Filedata']
-    
+
     user, workspace = get_user_ws_from_url(url)
 
     save_uploaded_item(request, upload_file, user, workspace)
-
+        
     resp = simplejson.dumps({})
     return HttpResponse(resp)
 

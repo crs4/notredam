@@ -29,7 +29,7 @@ from django.utils import simplejson
 
 from dam.settings import ROOT_PATH
 from dam.variants.models import Variant, ImagePreferences, AudioPreferences, VideoPreferences,  DocPreferences,  VariantAssociation,  ImagePreferencesForm, VideoPreferencesForm, AudioPreferencesForm,  DocPreferencesForm,  SourceVariant,  _create_parameters_json,  Preset
-from dam.repository.models import Type
+from dam.framework.dam_repository.models import Type
 from dam.repository.models import Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
@@ -90,11 +90,11 @@ def get_variant_media_type(item_id,  variant_name, workspace):
         logger.debug('variant_name %s' %variant_name)
         if variant_name == 'original' or variant_name ==  'edited':
             logger.debug('original or edited')
-            return item.type
+            return item.type.name
         logger.debug('item %s' %item)
         logger.debug('variant name %s' %variant_name)
         
-        v = Variant.objects.get(Q(workspace = workspace) | Q(workspace__isnull = True), variant_name = variant_name, media_type__name = item.type)
+        v = Variant.objects.get(Q(workspace = workspace) | Q(workspace__isnull = True), variant_name = variant_name, media_type = item.type)
         
         logger.debug('item_id %s' %item_id)
         
@@ -133,7 +133,7 @@ def force_variant_generation(request,  variant_id,  item_id):
     
 def _create_variant(variant,  item, ws):
     logger.debug('variant %s'%variant)
-    logger.debug('item.type %s'%item.type)
+    logger.debug('item.type %s'%item.type.name)
     logger.debug('ws %s'%ws)
 #    if variant_name =='original':
 #        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
@@ -143,11 +143,11 @@ def _create_variant(variant,  item, ws):
     
     try:
         if variant.shared:
-            comp = Component.objects.get(item = item,    variant= variant)
+            comp = Component.objects.get(item = item, variant= variant)
             comp.workspace.add(ws)
             comp.workspace.add(*item.workspaces.all())
         else:
-            comp = Component.objects.get(item = item,    variant= variant,  workspace = ws)
+            comp = Component.objects.get(item = item, variant= variant,  workspace = ws)
         comp.new_md_id()
         logger.debug('comp._id %s' %comp._id)
         comp.metadata.all().delete()
@@ -330,12 +330,14 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(variantassociation__workspace = workspace,  media_type__name = item.type,  default_url__isnull = True).distinct()
+    item_variants = Variant.objects.filter(variantassociation__workspace = workspace,  media_type = item.type,  default_url__isnull = True).distinct()
+
+    print item_variants
 
     now = time.time()
     resp = {'variants':[]}
     for v in item_variants:
-        
+                
         try:
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             work_in_progress = Machine.objects.filter(current_state__action__component = comp).count() > 0
@@ -370,7 +372,7 @@ def get_variants(request):
             if prefs:
                 media_type = prefs.media_type.name
             else:
-                media_type = item.type
+                media_type = item.type.name
             imported = False
             work_in_progress = False
             info_list = []

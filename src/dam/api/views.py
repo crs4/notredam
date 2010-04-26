@@ -32,7 +32,8 @@ from django_restapi.responder import *
 
 from django.contrib.auth.models import Permission
 
-from dam.repository.models import Type, Item,  Component,  _new_md_id
+from dam.repository.models import Item,  Component,  _new_md_id
+from dam.framework.dam_repository.models import Type
 from dam.workspace.models import Workspace,  WorkSpacePermissionAssociation, WorkSpacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation

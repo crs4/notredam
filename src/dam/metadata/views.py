@@ -266,7 +266,7 @@ def save_descriptor_values(descriptor, item, values, workspace, metadata_object=
     Save descriptor values for the given item
     """	
 	
-    properties = descriptor.properties.filter(media_type__name=item.type)
+    properties = descriptor.properties.filter(media_type=item.type)
     ctype_item = ContentType.objects.get_for_model(Item)
     ctype_obj = ContentType.objects.get_for_model(Component)
     for p in properties:
@@ -341,7 +341,7 @@ def save_descriptor_structure_values(descriptor, schema_id, item, values, worksp
     it saves the values as the first item of the array)
     """
 	
-    properties = descriptor.properties.filter(media_type__name=item.type)
+    properties = descriptor.properties.filter(media_type=item.type)
     ctype_item = ContentType.objects.get_for_model(Item)
     ctype_obj = ContentType.objects.get_for_model(Component)
     for p in properties:
@@ -493,7 +493,7 @@ def get_items_types(item_list):
     Returns the media types of the items in item_list
     """
 
-    types = Item.objects.filter(pk__in=item_list).values_list('type', flat=True)
+    types = Item.objects.filter(pk__in=item_list).values_list('type__name', flat=True)
     item_media_types = set(types)
   
     return item_media_types
@@ -889,7 +889,7 @@ def get_metadata(request):
 
     try:
     
-        item_media_types = set(Item.objects.filter(pk__in=item_list).values_list('type', flat=True))
+        item_media_types = set(Item.objects.filter(pk__in=item_list).values_list('type__name', flat=True))
     
         if metadata_view:
             form_list = _advanced_metadata_view(item_list, workspace, default_language, metadata_object, item_media_types)

@@ -26,9 +26,12 @@ from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
-from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, MetadataStructure, RightsValue, RightsXMPValue, Namespace
-from dam.repository.models import Type
+from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, MetadataStructure, RightsValue, RightsXMPValue
+from dam.framework.dam_repository.models import Type
 from dam.workspace.models import Workspace, WorkSpacePermissionAssociation, WorkspacePermissionsGroup, WorkSpacePermission
+
+from dam.framework.dam_metadata.models import XMPNamespace
+
 
 import logger
 
@@ -514,7 +517,7 @@ def damadmin_get_xmp_list(request):
 @staff_member_required
 def damadmin_get_xmp_namespaces(request):
     data = {'elements':[]}
-    namespaces = Namespace.objects.all()
+    namespaces = XMPNamespace.objects.all()
     for p in namespaces: 
         data['elements'].append({'id':p.id, 'prefix': p.prefix, 'name':p.name, 'url': p.uri})
         
@@ -532,13 +535,13 @@ def damadmin_save_ns(request):
     if ns_name and ns_prefix and ns_url:
     
         if int(current_ns_id) > 0:
-            ns = Namespace.objects.get(pk=current_ns_id)
+            ns = XMPNamespace.objects.get(pk=current_ns_id)
             ns.name = ns_name
             ns.prefix = ns_prefix
             ns.uri = ns_url
             ns.save()
         else:
-            ns = Namespace.objects.create(name=ns_name, prefix=ns_prefix, uri=ns_url)
+            ns = XMPNamespace.objects.create(name=ns_name, prefix=ns_prefix, uri=ns_url)
             
         return HttpResponse(simplejson.dumps({'success': True}))
 
@@ -561,7 +564,7 @@ def _get_xmp_params(request):
     if xmp_target:
         params[str(xmp_target)] = True
     params['keyword_target'] = request.POST.get('xmp_keyword')
-    params['namespace'] = Namespace.objects.get(pk=int(request.POST.get('xmp_namespace')))
+    params['namespace'] = XMPNamespace.objects.get(pk=int(request.POST.get('xmp_namespace')))
     params['is_array'] = request.POST.get('xmp_array')
     params['is_choice'] = request.POST.get('xmp_choice')
     for k in request.POST.keys():
@@ -602,7 +605,7 @@ def damadmin_save_xmp(request):
 @staff_member_required
 def damadmin_delete_namespace(request):
     ns_ids = simplejson.loads(request.POST.get('obj_list'))
-    Namespace.objects.filter(pk__in=ns_ids).delete()
+    XMPNamespace.objects.filter(pk__in=ns_ids).delete()
     return HttpResponse(simplejson.dumps({'success': True}))           
         
 @staff_member_required

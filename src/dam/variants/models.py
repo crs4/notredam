@@ -22,10 +22,14 @@ from django.contrib.contenttypes import generic
 from django.contrib.auth.models import User
 
 from dam.workspace.models import Workspace
-from dam.repository.models import Type, Component
+from dam.repository.models import Component
 from dam.metadata.models import RightsValue
+
+from dam.framework.dam_repository.models import Type
+
 import logger
 import time
+
 from django.utils import simplejson
 
 class Variant(models.Model):    
