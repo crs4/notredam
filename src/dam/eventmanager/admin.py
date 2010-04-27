@@ -20,8 +20,8 @@ from django.contrib import admin
 from dam.application.admin import mod_admin
 from eventmanager.models import EventRegistration, EventManager
 
-admin.site.register(EventRegistration)
-admin.site.register(EventManager)
-
-mod_admin.register(EventRegistration)
-mod_admin.register(EventManager)
+#admin.site.register(EventRegistration)
+#admin.site.register(EventManager)
+#
+#mod_admin.register(EventRegistration)
+#mod_admin.register(EventManager)
