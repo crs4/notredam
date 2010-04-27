@@ -42,7 +42,7 @@ from dam.application.models import Type
 from dam.variants.views import _create_variant
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
-
+from eventmanager.models import EventRegistration
 from mediadart.storage import Storage
 
 import logger
@@ -154,11 +154,11 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
 
-    try:
-        generate_tasks(variant, workspace, item, 1)
-    except Exception, ex:
-        print traceback.print_exc(ex)
-        raise    
+#    try:
+#        generate_tasks(variant, workspace, item, 1)
+#    except Exception, ex:
+#        print traceback.print_exc(ex)
+#        raise    
     
 def save_uploaded_item(request, upload_file, user, workspace):
 
@@ -179,10 +179,12 @@ def save_uploaded_item(request, upload_file, user, workspace):
     _uploaded_item(item, workspace) 
 
     item.workspaces.add(workspace)
-        
+    
     variant = Variant.objects.get(name = 'original',  media_type__name = item.type)
             
     save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
+    EventRegistration.objects.notify('upload',  **{'items':[item]})
+    
 
 def save_uploaded_variant(request, upload_file, user, workspace):
 

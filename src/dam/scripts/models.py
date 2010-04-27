@@ -17,8 +17,10 @@
 #########################################################################
 from django.db import models
 from django.utils import simplejson
+from django.contrib.contenttypes import generic
 from upload.views import generate_tasks
 from variants.models import Variant
+from repository.models import Component
 import logger
 
 
@@ -151,7 +153,7 @@ class Script(models.Model):
     description = models.CharField(max_length= 200)
     pipeline = models.TextField()
     workspace = models.ForeignKey('workspace.Workspace')
-    event = models.ForeignKey('eventmanager.EventRegistration',  null = True,  blank = True)
+    event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
     
     def __unicode__(self):
