@@ -29,10 +29,11 @@ from dam.repository.models import Item,Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
 from dam.preferences.views import get_user_setting
 from dam.workspace.models import Workspace
-from dam.metadata.models import MetadataLanguage, Namespace, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataStructure, MetadataDescriptor, RightsValue
+from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataStructure, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant, VariantAssociation
 from dam.workspace import decorators
 from dam.batch_processor.models import MachineState, Action, Machine
+from dam.framework.dam_metadata.models import XMPNamespace
 
 from mx.DateTime.Parser import DateTimeFromString
 from mimetypes import guess_type
@@ -575,7 +576,7 @@ def get_metadata_values(item_list, metadataschema, items_types, components_types
         values[item_list[0]] = ''
 
     c = connection.cursor()
-    c.execute("select schema_id, value, count(*), language, xpath from metadata_metadatavalue where schema_id=%d AND content_type_id=%d AND object_id IN (%s) GROUP BY schema_id, value, xpath, language;" % (metadataschema.id, ctype.id, str(",".join(object_list))))
+    c.execute("select schema_id, value, count(*), language, xpath from dam_metadata_xmpvalue where schema_id=%d AND content_type_id=%d AND object_id IN (%s) GROUP BY schema_id, value, xpath, language;" % (metadataschema.id, ctype.id, str(",".join(object_list))))
 
     results = [r for r in c.fetchall()]
     
@@ -688,7 +689,7 @@ def _advanced_metadata_view(item_list, workspace, default_language, metadata_obj
     components_types = get_components_types(item_list, metadata_object, workspace)
     components_list = get_components_list(item_list, metadata_object, workspace)
 
-    for namespace in Namespace.objects.all():
+    for namespace in XMPNamespace.objects.all():
         metadataschema_list = MetadataProperty.objects.filter(namespace=namespace).exclude(namespace__prefix='notreDAM').exclude(metadatastructure__in=MetadataStructure.objects.all()).order_by('field_name')
         for metadataschema in metadataschema_list:
   

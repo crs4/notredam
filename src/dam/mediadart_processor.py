@@ -39,7 +39,8 @@ from dam.batch_processor.models import Machine, MachineState, Action
 from dam.repository.models import Item, Component
 from dam.variants.models import ImagePreferences,  VideoPreferences,  AudioPreferences
 
-from dam.metadata.models import MetadataProperty, Namespace, MetadataValue
+from dam.metadata.models import MetadataProperty, MetadataValue
+from dam.framework.dam_metadata.models import XMPNamespace
 from dam.metadata.views import save_variants_rights
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
@@ -289,7 +290,7 @@ def read_xmp_features(item, features, component):
         return metadata_list, delete_list
     for feature in features['xmp_extractor'].keys():
         try:
-            namespace_obj = Namespace.objects.get(uri=feature)
+            namespace_obj = XMPNamespace.objects.get(uri=feature)
         except:
             logger.debug('unknown namespace %s' % feature)
             continue
