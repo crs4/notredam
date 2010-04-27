@@ -17,9 +17,9 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.metadata.models import MetadataProperty, Namespace, MetadataStructure, MetadataDescriptor, MetadataDescriptorGroup, MetadataPropertyChoice, MetadataValue, RightsValue, RightsXMPValue
+from dam.metadata.models import MetadataProperty, MetadataStructure, MetadataDescriptor, MetadataDescriptorGroup, MetadataPropertyChoice, MetadataValue, RightsValue, RightsXMPValue
 
-admin.site.register(Namespace)
+#admin.site.register(Namespace)
 admin.site.register(MetadataProperty)
 admin.site.register(MetadataStructure)
 admin.site.register(MetadataDescriptor)

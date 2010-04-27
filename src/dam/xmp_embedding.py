@@ -20,7 +20,7 @@ import sys
 import os
 import re
 
-from dam.metadata.models import MetadataProperty, MetadataValue, MetadataStructure, Namespace
+from dam.metadata.models import MetadataProperty, MetadataValue, MetadataStructure
 
 def reset_modified_flag(comp):
 
