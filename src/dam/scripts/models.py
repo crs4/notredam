@@ -165,8 +165,11 @@ class Script(models.Model):
         pipes = pipeline.get('pipes', [])
         
         for pipe_kwargs in pipes:
-            logger.debug(pipe_kwargs)
-            Pipe(self.workspace, **pipe_kwargs).execute(items)
+            logger.debug('-----------------------------%s'%pipe_kwargs)
+            try:
+                Pipe(self.workspace, **pipe_kwargs).execute(items)
+            except Exception, ex:
+                logger.error(ex)
                                 
             
         
@@ -247,7 +250,11 @@ class Pipe:
             logger.debug('self.adaptation_task %s'%self.adaptation_task)
             logger.debug('adapt_parameters %s'%adapt_parameters)
             if self.adaptation_task and adapt_parameters:
-                component.set_parameters(adapt_parameters)                                
+                component.set_parameters(adapt_parameters) 
+                
+                component.source = Variant.objects.get(name = self.source_variant, media_type__name = self.media_type).get_component(self.workspace, item)
+                component.save() 
+                               
                 generate_tasks(variant, self.workspace, item)
 
 class BaseAction(object):
