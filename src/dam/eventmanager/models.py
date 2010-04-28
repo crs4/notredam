@@ -20,17 +20,25 @@ from exceptions import *
 from django.db import models
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
-
+import logger
 
 class Event(models.Model):
     name = models.CharField(max_length=128)
     
 class EventManager(models.Manager):
     def notify(self,  event_name,  **parameters):
-        event_registrations = self.filter(event = Event.objects.get(name = event_name))
+        try:
+            event_registrations = self.filter(event = Event.objects.get(name = event_name))
+        except Exception, ex:
+            logger.debug(ex)
+            return
         for event_reg in event_registrations:
             listener = event_reg.listener
-            listener.execute(**parameters)
+            try:
+                listener.execute(**parameters)
+            except Exception, ex:
+                logger.debug(ex)
+                
         
 class EventRegistration(models.Model):
     event = models.ForeignKey('Event')

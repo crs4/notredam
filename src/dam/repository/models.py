@@ -566,7 +566,7 @@ class Component(models.Model):
     workspace = models.ManyToManyField('workspace.Workspace')    
 #    media_type = models.ForeignKey('application.Type')
     item = models.ForeignKey('Item')
-    source_id = models.CharField(max_length=40,  null = True,  blank = True)
+#    source_id = models.CharField(max_length=40,  null = True,  blank = True)
     
     preferences = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType,  null = True, blank = True)
@@ -580,7 +580,7 @@ class Component(models.Model):
     
     #new
     parameters = models.TextField(null = True,  blank = True)
-
+    source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False)    
 
     

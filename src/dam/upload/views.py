@@ -154,11 +154,11 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
 
-#    try:
-#        generate_tasks(variant, workspace, item, 1)
-#    except Exception, ex:
-#        print traceback.print_exc(ex)
-#        raise    
+    try:
+        generate_tasks(variant, workspace, item, 1)
+    except Exception, ex:
+        print traceback.print_exc(ex)
+        raise    
     
 def save_uploaded_item(request, upload_file, user, workspace):
 
@@ -327,10 +327,8 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
     from dam.application.models import Type
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
     if variant.auto_generated:
-        variant_source = variant.get_source(workspace,  item)
-        if variant_source:
-            source = variant_source.get_component(workspace = workspace,  item = item) 
-        else:
+        source = component.source
+        if not source:            
             if component.imported:
                 source = None
             else:
@@ -348,24 +346,33 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
             initial_state = register_task
         else:
             initial_state = None
+        
+        feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
+        logger.debug('feat_extract_orig %s'%feat_extract_orig)
+        if feat_extract_orig.count(): 
+            wait_for = feat_extract_orig[0].machine_set.all()[0]  
+        else:
+            wait_for = None
+        logger.debug('wait_for %s'%wait_for)
+            
     else:
         source = component
-        dests = Variant.objects.filter(destinations__workspace = workspace, destinations__source = variant)
-        variants_to_generate = []
-        for dest in dests:
-            variant_source = dest.get_source(workspace,  item)
-            
-            # if source has been re-imported, do not add imported components to variants_to_generate
-            
-            try:
-                comp = dest.get_component(item = item,  workspace= workspace)
-                if comp.imported:
-                    continue
-            except:
-                pass
-
-            if variant_source == None or (variant.sources.get(workspace = workspace, destination = dest).rank  <= variant_source.sources.get(workspace = workspace, destination = dest).rank):
-                variants_to_generate.append(dest)
+#        dests = Variant.objects.filter(destinations__workspace = workspace, destinations__source = variant)
+#        variants_to_generate = []
+#        for dest in dests:
+#            variant_source = dest.get_source(workspace,  item)
+#            
+#            # if source has been re-imported, do not add imported components to variants_to_generate
+#            
+#            try:
+#                comp = dest.get_component(item = item,  workspace= workspace)
+#                if comp.imported:
+#                    continue
+#            except:
+#                pass
+#
+#            if variant_source == None or (variant.sources.get(workspace = workspace, destination = dest).rank  <= variant_source.sources.get(workspace = workspace, destination = dest).rank):
+#                variants_to_generate.append(dest)
                 
         end = MachineState.objects.create(name='finished')
         feat_extr_action = Action.objects.create(component=source, function='extract_features')
@@ -379,11 +386,14 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
         else:
             fake_state = MachineState.objects.create(name='fake')
             fake_state.next_state = register_state
-            initial_state = Machine.objects.create(current_state=fake_state, initial_state=feat_extr_orig)
+        initial_state = Machine.objects.create(current_state=fake_state, initial_state=feat_extr_orig)
+            
+       
+        return
         
     ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
     for v in variants_to_generate:       
-        variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = v) 
+#        variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = v) 
         
 #        vp = variant_association.preferences    
         try:
@@ -395,8 +405,8 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
                 save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
                 fe_action = Action.objects.create(component=comp, function='extract_features')
                 fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
-                                
-                Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=initial_state)
+                logger.debug('----------wait_for %s'%wait_for)             
+                Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=wait_for)
 
 #                continue
 #                
@@ -496,8 +506,8 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
         Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=initial_state)
          
 #        comp.preferences = vp.copy()
-        comp.source_id = source._id
-        comp.save()
+##        comp.source_id = source._id
+#        comp.save()
         
 
 
