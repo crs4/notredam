@@ -20,7 +20,8 @@ import sys
 import os
 import re
 
-from dam.metadata.models import MetadataProperty, MetadataValue, MetadataStructure
+from dam.metadata.models import MetadataProperty, MetadataValue
+from dam.framework.dam_metadata.models import XMPStructure
 
 def reset_modified_flag(comp):
 
@@ -39,7 +40,7 @@ def synchronize_metadata(component):
     i = component.item
     c = component
 
-    structures = [s.name for s in MetadataStructure.objects.all()]
+    structures = [s.name for s in XMPStructure.objects.all()]
     changes = {}
     changes['item'] = {}
     my_metadata = i.metadata.filter(modified = True)

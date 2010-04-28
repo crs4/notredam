@@ -23,7 +23,7 @@ from django.contrib.contenttypes import generic
 from django.db import connection
 from datetime import datetime
 
-from dam.framework.dam_metadata.models import AbstractMetadataLanguage, XMPProperty, XMPStructure, XMPValue, XMPPropertyChoice
+from dam.framework.dam_metadata.models import AbstractMetadataLanguage, XMPProperty, XMPStructure, XMPPropertyChoice
 
 class MetadataLanguage(AbstractMetadataLanguage): pass
     
@@ -59,14 +59,21 @@ class MetadataDescriptor(models.Model):
     def __str__(self):
         return "%s" % (self.name)
 
-class MetadataValue(XMPValue):
-    pass
-
-class MetadataStructure(XMPStructure):
-    pass
-
-class MetadataPropertyChoice(XMPPropertyChoice):
-    pass
+class MetadataValue(models.Model):
+    """
+    Xmp property values are saved here
+    """
+    schema = models.ForeignKey(MetadataProperty, null=True, blank=True)
+    xpath = models.TextField()
+    value = models.TextField()
+    content_type = models.ForeignKey(ContentType)
+    content_object = generic.GenericForeignKey()
+    object_id = models.PositiveIntegerField()
+    language = models.CharField(max_length=12, null=True, blank=True)
+    modified = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return "%s (%s)" % (self.schema.namespace, self.schema.field_name)
 
 class MetadataDescriptorGroup(models.Model):
     """

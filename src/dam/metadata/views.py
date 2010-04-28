@@ -29,11 +29,11 @@ from dam.repository.models import Item,Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
 from dam.preferences.views import get_user_setting
 from dam.workspace.models import Workspace
-from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataStructure, MetadataDescriptor, RightsValue
+from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant, VariantAssociation
 from dam.workspace import decorators
 from dam.batch_processor.models import MachineState, Action, Machine
-from dam.framework.dam_metadata.models import XMPNamespace
+from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
 
 from mx.DateTime.Parser import DateTimeFromString
 from mimetypes import guess_type
@@ -576,7 +576,7 @@ def get_metadata_values(item_list, metadataschema, items_types, components_types
         values[item_list[0]] = ''
 
     c = connection.cursor()
-    c.execute("select schema_id, value, count(*), language, xpath from dam_metadata_xmpvalue where schema_id=%d AND content_type_id=%d AND object_id IN (%s) GROUP BY schema_id, value, xpath, language;" % (metadataschema.id, ctype.id, str(",".join(object_list))))
+    c.execute("select schema_id, value, count(*), language, xpath from metadata_metadatavalue where schema_id=%d AND content_type_id=%d AND object_id IN (%s) GROUP BY schema_id, value, xpath, language;" % (metadataschema.id, ctype.id, str(",".join(object_list))))
 
     results = [r for r in c.fetchall()]
     
@@ -642,12 +642,14 @@ def get_metadata_values(item_list, metadataschema, items_types, components_types
 
     return values, multiple_values, to_be_deleted
 
-def _metadata_definition(metadataschema):
+def _metadata_definition(schema):
     
     """
     Returns a dictionary containing definition info of a given metadataschema 
     (es. {type: string, array: true, editable: False, ...}
     """
+    
+    metadataschema = schema.metadataproperty
     
     string_type_list = ['txt', 'proper_name','mimetype','agent_name','xpath' ,'date_only_year', 'rational']
 
@@ -690,7 +692,7 @@ def _advanced_metadata_view(item_list, workspace, default_language, metadata_obj
     components_list = get_components_list(item_list, metadata_object, workspace)
 
     for namespace in XMPNamespace.objects.all():
-        metadataschema_list = MetadataProperty.objects.filter(namespace=namespace).exclude(namespace__prefix='notreDAM').exclude(metadatastructure__in=MetadataStructure.objects.all()).order_by('field_name')
+        metadataschema_list = MetadataProperty.objects.filter(namespace=namespace).exclude(namespace__prefix='notreDAM').exclude(xmpstructure__in=XMPStructure.objects.all()).order_by('field_name')
         for metadataschema in metadataschema_list:
   
 #            schema_media_types = set(metadataschema.media_type.all().values_list('name', flat=True))
@@ -723,7 +725,7 @@ def _generate_metadata_structure_item(group, metadatadescriptor, item_list, item
     if metadata_info:
         logger.debug(metadata_info)
 
-        structure = MetadataStructure.objects.get(name=metadata_info['type'])
+        structure = XMPStructure.objects.get(name=metadata_info['type'])
         for schema in structure.properties.all():
             schema_info = _metadata_definition(schema)
             schema_info['id'] = '%d_%d_%d' % (group.id, metadatadescriptor.id, schema.id)
@@ -845,7 +847,7 @@ def _simple_metadata_view(item_list, workspace, default_language, metadata_objec
 
             metadataschema = metadataschemas[0]
 
-            if metadataschema.type in MetadataStructure.objects.all().values_list('name', flat=True):
+            if metadataschema.type in XMPStructure.objects.all().values_list('name', flat=True):
                 
                 metadata_info = _generate_metadata_structure_item(group, metadatadescriptor, item_list, items_types, components_types, components_list, default_language)
                 
@@ -866,7 +868,7 @@ def get_metadata_structures(request):
     Returns the list of XMP Structures and their definitions
     """
     structure_list = {}
-    for s in MetadataStructure.objects.all():
+    for s in XMPStructure.objects.all():
         structure_list[s.name] = [_metadata_definition(p) for p in s.properties.all()]
 
     resp = simplejson.dumps(structure_list)
@@ -897,7 +899,8 @@ def get_metadata(request):
         else:
             form_list = _simple_metadata_view(item_list, workspace, default_language, metadata_object, item_media_types)
         form_dict = {'rows': form_list}
-    except:
+    except Exception, ex:
+        print ex
         form_dict = {'rows': []}
 
     resp = simplejson.dumps(form_dict)
@@ -953,11 +956,11 @@ def wsadmin_get_descriptor_properties(request):
     prop_list = simplejson.loads(request.POST.get('prop_list'))
     variant_only = request.POST.get('variant', 'all')
     if variant_only == 'variant':
-        props = MetadataProperty.objects.filter(is_variant=True).exclude(metadatastructure__in=MetadataStructure.objects.all()).exclude(pk__in=prop_list)
+        props = MetadataProperty.objects.filter(is_variant=True).exclude(xmpstructure__in=XMPStructure.objects.all()).exclude(pk__in=prop_list)
     elif variant_only == 'item':
-        props = MetadataProperty.objects.filter(is_variant=False).exclude(metadatastructure__in=MetadataStructure.objects.all()).exclude(pk__in=prop_list)
+        props = MetadataProperty.objects.filter(is_variant=False).exclude(xmpstructure=XMPStructure.objects.all()).exclude(pk__in=prop_list)
     else:
-        props = MetadataProperty.objects.exclude(metadatastructure__in=MetadataStructure.objects.all()).exclude(pk__in=prop_list)
+        props = MetadataProperty.objects.exclude(xmpstructure__in=XMPStructure.objects.all()).exclude(pk__in=prop_list)
     data = {'elements':[]}
     desc_props = MetadataProperty.objects.filter(pk__in=prop_list)
     for p in desc_props: 
