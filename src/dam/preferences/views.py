@@ -26,8 +26,9 @@ from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
-from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, MetadataStructure, RightsValue, RightsXMPValue
+from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, RightsValue, RightsXMPValue
 from dam.framework.dam_repository.models import Type
+from dam.framework.dam_metadata.models import XMPStructure
 from dam.workspace.models import Workspace, WorkSpacePermissionAssociation, WorkspacePermissionsGroup, WorkSpacePermission
 
 from dam.framework.dam_metadata.models import XMPNamespace
@@ -292,7 +293,7 @@ def damadmin_get_desc_list(request):
     
 @staff_member_required
 def damadmin_get_descriptor_properties(request):
-    props = MetadataProperty.objects.all().exclude(metadatastructure__in=MetadataStructure.objects.all()).exclude(metadatadescriptor__in=MetadataDescriptor.objects.all())
+    props = MetadataProperty.objects.all().exclude(xmpstructure__in=XMPStructure.objects.all()).exclude(metadatadescriptor__in=MetadataDescriptor.objects.all())
     current_desc_id = request.POST.get('desc_id', 0)
     data = {'elements':[]}
     if int(current_desc_id) > 0:
@@ -629,7 +630,7 @@ def damadmin_delete_ws(request):
 @staff_member_required
 def damadmin_get_xmp_structures(request):
     data = {'elements':[]}
-    structures = MetadataStructure.objects.all()
+    structures = XMPStructure.objects.all()
     for s in structures: 
         data['elements'].append({'id':s.id, 'name':s.name})
         

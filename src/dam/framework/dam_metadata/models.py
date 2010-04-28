@@ -143,22 +143,6 @@ class XMPStructure(models.Model):
     def __str__(self):
         return "%s" % (self.name)
 
-class XMPValue(models.Model):
-    """
-    Xmp property values are saved here
-    """
-    schema = models.ForeignKey(XMPProperty, null=True, blank=True)
-    xpath = models.TextField()
-    value = models.TextField()
-    content_type = models.ForeignKey(ContentType)
-    content_object = generic.GenericForeignKey()
-    object_id = models.PositiveIntegerField()
-    language = models.CharField(max_length=12, null=True, blank=True)
-    modified = models.BooleanField(default=False)
-    
-    def __str__(self):
-        return "%s (%s)" % (self.schema.namespace, self.schema.field_name)
-
 class XMPPropertyChoice(models.Model):
     """
     Choice values of an XMP Property 
