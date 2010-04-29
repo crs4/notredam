@@ -30,7 +30,6 @@ from django.views.decorators.cache import never_cache
 from django.shortcuts import render_to_response
 from django import http, template
 
-
 from django.template.loader import render_to_string
 
 #TODO: import exceptions...
@@ -96,6 +95,7 @@ class ModAdmin(admin.sites.AdminSite):
         return render_to_response(self.index_template or 'admin/index.html', context,
             context_instance=template.RequestContext(request)
         )
+        
 mod_admin = ModAdmin()
     
 class WorkspaceInline(admin.StackedInline):  

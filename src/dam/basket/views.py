@@ -44,9 +44,10 @@ def reload_item(request):
         user = User.objects.get(pk=request.session['_auth_user_id'])
         workspace = request.session['workspace']
         items_post = request.POST.getlist('items')
-        for i in items_post:
-            item = Item.objects.get(pk=i)
-            Basket.objects.get_or_create(user=user, item=item, workspace=workspace)
+
+        basket = Basket.get_basket(user, workspace)
+        items = Item.objects.filter(pk__in=items_post)       
+        basket.add_items(items)
 	
     except Exception,  ex:
         logger.exception(ex)
@@ -62,18 +63,23 @@ def remove_from_basket(request):
 
     try:
         items_post = request.POST.getlist('items')
+
+        items = Item.objects.filter(pk__in=items_post)       
  	
         user = User.objects.get(pk=request.session['_auth_user_id'])
         workspace = request.session['workspace']
 
-        for item in items_post :
-            Basket.objects.get(user=user, item__pk=item, workspace=workspace).delete()
-	
+        basket = Basket.get_basket(user, workspace)
+        basket.remove_items(items)
+
+        count = basket.get_size()
+
     except Exception,  ex:
+        count = 0
         logger.exception(ex)
         raise ex
 
-    return HttpResponse(Basket.objects.filter(user=user, workspace=workspace).count())
+    return HttpResponse(count)
  
 @login_required
 def clear_basket(request):
@@ -83,14 +89,14 @@ def clear_basket(request):
     try:
         user = User.objects.get(pk=request.session['_auth_user_id'])
         workspace = request.session['workspace'] 	
-        all_b = Basket.objects.filter(user=user, workspace=workspace)
-        all_b.delete()
+        
+        Basket.empty_basket(user, workspace)
         
     except Exception,  ex:
         logger.exception(ex)
         raise ex
 
-    return HttpResponse(Basket.objects.all().count())
+    return HttpResponse(0)
 
 @login_required
 def basket_size(request):
@@ -100,7 +106,11 @@ def basket_size(request):
     user = User.objects.get(pk=request.session['_auth_user_id'])
     workspace = request.session['workspace']
 
-    return HttpResponse(Basket.objects.filter(user=user, workspace=workspace).count())
+    basket = Basket.get_basket(user, workspace)
+    
+    count = basket.get_size()
+
+    return HttpResponse(count)
 
 def __inbasket(user,item,workspace):
     """
@@ -109,8 +119,9 @@ def __inbasket(user,item,workspace):
 
     try:
 
-        if Basket.objects.filter(user=user, item=item, workspace=workspace).count()== 0 :
-            return 0
+        basket = Basket.get_basket(user, workspace)
+
+        return basket.item_in_basket(item)
 	
     except Exception,  ex:
         logger.exception(ex)

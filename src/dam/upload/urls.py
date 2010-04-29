@@ -19,12 +19,9 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
-    (r'^get_upload_url/$', 'dam.upload.views.get_upload_url'),
     (r'^get_metadata_upload/$', 'dam.upload.views.get_metadata_upload'),
-    (r'^upload_finished/$', 'dam.upload.views.upload_finished'),
-    (r'^adobe_air_upload/$', 'dam.upload.views.adobe_air_upload'),
+    (r'^get_upload_url/$', 'dam.upload.views.get_upload_url'),
     (r'^upload_item/$', 'dam.upload.views.upload_item'),
-    (r'^get_flex_upload_url/$', 'dam.upload.views.get_flex_upload_url'),
-    (r'^upload_variant/$', 'dam.upload.views.upload_variant'),
+    (r'^upload_variant/$', 'dam.upload.views.upload_variant')
 
 )

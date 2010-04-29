@@ -20,11 +20,10 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from dam.application.models import Type
- 
 from django.contrib.auth.models import User
 from dam.workspace.models import Workspace
-from dam.repository.models import Item, Container, Component
+from dam.repository.models import Item, Component
+from dam.framework.dam_repository.models import Type
 
 import logger
 

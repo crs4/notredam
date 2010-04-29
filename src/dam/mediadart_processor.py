@@ -35,11 +35,12 @@ from django.db.models import Q
 from django.db import reset_queries
 from django.contrib.contenttypes.models import ContentType
 
-from dam.batch_processor.models import MDTask, Machine, MachineState, Action
+from dam.batch_processor.models import Machine, MachineState, Action
 from dam.repository.models import Item, Component
 from dam.variants.models import ImagePreferences,  VideoPreferences,  AudioPreferences
 
-from dam.metadata.models import MetadataProperty, Namespace, MetadataValue
+from dam.metadata.models import MetadataProperty, MetadataValue
+from dam.framework.dam_metadata.models import XMPNamespace
 from dam.metadata.views import save_variants_rights
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
@@ -121,7 +122,7 @@ def adapt_resource(component, machine):
 
     dest_res_id = new_id()
         
-    if item.type == 'image':
+    if item.type.name == 'image':
  
         transcoding_format = vp.get('codec', orig.format) #change to original format
         max_dim = int(vp.get('max_dim', -1)) 
@@ -170,7 +171,7 @@ def adapt_resource(component, machine):
         else:
             d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=(max_dim, max_dim))
 
-    elif item.type == 'movie':
+    elif item.type.name == 'movie':
 
         if component.variant.media_type.name == "image":
 
@@ -207,7 +208,7 @@ def adapt_resource(component, machine):
             d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
             
 
-    elif item.type == 'audio':
+    elif item.type.name == 'audio':
 
         
         preset_name = vp['preset_name']        
@@ -218,7 +219,7 @@ def adapt_resource(component, machine):
         
         d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
     
-    if item.type == 'doc':
+    if item.type.name == 'doc':
  
         transcoding_format = vp['codec']
         max_size = vp['max_dim']
@@ -235,13 +236,18 @@ def adapt_resource(component, machine):
 
 def extract_features(component, machine):
 
-    def save_features(result, component, machine):
-        save_component_features (component, result)
+    def save_features(result, component, machine, extractor):
+        save_component_features (component, result, extractor)
         machine_to_next_state(machine)
-
+        
+    def extract_xmp(result, component, machine, extractor):
+        save_component_features (component, result, extractor)
+        d = extractor_proxy.extract(component.ID, 'xmp_extractor')
+        d.addCallbacks(save_features, cb_error, callbackArgs=[component, machine, 'xmp_extractor'], errbackArgs=[component, machine])
+        
     logger.debug("[FeatureExtraction.execute] component %s" % component.ID)
 
-    extractors = {'image': 'image_basic', 'movie': 'video_basic', 'audio': 'audio_basic', 'doc': 'doc_basic'}
+    extractors = {'image': 'image_basic', 'movie': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
 
     extractor_proxy = Proxy('FeatureExtractor')
 
@@ -251,12 +257,12 @@ def extract_features(component, machine):
     my_extractor = extractors[my_media_type]
 
     if component.variant.auto_generated:
-        extractor_list = [my_extractor]
+        custom_callback = save_features
     else:
-        extractor_list = [my_extractor, 'xmp_extractor']
+        custom_callback = extract_xmp
 
-    d = extractor_proxy.extract_features(component.ID, extractor_list)
-    d.addCallbacks(save_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
+    d = extractor_proxy.extract(component.ID, my_extractor)
+    d.addCallbacks(custom_callback, cb_error, callbackArgs=[component, machine, my_extractor], errbackArgs=[component, machine])
 
     logger.debug("[FeatureExtraction.end] component %s" % component.ID)
 
@@ -290,13 +296,13 @@ def read_xmp_features(item, features, component):
 
     logger.debug('READ XMP FEATURES')
 
-    if not isinstance(features['xmp_extractor'], dict):
+    if not isinstance(features, dict):
         item.state = 1  
         item.save()
         return metadata_list, delete_list
-    for feature in features['xmp_extractor'].keys():
+    for feature in features.keys():
         try:
-            namespace_obj = Namespace.objects.get(uri=feature)
+            namespace_obj = XMPNamespace.objects.get(uri=feature)
         except:
             logger.debug('unknown namespace %s' % feature)
             continue
@@ -304,7 +310,7 @@ def read_xmp_features(item, features, component):
         metadata_dict[namespace_obj] = {}
 
         namespace_properties = MetadataProperty.objects.filter(namespace=namespace_obj)
-        for property_values in features['xmp_extractor'][feature]:
+        for property_values in features[feature]:
             property_xpath = property_values[0]
             property_value = property_values[1]
             property_options = property_values[2]
@@ -333,12 +339,12 @@ def read_xmp_features(item, features, component):
 
     return metadata_list, delete_list
 
-def save_component_features(component, features):
+def save_features(c, features):
 
     xmp_metadata_commons = {'size':[('notreDAM','FileSize')]}
     xmp_metadata_audio = {'channels':[('xmpDM', 'audioChannelType')], 'sample_rate':[('xmpDM', 'audioSampleRate')], 'duration':[('notreDAM', 'Duration')]}
 
-    xmp_metadata_video = {'height':[('xmpDM', 'videoFrameSize','stDim','h')] , 'width':[('xmpDM', 'videoFrameSize','stDim','w')], 'fps':[('xmpDM','videoFrameRate')], 'bit_rate':[('xmpDM','fileDataRate')], 'duration':[('notreDAM', 'Duration')]}
+    xmp_metadata_video = {'height':[('xmpDM', 'videoFrameSize','stDim','h')] , 'width':[('xmpDM', 'videoFrameSize','stDim','w')], 'r_frame_rate':[('xmpDM','videoFrameRate')], 'bit_rate':[('xmpDM','fileDataRate')], 'duration':[('notreDAM', 'Duration')]}
     xmp_metadata_image = {'height':[('tiff', 'ImageLength')] , 'width':[('tiff', 'ImageWidth')]}
     xmp_metadata_doc = {'pages': [('notreDAM', 'NPages')], 'Copyright': [('dc', 'rights')]}
 
@@ -350,69 +356,83 @@ def save_component_features(component, features):
 
     xmp_metadata = {'image': xmp_metadata_image, 'movie': xmp_metadata_video, 'audio': xmp_metadata_audio, 'doc': xmp_metadata_doc}
 
-    logger.debug("[ExtractMetadata.execute] component %s" % component.ID)
-
-    c = component
     metadata_list = []
-    xmp_metadata_list = []
     delete_list = []
-    xmp_delete_list = []
-    workspace = c.workspace.all()[0] 
 
-#    source_variant = c.variant.get_source(workspace,  c.item)
-
-    extractors = {'image': 'image_basic', 'movie': 'video_basic', 'audio': 'audio_basic', 'doc': 'doc_basic'}
-
-    my_media_type = c.media_type.name    
-    my_extractor = extractors[my_media_type]
+    media_type = c.media_type.name
 
     ctype = ContentType.objects.get_for_model(c)
 
-    if features.get('xmp_extractor', None):
-        item = Item.objects.get(component = c)
-        xmp_metadata_list, xmp_delete_list = read_xmp_features(item, features, c)
-    if features.get(my_extractor, None) and isinstance(features.get(my_extractor, None), dict):
-        lang = settings.METADATA_DEFAULT_LANGUAGE
-        for feature in features[my_extractor].keys():
-            if features[my_extractor][feature]=='' or features[my_extractor][feature] == '0':
-                continue 
-            if feature == 'size':
-                c.size = features[my_extractor][feature]
-            if feature == 'height':
-                c.height = features[my_extractor][feature]
-            elif feature == 'width':
-                c.width = features[my_extractor][feature]
+    lang = settings.METADATA_DEFAULT_LANGUAGE
+    for feature in features.keys():
+        if features[feature]=='' or features[feature] == '0':
+            continue 
+        if feature == 'size':
+            c.size = features[feature]
+        if feature == 'height':
+            c.height = features[feature]
+        elif feature == 'width':
+            c.width = features[feature]
+
+        try:
+            xmp_names = xmp_metadata[media_type][feature]
+        except KeyError:
+            continue
+
+        for m in xmp_names:
 
             try:
-                xmp_names = xmp_metadata[my_media_type][feature]
-            except KeyError:
+                ms = MetadataProperty.objects.get(namespace__prefix=m[0], field_name= m[1])
+            except:
+                logger.debug( 'inside readfeatures, unknown metadata %s:%s ' %  (m[0],m[1]))
                 continue
-
-            for m in xmp_names:
-
+            if ms.is_variant or c.variant.name == 'original':
+                if len(m) == 4:
+                    property_xpath = "%s:%s[1]/%s:%s" % (m[0], m[1], m[2], m[3])
+                else:
+                    property_xpath = ''
                 try:
-                    ms = MetadataProperty.objects.get(namespace__prefix=m[0], field_name= m[1])
+                    if ms.type == 'lang':
+                        x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], language=lang, xpath=property_xpath)
+                    else:                            
+                        x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], xpath=property_xpath)
+                    metadata_list.append(x) 
+                    delete_list.append(ms) 
                 except:
-                    logger.debug( 'inside readfeatures, unknown metadata %s:%s ' %  (m[0],m[1]))
+                    logger.debug('inside readfeatures, could not get %s' %  ms)
                     continue
-                if ms.is_variant or c.variant.name == 'original':
-                    if len(m) == 4:
-                        property_xpath = "%s:%s[1]/%s:%s" % (m[0], m[1], m[2], m[3])
-                    else:
-                        property_xpath = ''
-                    try:
-                        if ms.type == 'lang':
-                            x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[my_extractor][feature], language=lang, xpath=property_xpath)
-                        else:                            
-                            x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[my_extractor][feature], xpath=property_xpath)
-                        metadata_list.append(x) 
-                        delete_list.append(ms) 
-                    except:
-                        logger.debug('inside readfeatures, could not get %s' %  ms)
-                        continue
-    
-        c.state = 1
-        c.save()
+
+    c.save()
+
+    return (metadata_list, delete_list)
+
+def save_component_features(component, features, extractor):
+
+    logger.debug("[ExtractMetadata.execute] component %s %s" % (component.ID, features))
+
+    c = component
+
+    metadata_list = []
+    delete_list = []
+    xmp_metadata_list = []
+    xmp_delete_list = []
+    workspace = c.workspace.all()[0]
+
+#    source_variant = c.variant.get_source(workspace,  c.item)
+
+    ctype = ContentType.objects.get_for_model(c)
+
+    if extractor == 'xmp_extractor':
+        item = Item.objects.get(component = c)
+        xmp_metadata_list, xmp_delete_list = read_xmp_features(item, features, c)
+    elif extractor == 'media_basic':
+        for stream in features.keys():
+            if isinstance(features[stream], dict):
+                m_list, d_list = save_features(c, features[stream])
+                metadata_list.extend(m_list)
+                delete_list.extend(d_list)
+    else: 
+        metadata_list, delete_list = save_features(c, features)    
 
     MetadataValue.objects.filter(schema__in=delete_list, object_id=c.pk, content_type=ctype).delete()
 
@@ -512,9 +532,6 @@ def cleanup():
             
 @defer.inlineCallbacks
 def clean_task():
-
-#    tasks_wait_for = MDTask.objects.filter(wait_for__isnull=False).values_list('wait_for', flat=True)
-#    tasks_to_check = MDTask.objects.filter(wait_for__isnull=True, job_id__isnull=False, status__isnull=True).exclude(id__in=tasks_wait_for)
 
     logger.debug("[CleanTask.execute]")
 

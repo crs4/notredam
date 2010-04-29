@@ -35,7 +35,7 @@ from dam.variants.models import Variant,  VariantAssociation
 from dam.repository.models import Item, Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
-from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS,  MEDIADART_CONF
+from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
 
@@ -92,7 +92,7 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
     """
     
     item = Item.objects.get(pk = item_id)
-    variant = workspace.get_variants().distinct().get(media_type__name =  item.type,  name = variant_name)
+    variant = workspace.get_variants().distinct().get(media_type =  item.type,  name = variant_name)
     
     if thumb and variant.default_url:
         return variant.default_url
