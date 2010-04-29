@@ -262,6 +262,7 @@ class BaseAction(object):
     input_number = 1
     output_number = 1
     def __init__(self, **parameters):
+        logger.debug('parameters %s'%parameters)
         if parameters.keys().sort() != self.required_params.sort():
             raise MissingActionParameters('action parameters are: %s; parameters passed are %s'%(self.required_params, parameters))
 #        if isinstance(inputs, list):
@@ -274,8 +275,7 @@ class BaseAction(object):
         pass
     
 class BaseMDAction(BaseAction):
-    def get_adapt_parameters(self):
-        pass
+    pass
 
 class Resize(BaseMDAction):
     required_params = ['max_dim']
@@ -284,14 +284,15 @@ class Resize(BaseMDAction):
         return {'max_dim': self.parameters['max_dim']}
     
 class Transcoding(BaseMDAction):
-    required_params = ['format']
+    required_params = ['codec']
     
-    def get_adapt_parameters(self):
-        return {'output_file': self.input + '.' + self.parameters['format']}
+    def execute(self, item, variant):
+        logger.debug('self.parameters %s'%self.parameters)
+        return {'codec': self.parameters['codec']}
 
 class Watermark(BaseMDAction):
     required_params = ['file']
-    def get_adapt_parameters(self):
+    def execute(self):
         return {'watermark':self.parameters['file']}
 
 class ExtractVideoThumbnail(BaseMDAction):
