@@ -317,13 +317,12 @@ def  copy_metadata(comp,  comp_source):
 
 
 
-def _generate_tasks(variant, workspace, item,  component, register_task,  force_generation,  check_for_existing):
+def _generate_tasks(variant, workspace, item,  component, force_generation,  check_for_existing):
     
     """
     Generates MediaDART tasks
     """
     logger.debug('_generate_tasks')
-
     from dam.application.models import Type
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
     if variant.auto_generated:
@@ -334,187 +333,55 @@ def _generate_tasks(variant, workspace, item,  component, register_task,  force_
             else:
                 logger.debug('impossible to generate variant, no source found')
                 return 
-        variants_to_generate = [variant]
+        
 
         end = MachineState.objects.create(name='finished')
 
-        if register_task:
-            cs = register_task.initial_state
-            cs.next_state = end
-            cs.save()
-
-            initial_state = register_task
-        else:
-            initial_state = None
-        
+                
         feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
         logger.debug('feat_extract_orig %s'%feat_extract_orig)
         if feat_extract_orig.count(): 
-            wait_for = feat_extract_orig[0].machine_set.all()[0]  
+            source_machine = feat_extract_orig[0].machine_set.all()[0]  
         else:
-            wait_for = None
-        logger.debug('wait_for %s'%wait_for)
+            source_machine = None
+        logger.debug('source_machine %s'%source_machine)
+               
+        try:
+            comp = variant.get_component(item = item,  workspace= workspace)
+        except Component.DoesNotExist, ex:
+            comp = _create_variant(variant,  item, workspace)
             
+        end = MachineState.objects.create(name='finished')
+        save_rights_action = Action.objects.create(component=comp, function='save_rights')
+        save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)    
+        fe_action = Action.objects.create(component=comp, function='extract_features')
+        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
+        
+        if comp.imported:
+            logger.debug('----------source_machine %s'%source_machine)             
+            Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=source_machine)  
+        
+        else:
+            
+            adapt_action = Action.objects.create(component=comp, function='adapt_resource')
+            adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
+            
+            Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=source_machine)        
+                
     else:
         source = component
-#        dests = Variant.objects.filter(destinations__workspace = workspace, destinations__source = variant)
-#        variants_to_generate = []
-#        for dest in dests:
-#            variant_source = dest.get_source(workspace,  item)
-#            
-#            # if source has been re-imported, do not add imported components to variants_to_generate
-#            
-#            try:
-#                comp = dest.get_component(item = item,  workspace= workspace)
-#                if comp.imported:
-#                    continue
-#            except:
-#                pass
-#
-#            if variant_source == None or (variant.sources.get(workspace = workspace, destination = dest).rank  <= variant_source.sources.get(workspace = workspace, destination = dest).rank):
-#                variants_to_generate.append(dest)
                 
         end = MachineState.objects.create(name='finished')
         feat_extr_action = Action.objects.create(component=source, function='extract_features')
         feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
         
-        if register_task:
-            cs = register_task.initial_state
-            cs.next_state = feat_extr_orig
-            cs.save()
-            initial_state = register_task
-        else:
-            fake_state = MachineState.objects.create(name='fake')
-            fake_state.next_state = register_state
-        initial_state = Machine.objects.create(current_state=fake_state, initial_state=feat_extr_orig)
-            
-       
-        return
-        
-    ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
-    for v in variants_to_generate:       
-#        variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = v) 
-        
-#        vp = variant_association.preferences    
-        try:
-            comp = v.get_component(item = item,  workspace= workspace)
-            if comp.imported:
+        source_machine = Machine.objects.create(current_state=feat_extr_orig, initial_state=feat_extr_orig)
+#        ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
 
-                end = MachineState.objects.create(name='finished')
-                save_rights_action = Action.objects.create(component=comp, function='save_rights')
-                save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
-                fe_action = Action.objects.create(component=comp, function='extract_features')
-                fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
-                logger.debug('----------wait_for %s'%wait_for)             
-                Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=wait_for)
-
-#                continue
-#                
-#            if not force_generation:
-#            
-##                Just checking if same variants already exist
-#            
-#                if comp.preferences and comp.preferences == vp and comp.source_id == source._id:
-#    #            variant already exists
-#                    comp.save()
-#                    continue
-#        
-#    #    Searching for some variant in others ws
-#                
-#                found_same_prefs = False
-#                if v.is_global:
-#                    for item_ws in item.workspaces.exclude(pk = workspace.pk):
-#                        
-#                        ws_prefs = v.variantassociation_set.get(workspace = item_ws ).preferences                    
-#    #                        
-#                        ws_comp = Component.objects.get(variant = v,  workspace = item_ws,  item = item)
-#                        
-#    #                    if comp.preferences and comp.preferences == ws_prefs and source._id == ws_comp.source_id:
-#                        
-#                        if vp  == ws_prefs and source._id == ws_comp.source_id:
-#        #            variant already exists
-#                            
-#                            comp._id = ws_comp._id
-#                            copy_metadata(comp,  ws_comp)
-#                            comp.format = ws_comp.format
-#                            comp.save()
-#                            found_same_prefs = True
-#                            break
-#                if found_same_prefs:
-#                    comp.save()
-#                    continue
-#        
-#                
-#                elif (comp.imported or comp.uri) :
-#                    comp.save()
-#                    continue
-#                    
-#                else:
-#                    comp.new_md_id()
-#                    comp.metadata.all().delete()
-#                    comp.save()
-#
-#            
-#            else:
-#                comp.new_md_id()
-#                
-##                    TODO: cancellare solo quelli che verranno ri estratti
-#                comp.metadata.all().delete()
-##                save_variants_rights(comp, item, workspace, v)
-#                comp.save()
-    
-        except Component.DoesNotExist, ex:
-            comp = _create_variant(v,  item, workspace)
-        
-        
-        
-        
-#        type = vp.mime_type.name
-#        
-#        if type =='image' or type =='doc':
-#            ext=vp.codec
-#        elif type  =='movie':
-#            type = 'video'
-#            
-#            ext=vp.preset.extension
-#        elif type  =='audio':
-#            ext=vp.preset.extension
-#        
-#        comp.format = ext
-#        comp.save()
-#        
-#        mime_type=type+'/'+ext        
-#        MetadataValue.objects.create(schema=ms_mimetype, content_object = comp, value=mime_type)
-        
-#        if vp.media_type.name == 'image' and v.media_type == 'image' and vp.cropping and feat_extr_orig:
-#            previous_task = feat_extr_orig
-#        else:
-#            previous_task = register_task
-
-
-        end = MachineState.objects.create(name='finished')
-
-        save_rights_action = Action.objects.create(component=comp, function='save_rights')
-        save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)
-
-        fe_action = Action.objects.create(component=comp, function='extract_features')
-        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
-
-        adapt_action = Action.objects.create(component=comp, function='adapt_resource')
-        adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
-
-        Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=initial_state)
          
-#        comp.preferences = vp.copy()
-##        comp.source_id = source._id
-#        comp.save()
-        
-
-
-
-    if initial_state:
-        initial_state.current_state = initial_state.initial_state
-        initial_state.save()
+    if source_machine:
+        source_machine.current_state = source_machine.initial_state
+        source_machine.save()
             
 def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
@@ -533,13 +400,7 @@ def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  
     if upload_job_id:
         component.imported = True
         component.save()
-        register_action = Action.objects.create(component=component, function='add')
-        register_state = MachineState.objects.create(name='comp_add', action=register_action)
-        fake_state = MachineState.objects.create(name='fake')
-        fake_state.next_state = register_state
-        register_task = Machine.objects.create(current_state=fake_state, initial_state=register_state)
-    else:
-        register_task = None
+        
     
     if variant.shared and not variant.auto_generated and not check_for_existing: #the original... is shared by all the ws
         wss = item.workspaces.all()
@@ -547,4 +408,4 @@ def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  
         wss = [workspace]
     
     for ws in wss:
-        _generate_tasks(variant, ws, item,  component, register_task,  force_generation,  check_for_existing)            
+        _generate_tasks(variant, ws, item,  component, force_generation,  check_for_existing)            
