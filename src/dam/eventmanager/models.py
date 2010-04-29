@@ -23,7 +23,7 @@ from django.contrib.contenttypes.models import ContentType
 import logger
 
 class Event(models.Model):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, unique = True)
     
 class EventManager(models.Manager):
     def notify(self,  event_name,  **parameters):

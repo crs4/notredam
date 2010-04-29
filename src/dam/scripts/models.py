@@ -165,7 +165,7 @@ class Script(models.Model):
         pipes = pipeline.get('pipes', [])
         
         for pipe_kwargs in pipes:
-            logger.debug('-----------------------------%s'%pipe_kwargs)
+           
             try:
                 Pipe(self.workspace, **pipe_kwargs).execute(items)
             except Exception, ex:
@@ -294,6 +294,8 @@ class Watermark(BaseMDAction):
     def get_adapt_parameters(self):
         return {'watermark':self.parameters['file']}
 
+class ExtractVideoThumbnail(BaseMDAction):
+    pass
 
     
 #    

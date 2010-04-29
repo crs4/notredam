@@ -403,8 +403,10 @@ def save_variants_rights(item, workspace, variant):
             save_rights_value(comp, license, workspace)
         else:
             comp.metadata.filter(schema__rights_target=True).delete()
-            source_variant = variant.get_source(workspace,  item)
-            original_comp = source_variant.get_component(workspace = workspace,  item = item) 
+#            source_variant = variant.get_source(workspace,  item)
+#            original_comp = source_variant.get_component(workspace = workspace,  item = item) 
+            original_comp = comp.source
+            
             comp.comp_rights = []
             comp.comp_rights.add(*original_comp.comp_rights.all())
             for m in original_comp.metadata.filter(schema__rights_target=True):
