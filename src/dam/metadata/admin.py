@@ -17,14 +17,15 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.metadata.models import MetadataProperty, Namespace, MetadataStructure, MetadataDescriptor, MetadataDescriptorGroup, MetadataPropertyChoice, MetadataValue, RightsValue, RightsXMPValue
+from dam.metadata.models import MetadataProperty, MetadataDescriptor, MetadataDescriptorGroup, MetadataValue, RightsValue, RightsXMPValue
+from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure, XMPPropertyChoice
 
-admin.site.register(Namespace)
+admin.site.register(XMPNamespace)
+admin.site.register(XMPStructure)
+admin.site.register(XMPPropertyChoice)
 admin.site.register(MetadataProperty)
-admin.site.register(MetadataStructure)
 admin.site.register(MetadataDescriptor)
 admin.site.register(MetadataDescriptorGroup)
-admin.site.register(MetadataPropertyChoice)
 admin.site.register(MetadataValue)
 admin.site.register(RightsValue)
 admin.site.register(RightsXMPValue)

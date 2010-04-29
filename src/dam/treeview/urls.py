@@ -17,6 +17,7 @@
 #########################################################################
 
 from django.conf.urls.defaults import *
+
 urlpatterns = patterns('',
    
     (r'^delete_node/$', 'dam.treeview.views.delete'),

@@ -29,7 +29,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils import simplejson
 
-from dam.repository.models import Item, Component, Container
+from dam.repository.models import Item, Component
 from dam.workspace.models import Workspace
 from dam.metadata.models import MetadataProperty
 from dam.workspace.decorators import permission_required

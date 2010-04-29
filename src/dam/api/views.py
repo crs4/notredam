@@ -32,7 +32,9 @@ from django_restapi.responder import *
 
 from django.contrib.auth.models import Permission
 
-from dam.repository.models import Item,  Component,  Container,  _new_md_id
+from dam.repository.models import Item,  Component,  _new_md_id
+from dam.framework.dam_repository.models import Type
+from dam.framework.dam_metadata.models import XMPStructure
 from dam.workspace.models import Workspace,  WorkSpacePermissionAssociation, WorkSpacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
@@ -42,7 +44,7 @@ from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences
 
 from dam.workspace.views import _create_workspace, _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
-from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage,  MetadataStructure
+from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.metadata.views import  save_metadata_value
 from dam.upload.views import generate_tasks, _get_upload_url,  _create_variant, guess_media_type,  _uploaded_item
 from dam.workflow.views import _set_state 
@@ -52,7 +54,6 @@ from workspace.forms import AdminWorkspaceForm
 from application.views import get_component_url, _get_resource_url
 
 from django.contrib.auth import authenticate,  login
-from application.models import Type
 
 #from django.contrib.sessions.backends.db import SessionStore
 
@@ -973,13 +974,13 @@ class ItemResource(ModResource):
                 
 #                dict
 
-            elif property.type in MetadataStructure.objects.all().values_list('name',  flat = True):
+            elif property.type in XMPStructure.objects.all().values_list('name',  flat = True):
 #                list of dict
                 
                 if not isinstance(metadata[data],  list):
                     raise ArgsValidationError({'metadata': ['format of metadata %s is invalid; it must be a list of dictionaries' % data]})
                 
-                structure = MetadataStructure.objects.get(name = property.type)
+                structure = XMPStructure.objects.get(name = property.type)
                 structure_list = []
                 
                 for _structure in metadata[data]:

@@ -22,7 +22,68 @@ from dam.workspace.models import Workspace
 from dam.repository.models import Item
 
 class Basket(models.Model):
+    """
+    Implements simple basket per user
+    """
     user = models.ForeignKey(User)
-    item = models.ForeignKey(Item)
+    items = models.ManyToManyField(Item)
     workspace = models.ForeignKey(Workspace)
+
+    class Meta:
+        unique_together = (("user", "workspace"))
+
+    def get_size(self):
+        """
+        Returns number of items in basket
+        """
+        return self.items.all().count()
+
+    def add_items(self, items):
+        """
+        Add items to a basket
+        @param items a list or QuerySet of repository.Item
+        """
+        if isinstance(items, Item):
+            items = [items]
+
+        self.items.add(*items)
+
+    def remove_items(self, items):
+        """
+        Remove items from a basket
+        @param items a list or QuerySet of repository.Item
+        """
+
+        if isinstance(items, Item):
+            items = [items]
+
+        self.items.remove(*items)
+
+    def item_in_basket(self, item):
+        """
+        Check if an item is contained in the current basket
+        @param item an instance of repository.Item
+        """
+        return self.items.filter(pk=item.pk).count() > 0
+    
+    @staticmethod
+    def get_basket(user, workspace):
+        """
+        Returns the basket for the given user and workspace
+        @param user an instance of django.contrib.auth.User
+        @param workspace an instance of workspace.Workspace
+        """
+        basket, created = Basket.objects.get_or_create(user=user, workspace=workspace)
+
+        return basket
+        
+    @staticmethod    
+    def empty_basket(user, workspace):
+        """
+        Delete the basket for the given user/workspace
+        @param user an instance of django.contrib.auth.User
+        @param workspace an instance of workspace.Workspace
+        """
+        Basket.objects.filter(user=user, workspace=workspace).delete()
+    
 

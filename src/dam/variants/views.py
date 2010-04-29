@@ -29,14 +29,14 @@ from django.utils import simplejson
 
 from dam.settings import ROOT_PATH
 from dam.variants.models import Variant, ImagePreferences, AudioPreferences, VideoPreferences,  DocPreferences,  VariantAssociation,  ImagePreferencesForm, VideoPreferencesForm, AudioPreferencesForm,  DocPreferencesForm,  SourceVariant,  _create_parameters_json,  Preset
-from dam.application.models import Type
+from dam.framework.dam_repository.models import Type
 from dam.repository.models import Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required
 from dam.repository.models import Component,  Item
 from dam.metadata.views import _get_formatted_descriptors, save_variants_rights, _get_ws_groups
 from dam.application.views import get_component_url
-from batch_processor.models import MDTask
+from dam.batch_processor.models import Machine
 
 import os
 import logger
@@ -90,11 +90,11 @@ def get_variant_media_type(item_id,  variant_name, workspace):
         logger.debug('variant_name %s' %variant_name)
         if variant_name == 'original' or variant_name ==  'edited':
             logger.debug('original or edited')
-            return item.type
+            return item.type.name
         logger.debug('item %s' %item)
         logger.debug('variant name %s' %variant_name)
         
-        v = Variant.objects.get(Q(workspace = workspace) | Q(workspace__isnull = True), variant_name = variant_name, media_type__name = item.type)
+        v = Variant.objects.get(Q(workspace = workspace) | Q(workspace__isnull = True), variant_name = variant_name, media_type = item.type)
         
         logger.debug('item_id %s' %item_id)
         
@@ -133,7 +133,7 @@ def force_variant_generation(request,  variant_id,  item_id):
     
 def _create_variant(variant,  item, ws):
     logger.debug('variant %s'%variant)
-    logger.debug('item.type %s'%item.type)
+    logger.debug('item.type %s'%item.type.name)
     logger.debug('ws %s'%ws)
 #    if variant_name =='original':
 #        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
@@ -143,11 +143,11 @@ def _create_variant(variant,  item, ws):
     
     try:
         if variant.shared:
-            comp = Component.objects.get(item = item,    variant= variant)
+            comp = Component.objects.get(item = item, variant= variant)
             comp.workspace.add(ws)
             comp.workspace.add(*item.workspaces.all())
         else:
-            comp = Component.objects.get(item = item,    variant= variant,  workspace = ws)
+            comp = Component.objects.get(item = item, variant= variant,  workspace = ws)
         comp.new_md_id()
         logger.debug('comp._id %s' %comp._id)
         comp.metadata.all().delete()
@@ -330,20 +330,19 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(variantassociation__workspace = workspace,  media_type__name = item.type,  default_url__isnull = True).distinct()
+    item_variants = Variant.objects.filter(variantassociation__workspace = workspace,  media_type = item.type,  default_url__isnull = True).distinct()
+
+    print item_variants
 
     now = time.time()
     resp = {'variants':[]}
     for v in item_variants:
-        
+                
         try:
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
-            work_in_progress = comp.mdtask_set.filter(Q(status__isnull=True) | Q(status = 0)).exclude(task_type = 'set_rights').count() > 0
-            logger.debug('comp %s'%comp)
-            logger.debug('work_in_progress %s'%work_in_progress)
+            work_in_progress = Machine.objects.filter(current_state__action__component = comp).count() > 0
             resource_url = "/redirect_to_component/%s/%s/?t=%s"% (item_id,  v.name,  now)
             info_list = []
-            logger.debug('comp.format %s'%comp.format)
             if comp.media_type.name== 'image':
                 extension = comp.format
             else:
@@ -373,7 +372,7 @@ def get_variants(request):
             if prefs:
                 media_type = prefs.media_type.name
             else:
-                media_type = item.type
+                media_type = item.type.name
             imported = False
             work_in_progress = False
             info_list = []
@@ -403,7 +402,6 @@ def get_variant_metadata(request):
                                         'value': data.value})
         
         result = {'metadata':metadata}
-        logger.debug('result %s'%result)
         return HttpResponse(simplejson.dumps(result))
         
         
@@ -421,7 +419,6 @@ def save_sources(request):
         workspace = request.session['workspace']
         variants = request.POST['variants']
         media_type = request.POST['media_type']
-        logger.debug('variants %s'%variants)
         variants = simplejson.loads(variants)
         existing_variant_ids = []
         for v in variants:
@@ -440,7 +437,6 @@ def save_sources(request):
                 existing_variant_ids.append(variant.pk)
                 
         variant_to_delete = Variant.objects.filter(is_global = False,  auto_generated = False,  default_url = None,  variantassociation__workspace = workspace).exclude(pk__in = existing_variant_ids)
-        logger.debug('variant_to_delete %s'%variant_to_delete)
         variant_to_delete.delete()
         
     except Exception,  ex:
