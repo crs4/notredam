@@ -379,9 +379,7 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
 #        ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
 
          
-    if source_machine:
-        source_machine.current_state = source_machine.initial_state
-        source_machine.save()
+
             
 def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     

@@ -112,18 +112,18 @@ def adapt_resource(component, machine):
 
     variant = component.variant
     
-    source_variant = variant.get_source(workspace,  item)
+#    source_variant = variant.get_source(workspace,  item)
 
 #    vp = variant.get_preferences(workspace)
     vp = component.get_parameters()
     logger.debug('vp %s'%vp)
-    orig = source_variant.get_component(workspace = workspace,  item = item) 
+    orig = component.source 
 
     dest_res_id = new_id()
         
     if item.type == 'image':
  
-        transcoding_format = vp.get('codec','jpg') #change to original format
+        transcoding_format = vp.get('codec', orig.format) #change to original format
         max_dim = int(vp.get('max_dim', -1)) 
         logger.debug('max_dim %s'%max_dim)
         cropping = vp.get('cropping', False)
@@ -359,7 +359,7 @@ def save_component_features(component, features):
     xmp_delete_list = []
     workspace = c.workspace.all()[0] 
 
-    source_variant = c.variant.get_source(workspace,  c.item)
+#    source_variant = c.variant.get_source(workspace,  c.item)
 
     extractors = {'image': 'image_basic', 'movie': 'video_basic', 'audio': 'audio_basic', 'doc': 'doc_basic'}
 
