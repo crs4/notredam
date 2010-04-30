@@ -12,7 +12,85 @@ from eventmanager.models import *
 from django.utils import simplejson
 
 
+
 pipeline = {
+    'event': 'upload',
+    'state': 'boh', 
+    'actions':[
+#               {
+#        #metadata        
+#        },
+        {
+         'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'preview',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 200
+            }
+                    
+        }]
+         
+         },
+         
+         {
+        'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'thumbnail',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 100
+            }
+                    
+        }]
+         
+         },
+         {
+        'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'fullscreen',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 800
+            }
+                    
+        }]
+         
+         },
+         
+        {
+        'type':'adaptation',
+        'media_type': 'video',
+        'source_variant': 'original',
+        'output_variant': 'thumbnail',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'extractvideothumbnail',
+            'parameters':{
+                'max_dim': 100
+            }
+                    
+        }]
+         
+         }
+               
+               
+    ],
+    
+                 
+             
+}
+
+pipeline2 = {
         
     'event': 'upload',
     'state': 'boh', 
@@ -101,6 +179,31 @@ pipeline = {
              }        
          
         }],
+        
+        
+     },
+     
+     {
+         'media_type': 'video',
+         'source_variant': 'original',
+         'output_variant': 'preview',
+         
+         'actions': [{
+             'type': 'resize',
+             'parameters':{
+                 'max_size':800 
+             }        
+         
+        },
+        {
+         'type': 'transcode',
+         'parameters':{
+            'preset_name':'flv'           
+            }
+         
+         }
+         
+         ],
         
         
      }
