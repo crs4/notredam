@@ -38,12 +38,12 @@ class Script(models.Model):
     def execute(self, items):
         pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
         
-        pipes = pipeline.get('pipes', [])
+        actions = pipeline.get('actions', [])
         
-        for pipe_kwargs in pipes:
+        for action_params in actions:
            
             try:
-                Pipe(self.workspace, **pipe_kwargs).execute(items)
+                ActionFactory().get_action(**action_params).execute(items, self.workspace)
             except Exception, ex:
                 logger.exception(ex)
                                 
@@ -70,15 +70,36 @@ class ActionError(ScriptException):
 class MediaTypeNotSupported(ScriptException):
     pass
 
+class ActionFactory:
+    def get_action(self, **action_params):
+        if action_params['type'] == 'adaptation':
+            action_params.pop('type')
+            return Adaptation(**action_params)
+        else:
+            return None
+    
+    
+class BaseAction(object):
+    required_params = []
+  
+    def __init__(self, **parameters):
+        logger.debug('parameters %s'%parameters)
+        if self.required_params:
+            if parameters.keys().sort() != self.required_params.sort():
+                raise MissingActionParameters('action parameters are: %s; parameters passed are %s'%(self.required_params, parameters))
+    
+                    
+        self.parameters = parameters
+       
+    def execute(self, items, workspace):
+        pass
 
-class Pipe:
-    def __init__(self,workspace, actions = [], media_type = None, source_variant = None, output_variant = None ):
-        
-        
-        actions_available = {}
-        self.adaptation_task = False
-        self.workspace = workspace
-        for subclass in BaseMDAction.__subclasses__():
+
+class Adaptation(BaseAction):
+    def __init__(self,actions, media_type, source_variant, output_variant, output_format ):
+        actions_available = {}       
+       
+        for subclass in BaseAdaptAction.__subclasses__():
             actions_available[subclass.__name__.lower()] = subclass
     
             
@@ -88,7 +109,7 @@ class Pipe:
         self.media_type = media_type
         self.source_variant = source_variant
         self.output_variant = output_variant
-        
+        self.output_format = output_format
         
         
         self.actions = []
@@ -104,8 +125,7 @@ class Pipe:
                     params['source_variant'] = self.source_variant
                 
                 action = actions_available[type](self.media_type,**params)
-                if isinstance(action, BaseMDAction):
-                    self.adaptation_task = True
+                
             except Exception, ex:
                 logger.debug('self.media_type %s'%self.media_type)
                 logger.debug('type %s'%type)
@@ -115,68 +135,44 @@ class Pipe:
             self.actions.append(action)
             
         
-    def execute(self, items):
-        
-        adaptation_task = False
+    def execute(self, items, workspace):
+               
         adapt_parameters = {}
-        logger.debug('self.media_type %s'%self.media_type)
+       
         variant = Variant.objects.get(name = self.output_variant, media_type__name = self.media_type)
         for item in items:
             
             try:
-                component = variant.get_component(self.workspace,  item)    
+                component = variant.get_component(workspace,  item)    
                     
             except Component.DoesNotExist:
                 component = Component.objects.create(variant = variant,  item = item)
-                component.workspace.add(self.workspace)
+                component.workspace.add(workspace)
             
             for action in self.actions:
                     logger.debug('action %s'%action.__class__)
-                    logger.debug('isinstance(action, BaseMDAction) %s'%isinstance(action, BaseMDAction))
-                                   
-                    if isinstance(action, BaseMDAction):
-                        tmp = action.get_adapt_params()
-                        logger.debug('tmp %s'%tmp)
-                        if tmp:
-                            adapt_parameters.update(tmp)
-                    else:
-                        action.execute(item, variant)
-                        
-                
-            logger.debug('self.adaptation_task %s'%self.adaptation_task)
-            logger.debug('adapt_parameters %s'%adapt_parameters)
-            if self.adaptation_task and adapt_parameters:
-                component.set_parameters(adapt_parameters) 
-                
-                component.source = Variant.objects.get(name = self.source_variant, media_type__name = self.media_type).get_component(self.workspace, item)
-                component.save() 
-                               
-                generate_tasks(variant, self.workspace, item)
-
-class BaseAction(object):
-    required_params = []
-  
-    def __init__(self, **parameters):
-        logger.debug('parameters %s'%parameters)
-        if self.required_params:
-            if parameters.keys().sort() != self.required_params.sort():
-                raise MissingActionParameters('action parameters are: %s; parameters passed are %s'%(self.required_params, parameters))
-    
+                    logger.debug('isinstance(action, BaseAdaptAction) %s'%isinstance(action, BaseAdaptAction))       
+                    tmp = action.get_adapt_params()                        
+                    adapt_parameters.update(tmp)
                     
-        self.parameters = parameters
-       
-    def execute(self, item, variant):
-        pass
+            
+            logger.debug('adapt_parameters %s'%adapt_parameters)
+            adapt_parameters['codec'] = self.output_format
+            component.set_parameters(adapt_parameters) 
+            
+            component.source = Variant.objects.get(name = self.source_variant, media_type__name = self.media_type).get_component(workspace, item)
+            component.save() 
+            generate_tasks(variant, workspace, item)
 
-    
-class BaseMDAction(BaseAction):
+
+class BaseAdaptAction(BaseAction):
     media_type_supported = []
     def __init__(self, media_type, **parameters):   
         
         if media_type not in self.media_type_supported:
             raise MediaTypeNotSupported
         
-        super(BaseMDAction, self).__init__(**parameters)
+        super(BaseAdaptAction, self).__init__(**parameters)
         if media_type == 'video':
             media_type = 'movie'# sigh
         self.media_type = media_type
@@ -187,15 +183,15 @@ class BaseMDAction(BaseAction):
         return self.parameters
 
 
-class Resize(BaseMDAction): 
+class Resize(BaseAdaptAction): 
     media_type_supported = ['image', 'movie']
 #    image params: max_dim
-    
+#    video params: video_width, video_height
 #        TODO: check parameters in init
     
     
     
-class Transcode(BaseMDAction):
+class Transcode(BaseAdaptAction):
     media_type_supported = ['image', 'movie', 'doc', 'audio']
 #    image params: codec
    
@@ -203,13 +199,13 @@ class Transcode(BaseMDAction):
 
     
 
-class Watermark(BaseMDAction):
+class Watermark(BaseAdaptAction):
     media_type_supported = ['image', 'movie', 'doc']
     required_params = ['file']
     def get_adapt_params(self):
         return {'watermark':self.parameters['file']}
 
-class ExtractVideoThumbnail(BaseMDAction):
+class ExtractVideoThumbnail(BaseAdaptAction):
     media_type_supported = ['movie']
 #    required_params = ['max_dim']
     
@@ -218,11 +214,11 @@ class ExtractVideoThumbnail(BaseMDAction):
 
 
 
-class PresetAction(BaseMDAction):
+class PresetAction(BaseAdaptAction):
     required_params = ['preset_name']
     
 
-class AdaptVideo(BaseMDAction):
+class AdaptVideo(BaseAdaptAction):
     required_params = ['preset_name']
        
 
