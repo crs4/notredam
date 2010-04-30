@@ -58,30 +58,10 @@ class Variant(models.Model):
             if Component.objects.filter(item = item, variant = v).count( ) > 0:
                 return v
             
-            
-    
-#    def is_source(self,  workspace,  item):
-#        if self.auto_generated:
-#            return False        
-#            
-#        source_variants = SourceVariant.objects.filter(workspace = workspace, variant__media_type= self.media_type)
-#        for sv in source_variants:
-#            try:
-#                sv.variant.get_component(workspace,  item)
-#            except:
-#                continue
-#            if sv.variant == self:
-#                return True
-#            else:
-#                return False
-#        return False
-
-        
+           
+  
     def get_component(self, workspace,  item):
-        logger.debug('workspace %s'%workspace)
-        logger.debug('item%s'%item)
-        logger.debug('variant %s'%self)
-#        return VariantAssociation.objects.get(variant = self,  workspace = workspace).component_set.get(item = item)
+      
         return self.component_set.get(item = item,  workspace = workspace)
         
     def get_preferences(self, workspace):
@@ -94,11 +74,6 @@ class Variant(models.Model):
         if self.is_global and Variant.objects.filter(name = self.name,  is_global = True,  media_type= self.media_type).count() > 0:
             raise Exception('A global variant with name %s already exists'%self.name)
         super(Variant, self).save(*args,  **kwargs)
-        
-        
-#    class Meta:
-#        unique_together = (("name", "is_global",  'media_type'),)
-
 
 class VariantDefault(models.Model):
     variant = models.ForeignKey(Variant)

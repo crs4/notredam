@@ -38,17 +38,19 @@ logging.basicConfig(level=logging_level,
 default_logger = logging.getLogger('dam')
 #default_logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))
 
-console = logging.StreamHandler()
-# define a Handler which writes INFO messages or higher to the sys.stderr
-console.setLevel(logging_level)
-# set a format which is simpler for console use
-formatter = logging.Formatter('[%(asctime)s] %(levelname)-8s %(message)s')
-formatter.datefmt = '%d/%b/%Y %H:%M:%S'
-console.setFormatter(formatter)
-# add the handler to the root logger
-
-#logging.getLogger('').addHandler(console)
-default_logger.addHandler(console)
+#console = logging.StreamHandler()
+## define a Handler which writes INFO messages or higher to the sys.stderr
+#console.setLevel(logging_level)
+## set a format which is simpler for console use
+#formatter = logging.Formatter('[%(asctime)s] %(levelname)-8s %(message)s')
+#formatter.datefmt = '%d/%b/%Y %H:%M:%S'
+#
+#
+#console.setFormatter(formatter)
+## add the handler to the root logger
+#
+##logging.getLogger('').addHandler(console)
+#default_logger.addHandler(console)
 
 
 def set_fileoutput(filename):
