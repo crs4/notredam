@@ -16,7 +16,8 @@ pipeline = {
         
     'event': 'upload',
     'state': 'boh', 
-    'pipes':[{
+    'pipes':[
+             {
             
             'media_type': 'image',
             'source_variant': 'original',
@@ -29,7 +30,7 @@ pipeline = {
                     },
                 },
                 {
-                 'type': 'transcoding',
+                 'type': 'transcode',
                  'parameters':{
                     'codec':'jpeg'           
                     }
@@ -51,7 +52,7 @@ pipeline = {
          
         },
         {
-         'type': 'transcoding',
+         'type': 'transcode',
          'parameters':{
             'codec':'jpeg'           
             }
@@ -76,7 +77,7 @@ pipeline = {
          
         },
         {
-         'type': 'transcoding',
+         'type': 'transcode',
          'parameters':{
             'codec':'jpeg'           
             }
@@ -88,21 +89,21 @@ pipeline = {
         
      },
      
-#     {
-#         'media_type': 'video',
-#         'source_variant': 'original',
-#         'output_variant': 'thumbnail',
-#         
-#         'actions': [{
-#             'type': 'extractvideothumbnail',
-#             'parameters':{
-#                 'size':800 
-#             }        
-#         
-#        }],
-#        
-#        
-#     }
+     {
+         'media_type': 'video',
+         'source_variant': 'original',
+         'output_variant': 'thumbnail',
+         
+         'actions': [{
+             'type': 'extractvideothumbnail',
+             'parameters':{
+                 'max_dim':100 
+             }        
+         
+        }],
+        
+        
+     }
      
      
      
@@ -112,14 +113,14 @@ pipeline = {
 
 ws = Workspace.objects.get(pk = 1)
 pipeline_json = simplejson.dumps(pipeline)
-script = Script.objects.create(name = 'prova', description = 'prova', pipeline = pipeline_json, workspace = ws )
+#script = Script.objects.create(name = 'prova', description = 'prova', pipeline = pipeline_json, workspace = ws )
 
-#script = Script.objects.get(pk =  1)
-#script.pipeline = pipeline_json
-#script.save()
+script = Script.objects.get(pk =  1)
+script.pipeline = pipeline_json
+script.save()
 
-upload = Event.objects.create(name = 'upload')
-EventRegistration.objects.create(event = upload, listener = script)
+#upload = Event.objects.create(name = 'upload')
+#EventRegistration.objects.create(event = upload, listener = script)
 
 
 

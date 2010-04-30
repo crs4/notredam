@@ -172,11 +172,15 @@ def adapt_resource(component, machine):
             d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=(max_dim, max_dim))
 
     elif item.type.name == 'movie':
-
-        if component.variant.media_type.name == "image":
-
-            dim_x = vp['max_dim']
-            dim_y = vp['max_dim']
+        
+        logger.debug('component.variant.pk %s'%component.variant.pk)
+        logger.debug('component.variant %s'%component.variant)
+        logger.debug('component.variant.media_type.name %s'%component.variant.media_type.name)
+        logger.debug('component.media_type.name %s'%component.media_type.name)
+        if component.media_type.name == "image":
+            
+            dim_x = vp['thumb_size']
+            dim_y = vp['thumb_size']
             
 
             d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
