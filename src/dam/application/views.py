@@ -111,7 +111,7 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
             url = _get_resource_url(component.ID)
 
         except Exception,ex:
-            logger.exception( 'ex in get_component_url %s' %  ex )
+#            logger.exception( 'ex in get_component_url %s' %  ex )
             url = NOTAVAILABLE
 
     if url == NOTAVAILABLE and not redirect_if_not_available:
