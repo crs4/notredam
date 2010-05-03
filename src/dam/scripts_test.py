@@ -81,7 +81,37 @@ pipeline = {
                     
         }]
          
-         }
+         },
+         
+        {
+            'type':'adaptation',
+            'media_type': 'video',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'flv',
+            'actions':[{
+                'type': 'resize',
+                'parameters':{
+                    'max_height': 320,
+                    'max_width': 200
+                    }
+                },
+                {
+                   'type': 'videoencode',
+                   'parameters':{
+                        'framerate':'25/2',
+                        'bitrate':640
+                    }
+                
+                }
+                
+                        
+            ]
+         
+        },
+        
+        
+        
                
                
     ],
