@@ -29,7 +29,7 @@ class VerificationUrl(models.Model):
     user = models.ForeignKey(User, unique = True)
     url = models.CharField(max_length=40,  unique = True)
     
-    def save(self,  *args, **kwargs):        
+    def save(self,  *args, **kwargs):
         if not self.id and not self.url:            
             self.url = hashlib.sha1(unicode(time.time() )).hexdigest()
         super(VerificationUrl, self).save(*args, **kwargs)

@@ -17,7 +17,6 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.application.admin import mod_admin
 from dam.workspace.views import Workspace, WorkspacePermissionsGroup, WorkSpacePermissionAssociation, WorkSpacePermission
 
 class WorkspaceAdmin(admin.ModelAdmin):
@@ -39,5 +38,3 @@ admin.site.register(Workspace,  WorkspaceAdmin)
 admin.site.register(WorkspacePermissionsGroup)
 admin.site.register(WorkSpacePermission)
 admin.site.register(WorkSpacePermissionAssociation)
-
-mod_admin.register(Workspace, WorkspaceAdmin)

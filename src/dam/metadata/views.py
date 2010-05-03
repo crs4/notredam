@@ -25,7 +25,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils import simplejson
 from django.contrib.auth.models import User
 
-from dam.repository.models import Item,Component
+from dam.repository.models import Item, Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
 from dam.preferences.views import get_user_setting
 from dam.workspace.models import Workspace
@@ -36,8 +36,6 @@ from dam.batch_processor.models import MachineState, Action, Machine
 from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
 
 from mx.DateTime.Parser import DateTimeFromString
-from mimetypes import guess_type
-from os import path
 import logger
 import re
 

@@ -32,7 +32,7 @@ from django_restapi.responder import *
 
 from django.contrib.auth.models import Permission
 
-from dam.repository.models import Item,  Component,  _new_md_id
+from dam.repository.models import Item,  Component
 from dam.framework.dam_repository.models import Type
 from dam.framework.dam_metadata.models import XMPStructure
 from dam.workspace.models import Workspace,  WorkSpacePermissionAssociation, WorkSpacePermission
@@ -2708,8 +2708,11 @@ class VariantsResource(ModResource):
         except:
             raise ArgsValidationError({'args': ['invalid file_name, no valid extension found']})
         
-        res_id = _new_md_id()
-        resp,  job_id = _get_upload_url(res_id,  fsize, ext)
+#         res_id = _new_md_id()
+#         resp,  job_id = _get_upload_url(res_id,  fsize, ext)
+        
+        #TODO: replace _get_upload_url 
+        resp = []
         
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
