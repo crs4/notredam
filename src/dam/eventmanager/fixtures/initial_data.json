@@ -1,1 +1,1 @@
-[{"pk": 1, "model": "eventmanager.eventmanager", "fields": {"description": "my event manager"}}]
+[{"pk": 1, "model": "eventmanager.event", "fields": {"name": "upload"}}, {"pk": 1, "model": "eventmanager.eventregistration", "fields": {"event": 1, "content_type": 62, "object_id": 1}}]
