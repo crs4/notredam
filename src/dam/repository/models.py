@@ -22,16 +22,11 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
-from dam.workflow.models import State, StateItemAssociation
+from dam.workflow.models import StateItemAssociation
 import urlparse
-import sha
-import random
 import logger
 
 from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
-
-def _new_md_id():
-    return sha.new(str(random.random())).hexdigest()
 
 class Item(AbstractItem):
 
@@ -164,6 +159,7 @@ class Component(AbstractComponent):
     
     def _get_id(self):
         return self._id
+        
     ID = property(fget=_get_id)
     
     def set_parameters(self, params):
@@ -244,17 +240,4 @@ class Component(AbstractComponent):
     
     def get_variant(self):
         return self.variant
-    
-    def new_md_id(self):
-        self._id = _new_md_id()
-        self.save()
-            
-    def save(self, *args,  **kwargs):
-        if self._id == '':
-            self._id = sha.new(str(random.random())).hexdigest()
-        try:
-            models.Model.save(self,*args,  **kwargs)
-        except:
-            self._id = ''
-            raise
-            
+                

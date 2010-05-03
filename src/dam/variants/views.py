@@ -148,8 +148,6 @@ def _create_variant(variant,  item, ws):
             comp.workspace.add(*item.workspaces.all())
         else:
             comp = Component.objects.get(item = item, variant= variant,  workspace = ws)
-        comp.new_md_id()
-        logger.debug('comp._id %s' %comp._id)
         comp.metadata.all().delete()
         comp.save()
         

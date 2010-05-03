@@ -20,6 +20,7 @@ from django.db import models, connection
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.contrib.auth.models import User
+from django.utils import simplejson
 
 from dam.workspace.models import Workspace
 from dam.repository.models import Component
@@ -29,8 +30,6 @@ from dam.framework.dam_repository.models import Type
 
 import logger
 import time
-
-from django.utils import simplejson
 
 class Variant(models.Model):    
     name = models.CharField(max_length=50)
