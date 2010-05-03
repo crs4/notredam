@@ -103,6 +103,15 @@ pipeline = {
                         'bitrate':640
                     }
                 
+                },
+                
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                
                 }
                 
                         
