@@ -107,14 +107,12 @@ class Adaptation(BaseAction):
             media_type = 'movie'# sigh
         
         self.media_type = media_type
-        self.source_variant = source_variant
-        self.output_variant = output_variant
-        self.output_format = output_format
-        
+        self.source_variant = source_variant.lower()
+        self.output_variant = output_variant.lower()
+        self.output_format = output_format.lower()        
         
         self.actions = []
-        logger.debug('actions %s'%actions)
-        logger.debug('actions_available %s'%actions_available)
+        
         for action_dict in actions:
             
             type = action_dict['type'].lower()
@@ -123,12 +121,14 @@ class Adaptation(BaseAction):
                 params = action_dict['parameters']
                 if self.source_variant: 
                     params['source_variant'] = self.source_variant
+                if self.output_format:
+                    params['output_format'] = self.output_format
+                
                 
                 action = actions_available[type](self.media_type,**params)
                 
             except Exception, ex:
-                logger.debug('self.media_type %s'%self.media_type)
-                logger.debug('type %s'%type)
+              
                 logger.exception(ex)
                 
                 raise ActionError('action %s does not exist'%type)
@@ -156,8 +156,13 @@ class Adaptation(BaseAction):
                     adapt_parameters.update(tmp)
                     
             
-            logger.debug('adapt_parameters %s'%adapt_parameters)
-            adapt_parameters['codec'] = self.output_format
+            
+            if self.media_type == 'movie' or self.media_type == 'audio':
+                adapt_parameters['preset_name'] = self.output_format
+            else:
+                adapt_parameters['codec'] = self.output_format
+            
+            logger.debug('adapt_parameters %s'%adapt_parameters)    
             component.set_parameters(adapt_parameters) 
             
             component.source = Variant.objects.get(name = self.source_variant, media_type__name = self.media_type).get_component(workspace, item)
@@ -185,18 +190,23 @@ class BaseAdaptAction(BaseAction):
 
 class Resize(BaseAdaptAction): 
     media_type_supported = ['image', 'movie']
-#    image params: max_dim
-#    video params: video_width, video_height
-#        TODO: check parameters in init
+          
+class VideoEncode(BaseAdaptAction): 
+    media_type_supported = ['movie']
+    def __init__(self, media_type, **parameters):
+        super(VideoEncode, self).__init__(media_type, **parameters)
+        if self.parameters.has_key('bitrate'):
+            if self.parameters['output_format'] in ['flv', 'avi', 'mpegts']:
+                self.parameters['video_bitrate'] = int(self.parameters.pop('bitrate')*1000)
+            else:
+                 self.parameters['video_bitrate'] = int(self.parameters.pop('bitrate'))       
+        
+        if self.parameters.has_key('framerate'): 
+            self.parameters['video_framerate'] = self.parameters.pop('framerate')
+                
+class AudioEncode(BaseAdaptAction):
+    media_type_supported = ['movie', 'audio']
     
-    
-    
-class Transcode(BaseAdaptAction):
-    media_type_supported = ['image', 'movie', 'doc', 'audio']
-#    image params: codec
-   
-#        TODO: check parameters init
-
     
 
 class Watermark(BaseAdaptAction):
