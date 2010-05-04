@@ -112,6 +112,14 @@ pipeline = {
                         'rate':44100
                     }
                 
+                }, 
+                {
+                'type': 'watermark', 
+                'parameters':{
+                    'uri': 'mediadart://c2ed4e4af0874b8ea72e88d91c706359', 
+                    'position':1
+                    }
+                
                 }
                 
                         
