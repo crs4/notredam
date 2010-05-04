@@ -116,7 +116,7 @@ pipeline = {
                 {
                 'type': 'watermark', 
                 'parameters':{
-                    'uri': 'mediadart://c2ed4e4af0874b8ea72e88d91c706359', 
+                    'uri': 'c2ed4e4af0874b8ea72e88d91c706359', 
                     'position':1
                     }
                 
@@ -126,14 +126,60 @@ pipeline = {
             ]
          
         },
-        
-        
-        
-               
-               
-    ],
+        {
+            'type':'adaptation',
+            'media_type': 'audio',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'mp3',
+            'actions':[
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                }
+            ]
+                     
+        }, 
+        {
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':100,
+                    }
+                
+                } 
+  
+    ]
+    }, 
     
-                 
+    {
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':200,
+                    }
+                
+                } 
+  
+    ]
+    }
+    
+       ]          
              
 }
 
