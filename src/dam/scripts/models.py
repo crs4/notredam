@@ -215,10 +215,38 @@ class BaseAdaptAction(BaseAction):
     def get_adapt_params(self):
         return self.parameters
 
-
 class Resize(BaseAdaptAction): 
     media_type_supported = ['image', 'movie']
-          
+    
+
+class Watermark(BaseAdaptAction): 
+    media_type_supported = ['image', 'movie']
+    required_parameters = ['watermark_uri',  'watermark_position']
+    def __init__(self, media_type, **parameters):
+        """
+        parameters: 
+            watermark_uri
+            watermark_position(1,2,3,4,5,6,7,8,9)
+        
+        Mediadart API
+        video:
+            watermark_uri
+            watermark_top
+            watermark_left
+            watermark_top_percent
+            watermark_left_percent
+        
+        image:
+            watermark_filename
+            watermark_corner
+        """
+        super(Watermark,  self).__init__(media_type,  **parameters)
+        
+        self.parameters['watermak_filename'] = self.parameters.pop('uri')
+        
+#        TODO: watermark corner
+        
+        
 class VideoEncode(BaseAdaptAction):
     """default bitrate in kb""" 
     media_type_supported = ['movie']
@@ -248,17 +276,6 @@ class AudioEncode(BaseAdaptAction):
             
             self.parameters['audio_rate'] = int(self.parameters.pop('rate'))
                 
-    
-    
-    
-    
-    
-
-class Watermark(BaseAdaptAction):
-    media_type_supported = ['image', 'movie', 'doc']
-    required_params = ['file']
-    def get_adapt_params(self):
-        return {'watermark':self.parameters['file']}
 
 class ExtractVideoThumbnail(BaseAdaptAction):
     media_type_supported = ['movie']
