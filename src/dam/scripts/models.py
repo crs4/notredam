@@ -216,8 +216,11 @@ class BaseAdaptAction(BaseAction):
         return self.parameters
 
 class Resize(BaseAdaptAction): 
-    media_type_supported = ['image', 'movie']
-    
+    media_type_supported = ['image', 'movie',  'doc']
+
+class Doc2Image(BaseAdaptAction): 
+    media_type_supported = ['doc']
+    required_parameters = ['max_dim']
 
 class Watermark(BaseAdaptAction): 
     media_type_supported = ['image', 'movie']
