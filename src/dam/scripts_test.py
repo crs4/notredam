@@ -103,27 +103,90 @@ pipeline = {
                         'bitrate':640
                     }
                 
+                },
+                
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                
+                }, 
+                {
+                'type': 'watermark', 
+                'parameters':{
+                    'uri': 'c2ed4e4af0874b8ea72e88d91c706359', 
+                    'position':1
+                    }
+                
                 }
                 
                         
             ]
          
         },
-        
-        
-        
-               
-               
-    ],
+        {
+            'type':'adaptation',
+            'media_type': 'audio',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'mp3',
+            'actions':[
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                }
+            ]
+                     
+        }, 
+        {
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':100,
+                    }
+                
+                } 
+  
+    ]
+    }, 
     
-                 
+    {
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':200,
+                    }
+                
+                } 
+  
+    ]
+    }
+    
+       ]          
              
 }
 
 pipeline2 = {
         
     'event': 'upload',
-    'state': 'boh', 
+    'state': '', 
     'pipes':[
              {
             
@@ -246,7 +309,7 @@ pipeline2 = {
 
 ws = Workspace.objects.get(pk = 1)
 pipeline_json = simplejson.dumps(pipeline)
-#script = Script.objects.create(name = 'prova', description = 'prova', pipeline = pipeline_json, workspace = ws )
+#script = Script.objects.create(name = 'variant_generation', description = 'variant generation', pipeline = pipeline_json, workspace = ws )
 
 script = Script.objects.get(pk =  1)
 script.pipeline = pipeline_json

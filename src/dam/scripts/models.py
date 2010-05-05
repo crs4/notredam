@@ -23,6 +23,176 @@ from variants.models import Variant
 from repository.models import Component
 import logger
 
+variant_generation_pipeline = pipeline = {
+    'event': 'upload',
+    'state': 'boh', 
+    'actions':[
+#               {
+#        #metadata        
+#        },
+        {
+         'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'preview',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 200
+            }
+                    
+        }]
+         
+         },
+         
+         {
+        'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'thumbnail',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 100
+            }
+                    
+        }]
+         
+         },
+         {
+        'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'fullscreen',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 800
+            }
+                    
+        }]
+         
+         },
+         
+        {
+        'type':'adaptation',
+        'media_type': 'video',
+        'source_variant': 'original',
+        'output_variant': 'thumbnail',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'extractvideothumbnail',
+            'parameters':{
+                'max_dim': 100
+            }
+                    
+        }]
+         
+         },
+         
+        {
+            'type':'adaptation',
+            'media_type': 'video',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'flv',
+            'actions':[{
+                'type': 'resize',
+                'parameters':{
+                    'max_height': 320,
+                    'max_width': 200
+                    }
+                },
+                {
+                   'type': 'videoencode',
+                   'parameters':{
+                        'framerate':'25/2',
+                        'bitrate':640
+                    }
+                
+                },
+                
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                
+                }, 
+                {
+                'type': 'watermark', 
+                'parameters':{
+                    'uri': 'c2ed4e4af0874b8ea72e88d91c706359', 
+                    'position':1
+                    }
+                
+                }
+                
+                        
+            ]
+         
+        },
+        {
+            'type':'adaptation',
+            'media_type': 'audio',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'mp3',
+            'actions':[
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                }
+            ]
+                     
+        }, 
+        {
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':100,
+                    }
+                
+                } 
+  
+    ]
+    }, 
+    
+    {
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':200,
+                    }
+                
+                } 
+  
+    ]
+    }
+    
+       ]          
+             
+}
+
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
@@ -70,6 +240,9 @@ class ActionError(ScriptException):
 class MediaTypeNotSupported(ScriptException):
     pass
 
+class PresetUnknown(ScriptException):
+    pass
+
 class ActionFactory:
     def get_action(self, **action_params):
         if action_params['type'] == 'adaptation':
@@ -95,21 +268,46 @@ class BaseAction(object):
         pass
 
 
+preset = {'movie':
+                   {'matroska_mpeg4_aac': 'mpeg4',
+                   'mp4_h264_aaclow': 'mpeg4',
+                   'flv': 'flv',
+                   'avi': 'avi',
+                   'flv_h264_aac': 'flv',
+                   'theora': 'ogg'}
+     
+}
+
+
 class Adaptation(BaseAction):
-    def __init__(self,actions, media_type, source_variant, output_variant, output_format ):
+    def __init__(self,actions, media_type, source_variant, output_variant, output_format):
+        
+        
+       
+        if media_type == 'video':
+            media_type = 'movie'# sigh
+#        
+#            if self.output_format  not in preset[media_type].keys():
+#                raise PresetUnknown('Preset %s unknown. Presets available are: %s.'%(self.output_format,','.join(preset[media_type].keys()))) 
+#                
+#            self.extension = preset[media_type][output_format]
+#            
+#        else:
+#            self.extension = self.output_format
+       
+        
+        self.media_type = media_type
+        self.source_variant = source_variant.lower()
+        self.output_variant = output_variant.lower()
+        self.output_format = output_format.lower()     
+        
         actions_available = {}       
        
         for subclass in BaseAdaptAction.__subclasses__():
             actions_available[subclass.__name__.lower()] = subclass
     
-            
-        if media_type == 'video':
-            media_type = 'movie'# sigh
-        
-        self.media_type = media_type
-        self.source_variant = source_variant.lower()
-        self.output_variant = output_variant.lower()
-        self.output_format = output_format.lower()        
+       
+                
         
         self.actions = []
         
@@ -175,7 +373,7 @@ class BaseAdaptAction(BaseAction):
     def __init__(self, media_type, **parameters):   
         
         if media_type not in self.media_type_supported:
-            raise MediaTypeNotSupported
+            raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
         
         super(BaseAdaptAction, self).__init__(**parameters)
         if media_type == 'video':
@@ -187,13 +385,46 @@ class BaseAdaptAction(BaseAction):
     def get_adapt_params(self):
         return self.parameters
 
-
 class Resize(BaseAdaptAction): 
+    media_type_supported = ['image', 'movie',  'doc']
+
+class Doc2Image(BaseAdaptAction): 
+    media_type_supported = ['doc']
+    required_parameters = ['max_dim']
+
+class Watermark(BaseAdaptAction): 
     media_type_supported = ['image', 'movie']
-          
-class VideoEncode(BaseAdaptAction): 
+    required_parameters = ['watermark_uri',  'watermark_position']
+    def __init__(self, media_type, **parameters):
+        """
+        parameters: 
+            watermark_uri
+            watermark_position(1,2,3,4,5,6,7,8,9)
+        
+        Mediadart API
+        video:
+            watermark_uri
+            watermark_top
+            watermark_left
+            watermark_top_percent
+            watermark_left_percent
+        
+        image:
+            watermark_filename
+            watermark_corner
+        """
+        super(Watermark,  self).__init__(media_type,  **parameters)
+        
+        self.parameters['watermak_filename'] = self.parameters.pop('uri')
+        
+#        TODO: watermark corner
+        
+        
+class VideoEncode(BaseAdaptAction):
+    """default bitrate in kb""" 
     media_type_supported = ['movie']
     def __init__(self, media_type, **parameters):
+        
         super(VideoEncode, self).__init__(media_type, **parameters)
         if self.parameters.has_key('bitrate'):
             if self.parameters['output_format'] in ['flv', 'avi', 'mpegts']:
@@ -205,15 +436,19 @@ class VideoEncode(BaseAdaptAction):
             self.parameters['video_framerate'] = self.parameters.pop('framerate')
                 
 class AudioEncode(BaseAdaptAction):
+    """default bitrate in kb"""
     media_type_supported = ['movie', 'audio']
     
-    
-
-class Watermark(BaseAdaptAction):
-    media_type_supported = ['image', 'movie', 'doc']
-    required_params = ['file']
-    def get_adapt_params(self):
-        return {'watermark':self.parameters['file']}
+    def __init__(self, media_type, **parameters):
+        super(AudioEncode, self).__init__(media_type, **parameters)
+        if self.parameters.has_key('bitrate'):
+            if self.parameters['output_format'] in ['mp4_h264_aaclow', 'aac']:
+                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate')*1000)
+            else:
+                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate'))
+            
+            self.parameters['audio_rate'] = int(self.parameters.pop('rate'))
+                
 
 class ExtractVideoThumbnail(BaseAdaptAction):
     media_type_supported = ['movie']

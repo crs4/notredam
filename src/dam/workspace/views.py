@@ -45,6 +45,8 @@ from dam.preferences.models import DAMComponentSetting
 from dam.preferences.views import get_user_setting
 from dam.metadata.models import MetadataProperty
 from dam.metadata.views import get_metadata_default_language
+from dam.scripts.models import variant_generation_pipeline, Script
+from dam.eventmanager.models import Event, EventRegistration
 
 from django.utils.datastructures import SortedDict
 
@@ -75,33 +77,11 @@ def _create_workspace(ws, user):
     sources = Variant.objects.filter(is_global = True,  auto_generated = False,  default_url__isnull = True)
     
     try:
-        for source in sources:
-            VariantAssociation.objects.create(workspace = ws, variant = source)
-        
-        for variant in auto_generated:
-            defaults = VariantDefault.objects.filter(variant = variant)
-            for default in defaults:
-                pref = default.preferences.copy()
-                VariantAssociation.objects.create(workspace = ws, variant = variant, preferences = pref)
-            
-            for source in sources.filter(media_type = variant.media_type):
-                logger.debug('RANK %s %s'%(source,  source.default_rank))
-                SourceVariant.objects.create(workspace = ws,  destination = variant,  rank = source.default_rank,  source = source)    
-        
-#        for variant in global_variants:
-#            if variant.auto_generated:
-#                logger.debug('variant %s'%variant.name)
-#                defaults = VariantDefault.objects.filter(variant = variant)
-#                for default in defaults:
-#                    pref = default.preferences.copy()
-#                    VariantAssociation.objects.create(workspace = ws, variant = variant, preferences = pref)
-#            else:
-#                VariantAssociation.objects.create(workspace = ws, variant = variant)
-#                if variant.default_rank:
-#                    SourceVariant.objects.create(workspace = ws,  variant = variant,  rank = variant.default_rank)    
-#        
-            
-      
+        pipeline_json = simplejson.dumps(variant_generation_pipeline)
+        script = Script.objects.create(name = 'variant_generation', description = 'variant generation', pipeline = pipeline_json, workspace = ws )
+
+        upload = Event.objects.get(name = 'upload')
+        EventRegistration.objects.create(event = upload, listener = script)
         
         logger.debug('workspace: %s'%ws)
         logger.debug('workspace.name %s'%ws.name)
