@@ -85,7 +85,7 @@ class MetadataDescriptorGroup(models.Model):
     specific_basic = models.BooleanField(default=False)
     specific_full = models.BooleanField(default=False)
     upload = models.BooleanField(default=False)
-    workspace = models.ForeignKey('workspace.Workspace', null=True, blank=True) 
+    workspace = models.ForeignKey('workspace.DAMWorkspace', null=True, blank=True) 
     
     def __str__(self):
         return "%s" % (self.name)

@@ -16,20 +16,9 @@
 #
 #########################################################################
 
-from django.db import models
+from django.contrib import admin
+from models import WorkspacePermissionsGroup, WorkspacePermissionAssociation, WorkspacePermission
 
-from dam.repository.models import Item
-from dam.workflow.models import State
-from django.db.models import Q
-
-from dam.framework.dam_workspace.models import Workspace
-
-class DAMWorkspace(Workspace):
-    items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
-    states = models.ManyToManyField(State)
-        
-    def get_variants(self):
-        from dam.variants.models import Variant
-        return Variant.objects.filter(Q(variantassociation__workspace = self) | Q(is_global = True,  )).distinct()    
-
-
+admin.site.register(WorkspacePermissionsGroup)
+admin.site.register(WorkspacePermission)
+admin.site.register(WorkspacePermissionAssociation)

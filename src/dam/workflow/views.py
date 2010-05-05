@@ -21,7 +21,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import simplejson
 
 from dam.workflow.models import State, StateItemAssociation
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item
 from dam.workspace.decorators import permission_required
 
@@ -49,7 +49,7 @@ def set_state(request):
 @login_required
 def get_states(request):
     workspace = request.session['workspace']
-    states = State.objects.filter(workspace = workspace)
+    states = State.objects.filter(damworkspace = workspace)
     states_resp = []
     for state in states:
         states_resp.append({'pk': state.pk,  'name':  state.name})

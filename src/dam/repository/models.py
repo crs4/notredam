@@ -37,6 +37,29 @@ class Item(AbstractItem):
     class Meta:
         db_table = 'item'
 
+    def __unicode__(self):
+        return self.get_file_name()
+
+    def get_workspaces_count(self):
+        return self.workspaces.all().count()    
+
+    def delete_from_ws(self, user, workspaces=None):
+    
+        if not workspaces:
+            q1 = Workspace.objects.filter( Q(workspacepermissionassociation__permission__codename = 'admin') | Q(workspacepermissionassociation__permission__codename = 'remove_item'), members = user,workspacepermissionassociation__users = user)
+            q2 =  Workspace.objects.filter(Q(workspacepermissionsgroup__permissions__codename = 'admin') | Q(workspacepermissionsgroup__permissions__codename = 'remove_item'), members = user, workspacepermissionsgroup__users = user)
+            workspaces = reduce(or_, [q1,q2])
+
+        self.workspaces.remove(*workspaces)
+            
+        if self.get_workspaces_count() == 0:
+            components = self.component_set.all().delete()
+            self.delete()
+        else:
+            inboxes = self.node_set.filter(type = 'inbox',  workspace__in= workspaces)
+            for inbox in inboxes:
+                inbox.items.remove(self)
+            
     def get_metadata_values(self, metadataschema=None):
         from dam.metadata.views import get_metadata_values
         values = []
@@ -110,17 +133,8 @@ class Item(AbstractItem):
         from dam.variants.models import Variant
         return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(variantassociation__workspace__pk = workspace.pk), media_type = self.type),  workspace = workspace)
 
-    def description(self):
-        mydescription = self.metadata.get(schema__is_description = True, language ="it-IT")
-        return mydescription.value
-
-    def keywords(self):
+    def keywords(self):    
         self.node_set.filter(type = 'keyword' ).values('id','label')
-#        k = {}
-#        mykeywords = self.metadata.filter(schema__keyword_target = True)
-#        for i in mykeywords:
-#            k.append(i.value)
-#        return mykeywords
 
     def uploaded_by(self):
         try:
@@ -136,7 +150,7 @@ class Component(AbstractComponent):
     metadata = generic.GenericRelation('metadata.MetadataValue')
     
     variant = models.ForeignKey('variants.Variant')
-    workspace = models.ManyToManyField('workspace.Workspace')    
+    workspace = models.ManyToManyField('workspace.DAMWorkspace')    
 #    media_type = models.ForeignKey('application.Type')
     item = models.ForeignKey('repository.Item')
 #    source_id = models.CharField(max_length=40,  null = True,  blank = True)

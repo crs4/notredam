@@ -109,21 +109,5 @@ def basket_size(request):
 
     return HttpResponse(count)
 
-def __inbasket(user,item,workspace):
-    """
-    Check if the given item is in basket
-    """
-
-    try:
-
-        basket = Basket.get_basket(user, workspace)
-
-        return basket.item_in_basket(item)
-	
-    except Exception,  ex:
-        logger.exception(ex)
-        return 0	
-
-    return 1
 
 

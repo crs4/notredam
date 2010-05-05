@@ -35,7 +35,7 @@ from dam.variants.models import Variant, ImagePreferences as VariantsPreference,
 from dam.treeview.models import Node
 from dam.batch_processor.models import MachineState, Machine, Action
 
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.workspace.decorators import permission_required
 from dam.application.views import get_component_url
 from dam.variants.views import _create_variant

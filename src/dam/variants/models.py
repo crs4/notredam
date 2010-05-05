@@ -22,7 +22,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.auth.models import User
 from django.utils import simplejson
 
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Component
 from dam.metadata.models import RightsValue
 
