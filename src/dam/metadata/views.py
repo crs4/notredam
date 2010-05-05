@@ -29,7 +29,7 @@ from dam.preferences.models import DAMComponent, DAMComponentSetting
 from dam.preferences.views import get_user_setting
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
-from dam.variants.models import Variant, VariantAssociation
+from dam.variants.models import Variant
 from dam.workspace import decorators
 from dam.batch_processor.models import MachineState, Action, Machine
 from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
@@ -95,7 +95,7 @@ def get_variants_menu_list(request):
     """
     workspace = request.session['workspace']
     
-    vas = VariantAssociation.objects.filter(workspace = workspace, variant__default_url__isnull = True, variant__editable = True).exclude(variant__name='original').exclude(variant__name='thumbnail').order_by('variant__name').values_list('variant__name', flat=True)  
+    vas = Variant.objects.filter(workspace = workspace, default_url__isnull = True, editable = True).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
     
     vas = set(vas)
     
@@ -391,27 +391,27 @@ def save_variants_rights(item, workspace, variant):
     """
     
     comp = Component.objects.get(item=item, variant=variant, workspace=workspace)
-
-    variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = variant) 
-    vp = variant_association.preferences
-
-    if vp:
-        license = vp.rights_type
-
-        logger.debug(license)
-    
-        if license:
-            save_rights_value(comp, license, workspace)
-        else:
-            comp.metadata.filter(schema__rights_target=True).delete()
-#            source_variant = variant.get_source(workspace,  item)
-#            original_comp = source_variant.get_component(workspace = workspace,  item = item) 
-            original_comp = comp.source
-            
-            comp.comp_rights = []
-            comp.comp_rights.add(*original_comp.comp_rights.all())
-            for m in original_comp.metadata.filter(schema__rights_target=True):
-                MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = comp,  value = m.value, language=m.language)
+#    TODO: remove vp
+#    variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = variant) 
+#    vp = variant_association.preferences
+#
+#    if vp:
+#        license = vp.rights_type
+#
+#        logger.debug(license)
+#    
+#        if license:
+#            save_rights_value(comp, license, workspace)
+#        else:
+#            comp.metadata.filter(schema__rights_target=True).delete()
+##            source_variant = variant.get_source(workspace,  item)
+##            original_comp = source_variant.get_component(workspace = workspace,  item = item) 
+#            original_comp = comp.source
+#            
+#            comp.comp_rights = []
+#            comp.comp_rights.add(*original_comp.comp_rights.all())
+#            for m in original_comp.metadata.filter(schema__rights_target=True):
+#                MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = comp,  value = m.value, language=m.language)
 
 @login_required
 @decorators.permission_required('edit_metadata')

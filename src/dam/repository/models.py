@@ -196,14 +196,9 @@ class Component(AbstractComponent):
             return {}
         
     
-    def _get_media_type(self):
-        if self.variant.auto_generated:
-            pref = self.variant.get_preferences(workspace = self.workspace.all()[0])
-            return pref.media_type
-            
-        else:
-            return self.variant.media_type
-            
+    def _get_media_type(self):        
+            return self.type            
+     
     media_type = property(fget=_get_media_type)
     
     def __str__(self):

@@ -40,7 +40,7 @@ from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, W
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.views import _move_node,  _add_node, InvalidNode,  WrongWorkspace,  NotMovableNode,  _rename_node,  NotEditableNode, save_association,  _save__collection_association,  _save__keyword_association,  _remove_collection_association,  _remove_keyword_association,  _save_metadata_mapping,  _edit_node
-from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
+#from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
 
 
 from dam.workspace.views import _create_workspace, _add_items_to_ws, _search, _get_thumb_url
