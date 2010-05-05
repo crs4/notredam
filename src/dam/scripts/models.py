@@ -23,9 +23,10 @@ from variants.models import Variant
 from repository.models import Component
 import logger
 
-variant_generation_pipeline = pipeline = {
+
+variant_generation_pipeline = {
     'event': 'upload',
-    'state': 'boh', 
+    'state': '', 
     'actions':[
 #               {
 #        #metadata        
@@ -40,8 +41,7 @@ variant_generation_pipeline = pipeline = {
             'type': 'resize',
             'parameters':{
                 'max_dim': 200
-            }
-                    
+            }    
         }]
          
          },
@@ -194,37 +194,6 @@ variant_generation_pipeline = pipeline = {
 }
 
 
-class Script(models.Model):
-    name = models.CharField(max_length= 50)
-    description = models.CharField(max_length= 200)
-    pipeline = models.TextField()
-    workspace = models.ForeignKey('workspace.Workspace')
-    event = generic.GenericRelation('eventmanager.EventRegistration')
-    state = models.ForeignKey('workflow.State',  null = True,  blank = True)
-    
-    def __unicode__(self):
-        return unicode(self.name)
-    
-    def execute(self, items):
-        pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
-        
-        actions = pipeline.get('actions', [])
-        
-        for action_params in actions:
-           
-            try:
-                ActionFactory().get_action(**action_params).execute(items, self.workspace)
-            except Exception, ex:
-                logger.exception(ex)
-                                
-            
-        
-        
-            
-    class Meta:
-        unique_together = ('name', 'workspace' )
-  
-
 class ScriptException(Exception):
     pass
   
@@ -243,156 +212,125 @@ class MediaTypeNotSupported(ScriptException):
 class PresetUnknown(ScriptException):
     pass
 
-class ActionFactory:
-    def get_action(self, **action_params):
-        if action_params['type'] == 'adaptation':
-            action_params.pop('type')
-            return Adaptation(**action_params)
-        else:
-            return None
+class Script(models.Model):
+    name = models.CharField(max_length= 50)
+    description = models.CharField(max_length= 200)
+    pipeline = models.TextField()
+    workspace = models.ForeignKey('workspace.Workspace')
+    event = generic.GenericRelation('eventmanager.EventRegistration')
+    state = models.ForeignKey('workflow.State',  null = True,  blank = True)
+    
+    def __unicode__(self):
+        return unicode(self.name)
+    
+    def execute(self, items):
+        pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
+        
+        actions_list = pipeline.get('actions', [])
+        source_variant = pipeline['source_variant'].lower()
+        media_type = pipeline['media_type'].lower()
+                             
+        actions_available = {}       
+       
+        for subclass in BaseAction.__subclasses__():
+            actions_available[subclass.__name__.lower()] = subclass
+        
+        actions = []
+      
+        for action_dict in actions_list:
+            
+            type = action_dict['type'].lower()
+            try:                
+                params = action_dict['parameters']
+                params['workspace'] = self.workspace
+                params['media_type'] = media_type
+                params['source_variant'] = source_variant
+                
+                action = actions_available[type](**params)                
+            except Exception, ex:              
+                logger.exception(ex)                
+                raise ActionError('action %s does not exist'%type)
+            actions.append(action)
+  
+            
+        for item in items:
+            adapt_parameters = {}   
+            for action in actions:
+                if isinstance(action, SaveAs):
+                    action.execute(item,adapt_parameters)
+                else:
+                    tmp_adapt_parameters = action.get_adapt_params()
+                    if tmp_adapt_parameters:
+                        adapt_parameters.update(tmp_adapt_parameters)
+            
+    class Meta:
+        unique_together = ('name', 'workspace' )
+ 
     
     
 class BaseAction(object):
-    required_params = []
-  
-    def __init__(self, **parameters):
-        logger.debug('parameters %s'%parameters)
-        if self.required_params:
-            if parameters.keys().sort() != self.required_params.sort():
-                raise MissingActionParameters('action parameters are: %s; parameters passed are %s'%(self.required_params, parameters))
     
-                    
-        self.parameters = parameters
-       
-    def execute(self, items, workspace):
-        pass
-
-
-preset = {'movie':
-                   {'matroska_mpeg4_aac': 'mpeg4',
-                   'mp4_h264_aaclow': 'mpeg4',
-                   'flv': 'flv',
-                   'avi': 'avi',
-                   'flv_h264_aac': 'flv',
-                   'theora': 'ogg'}
-     
-}
-
-
-class Adaptation(BaseAction):
-    def __init__(self,actions, media_type, source_variant, output_variant, output_format):
-        
-        
-       
-        if media_type == 'video':
-            media_type = 'movie'# sigh
-#        
-#            if self.output_format  not in preset[media_type].keys():
-#                raise PresetUnknown('Preset %s unknown. Presets available are: %s.'%(self.output_format,','.join(preset[media_type].keys()))) 
-#                
-#            self.extension = preset[media_type][output_format]
-#            
-#        else:
-#            self.extension = self.output_format
-       
-        
-        self.media_type = media_type
-        self.source_variant = source_variant.lower()
-        self.output_variant = output_variant.lower()
-        self.output_format = output_format.lower()     
-        
-        actions_available = {}       
-       
-        for subclass in BaseAdaptAction.__subclasses__():
-            actions_available[subclass.__name__.lower()] = subclass
-    
-       
-                
-        
-        self.actions = []
-        
-        for action_dict in actions:
-            
-            type = action_dict['type'].lower()
-            try:
-                
-                params = action_dict['parameters']
-                if self.source_variant: 
-                    params['source_variant'] = self.source_variant
-                if self.output_format:
-                    params['output_format'] = self.output_format
-                
-                
-                action = actions_available[type](self.media_type,**params)
-                
-            except Exception, ex:
-              
-                logger.exception(ex)
-                
-                raise ActionError('action %s does not exist'%type)
-            self.actions.append(action)
-            
-        
-    def execute(self, items, workspace):
-               
-        adapt_parameters = {}
-       
-        variant = Variant.objects.get(name = self.output_variant, media_type__name = self.media_type)
-        for item in items:
-            
-            try:
-                component = variant.get_component(workspace,  item)    
-                    
-            except Component.DoesNotExist:
-                component = Component.objects.create(variant = variant,  item = item)
-                component.workspace.add(workspace)
-            
-            for action in self.actions:
-                    logger.debug('action %s'%action.__class__)
-                    logger.debug('isinstance(action, BaseAdaptAction) %s'%isinstance(action, BaseAdaptAction))       
-                    tmp = action.get_adapt_params()                        
-                    adapt_parameters.update(tmp)
-                    
-            
-            
-            if self.media_type == 'movie' or self.media_type == 'audio':
-                adapt_parameters['preset_name'] = self.output_format
-            else:
-                adapt_parameters['codec'] = self.output_format
-            
-            logger.debug('adapt_parameters %s'%adapt_parameters)    
-            component.set_parameters(adapt_parameters) 
-            
-            component.source = Variant.objects.get(name = self.source_variant, media_type__name = self.media_type).get_component(workspace, item)
-            component.save() 
-            generate_tasks(variant, workspace, item)
-
-
-class BaseAdaptAction(BaseAction):
-    media_type_supported = []
-    def __init__(self, media_type, **parameters):   
+    media_type_supported = ['image', 'video', 'audio', 'doc']
+    def __init__(self, media_type, source_variant, workspace):   
         
         if media_type not in self.media_type_supported:
             raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
         
-        super(BaseAdaptAction, self).__init__(**parameters)
+        
         if media_type == 'video':
             media_type = 'movie'# sigh
         self.media_type = media_type
         logger.debug('self.media_type %s'%self.media_type)
-        
+        self.source_variant = source_variant
+        self.workspace = workspace
+        self.parameters = {}
     
     def get_adapt_params(self):
         return self.parameters
 
-class Resize(BaseAdaptAction): 
-    media_type_supported = ['image', 'movie',  'doc']
 
-class Doc2Image(BaseAdaptAction): 
+class SaveAs(BaseAction):
+    
+    def __init__(self, media_type, source_variant, workspace, output_variant, output_format):   
+        super(SaveAs, self).__init__(media_type, source_variant, workspace)
+        
+        self.output_variant = output_variant
+        self.output_format = output_format
+    
+    def execute(self, item, adapt_parameters):     
+        
+        variant = Variant.objects.get(name = self.output_variant, media_type__name = self.media_type)          
+        
+        component = variant.get_component(self.workspace,  item)    
+         
+        if self.media_type == 'movie' or self.media_type == 'audio':
+            adapt_parameters['preset_name'] = self.output_format
+        else:
+            adapt_parameters['codec'] = self.output_format
+        
+        logger.debug('adapt_parameters %s'%adapt_parameters)    
+        component.set_parameters(adapt_parameters) 
+        
+        
+        source_variant = Variant.objects.get(name = self.source_variant, media_type__name = self.media_type) 
+        source= source_variant.get_component(self.workspace, item)                 
+        component.source = source
+        component.save() 
+        generate_tasks(variant, self.workspace, item)
+
+
+
+class Resize(BaseAction): 
+    media_type_supported = ['image', 'movie',  'doc']
+    def __init__(self, media_type, source_variant, workspace, max_dim):
+        super(Resize, self).__init__(media_type, source_variant, workspace)
+        self.parameters['max_dim'] = max_dim
+
+class Doc2Image(BaseAction): 
     media_type_supported = ['doc']
     required_parameters = ['max_dim']
 
-class Watermark(BaseAdaptAction): 
+class Watermark(BaseAction): 
     media_type_supported = ['image', 'movie']
     required_parameters = ['watermark_uri',  'watermark_position']
     def __init__(self, media_type, **parameters):
@@ -419,8 +357,19 @@ class Watermark(BaseAdaptAction):
         
 #        TODO: watermark corner
         
+
+preset = {'movie':
+                   {'matroska_mpeg4_aac': 'mpeg4',
+                   'mp4_h264_aaclow': 'mpeg4',
+                   'flv': 'flv',
+                   'avi': 'avi',
+                   'flv_h264_aac': 'flv',
+                   'theora': 'ogg'}
+     
+}
+
         
-class VideoEncode(BaseAdaptAction):
+class VideoEncode(BaseAction):
     """default bitrate in kb""" 
     media_type_supported = ['movie']
     def __init__(self, media_type, **parameters):
@@ -435,7 +384,7 @@ class VideoEncode(BaseAdaptAction):
         if self.parameters.has_key('framerate'): 
             self.parameters['video_framerate'] = self.parameters.pop('framerate')
                 
-class AudioEncode(BaseAdaptAction):
+class AudioEncode(BaseAction):
     """default bitrate in kb"""
     media_type_supported = ['movie', 'audio']
     
@@ -450,7 +399,7 @@ class AudioEncode(BaseAdaptAction):
             self.parameters['audio_rate'] = int(self.parameters.pop('rate'))
                 
 
-class ExtractVideoThumbnail(BaseAdaptAction):
+class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['movie']
 #    required_params = ['max_dim']
     
@@ -459,69 +408,10 @@ class ExtractVideoThumbnail(BaseAdaptAction):
 
 
 
-class PresetAction(BaseAdaptAction):
+class PresetAction(BaseAction):
     required_params = ['preset_name']
     
 
-class AdaptVideo(BaseAdaptAction):
+class AdaptVideo(BaseAction):
     required_params = ['preset_name']
        
-
-    
-    
-#    
-#class Action(models.Model):
-#    component = models.ForeignKey('Component')
-#    function = models.CharField(max_length=64)
-#
-#    def __str__(self):
-#        return "%s %s"  % (self.component.get_variant().name, self.function )
-#
-#class MachineState(models.Model):
-#    name = models.CharField(max_length=64)
-#    action = models.ForeignKey(Action, null=True, blank=True)
-#    next_state =  models.ForeignKey('self', null=True, blank=True)
-#
-#    def copy(self):
-#        initial = dict([(f.name, getattr(self, f.name)) for f in self._meta.fields if not isinstance(f, models.AutoField) and not f in self._meta.parents.values()])
-#        return self.__class__(**initial)
-#        
-#class Machine(models.Model):
-#    initial_state = models.ForeignKey(MachineState, related_name='initial')
-#    current_state = models.ForeignKey(MachineState)
-#    wait_for = models.ForeignKey('self', null=True, blank=True)
-
-        
-    
-#class Action(models.Model):  
-#    name = models.CharField(max_length = 50)
-#    command = models.CharField(max_length = 200)
-#    media_type = models.ManyToManyField('application.Type')
-#    parameters = models.ManyToManyField('Parameter')
-#    
-#    def __unicode__(self):
-#        return unicode(self.name)
-#
-#class Parameter(models.Model):
-#    name = models.CharField(max_length = 50)
-#    caption = models.CharField(max_length = 100)
-#    
-#    def __unicode__(self):
-#        return unicode(self.name)
-#
-#class ActionScriptAssociation(models.Model):
-#    action = models.ForeignKey('Action')
-#    script = models.ForeignKey('Script')
-#    action_position = models.SmallIntegerField()
-#    parameters= models.ManyToManyField('ParameterToAction',  related_name = 'parameter_values',  null = True,  blank = True)
-#    
-#    class Meta:
-#        unique_together = ('script', 'action_position' )
-#    
-#class ParameterToAction(models.Model):
-#    parameter = models.ForeignKey('Parameter')
-#    ActionScriptAssociation = models.ForeignKey('ActionScriptAssociation')
-#    value = models.CharField(max_length = 50)
-#    
-#    def __unicode__(self):
-#        return unicode(self.parameter.name)

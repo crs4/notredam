@@ -28,7 +28,7 @@ from django.db.models import Q
 from django.utils import simplejson
 
 from dam.settings import ROOT_PATH
-from dam.variants.models import Variant, ImagePreferences, AudioPreferences, VideoPreferences,  DocPreferences,  VariantAssociation,  ImagePreferencesForm, VideoPreferencesForm, AudioPreferencesForm,  DocPreferencesForm,  SourceVariant,  _create_parameters_json,  Preset
+from dam.variants.models import Variant
 from dam.framework.dam_repository.models import Type
 from dam.repository.models import Component
 from dam.workspace.models import Workspace
@@ -155,8 +155,15 @@ def _create_variant(variant,  item, ws):
         
     except Component.DoesNotExist:
         logger.debug('variant does not exist yet')
-        comp = Component.objects.create(item = item, variant= variant)
+        
+        if variant.dest_media_type:
+            dest_media_type = variant.dest_media_type
+        else: 
+            dest_media_type = variant.media_type
+                
+        comp = Component.objects.create(variant = variant,  item = item, type = dest_media_type)
         comp.workspace.add(ws)
+        
         if variant.shared:
             comp.workspace.add(*item.workspaces.all())
     
@@ -461,7 +468,8 @@ def get_preset_parameters(request):
         prefs= None
         variant_resizable = True
 
-    parameters = _create_parameters_json(params, prefs,  variant_resizable)
+#    parameters = _create_parameters_json(params, prefs,  variant_resizable)
+    parameters = []
     return HttpResponse(simplejson.dumps(parameters))
     
     

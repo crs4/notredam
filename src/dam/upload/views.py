@@ -31,7 +31,7 @@ from dam.repository.models import Item, Component
 from dam.framework.dam_repository.models import Type
 from dam.metadata.views import get_metadata_default_language, save_descriptor_values, save_variants_rights
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
-from dam.variants.models import Variant, ImagePreferences as VariantsPreference, VariantAssociation
+from dam.variants.models import Variant
 from dam.treeview.models import Node
 from dam.batch_processor.models import MachineState, Machine, Action
 
@@ -197,7 +197,7 @@ def upload_item(request):
         resp = simplejson.dumps({})
         return HttpResponse(resp)
     except Exception, ex:
-        logger.error(ex)
+        logger.exception(ex)
         raise ex
 
 def upload_variant(request):
