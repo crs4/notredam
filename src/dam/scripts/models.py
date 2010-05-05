@@ -23,128 +23,174 @@ from variants.models import Variant
 from repository.models import Component
 import logger
 
-variant_generation_pipeline = {
-        
+variant_generation_pipeline = pipeline = {
     'event': 'upload',
-    'state': '', 
-    'pipes':[
-             {
-            
-            'media_type': 'image',
+    'state': 'boh', 
+    'actions':[
+#               {
+#        #metadata        
+#        },
+        {
+         'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'preview',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 200
+            }
+                    
+        }]
+         
+         },
+         
+         {
+        'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'thumbnail',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 100
+            }
+                    
+        }]
+         
+         },
+         {
+        'type':'adaptation',
+        'media_type': 'image',
+        'source_variant': 'original',
+        'output_variant': 'fullscreen',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 800
+            }
+                    
+        }]
+         
+         },
+         
+        {
+        'type':'adaptation',
+        'media_type': 'video',
+        'source_variant': 'original',
+        'output_variant': 'thumbnail',
+        'output_format': 'jpeg',
+        'actions':[{
+            'type': 'extractvideothumbnail',
+            'parameters':{
+                'max_dim': 100
+            }
+                    
+        }]
+         
+         },
+         
+        {
+            'type':'adaptation',
+            'media_type': 'video',
             'source_variant': 'original',
             'output_variant': 'preview',
-            
-            'actions': [{
+            'output_format': 'flv',
+            'actions':[{
                 'type': 'resize',
                 'parameters':{
-                    'max_dim':200 
-                    },
+                    'max_height': 320,
+                    'max_width': 200
+                    }
                 },
                 {
-                 'type': 'transcode',
-                 'parameters':{
-                    'codec':'jpeg'           
+                   'type': 'videoencode',
+                   'parameters':{
+                        'framerate':'25/2',
+                        'bitrate':640
                     }
-                 
-                 }       
-            
-            ],
-           
-    },{
-         'media_type': 'image',
-         'source_variant': 'original',
-         'output_variant': 'thumbnail',
-         
-         'actions': [{
-             'type': 'resize',
-             'parameters':{
-                 'max_dim':100 
-             }        
-         
-        },
-        {
-         'type': 'transcode',
-         'parameters':{
-            'codec':'jpeg'           
-            }
-         
-         }       
-        
-        
-        ],
-        
-        
-     },
-     {
-         'media_type': 'image',
-         'source_variant': 'original',
-         'output_variant': 'fullscreen',
-         
-         'actions': [{
-             'type': 'resize',
-             'parameters':{
-                 'max_dim':800 
-             }        
+                
+                },
+                
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                
+                }, 
+                {
+                'type': 'watermark', 
+                'parameters':{
+                    'uri': 'c2ed4e4af0874b8ea72e88d91c706359', 
+                    'position':1
+                    }
+                
+                }
+                
+                        
+            ]
          
         },
         {
-         'type': 'transcode',
-         'parameters':{
-            'codec':'jpeg'           
-            }
-         
-         }
-        
-        ],
-        
-        
-     },
-     
-     {
-         'media_type': 'video',
-         'source_variant': 'original',
-         'output_variant': 'thumbnail',
-         
-         'actions': [{
-             'type': 'extractvideothumbnail',
-             'parameters':{
-                 'max_dim':100 
-             }        
-         
-        }],
-        
-        
-     },
-     
-     {
-         'media_type': 'video',
-         'source_variant': 'original',
-         'output_variant': 'preview',
-         
-         'actions': [{
-             'type': 'resize',
-             'parameters':{
-                 'max_size':800 
-             }        
-         
-        },
+            'type':'adaptation',
+            'media_type': 'audio',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'mp3',
+            'actions':[
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                }
+            ]
+                     
+        }, 
         {
-         'type': 'transcode',
-         'parameters':{
-            'preset_name':'flv'           
-            }
-         
-         }
-         
-         ],
-        
-        
-     }
-     
-     
-     
-     
-   ]
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':100,
+                    }
+                
+                } 
+  
+    ]
+    }, 
+    
+    {
+            'type':'adaptation',
+            'media_type': 'doc',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format': 'jpeg',
+            'actions':[
+                {
+                   'type': 'resize',
+                   'parameters':{                        
+                        'max_dim':200,
+                    }
+                
+                } 
+  
+    ]
+    }
+    
+       ]          
+             
 }
 
 
