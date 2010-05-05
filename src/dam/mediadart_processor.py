@@ -44,7 +44,7 @@ from dam.framework.dam_metadata.models import XMPNamespace
 from dam.metadata.views import save_variants_rights
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
-from settings import INSTALLATIONPATH,  MEDIADART_CONF
+from settings import INSTALLATIONPATH
 THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
 
 import logging

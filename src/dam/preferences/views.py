@@ -22,7 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import simplejson
 
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 
 import logger
 

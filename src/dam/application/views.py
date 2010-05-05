@@ -29,7 +29,7 @@ from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
 from dam.repository.models import Item
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.workspace.decorators import permission_required
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration

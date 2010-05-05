@@ -30,7 +30,8 @@ from dam.repository.models import Item, Component
 from dam.workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
-from dam.workspace.models import Workspace, WorkSpacePermission, WorkspacePermissionsGroup, WorkSpacePermissionAssociation
+from dam.workspace.models import DAMWorkspace as Workspace
+from dam.framework.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.variants.models import Variant, VariantAssociation, VariantDefault, SourceVariant
 from dam.upload.views import generate_tasks
 from dam.application.views import get_component_url
@@ -62,7 +63,7 @@ def _create_workspace(ws, user):
     ws.creator = user 
     ws.save() 
     
-    wspa = WorkSpacePermissionAssociation.objects.get_or_create(workspace = ws, permission = WorkSpacePermission.objects.get(name='admin'))[0]
+    wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = WorkspacePermission.objects.get(name='admin'))[0]
     wspa.users.add(user)
     ws.members.add(user)
     image = Type.objects.get(name = 'image')
@@ -1002,7 +1003,7 @@ def get_ws_members(request):
 
     members = ws.members.all()
     
-    available_permissions = WorkSpacePermission.objects.all()    
+    available_permissions = WorkspacePermission.objects.all()    
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
     
     data = {'elements':[]}
@@ -1046,7 +1047,7 @@ def get_available_permissions(request):
 
     ws = Workspace.objects.get(pk = ws_id)
     
-    available_permissions = WorkSpacePermission.objects.all()    
+    available_permissions = WorkspacePermission.objects.all()    
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
     
     data = {'available_permissions': permissions_list}
@@ -1085,8 +1086,8 @@ def save_members(request):
             if k not in ['id', 'name', 'editable']:
                 try: 
                     user = User.objects.get(pk=p['id'])
-                    ws_permission = WorkSpacePermission.objects.get(codename=k)
-                    wspa = WorkSpacePermissionAssociation.objects.get_or_create(workspace = ws, permission = ws_permission)[0]
+                    ws_permission = WorkspacePermission.objects.get(codename=k)
+                    wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = ws_permission)[0]
                     if v == 0:
                         wspa.users.remove(user)
                     else:
@@ -1095,9 +1096,9 @@ def save_members(request):
                     raise
                     pass
         
-    for wsp in WorkSpacePermission.objects.all():
+    for wsp in WorkspacePermission.objects.all():
         try:
-            wspa = WorkSpacePermissionAssociation.objects.get(workspace = ws, permission = wsp)
+            wspa = WorkspacePermissionAssociation.objects.get(workspace = ws, permission = wsp)
             wspa.users.remove(*removed_users)
         except:
             pass

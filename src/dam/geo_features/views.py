@@ -20,17 +20,13 @@
 Views used for geoannotation and geo search functionalities
 """
 
-from django.shortcuts import render_to_response
-from django.template import RequestContext, Context, loader
 from django.http import HttpResponse, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils import simplejson
 
-from dam.repository.models import Item, Component
-from dam.workspace.models import Workspace
+from dam.repository.models import Item
 from dam.metadata.models import MetadataProperty
 from dam.workspace.decorators import permission_required
 from dam.geo_features.models import GeoInfo
@@ -171,6 +167,7 @@ def save_geo_coords(item, lat, lng):
         item.metadata.create(schema=m, value=lng)
     
 @login_required
+@permission_required('edit_metadata')
 def save_geoinfo(request):
 
     """

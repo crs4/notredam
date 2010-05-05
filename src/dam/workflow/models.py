@@ -26,7 +26,7 @@ class State(models.Model):
 
 class StateItemAssociation(models.Model):
 	state = models.ForeignKey(State)
-	workspace = models.ForeignKey('workspace.Workspace')
+	workspace = models.ForeignKey('workspace.DAMWorkspace')
 	item = models.ForeignKey('repository.Item')
 	
 	def __unicode__(self):

@@ -35,7 +35,8 @@ from django.contrib.auth.models import Permission
 from dam.repository.models import Item,  Component
 from dam.framework.dam_repository.models import Type
 from dam.framework.dam_metadata.models import XMPStructure
-from dam.workspace.models import Workspace,  WorkSpacePermissionAssociation, WorkSpacePermission
+from dam.workspace.models import DAMWorkspace as Workspace
+from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.views import _move_node,  _add_node, InvalidNode,  WrongWorkspace,  NotMovableNode,  _rename_node,  NotEditableNode, save_association,  _save__collection_association,  _save__keyword_association,  _remove_collection_association,  _remove_keyword_association,  _save_metadata_mapping,  _edit_node
