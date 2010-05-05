@@ -331,6 +331,7 @@ Ext.onReady(function(){
 	        if (resp.inbox_to_reload){
                 var inbox = Ext.getCmp('inbox_tree');
                 var inbox_node = inbox.getRootNode().findChild( 'text', resp.inbox_to_reload);
+                
                 var expanded = inbox_node.isExpanded();
                 inbox.getLoader().load(inbox_node, function(){
                     if (expanded) {
@@ -347,22 +348,35 @@ Ext.onReady(function(){
 
         var form_url = '/delete_item/';
 
+        console.log(selected);
+
         var buttons = [
             {
-                text: 'OK', 
+                text: 'OK',                                                           
                 handler: function() {
                     var f = Ext.getCmp('form').form;
+                    
                     if (f.isValid()) {
-                        f.setValues({items_name:selected});
-                        f.submit({waitMsg:'Deleting...', method: "POST", success: function(form, action) {
+                    
+                        f.submit({
+                            params: {item_ids:selected},
+                            waitMsg:'Deleting...', 
+                            method: "POST", 
                             
-							var resp = Ext.decode(action.response.responseText);
-							on_delete_success(resp);
+                            success: function(form, action) {
+                            
+                                var resp = Ext.decode(action.response.responseText);
+                                on_delete_success(resp);                                                                                      
+        
+                                Ext.getCmp('action_win').close();
 
-				            Ext.getCmp('action_win').close();
-
-                            }, failure: function() {Ext.MessageBox.alert('Error', 'An error occured while removing items.');}});
-                    }else{
+                            }, 
+                            failure: function() {
+                                Ext.MessageBox.alert('Error', 'An error occured while removing items.');
+                            }
+                        });
+                        
+                    } else{
                         Ext.MessageBox.alert('Error', 'Please fill all the fields and try again.');
                     }
                 }
@@ -374,44 +388,45 @@ Ext.onReady(function(){
             }];
 
         if (multiple_ws) {
-	       var removal_options = {
-	           xtype: 'radiogroup',
-	           fieldLabel: 'Delete from:',
-	           items: [
-	               {boxLabel: 'Current workspace', name: 'choose', inputValue: 'current_w', checked: true},
-	               {boxLabel: 'All workspaces', name: 'choose', inputValue: 'all_w'}
-	           ]
-	       };
-
-	       var items = [removal_options, new Ext.form.Hidden ({name: 'item_id', value: selected})];
-
-	       var form = new Ext.form.FormPanel({
-	           labelWidth: 65,
-	           url: form_url,
-	           bodyStyle:'padding:5px 5px 0',
-	           width: 350,
-	           height: 100,
-	           frame: true,
-	           id: 'form',
-	           items: items,
-	           buttons: buttons
-
-	       });
-
-	       var win = new Ext.Window({
-	           title: "Delete item(s)",
-	           closable: true, 
+            var removal_options = {
+                xtype: 'radiogroup',
+                fieldLabel: 'Delete from:',
+                items: [
+                   {boxLabel: 'Current workspace', name: 'choose', inputValue: 'current_w', checked: true},
+                   {boxLabel: 'All workspaces', name: 'choose', inputValue: 'all_w'}
+                ]
+            };
+            
+            var items = [removal_options];
+            
+            var form = new Ext.form.FormPanel({
+                labelWidth: 65,
+                url: form_url,
+                bodyStyle:'padding:5px 5px 0',
+                width: 350,
+                height: 100,
+                frame: true,
+                id: 'form',
+                items: items,
+                buttons: buttons
+            });
+            
+            var win = new Ext.Window({
+                title: "Delete item(s)",
+                closable: true, 
                 constrain: true,
-	           modal: true, 
-	           layout: 'fit',
-	           items: [form],
-	           id: 'action_win',
-	           listeners: {
-	               close: function() {Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload();}
-	           }
-	       });
-
-	       win.show();
+                modal: true, 
+                layout: 'fit',
+                items: [form],
+                id: 'action_win',
+                listeners: {
+                    close: function() {
+                        Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload();
+                    }
+                }
+            });
+            
+            win.show();
 
         }
         else {
@@ -420,7 +435,7 @@ Ext.onReady(function(){
 				if (btn == 'yes') {
 					Ext.Ajax.request({
 				        url: form_url,
-		                params: {item_id: selected, choose: 'current_w'},
+		                params: {item_ids: selected, choose: 'current_w'},
 				        success: function(data){
 				            data = Ext.decode(data.responseText);
 							on_delete_success(data);
@@ -655,7 +670,7 @@ Ext.onReady(function(){
 
 						Ext.Ajax.request({
 					        url: '/check_item_wss/',
-			                params: {item_id: selected_ids},
+			                params: {item_ids: selected_ids},
 					        success: function(data){
 					            var data = Ext.decode(data.responseText);
 		                        delete_items_selection(selected_ids, data.multiple_ws);

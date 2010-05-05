@@ -17,12 +17,8 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.application.admin import mod_admin
 from variants.models import Variant, ImagePreferences as VariantsPreference, Type
 
 admin.site.register(Type)
 admin.site.register(Variant)
 admin.site.register(VariantsPreference)
-
-mod_admin.register(Variant)
-mod_admin.register(VariantsPreference)

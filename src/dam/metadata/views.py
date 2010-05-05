@@ -20,15 +20,14 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response
-from django.template import RequestContext, Context, loader
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils import simplejson
 from django.contrib.auth.models import User
 
-from dam.repository.models import Item,Component
+from dam.repository.models import Item, Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
 from dam.preferences.views import get_user_setting
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant, VariantAssociation
 from dam.workspace import decorators
@@ -36,8 +35,6 @@ from dam.batch_processor.models import MachineState, Action, Machine
 from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
 
 from mx.DateTime.Parser import DateTimeFromString
-from mimetypes import guess_type
-from os import path
 import logger
 import re
 
@@ -55,6 +52,9 @@ def add_sync_machine(component):
 
 @login_required
 def sync_component(request):
+    """
+    Export XMP metadata of the given items/variants
+    """
 
     items = request.POST.getlist('items')
     variants = request.POST.getlist('variants')
