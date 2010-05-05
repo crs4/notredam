@@ -19,6 +19,7 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
+
     (r'^get_lang_pref/$', 'dam.metadata.views.get_lang_pref'),
     (r'^get_metadata/$', 'dam.metadata.views.get_metadata'),
     (r'^save_metadata/$', 'dam.metadata.views.save_metadata'),
