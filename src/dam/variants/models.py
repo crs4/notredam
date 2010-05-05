@@ -37,7 +37,8 @@ class Variant(models.Model):
     caption = models.CharField(max_length=64)
     is_global = models.BooleanField(default=False) #common for all ws
     editable = models.BooleanField(default=True)    
-    media_type = models.ForeignKey(Type,  null = True, blank = True)
+    media_type = models.ForeignKey(Type)
+    dest_media_type = models.ForeignKey(Type, null = True, blank = True, related_name = 'dest_media_type')
     auto_generated = models.BooleanField(default=True)
     shared = models.BooleanField(default= False) #the same component will be shared through ws
     default_url = models.CharField(max_length=100, null = True, blank = True) #for static variant, i.e. thumbnail for audio ;)
@@ -61,10 +62,18 @@ class Variant(models.Model):
            
   
     def get_component(self, workspace,  item):
+        from variants.views import _create_variant
         try:
             return self.component_set.get(item = item,  workspace = workspace)
-        except:
-            logger.error('component for ws %s and item %s and variant %s not found'%(workspace, item, self.name))
+        except:            
+            if self.dest_media_type:
+                dest_media_type = self.dest_media_type
+            else: 
+                dest_media_type = self.media_type
+                
+            component = _create_variant(self,  item, workspace)
+            logger.error('component for ws %s and item %s and variant %s not found. Created.'%(workspace, item.pk, self.name))
+            return component
         
     def get_preferences(self, workspace):
         return VariantAssociation.objects.get(variant = self,  workspace = workspace).preferences
@@ -966,4 +975,3 @@ class PresetParameterValue(models.Model):
     
     def __unicode__(self):
         return self.value
-

@@ -37,7 +37,7 @@ class EventManager(models.Manager):
             try:
                 listener.execute(**parameters)
             except Exception, ex:
-                logger.debug(ex)
+                logger.exception(ex)
                 
         
 class EventRegistration(models.Model):

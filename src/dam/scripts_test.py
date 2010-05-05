@@ -15,8 +15,38 @@ from django.utils import simplejson
 
 pipeline = {
     'event': 'upload',
+    'state': '',
+    'media_type': 'image',
+    'source_variant': 'original', 
+    'actions':[
+        {
+            'type': 'resize',
+            'parameters':{
+                'max_dim': 100
+            }
+                    
+        },
+        {
+            'type': 'saveas',
+            'parameters':{
+                'output_format': 'jpeg',
+                'output_variant': 'thumbnail'
+            }
+                    
+        }
+        
+               
+    ]
+    
+    }
+
+
+
+pipeline3 = {
+    'event': 'upload',
     'state': 'boh', 
     'actions':[
+               
 #               {
 #        #metadata        
 #        },

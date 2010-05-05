@@ -37,7 +37,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from dam.batch_processor.models import Machine, MachineState, Action
 from dam.repository.models import Item, Component
-from dam.variants.models import ImagePreferences,  VideoPreferences,  AudioPreferences
+
 
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.framework.dam_metadata.models import XMPNamespace

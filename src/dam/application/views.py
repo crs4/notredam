@@ -31,7 +31,7 @@ from django.core.mail import send_mail
 from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
-from dam.variants.models import Variant,  VariantAssociation
+from dam.variants.models import Variant
 from dam.repository.models import Item, Component
 from dam.workspace.models import Workspace
 from dam.workspace.decorators import permission_required

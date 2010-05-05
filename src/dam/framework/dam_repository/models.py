@@ -36,7 +36,7 @@ class AbstractItem(models.Model):
 
     owner =  models.ForeignKey(User, related_name='owned_items', null=True, blank=True)
     uploader = models.ForeignKey(User, related_name='uploaded_items', null=True, blank=True)
-    type =  models.ForeignKey(Type, null=True, blank=True)
+    type =  models.ForeignKey(Type)
     creation_time = models.DateTimeField(auto_now_add = True)
     update_time = models.DateTimeField(auto_now = True)
 
@@ -48,7 +48,7 @@ class AbstractComponent(models.Model):
     """ Base abstract model describing components."""
 
     owner =  models.ForeignKey(User, null=True, blank=True)
-    type =  models.ForeignKey(Type, null=True)
+    type =  models.ForeignKey(Type)
     creation_time = models.DateTimeField(auto_now = True)
     update_time = models.DateTimeField(auto_now = True)
 
