@@ -23,6 +23,130 @@ from variants.models import Variant
 from repository.models import Component
 import logger
 
+variant_generation_pipeline = {
+        
+    'event': 'upload',
+    'state': '', 
+    'pipes':[
+             {
+            
+            'media_type': 'image',
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            
+            'actions': [{
+                'type': 'resize',
+                'parameters':{
+                    'max_dim':200 
+                    },
+                },
+                {
+                 'type': 'transcode',
+                 'parameters':{
+                    'codec':'jpeg'           
+                    }
+                 
+                 }       
+            
+            ],
+           
+    },{
+         'media_type': 'image',
+         'source_variant': 'original',
+         'output_variant': 'thumbnail',
+         
+         'actions': [{
+             'type': 'resize',
+             'parameters':{
+                 'max_dim':100 
+             }        
+         
+        },
+        {
+         'type': 'transcode',
+         'parameters':{
+            'codec':'jpeg'           
+            }
+         
+         }       
+        
+        
+        ],
+        
+        
+     },
+     {
+         'media_type': 'image',
+         'source_variant': 'original',
+         'output_variant': 'fullscreen',
+         
+         'actions': [{
+             'type': 'resize',
+             'parameters':{
+                 'max_dim':800 
+             }        
+         
+        },
+        {
+         'type': 'transcode',
+         'parameters':{
+            'codec':'jpeg'           
+            }
+         
+         }
+        
+        ],
+        
+        
+     },
+     
+     {
+         'media_type': 'video',
+         'source_variant': 'original',
+         'output_variant': 'thumbnail',
+         
+         'actions': [{
+             'type': 'extractvideothumbnail',
+             'parameters':{
+                 'max_dim':100 
+             }        
+         
+        }],
+        
+        
+     },
+     
+     {
+         'media_type': 'video',
+         'source_variant': 'original',
+         'output_variant': 'preview',
+         
+         'actions': [{
+             'type': 'resize',
+             'parameters':{
+                 'max_size':800 
+             }        
+         
+        },
+        {
+         'type': 'transcode',
+         'parameters':{
+            'preset_name':'flv'           
+            }
+         
+         }
+         
+         ],
+        
+        
+     }
+     
+     
+     
+     
+   ]
+}
+
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)

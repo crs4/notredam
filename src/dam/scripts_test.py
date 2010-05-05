@@ -186,7 +186,7 @@ pipeline = {
 pipeline2 = {
         
     'event': 'upload',
-    'state': 'boh', 
+    'state': '', 
     'pipes':[
              {
             
@@ -309,7 +309,7 @@ pipeline2 = {
 
 ws = Workspace.objects.get(pk = 1)
 pipeline_json = simplejson.dumps(pipeline)
-#script = Script.objects.create(name = 'prova', description = 'prova', pipeline = pipeline_json, workspace = ws )
+#script = Script.objects.create(name = 'variant_generation', description = 'variant generation', pipeline = pipeline_json, workspace = ws )
 
 script = Script.objects.get(pk =  1)
 script.pipeline = pipeline_json

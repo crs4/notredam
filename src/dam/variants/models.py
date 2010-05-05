@@ -61,8 +61,10 @@ class Variant(models.Model):
            
   
     def get_component(self, workspace,  item):
-      
-        return self.component_set.get(item = item,  workspace = workspace)
+        try:
+            return self.component_set.get(item = item,  workspace = workspace)
+        except:
+            logger.error('component for ws %s and item %s and variant %s not found'%(workspace, item, self.name))
         
     def get_preferences(self, workspace):
         return VariantAssociation.objects.get(variant = self,  workspace = workspace).preferences
