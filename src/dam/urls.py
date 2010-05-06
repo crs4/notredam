@@ -49,5 +49,6 @@ urlpatterns = patterns('',
     (r'^', include('dam.api.urls')),
     (r'^', include('dam.workflow.urls')),
     (r'^', include('dam.eventmanager.urls')),
+    (r'^', include('dam.scripts.urls')),
 
 )
