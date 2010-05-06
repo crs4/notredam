@@ -284,6 +284,7 @@ class Script(models.Model):
 class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
+    required_parameters = []
     def __init__(self, media_type, source_variant, workspace):   
         
 #        if media_type not in self.media_type_supported:
@@ -303,7 +304,8 @@ class BaseAction(object):
 
 
 class SaveAs(BaseAction):
-    
+    media_type_supported = ['image', 'video',  'doc', 'audio']
+    required_parameters = ['output_variant', 'output_format']
     def __init__(self, media_type, source_variant, workspace, output_variant, output_format):   
         super(SaveAs, self).__init__(media_type, source_variant, workspace)
         
@@ -334,7 +336,8 @@ class SaveAs(BaseAction):
 
 
 class Resize(BaseAction): 
-    media_type_supported = ['image', 'movie',  'doc']
+    media_type_supported = ['image', 'video',  'doc']
+    required_parameters = ['max_dim']
     def __init__(self, media_type, source_variant, workspace, max_dim):
         super(Resize, self).__init__(media_type, source_variant, workspace)
         self.parameters['max_dim'] = max_dim
@@ -344,7 +347,7 @@ class Doc2Image(BaseAction):
     required_parameters = ['max_dim']
 
 class Watermark(BaseAction): 
-    media_type_supported = ['image', 'movie']
+    media_type_supported = ['image', 'video']
     required_parameters = ['watermark_uri',  'watermark_position']
     def __init__(self, media_type, **parameters):
         """
@@ -384,7 +387,7 @@ preset = {'movie':
         
 class VideoEncode(BaseAction):
     """default bitrate in kb""" 
-    media_type_supported = ['movie']
+    media_type_supported = ['video']
     def __init__(self, media_type, **parameters):
         
         super(VideoEncode, self).__init__(media_type, **parameters)
@@ -399,7 +402,7 @@ class VideoEncode(BaseAction):
                 
 class AudioEncode(BaseAction):
     """default bitrate in kb"""
-    media_type_supported = ['movie', 'audio']
+    media_type_supported = ['video', 'audio']
     
     def __init__(self, media_type, source_variant, workspace, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace)
