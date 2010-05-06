@@ -13,24 +13,52 @@ from django.utils import simplejson
 
 
 
+#pipeline = {
+#    'event': 'upload',
+#    'state': '',
+#    'media_type': 'image',
+#    'source_variant': 'original', 
+#    'actions':[
+#        {
+#            'type': 'resize',
+#            'parameters':{
+#                'max_dim': 100
+#            }
+#                    
+#        },
+#        {
+#            'type': 'saveas',
+#            'parameters':{
+#                'output_format': 'jpeg',
+#                'output_variant': 'thumbnail'
+#            }
+#                    
+#        }
+#        
+#               
+#    ]
+#    
+#    }
+
 pipeline = {
     'event': 'upload',
     'state': '',
-    'media_type': 'image',
+    'media_type': 'audio',
     'source_variant': 'original', 
     'actions':[
         {
-            'type': 'resize',
-            'parameters':{
-                'max_dim': 100
+           'type': 'audioencode',
+           'parameters':{                        
+                'bitrate':128,
+                'rate':44100
             }
-                    
+                
         },
         {
             'type': 'saveas',
             'parameters':{
-                'output_format': 'jpeg',
-                'output_variant': 'thumbnail'
+                'output_format': 'mp3',
+                'output_variant': 'preview'
             }
                     
         }
@@ -39,6 +67,8 @@ pipeline = {
     ]
     
     }
+
+
 
 
 

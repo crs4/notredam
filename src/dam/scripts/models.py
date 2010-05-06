@@ -388,15 +388,15 @@ class AudioEncode(BaseAction):
     """default bitrate in kb"""
     media_type_supported = ['movie', 'audio']
     
-    def __init__(self, media_type, **parameters):
-        super(AudioEncode, self).__init__(media_type, **parameters)
+    def __init__(self, media_type, source_variant, workspace, rate, bitrate):
+        super(AudioEncode, self).__init__(media_type, source_variant, workspace)
         if self.parameters.has_key('bitrate'):
-            if self.parameters['output_format'] in ['mp4_h264_aaclow', 'aac']:
-                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate')*1000)
-            else:
-                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate'))
+#            if self.parameters['output_format'] in ['mp4_h264_aaclow', 'aac']:
+#                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate')*1000)
+#            else:
+            self.parameters['audio_bitrate'] = int(bitrate)
             
-            self.parameters['audio_rate'] = int(self.parameters.pop('rate'))
+            self.parameters['audio_rate'] = int(rate)
                 
 
 class ExtractVideoThumbnail(BaseAction):
