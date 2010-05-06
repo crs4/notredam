@@ -17,11 +17,11 @@ image = Type.objects.get(name = 'image')
 
 orig = Variant.objects.create(name = 'original', caption = 'Original',  is_global = True, auto_generated = False,  shared = True,  media_type = image, default_rank = 2)
 
-edited = Variant.objects.create(name = 'edited', caption = 'edited',  is_global = True, auto_generated = False, media_type = image, default_rank = 1, dest_media_type = image)
+edited = Variant.objects.create(name = 'edited', caption = 'edited',  is_global = True, auto_generated = False, media_type = image, default_rank = 1)
 #orig = Variant.objects.create(name = 'original', caption = 'Original',  is_global = True)
 
-thumb  = Variant.objects.create(name = 'thumbnail', caption = 'Thumbnail',   media_type = image,  is_global = True,  resizable = False,  editable = False, dest_media_type = image)
-
+thumb  = Variant.objects.create(name = 'thumbnail', caption = 'Thumbnail',   media_type = image,  is_global = True,  resizable = False,  editable = False)
+thumb  = Variant.objects.create(name = 'preview', caption = 'Preview',   media_type = image,  is_global = True,  resizable = False,  editable = False)
 
 fullscreen = Variant.objects.create(name = "fullscreen", media_type = image,  is_global = True)
 
