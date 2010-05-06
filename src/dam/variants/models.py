@@ -43,7 +43,7 @@ class Variant(models.Model):
     default_url = models.CharField(max_length=100, null = True, blank = True) #for static variant, i.e. thumbnail for audio ;)
     default_rank = models.IntegerField(null = True, blank = True) #not null for imported variants. variant with rank 1 will be used for generating  the others
     resizable = models.BooleanField(default=True)
-    
+#    TODO foreign key to ws
     def is_original(self):
         return self.name == 'original' and self.is_global
     
