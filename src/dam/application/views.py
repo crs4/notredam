@@ -17,23 +17,19 @@
 #########################################################################
 
 from django.shortcuts import render_to_response
-from django.template import RequestContext, Context, loader,  Template
+from django.template import RequestContext
 from django.views.generic.simple import redirect_to
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
-from django.contrib.contenttypes.models import ContentType
+from django.http import HttpResponse, HttpResponseForbidden
 
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Q
-from django.core.paginator import Paginator, InvalidPage
 from django.core.mail import send_mail
 from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
-from dam.variants.models import Variant
-from dam.repository.models import Item, Component
-from dam.workspace.models import Workspace
+from dam.repository.models import Item
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.workspace.decorators import permission_required
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
@@ -41,8 +37,6 @@ from dam.application.models import VerificationUrl
 
 from mediadart.storage import Storage
 
-import os
-import cPickle as pickle
 import logger
 
 NOTAVAILABLE = None
@@ -52,13 +46,6 @@ def home(request, msg=None):
     Always redirect user from http://host/ to http://host/workspace
     """
     return redirect_to(request, '/workspace/')
-
-@staff_member_required
-def dam_admin(request):
-    """
-    TODO: Dam Administration Interface is under development
-    """
-    return render_to_response('dam_administration.html', RequestContext(request,{}))
 
 def do_login(request):
     """

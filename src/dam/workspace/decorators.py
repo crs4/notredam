@@ -17,7 +17,7 @@
 #########################################################################
 
 
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from django.http import HttpResponseForbidden
 from django.db.models import Q
 from django.contrib.auth.models import User
