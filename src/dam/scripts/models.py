@@ -226,36 +226,49 @@ class Script(models.Model):
     def execute(self, items):
         pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
         
-        actions_list = pipeline.get('actions', [])
+        action_for_media_type = pipeline.get('actions', {})
         source_variant = pipeline['source_variant'].lower()
-        media_type = pipeline['media_type'].lower()
+         
                              
         actions_available = {}       
        
         for subclass in BaseAction.__subclasses__():
             actions_available[subclass.__name__.lower()] = subclass
         
-        actions = []
-      
-        for action_dict in actions_list:
+        actions = {
+            'image':[],
+            'video':[],
+            'audio':[],
+            'doc':[]
+            }
+        
+        
+        for media_type in action_for_media_type.keys():
+            for action_dict in action_for_media_type[media_type]:
             
-            type = action_dict['type'].lower()
-            try:                
+                type = action_dict['type'].lower()
                 params = action_dict['parameters']
                 params['workspace'] = self.workspace
                 params['media_type'] = media_type
                 params['source_variant'] = source_variant
-                
-                action = actions_available[type](**params)                
-            except Exception, ex:              
-                logger.exception(ex)                
-                raise ActionError('action %s does not exist'%type)
-            actions.append(action)
+
+                try:                    
+                    action = actions_available[type](**params)                
+                except Exception, ex:              
+                    logger.exception(ex)                
+                    raise ActionError('action %s does not exist'%type)
+                actions[media_type].append(action)
   
-            
+        
+        
+        logger.debug('actions %s'%actions)
         for item in items:
             adapt_parameters = {}   
-            for action in actions:
+            media_type = item.type.name
+            if media_type == 'movie':
+                media_type = 'video'
+                
+            for action in actions[media_type]:
                 if isinstance(action, SaveAs):
                     action.execute(item,adapt_parameters)
                 else:
@@ -273,8 +286,8 @@ class BaseAction(object):
     media_type_supported = ['image', 'video', 'audio', 'doc']
     def __init__(self, media_type, source_variant, workspace):   
         
-        if media_type not in self.media_type_supported:
-            raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
+#        if media_type not in self.media_type_supported:
+#            raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
         
         
         if media_type == 'video':
@@ -401,7 +414,10 @@ class AudioEncode(BaseAction):
 
 class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['movie']
-#    required_params = ['max_dim']
+    def __init__(self, media_type, source_variant, workspace, max_dim):
+        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace)
+        self.parameters['max_dim'] = max_dim
+
     
     def get_adapt_params(self):
         return {'thumb_size':self.parameters['max_dim']}

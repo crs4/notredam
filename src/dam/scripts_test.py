@@ -40,33 +40,83 @@ from django.utils import simplejson
 #    
 #    }
 
-pipeline = {
+pipeline_thumb = {
     'event': 'upload',
     'state': '',
     'media_type': 'audio',
     'source_variant': 'original', 
-    'actions':[
-        {
-           'type': 'audioencode',
-           'parameters':{                        
-                'bitrate':128,
-                'rate':44100
-            }
-                
+    'actions':{
+        'image':[
+            {
+                'type': 'resize',
+                'parameters':{
+                    'max_dim': 100
+                }
+                        
+            },
+            {
+                'type': 'saveas',
+                'parameters':{
+                    'output_format': 'jpeg',
+                    'output_variant': 'thumbnail'
+                }
+                        
+            }    
+        ],
+        'audio':[],
+        'video':[{
+            'type': 'extractvideothumbnail',
+            'parameters':{
+            'max_dim': 100}
         },
         {
             'type': 'saveas',
             'parameters':{
-                'output_format': 'mp3',
-                'output_variant': 'preview'
+                'output_format': 'jpeg',
+                'output_variant': 'thumbnail'
             }
-                    
-        }
-        
-               
-    ]
-    
+                        
+        }],
+        'doc':[
+            {
+               'type': 'resize',
+               'parameters':{                        
+                    'max_dim':100,
+                }
+            
+            },
+            {
+            'type': 'saveas',
+            'parameters':{
+                'output_format': 'jpeg',
+                'output_variant': 'thumbnail'
+            }
+                        
+        }]
     }
+}
+#    
+#    {
+#           'type': 'audioencode',
+#           'parameters':{                        
+#                'bitrate':128,
+#                'rate':44100
+#            }
+#                
+#        },
+#        {
+#            'type': 'saveas',
+#            'parameters':{
+#                'output_format': 'mp3',
+#                'output_variant': 'preview'
+#            }
+#                    
+#        }
+    
+    
+    
+    
+    
 
 
 
@@ -368,15 +418,15 @@ pipeline2 = {
 }
 
 ws = Workspace.objects.get(pk = 1)
-pipeline_json = simplejson.dumps(pipeline)
-#script = Script.objects.create(name = 'variant_generation', description = 'variant generation', pipeline = pipeline_json, workspace = ws )
+pipeline_json = simplejson.dumps(pipeline_thumb)
+#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws )
 
-script = Script.objects.get(pk =  1)
-script.pipeline = pipeline_json
-script.save()
+script_thumb = Script.objects.get(pk =  1)
+script_thumb.pipeline = pipeline_json
+script_thumb.save()
 
 #upload = Event.objects.create(name = 'upload')
-#EventRegistration.objects.create(event = upload, listener = script)
+#EventRegistration.objects.create(event = upload, listener = script_thumb)
 
 
 
