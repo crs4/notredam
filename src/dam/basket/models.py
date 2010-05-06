@@ -18,7 +18,7 @@
 
 from django.db import models
 from django.contrib.auth.models import User
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item
 
 class Basket(models.Model):

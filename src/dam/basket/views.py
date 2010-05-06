@@ -22,12 +22,9 @@ Views used for basket functionalities
 """
 
 from django.shortcuts import render_to_response
-from django.template import RequestContext, Context, loader
 from django.http import HttpResponse, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Q
 
 from dam.basket.models import Basket
 from dam.repository.models import Item
@@ -112,21 +109,5 @@ def basket_size(request):
 
     return HttpResponse(count)
 
-def __inbasket(user,item,workspace):
-    """
-    Check if the given item is in basket
-    """
-
-    try:
-
-        basket = Basket.get_basket(user, workspace)
-
-        return basket.item_in_basket(item)
-	
-    except Exception,  ex:
-        logger.exception(ex)
-        return 0	
-
-    return 1
 
 

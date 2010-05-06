@@ -17,8 +17,7 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.application.admin import mod_admin
-from dam.workspace.views import Workspace, WorkspacePermissionsGroup, WorkSpacePermissionAssociation, WorkSpacePermission
+from dam.workspace.models import DAMWorkspace
 
 class WorkspaceAdmin(admin.ModelAdmin):
     filter_horizontal = ('members','items',)
@@ -34,10 +33,5 @@ class WorkspaceAdmin(admin.ModelAdmin):
     )
 
     
-admin.site.register(Workspace,  WorkspaceAdmin)
+admin.site.register(DAMWorkspace,  WorkspaceAdmin)
 
-admin.site.register(WorkspacePermissionsGroup)
-admin.site.register(WorkSpacePermission)
-admin.site.register(WorkSpacePermissionAssociation)
-
-mod_admin.register(Workspace, WorkspaceAdmin)
