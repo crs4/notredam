@@ -105,7 +105,7 @@ pipeline_preview = {
             {
                 'type': 'resize',
                 'parameters':{
-                    'max_dim': 200
+                    'max_dim': 300
                 }
                         
             },
@@ -113,22 +113,59 @@ pipeline_preview = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'thumbnail'
+                    'output_variant': 'preview'
                 }
                         
             }    
         ],
-        'audio':[],
-        'video':[{
-            'type': 'extractvideothumbnail',
-            'parameters':{
-            'max_dim': 100}
-        },
-        {
+        'audio':[{
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                },
+                {
+                'type': 'saveas',
+                'parameters':{
+                    'output_format': 'mp3',
+                    'output_variant': 'preview'
+                }
+                        
+            }
+                
+                
+                
+                ],
+        'video':[
+                 {
+                'type': 'resize',
+                'parameters':{
+                    'height': 300,
+                    'width': 300
+                    }
+                },
+                {
+                   'type': 'videoencode',
+                   'parameters':{
+                        'framerate':'25/2',
+                        'bitrate':640
+                    }
+                
+                },                
+                {
+                   'type': 'audioencode',
+                   'parameters':{                        
+                        'bitrate':128,
+                        'rate':44100
+                    }
+                
+                },
+                {
             'type': 'saveas',
             'parameters':{
-                'output_format': 'jpeg',
-                'output_variant': 'thumbnail'
+                'output_format': 'flv',
+                'output_variant': 'preview'
             }
                         
         }],
@@ -136,7 +173,7 @@ pipeline_preview = {
             {
                'type': 'resize',
                'parameters':{                        
-                    'max_dim':100,
+                    'max_dim':300,
                 }
             
             },
@@ -144,7 +181,7 @@ pipeline_preview = {
             'type': 'saveas',
             'parameters':{
                 'output_format': 'jpeg',
-                'output_variant': 'thumbnail'
+                'output_variant': 'preview'
             }
                         
         }]
@@ -478,15 +515,28 @@ pipeline2 = {
 }
 
 ws = Workspace.objects.get(pk = 1)
-pipeline_json = simplejson.dumps(pipeline_thumb)
+
+#pipeline_json = simplejson.dumps(pipeline_thumb)
 #script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws )
 
-script_thumb = Script.objects.get(pk =  1)
-script_thumb.pipeline = pipeline_json
-script_thumb.save()
+#script_thumb = Script.objects.get(pk =  1)
+#script_thumb.pipeline = pipeline_json
+#script_thumb.save()
 
 #upload = Event.objects.create(name = 'upload')
 #EventRegistration.objects.create(event = upload, listener = script_thumb)
+
+pipeline_json = simplejson.dumps(pipeline_preview)
+
+#script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws )
+
+script_preview = Script.objects.get(pk =  2)
+script_preview.pipeline = pipeline_json
+script_preview.save()
+
+#upload = Event.objects.create(name = 'upload')
+#upload = Event.objects.get(name = 'upload')
+#EventRegistration.objects.create(event = upload, listener = script_preview)
 
 
 
