@@ -189,6 +189,34 @@ pipeline_preview = {
 }
 
 
+pipeline_fullscreen = {
+    'event': 'upload',
+    'state': '',   
+    'source_variant': 'original', 
+    'actions':{
+        'image':[
+            {
+                'type': 'resize',
+                'parameters':{
+                    'max_dim': 800
+                }
+                        
+            },
+            {
+                'type': 'saveas',
+                'parameters':{
+                    'output_format': 'jpeg',
+                    'output_variant': 'fullscreen'
+                }
+                        
+            }    
+        ],
+        
+        
+    }
+}
+
+
 
 
 
@@ -530,14 +558,23 @@ pipeline_json = simplejson.dumps(pipeline_preview)
 
 #script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws )
 
-script_preview = Script.objects.get(pk =  2)
-script_preview.pipeline = pipeline_json
-script_preview.save()
+#script_preview = Script.objects.get(pk =  2)
+#script_preview.pipeline = pipeline_json
+#script_preview.save()
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
 #EventRegistration.objects.create(event = upload, listener = script_preview)
 
+pipeline_json = simplejson.dumps(pipeline_fullscreen)
 
+script_fullscreen = Script.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws )
 
-#script.execute(Item.objects.all())
+#script_preview = Script.objects.get(pk =  3)
+#script_preview.pipeline = pipeline_json
+#script_preview.save()
+
+#upload = Event.objects.create(name = 'upload')
+upload = Event.objects.get(name = 'upload')
+EventRegistration.objects.create(event = upload, listener = script_fullscreen)
+
