@@ -212,6 +212,7 @@ class MediaTypeNotSupported(ScriptException):
 class PresetUnknown(ScriptException):
     pass
 
+
 class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
@@ -222,6 +223,12 @@ class Script(models.Model):
     
     def __unicode__(self):
         return unicode(self.name)
+    
+    def _validate(self):
+        
+        
+        pass
+    
     
     def execute(self, items):
         pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
@@ -279,7 +286,7 @@ class Script(models.Model):
                         adapt_parameters.update(tmp_adapt_parameters)
             
     class Meta:
-        unique_together = ('name', 'workspace' )
+        unique_together = ('name', 'workspace')
  
     
     
