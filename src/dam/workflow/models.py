@@ -22,12 +22,11 @@ class State(models.Model):
 	name = models.CharField(max_length=256)
 
 	def __unicode__(self):
-		return self.name
-	
+		return self.name	
 
 class StateItemAssociation(models.Model):
 	state = models.ForeignKey(State)
-	workspace = models.ForeignKey('workspace.Workspace')
+	workspace = models.ForeignKey('workspace.DAMWorkspace')
 	item = models.ForeignKey('repository.Item')
 	
 	def __unicode__(self):

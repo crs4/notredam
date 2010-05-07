@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.db import models
-from dam.repository.models import Component, Item
+from dam.repository.models import Component
 
 class Action(models.Model):
     """

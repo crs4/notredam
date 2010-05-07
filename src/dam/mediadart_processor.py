@@ -44,7 +44,7 @@ from dam.framework.dam_metadata.models import XMPNamespace
 from dam.metadata.views import save_variants_rights
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
-from settings import INSTALLATIONPATH,  MEDIADART_CONF
+from settings import INSTALLATIONPATH
 THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
 
 import logging
@@ -439,9 +439,9 @@ def save_component_features(component, features, extractor):
         item = Item.objects.get(component = c)
         xmp_metadata_list, xmp_delete_list = read_xmp_features(item, features, c)
     elif extractor == 'media_basic':
-        for stream in features.keys():
-            if isinstance(features[stream], dict):
-                m_list, d_list = save_features(c, features[stream])
+        for stream in features['streams']:
+            if isinstance(features['streams'][stream], dict):
+                m_list, d_list = save_features(c, features['streams'][stream])
                 metadata_list.extend(m_list)
                 delete_list.extend(d_list)
     else: 

@@ -20,8 +20,6 @@ from django.db import models
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
-from django.db import connection
-from datetime import datetime
 
 from dam.framework.dam_metadata.models import AbstractMetadataLanguage, XMPProperty, XMPStructure, XMPPropertyChoice
 
@@ -87,7 +85,7 @@ class MetadataDescriptorGroup(models.Model):
     specific_basic = models.BooleanField(default=False)
     specific_full = models.BooleanField(default=False)
     upload = models.BooleanField(default=False)
-    workspace = models.ForeignKey('workspace.Workspace', null=True, blank=True) 
+    workspace = models.ForeignKey('workspace.DAMWorkspace', null=True, blank=True) 
     
     def __str__(self):
         return "%s" % (self.name)

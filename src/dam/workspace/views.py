@@ -18,35 +18,31 @@
 
 from django.utils.encoding import smart_str
 from django.shortcuts import render_to_response
-from django.template import RequestContext, Context, loader,  Template
+from django.template import RequestContext
 from django.http import HttpResponse, HttpResponseForbidden
-from django.views.generic.simple import redirect_to
 
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.contrib.contenttypes.models import ContentType
-from django import forms
 from django.contrib.auth.models import User
 from django.utils import simplejson
-from dam.basket.views import __inbasket
 from dam.basket.models import Basket
 from dam.repository.models import Item, Component
 from dam.workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
-from dam.workspace.models import Workspace, WorkSpacePermission, WorkspacePermissionsGroup, WorkSpacePermissionAssociation
+from dam.workspace.models import DAMWorkspace as Workspace
+from dam.framework.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.variants.models import Variant      
 from dam.upload.views import generate_tasks
 from dam.application.views import get_component_url
-from dam.workspace.forms import AdminWorkspaceForm, AdminWorkspaceGroupsForm, AddMembersForm, AddMembersToGroupForm, SetPermissionsForm, SetGroupsForm
+from dam.workspace.forms import AdminWorkspaceForm
 from dam.framework.dam_repository.models import Type
 from dam.geo_features.models import GeoInfo
 from dam.batch_processor.models import MachineState, Machine
-from dam.settings import GOOGLE_KEY, ROOT_PATH, DATABASE_ENGINE
+from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
-from dam.preferences.views import get_user_setting, get_user_setting_by_level
+from dam.preferences.views import get_user_setting
 from dam.metadata.models import MetadataProperty
 from dam.metadata.views import get_metadata_default_language
 from dam.scripts.models import variant_generation_pipeline, Script
@@ -59,114 +55,6 @@ import time
 import operator
 import re
 
-from operator import and_, or_
-import cPickle as pickle
-import os.path
-from settings import INSTALLATIONPATH, THUMBS_DIR, SERVER_PUBLIC_ADDRESS
-
-#for django admin
-#def admin_edit_user(request,  object_id):
-#    return mod_admin_views.change_stage(request, 'auth', 'user',  object_id )
-#
-##for django admin
-#def admin_edit_ws_group(request,  ):
-#    return mod_admin_views.change_stage_ws_group(request, 'auth', 'user',  object_id )
-
-#for django admin
-@login_required
-def get_ws_permissions(request,  user_id, workspace_id ): 
-    wsp = WorkSpacePermission.objects.filter(workspacepermissionassociation__workspace__pk =  workspace_id, workspacepermissionassociation__users__pk = user_id)    
-    return render_to_response('option_permission.html', RequestContext(request,{'permissions' : wsp}))
-
-#for django admin
-@login_required
-def get_available_permissions(request,  user_id, workspace_id ):   
-    wsp = WorkSpacePermission.objects.filter().exclude(workspacepermissionassociation__users__pk = user_id, workspacepermissionassociation__workspace__pk =  workspace_id,)  
-    return render_to_response('option_permission.html', RequestContext(request,{'permissions' : wsp}))
-
-@login_required
-def is_workspace_member(request,  user_id, workspace_id ):   
-    ws = Workspace.objects.get(pk = workspace_id)   
-    try:
-        result = ws.members.all().filter(pk = user_id).count() 
-    except Exception,  ex:
-        raise ex
-    return HttpResponse(result)
-    
-#for django admin
-@login_required
-def get_groups(request,  user_id,  workspace_id ):
-    user = User.objects.get(pk = user_id)
-    f = forms.Form()
-    ws_groups = forms.ModelMultipleChoiceField(queryset = WorkspacePermissionsGroup.objects.filter(workspace__pk = workspace_id),  initial = [perm.pk for perm in  WorkspacePermissionsGroup.objects.filter(users = user,  workspace__pk = workspace_id)])    
-    ws_groups.widget.attrs  ={'id':'ws_groups',  'class':'vSelectMultipleField',}
-    f.fields['ws_groups'] = ws_groups
-    plus = '<a onclick="return showAddAnotherPopup(this);" id="add_ws_groups" class="add-another" href="../../../workspace/workspacepermissionsgroup/add/"> <img width="10" height="10" alt="Add Another" src="/media/img/admin/icon_addlink.gif"/></a>'
-    return HttpResponse(str(f['ws_groups']) + plus)
-
-
-@login_required
-def update_available_workspaces(request, user_id,   name):    
-    ws = Workspace.objects.get(name = name)
-    d = {'id':ws.pk,  'name':ws.name}
-    result = ws.members.all().filter(pk = user_id).count() 
-    member = ''
-    if result > 0:
-        member = 'member:1'
-    return HttpResponse('{name:"%s", id:%s, %s }'%(ws.name, ws.pk,  member) )
-
-@login_required
-def get_members(request,):
-    try:
-        ws_id = request.POST.get('ws_id')
-        group_id = request.POST.get('group_id')
-        ws = Workspace.objects.get(pk  = ws_id)
-        members = ws.members.all()
-        if group_id != None:
-            group =  WorkspacePermissionsGroup.objects.get(pk = group_id)
-            users = group.users.all()
-            for member in members:
-                if member in users:
-                    member.selected = True
-    except Exception,  ex:
-            raise ex
-    return render_to_response('option_permission.html', RequestContext(request,{'permissions' : members}))
-    
-#for django admin
-@login_required
-def get_user_ws_permissions(request, user_id,  workspace_id):   
-    all_perm = WorkSpacePermission.objects.all()
-    wsp = WorkSpacePermission.objects.filter(workspacepermissionassociation__workspace__pk =  workspace_id, workspacepermissionassociation__users__pk = user_id)    
-    for perm in all_perm:
-        if perm in wsp:
-            perm.selected = True    
-    return render_to_response('option_permission.html', RequestContext(request,{'permissions' : all_perm}))
-
-#for django admin
-@login_required    
-def get_group_permissions(request, ):
-    group_ids =request.POST.getlist('group_ids')
-    perm =  WorkSpacePermission.objects.filter(workspacepermissionsgroup__pk__in = group_ids).distinct()   
-    return render_to_response('option_permission.html', RequestContext(request,{'permissions' : perm}))
-
-#for django admin
-@login_required
-def get_user_ws_groups(request, user_id,  workspace_id):   
-    all_groups = WorkspacePermissionsGroup.objects.filter(workspace__pk = workspace_id)
-    user = User.objects.get(pk = user_id)
-    user_groups = user.workspacepermissionsgroup_set.all().filter(workspace__pk = workspace_id)
-    for group  in all_groups:
-        if group in user_groups:
-            group.selected = True
-    return render_to_response('option_permission.html', RequestContext(request,{'permissions' : all_groups}))
-
-@login_required    
-@permission_required('admin', False)
-def admin_workspace_get_groups_count(request,  ws_id):
-    ws = Workspace.objects.get(pk = ws_id)
-    n_groups = ws.workspacepermissionsgroup_set.all().count()
-    return HttpResponse(str(n_groups))
-    
 @login_required 
 @permission_required('admin', False)
 def admin_workspace(request,  ws_id):
@@ -177,7 +65,7 @@ def _create_workspace(ws, user):
     ws.creator = user 
     ws.save() 
     
-    wspa = WorkSpacePermissionAssociation.objects.get_or_create(workspace = ws, permission = WorkSpacePermission.objects.get(name='admin'))[0]
+    wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = WorkspacePermission.objects.get(name='admin'))[0]
     wspa.users.add(user)
     ws.members.add(user)
     image = Type.objects.get(name = 'image')
@@ -209,8 +97,6 @@ def _create_workspace(ws, user):
     except Exception,  ex:
         logger.exception(ex)
         raise ex
-    
-    
     
     return ws
 
@@ -257,397 +143,6 @@ def _admin_workspace(request,  ws):
 
     
     return HttpResponse(resp)
-#    else:
-#        
-#        form = AdminWorkspaceForm(ws)
-#    return render_to_response('admin/workspace/general.html', RequestContext(request,{'form': form, 'ws':ws,  'type':'general'}))
-
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_groups(request, ws_id):
-    ws = Workspace.objects.get(pk = ws_id)
-    groups =  ws.workspacepermissionsgroup_set.all()
-    return render_to_response('admin/workspace/group_list.html', RequestContext(request,{'groups':groups, 'ws':ws,  'type': 'groups',  }))
-
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_add_groups(request, ws_id,  group_id = None):    
-    
-    """
-    It allows to add a permission group to a workspace
-    @param ws_id: the id 
-    """
-    
-    ws = Workspace.objects.get(pk=ws_id)
-    if group_id:
-        group = WorkspacePermissionsGroup.objects.get(pk = group_id)
-    else:
-        group = WorkspacePermissionsGroup()
-    if request.method == 'POST':
-        
-        if request.POST.get('cmd') == 'delete':
-            group.delete()
-            return HttpResponseRedirect('/admin_workspace_permissions/groups/%s/'%ws_id)
-        else:          
-            form = AdminWorkspaceGroupsForm(ws, group,   request.POST)
-            context = {'form': form, 'ws':ws,  'group':group,  'type':'groups' , }
-            members_id = request.POST.getlist('members')
-            members = User.objects.filter(pk__in = members_id)
-            if form.is_valid():
-                
-                name = form.cleaned_data['name']
-                permissions = form.cleaned_data['permissions']
-                group.name = name
-                group.workspace = ws
-                group.save()
-                group.permissions.remove(*group.permissions.all())
-                group.permissions.add(*permissions)
-                group.users.remove(*group.users.all())
-                group.users.add(*members)
-                ws.members.add(*members)
-                context['members'] = group.users.all()
-                return HttpResponseRedirect('/admin_workspace_get_groups/%s/'%ws.pk)
-            else:
-                context['members'] = members
-                return render_to_response('admin/workspace/group.html', RequestContext(request, context))
-            
-    else:
-        form = AdminWorkspaceGroupsForm(ws,  group)
-        
-    
-    context = {'form': form, 'ws':ws,  'group':group,  'type':'groups' ,  }
-    if group_id:
-        context['members'] =group.users.all()
-    return render_to_response('admin/workspace/group.html', RequestContext(request, context))
-
-def admin_workspace_check_current_user_admin(request,  ws):    
-   
-    """
-    Internal function for checking that the current user maintains the admin permission    
-    """
-    
-    user = User.objects.get(pk = request.session['_auth_user_id'] )
-
-    logger.debug('ws.pk %s'%ws.pk)
-    admin = WorkSpacePermission.objects.get(codename = 'admin')
-    perm = user.workspacepermissionassociation_set.filter(permission = admin, workspace = ws)
-    groups =  user.workspacepermissionsgroup_set.filter(permissions = admin,  workspace = ws)
-    logger.debug('perm.count() %s '%perm.count())
-    logger.debug('groups.count() %s '%groups.count())
-    
-    if perm.count() == 0 and groups.count() == 0:
-        try:
-            wspa,  created =  WorkSpacePermissionAssociation.objects.get_or_create(permission = admin,  workspace = ws)
-            wspa.users.add(user)
-        except Exception, ex:
-            logger.exception('ex in adding admin permission to the current user: %s'%  ex)
-    
-
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_permissions(request, type,  ws_id):
-    
-    """
-    Main  view for editing workspace members permissions.
-    @type: a string that can assume two values, 'members' or 'groups'
-    @params ws_id: the id of the workspace to edit     
-    """
-    
-    ws = Workspace.objects.get(pk=ws_id)
-   
-    if type == 'members':
-        members = ws.members.all()
-        form = AddMembersForm(ws)
-        for member in members:
-            member.perm_groups  = member.workspacepermissionsgroup_set.all().filter(workspace = ws)
-        
-        return render_to_response('admin/workspace/permissions.html', RequestContext(request,{'members':members, 'ws':ws,  'type':type,'form':form  }))
-        
-    elif type == 'groups':
-        groups =  ws.workspacepermissionsgroup_set.all()
-        return render_to_response('admin/workspace/permissions.html', RequestContext(request,{'groups':groups, 'ws':ws,  'type': type,  }))
-    else:
-        raise Exception('invalid type %s' %type)
-
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_add_members(request, ws_id):
-    
-    """
-    It allows to add  members to a workspace. Members area passed via POST.
-    @params ws_id: the id of the workspace to edit
-    """
-
-    ws = Workspace.objects.get(pk=ws_id)
-    div = 'member_list'
-    if request.method == 'POST':
-        form = AddMembersForm(ws,  request.POST)
-        if form.is_valid():
-            members_id = request.POST.getlist('members_to_add')         
-            members = User.objects.filter(pk__in = members_id) 
-            ws.members.add(*members)
-        
-        members = ws.members.all()
-        form = AddMembersForm(ws)
-        for member in members:
-            member.perm_groups  = member.workspacepermissionsgroup_set.all().filter(workspace = ws)        
-
-        return render_to_response('admin/workspace/member_list.html', RequestContext(request,{'members': members,  'form':form,  'ws': ws}))
-        
-    else:
-        form = AddMembersForm(ws,)
-        
-        return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form,  'form_id': 'form_add',  'form_action': '/admin_workspace_add_members/',  'div':'member_list',  'notfieldset':1}))
-        
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_add_members_to_group(request, ws_id, group_id = None ):
-    
-    """
-    It allows to add members to a permission group    
-    @param ws_id: the id of the workspace to edit
-    @param group_id: the id of the group to whom members will be added. It is None when the group is being created
-    """
-    
-    ws = Workspace.objects.get(pk=ws_id)
-    div = 'member_list'
-    if group_id:
-        group = WorkspacePermissionsGroup.objects.get(pk = group_id)
-    else:
-        group = None
-    form = AddMembersToGroupForm(group)
-    
-    return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'button_function':'add_user_to_group()',  'button_value':'add',  'notfieldset':1  }))
- 
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_remove_members(request,  ws_id):
-    
-    """
-    It allows to remove members from a workspace. Members area passed via POST.
-    @params ws_id: the id of the workspace to edit
-    """
-    
-    ws = Workspace.objects.get(pk = ws_id)
-    user_pk = request.session['_auth_user_id']
-   
-    members_id = request.POST.getlist('members')
-    members = User.objects.filter(pk__in = members_id).exclude(pk = user_pk)        
-    ws.members.remove(*members)      
-    wspas = WorkSpacePermissionAssociation.objects.filter(workspace = ws, users__pk__in = members_id)
-    for wspa in wspas:
-        wspa.users.remove(*members)
-    for group in ws.workspacepermissionsgroup_set.filter(users__pk__in = members_id):
-        group.users.remove(*members)
-        
-    members = ws.members.all()
-    form = AddMembersForm(ws)
-    for member in members:
-        member.perm_groups  = member.workspacepermissionsgroup_set.all().filter(workspace = ws)        
-    
-    return render_to_response('admin/workspace/member_list.html', RequestContext(request,{'members': members,  'form':form}))
-
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_remove_user_from_groups(request, ws_id):
-    ws = Workspace.objects.get(pk = ws_id)
-    user_pk = request.POST.get('member_pk')
-    group_pk = request.POST.get('group_pk')
-    user = User.objects.get(pk = user_pk)
-    group = WorkspacePermissionsGroup.objects.get(pk = group_pk)
-    group.users.remove(user)
-    admin_workspace_check_current_user_admin(request,  ws)
-    return HttpResponse('ok')
-        
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_remove_groups(request, ws_id):
-    ws = Workspace.objects.get(pk = ws_id)   
-    groups_id = request.POST.getlist('groups')
-    groups = WorkspacePermissionsGroup.objects.filter(pk__in = groups_id)
-    groups.delete()
-    
-    return HttpResponseRedirect('/admin_workspace_get_groups/%s/'%ws_id)
-     
-def _admin_workspace_set_permissions_users(request, ws_id,  user_id):
-    ws = Workspace.objects.get(pk = ws_id)
-    type = 'users'
-    if user_id:
-        form_action = '/admin_workspace_set_permissions/%s/%s/'%(type, user_id)
-            
-    else:
-        form_action = '/admin_workspace_set_permissions/%s/%s/'%(  ws_id,  type)
-    
-    if request.method == 'POST':
-        if user_id:
-                members_id = [user_id]
-        else:
-            members_id = request.POST.getlist('members',)
-            
-        members = ws.members.filter(pk__in =members_id)
-            
-        if request.POST.has_key('onshow'):
-            if user_id:
-                initial = [wspa.permission.pk  for wspa in User.objects.get(pk = user_id).workspacepermissionassociation_set.filter(workspace = ws)]            
-            else:
-                initial = [wspa.permission.pk  for wspa in WorkSpacePermissionAssociation.objects.filter(workspace = ws,  users__in = members)]
-                
-                initial_to_disable  = []
-                if members.count() > 1:
-                
-                    for wspa in WorkSpacePermissionAssociation.objects.filter(workspace = ws,  users__in = members):
-                        if wspa.users.filter(pk__in = members_id).count()  < members.count():
-                            initial_to_disable.append(wspa.permission.pk  )
-
-            form = SetPermissionsForm(ws, initial = {'permissions':  initial,  'remove': 'true',  'hidden': initial_to_disable})
-            
-            return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'id_form_permissions': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id }))
-            
-        form = SetPermissionsForm(ws,  request.POST)
-        if form.is_valid():
-            permissions = form.cleaned_data['permissions']
-            permission_one_at_least = form.cleaned_data['hidden']
-            
-            if request.POST.get('remove',  'false') == 'true':
-                for member in members:
-                    member.workspacepermissionassociation_set.remove(*member.workspacepermissionassociation_set.filter(workspace = ws).exclude(permission__in = permission_one_at_least))
-                    
-            for perm in permissions:     
-                wspa,  created = WorkSpacePermissionAssociation.objects.get_or_create(permission = perm,  workspace = ws )
-                wspa.users.add(*members)
-            admin_workspace_check_current_user_admin(request,  ws)
-            
-        return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'form_id': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id  }))
-    else:
-       
-        form = SetPermissionsForm(ws, initial = {'remove': 'true'})
-            
-        return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'id_form_permissions': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id }))
-        
-def _admin_workspace_set_permissions_groups(request, ws_id,  user_id):
-    ws = Workspace.objects.get(pk = ws_id)
-    type = 'groups'
-    if user_id:
-        form_action = '/admin_workspace_set_permissions/%s/%s/'%(type, user_id)
-            
-    else:
-        form_action = '/admin_workspace_set_permissions/%s/%s/'%(type,  ws_id)
-    
-    if request.method == 'POST':
-        form = SetPermissionsForm(ws,  request.POST)
-        
-        if user_id:
-            members_id = [user_id]
-        else:
-            members_id = request.POST.getlist('groups',)
-        
-        groups = ws.workspacepermissionsgroup_set.all().filter(pk__in =members_id)       
-        if request.POST.has_key('onshow'):
-            initial = [permission.pk  for permission in  WorkSpacePermission.objects.filter(workspacepermissionsgroup__in = groups)]
-            initial_to_disable  = []
-            if groups.count() > 1:                
-                    for permission in  WorkSpacePermission.objects.filter(workspacepermissionsgroup__in = groups):
-                        if permission.workspacepermissionsgroup_set.all().count()  < groups.count():
-                            initial_to_disable.append(permission.pk )
-            form = SetPermissionsForm(ws, initial = {'permissions':  initial,  'remove': 'true',  'hidden': initial_to_disable})
-                
-            return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'id_form_permissions': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id }))
-            
-        form = SetPermissionsForm(ws,  request.POST)
-        if form.is_valid():
-            permissions = form.cleaned_data['permissions']
-            permission_one_at_least = form.cleaned_data['hidden']         
-            
-            for group in groups:
-                if request.POST.get('remove',  'false') == 'true':
-                    
-                    group.permissions.remove(*group.permissions.all().exclude(pk__in = [perm.pk for perm in permission_one_at_least]))
-                
-                group.permissions.add(*permissions)
-            admin_workspace_check_current_user_admin(request,  ws)                
-                
-        return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'form_id': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id  }))
-    else:       
-        form = SetPermissionsForm(ws, initial = {'remove': 'true'})
-        
-        return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'id_form_permissions': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id }))
-        
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_set_permissions(request,  ws_id,   type = 'users', ):
-    
-    if type == 'users':
-        return _admin_workspace_set_permissions_users(request,  ws_id,  None)
-    elif type == 'groups':
-        return _admin_workspace_set_permissions_groups(request,  ws_id,  None)
-    else:
-        raise Exception('unknown type, must be users or groups')
-        
-@login_required
-@permission_required('admin',  False)
-def admin_workspace_set_groups(request, ws_id,  user_id = None):
-    ws = Workspace.objects.get(pk = ws_id)
-
-    if user_id:
-        form_action = '/admin_workspace_set_groups/%s/'%user_id
-        members_id = [user_id]
-            
-    else:
-        form_action = '/admin_workspace_set_groups/'
-        members_id = request.POST.getlist('members',)
-    
-    members = ws.members.filter(pk__in =members_id)
-    
-    if request.method == 'POST':
-        if request.POST.has_key('onshow'):
-            
-            initial = [group.pk  for group in WorkspacePermissionsGroup.objects.filter(workspace = ws,  users__in = members)]
-            
-            initial_to_disable  = []
-            if members.count() > 1:
-            
-                for group in WorkspacePermissionsGroup.objects.filter(workspace = ws,  users__in = members):
-                    if group.users.filter(pk__in = members_id).count()  < members.count():
-                        initial_to_disable.append(group.pk )
-
-            form = SetGroupsForm(ws, initial = {'groups':  initial,  'remove': 'true',  'hidden': initial_to_disable})
-            
-            return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'id_form_permissions': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id }))
-            
-        form = SetGroupsForm(ws, request.POST)
-        if form.is_valid():
-            if user_id:
-                members_id = [user_id]
-            else:
-                members_id = request.POST.getlist('members',)            
-            
-            members = ws.members.filter(pk__in =members_id)
-            group_one_at_least = form.cleaned_data['hidden']
-            groups = form.cleaned_data['groups']
-            
-            for member in members:
-                if request.POST.get('remove',  'false') == 'true':               
-                    member.workspacepermissionsgroup_set.remove(*member.workspacepermissionsgroup_set.all().filter(workspace = ws).exclude(pk__in = [g.pk for g in group_one_at_least]))                
-                
-                member.workspacepermissionsgroup_set.add(*groups)
-        admin_workspace_check_current_user_admin(request,  ws)
-        return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'form_id': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id  }))
-    else:
-        
-        if ws.workspacepermissionsgroup_set.all().count() == 0:
-            return HttpResponse('No groups avaialable.Click <a href="/admin_workspace_groups/3/add/">here</a> to create one.')
-        
-        if user_id:
-            user = User.objects.get(pk = user_id)
-            initial = [group.pk for group in user.workspacepermissionsgroup_set.all().filter(workspace = ws)]
-            
-        else:
-            initial = []
-        form = SetGroupsForm(ws,   initial = {'groups':  initial})
-        
-        return render_to_response('admin/workspace/add_form.html', RequestContext(request,{'form':form, 'id_form_permissions': 'id_form_permissions',  'form_action': form_action, 'user_id': user_id }))
-
-
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     if ws not in item.workspaces.all():             
@@ -714,9 +209,6 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     
     return False
         
-        
-    
-
 @login_required
 @permission_required('add_item', False)
 def add_items_to_ws(request):   
@@ -784,9 +276,6 @@ def _remove_items(request, items):
         item.workspaces.remove(current_ws)
         item.component_set.all().filter(workspace = current_ws).exclude(Q(variant__is_global= True,  variant__auto_generated = False)| Q(variant__shared = True)).delete()
         
-        
-         
-
 @login_required
 def remove_item(request,  item,):
     current_ws = request.session.get('workspace')
@@ -1329,7 +818,6 @@ def load_items(request, view_type=None, unlimited=False, ):
                 'type': smart_str(item.type.name),
                 'inbasket': item_in_basket,
                 'preview_available': preview_available,
-                #'inbasket':1,
                 "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))
             }
             
@@ -1467,8 +955,6 @@ def get_n_items(request):
     n_items = workspace.items.all().count()
     resp = {'success': True,  'n_items': n_items}
     return HttpResponse(simplejson.dumps(resp))
-    
-
 
 @login_required
 def get_permissions(request):
@@ -1495,7 +981,7 @@ def get_ws_members(request):
 
     members = ws.members.all()
     
-    available_permissions = WorkSpacePermission.objects.all()    
+    available_permissions = WorkspacePermission.objects.all()    
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
     
     data = {'elements':[]}
@@ -1539,7 +1025,7 @@ def get_available_permissions(request):
 
     ws = Workspace.objects.get(pk = ws_id)
     
-    available_permissions = WorkSpacePermission.objects.all()    
+    available_permissions = WorkspacePermission.objects.all()    
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
     
     data = {'available_permissions': permissions_list}
@@ -1578,8 +1064,8 @@ def save_members(request):
             if k not in ['id', 'name', 'editable']:
                 try: 
                     user = User.objects.get(pk=p['id'])
-                    ws_permission = WorkSpacePermission.objects.get(codename=k)
-                    wspa = WorkSpacePermissionAssociation.objects.get_or_create(workspace = ws, permission = ws_permission)[0]
+                    ws_permission = WorkspacePermission.objects.get(codename=k)
+                    wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = ws_permission)[0]
                     if v == 0:
                         wspa.users.remove(user)
                     else:
@@ -1588,9 +1074,9 @@ def save_members(request):
                     raise
                     pass
         
-    for wsp in WorkSpacePermission.objects.all():
+    for wsp in WorkspacePermission.objects.all():
         try:
-            wspa = WorkSpacePermissionAssociation.objects.get(workspace = ws, permission = wsp)
+            wspa = WorkspacePermissionAssociation.objects.get(workspace = ws, permission = wsp)
             wspa.users.remove(*removed_users)
         except:
             pass
@@ -1599,7 +1085,7 @@ def save_members(request):
     
     data = {'success': True}
     
-    return HttpResponse(simplejson.dumps(data))        
+    return HttpResponse(simplejson.dumps(data))
     
 @login_required
 def switch_ws(request):
