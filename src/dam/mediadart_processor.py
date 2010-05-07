@@ -217,7 +217,7 @@ def adapt_resource(component, machine):
         
         preset_name = vp['preset_name']        
         param_dict = dict(vp)        
-
+        logger.debug("[Adaptation] param_dict %s" % param_dict)
         dest_res_id = dest_res_id + '.' + preset_name
         
         

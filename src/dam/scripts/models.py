@@ -226,9 +226,7 @@ class Script(models.Model):
     def execute(self, items):
         pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
         
-        action_for_media_type = pipeline.get('actions', {})
-        source_variant = pipeline['source_variant'].lower()
-         
+        media_types = pipeline.get('media_type', {})
                              
         actions_available = {}       
        
@@ -242,9 +240,12 @@ class Script(models.Model):
             'doc':[]
             }
         
-        
-        for media_type in action_for_media_type.keys():
-            for action_dict in action_for_media_type[media_type]:
+        logger.debug('media_types %s'%media_types)
+        for media_type, info in media_types.items():
+            logger.debug('info %s '%info)            
+            logger.debug('media_type %s'%media_type)
+            source_variant = info['source_variant']
+            for action_dict in info['actions']:
                 
                 type = action_dict['type'].lower()
                 params = action_dict['parameters']
@@ -273,6 +274,7 @@ class Script(models.Model):
                     action.execute(item,adapt_parameters)
                 else:
                     tmp_adapt_parameters = action.get_adapt_params()
+                    logger.debug('tmp_adapt_parameters %s'%tmp_adapt_parameters)
                     if tmp_adapt_parameters:
                         adapt_parameters.update(tmp_adapt_parameters)
             
@@ -417,12 +419,12 @@ class AudioEncode(BaseAction):
     
     def __init__(self, media_type, source_variant, workspace, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace)
-        if self.parameters.has_key('bitrate'):
+        
 #            if self.parameters['output_format'] in ['mp4_h264_aaclow', 'aac']:
 #                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate')*1000)
 #            else:
-            self.parameters['audio_bitrate'] = int(bitrate)            
-            self.parameters['audio_rate'] = int(rate)
+        self.parameters['audio_bitrate'] = int(bitrate)            
+        self.parameters['audio_rate'] = int(rate)
                 
 
 class ExtractVideoThumbnail(BaseAction):
