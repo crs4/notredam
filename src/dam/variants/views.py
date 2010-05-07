@@ -52,11 +52,8 @@ def new_variant(request):
     logger.debug('is_source %s'%is_source)
     
     prefs = {'image': ImagePreferences,  'audio': AudioPreferences,  'movie': VideoPreferences}
-    v = Variant.objects.create(name = name,  media_type = Type.objects.get(name = media_type),  is_global = False,  auto_generated =  not is_source)
-    va = VariantAssociation.objects.create(variant = v,  workspace = workspace,)
-    if not is_source:
-        va.preferences = preferences = prefs[media_type].objects.create() 
-        va.save()
+    v = Variant.objects.create(name = name,  workspace = workspace, media_type = Type.objects.get(name = media_type),  is_global = False,  auto_generated =  not is_source)
+    
     return HttpResponse(simplejson.dumps({'success': True}))
     
 
@@ -196,7 +193,7 @@ def get_variant_sources(request):
         resp['variants'].append({'pk': orig.pk,  'name': orig.name,  'rank': 1,  'original':  True,   'is_global': True})
 
     
-    available_sources =  Variant.objects.filter(auto_generated = False,  default_url__isnull = True,  variantassociation__workspace = workspace, media_type__name = media_type)
+    available_sources =  Variant.objects.filter(auto_generated = False,  default_url__isnull = True, workspace = workspace, media_type__name = media_type)
 
     if variant:
         available_sources = available_sources.exclude(pk__in = source_ids)
@@ -219,14 +216,12 @@ def get_variants_list(request):
     if media_type == 'video': #sigh
         media_type = 'movie'
         
-    vas = VariantAssociation.objects.filter(variant__media_type__name = media_type,  variant__auto_generated =  (type == 'generated'),  workspace = workspace,  variant__default_url__isnull = True, variant__editable = True)
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type,  variant__auto_generated =  (type == 'generated'), default_url__isnull = True, editable = True)
     
     
     resp = {'variants':[]}
-    for va in vas:
-        variant = va.variant
-#        prefs = va.preferences.get_form()
-#        resp['variants'].append({'pk':variant.pk,  'name': variant.name,  'prefs': prefs})
+    for variant in vas:
+        
         resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.is_global })
     return HttpResponse(simplejson.dumps(resp))
 
@@ -238,12 +233,13 @@ def get_variant_prefs(request):
     variant_id = request.POST.get('variant_id')
     form_classes = {'image':ImagePreferencesForm,  'doc': DocPreferencesForm,  'movie': VideoPreferencesForm,  'audio': AudioPreferencesForm}
     if variant_id:
-        va = VariantAssociation.objects.get(variant__pk = variant_id,  workspace = workspace)
-    #    resp = {'success': True,  'data': prefs}
-        
-        form_class = form_classes[va.preferences.media_type.name]        
-            
-        prefs = {'success': True,  'data': form_class(va.preferences).get_form()}
+        pass
+#        va = VariantAssociation.objects.get(variant__pk = variant_id,  workspace = workspace)
+#    #    resp = {'success': True,  'data': prefs}
+#        
+#        form_class = form_classes[va.preferences.media_type.name]        
+#            
+#        prefs = {'success': True,  'data': form_class(va.preferences).get_form()}
     else:
         media_type = request.POST['media_type']
         form_class = form_classes[media_type]
@@ -257,75 +253,76 @@ def get_variant_prefs(request):
 @login_required
 @permission_required('admin')
 def save_prefs(request):
-    from upload.views import generate_tasks
-
-    try:
-        workspace = request.session['workspace']
-        variant_id = request.POST.get('variant')
-        is_source = request.POST.get('is_source',  False)
-        rights_change = request.POST.get('rights_type_id',  False)
-
-        
-        resp = {'success': True}
-        if variant_id:    
-            variant = Variant.objects.get(pk = variant_id)
-            media_type = variant.media_type.name
-            va = VariantAssociation.objects.get(variant__pk = variant_id,  workspace = workspace)
-        else:
-            media_type = request.POST['media_type']
-            name = request.POST['name']
-            
-            
-            
-            
-            logger.debug('is_source %s'%is_source)
-            prefs = {'image': ImagePreferences,  'audio': AudioPreferences,  'movie': VideoPreferences,  'doc': DocPreferences}
-            variant = Variant.objects.create(name = name,  media_type = Type.objects.get(name = media_type),  is_global = False,  auto_generated =  not is_source)
-            
-            resp['pk'] = variant.pk
-            preset = request.POST.get('preset')
-            if preset:
-                prefs = prefs[media_type].objects.create(preset = Preset.objects.get(pk = preset)) 
-            else:
-                prefs = prefs[media_type].objects.create() 
-            va = VariantAssociation.objects.create(variant = variant,  workspace = workspace, preferences = prefs)
-            if not is_source:
-                sources = Variant.objects.filter(is_global = True,  auto_generated = False,  default_url__isnull = True,  media_type__name = media_type)
-                for source in sources:
-                    SourceVariant.objects.create(workspace = workspace,  destination = variant,  rank = source.default_rank,  source = source)    
-            
-        if not is_source:
-            prefs = va.preferences
-            prefs.save_func(request.POST)
-
-
-            sources = request.POST['sources']
-            sources = simplejson.loads(sources)
-            
-            logger.debug("SourceVariant.objects.filter(destination = variant,workspace= workspace).exclude(source__name = 'original',  source__is_global = True) %s"%SourceVariant.objects.filter(destination = variant,workspace= workspace).exclude(source__name = 'original',  source__is_global = True) )
-            SourceVariant.objects.filter(destination = variant,workspace= workspace).exclude(source__name = 'original',  source__is_global = True).delete()
-            for source in sources:
-                logger.debug('source["pk"] %s'%source["pk"])
-                source_variant = Variant.objects.get(pk = source['pk'])
-                if not source_variant.is_original():
-                    SourceVariant.objects.create(destination = variant,  source =  source_variant,  workspace= workspace,  rank = source['rank'])
-                else:
-                    orig = SourceVariant.objects.get(destination = variant,  source =  source_variant,  workspace= workspace)
-                    orig.rank = source['rank']
-                    orig.save()
-            
-            
-            logger.debug('now lets generate tasks!')
-            for item in workspace.items.filter(type = media_type):
-                generate_tasks(variant, workspace,  item)
-                if rights_change:
-                    save_variants_rights(item, workspace, variant)
-        
-    except Exception, ex:
-        logger.exception(ex)
-        raise ex
-    
-    return HttpResponse(simplejson.dumps(resp))
+    pass
+#    from upload.views import generate_tasks
+#
+#    try:
+#        workspace = request.session['workspace']
+#        variant_id = request.POST.get('variant')
+#        is_source = request.POST.get('is_source',  False)
+#        rights_change = request.POST.get('rights_type_id',  False)
+#
+#        
+#        resp = {'success': True}
+#        if variant_id:    
+#            variant = Variant.objects.get(pk = variant_id)
+#            media_type = variant.media_type.name
+##            va = VariantAssociation.objects.get(variant__pk = variant_id,  workspace = workspace)
+#        else:
+#            media_type = request.POST['media_type']
+#            name = request.POST['name']
+#            
+#            
+#            
+#            
+#            logger.debug('is_source %s'%is_source)
+#            prefs = {'image': ImagePreferences,  'audio': AudioPreferences,  'movie': VideoPreferences,  'doc': DocPreferences}
+#            variant = Variant.objects.create(name = name,  media_type = Type.objects.get(name = media_type),  is_global = False,  auto_generated =  not is_source)
+#            
+#            resp['pk'] = variant.pk
+#            preset = request.POST.get('preset')
+#            if preset:
+#                prefs = prefs[media_type].objects.create(preset = Preset.objects.get(pk = preset)) 
+#            else:
+#                prefs = prefs[media_type].objects.create() 
+#            va = VariantAssociation.objects.create(variant = variant,  workspace = workspace, preferences = prefs)
+#            if not is_source:
+#                sources = Variant.objects.filter(is_global = True,  auto_generated = False,  default_url__isnull = True,  media_type__name = media_type)
+#                for source in sources:
+#                    SourceVariant.objects.create(workspace = workspace,  destination = variant,  rank = source.default_rank,  source = source)    
+#            
+#        if not is_source:
+#            prefs = va.preferences
+#            prefs.save_func(request.POST)
+#
+#
+#            sources = request.POST['sources']
+#            sources = simplejson.loads(sources)
+#            
+#            logger.debug("SourceVariant.objects.filter(destination = variant,workspace= workspace).exclude(source__name = 'original',  source__is_global = True) %s"%SourceVariant.objects.filter(destination = variant,workspace= workspace).exclude(source__name = 'original',  source__is_global = True) )
+#            SourceVariant.objects.filter(destination = variant,workspace= workspace).exclude(source__name = 'original',  source__is_global = True).delete()
+#            for source in sources:
+#                logger.debug('source["pk"] %s'%source["pk"])
+#                source_variant = Variant.objects.get(pk = source['pk'])
+#                if not source_variant.is_original():
+#                    SourceVariant.objects.create(destination = variant,  source =  source_variant,  workspace= workspace,  rank = source['rank'])
+#                else:
+#                    orig = SourceVariant.objects.get(destination = variant,  source =  source_variant,  workspace= workspace)
+#                    orig.rank = source['rank']
+#                    orig.save()
+#            
+#            
+#            logger.debug('now lets generate tasks!')
+#            for item in workspace.items.filter(type = media_type):
+#                generate_tasks(variant, workspace,  item)
+#                if rights_change:
+#                    save_variants_rights(item, workspace, variant)
+#        
+#    except Exception, ex:
+#        logger.exception(ex)
+#        raise ex
+#    
+#    return HttpResponse(simplejson.dumps(resp))
 
 @login_required
 def get_variants(request):
@@ -337,7 +334,7 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(variantassociation__workspace = workspace,  media_type = item.type,  default_url__isnull = True).distinct()
+    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True),  media_type = item.type,  default_url__isnull = True).distinct()
 
     print item_variants
 
@@ -373,20 +370,21 @@ def get_variants(request):
             
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
+            pass
             #logger.exception(ex)
-            pk = None
-            prefs = v.variantassociation_set.get(workspace = workspace).preferences
-            if prefs:
-                media_type = prefs.media_type.name
-            else:
-                media_type = item.type.name
-            imported = False
-            work_in_progress = False
-            info_list = []
-            info_list_full = []
-            resource_url = ''
-            auto_generated = v.auto_generated
-            extension = None
+#            pk = None
+#            prefs = v.variantassociation_set.get(workspace = workspace).preferences
+#            if prefs:
+#                media_type = prefs.media_type.name
+#            else:
+#                media_type = item.type.name
+#            imported = False
+#            work_in_progress = False
+#            info_list = []
+#            info_list_full = []
+#            resource_url = ''
+#            auto_generated = v.auto_generated
+#            extension = None
             
         resp['variants'].append({'data_basic': info_list, 'data_full':info_list_full,  'variant_name': v.name,  'resource_url': resource_url,  'pk': v.pk,  'imported':imported, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'extension':extension,  'work_in_progress':work_in_progress,  'width': str(comp.width),  'height': str(comp.height )})
     
@@ -439,11 +437,11 @@ def save_sources(request):
                         
             else:
                 logger.debug('creating variant %s'%v['name'])
-                variant = Variant.objects.create(name = v['name'],  is_global = False,  auto_generated = False,  media_type = Type.objects.get(name= media_type),  default_url = None)
-                VariantAssociation.objects.create(variant= variant,  workspace = workspace)
+                variant = Variant.objects.create(name = v['name'],  is_global = False,  workspace = workspace, auto_generated = False,  media_type = Type.objects.get(name= media_type),  default_url = None)
+#                VariantAssociation.objects.create(variant= variant,  workspace = workspace)
                 existing_variant_ids.append(variant.pk)
                 
-        variant_to_delete = Variant.objects.filter(is_global = False,  auto_generated = False,  default_url = None,  variantassociation__workspace = workspace).exclude(pk__in = existing_variant_ids)
+        variant_to_delete = Variant.objects.filter(is_global = False,  auto_generated = False,  default_url = None,  workspace = workspace).exclude(pk__in = existing_variant_ids)
         variant_to_delete.delete()
         
     except Exception,  ex:
@@ -454,22 +452,23 @@ def save_sources(request):
 
 
 def get_preset_parameters(request):
-    workspace = request.session['workspace']
-    variant_id = request.POST.get('variant_id')
-    preset_id = request.POST['preset_id']
-    preset = Preset.objects.get(pk = preset_id)
-    params = preset.parameters.all()
-    
-    if variant_id:
-        variant = Variant.objects.get(pk = variant_id)
-        prefs = VariantAssociation.objects.get(variant = variant,  workspace = workspace).preferences
-        variant_resizable = variant.resizable
-    else:
-        prefs= None
-        variant_resizable = True
-
-#    parameters = _create_parameters_json(params, prefs,  variant_resizable)
-    parameters = []
-    return HttpResponse(simplejson.dumps(parameters))
-    
-    
+    pass
+#    workspace = request.session['workspace']
+#    variant_id = request.POST.get('variant_id')
+#    preset_id = request.POST['preset_id']
+#    preset = Preset.objects.get(pk = preset_id)
+#    params = preset.parameters.all()
+#    
+#    if variant_id:
+#        variant = Variant.objects.get(pk = variant_id)
+#        prefs = VariantAssociation.objects.get(variant = variant,  workspace = workspace).preferences
+#        variant_resizable = variant.resizable
+#    else:
+#        prefs= None
+#        variant_resizable = True
+#
+##    parameters = _create_parameters_json(params, prefs,  variant_resizable)
+#    parameters = []
+#    return HttpResponse(simplejson.dumps(parameters))
+#    
+#    
