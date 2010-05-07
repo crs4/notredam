@@ -15,6 +15,7 @@
 #    GNU General Public License for more details.
 #
 #########################################################################
+
 from django.db import models
 from django.utils import simplejson
 from django.contrib.contenttypes import generic
@@ -22,7 +23,6 @@ from upload.views import generate_tasks
 from variants.models import Variant
 from repository.models import Component
 import logger
-
 
 variant_generation_pipeline = {
     'event': 'upload',
@@ -216,7 +216,7 @@ class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
     pipeline = models.TextField()
-    workspace = models.ForeignKey('workspace.Workspace')
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
     event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
     

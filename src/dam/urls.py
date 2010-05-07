@@ -25,14 +25,11 @@ import os.path
 from django.contrib import admin
 admin.autodiscover()
 
-from dam.application.admin import mod_admin
 from settings import MEDIADART_STORAGE
+
 urlpatterns = patterns('', 
     (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
-#   (r'^admin/auth/user/(\d+)/$','dam.workspace.views.admin_edit_user'),
     (r'^admin/(.*)', admin.site.root), 
-    (r'^mod_admin/(.*)', mod_admin.root), 
-    (r'^files/thumbs/(?P<path>.*)$', 'django.views.static.serve', {'document_root': THUMBS_DIR}), 
     (r'^files/(?P<path>.*)$', 'django.views.static.serve', {'document_root': os.path.join(ROOT_PATH, 'files')}), 
     (r'^storage/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIADART_STORAGE}), 
     
@@ -49,6 +46,7 @@ urlpatterns = patterns('',
     (r'^', include('dam.api.urls')),
     (r'^', include('dam.workflow.urls')),
     (r'^', include('dam.eventmanager.urls')),
+    (r'^', include('dam.admin.urls')),
     (r'^', include('dam.scripts.urls')),
 
 )
