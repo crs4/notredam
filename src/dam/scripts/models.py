@@ -245,13 +245,13 @@ class Script(models.Model):
         
         for media_type in action_for_media_type.keys():
             for action_dict in action_for_media_type[media_type]:
-            
+                
                 type = action_dict['type'].lower()
                 params = action_dict['parameters']
                 params['workspace'] = self.workspace
                 params['media_type'] = media_type
                 params['source_variant'] = source_variant
-
+                logger.debug('action_dict %s'%action_dict)
                 try:                    
                     action = actions_available[type](**params)                
                 except Exception, ex:              
@@ -313,7 +313,8 @@ class SaveAs(BaseAction):
         self.output_format = output_format
     
     def execute(self, item, adapt_parameters):     
-        
+        logger.debug('self.output_variant %s'%self.output_variant)
+        logger.debug('self.media_type %s'%self.media_type)
         variant = Variant.objects.get(name = self.output_variant, media_type__name = self.media_type)          
         
         component = variant.get_component(self.workspace,  item)    
@@ -337,10 +338,18 @@ class SaveAs(BaseAction):
 
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
-    required_parameters = ['max_dim']
-    def __init__(self, media_type, source_variant, workspace, max_dim):
+    required_parameters = ['max_dim',  'height','width']
+    def __init__(self, media_type, source_variant, workspace, max_dim = None, height = None, width = None):
         super(Resize, self).__init__(media_type, source_variant, workspace)
-        self.parameters['max_dim'] = max_dim
+        if not max_dim and not height and not width:
+            raise MissingActionParameters('action resize need at least max_dim or height or width')
+        if max_dim:
+            self.parameters['max_dim'] = max_dim
+        if height:
+            self.parameters['max_height'] = height
+        if width:
+            self.parameters['max_width'] = width
+                
 
 class Doc2Image(BaseAction): 
     media_type_supported = ['doc']
@@ -388,14 +397,16 @@ preset = {'movie':
 class VideoEncode(BaseAction):
     """default bitrate in kb""" 
     media_type_supported = ['video']
-    def __init__(self, media_type, **parameters):
+    def __init__(self, media_type, source_variant, workspace, bitrate, framerate):
+        super(VideoEncode, self).__init__(media_type, source_variant, workspace)
         
-        super(VideoEncode, self).__init__(media_type, **parameters)
+       
         if self.parameters.has_key('bitrate'):
-            if self.parameters['output_format'] in ['flv', 'avi', 'mpegts']:
-                self.parameters['video_bitrate'] = int(self.parameters.pop('bitrate')*1000)
-            else:
-                 self.parameters['video_bitrate'] = int(self.parameters.pop('bitrate'))       
+#            if self.parameters['output_format'] in ['flv', 'avi', 'mpegts']:
+#                self.parameters['video_bitrate'] = int(self.parameters.pop('bitrate')*1000)
+#            else:
+#                 self.parameters['video_bitrate'] = int(self.parameters.pop('bitrate'))
+            self.parameters['video_bitrate'] = int(self.parameters.pop('bitrate'))       
         
         if self.parameters.has_key('framerate'): 
             self.parameters['video_framerate'] = self.parameters.pop('framerate')
@@ -410,8 +421,7 @@ class AudioEncode(BaseAction):
 #            if self.parameters['output_format'] in ['mp4_h264_aaclow', 'aac']:
 #                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate')*1000)
 #            else:
-            self.parameters['audio_bitrate'] = int(bitrate)
-            
+            self.parameters['audio_bitrate'] = int(bitrate)            
             self.parameters['audio_rate'] = int(rate)
                 
 

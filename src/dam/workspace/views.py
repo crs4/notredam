@@ -32,7 +32,7 @@ from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
-from dam.variants.models import Variant, VariantAssociation, VariantDefault, SourceVariant
+from dam.variants.models import Variant      
 from dam.upload.views import generate_tasks
 from dam.application.views import get_component_url
 from dam.workspace.forms import AdminWorkspaceForm
@@ -176,7 +176,7 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
             
             
 #                    default_source_variant = comp.variant.get_source
-        ws_variants = Variant.objects.filter(variantassociation__workspace = ws,  auto_generated = True,  media_type = item.type)
+        ws_variants = Variant.objects.filter(Q(workspace = ws) | Q(is_global = True),  auto_generated = True,  media_type = item.type)
         logger.debug('ws_variants %s'%ws_variants)
         
 #                logger.debug('item.component_set.filter(workspace = ws)[0].variant.pk %s' %item.component_set.filter(workspace = ws)[0].variant.pk)
@@ -203,9 +203,8 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
                     
                     
                 new_comp.workspace.add(ws)                        
-                sources = SourceVariant.objects.filter(destination = variant,  workspace = ws)
-                
-                generate_tasks(variant,  ws,  item,  check_for_existing = True)
+#               TODO: event for upload scripts
+#                generate_tasks(variant,  ws,  item,  check_for_existing = True)
         
         return True
     

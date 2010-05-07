@@ -30,6 +30,7 @@ class DAMWorkspace(Workspace):
         
     def get_variants(self):
         from dam.variants.models import Variant
-        return Variant.objects.filter(Q(variantassociation__workspace = self) | Q(is_global = True,  )).distinct()    
-
-
+        return Variant.objects.filter(Q(workspace = self) | Q(is_global = True,  )).distinct()    
+    
+    def  get_permissions(self,  user):
+        return WorkSpacePermission.objects.filter(Q(workspacepermissionassociation__in = WorkSpacePermissionAssociation.objects.filter(Q(users=user, workspace = self)) ) | Q(workspacepermissionsgroup__in= WorkspacePermissionsGroup.objects.filter(users = user, workspace = self) )).distinct()
