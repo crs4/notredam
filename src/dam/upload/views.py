@@ -144,7 +144,7 @@ def save_uploaded_item(request, upload_file, user, workspace):
 
     variant = Variant.objects.get(name = 'original',  media_type__name = type)
     save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
-    EventRegistration.objects.notify('upload',  **{'items':[item]})
+    EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
     
 
 def save_uploaded_variant(request, upload_file, user, workspace):
@@ -303,10 +303,13 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
                 
         feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
         logger.debug('feat_extract_orig %s'%feat_extract_orig)
+        
         if feat_extract_orig.count(): 
             source_machine = feat_extract_orig[0].machine_set.all()[0]  
         else:
             source_machine = None
+        
+#        source_machine = None
         logger.debug('source_machine %s'%source_machine)
                
         try:
@@ -325,7 +328,7 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
             Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=source_machine)  
         
         else:
-            
+            logger.debug('adaptation task')
             adapt_action = Action.objects.create(component=comp, function='adapt_resource')
             adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
             

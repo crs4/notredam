@@ -22,6 +22,7 @@ from django.contrib.contenttypes import generic
 from upload.views import generate_tasks
 from variants.models import Variant
 from repository.models import Component
+from dam.framework.dam_repository.models import Type
 import logger
 
 variant_generation_pipeline = {
@@ -212,6 +213,7 @@ class MediaTypeNotSupported(ScriptException):
 class PresetUnknown(ScriptException):
     pass
 
+
 class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
@@ -219,16 +221,27 @@ class Script(models.Model):
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
+    media_type = models.ManyToManyField(Type)
+    is_global = models.BooleanField(default = False)
+    
+    def save(self, *args, **kwargs):
+        super(Script, self).save(*args, **kwargs)
+        pipeline = simplejson.loads(self.pipeline)
+        media_type = pipeline['media_type'].keys()
+        
+        media_type = Type.objects.filter(name__in = media_type)
+        self.media_type.remove(*self.media_type.all())
+        self.media_type.add(*media_type)
+         
     
     def __unicode__(self):
         return unicode(self.name)
     
+    
     def execute(self, items):
         pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
         
-        action_for_media_type = pipeline.get('actions', {})
-        source_variant = pipeline['source_variant'].lower()
-         
+        media_types = pipeline.get('media_type', {})
                              
         actions_available = {}       
        
@@ -242,9 +255,12 @@ class Script(models.Model):
             'doc':[]
             }
         
-        
-        for media_type in action_for_media_type.keys():
-            for action_dict in action_for_media_type[media_type]:
+        logger.debug('media_types %s'%media_types)
+        for media_type, info in media_types.items():
+            logger.debug('info %s '%info)            
+            logger.debug('media_type %s'%media_type)
+            source_variant = info['source_variant']
+            for action_dict in info['actions']:
                 
                 type = action_dict['type'].lower()
                 params = action_dict['parameters']
@@ -273,11 +289,12 @@ class Script(models.Model):
                     action.execute(item,adapt_parameters)
                 else:
                     tmp_adapt_parameters = action.get_adapt_params()
+                    logger.debug('tmp_adapt_parameters %s'%tmp_adapt_parameters)
                     if tmp_adapt_parameters:
                         adapt_parameters.update(tmp_adapt_parameters)
             
     class Meta:
-        unique_together = ('name', 'workspace' )
+        unique_together = ('name', 'workspace')
  
     
     
@@ -332,24 +349,24 @@ class SaveAs(BaseAction):
         source= source_variant.get_component(self.workspace, item)                 
         component.source = source
         component.save() 
+        logger.debug('generate task')
         generate_tasks(variant, self.workspace, item)
 
 
 
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
-    required_parameters = ['max_dim',  'height','width']
-    def __init__(self, media_type, source_variant, workspace, max_dim = None, height = None, width = None):
+    required_parameters = ['max_height','max_width']
+    def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace)
-        if not max_dim and not height and not width:
-            raise MissingActionParameters('action resize need at least max_dim or height or width')
-        if max_dim:
-            self.parameters['max_dim'] = max_dim
-        if height:
-            self.parameters['max_height'] = height
-        if width:
-            self.parameters['max_width'] = width
+        if media_type == 'video' or media_type == 'movie':
+            self.parameters['video_height'] = max_height
+            self.parameters['video_width'] = max_width
+        else:
+            self.parameters['max_height'] = max_height
+            self.parameters['max_width'] = max_width
                 
+    
 
 class Doc2Image(BaseAction): 
     media_type_supported = ['doc']
@@ -357,7 +374,8 @@ class Doc2Image(BaseAction):
 
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
-    required_parameters = ['watermark_uri',  'watermark_position']
+    required_parameters = ['watermark_filename',  'watermark_top']
+    
     def __init__(self, media_type, **parameters):
         """
         parameters: 
@@ -417,23 +435,24 @@ class AudioEncode(BaseAction):
     
     def __init__(self, media_type, source_variant, workspace, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace)
-        if self.parameters.has_key('bitrate'):
+        
 #            if self.parameters['output_format'] in ['mp4_h264_aaclow', 'aac']:
 #                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate')*1000)
 #            else:
-            self.parameters['audio_bitrate'] = int(bitrate)            
-            self.parameters['audio_rate'] = int(rate)
+        self.parameters['audio_bitrate'] = int(bitrate)            
+        self.parameters['audio_rate'] = int(rate)
                 
 
 class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['movie']
-    def __init__(self, media_type, source_variant, workspace, max_dim):
+    def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace)
-        self.parameters['max_dim'] = max_dim
+        self.parameters['max_height'] = max_height
+        self.parameters['max_width'] = max_width
 
-    
-    def get_adapt_params(self):
-        return {'thumb_size':self.parameters['max_dim']}
+#    
+#    def get_adapt_params(self):
+#        return {'thumb_size':(self.parameters['max_height'], self.parameters['max_width'] )}
 
 
 
