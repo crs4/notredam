@@ -27,7 +27,8 @@ from django.db.models import Q
 from exceptions import *
 from treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
 from treeview.views import  _add_node
-from variants.models import VariantAssociation,  Variant, SourceVariant,  PresetParameterValue
+from variants.models import Variant
+#from variants.models import VariantAssociation,   SourceVariant,  PresetParameterValue
 from workspace.models import Workspace,  WorkSpacePermissionAssociation,  WorkSpacePermission
 from dam.workspace.views import _create_workspace
 from repository.models import Item,  Component

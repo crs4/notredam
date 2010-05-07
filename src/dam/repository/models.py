@@ -113,7 +113,7 @@ class Item(AbstractItem):
 
     def get_variants(self,  workspace):
         from dam.variants.models import Variant
-        return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(variantassociation__workspace__pk = workspace.pk), media_type = self.type),  workspace = workspace)
+        return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(workspace__pk = workspace.pk), media_type = self.type),  workspace = workspace)
 
     def description(self):
         mydescription = self.metadata.get(schema__is_description = True, language ="it-IT")

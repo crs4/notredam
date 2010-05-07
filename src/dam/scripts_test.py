@@ -544,19 +544,19 @@ pipeline2 = {
 
 ws = Workspace.objects.get(pk = 1)
 
-#pipeline_json = simplejson.dumps(pipeline_thumb)
-#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws )
+pipeline_json = simplejson.dumps(pipeline_thumb)
+script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws )
 
 #script_thumb = Script.objects.get(pk =  1)
 #script_thumb.pipeline = pipeline_json
 #script_thumb.save()
 
-#upload = Event.objects.create(name = 'upload')
-#EventRegistration.objects.create(event = upload, listener = script_thumb)
+upload = Event.objects.create(name = 'upload')
+EventRegistration.objects.create(event = upload, listener = script_thumb)
 
 pipeline_json = simplejson.dumps(pipeline_preview)
 
-#script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws )
+script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws )
 
 #script_preview = Script.objects.get(pk =  2)
 #script_preview.pipeline = pipeline_json
@@ -564,7 +564,7 @@ pipeline_json = simplejson.dumps(pipeline_preview)
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
-#EventRegistration.objects.create(event = upload, listener = script_preview)
+EventRegistration.objects.create(event = upload, listener = script_preview)
 
 pipeline_json = simplejson.dumps(pipeline_fullscreen)
 
