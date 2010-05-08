@@ -24,7 +24,7 @@ from django.utils import simplejson
 
 from dam.repository.models import Item, Component
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.workspace.decorators import permission_required
+from dam.framework.dam_workspace.decorators import permission_required
 from dam.treeview.models import Node
 
 import logger

@@ -36,7 +36,7 @@ from dam.treeview.models import Node
 from dam.batch_processor.models import MachineState, Machine, Action
 
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.workspace.decorators import permission_required
+from dam.framework.dam_workspace.decorators import permission_required
 from dam.application.views import get_component_url
 from dam.variants.views import _create_variant
 from dam.upload.models import UploadURL

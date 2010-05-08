@@ -17,7 +17,7 @@
 #########################################################################
 
 
-from dam.workspace.models import DAMWorkspace as Workspace
+from dam.framework.dam_workspace.models import Workspace
 from django.http import HttpResponseForbidden
 from django.db.models import Q
 from django.contrib.auth.models import User
@@ -26,7 +26,8 @@ def membership_required(func):
     def check(request, *args, **kwargs):			
         user =  User.objects.get(pk = request.session['_auth_user_id'])
         ws_id = args[0]
-        if not user.workspaces.filter(pk = ws_id).count():
+        workspace = Workspace.objects.get(pk=ws_id)
+        if not workspace.has_member(user):
             return HttpResponseForbidden('403 Forbidden: membership required!')
         
         return func(request, *args, **kwargs)
@@ -52,10 +53,11 @@ def permission_required(permission,  ws_in_session = True):
                 else:
                     
                     raise Exception('no workspace passed')
+                    
                 workspace = Workspace.objects.get(pk = ws_id)
             
             user =  User.objects.get(pk = request.session['_auth_user_id'])			
-            if user.workspacepermissionassociation_set.filter(Q(workspace = workspace),  Q(permission__codename = 'admin') | Q(permission__codename = permission)).count() > 0 or user.workspacepermissionsgroup_set.filter(Q(workspace = workspace),  Q(permissions__codename = 'admin') | Q(permissions__codename = permission)).count() > 0:
+            if workspace.has_permission(user, permission):
             	return func(request, *args, **kwargs)
             else:
             	return HttpResponseForbidden('403 Forbidden: you have no permission to access this page!')

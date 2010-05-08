@@ -27,7 +27,7 @@ from django.contrib.auth.models import User
 from django.utils import simplejson
 from dam.basket.models import Basket
 from dam.repository.models import Item, Component
-from dam.workspace.decorators import permission_required, membership_required
+from dam.framework.dam_workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
 from dam.workspace.models import DAMWorkspace as Workspace

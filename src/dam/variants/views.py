@@ -32,7 +32,7 @@ from dam.variants.models import Variant
 from dam.framework.dam_repository.models import Type
 from dam.repository.models import Component
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.workspace.decorators import permission_required
+from dam.framework.dam_workspace.decorators import permission_required
 from dam.repository.models import Component,  Item
 from dam.metadata.views import _get_formatted_descriptors, save_variants_rights, _get_ws_groups
 from dam.application.views import get_component_url

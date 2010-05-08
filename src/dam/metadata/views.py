@@ -30,7 +30,7 @@ from dam.preferences.views import get_user_setting
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant
-from dam.workspace import decorators
+from dam.framework.dam_workspace import decorators
 from dam.batch_processor.models import MachineState, Action, Machine
 from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
 

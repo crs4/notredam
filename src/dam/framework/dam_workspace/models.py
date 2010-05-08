@@ -41,8 +41,17 @@ class Workspace(models.Model):
 
     def __unicode__(self):
         return "%s" % (self.name)
-            
-    def  get_permissions(self,  user):
+        
+    def has_member(self, user):
+        if user in self.members.all():
+            return True
+        else:
+            return False
+
+    def has_permission(self, user, permission):
+        return self.get_permissions(user).filter(Q(codename = 'admin') | Q(codename = permission)).count() > 0
+        
+    def get_permissions(self,  user):
         return WorkspacePermission.objects.filter(Q(workspacepermissionassociation__in = WorkspacePermissionAssociation.objects.filter(Q(users=user, workspace = self)) ) | Q(workspacepermissionsgroup__in= WorkspacePermissionsGroup.objects.filter(users = user, workspace = self) )).distinct()
 
 class WorkspacePermission(models.Model):

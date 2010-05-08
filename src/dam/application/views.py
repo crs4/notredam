@@ -30,10 +30,11 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 from dam.repository.models import Item
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.workspace.decorators import permission_required
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
+
+from dam.framework.dam_workspace.decorators import permission_required
 
 from mediadart.storage import Storage
 

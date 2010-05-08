@@ -26,7 +26,7 @@ from django.template import RequestContext, Context, loader
 from django.contrib.contenttypes.models import ContentType
 
 from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
-from dam.workspace.decorators import permission_required, membership_required
+from dam.framework.dam_workspace.decorators import permission_required, membership_required
 from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item, Component
