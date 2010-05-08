@@ -23,7 +23,7 @@ from django.utils import simplejson
 from dam.workflow.models import State, StateItemAssociation
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item
-from dam.workspace.decorators import permission_required
+from dam.framework.dam_workspace.decorators import permission_required
 
 def _set_state(items, workspace, state):
     
