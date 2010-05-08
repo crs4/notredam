@@ -30,6 +30,5 @@ urlpatterns = patterns('',
     (r'^save_prefs/$', 'dam.variants.views.save_prefs'),
     (r'^get_variant_sources/$', 'dam.variants.views.get_variant_sources'),
     (r'^save_sources/$', 'dam.variants.views.save_sources'),
-    (r'^get_preset_parameters/$', 'dam.variants.views.get_preset_parameters'),
 
 )
