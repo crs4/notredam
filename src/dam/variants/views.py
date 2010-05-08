@@ -208,13 +208,14 @@ def get_variant_sources(request):
 @login_required
 def get_variants_list(request):
     workspace = request.session['workspace']
+#    workspace = Workspace.objects.get(pk = 1)
     media_type = request.POST['media_type']
     type = request.POST.get('type',  'generated')
     logger.debug('type %s'%type)
     if media_type == 'video': #sigh
         media_type = 'movie'
         
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type,  variant__auto_generated =  (type == 'generated'), default_url__isnull = True, editable = True)
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'), default_url__isnull = True, editable = True)
     
     
     resp = {'variants':[]}
@@ -332,9 +333,8 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True),  media_type = item.type,  default_url__isnull = True).distinct()
-
-    print item_variants
+    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True),  media_type = item.type).distinct()
+    logger.debug('item_variants %s'%item_variants)
 
     now = time.time()
     resp = {'variants':[]}
@@ -368,7 +368,10 @@ def get_variants(request):
             
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
-            pass
+            work_in_progress =  True
+            resp['variants'].append({ 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
+            continue
+            
             #logger.exception(ex)
 #            pk = None
 #            prefs = v.variantassociation_set.get(workspace = workspace).preferences
@@ -447,26 +450,3 @@ def save_sources(request):
         raise ex
     return HttpResponse(simplejson.dumps(resp))
 
-
-
-def get_preset_parameters(request):
-    pass
-#    workspace = request.session['workspace']
-#    variant_id = request.POST.get('variant_id')
-#    preset_id = request.POST['preset_id']
-#    preset = Preset.objects.get(pk = preset_id)
-#    params = preset.parameters.all()
-#    
-#    if variant_id:
-#        variant = Variant.objects.get(pk = variant_id)
-#        prefs = VariantAssociation.objects.get(variant = variant,  workspace = workspace).preferences
-#        variant_resizable = variant.resizable
-#    else:
-#        prefs= None
-#        variant_resizable = True
-#
-##    parameters = _create_parameters_json(params, prefs,  variant_resizable)
-#    parameters = []
-#    return HttpResponse(simplejson.dumps(parameters))
-#    
-#    
