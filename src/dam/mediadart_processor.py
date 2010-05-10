@@ -125,8 +125,14 @@ def adapt_resource(component, machine):
     if item.type.name == 'image':
  
         transcoding_format = vp.get('codec', orig.format) #change to original format
-        max_dim = int(vp.get('max_dim', -1)) 
-        logger.debug('max_dim %s'%max_dim)
+        
+        height = int(vp.get('max_height', -1))        
+        width = int(vp.get('max_width', -1))
+        
+        dest_size = (width, height)
+        
+        logger.debug('dest_size %s,%s'%dest_size)
+      
         cropping = vp.get('cropping', False)
         watermark_enabled = vp.get('watermarking', False)
 
@@ -165,11 +171,13 @@ def adapt_resource(component, machine):
 #         else:
 
         dest_res_id = dest_res_id + '.' + transcoding_format
-
+        
+        
+        
         if watermark_enabled:
-            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=(max_dim, max_dim), watermark='/opt/mediadart/share/logo-s.png')
+            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark='/opt/mediadart/share/logo-s.png')
         else:
-            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=(max_dim, max_dim))
+            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
 
     elif item.type.name == 'movie':
         
@@ -179,8 +187,8 @@ def adapt_resource(component, machine):
         logger.debug('component.media_type.name %s'%component.media_type.name)
         if component.media_type.name == "image":
             
-            dim_x = vp['thumb_size']
-            dim_y = vp['thumb_size']
+            dim_x = vp['max_width']
+            dim_y = vp['max_height']
             
 
             d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
@@ -226,7 +234,8 @@ def adapt_resource(component, machine):
     if item.type.name == 'doc':
  
         transcoding_format = vp['codec']
-        max_size = vp['max_dim']
+#        TODO: add width, to mediadart, see adapt_doc
+        max_size = vp['max_height']
         
         dest_res_id = dest_res_id + '.' + transcoding_format
         

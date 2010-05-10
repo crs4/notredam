@@ -53,10 +53,13 @@ pipeline_thumb = {
             'actions': [
                 {'type': 'resize',
                 'parameters':{
-                    'max_dim': 100
+                    'max_height': 100,
+                    'max_width': 100
+                    
                 }
                         
                 },
+               
                 {
                 'type': 'saveas',
                 'parameters':{
@@ -75,7 +78,9 @@ pipeline_thumb = {
             'actions':[{
                 'type': 'extractvideothumbnail',
                 'parameters':{
-                'max_dim': 100}
+                'max_height': 100,
+                'max_width': 100,
+                }
             },
             {
                 'type': 'saveas',
@@ -92,7 +97,8 @@ pipeline_thumb = {
             {
                'type': 'resize',
                'parameters':{                        
-                    'max_dim':100,
+                    'max_height': 100,
+                    'max_width': 100,
                 }
             
             },
@@ -123,7 +129,8 @@ pipeline_preview = {
                 {
                  'type': 'resize',
                 'parameters':{
-                    'max_dim': 300
+                   'max_height': 300,
+                   'max_width': 300,
                 }
                         
                 },
@@ -167,8 +174,8 @@ pipeline_preview = {
                  {
                 'type': 'resize',
                 'parameters':{
-                    'height': 300,
-                    'width': 300
+                    'max_height': 300,
+                    'max_width': 300
                     }
                 },
                 {
@@ -204,7 +211,8 @@ pipeline_preview = {
             {
                'type': 'resize',
                'parameters':{                        
-                    'max_dim':300,
+                    'max_height':300,
+                    'max_width':300,
                 }
             
             },
@@ -329,7 +337,8 @@ pipeline_fullscreen = {
                 {
                  'type': 'resize',
                 'parameters':{
-                    'max_dim': 800
+                    'max_height': 800,
+                    'max_width': 800,
                 }
                         
                 },
@@ -377,31 +386,31 @@ pipeline_fullscreen = {
 
 ws = Workspace.objects.get(pk = 1)
 
-pipeline_json = simplejson.dumps(pipeline_thumb)
-script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
-
-#script_thumb = Script.objects.get(pk =  1)
-#script_thumb.pipeline = pipeline_json
-#script_thumb.save()
-
-upload = Event.objects.create(name = 'upload')
-EventRegistration.objects.create(event = upload, listener = script_thumb, workspace = ws)
-
+#pipeline_json = simplejson.dumps(pipeline_thumb)
+#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
+#
+##script_thumb = Script.objects.get(pk =  1)
+##script_thumb.pipeline = pipeline_json
+##script_thumb.save()
+#
+#upload = Event.objects.create(name = 'upload')
+#EventRegistration.objects.create(event = upload, listener = script_thumb, workspace = ws)
+#
 pipeline_json = simplejson.dumps(pipeline_preview)
+#
+#script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws,is_global = True )
 
-script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws,is_global = True )
-
-#script_preview = Script.objects.get(pk =  2)
-#script_preview.pipeline = pipeline_json
-#script_preview.save()
+script_preview = Script.objects.get(pk =  2)
+script_preview.pipeline = pipeline_json
+script_preview.save()
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
-EventRegistration.objects.create(event = upload, listener = script_preview, workspace = ws)
+#EventRegistration.objects.create(event = upload, listener = script_preview, workspace = ws)
 #
-pipeline_json = simplejson.dumps(pipeline_fullscreen)
+#pipeline_json = simplejson.dumps(pipeline_fullscreen)
 
-script_fullscreen = Script.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, is_global = True)
+#script_fullscreen = Script.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, is_global = True)
 #
 ##script_preview = Script.objects.get(pk =  3)
 ##script_preview.pipeline = pipeline_json
@@ -409,5 +418,5 @@ script_fullscreen = Script.objects.create(name = 'fullscreen_generation', descri
 #
 ##upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
-EventRegistration.objects.create(event = upload, listener = script_fullscreen, workspace = ws)
+#EventRegistration.objects.create(event = upload, listener = script_fullscreen, workspace = ws)
 
