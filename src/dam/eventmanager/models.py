@@ -26,9 +26,9 @@ class Event(models.Model):
     name = models.CharField(max_length=128, unique = True)
     
 class EventManager(models.Manager):
-    def notify(self,  event_name,  **parameters):
+    def notify(self,  event_name, workspace, **parameters):
         try:
-            event_registrations = self.filter(event = Event.objects.get(name = event_name))
+            event_registrations = self.filter(event = Event.objects.get(name = event_name), workspace = workspace)
         except Exception, ex:
             logger.debug(ex)
             return
@@ -44,6 +44,7 @@ class EventRegistration(models.Model):
     event = models.ForeignKey('Event')
     content_type = models.ForeignKey(ContentType)
     listener = generic.GenericForeignKey()
+    workspace = models.ForeignKey('workspace.Workspace')
     object_id = models.PositiveIntegerField()
     
     objects = EventManager()

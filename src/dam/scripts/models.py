@@ -21,8 +21,8 @@ from django.contrib.contenttypes import generic
 from upload.views import generate_tasks
 from variants.models import Variant
 from repository.models import Component
+from dam.framework.dam_repository.models import Type
 import logger
-
 
 variant_generation_pipeline = {
     'event': 'upload',
@@ -220,14 +220,21 @@ class Script(models.Model):
     workspace = models.ForeignKey('workspace.Workspace')
     event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
+    media_type = models.ManyToManyField(Type)
+    is_global = models.BooleanField(default = False)
+    
+    def save(self, *args, **kwargs):
+        super(Script, self).save(*args, **kwargs)
+        pipeline = simplejson.loads(self.pipeline)
+        media_type = pipeline['media_type'].keys()
+        
+        media_type = Type.objects.filter(name__in = media_type)
+        self.media_type.remove(*self.media_type.all())
+        self.media_type.add(*media_type)
+         
     
     def __unicode__(self):
         return unicode(self.name)
-    
-    def _validate(self):
-        
-        
-        pass
     
     
     def execute(self, items):
@@ -341,6 +348,7 @@ class SaveAs(BaseAction):
         source= source_variant.get_component(self.workspace, item)                 
         component.source = source
         component.save() 
+        logger.debug('generate task')
         generate_tasks(variant, self.workspace, item)
 
 

@@ -58,9 +58,12 @@ def new_script(request):
 
 
 def edit_script(request):
-    script_id = request.POST['script_id']
+    script_id = request.POST['script']
     script = Script.objects.get(pk = script_id)
     
+    if script.is_global:        
+        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+        
     pipeline_str = request.POST.get('actions')
     if pipeline_str:        
         script.pipeline = pipeline_str
@@ -82,7 +85,14 @@ def edit_script(request):
     script.save()
     return HttpResponse(simplejson.dumps({'success': True}))
         
-        
-        
-         
-             
+
+def delete_script(request):        
+    script_id = request.POST['script']
+    script = Script.objects.get(pk = script_id)
+    if not script.is_global:
+        script.delete()
+    else:
+        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+    return HttpResponse(simplejson.dumps({'success': True}))
+
+    
