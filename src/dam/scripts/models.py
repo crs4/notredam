@@ -355,18 +355,17 @@ class SaveAs(BaseAction):
 
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
-    required_parameters = ['max_dim',  'height','width']
-    def __init__(self, media_type, source_variant, workspace, max_dim = None, height = None, width = None):
+    required_parameters = ['max_height','max_width']
+    def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace)
-        if not max_dim and not height and not width:
-            raise MissingActionParameters('action resize need at least max_dim or height or width')
-        if max_dim:
-            self.parameters['max_dim'] = max_dim
-        if height:
-            self.parameters['max_height'] = height
-        if width:
-            self.parameters['max_width'] = width
+        if media_type == 'video' or media_type == 'movie':
+            self.parameters['video_height'] = max_height
+            self.parameters['video_width'] = max_width
+        else:
+            self.parameters['max_height'] = max_height
+            self.parameters['max_width'] = max_width
                 
+    
 
 class Doc2Image(BaseAction): 
     media_type_supported = ['doc']
@@ -374,7 +373,8 @@ class Doc2Image(BaseAction):
 
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
-    required_parameters = ['watermark_uri',  'watermark_position']
+    required_parameters = ['watermark_filename',  'watermark_top']
+    
     def __init__(self, media_type, **parameters):
         """
         parameters: 
@@ -444,13 +444,14 @@ class AudioEncode(BaseAction):
 
 class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['movie']
-    def __init__(self, media_type, source_variant, workspace, max_dim):
+    def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace)
-        self.parameters['max_dim'] = max_dim
+        self.parameters['max_height'] = max_height
+        self.parameters['max_width'] = max_width
 
-    
-    def get_adapt_params(self):
-        return {'thumb_size':self.parameters['max_dim']}
+#    
+#    def get_adapt_params(self):
+#        return {'thumb_size':(self.parameters['max_height'], self.parameters['max_width'] )}
 
 
 
