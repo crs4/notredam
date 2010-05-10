@@ -185,15 +185,14 @@ def _create_workspace(ws, user):
     audio = Type.objects.get(name = 'audio')
 #    global_variants = Variant.objects.filter(is_global = True,  )
     
-    auto_generated = Variant.objects.filter(is_global = True,  auto_generated = True)
-    sources = Variant.objects.filter(is_global = True,  auto_generated = False,  default_url__isnull = True)
     
     try:
-        pipeline_json = simplejson.dumps(variant_generation_pipeline)
-        script = Script.objects.create(name = 'variant_generation', description = 'variant generation', pipeline = pipeline_json, workspace = ws )
-
+        
+        global_scripts = Script.objects.filter(is_global = True)
         upload = Event.objects.get(name = 'upload')
-        EventRegistration.objects.create(event = upload, listener = script)
+        for glob_script in global_scripts:
+            script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
+            EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
         
         logger.debug('workspace: %s'%ws)
         logger.debug('workspace.name %s'%ws.name)
