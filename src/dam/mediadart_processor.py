@@ -177,7 +177,10 @@ def adapt_resource(component, machine):
         if watermark_filename:
             watermark_corner = (int(vp['pos_x']),int(vp['pos_y']))
             alpha =  vp['alpha']
-            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark_filename=watermark_filename, watermark_corner = watermark_corner, alpha = int(alpha))
+            
+            if alpha is not None:
+                alpha = int(alpha)
+            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark_filename=watermark_filename, watermark_corner = watermark_corner, alpha = alpha)
         else:
             d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
 

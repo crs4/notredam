@@ -29,6 +29,7 @@ import random
 import logger
 
 from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
+import simplejson
 
 def _new_md_id():
     return sha.new(str(random.random())).hexdigest()
@@ -173,7 +174,7 @@ class Component(AbstractComponent):
         keys = params.keys()
         keys.sort()
         for key in keys:
-            params_str += '%s=%s&'%(key,params[key])
+            params_str += '%s=%s&'%(key,simplejson.dumps(params[key]))
         
         self.parameters = params_str
         self.save()
@@ -181,7 +182,14 @@ class Component(AbstractComponent):
     def get_parameters(self):
         logger.debug('self.parameters %s'%self.parameters)
         if self.parameters:
-            return dict(urlparse.parse_qsl(self.parameters))
+            tmp = dict(urlparse.parse_qsl(self.parameters))
+            for key in tmp.keys():
+                logger.debug('key %s value %s'%(key, tmp[key]))
+                try:
+                    tmp[key] = simplejson.loads(tmp[key])
+                except:
+                    pass
+            return tmp
         else:
             return {}
         

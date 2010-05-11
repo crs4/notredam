@@ -49,20 +49,20 @@ def get_script_actions(request):
 
     
 
-#@login_required
-#def get_actions(request):    
-#    actions = {'actions':[]}    
-#    
-#    for action in BaseAction.__subclasses__():
-#      
-#            
-#            actions['actions'].append({                                
-#                    'name':action.__name__.lower(),
-#                    'media_type': action.media_type_supported,
-#                    'parameters': action.required_parameters                    
-#            })
-#                
-#    return HttpResponse(simplejson.dumps(actions))
+@login_required
+def get_actions(request):    
+    actions = {'actions':[]}    
+    
+    for action in BaseAction.__subclasses__():
+      
+            
+            actions['actions'].append({                                
+                    'name':action.__name__.lower(),
+                    'media_type': action.media_type_supported,
+                    'parameters': action.required_parameters                    
+            })
+                
+    return HttpResponse(simplejson.dumps(actions))
          
 def new_script(request):
     pipeline = simple_json.loads(request.POST['actions'])

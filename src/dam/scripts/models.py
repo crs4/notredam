@@ -381,8 +381,9 @@ class Watermark(BaseAction):
     media_type_supported = ['image', 'video']
     required_parameters = ['filename', 'pos_x', 'pos_y', 'alpha']
     
-    def __init__(self, media_type, source_variant, workspace, filename, pos_x, pos_y, alpha):
-        params = {'filename':filename, 'pos_x': int(pos_x), 'pos_y':int(pos_y), 'alpha':int(alpha)}
+    def __init__(self, media_type, source_variant, workspace, filename, pos_x, pos_y, alpha = None):
+        
+        params = {'filename':filename, 'pos_x': pos_x, 'pos_y':pos_y, 'alpha':alpha}
         super(Watermark,  self).__init__(media_type, source_variant, workspace,  **params)
 
         
@@ -437,11 +438,3 @@ class ExtractVideoThumbnail(BaseAction):
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, **params)
     
 
-
-class PresetAction(BaseAction):
-    required_params = ['preset_name']
-    
-
-class AdaptVideo(BaseAction):
-    required_params = ['preset_name']
-       
