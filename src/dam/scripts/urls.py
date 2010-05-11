@@ -6,4 +6,5 @@ urlpatterns = patterns('',
     (r'^new_script/', 'dam.scripts.views.new_script'),
     (r'^edit_script/', 'dam.scripts.views.edit_script'),
     (r'^delete_script/', 'dam.scripts.views.delete_script'),
+    (r'^get_actions/', 'dam.scripts.views.get_actions'),
 )
