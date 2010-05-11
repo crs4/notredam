@@ -301,7 +301,7 @@ class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
     required_parameters = []
-    def __init__(self, media_type, source_variant, workspace):   
+    def __init__(self, media_type, source_variant, workspace, **params):   
         
 #        if media_type not in self.media_type_supported:
 #            raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
@@ -313,8 +313,11 @@ class BaseAction(object):
         logger.debug('self.media_type %s'%self.media_type)
         self.source_variant = source_variant
         self.workspace = workspace
-        self.parameters = {}
-    
+        if params:
+            self.parameters = params
+        else:
+            self.parameters = {}
+            
     def get_adapt_params(self):
         return self.parameters
 
@@ -322,7 +325,7 @@ class BaseAction(object):
 class SaveAs(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
     required_parameters = ['output_variant', 'output_format']
-    def __init__(self, media_type, source_variant, workspace, output_variant, output_format):   
+    def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
         super(SaveAs, self).__init__(media_type, source_variant, workspace)
         
         self.output_variant = output_variant
@@ -365,37 +368,23 @@ class Resize(BaseAction):
             self.parameters['max_height'] = max_height
             self.parameters['max_width'] = max_width
                 
-    
 
-class Doc2Image(BaseAction): 
-    media_type_supported = ['doc']
-    required_parameters = ['max_dim']
-
+class Crop(BaseAction): 
+    media_type_supported = ['image',]
+    required_parameters = ['upperleft_x', 'upperleft_y', 'lowerright_x', 'lowerright_y']
+    def __init__(self, media_type, source_variant, workspace,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
+        params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y }
+        
+        super(Resize, self).__init__(media_type, source_variant, workspace, **params)
+     
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
-    required_parameters = ['watermark_filename',  'watermark_top']
+    required_parameters = ['filename', 'pos_x', 'pos_y', 'alpha']
     
-    def __init__(self, media_type, **parameters):
-        """
-        parameters: 
-            watermark_uri
-            watermark_position(1,2,3,4,5,6,7,8,9)
-        
-        Mediadart API
-        video:
-            watermark_uri
-            watermark_top
-            watermark_left
-            watermark_top_percent
-            watermark_left_percent
-        
-        image:
-            watermark_filename
-            watermark_corner
-        """
-        super(Watermark,  self).__init__(media_type,  **parameters)
-        
-        self.parameters['watermak_filename'] = self.parameters.pop('uri')
+    def __init__(self, media_type, source_variant, workspace, filename, pos_x, pos_y, alpha):
+        params = {'filename':filename, 'pos_x': int(pos_x), 'pos_y':int(pos_y), 'alpha':int(alpha)}
+        super(Watermark,  self).__init__(media_type, source_variant, workspace,  **params)
+
         
 #        TODO: watermark corner
         
@@ -415,7 +404,8 @@ class VideoEncode(BaseAction):
     """default bitrate in kb""" 
     media_type_supported = ['video']
     def __init__(self, media_type, source_variant, workspace, bitrate, framerate):
-        super(VideoEncode, self).__init__(media_type, source_variant, workspace)
+        params = {'bitrate':bitrate,  'framerate': framerate}
+        super(VideoEncode, self).__init__(media_type, source_variant, workspace, **params)
         
        
         if self.parameters.has_key('bitrate'):
@@ -435,9 +425,7 @@ class AudioEncode(BaseAction):
     def __init__(self, media_type, source_variant, workspace, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace)
         
-#            if self.parameters['output_format'] in ['mp4_h264_aaclow', 'aac']:
-#                self.parameters['audio_bitrate'] = int(self.parameters.pop('bitrate')*1000)
-#            else:
+
         self.parameters['audio_bitrate'] = int(bitrate)            
         self.parameters['audio_rate'] = int(rate)
                 
@@ -445,14 +433,9 @@ class AudioEncode(BaseAction):
 class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['movie']
     def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
-        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace)
-        self.parameters['max_height'] = max_height
-        self.parameters['max_width'] = max_width
-
-#    
-#    def get_adapt_params(self):
-#        return {'thumb_size':(self.parameters['max_height'], self.parameters['max_width'] )}
-
+        params = {'max_height': max_height,  'max_width':max_width}
+        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, **params)
+    
 
 
 class PresetAction(BaseAction):

@@ -341,6 +341,16 @@ pipeline_fullscreen = {
                     'max_width': 800,
                 }
                         
+                },{
+                   'type': 'watermark',
+                   'parameters':{
+                    'filename':'14c5c8e95751401db5dd6253817b6a6d.gif',
+                    'pos_x': 20,
+                    'pos_y':20,
+                    'alpha': 0
+                                 
+                    }
+                   
                 },
                 {
                 'type': 'saveas',
@@ -386,35 +396,35 @@ pipeline_fullscreen = {
 
 ws = Workspace.objects.get(pk = 1)
 
-#pipeline_json = simplejson.dumps(pipeline_thumb)
+pipeline_json = simplejson.dumps(pipeline_thumb)
 #script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
 #
-##script_thumb = Script.objects.get(pk =  1)
-##script_thumb.pipeline = pipeline_json
-##script_thumb.save()
+#script_thumb = Script.objects.get(pk =  1)
+#script_thumb.pipeline = pipeline_json
+#script_thumb.save()
 #
 #upload = Event.objects.create(name = 'upload')
 #EventRegistration.objects.create(event = upload, listener = script_thumb, workspace = ws)
 #
-pipeline_json = simplejson.dumps(pipeline_preview)
+#pipeline_json = simplejson.dumps(pipeline_preview)
 #
 #script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws,is_global = True )
 
-script_preview = Script.objects.get(pk =  2)
-script_preview.pipeline = pipeline_json
-script_preview.save()
+#script_preview = Script.objects.get(pk =  2)
+#script_preview.pipeline = pipeline_json
+#script_preview.save()
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
 #EventRegistration.objects.create(event = upload, listener = script_preview, workspace = ws)
 #
-#pipeline_json = simplejson.dumps(pipeline_fullscreen)
+pipeline_json = simplejson.dumps(pipeline_fullscreen)
 
 #script_fullscreen = Script.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, is_global = True)
 #
-##script_preview = Script.objects.get(pk =  3)
-##script_preview.pipeline = pipeline_json
-##script_preview.save()
+script_preview = Script.objects.get(pk =  3)
+script_preview.pipeline = pipeline_json
+script_preview.save()
 #
 ##upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')

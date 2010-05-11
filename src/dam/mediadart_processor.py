@@ -134,7 +134,7 @@ def adapt_resource(component, machine):
         logger.debug('dest_size %s,%s'%dest_size)
       
         cropping = vp.get('cropping', False)
-        watermark_enabled = vp.get('watermarking', False)
+        watermark_filename = vp.get('filename', False)
 
 #         if cropping:
 # 
@@ -174,8 +174,10 @@ def adapt_resource(component, machine):
         
         
         
-        if watermark_enabled:
-            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark='/opt/mediadart/share/logo-s.png')
+        if watermark_filename:
+            watermark_corner = (int(vp['pos_x']),int(vp['pos_y']))
+            alpha =  vp['alpha']
+            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark_filename=watermark_filename, watermark_corner = watermark_corner, alpha = int(alpha))
         else:
             d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
 
