@@ -375,17 +375,40 @@ class Crop(BaseAction):
     def __init__(self, media_type, source_variant, workspace,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
         params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y }
         
-        super(Resize, self).__init__(media_type, source_variant, workspace, **params)
+        super(Crop, self).__init__(media_type, source_variant, workspace, **params)
      
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
-    required_parameters = ['filename', 'pos_x', 'pos_y', 'alpha']
+    required_parameters = ['filename', 'pos_x', 'pos_y', 'pos_x_percent', 'pos_y_percent', 'alpha']
     
-    def __init__(self, media_type, source_variant, workspace, filename, pos_x, pos_y, alpha = None):
+    def __init__(self, media_type, source_variant, workspace, filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
         
-        params = {'filename':filename, 'pos_x': pos_x, 'pos_y':pos_y, 'alpha':alpha}
-        super(Watermark,  self).__init__(media_type, source_variant, workspace,  **params)
-
+        super(Watermark,  self).__init__(media_type, source_variant, workspace)
+        self.parameters['watermark_filename'] = filename
+        
+         
+        
+        if self.media_type == 'image':
+            if not (pos_x and pos_y):
+                raise MissingActionParameters('pos_x or pos_y parameter is missing: they are required')
+            
+            self.parameters['alpha'] = alpha
+            self.parameters['pos_x'] = pos_x
+            self.parameters['pos_y'] = pos_y
+            
+        else:
+            if not ((pos_x and pos_y) or (pos_x_percent and pos_y_percent)):
+                raise MissingActionParameters('no coordinates for watermark are passed (pos_x, pos_y or pos_x_percent, pos_y_percent): they are required')
+            
+            if (pos_x and pos_y):
+                self.parameters['watermark_top'] = pos_x
+                self.parameters['watermark_left'] = pos_y
+            else:
+                self.parameters['watermark_top_percent'] = pos_x_percent
+                self.parameters['watermark_left_percent'] = pos_y_percent
+                
+                
+            
         
 #        TODO: watermark corner
         
