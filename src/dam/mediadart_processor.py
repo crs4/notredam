@@ -121,22 +121,23 @@ def adapt_resource(component, machine):
     orig = component.source 
 
     dest_res_id = new_id()
-        
+    watermark_filename = vp.get('watermark_filename', False)
+    
     if item.type.name == 'image':
- 
-        transcoding_format = vp.get('codec', orig.format) #change to original format
         
+        args ={}
         height = int(vp.get('max_height', -1))        
         width = int(vp.get('max_width', -1))
         
-        dest_size = (width, height)
+        args['dest_size'] = (width, height)
         
-        logger.debug('dest_size %s,%s'%dest_size)
-      
-        cropping = vp.get('cropping', False)
-        watermark_filename = vp.get('filename', False)
+        cropping  = vp.get('upperleft_x', False)
+        if cropping:
+            args['crop_box'] = (vp['upperleft_x'], vp['upperleft_y'], vp['lowerright_x'], vp['lowerright_y'])
+        
+        
 
-#         if cropping:
+#        if cropping:
 # 
 #             extractors = {'image': 'image_basic', 'movie': 'video_basic', 'audio': 'audio_basic', 'doc': ''}
 # 
@@ -168,21 +169,28 @@ def adapt_resource(component, machine):
 #                 (res_id, job_id) = yield m.adapt_image(transcoding_format, src_x = src_x, src_y = src_y, src_width = src_width, src_height = src_height, dest_width = crop_dim, dest_height = crop_dim, output_res_id=component.ID)
 #                 
 
-#         else:
+        
 
+        transcoding_format = vp.get('codec', orig.format) #change to original format
         dest_res_id = dest_res_id + '.' + transcoding_format
         
         
         
         if watermark_filename:
-            watermark_corner = (int(vp['pos_x']),int(vp['pos_y']))
-            alpha =  vp['alpha']
+            args['watermark_filename'] = watermark_filename
+            args['watermark_corner'] = (int(vp['pos_x']),int(vp['pos_y']))
             
-            if alpha is not None:
-                alpha = int(alpha)
-            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark_filename=watermark_filename, watermark_corner = watermark_corner, alpha = alpha)
-        else:
-            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
+            
+            
+            if vp['alpha'] is not None:
+                vp['alpha']  = int(vp['alpha'])
+                
+            args['alpha'] = vp['alpha']
+#            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark_filename=watermark_filename, watermark_corner = watermark_corner, alpha = alpha)
+#        else:
+#            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
+
+        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
     elif item.type.name == 'movie':
         
@@ -214,13 +222,24 @@ def adapt_resource(component, machine):
                     param_dict[key] = int(val)
                 else:
                     param_dict[key] = val
-                
-#             if  vp.watermarking:
-#                 param_dict['watermark_uri'] = 'mediadart://' + vp.watermark_uri
-#                 param_dict.update(vp.get_watermarking_params())
-#                 #param_dict['watermark_top'] = 10
-#                 #param_dict['watermark_left'] = 10
-#                 yield utils.wait_for_resource(vp.watermark_uri, 5)
+            
+            
+#            if watermark_filename:
+#                tmp = vp.get('watermark_top')
+#                if tmp:
+#                    param_dictwatermark_top = tmp
+#                    watermark_left = vp.get('watermark_left')
+#                else:
+#                    watermark_top_percent = vp.get('watermark_top_percent')
+#                    watermark_left_percent = vp.get('watermark_left_percent')
+#                
+#            
+#            if  vp.watermarking:
+#             param_dict['watermark_uri'] = 'mediadart://' + vp.watermark_uri
+#             param_dict.update(vp.get_watermarking_params())
+             #param_dict['watermark_top'] = 10
+             #param_dict['watermark_left'] = 10
+#             yield utils.wait_for_resource(vp.watermark_uri, 5)
                 
             d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
             
