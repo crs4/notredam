@@ -355,16 +355,16 @@ pipeline_fullscreen = {
                 }
                         
                 },
-                {
-                 'type': 'crop',
-                 'parameters':{
-                    'upperleft_x': 20, 
-                    'upperleft_y':20,
-                    'lowerright_x':2000,
-                    'lowerright_y': 2000           
-                }
-                 
-                 },
+#                {
+#                 'type': 'crop',
+#                 'parameters':{
+#                    'upperleft_x': 20, 
+#                    'upperleft_y':20,
+#                    'lowerright_x':2000,
+#                    'lowerright_y': 2000           
+#                }
+#                 
+#                 },
                 
 #                {
 #                   'type': 'watermark',
@@ -381,7 +381,7 @@ pipeline_fullscreen = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'fullscreen'
+                    'output_variant': 'prova'
                 }
                         
             }    
@@ -421,7 +421,7 @@ pipeline_fullscreen = {
 
 ws = Workspace.objects.get(pk = 1)
 
-pipeline_json = simplejson.dumps(pipeline_thumb)
+#pipeline_json = simplejson.dumps(pipeline_thumb)
 #script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
 #
 #script_thumb = Script.objects.get(pk =  1)

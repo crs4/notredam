@@ -335,9 +335,8 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True),  media_type = item.type,  default_url__isnull = True).distinct()
-
-    print item_variants
+    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True),  media_type = item.type).distinct()
+    logger.debug('item_variants %s'%item_variants)
 
     now = time.time()
     resp = {'variants':[]}
@@ -371,7 +370,10 @@ def get_variants(request):
             
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
-            pass
+            work_in_progress =  True
+            resp['variants'].append({ 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
+            continue
+            
             #logger.exception(ex)
 #            pk = None
 #            prefs = v.variantassociation_set.get(workspace = workspace).preferences
