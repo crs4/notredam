@@ -360,23 +360,23 @@ pipeline_fullscreen = {
                  'parameters':{
                     'upperleft_x': 20, 
                     'upperleft_y':20,
-                    'lowerright_x':200,
-                    'lowerright_y': 200           
+                    'lowerright_x':2000,
+                    'lowerright_y': 2000           
                 }
                  
                  },
                 
-                {
-                   'type': 'watermark',
-                   'parameters':{
-                    'filename':'14c5c8e95751401db5dd6253817b6a6d.gif',
-                    'pos_x': 20,
-                    'pos_y':20,
-                    'alpha': 0
-                                 
-                    }
-                   
-                },
+#                {
+#                   'type': 'watermark',
+#                   'parameters':{
+#                    'filename':'14c5c8e95751401db5dd6253817b6a6d.gif',
+#                    'pos_x': 20,
+#                    'pos_y':20,
+#                    'alpha': 255
+#                                 
+#                    }
+#                   
+#                },
                 {
                 'type': 'saveas',
                 'parameters':{
