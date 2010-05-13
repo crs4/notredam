@@ -217,7 +217,7 @@ def get_variants_list(request):
     if media_type == 'video': #sigh
         media_type = 'movie'
         
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'),  editable = True)
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'))
     
     
     resp = {'variants':[]}
