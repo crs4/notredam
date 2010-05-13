@@ -384,7 +384,28 @@ pipeline_fullscreen = {
                     'output_variant': 'prova'
                 }
                         
-            }    
+            },
+                {
+                 'type': 'crop',
+                 'parameters':{
+                    'upperleft_x': 20, 
+                    'upperleft_y':20,
+                    'lowerright_x':200,
+                    'lowerright_y': 200           
+                }
+                 
+                 },
+                 {
+                'type': 'saveas',
+                'parameters':{
+                    'output_format': 'jpeg',
+                    'output_variant': 'fullscreen'
+                }
+                        
+            }
+                 
+                
+    
         ],
                  
                  

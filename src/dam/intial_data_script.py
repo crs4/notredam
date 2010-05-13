@@ -31,8 +31,6 @@ orig = Variant.objects.create(name = 'original', caption = 'Original',  is_globa
 edited = Variant.objects.create(name = 'edited', caption = 'edited',  is_global = True, auto_generated = False,   media_type = audio, default_rank = 1)
 
 
-thumb  = Variant.objects.create(name = 'thumbnail', caption = 'Thumbnail',  media_type = audio, auto_generated = False,  is_global = True,  default_url = '/files/images/audio_thumbnail.jpg',  editable = False, dest_media_type = image)
-
 
 preview = Variant.objects.create(name = "preview", media_type = audio,  is_global = True)
 
