@@ -928,16 +928,45 @@ function variants_prefs(){
     	});
 
  
-    	console.log(list_variant);
+    	function select_type(){
+    		
+    		
+    	};
     	return new Ext.Panel({
     		title: media_type,
     		layout:'fit',
     		items:[list_variant],
-    		tbar:[{
+    		tbar:[
+    		      	'Type: ',
+    		      	{
+    		      		text: 'Generated',
+    		      		menu:[
+    		      		      new Ext.menu.CheckItem({    		      		    	  
+    		      		    	  text: 'Generated',
+    		      		    	  checked: true,
+    		      		    	  group: 'variant_type',
+    		      		    	  handler: 
+    		      		    		  
+    		      		    		  
+    		      		      }),
+    		      			new Ext.menu.CheckItem({
+    		      				text: 'Source',
+    		      				group: 'variant_type'
+    		      			})
+    		      		]
+    		      		
+    		      	},
+    		      	
+    		      	'-',
+    		      {
     			text: 'Add'},
     			{
+    			text: 'Rename'
+    		},
+    		{
     			text: 'Remove'
-    		}]
+    		}
+    		]
     		
     		
     	});
