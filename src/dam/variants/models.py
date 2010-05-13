@@ -42,7 +42,6 @@ class Variant(models.Model):
     dest_media_type = models.ForeignKey(Type, null = True, blank = True, related_name = 'dest_media_type')
     auto_generated = models.BooleanField(default=True)
     shared = models.BooleanField(default= False) #the same component will be shared through ws
-    default_url = models.CharField(max_length=100, null = True, blank = True) #for static variant, i.e. thumbnail for audio ;)
     default_rank = models.IntegerField(null = True, blank = True) #not null for imported variants. variant with rank 1 will be used for generating  the others
     resizable = models.BooleanField(default=True)
 #    TODO foreign key to ws

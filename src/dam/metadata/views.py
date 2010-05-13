@@ -95,7 +95,7 @@ def get_variants_menu_list(request):
     """
     workspace = request.session['workspace']
     
-    vas = Variant.objects.filter(workspace = workspace, default_url__isnull = True, editable = True).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
+    vas = Variant.objects.filter(workspace = workspace, editable = True).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
     
     vas = set(vas)
     

@@ -193,7 +193,7 @@ def get_variant_sources(request):
         resp['variants'].append({'pk': orig.pk,  'name': orig.name,  'rank': 1,  'original':  True,   'is_global': True})
 
     
-    available_sources =  Variant.objects.filter(auto_generated = False,  default_url__isnull = True, workspace = workspace, media_type__name = media_type)
+    available_sources =  Variant.objects.filter(auto_generated = False, workspace = workspace, media_type__name = media_type)
 
     if variant:
         available_sources = available_sources.exclude(pk__in = source_ids)
@@ -217,7 +217,7 @@ def get_variants_list(request):
     if media_type == 'video': #sigh
         media_type = 'movie'
         
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'), default_url__isnull = True, editable = True)
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'),  editable = True)
     
     
     resp = {'variants':[]}
@@ -440,11 +440,11 @@ def save_sources(request):
                         
             else:
                 logger.debug('creating variant %s'%v['name'])
-                variant = Variant.objects.create(name = v['name'],  is_global = False,  workspace = workspace, auto_generated = False,  media_type = Type.objects.get(name= media_type),  default_url = None)
+                variant = Variant.objects.create(name = v['name'],  is_global = False,  workspace = workspace, auto_generated = False,  media_type = Type.objects.get(name= media_type))
 #                VariantAssociation.objects.create(variant= variant,  workspace = workspace)
                 existing_variant_ids.append(variant.pk)
                 
-        variant_to_delete = Variant.objects.filter(is_global = False,  auto_generated = False,  default_url = None,  workspace = workspace).exclude(pk__in = existing_variant_ids)
+        variant_to_delete = Variant.objects.filter(is_global = False,  auto_generated = False,  workspace = workspace).exclude(pk__in = existing_variant_ids)
         variant_to_delete.delete()
         
     except Exception,  ex:
