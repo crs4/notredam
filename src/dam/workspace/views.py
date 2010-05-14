@@ -49,7 +49,7 @@ from dam.preferences.models import DAMComponentSetting
 from dam.preferences.views import get_user_setting, get_user_setting_by_level
 from dam.metadata.models import MetadataProperty
 from dam.metadata.views import get_metadata_default_language
-from dam.scripts.models import variant_generation_pipeline, Script
+from dam.scripts.models import Script, ScriptDefault 
 from dam.eventmanager.models import Event, EventRegistration
 
 from django.utils.datastructures import SortedDict
@@ -188,7 +188,7 @@ def _create_workspace(ws, user):
     
     try:
         
-        global_scripts = Script.objects.filter(is_global = True)
+        global_scripts = ScriptDefault.objects.all()
         upload = Event.objects.get(name = 'upload')
         for glob_script in global_scripts:
             script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )

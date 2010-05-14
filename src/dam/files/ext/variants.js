@@ -945,7 +945,7 @@ function variants_prefs(){
     		      		    	  text: 'Generated',
     		      		    	  checked: true,
     		      		    	  group: 'variant_type',
-    		      		    	  handler: 
+    		      		    	  
     		      		    		  
     		      		    		  
     		      		      }),
