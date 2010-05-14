@@ -22,6 +22,7 @@ from upload.views import generate_tasks
 from variants.models import Variant
 from repository.models import Component
 from dam.framework.dam_repository.models import Type
+from dam.metadata.views import save_variants_rights
 import logger
 
 variant_generation_pipeline = {
@@ -212,6 +213,10 @@ class MediaTypeNotSupported(ScriptException):
 class PresetUnknown(ScriptException):
     pass
 
+class ScriptDefault(models.Model):
+    name = models.CharField(max_length= 50)
+    description = models.CharField(max_length= 200)
+    pipeline = models.TextField()
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
@@ -296,7 +301,6 @@ class Script(models.Model):
         unique_together = ('name', 'workspace')
  
     
-    
 class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
@@ -320,7 +324,16 @@ class BaseAction(object):
             
     def get_adapt_params(self):
         return self.parameters
+        
 
+class SetRights(BaseAction):
+    media_type_supported = ['image', 'video',  'doc', 'audio']
+    required_parameters = ['rights']
+    def __init__(self, media_type, source_variant, workspace, rights):  
+        super(SetRights, self).__init__(media_type, source_variant, workspace,  **{'rights':rights})
+        
+        
+        
 
 class SaveAs(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
@@ -331,12 +344,19 @@ class SaveAs(BaseAction):
         self.output_variant = output_variant
         self.output_format = output_format
     
-    def execute(self, item, adapt_parameters):     
+    def execute(self, item, adapt_parameters):  
+        if adapt_parameters.has_key('rights'):
+            rights = adapt_parameters.pop('rights')
+        else:
+            rights = None
+        logger.debug('rights %s'%rights)
+            
         logger.debug('self.output_variant %s'%self.output_variant)
         logger.debug('self.media_type %s'%self.media_type)
         variant = Variant.objects.get(name = self.output_variant, media_type__name = self.media_type)          
         
         component = variant.get_component(self.workspace,  item)    
+        
          
         if self.media_type == 'movie' or self.media_type == 'audio':
             adapt_parameters['preset_name'] = self.output_format
@@ -352,6 +372,7 @@ class SaveAs(BaseAction):
         component.source = source
         component.save() 
         logger.debug('generate task')
+#        save_variants_rights(component , self.workspace,  'reserved' )
         generate_tasks(variant, self.workspace, item)
 
 
