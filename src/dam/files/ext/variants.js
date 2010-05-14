@@ -913,9 +913,10 @@ function variants_prefs(){
     	    fields: ['pk','name', 'is_global']
 
     	});
-    	var list_variant = new Ext.grid.GridPanel({
+    	var list_variant = new Ext.grid.EditorGridPanel({
 //    		layout:'fit',
     	    store: store,
+            id: 'variant_grid_' + media_type,
     	    hideHeaders: true,
     	    viewConfig:{
     	    	forceFit:true
@@ -923,35 +924,45 @@ function variants_prefs(){
     	    columns: [{
     	        header: 'variant',    	       
     	        dataIndex: 'name',
+                editable: true,
+                editor:  new Ext.form.TextField()
     	        
-    	    }]
+    	    }],
+            listeners: {
+                afteredit: function(e){
+//                    if (e.record.data.pk)
+//                        Ext.Ajax.request();
+                }
+            }
     	});
 
- 
-    	function select_type(){
-    		
-    		
-    	};
-    	return new Ext.Panel({
+        var type_id = 'variant_type_' + media_type;
+    	function set_variant_type_name(name){
+            Ext.getCmp(type_id).setText(name)
+        };
+    	
+        return new Ext.Panel({
     		title: media_type,
     		layout:'fit',
     		items:[list_variant],
     		tbar:[
     		      	'Type: ',
     		      	{
+                        id: type_id,
     		      		text: 'Generated',
     		      		menu:[
     		      		      new Ext.menu.CheckItem({    		      		    	  
-    		      		    	  text: 'Generated',
-    		      		    	  checked: true,
-    		      		    	  group: 'variant_type',
-    		      		    	  
+                                text: 'Generated',
+                                checked: true,
+                                group: 'variant_type',
+                                handler: function(){set_variant_type_name(this.text)}
     		      		    		  
     		      		    		  
     		      		      }),
     		      			new Ext.menu.CheckItem({
     		      				text: 'Source',
-    		      				group: 'variant_type'
+    		      				group: 'variant_type',
+                                handler: function(){set_variant_type_name(this.text)}
     		      			})
     		      		]
     		      		
@@ -959,7 +970,12 @@ function variants_prefs(){
     		      	
     		      	'-',
     		      {
-    			text: 'Add'},
+                    text: 'Add',
+                    handler: function(){
+                        list_variant.getStore().loadData({variants: [{pk: null, name: 'new variant'}]}, true);
+                        list_variant.startEditing(list_variant.getStore().getCount() -1,0);
+                    }
+                      },
     			{
     			text: 'Rename'
     		},
