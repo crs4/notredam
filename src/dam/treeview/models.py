@@ -24,6 +24,7 @@ from django.contrib.auth.models import User
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item, Component
 from dam.framework.dam_repository.models import Type
+from dam.framework.dam_tree.models import AbstractNode
 
 import logger
 
@@ -38,20 +39,10 @@ class NodeManager(models.Manager):
             nodes = Node.objects.filter(label = labels.pop(),  type = type)
             for node in nodes:
                 node_path = _to_path(node.get_ancestors().exclude(depth = 0)) 
-                logger.debug('path %s'%node_path)                
                 if node_path == path:
                     return node           
         
         return None
-        
-        for label in labels:
-            nodes = self.filter(label = label)
-            if nodes.count() == 1:
-                return nodes[0]
-            elif nodes.count() == 0:
-                return None
-            else:
-                nodes
         
     def copy_tree(self, root, new_root, ):
         new_owner = new_root.content_object
@@ -85,7 +76,6 @@ class NodeManager(models.Manager):
 #        print nodes
         return nodes
    
-
 class Category(models.Model):
     label = models.CharField(max_length= 200)
     position = models.IntegerField(unique = True)
@@ -97,16 +87,7 @@ class Category(models.Model):
     def __unicode__(self):
         return self.label
 
-
-class Node(models.Model):
-    label = models.CharField(max_length= 200)
-    parent    = models.ForeignKey('self', related_name="children", blank=True, null=True)
-    depth  = models.IntegerField(default=0)
-    type = models.CharField(max_length= 25)
-    cls = models.CharField(max_length= 25)
-    
-    lft = models.PositiveIntegerField(editable=False,default=1)
-    rgt  = models.PositiveIntegerField(editable=False,default=1)
+class Node(AbstractNode):
     is_draggable = models.BooleanField(default = True)
     is_drop_target= models.BooleanField(default = True)
     editable = models.BooleanField(default = True)
@@ -115,31 +96,7 @@ class Node(models.Model):
     items = models.ManyToManyField('repository.Item')
     metadata_schema = models.ManyToManyField('metadata.MetadataProperty',  through = 'NodeMetadataAssociation',  blank=True, null=True)
     associate_ancestors = models.BooleanField(default = False)
-#    metadata_schema = models.ManyToManyField('metadata.MetadataProperty')
-    creation_date = models.DateField(auto_now_add=True)
     
-    def get_path(self):
-        path = self.type + ':/'
-        ancestors = self.get_ancestors()
-        for anc in ancestors:
-            if anc.depth == 0:
-                continue
-            path+=str(anc) + '/'
-        return path
-    
-    def rebuild_tree(self, left):
-        logger.debug('rebuild_tree')
-        right = left+1
-        for c in Node.objects.filter(parent=self,).order_by('depth'):
-            right = c.rebuild_tree(right)
-        
-        self.lft = left
-        self.rgt = right
-#        logger.debug('self.lft %s self.right %s' %(left,  right))
-        
-        super(Node, self).save()
-        return right+1
-        
     def get_ancestors(self):
         nodes = Node.objects.filter(type = self.type)
         nodes = nodes.extra(where=['lft <=%s and rgt>=%s', 'workspace_id = %s', ], params=[self.lft, self.rgt, self.workspace.pk]).order_by('lft')
@@ -171,7 +128,8 @@ class Node(models.Model):
         else:
 #            just creating the node
             rebuild_tree = True
-        super(Node, self).save(*args,  **kwargs)
+            
+        models.Model.save(self, *args, **kwargs)
         
         if rebuild_tree:
             try:
@@ -182,23 +140,11 @@ class Node(models.Model):
                 logger.exception(ex)
                 raise ex
                 
-    def __str__(self):
-        return unicode(self.label)
-        
     class Meta:        
-        db_table = 'node'    
-    
-    def has_child(self):
-        childrens=self.get_branch()
-        if len(childrens) > 1:
-            has_child = True
-        else:
-            has_child = False
-        return has_child    
-    
+        db_table = 'node'        
 
 class NodeMetadataAssociation(models.Model):
-    node = models.ForeignKey(Node, )
+    node = models.ForeignKey(Node)
     metadata_schema = models.ForeignKey('metadata.MetadataProperty')
     value = models.CharField(max_length= 100)
     

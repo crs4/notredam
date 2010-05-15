@@ -17,8 +17,6 @@
 #########################################################################
 
 from django.db import models
-from django.contrib.contenttypes import generic
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
 class Type(models.Model):
@@ -30,6 +28,19 @@ class Type(models.Model):
     def __str__(self):
         return self.name
 
+class ItemManager(models.Manager):
+
+    """ Item Manager """
+
+    def get_items_owned_by(self, user):
+        return self.filter(owner = user)
+
+    def get_items_uploaded_by(self, user):
+        return self.filter(uploader = user)
+        
+    def get_items_by_type(self, type):
+        return self.filter(type = type)
+
 class AbstractItem(models.Model):
 
     """ Base abstract model describing items."""
@@ -39,15 +50,16 @@ class AbstractItem(models.Model):
     type =  models.ForeignKey(Type)
     creation_time = models.DateTimeField(auto_now_add = True)
     update_time = models.DateTimeField(auto_now = True)
+    objects = ItemManager()
 
     class Meta:
         abstract = True
-                                
+        
 class AbstractComponent(models.Model):
 
     """ Base abstract model describing components."""
 
-    owner =  models.ForeignKey(User, null=True, blank=True)
+    owner =  models.ForeignKey(User, related_name='owned_components', null=True, blank=True)
     type =  models.ForeignKey(Type)
     creation_time = models.DateTimeField(auto_now = True)
     update_time = models.DateTimeField(auto_now = True)

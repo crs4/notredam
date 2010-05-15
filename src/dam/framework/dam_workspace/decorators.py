@@ -23,7 +23,10 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 
 def membership_required(func):
-    def check(request, *args, **kwargs):			
+    """
+    Check if the current logged user is a member of the given workspace
+    """
+    def check(request, *args, **kwargs):
         user =  User.objects.get(pk = request.session['_auth_user_id'])
         ws_id = args[0]
         workspace = Workspace.objects.get(pk=ws_id)
@@ -34,6 +37,10 @@ def membership_required(func):
     return check
 
 def permission_required(permission,  ws_in_session = True):	
+    """
+    Check if the current logged user has the required permission
+    """
+
     def check_call(func):
         		
         def check(request, *args, **kwargs):	
