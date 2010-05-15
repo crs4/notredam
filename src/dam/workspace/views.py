@@ -71,8 +71,7 @@ def _create_workspace(ws, user):
     image = Type.objects.get(name = 'image')
     movie = Type.objects.get(name = 'movie')
     audio = Type.objects.get(name = 'audio')
-#    global_variants = Variant.objects.filter(is_global = True,  )
-    
+#    global_variants = Variant.objects.filter(is_global = True)
     
     try:
         
@@ -110,38 +109,30 @@ def create_workspace(request):
     	return _admin_workspace(request,  None)
 
 def _admin_workspace(request,  ws):
-    user = User.objects.get(pk=request.session['_auth_user_id'])    
+    user = User.objects.get(pk=request.session['_auth_user_id'])
     logger.debug('ws %s'%ws)
     if ws == None:
         ws = Workspace()
-
     
     form = AdminWorkspaceForm(ws, request.POST)
-    logger.debug(request.POST)
     if form.is_valid():
         name = form.cleaned_data['name']
         description = form.cleaned_data['description']
-        logger.debug('form.cleaned_data %s'%form.cleaned_data)
-        ws.name = name 
-        ws.description = description             
+        ws.name = name
+        ws.description = description
         
         if ws.pk == None:
 #                orig = Variant.objects.get(name = 'original',  is_global = True)
 #                ws.default_source_variant = orig
-            ws.save()                           
-            ws = _create_workspace(ws, user)            
+            ws.save()
+            ws = _create_workspace(ws, user)
         else:
-            ws.save()           
+            ws.save()
         
         resp = simplejson.dumps({'success': True,  'ws_id':ws.pk})
     else:
-        logger.debug('form invalid')
-        logged.debug(form._errors)        
         resp = simplejson.dumps({'failure': True})
 
-#            TODO: form invalid
-
-    
     return HttpResponse(resp)
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):

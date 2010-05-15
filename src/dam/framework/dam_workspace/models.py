@@ -23,30 +23,54 @@ from django.db.models import Q
 from operator import and_, or_
 
 class PermissionManager(models.Manager):
+    """
+    
+    """
     def with_permissions(self, user, permissions):
         wss_1= super(PermissionManager,  self).filter(workspacepermissionassociation__permission__in = permissions,  workspacepermissionassociation__users = user)        
         wss_2 = super(PermissionManager,  self).filter(workspacepermissionsgroup__permissions__in = permissions,  workspacepermissionsgroup__users = user)
         wss = reduce(or_, [wss_1,  wss_2]).distinct()
         return wss
 
+class WorkspaceManager(models.Manager):
+    """
+    
+    """
+    def create_workspace(self, name, description, creator):
+        ws = self.model(None, name=name, description=description, creator=creator)
+        ws.save()
+
+        try:
+            permission = WorkspacePermission.objects.get(name='admin')
+            wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = permission)[0]
+            wspa.users.add(creator)
+            ws.members.add(creator)
+        except:
+            pass
+            
+        return ws
+
 class Workspace(models.Model):
-    name = models.CharField(max_length=512)
+    """
+
+    """
+    name = models.CharField(max_length=128)
     description = models.CharField(max_length=512)
-    creator = models.ForeignKey(User,  blank = True,  null = True)
-    members = models.ManyToManyField(User, related_name="workspaces",  blank=True)    
+    creator = models.ForeignKey(User)
+    members = models.ManyToManyField(User, related_name="workspaces")    
     creation_date = models.DateTimeField(auto_now_add = True)
     last_update = models.DateTimeField(auto_now = True)
-    objects = models.Manager()
+    objects = WorkspaceManager()
     permissions = PermissionManager()
 
     def __unicode__(self):
         return "%s" % (self.name)
         
+    def get_members(self):
+        return self.members.all()
+        
     def has_member(self, user):
-        if user in self.members.all():
-            return True
-        else:
-            return False
+        return user in self.get_members()
 
     def has_permission(self, user, permission):
         return self.get_permissions(user).filter(Q(codename = 'admin') | Q(codename = permission)).count() > 0
