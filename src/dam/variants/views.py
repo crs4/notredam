@@ -51,7 +51,7 @@ def new_variant(request):
     is_source = request.POST.get('is_source',  False)
     logger.debug('is_source %s'%is_source)
     
-    prefs = {'image': ImagePreferences,  'audio': AudioPreferences,  'movie': VideoPreferences}
+    prefs = {'image': ImagePreferences,  'audio': AudioPreferences,  'video': VideoPreferences}
     v = Variant.objects.create(name = name,  workspace = workspace, media_type = Type.objects.get(name = media_type),  is_global = False,  auto_generated =  not is_source)
     
     return HttpResponse(simplejson.dumps({'success': True}))
@@ -212,8 +212,6 @@ def get_variants_list(request):
     media_type = request.POST['media_type']
     type = request.POST.get('type',  'generated')
     logger.debug('type %s'%type)
-    if media_type == 'video': #sigh
-        media_type = 'movie'
         
     vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'))
     
@@ -230,7 +228,7 @@ def get_variants_list(request):
 def get_variant_prefs(request):
     workspace = request.session['workspace']
     variant_id = request.POST.get('variant_id')
-    form_classes = {'image':ImagePreferencesForm,  'doc': DocPreferencesForm,  'movie': VideoPreferencesForm,  'audio': AudioPreferencesForm}
+    form_classes = {'image':ImagePreferencesForm,  'doc': DocPreferencesForm,  'video': VideoPreferencesForm,  'audio': AudioPreferencesForm}
     if variant_id:
         pass
 #        va = VariantAssociation.objects.get(variant__pk = variant_id,  workspace = workspace)

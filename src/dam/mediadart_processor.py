@@ -192,7 +192,7 @@ def adapt_resource(component, machine):
 
         d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
-    elif item.type.name == 'movie':
+    elif item.type.name == 'video':
         
         logger.debug('component.variant.pk %s'%component.variant.pk)
         logger.debug('component.variant %s'%component.variant)
@@ -284,7 +284,7 @@ def extract_features(component, machine):
         
     logger.debug("[FeatureExtraction.execute] component %s" % component.ID)
 
-    extractors = {'image': 'image_basic', 'movie': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
+    extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
 
     extractor_proxy = Proxy('FeatureExtractor')
 
@@ -391,7 +391,7 @@ def save_features(c, features):
 
     xmp_metadata_video.update(xmp_metadata_audio)
 
-    xmp_metadata = {'image': xmp_metadata_image, 'movie': xmp_metadata_video, 'audio': xmp_metadata_audio, 'doc': xmp_metadata_doc}
+    xmp_metadata = {'image': xmp_metadata_image, 'video': xmp_metadata_video, 'audio': xmp_metadata_audio, 'doc': xmp_metadata_doc}
 
     metadata_list = []
     delete_list = []

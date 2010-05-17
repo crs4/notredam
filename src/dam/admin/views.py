@@ -3,7 +3,7 @@ from django.utils import simplejson
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
 from dam.framework.dam_repository.models import Type
@@ -295,7 +295,7 @@ def damadmin_get_xmp_list(request):
     for p in props: 
         media_types = p.media_type.all().values_list('name', flat=True)
         schema_type = _get_schema_type(p)        
-        prop_dict = {'id':p.id, 'namespace_name': p.namespace.name, 'name':p.field_name, 'keyword_target': p.keyword_target, 'xmp_type': p.type, 'variant': p.is_variant, 'editable': p.editable, 'searchable':p.is_searchable,  'caption': p.caption, 'description': p.description, 'namespace': p.namespace.id, 'type': schema_type, 'image': 'image' in media_types, 'video': 'movie' in media_types, 'doc': 'doc' in media_types, 'audio': 'audio' in media_types}
+        prop_dict = {'id':p.id, 'namespace_name': p.namespace.name, 'name':p.field_name, 'keyword_target': p.keyword_target, 'xmp_type': p.type, 'variant': p.is_variant, 'editable': p.editable, 'searchable':p.is_searchable,  'caption': p.caption, 'description': p.description, 'namespace': p.namespace.id, 'type': schema_type, 'image': 'image' in media_types, 'video': 'video' in media_types, 'doc': 'doc' in media_types, 'audio': 'audio' in media_types}
         is_array = _get_is_array(p)
         is_choice = _get_is_choice(p)
         is_target = _get_is_target(p)
@@ -503,8 +503,6 @@ def damadmin_save_user(request):
 
     else:
 
-        from dam.workspace.views import _create_workspace
-
         user = User.objects.create_user(username, email, password)
 
         add_ws_permission = Permission.objects.get(codename='add_workspace')
@@ -512,8 +510,7 @@ def damadmin_save_user(request):
         user.user_permissions.add(add_ws_permission)
         user.save()
 
-        ws = Workspace(name=user.username)
-        _create_workspace(ws, user)
+        ws = Workspace.objects.create_workspace(user.username, '', user)
 
     user.first_name = first_name
     user.last_name = last_name
@@ -640,11 +637,9 @@ def damadmin_save_ws(request):
         ws.save()
     else:
 
-        from dam.workspace.views import _create_workspace
 
         user = User.objects.get(pk=creator)
-        ws = Workspace(name=ws_name, description=description)
-        _create_workspace(ws, user)
+        ws = Workspace.objects.create_workspace(user.username, '', user)
     
     for p in permissions:
         perms_list = p['permissions']

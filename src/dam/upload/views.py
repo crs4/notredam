@@ -237,7 +237,7 @@ def get_metadata_upload(request):
 def guess_media_type (file):
 
     """
-    It tries to guess the media type of the uploaded file (image, movie, audio or doc)
+    It tries to guess the media type of the uploaded file (image, video, audio or doc)
     """
     
 #    mimetypes.init()
@@ -253,8 +253,6 @@ def guess_media_type (file):
     
     try:
         media_type = media_type[0][:media_type[0].find("/")]
-        if media_type == 'video':
-            media_type = 'movie'
         
 #        if media_type == 'application':
 #            media_type = 'doc'        

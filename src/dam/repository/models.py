@@ -130,12 +130,16 @@ class Item(AbstractItem):
         else:
             return StateItemAssociation.get(item=self, workspace=workspace)
 
-    def get_variants(self,  workspace):
+    def get_variant(self, workspace, variant):
+        from dam.variants.models import Variant
+        return self.component_set.get(variant = variant, workspace = workspace)
+
+    def get_variants(self, workspace):
         from dam.variants.models import Variant
         return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(workspace__pk = workspace.pk), media_type = self.type),  workspace = workspace)
 
     def keywords(self):    
-        self.node_set.filter(type = 'keyword' ).values('id','label')
+        self.node_set.filter(type = 'keyword').values('id','label')
 
     def uploaded_by(self):
         try:

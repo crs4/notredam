@@ -61,45 +61,10 @@ def admin_workspace(request,  ws_id):
     ws = Workspace.objects.get(pk = ws_id)
     return _admin_workspace(request,  ws)
 
-def _create_workspace(ws, user):
-    ws.creator = user 
-    ws.save() 
-    
-    wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = WorkspacePermission.objects.get(name='admin'))[0]
-    wspa.users.add(user)
-    ws.members.add(user)
-    image = Type.objects.get(name = 'image')
-    movie = Type.objects.get(name = 'movie')
-    audio = Type.objects.get(name = 'audio')
-#    global_variants = Variant.objects.filter(is_global = True)
-    
-    try:
-        
-        global_scripts = ScriptDefault.objects.all()
-        upload = Event.objects.get(name = 'upload')
-        for glob_script in global_scripts:
-            script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
-            EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
-        
-        root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'keyword',  cls = 'keyword')
-        col_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'collection')
-        inbox_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'inbox')
-        uploaded = Node.objects.create(parent = inbox_root, depth = 1, label = 'Uploaded', workspace = ws, editable = False,  type = 'inbox')
-        imported = Node.objects.create(parent = inbox_root, depth = 1, label = 'Imported', workspace = ws, editable = False, type = 'inbox')
-
-        for cat in Category.objects.all():
-            Node.objects.create(workspace = ws, label = cat.label, depth = 1, type = root.type, parent = root,  is_drop_target = cat.is_drop_target,  is_draggable = cat.is_draggable,  editable = cat.editable,  cls = cat.cls)
-#        return render_to_response('test_refactoring.html', RequestContext(request,{'ws':ws,  'keywords_root': keywords_root}))
-    except Exception,  ex:
-        logger.exception(ex)
-        raise ex
-    
-    return ws
-
 @login_required 
 def create_workspace(request):
     user = User.objects.get(pk=request.session['_auth_user_id'])
-    if not user.has_perm('workspace.add_workspace'):
+    if not user.has_perm('dam_workspace.add_workspace'):
         resp = simplejson.dumps({'failure': True})
         return HttpResponse(resp)
     else: 
@@ -120,8 +85,7 @@ def _admin_workspace(request,  ws):
         if ws.pk == None:
 #                orig = Variant.objects.get(name = 'original',  is_global = True)
 #                ws.default_source_variant = orig
-            ws.save()
-            ws = _create_workspace(ws, user)
+            ws = Workspace.objects.create_workspace(name, description, user)
         else:
             ws.save()
         
@@ -132,8 +96,7 @@ def _admin_workspace(request,  ws):
     return HttpResponse(resp)
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
-    if ws not in item.workspaces.all():             
-        media_type = Type.objects.get(name = item.type.name)
+    if ws not in item.workspaces.all():
         item.workspaces.add(ws)
         
 #                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
@@ -192,17 +155,19 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     
     return False
         
+@permission_required('remove_item')
+def _remove_items(ws, items):
+
+    for item in items:
+        ws.remove_item(item)
+        
 @login_required
 @permission_required('add_item', False)
 def add_items_to_ws(request):   
     try:
         item_ids = request.POST.getlist('item_id')
-        items_commas = item_ids[0].split(',')
-
-        if len(items_commas) > 1:
-            item_ids = items_commas
-
         ws_id = request.POST.get('ws_id')
+        
         ws = Workspace.objects.get(pk = ws_id)
 #        current_ws_id = request.POST.get('current_ws_id')
 #        current_ws = Workspace.objects.get(pk = current_ws_id )
@@ -219,7 +184,7 @@ def add_items_to_ws(request):
                 item_imported.append(item)
         
         if remove == 'true':
-            _remove_items(request, items)
+            _remove_items(ws, items)
                 
         if len(item_imported) > 0:
             imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
@@ -235,62 +200,31 @@ def add_items_to_ws(request):
         import traceback
         raise ex
 
-@permission_required('remove_item')
-def _remove_items(request, items):
-    current_ws = request.session.get('workspace')
-    for item in items:
-        
-        try:
-            
-            inbox_nodes = Node.objects.filter(type = 'inbox', workspace = current_ws, items = item) #just to be sure, filter instead of get
-            for inbox_node in inbox_nodes:
-                inbox_node.items.remove(item)                
-                if inbox_node.items.all().count() == 0:
-                    inbox_node.delete()
-                
-        except Exception, ex:
-            logger.exception(ex)
-            raise ex
-        
-        
-        item.workspaces.remove(current_ws)
-        item.component_set.all().filter(workspace = current_ws).exclude(Q(variant__is_global= True,  variant__auto_generated = False)| Q(variant__shared = True)).delete()
-        
-@login_required
-def remove_item(request,  item,):
-    current_ws = request.session.get('workspace')
-    item.workspaces.remove(current_ws)
-    item.component_set.all().filter(workspace = current_ws).exclude(variant__variant_name = 'original').exclude(variant__variant_name = 'thumbnail').delete()
-
 @login_required
 @permission_required('admin')
 def delete_ws(request,  ws_id):
     ws = Workspace.objects.get(pk = ws_id)
     user = User.objects.get(pk=request.session['_auth_user_id'])
     ws.delete()
-#    ws_redirect = Workspace.objects.all()[0]
     return HttpResponse(simplejson.dumps({'success': True}))
     
-
 @login_required
 def get_workspaces(request):
     try:
         user = User.objects.get(pk=request.session['_auth_user_id'])
-        wss = Workspace.objects.filter(members = user).order_by('name').distinct()
+        wss = user.workspaces.all().order_by('name').distinct()
         
-#        wss = list(wss)
         resp = {'workspaces': []}
         for ws in wss:
                         
-            root = Node.objects.get(workspace = ws,  depth=0,  type = 'keyword')
-            collection_root = Node.objects.get(workspace  = ws,  depth=0,  type = 'collection')
-            inbox_root = Node.objects.get(workspace = ws,  depth=0,  type = 'inbox')
+            root = Node.objects.get_root(ws = ws, type = 'keyword')
+            collection_root = Node.objects.get_root(ws = ws, type = 'collection')
+            inbox_root = Node.objects.get_root(ws = ws, type = 'inbox')
             
             tmp = {
                 'pk': ws.pk,
                 'name': ws.name,
                 'description': ws.description,
-#                'media_type': media_types_selected,
                 'root_id': root.pk,
                 'collections_root_id': collection_root.pk,
                 'inbox_root_id':inbox_root.pk
@@ -309,7 +243,6 @@ def get_workspaces(request):
             request.session.modified = True
             media_types_selected = request.session['media_type'][ws.pk]                  
             
-#            media_types_selected = ['image', 'video', 'audio', 'doc']
             tmp['media_type'] = media_types_selected
             
             resp['workspaces'].append(tmp)
@@ -329,7 +262,6 @@ def _search_complex_query(complex_query,  items):
                 items = items.exclude(node = node)
                 
             else:
-#                items= items.filter(node = node)
                 items = items.filter(node__in = node.get_branch())
             
     else:
@@ -633,6 +565,7 @@ def _get_thumb_url(item, workspace, thumb_dict = None, absolute_url = False):
             thumb_url = url
     except:
         return None, None
+        
     return thumb_url,thumb_ready
 
 
@@ -660,12 +593,6 @@ def load_items(request, view_type=None, unlimited=False, ):
             
         request.session.modified = True
         
-#        TODO: change movie - video, sigh 
-        if 'video' in media_type:
-            media_type.remove('video')
-            media_type.append('movie')
-        
-
         start = int(request.POST.get('start', 0))
         limit = int(request.POST.get('limit', 30))
 		
@@ -862,7 +789,7 @@ def get_permissions(request):
     user = User.objects.get(pk=request.session['_auth_user_id'])
     permissions = workspace.get_permissions(user)
     resp = {'permissions':[]}
-    if user.has_perm('workspace.add_workspace'):
+    if user.has_perm('dam_workspace.add_workspace'):
         resp['permissions'].append({'name': 'add_ws'})
     for perm in permissions:
         resp['permissions'].append({'name': perm.codename})

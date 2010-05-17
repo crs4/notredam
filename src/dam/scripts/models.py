@@ -116,8 +116,6 @@ class Script(models.Model):
         for item in items:
             adapt_parameters = {}   
             media_type = item.type.name
-            if media_type == 'movie':
-                media_type = 'video'
                 
             for action in actions[media_type]:
                 if isinstance(action, SaveAs):
@@ -142,8 +140,6 @@ class BaseAction(object):
 #            raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
         
         
-        if media_type == 'video':
-            media_type = 'movie'# sigh
         self.media_type = media_type
         logger.debug('self.media_type %s'%self.media_type)
         self.source_variant = source_variant
@@ -189,7 +185,7 @@ class SaveAs(BaseAction):
         component = variant.get_component(self.workspace,  item)    
         
          
-        if self.media_type == 'movie' or self.media_type == 'audio':
+        if self.media_type == 'video' or self.media_type == 'audio':
             adapt_parameters['preset_name'] = self.output_format
         else:
             adapt_parameters['codec'] = self.output_format
@@ -213,7 +209,7 @@ class Resize(BaseAction):
     required_parameters = [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
     def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace)
-        if media_type == 'video' or media_type == 'movie':
+        if media_type == 'video':
             self.parameters['video_height'] = max_height
             self.parameters['video_width'] = max_width
         else:
@@ -265,7 +261,7 @@ class Watermark(BaseAction):
 #        TODO: watermark corner
         
 
-preset = {'movie':
+preset = {'video':
                    {'matroska_mpeg4_aac': 'mpeg4',
                    'mp4_h264_aaclow': 'mpeg4',
                    'flv': 'flv',
@@ -308,7 +304,7 @@ class AudioEncode(BaseAction):
                 
 
 class ExtractVideoThumbnail(BaseAction):
-    media_type_supported = ['movie']
+    media_type_supported = ['video']
     required_parameters = [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
         params = {'max_height': max_height,  'max_width':max_width}
