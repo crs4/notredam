@@ -34,7 +34,6 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.variants.models import Variant      
 from dam.upload.views import generate_tasks
-from dam.application.views import get_component_url
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.framework.dam_repository.models import Type
 from dam.geo_features.models import GeoInfo
@@ -547,27 +546,21 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     return (items, total_count)
 
 
-def _get_thumb_url(item, workspace, thumb_dict = None, absolute_url = False):
+def _get_thumb_url(item, workspace):
 
     thumb_url = NOTAVAILABLE
     thumb_ready = 0
-    
-    if not thumb_dict:
-        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('media_type__name',  'pk')
-        thumb_dict = {}
-        for thumb in thumb_variants:
-            thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk']}
-    
+        
     try:
-        url = get_component_url(workspace, item.pk, 'thumbnail', thumb=True)
+        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = 'thumbnail')
+        url = item.get_variant(workspace, variant).get_component_url()
         if url:
             thumb_ready = 1
             thumb_url = url
     except:
-        return None, None
+        pass
         
-    return thumb_url,thumb_ready
-
+    return thumb_url, thumb_ready
 
 
 @login_required

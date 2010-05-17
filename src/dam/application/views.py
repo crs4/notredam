@@ -28,7 +28,7 @@ from django.core.mail import send_mail
 from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
-from dam.repository.models import Item
+from dam.repository.models import Item, _get_resource_url
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
@@ -74,52 +74,6 @@ def do_logout(request):
         request.session.__delitem__('workspace')
     return home(request)
 
-def get_component_url(workspace, item_id, variant_name, redirect_if_not_available = True):
-    """
-    Looks for the component named variant_name of the item item_id in the given workspace and returns the component url 
-    """
-    
-    item = Item.objects.get(pk = item_id)
-    variant = workspace.get_variants().distinct().get(media_type =  item.type,  name = variant_name)
-    
-#    if thumb and variant.default_url:
-#        return variant.default_url
-    
-    url = NOTAVAILABLE    
-   
-    try:
-        component = variant.get_component(workspace,  item)
-    
-        if component.uri:
-            return component.uri
-
-        url = _get_resource_url(component.ID)
-
-    except Exception,ex:
-        url = NOTAVAILABLE
-
-    if url == NOTAVAILABLE and not redirect_if_not_available:
-        return None
-        
-    return url
-
-
-def _get_resource_url(id):
-    """
-    Returns resource path
-    """
-
-    storage = Storage()
-
-    try:
-        if storage.exists(id):
-            url = '/storage/' + id
-        else:
-            url = None
-    except:
-        url = None
-    return url
-
 @login_required
 def redirect_to_resource(request, id):
     """
@@ -129,7 +83,7 @@ def redirect_to_resource(request, id):
     try:
         url = _get_resource_url(id)
     except:
-        url = NOTAVAILABLE    
+        url = NOTAVAILABLE
 
     return redirect_to(request,  url)
 

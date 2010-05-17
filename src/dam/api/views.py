@@ -32,7 +32,7 @@ from django_restapi.responder import *
 
 from django.contrib.auth.models import Permission
 
-from dam.repository.models import Item,  Component
+from dam.repository.models import Item,  Component, _get_resource_url
 from dam.framework.dam_repository.models import Type
 from dam.framework.dam_metadata.models import XMPStructure
 from dam.workspace.models import DAMWorkspace as Workspace
@@ -52,7 +52,6 @@ from dam.workflow.views import _set_state
 from decorators import *
 from exceptions import *
 from workspace.forms import AdminWorkspaceForm
-from application.views import get_component_url, _get_resource_url
 
 from django.contrib.auth import authenticate,  login
 
@@ -470,7 +469,7 @@ class WorkspaceResource(ModResource):
 #                    else:
                     va = v.variantassociation_set.get(workspace__pk = workspace_id)
                     logger.debug('v %s'%v)
-                    url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)        
+                    url = c.get_component_url()
                     tmp[v.name] = url
         
             resp['items'].append(tmp)
@@ -1133,7 +1132,7 @@ class ItemResource(ModResource):
                 v = component.variant
                 va = v.variantassociation_set.get(workspace = workspace)
                 logger.debug('v %s'%v)
-                url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)
+                url  = component.get_component_url()
 #                url = '/files/images/ooo.jpg'        
                 
             tmp[variant] = url
@@ -1491,7 +1490,7 @@ class ItemResource(ModResource):
                             
             va = v.variantassociation_set.get(workspace__pk = workspace_id)
             logger.debug('v %s'%v)
-            url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)        
+            url  = c.get_component_url()        
 #            item.variants[va.pk] = url
             item.variants[v.name] = url
     
