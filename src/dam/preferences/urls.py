@@ -24,5 +24,6 @@ urlpatterns = patterns('',
     (r'^save_system_pref/$', 'dam.preferences.views.save_system_pref'),
     (r'^get_ws_settings/$', 'dam.preferences.views.get_ws_settings'),
     (r'^save_ws_pref/$', 'dam.preferences.views.save_ws_pref'),
+    (r'^get_lang_pref/$', 'dam.preferences.views.get_lang_pref'),
 
 )

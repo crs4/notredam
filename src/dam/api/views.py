@@ -46,7 +46,6 @@ from dam.treeview.views import _move_node,  _add_node, InvalidNode,  WrongWorksp
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.metadata.views import  save_metadata_value
 from dam.upload.views import generate_tasks, _get_upload_url,  _create_variant, guess_media_type,  _uploaded_item
 from dam.workflow.views import _set_state 
 from decorators import *
@@ -1018,11 +1017,7 @@ class ItemResource(ModResource):
                 new_metadata[str(property.pk)] = metadata[data]
                 
         logger.debug('new_metadata %s' %new_metadata)
-        save_metadata_value([item_id], new_metadata,  'original', workspace)
-                
-            
-            
-        
+        MetadataValue.objects.save_metadata_value([item_id], new_metadata,  'original', workspace)
         
 #        for data in metadata:            
 #            logger.debug('metadata %s '%metadata )

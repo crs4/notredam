@@ -43,7 +43,7 @@ from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
 from dam.preferences.views import get_user_setting
 from dam.metadata.models import MetadataProperty
-from dam.metadata.views import get_metadata_default_language
+from dam.preferences.views import get_metadata_default_language
 from dam.scripts.models import Script, ScriptDefault 
 from dam.eventmanager.models import Event, EventRegistration
 

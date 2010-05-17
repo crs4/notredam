@@ -23,8 +23,40 @@ from django.utils import simplejson
 
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
 from dam.workspace.models import DAMWorkspace as Workspace
+from dam.metadata.models import MetadataLanguage
 
 import logger
+
+def get_metadata_default_language(user, workspace=None):
+    """
+    Returns default metadata language for the given user (or the application default)
+    """
+    component=DAMComponent.objects.get(name__iexact='metadata')
+    setting=DAMComponentSetting.objects.get(component=component, name__iexact='default_metadata_language')
+    comma_separated_languages = get_user_setting(user, setting, workspace)
+    list_of_languages = comma_separated_languages.split(',')
+    return list_of_languages[0]
+
+@login_required
+def get_lang_pref(request):
+    """
+    Returns the list of available metadata languages chosen by the given user
+    """
+    workspace = request.session['workspace']
+    
+    user = User.objects.get(pk=request.session['_auth_user_id'])
+    component=DAMComponent.objects.get(name__iexact='metadata')
+    setting=DAMComponentSetting.objects.get(component=component, name__iexact='supported_languages')
+    comma_separated_languages = get_user_setting(user, setting, workspace)
+    list_of_languages = comma_separated_languages.split(',')
+    resp = {'languages':[]}
+    default_language = get_metadata_default_language(user,workspace)
+    languages = MetadataLanguage.objects.filter(code__in=list_of_languages).values('code', 'language', 'country')
+    for l in languages:
+        if l['code'] == default_language:
+            l['default_value'] = True
+        resp['languages'].append(l)
+    return HttpResponse(simplejson.dumps(resp))
 
 @login_required
 def get_user_settings(request):
