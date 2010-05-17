@@ -23,177 +23,8 @@ from upload.views import generate_tasks
 from variants.models import Variant
 from repository.models import Component
 from dam.framework.dam_repository.models import Type
+from dam.metadata.views import save_variants_rights
 import logger
-
-variant_generation_pipeline = {
-    'event': 'upload',
-    'state': '', 
-    'actions':[
-#               {
-#        #metadata        
-#        },
-        {
-         'type':'adaptation',
-        'media_type': 'image',
-        'source_variant': 'original',
-        'output_variant': 'preview',
-        'output_format': 'jpeg',
-        'actions':[{
-            'type': 'resize',
-            'parameters':{
-                'max_dim': 200
-            }    
-        }]
-         
-         },
-         
-         {
-        'type':'adaptation',
-        'media_type': 'image',
-        'source_variant': 'original',
-        'output_variant': 'thumbnail',
-        'output_format': 'jpeg',
-        'actions':[{
-            'type': 'resize',
-            'parameters':{
-                'max_dim': 100
-            }
-                    
-        }]
-         
-         },
-         {
-        'type':'adaptation',
-        'media_type': 'image',
-        'source_variant': 'original',
-        'output_variant': 'fullscreen',
-        'output_format': 'jpeg',
-        'actions':[{
-            'type': 'resize',
-            'parameters':{
-                'max_dim': 800
-            }
-                    
-        }]
-         
-         },
-         
-        {
-        'type':'adaptation',
-        'media_type': 'video',
-        'source_variant': 'original',
-        'output_variant': 'thumbnail',
-        'output_format': 'jpeg',
-        'actions':[{
-            'type': 'extractvideothumbnail',
-            'parameters':{
-                'max_dim': 100
-            }
-                    
-        }]
-         
-         },
-         
-        {
-            'type':'adaptation',
-            'media_type': 'video',
-            'source_variant': 'original',
-            'output_variant': 'preview',
-            'output_format': 'flv',
-            'actions':[{
-                'type': 'resize',
-                'parameters':{
-                    'max_height': 320,
-                    'max_width': 200
-                    }
-                },
-                {
-                   'type': 'videoencode',
-                   'parameters':{
-                        'framerate':'25/2',
-                        'bitrate':640
-                    }
-                
-                },
-                
-                {
-                   'type': 'audioencode',
-                   'parameters':{                        
-                        'bitrate':128,
-                        'rate':44100
-                    }
-                
-                }, 
-                {
-                'type': 'watermark', 
-                'parameters':{
-                    'uri': 'c2ed4e4af0874b8ea72e88d91c706359', 
-                    'position':1
-                    }
-                
-                }
-                
-                        
-            ]
-         
-        },
-        {
-            'type':'adaptation',
-            'media_type': 'audio',
-            'source_variant': 'original',
-            'output_variant': 'preview',
-            'output_format': 'mp3',
-            'actions':[
-                {
-                   'type': 'audioencode',
-                   'parameters':{                        
-                        'bitrate':128,
-                        'rate':44100
-                    }
-                }
-            ]
-                     
-        }, 
-        {
-            'type':'adaptation',
-            'media_type': 'doc',
-            'source_variant': 'original',
-            'output_variant': 'thumbnail',
-            'output_format': 'jpeg',
-            'actions':[
-                {
-                   'type': 'resize',
-                   'parameters':{                        
-                        'max_dim':100,
-                    }
-                
-                } 
-  
-    ]
-    }, 
-    
-    {
-            'type':'adaptation',
-            'media_type': 'doc',
-            'source_variant': 'original',
-            'output_variant': 'preview',
-            'output_format': 'jpeg',
-            'actions':[
-                {
-                   'type': 'resize',
-                   'parameters':{                        
-                        'max_dim':200,
-                    }
-                
-                } 
-  
-    ]
-    }
-    
-       ]          
-             
-}
-
 
 class ScriptException(Exception):
     pass
@@ -213,6 +44,10 @@ class MediaTypeNotSupported(ScriptException):
 class PresetUnknown(ScriptException):
     pass
 
+class ScriptDefault(models.Model):
+    name = models.CharField(max_length= 50)
+    description = models.CharField(max_length= 200)
+    pipeline = models.TextField()
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
@@ -297,7 +132,6 @@ class Script(models.Model):
         unique_together = ('name', 'workspace')
  
     
-    
 class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
@@ -321,23 +155,39 @@ class BaseAction(object):
             
     def get_adapt_params(self):
         return self.parameters
+        
 
+class SetRights(BaseAction):
+    media_type_supported = ['image', 'video',  'doc', 'audio']
+    required_parameters = [{'name':'rights',  'type': 'string'}]
+    def __init__(self, media_type, source_variant, workspace, rights):  
+        super(SetRights, self).__init__(media_type, source_variant, workspace,  **{'rights':rights})
+        
+        
+        
 
 class SaveAs(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = ['output_variant', 'output_format']
+    required_parameters = [{'name':'output_variant',  'type': 'string'}, {'name':'output_format',  'type': 'string'}]
     def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
         super(SaveAs, self).__init__(media_type, source_variant, workspace)
         
         self.output_variant = output_variant
         self.output_format = output_format
     
-    def execute(self, item, adapt_parameters):     
+    def execute(self, item, adapt_parameters):  
+        if adapt_parameters.has_key('rights'):
+            rights = adapt_parameters.pop('rights')
+        else:
+            rights = None
+        logger.debug('rights %s'%rights)
+            
         logger.debug('self.output_variant %s'%self.output_variant)
         logger.debug('self.media_type %s'%self.media_type)
         variant = Variant.objects.get(name = self.output_variant, media_type__name = self.media_type)          
         
         component = variant.get_component(self.workspace,  item)    
+        
          
         if self.media_type == 'movie' or self.media_type == 'audio':
             adapt_parameters['preset_name'] = self.output_format
@@ -353,13 +203,14 @@ class SaveAs(BaseAction):
         component.source = source
         component.save() 
         logger.debug('generate task')
+        save_variants_rights(component , self.workspace, rights)
         generate_tasks(variant, self.workspace, item)
 
 
 
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
-    required_parameters = ['max_height','max_width']
+    required_parameters = [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
     def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace)
         if media_type == 'video' or media_type == 'movie':
@@ -372,7 +223,7 @@ class Resize(BaseAction):
 
 class Crop(BaseAction): 
     media_type_supported = ['image',]
-    required_parameters = ['upperleft_x', 'upperleft_y', 'lowerright_x', 'lowerright_y']
+    required_parameters = [{ 'name': 'upperleft_x',  'type': 'number'}, { 'name': 'upperleft_y',  'type': 'number'}, { 'name': 'lowerright_x',  'type': 'number'}, { 'name': 'lowerright_y',  'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
         params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y }
         
@@ -380,7 +231,7 @@ class Crop(BaseAction):
      
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
-    required_parameters = ['filename', 'pos_x', 'pos_y', 'pos_x_percent', 'pos_y_percent', 'alpha']
+    required_parameters = [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
     
     def __init__(self, media_type, source_variant, workspace, filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
         
@@ -428,6 +279,7 @@ preset = {'movie':
 class VideoEncode(BaseAction):
     """default bitrate in kb""" 
     media_type_supported = ['video']
+    required_parameters = [{ 'name': 'bitrate','type': 'number'},  { 'name': 'framerate', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, bitrate, framerate):
         params = {'bitrate':bitrate,  'framerate': framerate}
         super(VideoEncode, self).__init__(media_type, source_variant, workspace, **params)
@@ -446,7 +298,7 @@ class VideoEncode(BaseAction):
 class AudioEncode(BaseAction):
     """default bitrate in kb"""
     media_type_supported = ['video', 'audio']
-    
+    required_parameters = [{ 'name': 'bitrate','type': 'number'},  { 'name': 'rate', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace)
         
@@ -457,6 +309,7 @@ class AudioEncode(BaseAction):
 
 class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['movie']
+    required_parameters = [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
         params = {'max_height': max_height,  'max_width':max_width}
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, **params)

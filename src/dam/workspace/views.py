@@ -45,7 +45,7 @@ from dam.preferences.models import DAMComponentSetting
 from dam.preferences.views import get_user_setting
 from dam.metadata.models import MetadataProperty
 from dam.metadata.views import get_metadata_default_language
-from dam.scripts.models import variant_generation_pipeline, Script
+from dam.scripts.models import Script, ScriptDefault 
 from dam.eventmanager.models import Event, EventRegistration
 
 from django.utils.datastructures import SortedDict
@@ -75,7 +75,7 @@ def _create_workspace(ws, user):
     
     try:
         
-        global_scripts = Script.objects.filter(is_global = True)
+        global_scripts = ScriptDefault.objects.all()
         upload = Event.objects.get(name = 'upload')
         for glob_script in global_scripts:
             script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
@@ -621,21 +621,16 @@ def _get_thumb_url(item, workspace, thumb_dict = None, absolute_url = False):
     thumb_ready = 0
     
     if not thumb_dict:
-        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('media_type__name',  'pk',  'default_url')
+        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('media_type__name',  'pk')
         thumb_dict = {}
         for thumb in thumb_variants:
-            thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk'],  'default_url': thumb['default_url']}
+            thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk']}
     
     try:
-        if thumb_dict[item.type.name]['default_url']:
-            thumb_url = thumb_dict[item.type.name]['default_url']
+        url = get_component_url(workspace, item.pk, 'thumbnail', thumb=True)
+        if url:
             thumb_ready = 1
-        
-        else:
-            url = get_component_url(workspace, item.pk, 'thumbnail', thumb=True)
-            if url:
-                thumb_ready = 1
-                thumb_url = url
+            thumb_url = url
     except:
         return None, None
     return thumb_url,thumb_ready

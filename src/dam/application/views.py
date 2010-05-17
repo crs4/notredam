@@ -82,8 +82,8 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
     item = Item.objects.get(pk = item_id)
     variant = workspace.get_variants().distinct().get(media_type =  item.type,  name = variant_name)
     
-    if thumb and variant.default_url:
-        return variant.default_url
+#    if thumb and variant.default_url:
+#        return variant.default_url
     
     url = NOTAVAILABLE    
    

@@ -2519,7 +2519,7 @@ class VariantsResource(ModResource):
                 
         else:            
             
-            variants = workspace.get_variants().exclude(auto_generated = False, default_url__isnull = False)
+            variants = workspace.get_variants().exclude(auto_generated = False)
             
             resp = {'variants':[]}
             for variant in variants:
@@ -2658,12 +2658,12 @@ class VariantsResource(ModResource):
             
             
             if not sources_list:
-                sources = Variant.objects.filter(is_global = True,  auto_generated = False,  default_url__isnull = True,  media_type = type_obj)
+                sources = Variant.objects.filter(is_global = True,  auto_generated = False,    media_type = type_obj)
                 for source in sources:
                     SourceVariant.objects.create(workspace = workspace,  destination = variant,  rank = source.default_rank,  source = source)    
             
             else:
-                sources = Variant.objects.filter(is_global = True,  auto_generated = False,  default_url__isnull = True,  media_type = type_obj)
+                sources = Variant.objects.filter(is_global = True,  auto_generated = False, media_type = type_obj)
                 sources = sources.filter(pk__in = sources_list)
                 if sources.count() == 0:
                     raise ArgsValidationError({arg: ['no sources found with id in %s'%sources_list]})
