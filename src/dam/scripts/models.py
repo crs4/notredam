@@ -202,7 +202,7 @@ class SaveAs(BaseAction):
         component.source = source
         component.save() 
         logger.debug('generate task')
-#        save_variants_rights(component , self.workspace,  'reserved' )
+        save_variants_rights(component , self.workspace, rights)
         generate_tasks(variant, self.workspace, item)
 
 

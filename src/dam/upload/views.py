@@ -318,10 +318,10 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
             comp = _create_variant(variant,  item, workspace)
             
         end = MachineState.objects.create(name='finished')
-        save_rights_action = Action.objects.create(component=comp, function='save_rights')
-        save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)    
+#        save_rights_action = Action.objects.create(component=comp, function='save_rights')
+#        save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)    
         fe_action = Action.objects.create(component=comp, function='extract_features')
-        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=save_rights_state)
+        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=end)
         
         if comp.imported:
             logger.debug('----------source_machine %s'%source_machine)             

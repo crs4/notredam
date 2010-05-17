@@ -24,6 +24,7 @@ from django.template import RequestContext, Context, loader
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils import simplejson
 from django.contrib.auth.models import User
+from django.db.models import Q
 
 from dam.repository.models import Item,Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
@@ -95,7 +96,7 @@ def get_variants_menu_list(request):
     """
     workspace = request.session['workspace']
     
-    vas = Variant.objects.filter(workspace = workspace, editable = True).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
+    vas = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True)).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
     
     vas = set(vas)
     
@@ -383,35 +384,27 @@ def save_rights_value(comp, license, workspace):
         xmp_values[m.xmp_property.id] = m.value
     save_metadata_value(item_list, xmp_values, comp.variant.name, workspace)    
 
-def save_variants_rights(item, workspace, variant):
+def save_variants_rights(comp, workspace, license_value):
 
     """
     Save license to the given component and set xmp 
     values according to right rules (as defined in XMPRightsValue)
     """
-    
-    comp = Component.objects.get(item=item, variant=variant, workspace=workspace)
-#    TODO: remove vp
-#    variant_association = VariantAssociation.objects.get(workspace = workspace,  variant = variant) 
-#    vp = variant_association.preferences
-#
-#    if vp:
-#        license = vp.rights_type
-#
-#        logger.debug(license)
-#    
-#        if license:
-#            save_rights_value(comp, license, workspace)
-#        else:
-#            comp.metadata.filter(schema__rights_target=True).delete()
-##            source_variant = variant.get_source(workspace,  item)
-##            original_comp = source_variant.get_component(workspace = workspace,  item = item) 
-#            original_comp = comp.source
-#            
-#            comp.comp_rights = []
-#            comp.comp_rights.add(*original_comp.comp_rights.all())
-#            for m in original_comp.metadata.filter(schema__rights_target=True):
-#                MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = comp,  value = m.value, language=m.language)
+        
+    try:
+        license = RightsValue.objects.get(value__iexact = license_value)
+        logger.debug(license)
+        save_rights_value(comp, license, workspace)
+    except:
+        comp.metadata.filter(schema__rights_target=True).delete()
+#            source_variant = variant.get_source(workspace,  item)
+#            original_comp = source_variant.get_component(workspace = workspace,  item = item) 
+        original_comp = comp.source
+        
+        comp.comp_rights = []
+        comp.comp_rights.add(*original_comp.comp_rights.all())
+        for m in original_comp.metadata.filter(schema__rights_target=True):
+            MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = comp,  value = m.value, language=m.language)
 
 @login_required
 @decorators.permission_required('edit_metadata')
