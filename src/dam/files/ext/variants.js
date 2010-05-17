@@ -930,8 +930,15 @@ function variants_prefs(){
     	    }],
             listeners: {
                 afteredit: function(e){
-//                    if (e.record.data.pk)
-//                        Ext.Ajax.request();
+                    if (!e.record.data.pk)
+                        Ext.Ajax.request({
+                        	url:'/new_variant/',
+                        	params:{
+                        		name: e.record.data.name
+                        	
+                        	}
+                        	
+                        });
                 }
             }
     	});
@@ -977,7 +984,7 @@ function variants_prefs(){
                     }
                       },
     			{
-    			text: 'Rename'
+    			text: 'Edit'
     		},
     		{
     			text: 'Remove'
