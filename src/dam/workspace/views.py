@@ -81,9 +81,6 @@ def _create_workspace(ws, user):
             script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
             EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
         
-        logger.debug('workspace: %s'%ws)
-        logger.debug('workspace.name %s'%ws.name)
-        logger.debug('workspace.pk %s'%ws.pk)
         root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'keyword',  cls = 'keyword')
         col_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'collection')
         inbox_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'inbox')
@@ -110,7 +107,6 @@ def create_workspace(request):
 
 def _admin_workspace(request,  ws):
     user = User.objects.get(pk=request.session['_auth_user_id'])
-    logger.debug('ws %s'%ws)
     if ws == None:
         ws = Workspace()
     
@@ -142,12 +138,10 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
         
 #                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
         components = item.component_set.all().filter(variant__is_global = True, workspace = current_ws)
-        logger.debug('components %s' %components)
         
         for comp in components:
             
             if not comp.variant.auto_generated:
-                logger.debug('not generated, comp.variant %s' %comp.variant)
                 comp.workspace.add(ws)
             
 #                    elif comp.variant.shared:
@@ -167,11 +161,9 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
             
 #                    default_source_variant = comp.variant.get_source
         ws_variants = Variant.objects.filter(Q(workspace = ws) | Q(is_global = True),  auto_generated = True,  media_type = item.type)
-        logger.debug('ws_variants %s'%ws_variants)
         
 #                logger.debug('item.component_set.filter(workspace = ws)[0].variant.pk %s' %item.component_set.filter(workspace = ws)[0].variant.pk)
         for variant in ws_variants:
-            logger.debug('variant %s'%variant)
             if item.component_set.filter(variant = variant, workspace = ws).count() == 0: #if component for variant has not been created yet
                 
                 
@@ -218,7 +210,6 @@ def add_items_to_ws(request):
         remove = request.POST.get('remove')
         move_public = request.POST.get('move_public', 'false')
         items = Item.objects.filter(pk__in = item_ids)
-        logger.debug(items)
         
         item_imported = []
         
@@ -247,11 +238,9 @@ def add_items_to_ws(request):
 @permission_required('remove_item')
 def _remove_items(request, items):
     current_ws = request.session.get('workspace')
-    logger.debug('current_ws %s'%current_ws)
     for item in items:
         
         try:
-            logger.debug('item.pk %s'%item.pk)
             
             inbox_nodes = Node.objects.filter(type = 'inbox', workspace = current_ws, items = item) #just to be sure, filter instead of get
             for inbox_node in inbox_nodes:
@@ -297,7 +286,6 @@ def get_workspaces(request):
             collection_root = Node.objects.get(workspace  = ws,  depth=0,  type = 'collection')
             inbox_root = Node.objects.get(workspace = ws,  depth=0,  type = 'inbox')
             
-            
             tmp = {
                 'pk': ws.pk,
                 'name': ws.name,
@@ -322,7 +310,6 @@ def get_workspaces(request):
             media_types_selected = request.session['media_type'][ws.pk]                  
             
 #            media_types_selected = ['image', 'video', 'audio', 'doc']
-            logger.debug('media_types_selected %s'%media_types_selected)
             tmp['media_type'] = media_types_selected
             
             resp['workspaces'].append(tmp)
@@ -335,7 +322,6 @@ def get_workspaces(request):
 
 def _search_complex_query(complex_query,  items):
     
-    logger.debug('items %s'%items)
     if complex_query['condition'] == 'and':
         for node_id in complex_query['nodes']:
             node = Node.objects.get(pk = node_id['id'])
@@ -345,10 +331,8 @@ def _search_complex_query(complex_query,  items):
             else:
 #                items= items.filter(node = node)
                 items = items.filter(node__in = node.get_branch())
-            logger.debug('items %s'%items)
             
     else:
-        logger.debug('or!!')
         
         q = None
         for node_id in complex_query['nodes']:
@@ -366,8 +350,7 @@ def _search_complex_query(complex_query,  items):
                     q = q.__or__(Q(node = node))
             
         items = items.filter(q)                
-    logger.debug('items %s'%items)
-    logger.debug('items.__class__ %s'%items.__class__)
+
     return items
 
 
@@ -380,16 +363,11 @@ def _search(request,  items, workspace = None):
             return items.filter(node__in = node.get_branch())
         
     def search_smart_folder(smart_folder_node, items):
-        logger.debug('smart_folder_node %s'%smart_folder_node)
                 
         complex_query = smart_folder_node.get_complex_query()
         items = _search_complex_query(complex_query,  items)
         return items
         
-        
-    
-    
-    logger.debug('search, starting_items %s'%items)
     query = request.POST.get('query')
     order_by = request.POST.get('order_by',  'creation_time')
     order_mode = request.POST.get('order_mode',  'decrescent')
@@ -415,12 +393,10 @@ def _search(request,  items, workspace = None):
     else:
         if nodes_query:            
             for node_id  in nodes_query:
-                logger.debug(node_id)
                 node = Node.objects.filter(pk = node_id)                
                 if node.count() > 0:
                     node = node[0] 
                     queries.append(search_node(node, not show_associated_items))
-                    logger.debug('queries %s'%queries)
                 else:
 #                    return Item.objects.none()
                     queries.append(Item.objects.none())
@@ -436,15 +412,11 @@ def _search(request,  items, workspace = None):
 #Text query                
         if query:
             
-            logger.debug('query %s'%query)
-            
             metadata_query = re.findall('\s*(\w+:\w+=\w+[.\w]*)\s*', query,  re.U)
             
             inbox = re.findall('\s*Inbox:/(\w+[/\w\-]*)/\s*', query,  re.U)
             
             smart_folder = re.findall('\s*SmartFolders:"(.+)"\s*', query,  re.U)
-            logger.debug('smart_folder %s'%smart_folder)
-            
             
             keywords = re.findall('\s*Keywords:/(.+)/\s*', query,  re.U)
 #            spaced_keywords = re.findall('\s*Keywords:"([\w\s/]*)"\s*', query,  re.U)
@@ -454,10 +426,6 @@ def _search(request,  items, workspace = None):
 #            spaced_collections = re.findall('\s*Collections:"([\w\s/]*)"\s*', query,  re.U)
 #            collections.extend(spaced_collections)
             
-            real_objects= re.findall('\s*real_object:(\w+[\w\s]*)\s*', query,  re.U)
-            spaced_real_objects = re.findall('\s*real_object:"([\w\s]*)"\s*', query,  re.U)
-            real_objects.extend(spaced_real_objects)
-
             geo = re.findall('\s*geo:\(([\d.-]*),([\d.-]*)\),\(([\d.-]*),([\d.-]*)\)\s*', query,  re.U)
             
     #            just put out  keywords and collections....
@@ -478,10 +446,6 @@ def _search(request,  items, workspace = None):
             
     #       remove geo too...
             simple_query = re.sub('(\w+:\(([\d.-]*),([\d.-]*)\),\(([\d.-]*),([\d.-]*)\))', '', simple_query)
-
-    #       remove real_objects too...
-            simple_query = re.sub('(real_object:(\w+[\w\s]*)\s*)', '', simple_query)
-            simple_query = re.sub('(real_object:"([\w\s]*)"\s*)', '', simple_query)
 
             multi_words = re.findall('"(.+?)"', simple_query,  re.U)
             single_word_query = re.compile('"(.+)"',  re.U).sub( '', simple_query)
@@ -548,24 +512,13 @@ def _search(request,  items, workspace = None):
                 node = Node.objects.get_from_path(coll,  'collection')
                 logger.debug('node found %s'%node)
                 queries.append(items.filter(node = node))
-                
-            logger.debug('ro: %s'%real_objects)
-
-            
-    
+                    
             if smart_folder:               
                 
-                logger.debug('smart_folder[0] %s'%smart_folder[0])
                 smart_folder_node = SmartFolder.objects.get(workspace = workspace,  label = smart_folder[0])
                 queries.append(search_smart_folder(smart_folder_node, items))
-                
-
-            for robj in real_objects:
-                queries.append(items.filter(Q(real_objects__name = robj) & Q(real_objects__workspace=request.session['workspace'])))
 
             for coords in geo:
-    #                q = Q(node__label__iexact = collection.strip(),  node__type = 'collection')
-    #                queries.append(items.filter(q))
                 ne_lat = coords[0]
                 ne_lng = coords[1]
                 sw_lat = coords[2]
@@ -576,25 +529,18 @@ def _search(request,  items, workspace = None):
                     queries.append(items.filter(Q(geoinfo__longitude__gte=sw_lng) | Q(geoinfo__longitude__lte=ne_lng), geoinfo__latitude__lte=ne_lat, geoinfo__latitude__gte=sw_lat))
             
             for word in words:
-                logger.debug('word %s'%word)
                 if DATABASE_ENGINE == 'sqlite3':
                     q = Q(metadata__value__iregex = u'(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%word.strip())                
                     queries.append(items.filter(q))
                 elif DATABASE_ENGINE == 'mysql':
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%word.strip())
                     queries.append(items.filter(q))
-                
-                    
-                    
                     
             for words in multi_words:
-                logger.debug('words: %s'%words)
                 tmp = re.findall('\s*(.+)\s*', words,  re.U)
-                logger.debug('tmp %s'%tmp)
                 if DATABASE_ENGINE == 'sqlite3':
                     words_joined = '\s+'.join(tmp)
                     words_joined = words_joined.strip() 
-                    logger.debug('words_joined %s'%words_joined)            
 #                    q = Q(metadata__value__iregex = '(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%words_joined)
                     q = Q(metadata__value__iregex = '%s'%words_joined)
 
@@ -602,28 +548,18 @@ def _search(request,  items, workspace = None):
                 
                 elif DATABASE_ENGINE == 'mysql':
                     words_joined = '[[:blank:]]+'.join(tmp)
-                    logger.debug('words_joined %s'%words_joined)            
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%words_joined)
                     queries.append(items.filter(q))
                 
-            
-            logger.debug('queries %s'%queries)
-            
-        logger.debug('queries %s'%queries )
         if queries:
             if len(queries) == 1:
                 items = queries[0]
             else:
                 
-    #                logger.debug(queries[1][0] == queries[2][0])
-                
                 items = reduce(operator.and_,  queries)
-                logger.debug('items after AND %s ' %items)
         
     items.distinct()       
-    logger.debug('items before ordering: %s'%items)
     property = None
-    
     
     if order_by:
         
@@ -640,18 +576,12 @@ def _search(request,  items, workspace = None):
                 property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
             except MetadataProperty.DoesNotExist:
                 property = None
-                logger.debug('property for ordering not found')
-            
-        
-
-        
         
             if property:
                 language_settings = DAMComponentSetting.objects.get(name='supported_languages')
 #                language_selected = get_user_setting_by_level(language_settings,workspace)
 #                TODO: change when gui multilanguage ready
                 language_selected = 'en-US' 
-                logger.debug('language_selected %s'%language_selected)
                 items = items.extra(select=SortedDict([(order_by, 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s or language=null')]),  select_params = (str(property.id),  language_selected))
                 
         if order_mode == 'decrescent':
@@ -659,8 +589,6 @@ def _search(request,  items, workspace = None):
         else:
             items = items.order_by('%s'%order_by)
 
-    
-    logger.debug('items at the end: %s'%items)
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
@@ -670,10 +598,6 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
     
     items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
-#    if media_type != 'all':
-#        items = workspace.items.filter(type=media_type).distinct().order_by('-creation_time')
-#    else:
-#        items = workspace.items.distinct().order_by('-creation_time')
 
     user_basket = Basket.get_basket(user, workspace)
     basket_items = user_basket.items.all().values_list('pk', flat=True)
@@ -681,7 +605,6 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-#    if request.POST.get('query') or request.POST.getlist('node_id') or request.POST.get('complex_query'):
     items = _search(request,  items)
 
     total_count = items.count()
@@ -725,15 +648,13 @@ def load_items(request, view_type=None, unlimited=False, ):
     try:
         user = User.objects.get(pk=request.session['_auth_user_id'])
         workspace_id = request.POST.get('workspace_id')
-        logger.debug('workspace_id %s'%workspace_id)
+
         if  workspace_id:
             workspace = Workspace.objects.get(pk = workspace_id)
         else:
             workspace = request.session['workspace']        
 
         media_type = request.POST.getlist('media_type')
-
-        logger.debug("request.session['media_type'] %s"%request.session['media_type']) 
         
 #        save media type on session
 
@@ -743,9 +664,6 @@ def load_items(request, view_type=None, unlimited=False, ):
             request.session['media_type']= {workspace.pk: list(media_type)}
             
         request.session.modified = True
-
-#            
-        logger.debug("request.session['media_type'] %s"%request.session['media_type'])    
         
 #        TODO: change movie - video, sigh 
         if 'video' in media_type:
@@ -817,7 +735,6 @@ def load_items(request, view_type=None, unlimited=False, ):
                 state_association = states[0]
                 
                 item_info['state'] = state_association.state.pk
-                logger.debug("item_info['state'] %s"%item_info['state'])
                 
             item_dict.append(item_info)
         
@@ -832,7 +749,6 @@ def load_items(request, view_type=None, unlimited=False, ):
 
 @membership_required
 def _switch_workspace(request,  workspace_id):
-    logger.debug('workspace_id %s'%workspace_id)
     workspace = Workspace.objects.get(pk = workspace_id)
     request.session['workspace'] = workspace
     return workspace
@@ -840,7 +756,6 @@ def _switch_workspace(request,  workspace_id):
 @login_required
 def workspace(request,  workspace_id = None):
     user = User.objects.get(pk=request.session['_auth_user_id'])
-    logger.debug('workspace_id %s'%workspace_id)
     if not workspace_id:
         if request.session.__contains__('workspace'):
             workspace = Workspace.objects.get(pk = request.session.get('workspace', ).pk ) #ws in session could be outdated (old name)
@@ -850,8 +765,6 @@ def workspace(request,  workspace_id = None):
     else:
         workspace = _switch_workspace(request,  workspace_id)
     
-    logger.debug('workspace.name %s'%workspace.name)
-    logger.debug('workspace.pk %s'%workspace.pk)
     return render_to_response('workspace_gui.html', RequestContext(request,{'ws':workspace, 'GOOGLE_KEY': GOOGLE_KEY}))
 
 def _replace_groups(group, item, default_language):
@@ -951,7 +864,6 @@ def get_n_items(request):
 @login_required
 def get_permissions(request):
     workspace = request.session.get('workspace')
-    logger.debug('-----------workspace %s'%workspace)
     user = User.objects.get(pk=request.session['_auth_user_id'])
     permissions = workspace.get_permissions(user)
     resp = {'permissions':[]}
@@ -971,7 +883,7 @@ def get_ws_members(request):
 
     ws = Workspace.objects.get(pk = ws_id)
 
-    members = ws.members.all()
+    members = ws.get_members()
     
     available_permissions = WorkspacePermission.objects.all()    
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
@@ -1044,37 +956,26 @@ def save_members(request):
     for p in permissions_list:
         try:
             user = User.objects.get(pk=p['id'])
-            ws.members.add(user)
+            user_perms = []
             current_users.append(user.pk)
+            for k, v in p.iteritems():
+                if k not in ['id', 'name', 'editable'] and v == 1:
+                    try:
+                        ws_permission = WorkspacePermission.objects.get(codename=k)
+                        user_perms.append(ws_permission)
+                    except:
+                        pass
+
+            ws.add_member(user, user_perms)
+
         except:
             continue
 
     removed_users = ws.members.exclude(pk__in=current_users)
         
-    for p in permissions_list:
-        for k, v in p.iteritems():
-            if k not in ['id', 'name', 'editable']:
-                try: 
-                    user = User.objects.get(pk=p['id'])
-                    ws_permission = WorkspacePermission.objects.get(codename=k)
-                    wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = ws_permission)[0]
-                    if v == 0:
-                        wspa.users.remove(user)
-                    else:
-                        wspa.users.add(user)
-                except:
-                    raise
-                    pass
-        
-    for wsp in WorkspacePermission.objects.all():
-        try:
-            wspa = WorkspacePermissionAssociation.objects.get(workspace = ws, permission = wsp)
-            wspa.users.remove(*removed_users)
-        except:
-            pass
-
-    ws.members.remove(*removed_users)
-    
+    for u in removed_users:
+        ws.remove_member(u)
+            
     data = {'success': True}
     
     return HttpResponse(simplejson.dumps(data))
@@ -1082,7 +983,6 @@ def save_members(request):
 @login_required
 def switch_ws(request):
     workspace_id = request.POST['workspace_id']
-    logger.debug('workspace_id %s'%workspace_id)
     _switch_workspace(request,  workspace_id)
     return HttpResponse(simplejson.dumps({'success': True}))
     
