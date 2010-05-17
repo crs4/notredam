@@ -65,7 +65,40 @@ class Workspace(models.Model):
 
     def __unicode__(self):
         return "%s" % (self.name)
-        
+
+    def add_member(self, user, permissions):
+
+        self.members.add(user)
+
+        self.remove_member_permissions(user)
+
+        for perm in permissions:
+            wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = self, permission = perm)[0]
+            wspa.users.add(user)
+
+    def remove_member(self, user):
+
+        perms = self.ws_permissions.all()
+        for p in perms:
+            p.users.remove(user)
+            
+        self.members.remove(user)   
+
+    def remove_member_permissions(self, user, permission=None):
+
+        if permission:
+
+            try:
+                perm = self.ws_permissions.get(permission=permission)
+                perm.users.remove(user)
+            except:
+                pass
+
+        else:
+            perms = self.ws_permissions.all()
+            for p in perms:
+                p.users.remove(user)
+                        
     def get_members(self):
         return self.members.all()
         
@@ -93,7 +126,7 @@ class WorkspacePermission(models.Model):
 
 class WorkspacePermissionAssociation(models.Model):
     permission = models.ForeignKey('WorkspacePermission')
-    workspace = models.ForeignKey('Workspace')
+    workspace = models.ForeignKey('Workspace', related_name='ws_permissions')
     users = models.ManyToManyField(User)
     groups = models.ManyToManyField('WorkspacePermissionsGroup', blank = True)
 
