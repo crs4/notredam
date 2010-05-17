@@ -30,7 +30,6 @@ from treeview.views import  _add_node
 from variants.models import Variant
 #from variants.models import VariantAssociation,   SourceVariant,  PresetParameterValue
 from workspace.models import Workspace,  WorkSpacePermissionAssociation,  WorkSpacePermission
-from dam.workspace.views import _create_workspace
 from repository.models import Item,  Component
 from metadata.models import MetadataProperty,  MetadataValue
 from application.models import Type
@@ -589,8 +588,7 @@ class ItemTest(MyTestCase):
        
         item_id = Item.objects.all()[0].pk
         user = User.objects.get(pk = 1)
-        ws_new = Workspace(creator = user,  name= 'test')
-        _create_workspace(ws_new,  user)        
+        ws_new = Workspace.objects.create_workspace('test', '', user)
         
         params = self.get_final_parameters({'workspace_id':ws_new.pk})
         response = self.client.post('/api/item/%s/add_to_workspace/'%item_id, params,  )             
@@ -1334,7 +1332,7 @@ class VariantsTest(MyTestCase):
         
     def test_get_single_preset(self):
         
-        variant = Variant.objects.get(name = 'preview',  media_type__name = 'movie')
+        variant = Variant.objects.get(name = 'preview',  media_type__name = 'video')
         workspace = Workspace.objects.get(pk = 1)
         prefs = VariantAssociation.objects.get(workspace = workspace,  variant = variant).preferences
         
@@ -1435,7 +1433,7 @@ class VariantsTest(MyTestCase):
 
     def test_edit_preset(self):
     
-        variant = Variant.objects.get(name = 'preview',  media_type__name = 'movie')
+        variant = Variant.objects.get(name = 'preview',  media_type__name = 'video')
         workspace = Workspace.objects.get(pk = 1)        
         
         params = {
