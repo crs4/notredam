@@ -41,7 +41,6 @@ from dam.repository.models import Item, Component
 
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.framework.dam_metadata.models import XMPNamespace
-from dam.metadata.views import save_variants_rights
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
 from settings import INSTALLATIONPATH
@@ -302,20 +301,6 @@ def extract_features(component, machine):
     d.addCallbacks(custom_callback, cb_error, callbackArgs=[component, machine, my_extractor], errbackArgs=[component, machine])
 
     logger.debug("[FeatureExtraction.end] component %s" % component.ID)
-
-def save_rights(component, machine):
-
-    logger.debug("[SetRights.execute] component %s" % component.ID)
-    
-    workspace = component.workspace.all()[0] 
-    item = component.item
-    variant = component.variant
-
-    save_variants_rights(item, workspace, variant)
-
-    machine_to_next_state(machine)
-
-    logger.debug("[SetRights.end] component %s" % component.ID)
 
 def read_xmp_features(item, features, component):
     from time import strptime

@@ -80,11 +80,12 @@ class Item(AbstractItem):
                 inbox.items.remove(self)
             
     def get_metadata_values(self, metadataschema=None):
-        from dam.metadata.views import get_metadata_values
+        from dam.metadata.models import MetadataValue
+    
         values = []
         original_component = Component.objects.get(item=self, variant__name='original', workspace=self.workspaces.all()[0])
         if metadataschema:
-            schema_value, delete, b = get_metadata_values([self.pk], metadataschema, set([self.type.name]), set([original_component.media_type.name]), [original_component.pk])
+            schema_value, delete, b = MetadataValue.objects.get_metadata_values([self.pk], metadataschema, set([self.type.name]), set([original_component.media_type.name]), [original_component.pk])
             if delete:
                 return None
             if schema_value:
@@ -97,13 +98,45 @@ class Item(AbstractItem):
         else:
             for m in self.metadata.all().distinct('schema').values('schema'):
                 prop = MetadataProperty.objects.get(pk=m['schema'])
-                schema_value, delete, b = get_metadata_values([self.pk], prop, set([self.type.name]), set([original_component.media_type.name]), [original_component.pk])
+                schema_value, delete, b = MetadataValue.objects.get_metadata_values([self.pk], prop, set([self.type.name]), set([original_component.media_type.name]), [original_component.pk])
                 if delete:
                     return None
                 if schema_value:
                     if schema_value[self.pk]:
                         values.append({'%s' % prop.pk: schema_value[self.pk]})
 
+        return values
+
+    def get_formatted_descriptors(self, user, workspace):
+        from dam.metadata.models import MetadataDescriptor, MetadataProperty
+        from dam.preferences.views import get_metadata_default_language
+
+        descriptors = self.get_descriptors(workspace)
+        default_language = get_metadata_default_language(user, workspace)
+        values = []
+        for d, v in descriptors.iteritems():
+            desc = MetadataDescriptor.objects.get(pk=d)
+            desc_dict = {'caption': '%s' % desc.name}
+            desc_value = v
+    
+            if isinstance(v, dict):
+                if v.has_key(default_language):
+                    desc_value = v.get(default_language)
+                else:
+                    continue
+            elif isinstance(v, list):
+                for value in v:
+                    if isinstance(value, dict):
+                        if not isinstance(desc_value, dict):
+                            desc_value = {'properties': []}
+                        for key, v_value  in value.iteritems():
+                            p = MetadataProperty.objects.get(pk=key)
+                            desc_value['properties'].append({'caption': p.caption, 'value': v_value})
+    
+            desc_dict['value'] = desc_value
+    
+            values.append(desc_dict)
+        
         return values
 
     def get_descriptors(self, workspace=None):
@@ -217,6 +250,42 @@ class Component(AbstractComponent):
             url = NOTAVAILABLE    
             
         return url
+
+    def save_rights_value(self, license_value, workspace):
+    
+        """
+        Save license to the given component and set xmp 
+        values according to right rules (as defined in XMPRightsValue)
+        """
+    
+        logger.debug("SAVING RIGHTS")
+
+        try:    
+            if isinstance(license_value, RightsValue):
+                license = license_value
+            else:
+                license = RightsValue.objects.get(value__iexact = license_value)
+
+            self.comp_rights = []
+            self.metadata.filter(schema__rights_target=True).delete()
+            license.components.add(self)
+            item_list = [self.item]
+        
+            xmp_values = {}
+            for m in license.xmp_values.all():
+                xmp_values[m.xmp_property.id] = m.value
+            MetadataValue.objects.save_metadata_value(item_list, xmp_values, self.variant.name, workspace)
+
+        except:
+
+            self.metadata.filter(schema__rights_target=True).delete()
+
+            original_comp = self.source
+            
+            self.comp_rights = []
+            self.comp_rights.add(*original_comp.comp_rights.all())
+            for m in original_comp.metadata.filter(schema__rights_target=True):
+                MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = self,  value = m.value, language=m.language)
     
     def set_parameters(self, params):
         params_str = ''
@@ -258,10 +327,10 @@ class Component(AbstractComponent):
         return format_filesize(self.size)
     
     def get_metadata_values(self, metadataschema=None):
-        from dam.metadata.views import get_metadata_values
+        from dam.metadata.models import MetadataValue
         values = []
         if metadataschema:
-            schema_value, delete, b = get_metadata_values([self.item.pk], metadataschema, set([self.item.type.name]), set([self.media_type.name]), [self.pk], self)
+            schema_value, delete, b = MetadataValue.objects.get_metadata_values([self.item.pk], metadataschema, set([self.item.type.name]), set([self.media_type.name]), [self.pk], self)
             if delete:
                 return None
             if schema_value:
@@ -274,13 +343,45 @@ class Component(AbstractComponent):
         else:
             for m in self.metadata.all().distinct('schema').values('schema'):
                 prop = MetadataProperty.objects.get(pk=m['schema'])
-                schema_value, delete, b = get_metadata_values([self.item.pk], prop, set([self.item.type.name]), set([self.media_type.name]), [self.pk], self)
+                schema_value, delete, b = MetadataValue.objects.get_metadata_values([self.item.pk], prop, set([self.item.type.name]), set([self.media_type.name]), [self.pk], self)
                 if delete:
                     return None
                 if schema_value:
                     if schema_value[self.item.pk]:
                         values.append({'%s' % prop.pk: schema_value[self.item.pk]})
 
+        return values
+
+    def get_formatted_descriptors(self, group, user, workspace):
+        from dam.metadata.models import MetadataDescriptor, MetadataProperty
+        from dam.preferences.views import get_metadata_default_language
+    
+        descriptors = self.get_descriptors(group)
+        default_language = get_metadata_default_language(user, workspace)
+        values = []
+        for d, v in descriptors.iteritems():
+            desc = MetadataDescriptor.objects.get(pk=d)
+            desc_dict = {'caption': '%s' % desc.name}
+            desc_value = v
+    
+            if isinstance(v, dict):
+                if v.has_key(default_language):
+                    desc_value = v.get(default_language)
+                else:
+                    continue
+            elif isinstance(v, list):
+                for value in v:
+                    if isinstance(value, dict):
+                        if not isinstance(desc_value, dict):
+                            desc_value = {'properties': []}
+                        for key, v_value  in value.iteritems():
+                            p = MetadataProperty.objects.get(pk=key)
+                            desc_value['properties'].append({'caption': p.caption, 'value': v_value})
+    
+            desc_dict['value'] = desc_value
+    
+            values.append(desc_dict)
+        
         return values
 
     def get_descriptors(self, desc_group):

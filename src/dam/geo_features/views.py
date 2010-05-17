@@ -137,34 +137,15 @@ def get_markers(request):
 
     filter_items, count = _search_items(request, workspace, media_type, unlimited=True)
 
-    point = []
+    geotagged = GeoInfo.objects.search_geotagged(ne_lat, ne_lng, sw_lat, sw_lng, filter_items)
 
-    if(float(ne_lng)>float(sw_lng)):
-        geotagged = GeoInfo.objects.filter(latitude__lte=ne_lat, latitude__gte=sw_lat, longitude__lt=ne_lng, longitude__gt=sw_lng, item__in=filter_items)
-    else:
-        geotagged = GeoInfo.objects.filter(Q(longitude__gte=sw_lng) | Q(longitude__lte=ne_lng), latitude__lte=ne_lat, latitude__gte=sw_lat, item__in=filter_items)
+    point = []
 
     for i in geotagged:
         point.append({'lat': i.latitude, 'lng': i.longitude, 'item': i.item.pk})
 
     resp = simplejson.dumps(list(point))
     return HttpResponse(resp)
-
-def save_geo_coords(item, lat, lng):
-    """
-    Save geo coordinates of the given item
-    """
-    metadata_lat = MetadataProperty.objects.filter(latitude_target=True)
-    metadata_lng = MetadataProperty.objects.filter(longitude_target=True)
-
-    GeoInfo.objects.filter(item=item).delete()
-    geo = GeoInfo.objects.create(latitude=lat, longitude=lng, item=item)
-    item.metadata.filter(schema__in=metadata_lat).delete()
-    item.metadata.filter(schema__in=metadata_lng).delete()
-    for m in metadata_lat:
-        item.metadata.create(schema=m, value=lat)
-    for m in metadata_lng:
-        item.metadata.create(schema=m, value=lng)
     
 @login_required
 @permission_required('edit_metadata')
@@ -181,8 +162,8 @@ def save_geoinfo(request):
         item_object = Item.objects.get(pk=i)
         latitude = coords['lat']
         longitude = coords['lng']
-        save_geo_coords(item_object, latitude, longitude)
-
+        GeoInfo.objects.save_geo_coords(item_object, latitude, longitude)
+        
     resp = simplejson.dumps({'success': True})
 
     return HttpResponse(resp)

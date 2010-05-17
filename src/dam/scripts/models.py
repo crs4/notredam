@@ -19,11 +19,11 @@
 from django.db import models
 from django.utils import simplejson
 from django.contrib.contenttypes import generic
-from upload.views import generate_tasks
-from variants.models import Variant
-from repository.models import Component
+from dam.upload.views import generate_tasks
+from dam.variants.models import Variant
+from dam.repository.models import Component
 from dam.framework.dam_repository.models import Type
-from dam.metadata.views import save_variants_rights
+
 import logger
 
 class ScriptException(Exception):
@@ -199,10 +199,8 @@ class SaveAs(BaseAction):
         component.source = source
         component.save() 
         logger.debug('generate task')
-        save_variants_rights(component , self.workspace, rights)
+        component.save_variants_rights(self.workspace, rights)
         generate_tasks(variant, self.workspace, item)
-
-
 
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']

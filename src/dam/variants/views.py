@@ -34,7 +34,7 @@ from dam.repository.models import Component
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.decorators import permission_required
 from dam.repository.models import Component,  Item
-from dam.metadata.views import _get_formatted_descriptors, save_variants_rights, _get_ws_groups
+from dam.metadata.views import _get_ws_groups
 from dam.batch_processor.models import Machine
 
 import os
@@ -357,11 +357,8 @@ def get_variants(request):
             basic_group = _get_ws_groups(workspace, 'specific_basic')[0]
             full_group = _get_ws_groups(workspace, 'specific_full')[0]
             
-            basic_descriptors = comp.get_descriptors(basic_group)
-            full_descriptors = comp.get_descriptors(full_group)
-            
-            info_list = _get_formatted_descriptors(basic_descriptors,  user, workspace)
-            info_list_full = _get_formatted_descriptors(full_descriptors,  user, workspace)
+            info_list = comp.get_formatted_descriptors(basic_group,  user, workspace)
+            info_list_full = comp.get_formatted_descriptors(full_group,  user, workspace)
             
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
@@ -447,3 +444,18 @@ def save_sources(request):
         raise ex
     return HttpResponse(simplejson.dumps(resp))
 
+@login_required
+def get_variants_menu_list(request):
+    """
+    Returns the list of variants of the current workspace
+    """
+    workspace = request.session['workspace']
+    
+    vas = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True)).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
+    
+    vas = set(vas)
+    
+    resp = {'variants':[]}
+    for va in vas:
+        resp['variants'].append({'variant_name': va})
+    return HttpResponse(simplejson.dumps(resp))

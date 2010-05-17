@@ -71,7 +71,7 @@ class Basket(models.Model):
         """
         Returns the basket for the given user and workspace
         @param user an instance of django.contrib.auth.User
-        @param workspace an instance of workspace.Workspace
+        @param workspace an instance of workspace.DAMWorkspace
         """
         basket, created = Basket.objects.get_or_create(user=user, workspace=workspace)
 
@@ -82,7 +82,7 @@ class Basket(models.Model):
         """
         Delete the basket for the given user/workspace
         @param user an instance of django.contrib.auth.User
-        @param workspace an instance of workspace.Workspace
+        @param workspace an instance of workspace.DAMWorkspace
         """
         Basket.objects.filter(user=user, workspace=workspace).delete()
     
