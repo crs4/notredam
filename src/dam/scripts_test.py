@@ -135,6 +135,12 @@ pipeline_preview = {
                         
                 },
                 {
+                     'type': 'setrights',
+                     'parameters':{
+                        'rights': 'creative commons by'
+                     }
+                 },
+                {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
@@ -194,17 +200,17 @@ pipeline_preview = {
                     }
                 
                 },
-                {
-                   'type': 'watermark',
-                   'parameters':{
-                    'filename':'14c5c8e95751401db5dd6253817b6a6d.gif',
-                    'pos_x_percent': 20,
-                    'pos_y_percent':20,
-                  
-                                 
-                    }
-                   
-                },
+#                {
+#                   'type': 'watermark',
+#                   'parameters':{
+#                    'filename':'14c5c8e95751401db5dd6253817b6a6d.gif',
+#                    'pos_x_percent': 20,
+#                    'pos_y_percent':20,
+#                  
+#                                 
+#                    }
+#                   
+#                },
                 
                 
                 {
@@ -381,10 +387,31 @@ pipeline_fullscreen = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'prova'
+                    'output_variant': 'fullscreen'
                 }
                         
-            }    
+            },
+#                {
+#                 'type': 'crop',
+#                 'parameters':{
+#                    'upperleft_x': 20, 
+#                    'upperleft_y':20,
+#                    'lowerright_x':200,
+#                    'lowerright_y': 200           
+#                }
+#                 
+#                 },
+#                 {
+#                'type': 'saveas',
+#                'parameters':{
+#                    'output_format': 'jpeg',
+#                    'output_variant': 'fullscreen'
+#                }
+#                        
+#            }
+                 
+                
+    
         ],
                  
                  
@@ -424,34 +451,40 @@ ws = Workspace.objects.get(pk = 1)
 #pipeline_json = simplejson.dumps(pipeline_thumb)
 #script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
 #
+#ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
+
+
 #script_thumb = Script.objects.get(pk =  1)
 #script_thumb.pipeline = pipeline_json
 #script_thumb.save()
-#
+
 #upload = Event.objects.create(name = 'upload')
 #EventRegistration.objects.create(event = upload, listener = script_thumb, workspace = ws)
-#
-#pipeline_json = simplejson.dumps(pipeline_preview)
-#
-#script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws,is_global = True )
 
-#script_preview = Script.objects.get(pk =  2)
-#script_preview.pipeline = pipeline_json
-#script_preview.save()
+pipeline_json = simplejson.dumps(pipeline_preview)
+
+#script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws,is_global = True )
+#ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
+
+#
+script_preview = Script.objects.get(pk =  2)
+script_preview.pipeline = pipeline_json
+script_preview.save()
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
 #EventRegistration.objects.create(event = upload, listener = script_preview, workspace = ws)
-#
-pipeline_json = simplejson.dumps(pipeline_fullscreen)
 
+#pipeline_json = simplejson.dumps(pipeline_fullscreen)
+#
 #script_fullscreen = Script.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, is_global = True)
-#
-script_preview = Script.objects.get(pk =  3)
-script_preview.pipeline = pipeline_json
-script_preview.save()
-#
-##upload = Event.objects.create(name = 'upload')
+#ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
+
+#script_preview = Script.objects.get(pk =  3)
+#script_preview.pipeline = pipeline_json
+#script_preview.save()
+
+#upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
 #EventRegistration.objects.create(event = upload, listener = script_fullscreen, workspace = ws)
 
