@@ -23,11 +23,29 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
 from dam.workflow.models import StateItemAssociation
+from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
+
 import urlparse
 import logger
-
-from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
 import simplejson
+
+from mediadart.storage import Storage
+
+def _get_resource_url(id):
+    """
+    Returns resource path
+    """
+
+    storage = Storage()
+
+    try:
+        if storage.exists(id):
+            url = '/storage/' + id
+        else:
+            url = None
+    except:
+        url = None
+    return url
 
 class Item(AbstractItem):
 
@@ -180,6 +198,25 @@ class Component(AbstractComponent):
         return self._id
         
     ID = property(fget=_get_id)
+    
+    def get_component_url(self):
+    
+        from dam.application.views import NOTAVAILABLE
+
+        url = NOTAVAILABLE    
+       
+        try:
+            component = self
+        
+            if component.uri:
+                return component.uri
+    
+            url = _get_resource_url(component.ID)
+    
+        except Exception,ex:
+            url = NOTAVAILABLE    
+            
+        return url
     
     def set_parameters(self, params):
         params_str = ''
