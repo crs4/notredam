@@ -32,26 +32,25 @@ from django_restapi.responder import *
 
 from django.contrib.auth.models import Permission
 
-from dam.repository.models import Item,  Component,  _new_md_id
+from dam.repository.models import Item,  Component, _get_resource_url
 from dam.framework.dam_repository.models import Type
 from dam.framework.dam_metadata.models import XMPStructure
-from dam.workspace.models import Workspace,  WorkSpacePermissionAssociation, WorkSpacePermission
+from dam.workspace.models import DAMWorkspace as Workspace
+from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.views import _move_node,  _add_node, InvalidNode,  WrongWorkspace,  NotMovableNode,  _rename_node,  NotEditableNode, save_association,  _save__collection_association,  _save__keyword_association,  _remove_collection_association,  _remove_keyword_association,  _save_metadata_mapping,  _edit_node
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
 
 
-from dam.workspace.views import _create_workspace, _add_items_to_ws, _search, _get_thumb_url
+from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.metadata.views import  save_metadata_value
 from dam.upload.views import generate_tasks, _get_upload_url,  _create_variant, guess_media_type,  _uploaded_item
 from dam.workflow.views import _set_state 
 from decorators import *
 from exceptions import *
 from workspace.forms import AdminWorkspaceForm
-from application.views import get_component_url, _get_resource_url
 
 from django.contrib.auth import authenticate,  login
 
@@ -469,7 +468,7 @@ class WorkspaceResource(ModResource):
 #                    else:
                     va = v.variantassociation_set.get(workspace__pk = workspace_id)
                     logger.debug('v %s'%v)
-                    url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)        
+                    url = c.get_component_url()
                     tmp[v.name] = url
         
             resp['items'].append(tmp)
@@ -534,8 +533,6 @@ class WorkspaceResource(ModResource):
 #            tmp['id'] = va.variant.pk            
             v_name = va.variant.name
             media_type = va.variant.media_type.name
-            if media_type == 'movie':
-                media_type  = 'video'
                 
             if resp.has_key(v_name):
                 
@@ -640,10 +637,9 @@ class WorkspaceResource(ModResource):
             logger.exception('invalid form:\n %s' %form.errors)            
             raise ArgsValidationError(form.errors  )
         
-        ws.save()
-        
         user = User.objects.get(pk = user_id)
-        _create_workspace(ws,  user)
+        ws = Workspace.objects.create_workspace(name, description, user)
+
         resp = {'id': ws.pk, 'name': ws.name,  'description': ws.description}
         json_resp = json.dumps(resp)
         logger.debug('json_resp %s'% json_resp)
@@ -706,9 +702,6 @@ class WorkspaceResource(ModResource):
         metadata = request.POST.getlist('metadata')
         media_type = request.POST.get('media_type')
         logger.debug('metadata %s'%metadata)
-#        TODO: movie... sigh
-        if media_type == 'video':
-            media_type = 'movie'
         
         workspace = Workspace.objects.get(pk = workspace_id)
         items = Item.objects.filter(workspaces__pk = workspace_id)
@@ -783,7 +776,7 @@ class ItemResource(ModResource):
         if self.private:
             media_type = request.POST.get('media_type') 
             if media_type:
-                if not media_type in ['image',  'movie',  'audio',  'doc']:
+                if not media_type in ['image',  'video',  'audio',  'doc']:
                     raise ArgsValidationError
                 logger.debug('media_type %s' %media_type)
                 item.type = media_type
@@ -1024,11 +1017,7 @@ class ItemResource(ModResource):
                 new_metadata[str(property.pk)] = metadata[data]
                 
         logger.debug('new_metadata %s' %new_metadata)
-        save_metadata_value([item_id], new_metadata,  'original', workspace)
-                
-            
-            
-        
+        MetadataValue.objects.save_metadata_value([item_id], new_metadata,  'original', workspace)
         
 #        for data in metadata:            
 #            logger.debug('metadata %s '%metadata )
@@ -1113,11 +1102,7 @@ class ItemResource(ModResource):
     
     def _get_item_info(self, item, workspace, variants, metadata):
         media_type = item.type
-        
-#        TODO: movie...
-        if media_type == 'movie':
-            media_type = 'video'
-        
+                
         tmp = {'pk': item.pk, 'media_type': media_type}
         for m in metadata:
             property_namespace, property_field_name = m.split('_')
@@ -1142,7 +1127,7 @@ class ItemResource(ModResource):
                 v = component.variant
                 va = v.variantassociation_set.get(workspace = workspace)
                 logger.debug('v %s'%v)
-                url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)
+                url  = component.get_component_url()
 #                url = '/files/images/ooo.jpg'        
                 
             tmp[variant] = url
@@ -1500,7 +1485,7 @@ class ItemResource(ModResource):
                             
             va = v.variantassociation_set.get(workspace__pk = workspace_id)
             logger.debug('v %s'%v)
-            url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)        
+            url  = c.get_component_url()        
 #            item.variants[va.pk] = url
             item.variants[v.name] = url
     
@@ -1512,7 +1497,7 @@ class ItemResource(ModResource):
         - method: POST
         - args:
             - workspace_id : the id of the workspace to whom the item will be added
-            - media_type: image, movie, audio. Optional, default: image
+            - media_type: image, video, audio. Optional, default: image
         - returns:
             - JSON example:
             {
@@ -1529,10 +1514,6 @@ class ItemResource(ModResource):
         types = [t.name for t in Type.objects.all()]
         
         media_type = request.POST.get('media_type',  'image')
-        
-#        TODO: fix movie name, sigh
-        if media_type == 'video':
-            media_type = 'movie'
         
         if media_type not in types:
             raise InvalidMediaType
@@ -2437,8 +2418,7 @@ class Auth(ModResource):
         
         create_ws = request.POST.get('create_workspace')
         if create_ws:
-            ws = Workspace(name=user.username)
-            _create_workspace(ws,  user)        
+            ws = Workspace.objects.create_workspace(user.username, '', user)
         
         resp = {'id':user.pk}
         logger.debug('resp %s'%resp)    
@@ -2459,8 +2439,7 @@ class VariantsResource(ModResource):
             'media_type': variant.media_type.name, 
             'auto_generated': variant.auto_generated, 
         }
-        if resp['media_type'] == 'movie':
-            resp['media_type']  = 'video'
+
         if not variant.is_global:
             try:
                 variant_association = VariantAssociation.objects.get(variant = variant)
@@ -2626,12 +2605,8 @@ class VariantsResource(ModResource):
         for arg in arg_dict.keys():
             if  arg_dict[arg] is None:
                 raise MissingArgs({arg: ['argument %s is missing'%arg]})
-            
-        
-        if media_type == 'video':
-            type_obj = Type.objects.get(name = 'movie')
-        else:
-            type_obj = Type.objects.get(name = media_type)
+                    
+        type_obj = Type.objects.get(name = media_type)
              
         variant = Variant.objects.create(name = name, caption = caption,  auto_generated = generated,  media_type = type_obj)
         va = VariantAssociation.objects.create(variant = variant,  workspace = workspace)
@@ -2708,8 +2683,11 @@ class VariantsResource(ModResource):
         except:
             raise ArgsValidationError({'args': ['invalid file_name, no valid extension found']})
         
-        res_id = _new_md_id()
-        resp,  job_id = _get_upload_url(res_id,  fsize, ext)
+#         res_id = _new_md_id()
+#         resp,  job_id = _get_upload_url(res_id,  fsize, ext)
+        
+        #TODO: replace _get_upload_url 
+        resp = []
         
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)

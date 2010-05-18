@@ -19,7 +19,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace
 
 import uuid
 
@@ -30,7 +30,7 @@ class UploadURL(models.Model):
 
     user = models.ForeignKey(User)
     url = models.CharField(max_length=40, unique = True)
-    workspace = models.ForeignKey(Workspace)
+    workspace = models.ForeignKey(DAMWorkspace)
     
     def save(self,  *args, **kwargs):
         if not self.id and not self.url:

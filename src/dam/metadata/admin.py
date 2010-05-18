@@ -18,11 +18,7 @@
 
 from django.contrib import admin
 from dam.metadata.models import MetadataProperty, MetadataDescriptor, MetadataDescriptorGroup, MetadataValue, RightsValue, RightsXMPValue
-from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure, XMPPropertyChoice
 
-admin.site.register(XMPNamespace)
-admin.site.register(XMPStructure)
-admin.site.register(XMPPropertyChoice)
 admin.site.register(MetadataProperty)
 admin.site.register(MetadataDescriptor)
 admin.site.register(MetadataDescriptorGroup)
