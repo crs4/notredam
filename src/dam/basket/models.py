@@ -18,7 +18,7 @@
 
 from django.db import models
 from django.contrib.auth.models import User
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item
 
 class Basket(models.Model):
@@ -71,7 +71,7 @@ class Basket(models.Model):
         """
         Returns the basket for the given user and workspace
         @param user an instance of django.contrib.auth.User
-        @param workspace an instance of workspace.Workspace
+        @param workspace an instance of workspace.DAMWorkspace
         """
         basket, created = Basket.objects.get_or_create(user=user, workspace=workspace)
 
@@ -82,7 +82,7 @@ class Basket(models.Model):
         """
         Delete the basket for the given user/workspace
         @param user an instance of django.contrib.auth.User
-        @param workspace an instance of workspace.Workspace
+        @param workspace an instance of workspace.DAMWorkspace
         """
         Basket.objects.filter(user=user, workspace=workspace).delete()
     

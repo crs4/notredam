@@ -19,13 +19,12 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
-    (r'^get_lang_pref/$', 'dam.metadata.views.get_lang_pref'),
+
     (r'^get_metadata/$', 'dam.metadata.views.get_metadata'),
     (r'^save_metadata/$', 'dam.metadata.views.save_metadata'),
     (r'^metadata_structures/$', 'dam.metadata.views.get_metadata_structures'),
     (r'^save_descriptors/$', 'dam.metadata.views.save_descriptors'),
     (r'^get_basic_descriptors/$', 'dam.metadata.views.get_basic_descriptors'),
-    (r'^get_variants_menu_list/$', 'dam.metadata.views.get_variants_menu_list'),
     (r'^sync_component/$', 'dam.metadata.views.sync_component'),
     
     (r'^ws_admin/config_descriptors/(.+)/$', 'dam.metadata.views.wsadmin_config_descriptors'),

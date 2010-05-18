@@ -29,19 +29,18 @@ from django.db.models import Q
 
 from dam.repository.models import Item, Component
 from dam.framework.dam_repository.models import Type
-from dam.metadata.views import get_metadata_default_language, save_descriptor_values, save_variants_rights
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
 from dam.treeview.models import Node
 from dam.batch_processor.models import MachineState, Machine, Action
-
-from dam.workspace.models import Workspace
-from dam.workspace.decorators import permission_required
-from dam.application.views import get_component_url
+from dam.workspace.models import DAMWorkspace as Workspace
+from dam.framework.dam_workspace.decorators import permission_required
 from dam.variants.views import _create_variant
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
-from eventmanager.models import EventRegistration
+from dam.eventmanager.models import EventRegistration
+from dam.preferences.views import get_metadata_default_language
+
 from mediadart.storage import Storage
 
 import logger
@@ -109,7 +108,7 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
             value = request.POST[key]
             metadata_id = key.split('_')[-1]
             descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
-            save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
+            MetadataValue.objects.save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
 
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
@@ -237,7 +236,7 @@ def get_metadata_upload(request):
 def guess_media_type (file):
 
     """
-    It tries to guess the media type of the uploaded file (image, movie, audio or doc)
+    It tries to guess the media type of the uploaded file (image, video, audio or doc)
     """
     
 #    mimetypes.init()
@@ -253,8 +252,6 @@ def guess_media_type (file):
     
     try:
         media_type = media_type[0][:media_type[0].find("/")]
-        if media_type == 'video':
-            media_type = 'movie'
         
 #        if media_type == 'application':
 #            media_type = 'doc'        

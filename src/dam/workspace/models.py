@@ -17,36 +17,66 @@
 #########################################################################
 
 from django.db import models
-from django.contrib.auth.models import User, Permission, Group
+from django.db.models import Q
 
 from dam.repository.models import Item
 from dam.workflow.models import State
-from django.db.models import Q
-from operator import and_, or_
+from dam.framework.dam_workspace.models import Workspace, WorkspaceManager
 
-class PermissionManager(models.Manager):
-    def with_permissions(self, user,   permissions):
-        wss_1= super(PermissionManager,  self).filter(workspacepermissionassociation__permission__in = permissions,  workspacepermissionassociation__users = user)
+class WSManager(WorkspaceManager):
+
+    def create_workspace(self, name, description, creator):
+
+        from dam.scripts.models import ScriptDefault, Script
+        from dam.treeview.models import Node, Category
+        from dam.eventmanager.models import Event, EventRegistration
+
+        ws = super(WSManager, self).create_workspace(name, description, creator)
         
-        wss_2 = super(PermissionManager,  self).filter(workspacepermissionsgroup__permissions__in = permissions,  workspacepermissionsgroup__users = user)
-        wss = reduce(or_, [wss_1,  wss_2]).distinct()
-        return wss
+        try:
+            
+            global_scripts = ScriptDefault.objects.all()
+            upload = Event.objects.get(name = 'upload')
+            for glob_script in global_scripts:
+                script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
+                EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
+            
+            root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'keyword',  cls = 'keyword')
+            col_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'collection')
+            inbox_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'inbox')
+            uploaded = Node.objects.create(parent = inbox_root, depth = 1, label = 'Uploaded', workspace = ws, editable = False,  type = 'inbox')
+            imported = Node.objects.create(parent = inbox_root, depth = 1, label = 'Imported', workspace = ws, editable = False, type = 'inbox')
+    
+            for cat in Category.objects.all():
+                Node.objects.create(workspace = ws, label = cat.label, depth = 1, type = root.type, parent = root,  is_drop_target = cat.is_drop_target,  is_draggable = cat.is_draggable,  editable = cat.editable,  cls = cat.cls)
+        except Exception,  ex:
+            logger.exception(ex)
+            raise ex        
+        
+        return ws
 
-class Workspace(models.Model):
-    name = models.CharField(max_length=512)
-    description = models.CharField(max_length=512)
-    creator = models.ForeignKey(User,  blank = True,  null = True)
-    members = models.ManyToManyField(User, related_name="workspaces",  blank=True)    
+class DAMWorkspace(Workspace):
     items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
-    creation_date = models.DateTimeField(auto_now_add = True)
-    last_update = models.DateTimeField(auto_now = True)
     states = models.ManyToManyField(State)
-    objects = models.Manager()
-    permissions = PermissionManager()
+    objects = WSManager()
+    
+    def remove_item(self, item):
 
-    def __unicode__(self):
-        return "%s" % (self.name)
-        
+        try:
+            
+            inbox_nodes = Node.objects.filter(type = 'inbox', workspace = self, items = item) #just to be sure, filter instead of get
+            for inbox_node in inbox_nodes:
+                inbox_node.items.remove(item)
+                if inbox_node.items.all().count() == 0:
+                    inbox_node.delete()
+            
+            item.workspaces.remove(self)
+            item.component_set.all().filter(workspace = self).exclude(Q(variant__is_global= True,  variant__auto_generated = False)| Q(variant__shared = True)).delete()
+            
+        except Exception, ex:
+            logger.exception(ex)
+            raise ex        
+    
     def get_variants(self):
         from dam.variants.models import Variant
         return Variant.objects.filter(Q(workspace = self) | Q(workspace__isnull = True,  )).distinct()    
@@ -95,3 +125,4 @@ class WorkspacePermissionsGroup(models.Model):
             'fields': ('name', 'workspace', 'permissions',  'users')
         }),       
     )
+>>>>>>> other

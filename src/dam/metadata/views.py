@@ -20,29 +20,26 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response
-from django.template import RequestContext, Context, loader
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils import simplejson
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from dam.repository.models import Item,Component
+from dam.repository.models import Item, Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
-from dam.preferences.views import get_user_setting
-from dam.workspace.models import Workspace
+from dam.preferences.views import get_user_setting, get_metadata_default_language
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant
-from dam.workspace import decorators
+from dam.framework.dam_workspace import decorators
 from dam.batch_processor.models import MachineState, Action, Machine
 from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
 
 from mx.DateTime.Parser import DateTimeFromString
-from mimetypes import guess_type
-from os import path
 import logger
 import re
 
-def add_sync_machine(component):
+def _add_sync_machine(component):
 
     end = MachineState.objects.create(name='finished')
 
@@ -56,6 +53,9 @@ def add_sync_machine(component):
 
 @login_required
 def sync_component(request):
+    """
+    Export XMP metadata of the given items/variants
+    """
 
     items = request.POST.getlist('items')
     variants = request.POST.getlist('variants')
@@ -75,87 +75,9 @@ def sync_component(request):
 
         for component in sync_comp:
 
-            add_sync_machine(component)
+            _add_sync_machine(component)
     
     return HttpResponse('')
-
-def get_metadata_default_language(user, workspace=None):
-    """
-    Returns default metadata language for the given user (or the application default)
-    """
-    component=DAMComponent.objects.get(name__iexact='metadata')
-    setting=DAMComponentSetting.objects.get(component=component, name__iexact='default_metadata_language')
-    comma_separated_languages = get_user_setting(user, setting, workspace)
-    list_of_languages = comma_separated_languages.split(',')
-    return list_of_languages[0]
-
-@login_required
-def get_variants_menu_list(request):
-    """
-    Returns the list of variants of the current workspace
-    """
-    workspace = request.session['workspace']
-    
-    vas = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True)).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
-    
-    vas = set(vas)
-    
-    resp = {'variants':[]}
-    for va in vas:
-        resp['variants'].append({'variant_name': va})
-    return HttpResponse(simplejson.dumps(resp))
-
-def get_lang_pref(request):
-    """
-    Returns the list of available metadata languages chosen by the given user
-    """
-    workspace = request.session['workspace']
-    
-    user = User.objects.get(pk=request.session['_auth_user_id'])
-    component=DAMComponent.objects.get(name__iexact='metadata')
-    setting=DAMComponentSetting.objects.get(component=component, name__iexact='supported_languages')
-    comma_separated_languages = get_user_setting(user, setting, workspace)
-    list_of_languages = comma_separated_languages.split(',')
-    resp = {'languages':[]}
-    default_language = get_metadata_default_language(user,workspace)
-    languages = MetadataLanguage.objects.filter(code__in=list_of_languages).values('code', 'language', 'country')
-    for l in languages:
-        if l['code'] == default_language:
-            l['default_value'] = True
-        resp['languages'].append(l)
-    return HttpResponse(simplejson.dumps(resp))
-
-def _get_formatted_descriptors(descriptors, user, workspace):
-    """
-    
-    """
-    default_language = get_metadata_default_language(user, workspace)
-    values = []
-    for d, v in descriptors.iteritems():
-        desc = MetadataDescriptor.objects.get(pk=d)
-        desc_dict = {'caption': '%s' % desc.name}
-        desc_value = v
-
-        if isinstance(v, dict):
-            if v.has_key(default_language):
-                desc_value = v.get(default_language)
-            else:
-                continue
-        elif isinstance(v, list):
-            for value in v:
-                if isinstance(value, dict):
-                    if not isinstance(desc_value, dict):
-                        desc_value = {'properties': []}
-                    for key, v_value  in value.iteritems():
-                        p = MetadataProperty.objects.get(pk=key)
-                        desc_value['properties'].append({'caption': p.caption, 'value': v_value})
-
-        desc_dict['value'] = desc_value
-
-        values.append(desc_dict)
-    
-    return values
-
 
 @login_required
 def get_basic_descriptors(request): 
@@ -170,75 +92,11 @@ def get_basic_descriptors(request):
     user = User.objects.get(pk=request.session['_auth_user_id'])
 
     item = Item.objects.get(pk=item_list[0])
-    descriptors = item.get_descriptors(workspace)
+    values = item.get_formatted_descriptors(user, workspace)
     
-    values = _get_formatted_descriptors(descriptors,  user, workspace)
-
     resp_dict = {'descriptors': values}
     resp = simplejson.dumps(resp_dict)
     return HttpResponse(resp)
-
-def set_modified_flag(mtdata, comp):
-
-   """
-   Set flag modified in metadata and in Component
-   """
-   if mtdata.modified == False:
-       mtdata.modified = True
-       mtdata.save()
-   if isinstance(comp, Component):
-       if comp.modified_metadata == False:
-           comp.modified_metadata = True
-           comp.save()
-
-def save_metadata_value(item_list, metadata, metadata_object, workspace, default_language='en-US'):
-    
-    """
-    Save XMP Values for the items in item_list
-    """
-    
-    ctype_item = ContentType.objects.get_for_model(Item)
-    ctype_obj = ContentType.objects.get_for_model(Component)
-
-    for i in item_list:
-        item = Item.objects.get(pk=i)
-        for m in metadata:
-            metadataschema = MetadataProperty.objects.get(pk=int(m))
-
-            if metadataschema.is_variant:
-                obj = Component.objects.get(item=item, variant__name=metadata_object, workspace=workspace)
-                ctype = ctype_obj
-            else:
-                obj = item
-                ctype = ctype_item
-
-            obj.metadata.filter(schema__id=int(m)).delete()
-
-            if isinstance(metadata[m], list):
-                if metadataschema.type == 'lang':
-                    for value in metadata[m]:
-                        new_metadata = MetadataValue.objects.get_or_create(schema=metadataschema, object_id=obj.pk, content_type=ctype, value=value[0], language=value[1])
-                        set_modified_flag(new_metadata[0],obj)
-                else:
-                    for index in range(len(metadata[m])):
-                        value = metadata[m][index]
-                        if isinstance(value, dict):
-                            for k, v in value.iteritems():
-                                subproperty = MetadataProperty.objects.get(pk=int(k))
-                                xpath = '%s:%s[%d]/%s:%s' % (metadataschema.namespace.prefix, metadataschema.field_name, index+1, subproperty.namespace.prefix, subproperty.field_name)
-                                if subproperty.type == 'lang':
-                                    new_metadata = MetadataValue.objects.get_or_create(schema=metadataschema, object_id=obj.pk, content_type=ctype, value=v, xpath=xpath, language=default_language)                                        
-                                    set_modified_flag(new_metadata[0],obj)
-                                else:
-                                    new_metadata = MetadataValue.objects.get_or_create(schema=metadataschema, object_id=obj.pk, content_type=ctype, value=v, xpath=xpath)
-                                    set_modified_flag(new_metadata[0],obj)
-                        else:
-                            new_metadata = MetadataValue.objects.get_or_create(schema=metadataschema, object_id=obj.pk, content_type=ctype, value=value)
-                            set_modified_flag(new_metadata[0],obj)
-            else:
-                value = metadata[m]
-                new_metadata = MetadataValue.objects.get_or_create(schema=metadataschema, object_id=obj.pk, content_type=ctype, value=value)
-                set_modified_flag(new_metadata[0],obj)
 
 @login_required
 @decorators.permission_required('edit_metadata')
@@ -251,160 +109,18 @@ def save_metadata(request):
     metadata = simplejson.loads(request.POST.get('metadata'))
 
     item_list = request.POST.getlist('items')
-    metadata_object = request.POST.get('obj', 'original')
+    variant_name = request.POST.get('obj', 'original')
 
     workspace = request.session.get('workspace', None) 
 
     user = User.objects.get(pk=request.session['_auth_user_id'])
     default_language = get_metadata_default_language(user, workspace)
 
-    save_metadata_value(item_list, metadata, metadata_object, workspace, default_language)
+    items = Item.objects.filter(pk__in=item_list)
+
+    MetadataValue.objects.save_metadata_value(items, metadata, variant_name, workspace, default_language)
 
     return HttpResponse('OK')   
-
-def save_descriptor_values(descriptor, item, values, workspace, metadata_object='original', default_language='en-US'):
-	
-    """
-    Save descriptor values for the given item
-    """	
-	
-    properties = descriptor.properties.filter(media_type=item.type)
-    ctype_item = ContentType.objects.get_for_model(Item)
-    ctype_obj = ContentType.objects.get_for_model(Component)
-    for p in properties:
-
-        if not p.editable:
-            continue
-
-        if p.is_variant:
-            obj = Component.objects.get(item=item, variant__name=metadata_object, workspace=workspace)
-            ctype = ctype_obj
-        else:
-            obj = item
-            ctype = ctype_item
-
-        obj.metadata.filter(schema__id=int(p.id)).delete()
-
-        if isinstance(values, list):
-            if p.type == 'lang':
-                if p.is_array != 'not_array':
-                    for value in values:
-                        new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=value[0], language=value[1])
-                        set_modified_flag(new_metadata[0],obj)
-                else:
-                    value = values[0]
-                    new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=value[0], language=value[1])                      
-                    set_modified_flag(new_metadata[0],obj)
-            else:
-                if p.is_array != 'not_array':                   
-                    for index in range(len(values)):
-                        value = values[index]
-                        if isinstance(value, dict):
-                            for k, v in value.iteritems():
-                                subproperty = MetadataProperty.objects.get(pk=int(k))                               
-                                xpath = '%s:%s[%d]/%s:%s' % (p.namespace.prefix, p.field_name, index+1, subproperty.namespace.prefix, subproperty.field_name)
-                                new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=v, xpath=xpath)                               
-                                set_modified_flag(new_metadata[0],obj)
-                        else:
-                            new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=value)
-                            set_modified_flag(new_metadata[0],obj)
-                else:
-                    value = values[0]
-                    index = 0
-                    if isinstance(value, dict):
-                        for k, v in value.iteritems():
-                            subproperty = MetadataProperty.objects.get(pk=int(k))                               
-                            xpath = '%s:%s[%d]/%s:%s' % (p.namespace.prefix, p.field_name, index+1, subproperty.namespace.prefix, subproperty.field_name)
-                            new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=v, xpath=xpath)                               
-                            set_modified_flag(new_metadata[0],obj)
-                    else:
-                        new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=value)
-                        set_modified_flag(new_metadata[0],obj)
-        else:
-            if p.type == 'lang':
-                new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=values, language=default_language)
-                set_modified_flag(new_metadata[0],obj)
-            else:
-                if p.is_array != 'not_array':
-                    value = values.split(',')
-                    for v in value:
-                        new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=v.strip())
-                        set_modified_flag(new_metadata[0],obj)
-                else:
-                    value = values
-                    new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, value=value)
-                    set_modified_flag(new_metadata[0],obj)
-
-def save_descriptor_structure_values(descriptor, schema_id, item, values, workspace, metadata_object='original'):
-	
-    """
-    Save descriptor values for the given item 
-    (if the descriptor is mapped to an array of XMP Structure, 
-    it saves the values as the first item of the array)
-    """
-	
-    properties = descriptor.properties.filter(media_type=item.type)
-    ctype_item = ContentType.objects.get_for_model(Item)
-    ctype_obj = ContentType.objects.get_for_model(Component)
-    for p in properties:
-
-        if not p.editable:
-            continue
-
-        if p.is_variant:
-            obj = Component.objects.get(item=item, variant__name=metadata_object, workspace=workspace)
-            ctype = ctype_obj
-        else:
-            obj = item
-            ctype = ctype_item
-
-        subproperty = MetadataProperty.objects.get(pk=int(schema_id))                               
-        xpath = '%s:%s[1]/%s:%s' % (p.namespace.prefix, p.field_name, subproperty.namespace.prefix, subproperty.field_name)
-        new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, xpath=xpath)
-        new_metadata[0].value = values
-        new_metadata[0].save()
-        set_modified_flag(new_metadata[0],obj)
-
-def save_rights_value(comp, license, workspace):
-
-    """
-    Save license to the given component and set xmp 
-    values according to right rules (as defined in XMPRightsValue)
-    """
-
-    logger.debug("SAVING RIGHTS")
-
-    comp.comp_rights = []    
-    comp.metadata.filter(schema__rights_target=True).delete()
-    license.components.add(comp)
-    item_list = [comp.item.pk]
-
-    xmp_values = {}
-    for m in license.xmp_values.all():
-        xmp_values[m.xmp_property.id] = m.value
-    save_metadata_value(item_list, xmp_values, comp.variant.name, workspace)    
-
-def save_variants_rights(comp, workspace, license_value):
-
-    """
-    Save license to the given component and set xmp 
-    values according to right rules (as defined in XMPRightsValue)
-    """
-        
-    try:
-        license = RightsValue.objects.get(value__iexact = license_value)
-        logger.debug(license)
-        save_rights_value(comp, license, workspace)
-    except:
-        comp.metadata.filter(schema__rights_target=True).delete()
-#            source_variant = variant.get_source(workspace,  item)
-#            original_comp = source_variant.get_component(workspace = workspace,  item = item) 
-        original_comp = comp.source
-        
-        comp.comp_rights = []
-        comp.comp_rights.add(*original_comp.comp_rights.all())
-        for m in original_comp.metadata.filter(schema__rights_target=True):
-            MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = comp,  value = m.value, language=m.language)
 
 @login_required
 @decorators.permission_required('edit_metadata')
@@ -417,7 +133,7 @@ def save_descriptors(request):
     metadata = simplejson.loads(request.POST.get('metadata'))
 
     item_list = request.POST.getlist('items')
-    metadata_object = request.POST.get('obj', 'original')
+    variant_name = request.POST.get('obj', 'original')
 
     ctype_item = ContentType.objects.get_for_model(Item)
     ctype_obj = ContentType.objects.get_for_model(Component)
@@ -427,61 +143,24 @@ def save_descriptors(request):
 
     default_language = get_metadata_default_language(user, workspace)
 
-    for i in item_list:
-        if len(i.strip()) > 0:
-            item = Item.objects.get(pk=i)
-            for m in metadata:
-                ids = m.split('_')
-                desc_id = ids[1]
-                if desc_id == 'license':
-                    license_id = metadata[m]
-                    license = RightsValue.objects.get(pk=int(license_id))
-                    comp = Component.objects.get(item=item, variant__name=metadata_object, workspace=workspace)
-                    save_rights_value(comp, license, workspace)
-                else:
-                    descriptor = MetadataDescriptor.objects.get(pk=int(desc_id))
-                    if len(ids) == 2:
-                        save_descriptor_values(descriptor, item, metadata[m], workspace, metadata_object, default_language)
-                    else:
-                        save_descriptor_structure_values(descriptor, ids[2], item, metadata[m], workspace, metadata_object)
+    items = Item.objects.filter(pk__in=item_list)            
+            
+    for m in metadata:
+        ids = m.split('_')
+        desc_id = ids[1]
+        if desc_id == 'license':
+            license_id = metadata[m]
+            license = RightsValue.objects.get(pk=int(license_id))
+            comp = Component.objects.get(item=item, variant__name=variant_name, workspace=workspace)
+            comp.save_rights_value(license, workspace)
+        else:
+            descriptor = MetadataDescriptor.objects.get(pk=int(desc_id))
+            if len(ids) == 2:
+                MetadataValue.objects.save_descriptor_values(descriptor, items, metadata[m], workspace, variant_name, default_language)
+            else:
+                MetadataValue.objects.save_descriptor_structure_values(descriptor, ids[2], items, metadata[m], workspace, variant_name)
                         
     return HttpResponse('OK')
-
-def convert_rational(s):
-    """
-    Converts a rational XMP Value (es. ApertureSize 16/10) to
-    float type
-    """
-    try:
-        return float(s)
-    except:
-        num, denom = s.split('/')
-        return round(float(num) / float(denom), 3)
-
-def convert_datetime(s):
-    """
-    Convert a datetime string to a standard format
-    """
-    try:
-        dt = DateTimeFromString(s)
-        date_string = dt.Format("%m/%d/%Y %H:%M:%S")
-        return date_string
-    except:
-        return s
-
-def round_size(v1, v2):
-    value = float(v1) + float(v2)/1024.0
-    return str(round(value, 1))
-
-def format_filesize(size):
-    mb, r = divmod(size, 1048576)
-    kb, b = divmod(r, 1024)
-    if mb:
-        return round_size(mb, kb) + ' MB'
-    elif kb:
-        return round_size(kb, b) + ' KB'
-    else:
-        return str(b) + ' bytes'
 
 def get_items_types(item_list):
 
@@ -521,160 +200,7 @@ def get_components_list(item_list, variant, workspace):
 
     ids = Component.objects.filter(item__pk__in=item_list, variant__name=variant, workspace=workspace).values_list('pk', flat=True)
 
-    return ids
-    
-def get_metadata_values(item_list, metadataschema, items_types, components_types, components_list, component_obj=None):
-
-    """
-    Get metadataschema values for the given items/components
-    """
-
-    from django.db import connection
-
-    to_be_deleted = False
-    multiple_values = False
-
-    values = {}
-
-    object_list = []
-
-    if not component_obj:
-        if metadataschema.is_variant:
-            ctype = ContentType.objects.get_for_model(Component)
-        else:
-            ctype = ContentType.objects.get_for_model(Item)
-    else:
-        if not metadataschema.is_variant:
-            return (None, None, None)
-        ctype = ContentType.objects.get_for_model(Component)
-
-    required_media_types = set()
-
-    if metadataschema.is_variant:
-        object_list = ["'%s'" % c for c in components_list]
-        required_media_types = components_types
-    else:
-        object_list = ["'%s'" % c for c in item_list]
-        required_media_types = items_types
-
-    schema_media_types = set(metadataschema.media_type.all().values_list('name', flat=True))
-
-    if required_media_types - schema_media_types:
-        return None, False, True
-    
-    if metadataschema.is_array != 'not_array' or metadataschema.is_choice == 'open_choice':
-        if metadataschema.type == 'lang':
-            values[item_list[0]] = {}
-        else:
-            values[item_list[0]] = []
-    else:
-        values[item_list[0]] = ''
-
-    c = connection.cursor()
-    c.execute("select schema_id, value, count(*), language, xpath from metadata_metadatavalue where schema_id=%d AND content_type_id=%d AND object_id IN (%s) GROUP BY schema_id, value, xpath, language;" % (metadataschema.id, ctype.id, str(",".join(object_list))))
-
-    results = [r for r in c.fetchall()]
-    
-
-    xpath_re = re.compile(r'(?P<prefix>\w+):(?P<property>\w+)(?P<array_index>\[\d+\]){,1}')
-    xpath_values = []
-
-    for r in results:
-        value = r[1]
-        count = r[2]
-        language = r[3]
-        xpath = r[4]
-        if r[2] < len(item_list): 
-            multiple_values = True
-        if metadataschema.type == 'filesize':
-            value = format_filesize(float(value))
-        elif metadataschema.type == 'rational':
-            value = convert_rational(value)
-        elif metadataschema.type == 'date_and_time':
-            value = convert_datetime(value)
-        if metadataschema.is_choice != 'not_choice':
-            p_choice = metadataschema.property_choices.filter(value=str(value))
-            if p_choice.count() > 0:
-                if p_choice[0].description:
-                    value = p_choice[0].description
-
-        xpath_splitted = xpath_re.findall(xpath)
-
-        if len(xpath_splitted) > 1:
-            metadata_ns = xpath_splitted[1][0].strip()
-            metadata_property = xpath_splitted[1][1].strip()
-            metadata_index = xpath_splitted[0][2].strip()
-
-            if len(metadata_index) == 0:
-                metadata_index = 1
-            else:
-                metadata_index = int(re.sub('\D', '', metadata_index))
-
-            while len(xpath_values) < metadata_index:
-                xpath_values.append({})
-
-            try:
-                found_property = MetadataProperty.objects.get(namespace__prefix=metadata_ns, field_name__iexact=metadata_property)
-            except Exception, ex:
-                to_be_deleted = True
-                logger.debug('metadata: %s %s %s, %s' % (xpath_splitted, metadataschema, metadata_property, str(ex)))
-                break
-            xpath_values[metadata_index-1][found_property.id] = value
-
-        elif isinstance(values[item_list[0]], list):
-            schema_value = value
-            values[item_list[0]].append(schema_value)
-        elif isinstance(values[item_list[0]], dict):
-            values[item_list[0]][language] = value
-        else:
-            values[item_list[0]] = value
-
-    if xpath_values:
-        values[item_list[0]] = xpath_values
-
-    if (len(results) == 0 or multiple_values) and not metadataschema.editable:
-        to_be_deleted = True
-
-    return values, multiple_values, to_be_deleted
-
-def _metadata_definition(schema):
-    
-    """
-    Returns a dictionary containing definition info of a given metadataschema 
-    (es. {type: string, array: true, editable: False, ...}
-    """
-    
-    metadataschema = schema.metadataproperty
-    
-    string_type_list = ['txt', 'proper_name','mimetype','agent_name','xpath' ,'date_only_year', 'rational']
-
-    tooltip=metadataschema.namespace.prefix+':'+metadataschema.field_name + ": " + metadataschema.description
-
-    definition = {'id': metadataschema.id, 'name': metadataschema.caption, 'groupname': metadataschema.namespace.name, 'tooltip': tooltip, 'value': '', 'type': metadataschema.type, 'editable': metadataschema.editable, 'is_variant': metadataschema.is_variant, 'is_choice': metadataschema.is_choice}
-
-    if metadataschema.is_choice == 'close_choice' or metadataschema.is_choice == 'open_choice':
-        choices = []
-
-        for x in metadataschema.property_choices.all():
-            if metadataschema.is_array != 'not_array':
-                choices.append(x.value)
-            else:
-                if x.description:
-                    choices.append([x.value, x.description])
-                else:
-                    choices.append([x.value, x.value])
-                
-        definition['choices'] = choices
-
-    elif metadataschema.type in string_type_list:
-        definition['type'] = 'text'
-
-    if metadataschema.is_array == 'not_array':
-        definition['array'] = 'false'
-    else:
-        definition['array'] = 'true'
-
-    return definition
+    return ids    
 
 def _advanced_metadata_view(item_list, workspace, default_language, metadata_object, media_types):
     """
@@ -695,9 +221,9 @@ def _advanced_metadata_view(item_list, workspace, default_language, metadata_obj
 #            if schema_media_types & media_types != media_types:
 #                continue
 
-            form_list.append(_metadata_definition(metadataschema))
+            form_list.append(metadataschema.metadata_definition())
 
-            schema_value, multiple_values, to_be_deleted = get_metadata_values(item_list, metadataschema, items_types, components_types, components_list)
+            schema_value, multiple_values, to_be_deleted = MetadataValue.objects.get_metadata_values(item_list, metadataschema, items_types, components_types, components_list)
 
             if to_be_deleted:
                 form_list.pop()
@@ -718,11 +244,10 @@ def _generate_metadata_structure_item(group, metadatadescriptor, item_list, item
     metadata_info = _generate_metadata_item(group, metadatadescriptor, item_list, items_types, components_types, components_list, default_language)
 
     if metadata_info:
-        logger.debug(metadata_info)
 
         structure = XMPStructure.objects.get(name=metadata_info['type'])
         for schema in structure.properties.all():
-            schema_info = _metadata_definition(schema)
+            schema_info = schema.metadataproperty.metadata_definition()
             schema_info['id'] = '%d_%d_%d' % (group.id, metadatadescriptor.id, schema.id)
             schema_info['groupname'] = group.name
             schema_info['value'] = ''
@@ -746,9 +271,9 @@ def _generate_metadata_item(group, metadatadescriptor, item_list, items_types, c
 
     for m in metadatadescriptor.properties.all():
 
-        metadata_info = _metadata_definition(m)
+        metadata_info = m.metadata_definition()
 
-        schema_value, multiple_values, to_be_deleted = get_metadata_values(item_list, m, items_types, components_types, components_list)
+        schema_value, multiple_values, to_be_deleted = MetadataValue.objects.get_metadata_values(item_list, m, items_types, components_types, components_list)
 
         if not to_be_deleted:
             metadata_info['to_be_deleted'] = False
@@ -864,7 +389,7 @@ def get_metadata_structures(request):
     """
     structure_list = {}
     for s in XMPStructure.objects.all():
-        structure_list[s.name] = [_metadata_definition(p) for p in s.properties.all()]
+        structure_list[s.name] = [p.metadataproperty.metadata_definition() for p in s.properties.all()]
 
     resp = simplejson.dumps(structure_list)
     return HttpResponse(resp)
@@ -921,7 +446,7 @@ def _get_ws_groups(workspace, type=None):
             groups = MetadataDescriptorGroup.objects.filter(**query)
     except:
         del(query['workspace'])
-        groups = MetadataDescriptorGroup.objects.filter(**query)        
+        groups = MetadataDescriptorGroup.objects.filter(**query)
 
     return groups
 
