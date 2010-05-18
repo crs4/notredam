@@ -142,7 +142,7 @@ def save_uploaded_item(request, upload_file, user, workspace):
 
     item.workspaces.add(workspace)
 
-    variant = Variant.objects.get(name = 'original',  media_type__name = type)
+    variant = Variant.objects.get(name = 'original')
     save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
     EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
     
