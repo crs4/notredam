@@ -111,7 +111,7 @@ def adapt_resource(component, machine):
     item = component.item
     workspace = component.workspace.all()[0] 
 
-    variant = component.variant
+#    variant = component.variant
     
 #    source_variant = variant.get_source(workspace,  item)
 
@@ -193,9 +193,7 @@ def adapt_resource(component, machine):
         d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
     elif item.type.name == 'video':
-        
-        logger.debug('component.variant.pk %s'%component.variant.pk)
-        logger.debug('component.variant %s'%component.variant)
+       
         
         logger.debug('component.media_type.name %s'%component.media_type.name)
         if component.media_type.name == "image":
@@ -313,7 +311,7 @@ def send_mail(component, machine):
             [mail])
     storage = Storage()
     email.attach_file(storage.abspath(component.source.ID))
-    email.send()
+    reactor.callInThread(email.send)
     logger.debug("[SendMail.end] component %s" % component.ID)
 
 def read_xmp_features(item, features, component):
