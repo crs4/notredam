@@ -15,14 +15,15 @@
 #    GNU General Public License for more details.
 #
 #########################################################################
+
 from django.db import models
 from django.utils import simplejson
 from django.contrib.contenttypes import generic
-from upload.views import generate_tasks
-from variants.models import Variant
-from repository.models import Component
+from dam.upload.views import generate_tasks
+from dam.variants.models import Variant
+from dam.repository.models import Component
 from dam.framework.dam_repository.models import Type
-from dam.metadata.views import save_variants_rights
+
 import logger
 
 class ScriptException(Exception):
@@ -52,7 +53,7 @@ class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
     pipeline = models.TextField()
-    workspace = models.ForeignKey('workspace.Workspace')
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
     event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
     media_type = models.ManyToManyField(Type)
@@ -117,8 +118,6 @@ class Script(models.Model):
         for item in items:
             adapt_parameters = {}   
             media_type = item.type.name
-            if media_type == 'movie':
-                media_type = 'video'
                 
             for action in actions[media_type]:
                 if isinstance(action, SaveAs):
@@ -143,8 +142,6 @@ class BaseAction(object):
 #            raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
         
         
-        if media_type == 'video':
-            media_type = 'movie'# sigh
         self.media_type = media_type
         logger.debug('self.media_type %s'%self.media_type)
         self.source_variant = source_variant
@@ -221,9 +218,7 @@ class SaveAs(BaseAction):
         
         component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))    
         
-        
-        
-        if self.media_type == 'movie' or self.media_type == 'audio':
+        if self.media_type == 'video' or self.media_type == 'audio':
             adapt_parameters['preset_name'] = self.output_format
         else:
             adapt_parameters['codec'] = self.output_format
@@ -237,7 +232,7 @@ class SaveAs(BaseAction):
         component.source = source
         component.save() 
         logger.debug('generate task')
-        save_variants_rights(component , self.workspace, rights)
+        component.save_rights_value(rights, self.workspace)
         generate_tasks(variant, self.workspace, item)
 
    
@@ -251,13 +246,12 @@ class SendByMail(SaveAs):
         adapt_parameters['mail'] = self.mail
         super(SendByMail,  self).execute(item,  adapt_parameters)
     
-
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
     required_parameters = [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
     def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace)
-        if media_type == 'video' or media_type == 'movie':
+        if media_type == 'video':
             self.parameters['video_height'] = max_height
             self.parameters['video_width'] = max_width
         else:
@@ -309,7 +303,7 @@ class Watermark(BaseAction):
 #        TODO: watermark corner
         
 
-preset = {'movie':
+preset = {'video':
                    {'matroska_mpeg4_aac': 'mpeg4',
                    'mp4_h264_aaclow': 'mpeg4',
                    'flv': 'flv',
@@ -352,7 +346,7 @@ class AudioEncode(BaseAction):
                 
 
 class ExtractVideoThumbnail(BaseAction):
-    media_type_supported = ['movie']
+    media_type_supported = ['video']
     required_parameters = [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
         params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}

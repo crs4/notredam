@@ -22,10 +22,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import simplejson
 
-from dam.settings import MEDIADART_CONF
 from dam.repository.models import Item, Component
-from dam.workspace.models import Workspace
-from dam.workspace.decorators import permission_required
+from dam.workspace.models import DAMWorkspace as Workspace
+from dam.framework.dam_workspace.decorators import permission_required
+from dam.treeview.models import Node
 
 import logger
 from operator import and_, or_
@@ -37,11 +37,7 @@ def check_item_wss(request):
     Check if items are owned by more than one workspace
     """
     
-    items_id = request.POST.getlist('item_id')
-    items_commas = items_id[0].split(',')
-
-    if len(items_commas) > 1:
-        items_id = items_commas
+    items_id = request.POST.getlist('item_ids')
 
     multiple_ws = False
 
@@ -50,7 +46,7 @@ def check_item_wss(request):
             i = Item.objects.get(pk=item)
         except:
             continue
-        if i.workspaces.all().count() > 1:
+        if i.get_workspaces_count() > 1:
             multiple_ws = True
             break
 
@@ -66,63 +62,31 @@ def delete_item(request):
     cw = request.session['workspace']
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    items_id = request.POST.getlist('item_id')
-    items_commas = items_id[0].split(',')
-
-    if len(items_commas) > 1:
-        items_id = items_commas
+    items_id = request.POST.getlist('item_ids')
         
     choose = request.POST.get('choose')
+
     inbox_deleted = None
-    
+
     if choose == 'current_w':
-        for item in items_id:
-            i = Item.objects.get(pk=item)
-            i.workspaces.remove(cw)
-            components = Component.objects.filter(item__pk=i.pk,workspace__pk=cw.pk)
-            for c in components:
-                c.workspace.remove(cw)
-                
-                if c.workspace.all().count() == 0:
-                    c.delete()
+        workspaces = [cw]
 
-            inboxes = i.node_set.filter(type = 'inbox',  workspace = cw) #just to be sure, filter instead of get
-            for inbox in inboxes:
-            
-                inbox.items.remove(i)
-                
-                if inbox.items.count() == 0:
-                    inbox_deleted = inbox.parent.label            
-                    inbox.delete()
-                
-            if i.workspaces.all().count() == 0:
-                components = Component.objects.filter(item=i)
-                for c in components:
-                    c.delete()
-                i.delete() 
-                
-    elif choose == 'all_w':
-        q1 = Workspace.objects.filter( Q(workspacepermissionassociation__permission__codename = 'admin') | Q(workspacepermissionassociation__permission__codename = 'remove_item'), members = user,workspacepermissionassociation__users = user)
-        q2 =  Workspace.objects.filter(Q(workspacepermissionsgroup__permissions__codename = 'admin') | Q(workspacepermissionsgroup__permissions__codename = 'remove_item'), members = user, workspacepermissionsgroup__users = user)
-        wss = reduce(or_, [q1,q2])
+        try:        
+            inbox = Node.objects.get(type = 'inbox',  workspace = cw) #just to be sure, filter instead of get
 
-        for item in items_id:
-            i = Item.objects.filter(pk=item)[0]
-            for w in wss:
-                if i in w.items.all():
-                    try:
-                        w.items.remove(i)
-                    except Exception,e:
-                        logger.debug( "errore eliminazione %s" % e )
-                        pass
-    
-            if i.workspaces.all().count() == 0:
-                components = Component.objects.filter(item=i)
-                for c in components:
-                    c.delete()
-                i.delete() 
-            
-    if inbox_deleted:
-        return HttpResponse(simplejson.dumps({'inbox_to_reload': inbox_deleted,  'success': True}))
+            if inbox.items.count() == 0:
+                if inbox.parent:
+                    inbox_deleted = inbox.parent.label
+                inbox.delete()
+
+        except:
+            pass
+
     else:
-        return HttpResponse(simplejson.dumps({'success': True}))
+        workspaces = None
+
+    for item in items_id:
+        i = Item.objects.get(pk=item)
+        i.delete_from_ws(user, workspaces)
+                
+    return HttpResponse(simplejson.dumps({'inbox_to_reload': inbox_deleted,  'success': True}))

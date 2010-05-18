@@ -24,11 +24,9 @@ urlpatterns = patterns('',
     (r'^login/$', 'dam.application.views.do_login'),
     (r'^logout/$', 'dam.application.views.do_logout'),
     (r'^get_component_url/(.+)/(.+)/$', 'dam.application.views.get_component'),
-    (r'^get_component_url/(.+)/$', 'dam.application.views.get_component'),
     (r'^redirect_to_component/(.+)/(.+)/$', 'dam.application.views.redirect_to_component'),    
     (r'^redirect_to_resource/(.+)/$','dam.application.views.redirect_to_resource'),
     (r'^registration/$','dam.application.views.registration'),
     (r'^confirm_user/(.+)/$','dam.application.views.confirm_user'),
-    (r'^dam_admin/$','dam.application.views.dam_admin'),
 
 )
