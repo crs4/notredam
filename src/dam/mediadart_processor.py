@@ -41,7 +41,6 @@ from dam.repository.models import Item, Component
 
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.framework.dam_metadata.models import XMPNamespace
-from dam.metadata.views import save_variants_rights
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
 from settings import INSTALLATIONPATH,  MEDIADART_CONF,  EMAIL_HOST,  EMAIL_SENDER
@@ -192,7 +191,7 @@ def adapt_resource(component, machine):
 
         d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
-    elif item.type.name == 'movie':
+    elif item.type.name == 'video':
         
         logger.debug('component.variant.pk %s'%component.variant.pk)
         logger.debug('component.variant %s'%component.variant)
@@ -284,7 +283,7 @@ def extract_features(component, machine):
         
     logger.debug("[FeatureExtraction.execute] component %s" % component.ID)
 
-    extractors = {'image': 'image_basic', 'movie': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
+    extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
 
     extractor_proxy = Proxy('FeatureExtractor')
 
@@ -390,7 +389,7 @@ def save_features(c, features):
 
     xmp_metadata_video.update(xmp_metadata_audio)
 
-    xmp_metadata = {'image': xmp_metadata_image, 'movie': xmp_metadata_video, 'audio': xmp_metadata_audio, 'doc': xmp_metadata_doc}
+    xmp_metadata = {'image': xmp_metadata_image, 'video': xmp_metadata_video, 'audio': xmp_metadata_audio, 'doc': xmp_metadata_doc}
 
     metadata_list = []
     delete_list = []
@@ -462,9 +461,9 @@ def save_component_features(component, features, extractor):
         item = Item.objects.get(component = c)
         xmp_metadata_list, xmp_delete_list = read_xmp_features(item, features, c)
     elif extractor == 'media_basic':
-        for stream in features.keys():
-            if isinstance(features[stream], dict):
-                m_list, d_list = save_features(c, features[stream])
+        for stream in features['streams']:
+            if isinstance(features['streams'][stream], dict):
+                m_list, d_list = save_features(c, features['streams'][stream])
                 metadata_list.extend(m_list)
                 delete_list.extend(d_list)
     else: 

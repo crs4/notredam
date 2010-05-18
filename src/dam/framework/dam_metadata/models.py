@@ -18,11 +18,6 @@
 
 from django.db import models
 
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
-from django.db import connection
-from datetime import datetime
-
 class AbstractMetadataLanguage(models.Model):
     """
     List of Languages compliant to RFC 3066
@@ -47,6 +42,21 @@ class XMPNamespace(models.Model):
     
     def __str__(self):
         return "%s (%s)" % (self.name, self.uri)
+
+class XMPPropertyManager(models.Manager):
+    """
+    XMP Property Manager
+    """
+    
+    def filter_by_namespace(ns):
+        if isinstance(ns, XMPNamespace):
+            return self.filter(namespace=ns)
+        else:
+            try:
+                ns_obj = XMPNamespace.objects.get(prefix=ns)
+                return self.filter(namespace = ns_obj)
+            except:
+                return self.none()
 
 class XMPProperty(models.Model):
     """
@@ -108,7 +118,7 @@ class XMPProperty(models.Model):
         ('CopyrightOwnerDetail','CopyrightOwnerDetail'),
         ('ImageCreatorDetail','ImageCreatorDetail'),
         ('ArtworkOrObjectDetails','ArtworkOrObjectDetails'),
-        ('filesize','filesize'),        
+        ('filesize','filesize')
         )
 
     namespace = models.ForeignKey(XMPNamespace)
@@ -120,6 +130,7 @@ class XMPProperty(models.Model):
     is_choice = models.CharField(max_length=15, choices=CHOICE_TYPES, default='not_choice')
     internal = models.BooleanField(default=False)
     editable = models.BooleanField(default=True)
+    objects = XMPPropertyManager()
     
     if models.get_app('dam_repository'):
         media_type = models.ManyToManyField('dam_repository.Type', default='image' )
@@ -131,6 +142,9 @@ class XMPProperty(models.Model):
 
     def __str__(self):
         return "%s:%s" % (self.namespace.prefix, self.field_name)
+
+    def get_choices(self):
+        return self.property_choices.all()
 
 class XMPStructure(models.Model):
     """

@@ -17,13 +17,8 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.application.admin import mod_admin
 
 from repository.models import Item, Component
 
 admin.site.register(Item)
 admin.site.register(Component)
-
-mod_admin.register(Item)
-mod_admin.register(Component)
-

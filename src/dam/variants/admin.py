@@ -17,12 +17,7 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.application.admin import mod_admin
 from variants.models import Variant
 
 #admin.site.register(Type)
 admin.site.register(Variant)
-
-
-mod_admin.register(Variant)
-

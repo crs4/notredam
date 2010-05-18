@@ -17,32 +17,27 @@
 #########################################################################
 
 from django.shortcuts import render_to_response
-from django.template import RequestContext, Context, loader,  Template
+from django.template import RequestContext
 from django.views.generic.simple import redirect_to
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
-from django.contrib.contenttypes.models import ContentType
+from django.http import HttpResponse, HttpResponseForbidden
 
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Q
-from django.core.paginator import Paginator, InvalidPage
 from django.core.mail import send_mail
 from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
-from dam.variants.models import Variant
-from dam.repository.models import Item, Component
-from dam.workspace.models import Workspace
-from dam.workspace.decorators import permission_required
+from dam.repository.models import Item, _get_resource_url
+from dam.workspace.models import DAMWorkspace as Workspace
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
 
+from dam.framework.dam_workspace.decorators import permission_required
+
 from mediadart.storage import Storage
 
-import os
-import cPickle as pickle
 import logger
 
 NOTAVAILABLE = None
@@ -52,13 +47,6 @@ def home(request, msg=None):
     Always redirect user from http://host/ to http://host/workspace
     """
     return redirect_to(request, '/workspace/')
-
-@staff_member_required
-def dam_admin(request):
-    """
-    TODO: Dam Administration Interface is under development
-    """
-    return render_to_response('dam_administration.html', RequestContext(request,{}))
 
 def do_login(request):
     """
@@ -86,58 +74,6 @@ def do_logout(request):
         request.session.__delitem__('workspace')
     return home(request)
 
-def get_component_url(workspace, item_id, variant_name,  public_only=False,  thumb = False,  redirect_if_not_available = True):
-    """
-    Looks for the component named variant_name of the item item_id in the given workspace and returns the component url 
-    """
-    
-    item = Item.objects.get(pk = item_id)
-    variant = workspace.get_variants().distinct().get(media_type =  item.type,  name = variant_name)
-    
-#    if thumb and variant.default_url:
-#        return variant.default_url
-    
-    url = NOTAVAILABLE    
-   
-    if public_only:
-        pass
-    else:
-        try:
-            component = variant.get_component(workspace,  item)
-        
-            if component.uri:
-                return component.uri
-
-            url = _get_resource_url(component.ID)
-
-        except Exception,ex:
-#            logger.exception( 'ex in get_component_url %s' %  ex )
-            url = NOTAVAILABLE
-
-    if url == NOTAVAILABLE and not redirect_if_not_available:
-        return None
-        
-    return url
-
-
-def _get_resource_url(id):
-    """
-    Returns resource path
-    """
-
-    storage = Storage()
-
-    try:
-        if storage.exists(id):
-            url = '/storage/' + id
-        else:
-            url = None
-    except:
-        url = None
-    return url
-
-    
-
 @login_required
 def redirect_to_resource(request, id):
     """
@@ -147,30 +83,25 @@ def redirect_to_resource(request, id):
     try:
         url = _get_resource_url(id)
     except:
-        url = NOTAVAILABLE    
+        url = NOTAVAILABLE
+
     return redirect_to(request,  url)
 
 @login_required
-def get_component(request, item_id, variant_name ,  redirect=False):
+def get_component(request, item_id, variant_name, redirect=False):
     """
     Looks for the component named variant_name of the item item_id in the given workspace
     """
     workspace = request.session.get('workspace', None) 
-    if workspace is None:
-        public_only = True
-    else:
-        public_only = False
-    
-    if request.GET.get('thumb'):
-        thumb = True
-    else:
-        thumb = False
     
     try:
-        url = get_component_url(workspace,  item_id, variant_name, public_only = public_only,  thumb = thumb)
+        item = Item.objects.get(pk=item_id)
+        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = variant_name)
+        url = item.get_variant(workspace, variant).get_component_url()
     except Exception,  ex:
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'failure': True}))
+
     if redirect:
         return redirect_to(request, url)
     else:
@@ -187,14 +118,12 @@ def registration(request):
     """
     Creates registration form or saves registration info
     """
-    from dam.workspace.views import _create_workspace
 
     def save_user_and_login(form):
         form.save(commit = True)
         user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
         login(request,  user)
-        ws = Workspace(name=user.username)
-        _create_workspace(ws,  user)
+        ws = Workspace.objects.create_workspace(user.username, '', user)
         return user
 
     if request.method == 'POST': 
@@ -233,14 +162,12 @@ def confirm_user(request, url):
     Confirms user registration and creates a new workspace for the new user
     """
 
-    from dam.workspace.views import _create_workspace
 
     user = VerificationUrl.objects.get(url= url).user
     user.is_active = True
     user.save()
     logout(request)
 
-    ws = Workspace(name=user.username)
-    _create_workspace(ws,  user)
+    ws = Workspace.objects.create_workspace(user.username, '', user)
 
     return render_to_response('registration_completed.html', RequestContext(request,{'usr':user}))

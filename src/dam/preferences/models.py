@@ -24,7 +24,7 @@ It can be easily done by using the django admin.
 
 from django.db import models
 from django.contrib.auth.models import User
-from dam.workspace.models import Workspace
+from dam.workspace.models import DAMWorkspace as Workspace
 
 class SettingValue(models.Model):
     """

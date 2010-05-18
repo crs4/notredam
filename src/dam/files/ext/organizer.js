@@ -297,7 +297,7 @@ function _show_details(data, active_tab, view, selNode){
         if (data.type == 'image' || data.type == 'doc') {
             previewTemplate.overwrite(preview, data);
         }
-        else if (data.type == 'movie') {
+        else if (data.type == 'video') {
             previewMovieTemplate.overwrite(preview, data);
             flowplayer("player", "/files/flowplayer/flowplayer-3.1.4.swf", { 
                 clip: { initialScale: 'orig', autoPlay: false, scaling: 'orig' },             

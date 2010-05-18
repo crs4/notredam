@@ -16,21 +16,9 @@
 #
 #########################################################################
 
-from django.db import models
-from django.contrib.auth.models import User
-import time
-import hashlib
+from django.contrib import admin
+from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure, XMPPropertyChoice
 
-class VerificationUrl(models.Model):
-    """ 
-    Confirmation url sent to the user's email 
-    address during user registration process
-    """
-    user = models.ForeignKey(User, unique = True)
-    url = models.CharField(max_length=40,  unique = True)
-    
-    def save(self,  *args, **kwargs):
-        if not self.id and not self.url:            
-            self.url = hashlib.sha1(unicode(time.time() )).hexdigest()
-        super(VerificationUrl, self).save(*args, **kwargs)
-
+admin.site.register(XMPNamespace)
+admin.site.register(XMPStructure)
+admin.site.register(XMPPropertyChoice)

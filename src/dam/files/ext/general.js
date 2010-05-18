@@ -198,10 +198,8 @@ function get_selected_items(){
     if(selNodes && selNodes.length > 0){ 
         var selected_ids = [];
         for (var i=0; i < selNodes.length; i++) {
-            console.log(selNodes[i].id);
             var data = view.store.getAt(view.store.findExact('pk', selNodes[i].id)).data;
             selected_ids.push(data.pk);
-            console.log(data.pk);
         }
     
     }
@@ -491,7 +489,7 @@ function open_variant(name, url, media_type, width, height){
     
     }
     
-    else if(media_type == 'movie' || media_type == 'audio'){
+    else if(media_type == 'video' || media_type == 'audio'){
         
         var html = '<div class="details"><a href="' + url + ((media_type == 'audio')? '.mp3': '')   + '" style="display:block;';
         if (width && height && width != '0' && height != '0'){
@@ -528,7 +526,7 @@ function open_variant(name, url, media_type, width, height){
             html: html,
             listeners:{
                 show: function(){
-                    if(media_type == 'movie') {
+                    if(media_type == 'video') {
                         flowplayer("player_variant", "/files/flowplayer/flowplayer-3.1.4.swf", { 
                             clip: { initialScale: 'orig', autoPlay: false, scaling: 'orig' },             
                             plugins: { 

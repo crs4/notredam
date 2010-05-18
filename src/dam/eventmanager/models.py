@@ -44,7 +44,7 @@ class EventRegistration(models.Model):
     event = models.ForeignKey('Event')
     content_type = models.ForeignKey(ContentType)
     listener = generic.GenericForeignKey()
-    workspace = models.ForeignKey('workspace.Workspace')
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
     object_id = models.PositiveIntegerField()
     
     objects = EventManager()
