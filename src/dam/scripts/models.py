@@ -167,8 +167,30 @@ class SetRights(BaseAction):
         
 
 class SaveAction(BaseAction):
-    pass
+    media_type_supported = ['image', 'video',  'doc', 'audio']
+    required_parameters = [ {'name':'output_format',  'type': 'string'}]
+    def __init__(self, media_type, source_variant, workspace, output_format):  
+        super(SaveAs, self).__init__(media_type, source_variant, workspace)
+        self.output_format = output_format
     
+    def _set_adapt_parameters(self, component,   adapt_parameters):
+        if adapt_parameters.has_key('rights'):
+            rights = adapt_parameters.pop('rights')
+        else:
+            rights = None
+        logger.debug('rights %s'%rights)
+            
+        logger.debug('self.output_variant %s'%self.output_variant)
+        logger.debug('self.media_type %s'%self.media_type)
+         
+        if self.media_type == 'movie' or self.media_type == 'audio':
+            adapt_parameters['preset_name'] = self.output_format
+        else:
+            adapt_parameters['codec'] = self.output_format
+        
+        logger.debug('adapt_parameters %s'%adapt_parameters)    
+        component.set_parameters(adapt_parameters) 
+        
     
 class SaveAs(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
@@ -184,15 +206,23 @@ class SaveAs(BaseAction):
             rights = adapt_parameters.pop('rights')
         else:
             rights = None
+            
+        if self.media_type == 'doc':
+            output_media_type = 'image'
+        elif  adapt_parameters.has_key('output_media_type'):
+            output_media_type= adapt_parameters.pop('output_media_type')
+        else:
+            output_media_type = self.media_type
         logger.debug('rights %s'%rights)
             
         logger.debug('self.output_variant %s'%self.output_variant)
         logger.debug('self.media_type %s'%self.media_type)
-        variant = Variant.objects.get(name = self.output_variant, media_type__name = self.media_type)          
+        variant = Variant.objects.get(name = self.output_variant)          
         
-        component = variant.get_component(self.workspace,  item)    
+        component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))    
         
-         
+        
+        
         if self.media_type == 'movie' or self.media_type == 'audio':
             adapt_parameters['preset_name'] = self.output_format
         else:
@@ -325,7 +355,7 @@ class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['movie']
     required_parameters = [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
-        params = {'max_height': max_height,  'max_width':max_width}
+        params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, **params)
     
 

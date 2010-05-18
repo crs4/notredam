@@ -35,51 +35,52 @@ from django.utils import simplejson
 class Variant(models.Model):    
     name = models.CharField(max_length=50)
     caption = models.CharField(max_length=64)
-    is_global = models.BooleanField(default=False) #common for all ws
+#    is_global = models.BooleanField(default=False) #common for all ws
     workspace = models.ForeignKey(Workspace, null = True, blank = True)
     editable = models.BooleanField(default=True)    
-    media_type = models.ForeignKey(Type)
-    dest_media_type = models.ForeignKey(Type, null = True, blank = True, related_name = 'dest_media_type')
+    hidden= models.BooleanField(default=False)    
+#    media_type = models.ForeignKey(Type)
+#    dest_media_type = models.ForeignKey(Type, null = True, blank = True, related_name = 'dest_media_type')
     auto_generated = models.BooleanField(default=True)
     shared = models.BooleanField(default= False) #the same component will be shared through ws
-    default_rank = models.IntegerField(null = True, blank = True) #not null for imported variants. variant with rank 1 will be used for generating  the others
-    resizable = models.BooleanField(default=True)
+#    default_rank = models.IntegerField(null = True, blank = True) #not null for imported variants. variant with rank 1 will be used for generating  the others
+#    resizable = models.BooleanField(default=True)
 #    TODO foreign key to ws
-    def is_original(self):
-        return self.name == 'original' and self.is_global
-    
-    def get_source(self,  workspace,  item):
-#        if not self.auto_generated:
-#            return None
-            
-        sources = SourceVariant.objects.filter(destination = self,  workspace = workspace)
-        for source_variant in sources:
-            v = source_variant.source
-            logger.debug('source_variant.source %s'%v)
-            if Component.objects.filter(item = item, variant = v).count( ) > 0:
-                return v
-            
+#    def is_original(self):
+#        return self.name == 'original' and self.is_global
+#    
+#    def get_source(self,  workspace,  item):
+##        if not self.auto_generated:
+##            return None
+#            
+#        sources = SourceVariant.objects.filter(destination = self,  workspace = workspace)
+#        for source_variant in sources:
+#            v = source_variant.source
+#            logger.debug('source_variant.source %s'%v)
+#            if Component.objects.filter(item = item, variant = v).count( ) > 0:
+#                return v
+#            
            
   
-    def get_component(self, workspace,  item):
+    def get_component(self, workspace,  item,  media_type = None):
         from variants.views import _create_variant
         try:
             return self.component_set.get(item = item,  workspace = workspace)
         except:            
-            if self.dest_media_type:
-                dest_media_type = self.dest_media_type
-            else: 
-                dest_media_type = self.media_type
+#            if self.dest_media_type:
+#                dest_media_type = self.dest_media_type
+#            else: 
+#                dest_media_type = self.media_type
                 
-            component = _create_variant(self,  item, workspace)
+            component = _create_variant(self,  item, workspace,  media_type)
             logger.error('component for ws %s and item %s and variant %s not found. Created.'%(workspace, item.pk, self.name))
             return component
     
     def __str__(self):
         return self.name
 
-    def save(self,  *args,  **kwargs):
-        if self.is_global and Variant.objects.filter(name = self.name,  is_global = True,  media_type= self.media_type).count() > 0:
-            raise Exception('A global variant with name %s already exists'%self.name)
-        super(Variant, self).save(*args,  **kwargs)
+#    def save(self,  *args,  **kwargs):
+#        if self.is_global and Variant.objects.filter(name = self.name,  is_global = True,  media_type= self.media_type).count() > 0:
+#            raise Exception('A global variant with name %s already exists'%self.name)
+#        super(Variant, self).save(*args,  **kwargs)
 

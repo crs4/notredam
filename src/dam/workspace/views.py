@@ -1218,7 +1218,7 @@ def _get_thumb_url(item, workspace, thumb_dict = None, absolute_url = False):
     thumb_ready = 0
     
     if not thumb_dict:
-        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('media_type__name',  'pk')
+        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('component__media_type__name',  'pk')
         thumb_dict = {}
         for thumb in thumb_variants:
             thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk']}

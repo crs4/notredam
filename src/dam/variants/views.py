@@ -128,9 +128,11 @@ def force_variant_generation(request,  variant_id,  item_id):
     
     return HttpResponse(simplejson.dumps({'success': True}))
     
-def _create_variant(variant,  item, ws):
+def _create_variant(variant,  item, ws,  media_type = None):
     logger.debug('variant %s'%variant)
     logger.debug('item.type %s'%item.type.name)
+    if not media_type:
+        media_type = item.type
     logger.debug('ws %s'%ws)
 #    if variant_name =='original':
 #        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
@@ -144,7 +146,7 @@ def _create_variant(variant,  item, ws):
             comp.workspace.add(ws)
             comp.workspace.add(*item.workspaces.all())
         else:
-            comp = Component.objects.get(item = item, variant= variant,  workspace = ws)
+            comp = Component.objects.get(item = item, variant= variant,  workspace = ws,  media_type = media_type)
         comp.new_md_id()
         logger.debug('comp._id %s' %comp._id)
         comp.metadata.all().delete()
@@ -152,13 +154,9 @@ def _create_variant(variant,  item, ws):
         
     except Component.DoesNotExist:
         logger.debug('variant does not exist yet')
-        
-        if variant.dest_media_type:
-            dest_media_type = variant.dest_media_type
-        else: 
-            dest_media_type = variant.media_type
+      
                 
-        comp = Component.objects.create(variant = variant,  item = item, type = dest_media_type)
+        comp = Component.objects.create(variant = variant,  item = item, type = media_type)
         comp.workspace.add(ws)
         
         if variant.shared:
