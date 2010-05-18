@@ -34,7 +34,7 @@ import time
 from django.db.models import Q
 from django.db import reset_queries
 from django.contrib.contenttypes.models import ContentType
-
+from django.core.mail import EmailMessage
 from dam.batch_processor.models import Machine, MachineState, Action
 from dam.repository.models import Item, Component
 
@@ -44,7 +44,7 @@ from dam.framework.dam_metadata.models import XMPNamespace
 from dam.metadata.views import save_variants_rights
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
-from settings import INSTALLATIONPATH,  MEDIADART_CONF
+from settings import INSTALLATIONPATH,  MEDIADART_CONF,  EMAIL_HOST,  EMAIL_SENDER
 THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
 
 import logging
@@ -303,19 +303,18 @@ def extract_features(component, machine):
 
     logger.debug("[FeatureExtraction.end] component %s" % component.ID)
 
-def save_rights(component, machine):
+def send_mail(component, machine):
 
-    logger.debug("[SetRights.execute] component %s" % component.ID)
+    logger.debug("[SendMail.execute] component %s" % component.ID)
     
-    workspace = component.workspace.all()[0] 
-    item = component.item
-    variant = component.variant
-
-    save_variants_rights(item, workspace, variant)
-
-    machine_to_next_state(machine)
-
-    logger.debug("[SetRights.end] component %s" % component.ID)
+    mail = component.get_parameters()['mail']
+    
+    email = EmailMessage('Notredam Generated Variant', 'A copy of the generated variant is attached', EMAIL_SENDER,
+            [mail])
+    storage = Storage()
+    email.attach_file(storage.abspath(component.source.ID))
+    email.send()
+    logger.debug("[SendMail.end] component %s" % component.ID)
 
 def read_xmp_features(item, features, component):
     from time import strptime

@@ -318,10 +318,15 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
             comp = _create_variant(variant,  item, workspace)
             
         end = MachineState.objects.create(name='finished')
-#        save_rights_action = Action.objects.create(component=comp, function='save_rights')
-#        save_rights_state = MachineState.objects.create(name='comp_save_rights', action=save_rights_action, next_state=end)    
+        if component.variant.name == 'mail':
+            send_mail_action = Action.objects.create(component=comp, function='send_mail')
+            send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
+            end_state = send_mail_state
+        else:
+            end_state = end
+        
         fe_action = Action.objects.create(component=comp, function='extract_features')
-        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=end)
+        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=end_state)
         
         if comp.imported:
             logger.debug('----------source_machine %s'%source_machine)             
@@ -337,7 +342,8 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
     else:
         source = component
                 
-        end = MachineState.objects.create(name='finished')
+        end = MachineState.objects.create(name='finished')     
+            
         feat_extr_action = Action.objects.create(component=source, function='extract_features')
         feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
         

@@ -81,6 +81,8 @@ class Script(models.Model):
        
         for subclass in BaseAction.__subclasses__():
             actions_available[subclass.__name__.lower()] = subclass
+            
+        actions_available[SendByMail.__name__.lower()] = SendByMail
         
         actions = {
             'image':[],
@@ -163,8 +165,11 @@ class SetRights(BaseAction):
         super(SetRights, self).__init__(media_type, source_variant, workspace,  **{'rights':rights})
         
         
-        
 
+class SaveAction(BaseAction):
+    pass
+    
+    
 class SaveAs(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
     required_parameters = [{'name':'output_variant',  'type': 'string'}, {'name':'output_format',  'type': 'string'}]
@@ -205,7 +210,17 @@ class SaveAs(BaseAction):
         save_variants_rights(component , self.workspace, rights)
         generate_tasks(variant, self.workspace, item)
 
-
+   
+class SendByMail(SaveAs):
+    def __init__(self, media_type, source_variant, workspace, mail,  output_format):
+        output_variant = 'mail'
+        super(SendByMail, self).__init__(media_type, source_variant, workspace,  output_variant,  output_format)
+        self.mail = mail
+    
+    def execute(self, item, adapt_parameters):  
+        adapt_parameters['mail'] = self.mail
+        super(SendByMail,  self).execute(item,  adapt_parameters)
+    
 
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']

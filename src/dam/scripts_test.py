@@ -141,10 +141,12 @@ pipeline_preview = {
                      }
                  },
                 {
-                'type': 'saveas',
+                'type': 'sendbymail',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'preview'
+                    'mail': 'mdrio@tiscali.it'
+                    
+#                    'output_variant': 'preview'
                 }
                         
             }    
