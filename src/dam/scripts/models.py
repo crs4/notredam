@@ -80,8 +80,13 @@ class Script(models.Model):
                              
         actions_available = {}       
        
-        for subclass in BaseAction.__subclasses__():
-            actions_available[subclass.__name__.lower()] = subclass
+        classes = []
+        classes.extend(BaseAction.__subclasses__())
+        classes.extend(SaveAction.__subclasses__())
+        
+        for subclass in classes:
+            if subclass != SaveAction:
+                actions_available[subclass.__name__.lower()] = subclass
             
         actions_available[SendByMail.__name__.lower()] = SendByMail
         
@@ -120,7 +125,7 @@ class Script(models.Model):
             media_type = item.type.name
                 
             for action in actions[media_type]:
-                if isinstance(action, SaveAs):
+                if isinstance(action, SaveAs) or isinstance(action, SendByMail):
                     action.execute(item,adapt_parameters)
                 else:
                     tmp_adapt_parameters = action.get_adapt_params()
@@ -167,10 +172,21 @@ class SaveAction(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
     required_parameters = [ {'name':'output_format',  'type': 'string'}]
     def __init__(self, media_type, source_variant, workspace, output_format):  
-        super(SaveAs, self).__init__(media_type, source_variant, workspace)
+        super(SaveAction, self).__init__(media_type, source_variant, workspace)
         self.output_format = output_format
     
-    def _set_adapt_parameters(self, component,   adapt_parameters):
+    def _get_output_media_type(self, adapt_parameters):
+                
+        if self.media_type == 'doc':
+            output_media_type = 'image'
+        elif  adapt_parameters.has_key('output_media_type'):
+            output_media_type= adapt_parameters.pop('output_media_type')
+        else:
+            output_media_type = self.media_type
+        
+        return output_media_type
+    
+    def _generate_resource(self, component, adapt_parameters): 
         if adapt_parameters.has_key('rights'):
             rights = adapt_parameters.pop('rights')
         else:
@@ -180,72 +196,58 @@ class SaveAction(BaseAction):
         logger.debug('self.output_variant %s'%self.output_variant)
         logger.debug('self.media_type %s'%self.media_type)
          
-        if self.media_type == 'movie' or self.media_type == 'audio':
-            adapt_parameters['preset_name'] = self.output_format
-        else:
-            adapt_parameters['codec'] = self.output_format
-        
-        logger.debug('adapt_parameters %s'%adapt_parameters)    
-        component.set_parameters(adapt_parameters) 
-        
-    
-class SaveAs(BaseAction):
-    media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = [{'name':'output_variant',  'type': 'string'}, {'name':'output_format',  'type': 'string'}]
-    def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
-        super(SaveAs, self).__init__(media_type, source_variant, workspace)
-        
-        self.output_variant = output_variant
-        self.output_format = output_format
-    
-    def execute(self, item, adapt_parameters):  
-        if adapt_parameters.has_key('rights'):
-            rights = adapt_parameters.pop('rights')
-        else:
-            rights = None
-            
-        if self.media_type == 'doc':
-            output_media_type = 'image'
-        elif  adapt_parameters.has_key('output_media_type'):
-            output_media_type= adapt_parameters.pop('output_media_type')
-        else:
-            output_media_type = self.media_type
-        logger.debug('rights %s'%rights)
-            
-        logger.debug('self.output_variant %s'%self.output_variant)
-        logger.debug('self.media_type %s'%self.media_type)
-        variant = Variant.objects.get(name = self.output_variant)          
-        
-        component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))    
-        
         if self.media_type == 'video' or self.media_type == 'audio':
             adapt_parameters['preset_name'] = self.output_format
         else:
             adapt_parameters['codec'] = self.output_format
-        
+
         logger.debug('adapt_parameters %s'%adapt_parameters)    
         component.set_parameters(adapt_parameters) 
-        
-        
         source_variant = Variant.objects.get(name = self.source_variant) 
-        source= source_variant.get_component(self.workspace, item)                 
+        source= source_variant.get_component(self.workspace, component.item)                 
         component.source = source
         component.save() 
         logger.debug('generate task')
         component.save_rights_value(rights, self.workspace)
-        generate_tasks(variant, self.workspace, item)
-
-   
-class SendByMail(SaveAs):
+        generate_tasks(component)
+        
+    def execute(self, item, adapt_parameters):
+        output_media_type = self._get_output_media_type(adapt_parameters)
+        variant = Variant.objects.get(name = self.output_variant)                  
+        component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))
+        self._generate_resource(component, adapt_parameters)
+    
+    
+class SaveAs(SaveAction):
+    media_type_supported = ['image', 'video',  'doc', 'audio']
+    required_parameters = [{'name':'output_variant',  'type': 'string'}, {'name':'output_format',  'type': 'string'}]
+    def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
+        super(SaveAs, self).__init__(media_type, source_variant, workspace,output_format)
+        self.output_variant = output_variant
+    
+#    def execute(self, item, adapt_parameters):
+#        output_media_type = self._get_output_media_type(adapt_parameters)
+#        variant = Variant.objects.get(name = self.output_variant)
+#                  
+#        component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))
+#        self._generate_resource(component, adapt_parameters)    
+           
+class SendByMail(SaveAction):
     def __init__(self, media_type, source_variant, workspace, mail,  output_format):
         output_variant = 'mail'
-        super(SendByMail, self).__init__(media_type, source_variant, workspace,  output_variant,  output_format)
+        super(SendByMail, self).__init__(media_type, source_variant, workspace, output_format)
         self.mail = mail
-    
+        self.output_variant = 'mail'
+#    
     def execute(self, item, adapt_parameters):  
         adapt_parameters['mail'] = self.mail
-        super(SendByMail,  self).execute(item,  adapt_parameters)
-    
+        super(SendByMail, self).execute(item, adapt_parameters)
+#        output_media_type  = self._get_output_media_type(adapt_parameters)
+#        component = Component.objects.create( item = item, type = Type.objects.get(name =output_media_type))
+#        component.workspace.add(self.workspace)
+#        logger.debug('--------SENDMAIL')
+#        self._generate_resource(component, adapt_parameters)
+#    
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
     required_parameters = [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
