@@ -47,17 +47,21 @@ def convert_datetime(s):
     except:
         return s
 
-def round_size(v1, v2):
+def _round_size(v1, v2):
     value = float(v1) + float(v2)/1024.0
     return str(round(value, 1))
 
 def format_filesize(size):
+    """
+    Format file size in MB/KB
+    """
+
     mb, r = divmod(size, 1048576)
     kb, b = divmod(r, 1024)
     if mb:
-        return round_size(mb, kb) + ' MB'
+        return _round_size(mb, kb) + ' MB'
     elif kb:
-        return round_size(kb, b) + ' KB'
+        return _round_size(kb, b) + ' KB'
     else:
         return str(b) + ' bytes'
 

@@ -27,7 +27,7 @@ from django.db.models import Q
 
 from dam.repository.models import Item, Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
-from dam.preferences.views import get_user_setting, get_metadata_default_language
+from dam.preferences.views import get_metadata_default_language
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant
@@ -383,6 +383,7 @@ def _simple_metadata_view(item_list, workspace, default_language, metadata_objec
                     
     return form_list
 
+@login_required
 def get_metadata_structures(request):
     """
     Returns the list of XMP Structures and their definitions

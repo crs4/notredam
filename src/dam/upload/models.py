@@ -23,6 +23,21 @@ from dam.workspace.models import DAMWorkspace
 
 import uuid
 
+class UploadManager(models.Manager):
+
+    def get_user_ws_from_url(self, url):
+        """
+        Retrieve user and workspace from the unique upload url
+        """
+    
+        find_url = self.get(url=url)
+        user = find_url.user
+        workspace = find_url.workspace
+    
+        find_url.delete()
+    
+        return (user, workspace)
+
 class UploadURL(models.Model):
     """ 
     Unique upload url for user (due to flash cookie bug) 
@@ -31,6 +46,7 @@ class UploadURL(models.Model):
     user = models.ForeignKey(User)
     url = models.CharField(max_length=40, unique = True)
     workspace = models.ForeignKey(DAMWorkspace)
+    objects = UploadManager()
     
     def save(self,  *args, **kwargs):
         if not self.id and not self.url:

@@ -22,12 +22,12 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
-from dam.workflow.models import StateItemAssociation
 from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
 
 import urlparse
 import logger
 import simplejson
+import time
 
 from mediadart.storage import Storage
 
@@ -61,6 +61,13 @@ class Item(AbstractItem):
 
     def get_workspaces_count(self):
         return self.workspaces.all().count()    
+
+    def add_to_uploaded_inbox(self, workspace):
+        
+        uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
+        time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
+        node = workspace.tree_nodes.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  depth = 2)[0]
+        node.items.add(self)
 
     def delete_from_ws(self, user, workspaces=None):
     
@@ -176,6 +183,8 @@ class Item(AbstractItem):
         return float(orig.size)
 
     def get_states(self, workspace=None):
+        from dam.workflow.models import StateItemAssociation
+
         if workspace is None:
             return StateItemAssociation.objects.filter(item = self)
         else:

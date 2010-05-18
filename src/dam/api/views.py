@@ -46,7 +46,7 @@ from dam.treeview.views import _move_node,  _add_node, InvalidNode,  WrongWorksp
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.upload.views import generate_tasks, _get_upload_url,  _create_variant, guess_media_type,  _uploaded_item
+from dam.upload.views import generate_tasks, _get_upload_url,  _create_variant, guess_media_type
 from dam.workflow.views import _set_state 
 from decorators import *
 from exceptions import *
@@ -1530,8 +1530,7 @@ class ItemResource(ModResource):
 
         item = Item.objects.create(uploader = user,  type = media_type,)
         ws.items.add(item)
-        _uploaded_item(item,  ws)      
-        
+        item.add_to_uploaded_inbox(ws)        
         
 #        if request.POST.has_key('metadata'):
 #            self._set_metadata(request,  item_id,)

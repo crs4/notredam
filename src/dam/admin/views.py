@@ -12,7 +12,6 @@ from dam.framework.dam_metadata.models import XMPNamespace
 from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, RightsValue, RightsXMPValue
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermissionsGroup, WorkspacePermission
-from dam.preferences.views import get_user_setting_by_level
 
 @staff_member_required
 def dam_admin(request):
@@ -30,7 +29,7 @@ def get_admin_settings(request):
     data = {'prefs':[]}
     for s in settings:
         choices = [[c.name, c.description] for c in s.choices.all()]
-        value = get_user_setting_by_level(s)
+        value = s.get_user_setting_by_level()
         data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': s.component.name,  'type': s.type,  'value': value,  'choices':choices})
     return HttpResponse(simplejson.dumps(data))    
 

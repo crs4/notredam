@@ -41,7 +41,6 @@ from dam.batch_processor.models import MachineState, Machine
 from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
-from dam.preferences.views import get_user_setting
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
 from dam.scripts.models import Script, ScriptDefault 
@@ -602,7 +601,7 @@ def load_items(request, view_type=None, unlimited=False, ):
         tasks_pending = tasks_pending_obj.values_list('action__component__item',  flat=True)
                 
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-        thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
 
         default_language = get_metadata_default_language(user, workspace)
 
@@ -744,7 +743,7 @@ def get_status(request):
         now = time.time()
     
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-        thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
     
         default_language = get_metadata_default_language(user, workspace)
     

@@ -91,7 +91,7 @@ class Node(AbstractNode):
     is_draggable = models.BooleanField(default = True)
     is_drop_target= models.BooleanField(default = True)
     editable = models.BooleanField(default = True)
-    workspace = models.ForeignKey(Workspace)
+    workspace = models.ForeignKey(Workspace, related_name='tree_nodes')
     objects = NodeManager()
     items = models.ManyToManyField('repository.Item')
     metadata_schema = models.ManyToManyField('metadata.MetadataProperty',  through = 'NodeMetadataAssociation',  blank=True, null=True)
