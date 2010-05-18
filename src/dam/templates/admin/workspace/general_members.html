@@ -1,0 +1,81 @@
+{% extends "admin/workspace/permissions.html" %}
+
+{%block js%}      
+{{block.super}}      
+<script>
+    
+    //YAHOO.util.Event.onDOMReady(resize_win);
+    
+  
+    function add_user(){
+
+        if(!$('add_a_user').visible())
+            $('add_a_user').show()
+        new Ajax.Updater('add_a_user', '/admin_workspace_add_members/',{method:'get'})
+        
+      
+    
+
+    }
+    
+    function do_add(){
+    new Ajax.Updater('member_list','/admin_workspace_add_members/', {postBody: $('form_add').serialize() + '&remove=true'})
+    
+    
+    }
+    
+    
+    
+    
+</script>
+{%endblock%}
+
+
+
+
+
+
+
+{% block subcontent %}
+	
+	{%comment%}
+    <legend>
+		workspace: {{ws.name}}
+	</legend>
+	{%endcomment%}
+    
+    
+    <!--div>
+        <div id="add_a_user" ><a onclick="add_user()" href="#" >add users</a>
+        </div>
+    </div-->
+    <div id="buttons" style="padding-bottom:20px">
+    <input type="button" value="add" onclick="add_user()" />
+    
+    <input type="button" value="remove" onclick="remove_selected()"/>
+    <input type="button" value="set permissions"/>
+    <input type="button" value="set groups"/>
+    <div id="add_a_user" style="margin-left:140; background:white; width:150px; height:60px; display:none; z-index:10; "></div>
+</div>
+    Select: <a href="javascript:void(0)" onclick="select_all()">all</a> | <a href="javascript:void(0)" onclick="un_select_all()">none</a>
+    <br>
+    
+    
+    <form  id="form_list" action="/admin_workspace_remove_members/" method="POST">
+    
+        
+        <!--div id="members_buttons" style="text-align:right">
+          
+            <input  type="button" id="select_all_button" name="cmd"  value="select all" onclick="select_all()" />
+            <input   type="button" id="un_select_all_button" name="cmd"  value="unselect all" onclick="un_select_all()" />
+        </div-->
+    
+    
+        
+        
+      
+        <div id="member_list">
+            {%include 'admin/workspace/member_list.html'%}
+        </div>
+        </form>
+{% endblock %}
