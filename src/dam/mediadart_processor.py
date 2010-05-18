@@ -43,7 +43,7 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.framework.dam_metadata.models import XMPNamespace
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 
-from settings import INSTALLATIONPATH,  MEDIADART_CONF,  EMAIL_HOST,  EMAIL_SENDER
+from settings import INSTALLATIONPATH,  EMAIL_HOST,  EMAIL_SENDER
 THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
 
 import logging
