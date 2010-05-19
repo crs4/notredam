@@ -114,7 +114,7 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
 
     try:
-        generate_tasks(variant, workspace, item, 1)
+        generate_tasks(comp)
     except Exception, ex:
         print traceback.print_exc(ex)
         raise    
@@ -275,7 +275,7 @@ def  copy_metadata(comp,  comp_source):
 
 
 
-def _generate_tasks(variant, workspace, item,  component, force_generation,  check_for_existing):
+def _generate_tasks( component, force_generation,  check_for_existing):
     
     """
     Generates MediaDART tasks
@@ -283,9 +283,19 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
 
     logger.debug('_generate_tasks')
     from dam.framework.dam_repository.models import Type
-    
+    variant = component.variant
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
-    if variant.auto_generated:
+    
+    if variant and not variant.auto_generated:
+     
+                
+        end = MachineState.objects.create(name='finished')     
+            
+        feat_extr_action = Action.objects.create(component=component, function='extract_features')
+        feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
+        
+        source_machine = Machine.objects.create(current_state=feat_extr_orig, initial_state=feat_extr_orig)
+    else:
         source = component.source
         if not source:            
             if component.imported:
@@ -309,54 +319,46 @@ def _generate_tasks(variant, workspace, item,  component, force_generation,  che
 #        source_machine = None
         logger.debug('source_machine %s'%source_machine)
                
-        try:
-            comp = variant.get_component(item = item,  workspace= workspace)
-        except Component.DoesNotExist, ex:
-            comp = _create_variant(variant,  item, workspace)
-            
         end = MachineState.objects.create(name='finished')
-        if component.variant.name == 'mail':
-            send_mail_action = Action.objects.create(component=comp, function='send_mail')
+        logger.debug('----------------- VARIANT %s'%variant)
+#        if not variant:
+        if  variant.name == 'mail':
+            
+            send_mail_action = Action.objects.create(component=component, function='send_mail')
             send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
             end_state = send_mail_state
         else:
             end_state = end
         
-        fe_action = Action.objects.create(component=comp, function='extract_features')
+        fe_action = Action.objects.create(component=component, function='extract_features')
         fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=end_state)
         
-        if comp.imported:
+        if component.imported:
             logger.debug('----------source_machine %s'%source_machine)             
             Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=source_machine)  
         
         else:
             logger.debug('adaptation task')
-            adapt_action = Action.objects.create(component=comp, function='adapt_resource')
+            adapt_action = Action.objects.create(component=component, function='adapt_resource')
             adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
             
             Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=source_machine)        
                 
-    else:
-        source = component
-                
-        end = MachineState.objects.create(name='finished')     
-            
-        feat_extr_action = Action.objects.create(component=source, function='extract_features')
-        feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
+  
         
-        source_machine = Machine.objects.create(current_state=feat_extr_orig, initial_state=feat_extr_orig)
 #        ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
 
          
 
             
-def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
+#def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
+def generate_tasks(component, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
     """
     Generate MediaDART Tasks for the given variant, item and workspace
     """
     logger.debug('generate_tasks')
-    component = variant.get_component(workspace,  item)
+#    component = variant.get_component(workspace,  item)
 #    try:
 #        component = variant.get_component(workspace,  item)    
 #        
@@ -368,11 +370,14 @@ def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  
         component.imported = True
         component.save()
         
+#    variant = component.variant
+#    if variant and  variant.shared and not variant.auto_generated and not check_for_existing: #the original... is shared by all the ws
+#        wss = item.workspaces.all()
+#    else:
+#        wss = [workspace]
     
-    if variant.shared and not variant.auto_generated and not check_for_existing: #the original... is shared by all the ws
-        wss = item.workspaces.all()
-    else:
-        wss = [workspace]
     
-    for ws in wss:
-        _generate_tasks(variant, ws, item,  component, force_generation,  check_for_existing)            
+#    for ws in wss:
+#        _generate_tasks( ws,  component, force_generation,  check_for_existing)            
+
+    _generate_tasks(component, force_generation,  check_for_existing)
