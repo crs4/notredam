@@ -196,7 +196,7 @@ def adapt_resource(component, machine):
         
         logger.debug('component.variant.pk %s'%component.variant.pk)
         logger.debug('component.variant %s'%component.variant)
-        logger.debug('component.variant.media_type.name %s'%component.variant.media_type.name)
+        
         logger.debug('component.media_type.name %s'%component.media_type.name)
         if component.media_type.name == "image":
             

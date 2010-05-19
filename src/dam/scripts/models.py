@@ -232,7 +232,7 @@ class SaveAs(BaseAction):
         component.set_parameters(adapt_parameters) 
         
         
-        source_variant = Variant.objects.get(name = self.source_variant, media_type__name = self.media_type) 
+        source_variant = Variant.objects.get(name = self.source_variant) 
         source= source_variant.get_component(self.workspace, item)                 
         component.source = source
         component.save() 

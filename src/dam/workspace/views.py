@@ -1217,18 +1217,20 @@ def _get_thumb_url(item, workspace, thumb_dict = None, absolute_url = False):
     thumb_url = NOTAVAILABLE
     thumb_ready = 0
     
-    if not thumb_dict:
-        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('component__media_type__name',  'pk')
-        thumb_dict = {}
-        for thumb in thumb_variants:
-            thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk']}
+#    if not thumb_dict:
+#        thumb_variants = workspace.get_variants().filter(name = 'thumbnail').values('component__media_type__name',  'pk')
+#        thumb_dict = {}
+#        for thumb in thumb_variants:
+#            thumb_dict[thumb['media_type__name']] = {'pk': thumb['pk']}
     
     try:
         url = get_component_url(workspace, item.pk, 'thumbnail', thumb=True)
+        logger.debug('url %s'%url)
         if url:
             thumb_ready = 1
             thumb_url = url
-    except:
+    except Exception, ex:
+        logger.exception(ex)
         return None, None
     return thumb_url,thumb_ready
 
@@ -1308,6 +1310,7 @@ def load_items(request, view_type=None, unlimited=False, ):
                 item_in_basket = 1
              
             thumb_url,thumb_ready = _get_thumb_url(item, workspace)
+            logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
 
             states = item.stateitemassociation_set.filter(workspace = workspace)
 
@@ -1410,52 +1413,55 @@ def _get_thumb_caption(item, template_string, language):
     
 @login_required
 def get_status(request):    
+    try:
+        items = simplejson.loads(request.POST.get('items'))
     
-    items = simplejson.loads(request.POST.get('items'))
-
-    user = User.objects.get(pk=request.session['_auth_user_id'])
-
-    workspace = request.session.get('workspace', None) 
-
-    ws_tasks = Machine.objects.filter(current_state__action__component__workspace=workspace)
-    tasks_pending = ws_tasks.exclude(current_state__name='failed')
-    tasks_failed = ws_tasks.filter(current_state__name='failed')
-
-    items_failed = tasks_failed.values_list('current_state__action__component__item', flat=True).distinct()
-    items_pending = tasks_pending.values_list('current_state__action__component__item', flat=True).distinct()
-
-    total_pending = items_pending.count()
-    total_failed = items_failed.count()
+        user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    update_items = {}
- 
-    now = time.time()
-
-    thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-    thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
-
-    default_language = get_metadata_default_language(user, workspace)
-
-    for i in items:
-        item = Item.objects.get(pk=i)
-
-        thumb_url,thumb_ready = _get_thumb_url(item, workspace)
-
-        my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-
-        if tasks_pending.filter(current_state__action__component__item=item).count() > 0:
-            update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
-                              "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
-        else:
-            preview_available = tasks_pending.filter(current_state__action__component__variant__name = 'preview', current_state__action__component__item=item).count()
-            update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'inprogress': 0, 'thumb': thumb_ready, 
-                              'preview_available': preview_available,"url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
-
-#    resp_dict = {'adapt': adapt_pending, 'feat': feat_pending, 'metadata': metadata_pending, 'items': update_items}
-    resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-
-    resp = simplejson.dumps(resp_dict)
-    return HttpResponse(resp)
+        workspace = request.session.get('workspace', None) 
+    
+        ws_tasks = Machine.objects.filter(current_state__action__component__workspace=workspace)
+        tasks_pending = ws_tasks.exclude(current_state__name='failed')
+        tasks_failed = ws_tasks.filter(current_state__name='failed')
+    
+        items_failed = tasks_failed.values_list('current_state__action__component__item', flat=True).distinct()
+        items_pending = tasks_pending.values_list('current_state__action__component__item', flat=True).distinct()
+    
+        total_pending = items_pending.count()
+        total_failed = items_failed.count()
+        
+        update_items = {}
+     
+        now = time.time()
+    
+        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+        thumb_caption = get_user_setting(user, thumb_caption_setting, workspace)
+    
+        default_language = get_metadata_default_language(user, workspace)
+    
+        for i in items:
+            item = Item.objects.get(pk=i)
+    
+            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
+    
+            my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+    
+            if tasks_pending.filter(current_state__action__component__item=item).count() > 0:
+                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
+                                  "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
+            else:
+                preview_available = tasks_pending.filter(current_state__action__component__variant__name = 'preview', current_state__action__component__item=item).count()
+                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'inprogress': 0, 'thumb': thumb_ready, 
+                                  'preview_available': preview_available,"url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
+    
+    #    resp_dict = {'adapt': adapt_pending, 'feat': feat_pending, 'metadata': metadata_pending, 'items': update_items}
+        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
+    
+        resp = simplejson.dumps(resp_dict)
+        return HttpResponse(resp)
+    except Exception,ex:
+        logger.exception(ex)
+        raise ex
     
 @login_required
 def get_n_items(request):

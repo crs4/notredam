@@ -103,7 +103,7 @@ class Item(AbstractItem):
 
     def get_file_size(self):
         from dam.variants.models import Variant
-        orig = self.component_set.get(variant = Variant.objects.get(name = 'original', media_type = self.type))
+        orig = self.component_set.get(variant = Variant.objects.get(name = 'original'))
         return float(orig.size)
 
     def get_states(self, workspace=None):

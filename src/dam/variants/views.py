@@ -146,7 +146,7 @@ def _create_variant(variant,  item, ws,  media_type = None):
             comp.workspace.add(ws)
             comp.workspace.add(*item.workspaces.all())
         else:
-            comp = Component.objects.get(item = item, variant= variant,  workspace = ws,  media_type = media_type)
+            comp = Component.objects.get(item = item, variant= variant,  workspace = ws,  type = media_type)
         comp.new_md_id()
         logger.debug('comp._id %s' %comp._id)
         comp.metadata.all().delete()
@@ -333,7 +333,7 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(is_global = True),  media_type = item.type).distinct()
+    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True)).distinct()
     logger.debug('item_variants %s'%item_variants)
 
     now = time.time()

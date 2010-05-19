@@ -92,7 +92,7 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
     """
     
     item = Item.objects.get(pk = item_id)
-    variant = workspace.get_variants().distinct().get(media_type =  item.type,  name = variant_name)
+    variant = workspace.get_variants().distinct().get(name = variant_name)
     
 #    if thumb and variant.default_url:
 #        return variant.default_url
@@ -109,9 +109,9 @@ def get_component_url(workspace, item_id, variant_name,  public_only=False,  thu
                 return component.uri
 
             url = _get_resource_url(component.ID)
-
+            logger.debug('url %s'%url)
         except Exception,ex:
-#            logger.exception( 'ex in get_component_url %s' %  ex )
+            logger.exception( 'ex in get_component_url %s' %  ex )
             url = NOTAVAILABLE
 
     if url == NOTAVAILABLE and not redirect_if_not_available:
