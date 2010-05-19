@@ -14,17 +14,24 @@ user = User.objects.get(pk = 1)
 
 
 image = Type.objects.get(name = 'image')
-
+audio = Type.objects.get(name = 'audio')
+video = Type.objects.get(name = 'movie')
+doc = Type.objects.get(name = 'doc')
 orig = Variant.objects.create(name = 'original', caption = 'Original',  auto_generated = False,  shared = True)
+orig.media_type.add(*[image, audio, video, doc])
 
 edited = Variant.objects.create(name = 'edited', caption = 'edited', auto_generated = False, )
+edited.media_type.add(*[image, audio, video, doc])
 #orig = Variant.objects.create(name = 'original', caption = 'Original',  is_global = True)
 
 thumb  = Variant.objects.create(name = 'thumbnail', caption = 'Thumbnail',      editable = False)
-thumb  = Variant.objects.create(name = 'preview', caption = 'Preview',    editable = False)
+thumb.media_type.add(*[image, audio, video, doc])
+
+preview  = Variant.objects.create(name = 'preview', caption = 'Preview',    editable = False)
+preview.media_type.add(*[image, audio, video, doc])
 
 fullscreen = Variant.objects.create(name = "fullscreen", caption = 'Fullscreen')
-
+fullscreen.media_type.add(image)
 #audio = Type.objects.get(name = 'audio')
 #orig = Variant.objects.create(name = 'original', caption = 'Original',  is_global = True,  auto_generated = False, media_type = audio, shared = True,default_rank = 2)
 #

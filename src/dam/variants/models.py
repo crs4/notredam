@@ -39,7 +39,7 @@ class Variant(models.Model):
     workspace = models.ForeignKey(Workspace, null = True, blank = True)
     editable = models.BooleanField(default=True)    
     hidden= models.BooleanField(default=False)    
-#    media_type = models.ManyToManyField(Type)
+    media_type = models.ManyToManyField(Type)
 #    dest_media_type = models.ForeignKey(Type, null = True, blank = True, related_name = 'dest_media_type')
     auto_generated = models.BooleanField(default=True)
     shared = models.BooleanField(default= False) #the same component will be shared through ws
