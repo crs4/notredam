@@ -333,7 +333,7 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True)).distinct()
+    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = item.type).distinct()
     logger.debug('item_variants %s'%item_variants)
 
     now = time.time()
