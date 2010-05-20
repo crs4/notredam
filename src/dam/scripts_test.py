@@ -214,7 +214,14 @@ pipeline_preview = {
 #                   
 #                },
                 
-                
+                {
+                'type': 'sendbymail',
+                'parameters':{
+                    'output_format': 'flv',
+                    'mail': 'mdrio@tiscali.it'
+                }
+                            
+                },
                 {
                 'type': 'saveas',
                 'parameters':{
