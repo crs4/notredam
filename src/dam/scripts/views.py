@@ -77,7 +77,7 @@ def get_actions(request):
     return HttpResponse(simplejson.dumps(actions))
          
 def new_script(request):
-    pipeline = simple_json.loads(request.POST['actions'])
+    pipeline = request.POST['actions_media_type']
     name = request.POST['name']
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  
@@ -100,7 +100,7 @@ def edit_script(request):
     if script.is_global:        
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
         
-    pipeline_str = request.POST.get('actions')
+    pipeline_str = request.POST.get('actions_media_type')
     if pipeline_str:        
         script.pipeline = pipeline_str
         
