@@ -453,6 +453,9 @@ def _get_ws_groups(workspace, type=None):
 
 @login_required
 def wsadmin_config_descriptors(request, type='basic_summary'):
+    """
+    Workspace Metadata Configuration: retrieve descriptors
+    """
     workspace = request.session.get('workspace')
     
     groups = _get_ws_groups(workspace, type)
@@ -474,6 +477,10 @@ def wsadmin_config_descriptors(request, type='basic_summary'):
     
 @login_required
 def wsadmin_get_descriptor_properties(request):
+    """
+    Workspace Metadata Configuration: retrieve XMP properties
+    """
+
     prop_list = simplejson.loads(request.POST.get('prop_list'))
     variant_only = request.POST.get('variant', 'all')
     if variant_only == 'variant':
@@ -514,6 +521,10 @@ def _get_new_desc(d):
 
 @login_required
 def wsadmin_save_ws_descriptors(request):
+    """
+    Workspace Metadata Configuration: Save descriptors for the current workspace
+    """
+
     workspace = request.session.get('workspace')
 
     basic_list = simplejson.loads(request.POST.get('basic'))
@@ -564,6 +575,9 @@ def wsadmin_save_ws_descriptors(request):
 
 @login_required
 def wsadmin_config_descriptor_groups(request):
+    """
+    Workspace Metadata Configuration: retrieve descriptor groups
+    """
 
     workspace = request.session.get('workspace')
     
@@ -590,6 +604,10 @@ def wsadmin_config_descriptor_groups(request):
 
 @login_required
 def wsadmin_set_default_descriptors(request):
+    """
+    Workspace Metadata Configuration: Reset configuration to defaults
+    """
+
     workspace = request.session.get('workspace')
 
     my_groups = MetadataDescriptorGroup.objects.filter(workspace=workspace)

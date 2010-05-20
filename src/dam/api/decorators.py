@@ -30,7 +30,7 @@ import hashlib
 
 import traceback
 
-from dam.treeview.views import InvalidNode,  WrongWorkspace,  NotMovableNode,    NotEditableNode
+from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,    NotEditableNode
 from dam.treeview.models import Node
 from dam.workspace.models import Workspace
 from dam.repository.models import Item

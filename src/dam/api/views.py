@@ -39,14 +39,15 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
-from dam.treeview.views import _move_node,  _add_node, InvalidNode,  WrongWorkspace,  NotMovableNode,  _rename_node,  NotEditableNode, save_association,  _save__collection_association,  _save__keyword_association,  _remove_collection_association,  _remove_keyword_association,  _save_metadata_mapping,  _edit_node
+from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode
+from dam.treeview.views import _save__collection_association,  _save__keyword_association,  _remove_collection_association,  _remove_keyword_association
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
 
 
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.upload.views import generate_tasks, _get_upload_url,  _create_variant, guess_media_type
+from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type
 from dam.workflow.views import _set_state 
 from decorators import *
 from exceptions import *
@@ -834,7 +835,7 @@ class ItemResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_metadata'])
 #        variant = VariantAssociation.objects.get(pk = variant_id).variant
         variant = Variant.objects.get(pk = variant_id)
-        comp = _create_variant(variant,  item, ws)
+        comp = item.create_variant(variant, ws)
         
 #        url  = request.POST.get('url')
 #        if request.POST.has_key('external'):
@@ -1715,7 +1716,7 @@ class CollectionResource(ModResource):
             workspace = parent_node.workspace        
             
         _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])        
-        node = _add_node(parent_node, label, workspace)
+        node = parent_node.add_node(label, workspace)
         json_response = json.dumps({'model': 'collection',  'id': node.pk, 'label': label, 'parent_id': parent_id, 'workspace_id': workspace.id,  })
         logger.debug('add: json_response %s'%json_response )
         return HttpResponse(json_response) 
@@ -1813,7 +1814,7 @@ class CollectionResource(ModResource):
         if request.POST.has_key('label'):
             label = request.POST['label']
             logger.debug('label %s' %label)
-            _rename_node(node,  label,  ws)   
+            node.rename_node(label,  ws)   
             return HttpResponse('') 
         else:
             raise MissingArgs
@@ -1843,7 +1844,7 @@ class CollectionResource(ModResource):
             node_dest = Node.objects.get(pk = request.GET['parent_id'])  
         
         logger.debug('moving...')        
-        _move_node(node_source, node_dest,  ws)
+        node_source.move_node(node_dest,  ws)
         return HttpResponse('')         
         
     @exception_handler
@@ -2122,9 +2123,9 @@ class KeywordsResource(ModResource):
         if new_node.count() > 0:
             new_node = new_node[0]
         else:
-            new_node = _add_node(node_parent,  request.POST['label'],  ws, type, associate_ancestors)   
+            new_node = node_parent.add_node(request.POST['label'],  ws, type, associate_ancestors)   
             if len(metadata_schema) > 0:
-                _save_metadata_mapping(new_node , metadata_schema)
+                new_node.save_metadata_mapping(metadata_schema)
         
         items  = request.POST.getlist('items')
 #        TODO: test it
@@ -2161,7 +2162,7 @@ class KeywordsResource(ModResource):
         metadata_schema = self._prepare_metadata_schema(request)
         
         
-        _edit_node(node,  label,  metadata_schema, associate_ancestors,  ws)
+        node.edit_node(label,  metadata_schema, associate_ancestors,  ws)
         
         return HttpResponse('') 
     
@@ -2191,7 +2192,7 @@ class KeywordsResource(ModResource):
             node_dest = Node.objects.get(pk = request.POST['parent_id'])  
         
         logger.debug('moving...')        
-        _move_node(node_source ,  node_dest,  ws)                        
+        node_source.move_node(node_dest,  ws)                        
         
         return HttpResponse('') 
     

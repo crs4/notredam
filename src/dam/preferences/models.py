@@ -83,7 +83,7 @@ class SettingManager(models.Manager):
     
     def save_preference(self, request, obj):
         """
-        Get the preference value from request.POST and save
+        Get the preference value from request.POST and save it
         """
         for key in request.POST.keys():
             if key.startswith('pref__'):

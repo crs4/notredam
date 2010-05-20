@@ -120,15 +120,10 @@ Ext.override(Ext.tree.TreeNodeUI, {
                 var tab = Ext.getCmp('media_tabs').getActiveTab();
                 
                 if (tab){
-                	var view = tab.getComponent(0);
 	                
-	                var items = view.getSelectedNodes();
+	                var items = get_selected_items();
 	                if (items.length > 0){
-	                    for(var i = 0; i<items.length; i ++){
-	                    	loader.baseParams.items .push(items[i].id);
-	                    }
-//	                    loader.baseParams.items = item_id;
-	                    
+	                    loader.baseParams.items = items;	                    
 	                }
                 }
                 
@@ -344,18 +339,12 @@ function create_tree(title, id){
             //for tristate
             checkchange: function(node, checked){
 
-                var media_tab = Ext.getCmp('media_tabs').getActiveTab();
-                var view = media_tab.getComponent(0);
                 var cb = node.getUI().checkbox;
                 
-                var items = view.getSelectedNodes();
+                var items = get_selected_items();
                 if (items.length == 0){
                     cb.checked = false;
                     return false;
-                }
-                var item_id = [];
-                for(i = 0; i<items.length; i ++){
-                    item_id.push(items[i].id);
                 }
                 
                 var tristate = false;                
@@ -378,7 +367,7 @@ function create_tree(title, id){
                          Ext.Ajax.request({
                             url:'/remove_association/',
                             params:{
-                                items:item_id,
+                                items:items,
                                 node:node.attributes.id
                                 },
                             scope: node,
@@ -406,7 +395,7 @@ function create_tree(title, id){
                         Ext.Ajax.request({
                             url:'/save_keyword/',
                             params:{
-                                items:item_id,
+                                items:items,
                                 node:node.attributes.id
                                 },
                             callback: function(){
@@ -421,7 +410,7 @@ function create_tree(title, id){
                         Ext.Ajax.request({
                             url:'/remove_association/',
                             params:{
-                                items:item_id,
+                                items:items,
                                 node:node.attributes.id
                                 }
                         });
@@ -516,7 +505,7 @@ function create_tree(title, id){
                         node_index = getSelectedIndexes[i];
                         item = view.getStore().getAt(node_index);
                         
-                        if(item){                            
+                        if(item){
                             items.push(item.data.pk);
                         }
                         
