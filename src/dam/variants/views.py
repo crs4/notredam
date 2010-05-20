@@ -212,13 +212,13 @@ def get_variants_list(request):
     type = request.POST.get('type',  'generated')
     logger.debug('type %s'%type)
         
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'))
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True),media_type__name = media_type, auto_generated =  (type == 'generated'))
     
     
     resp = {'variants':[]}
     for variant in vas:
         
-        resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.is_global })
+        resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.workspace is None })
     return HttpResponse(simplejson.dumps(resp))
 
 
