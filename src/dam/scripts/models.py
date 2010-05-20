@@ -49,32 +49,42 @@ class ScriptDefault(models.Model):
     description = models.CharField(max_length= 200)
     pipeline = models.TextField()
 
+def _get_orig():
+    return Variant.objects.get(name = 'original')
+
+class ActionList(models.Model):
+    actions = models.TextField()
+    script = models.ForeignKey('Script')
+    media_type = models.ForeignKey(Type)
+    source_variant = models.ForeignKey(Variant, default = _get_orig)
+
+
 class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
-    pipeline = models.TextField()
+#    pipeline = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
-    media_type = models.ManyToManyField(Type)
+#    media_type = models.ManyToManyField(Type, through=ActionList)
     is_global = models.BooleanField(default = False)
     
-    def save(self, *args, **kwargs):
-        super(Script, self).save(*args, **kwargs)
-        pipeline = simplejson.loads(self.pipeline)
-        media_type = pipeline.keys()
-        
-        media_type = Type.objects.filter(name__in = media_type)
-        self.media_type.remove(*self.media_type.all())
-        self.media_type.add(*media_type)
-         
-    
+#    def save(self, *args, **kwargs):
+#        super(Script, self).save(*args, **kwargs)
+#        pipeline = simplejson.loads(self.pipeline)
+#        media_type = pipeline.keys()
+#        
+#        media_type = Type.objects.filter(name__in = media_type)
+#        self.media_type.remove(*self.media_type.all())
+#        self.media_type.add(*media_type)
+#         
+#    
     def __unicode__(self):
         return unicode(self.name)
     
     
     def execute(self, items):
-        pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
+#        pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
         
 #        media_types = pipeline.keys()
                              
@@ -98,7 +108,11 @@ class Script(models.Model):
             }
         
 #        logger.debug('media_types %s'%media_types)
-        for media_type, info in pipeline.items():
+        
+#        for media_type, info in pipeline.items():
+        for action in self.actionlist_set.all():
+            info = simplejson.loads(str(action.actions))
+            media_type = action.media_type.name
             logger.debug('info %s '%info)            
             logger.debug('media_type %s'%media_type)
             source_variant = info['source_variant']
