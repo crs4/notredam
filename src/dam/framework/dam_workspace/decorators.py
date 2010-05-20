@@ -73,6 +73,4 @@ def permission_required(permission,  ws_in_session = True):
     
     return check_call
 
-	
-	
 		

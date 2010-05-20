@@ -195,8 +195,8 @@ var mv_ws_menu = new Ext.menu.Menu({
 function get_selected_items(){
     var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
     var selNodes= view.getSelectedNodes();
+    var selected_ids = [];
     if(selNodes && selNodes.length > 0){ 
-        var selected_ids = [];
         for (var i=0; i < selNodes.length; i++) {
             var data = view.store.getAt(view.store.findExact('pk', selNodes[i].id)).data;
             selected_ids.push(data.pk);

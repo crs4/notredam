@@ -62,7 +62,6 @@ class Variant(models.Model):
            
   
     def get_component(self, workspace,  item,  media_type = None):
-        from variants.views import _create_variant
         try:
             return self.component_set.get(item = item,  workspace = workspace)
         except:            
@@ -71,7 +70,7 @@ class Variant(models.Model):
 #            else: 
 #                dest_media_type = self.media_type
                 
-            component = _create_variant(self,  item, workspace,  media_type)
+            component = item.create_variant(self, workspace,  media_type)
             logger.error('component for ws %s and item %s and variant %s not found. Created.'%(workspace, item.pk, self.name))
             return component
     

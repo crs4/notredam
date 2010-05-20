@@ -35,7 +35,6 @@ from dam.treeview.models import Node
 from dam.batch_processor.models import MachineState, Machine, Action
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.decorators import permission_required
-from dam.variants.views import _create_variant
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
@@ -96,7 +95,7 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
     Create component for the given item and generate mediadart tasks. 
     Used only when user uploaded an item's variant
     """
-    comp = _create_variant(variant,  item, workspace)
+    comp = item.create_variant(variant, workspace)
     
     comp.file_name = file_name
     comp._id = res_id
