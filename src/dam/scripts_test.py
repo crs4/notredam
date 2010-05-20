@@ -6,39 +6,12 @@ setup_environ(settings)
 
 
 from scripts.models import *
-
+from scripts.views import _new_script
 from workspace.models import *
 from eventmanager.models import *
 from django.utils import simplejson
 
 
-
-#pipeline = {
-#    'event': 'upload',
-#    'state': '',
-#    'media_type': 'image',
-#    'source_variant': 'original', 
-#    'actions':[
-#        {
-#            'type': 'resize',
-#            'parameters':{
-#                'max_dim': 100
-#            }
-#                    
-#        },
-#        {
-#            'type': 'saveas',
-#            'parameters':{
-#                'output_format': 'jpeg',
-#                'output_variant': 'thumbnail'
-#            }
-#                    
-#        }
-#        
-#               
-#    ]
-#    
-#    }
 
 pipeline_thumb = {
     
@@ -328,51 +301,38 @@ pipeline_fullscreen = {
     
 }
 
-
-
-
-#    
-#    {
-#           'type': 'audioencode',
-#           'parameters':{                        
-#                'bitrate':128,
-#                'rate':44100
-#            }
-#                
-#        },
-#        {
-#            'type': 'saveas',
-#            'parameters':{
-#                'output_format': 'mp3',
-#                'output_variant': 'preview'
-#            }
-#                    
-#        }
-    
-    
-    
-    
     
 
 ws = DAMWorkspace.objects.get(pk = 1)
-
+#upload = Event.objects.get(name = 'upload')
 pipeline_json = simplejson.dumps(pipeline_thumb)
-script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
-
+_new_script(name = 'thumb_generation', description = 'thumbnail generation', workspace = ws, pipeline = pipeline_json, events = ['upload'])
 ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
+
+pipeline_json = simplejson.dumps(pipeline_preview)
+
+_new_script(name = 'preview_generation', description = 'preview generation', workspace = ws, pipeline = pipeline_json, events = ['upload'])
+ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
+
+pipeline_json = simplejson.dumps(pipeline_fullscreen)
+
+_new_script(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, events = ['upload'])
+ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
+
+
+#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
+#
+#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
+#
 
 
 #script_thumb = Script.objects.get(pk =  1)
 #script_thumb.pipeline = pipeline_json
 #script_thumb.save()
 
-upload = Event.objects.create(name = 'upload')
-EventRegistration.objects.create(event = upload, listener = script_thumb, workspace = ws)
 
-pipeline_json = simplejson.dumps(pipeline_preview)
+#EventRegistration.objects.create(event = upload, listener = script_thumb, workspace = ws)
 
-script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws,is_global = True )
-ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
 
 
 #script_preview = Script.objects.get(pk =  2)
@@ -381,12 +341,12 @@ ScriptDefault.objects.create(name = 'preview_generation', description = 'preview
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
-EventRegistration.objects.create(event = upload, listener = script_preview, workspace = ws)
+#EventRegistration.objects.create(event = upload, listener = script_preview, workspace = ws)
 
-pipeline_json = simplejson.dumps(pipeline_fullscreen)
-
-script_fullscreen = Script.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, is_global = True)
-ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
+#pipeline_json = simplejson.dumps(pipeline_fullscreen)
+#
+#script_fullscreen = Script.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, is_global = True)
+#ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
 
 #script_preview = Script.objects.get(pk =  3)
 #script_preview.pipeline = pipeline_json
@@ -394,5 +354,5 @@ ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'full
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
-EventRegistration.objects.create(event = upload, listener = script_fullscreen, workspace = ws)
+#EventRegistration.objects.create(event = upload, listener = script_fullscreen, workspace = ws)
 

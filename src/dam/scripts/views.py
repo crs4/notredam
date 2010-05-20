@@ -75,21 +75,26 @@ def get_actions(request):
                 })
     logger.debug('actions %s'%actions)        
     return HttpResponse(simplejson.dumps(actions))
-         
+
+def _new_script(name, description, workspace, pipeline, events):
+    script = Script.objects.create(name = name, description = description, workspace = workspace)
+    pipeline = simplejson.loads(pipeline)
+    for media_type, actions in pipeline.items():
+        ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions))
+    
+    for event_name in events:
+        event = Event.objects.get(name = event_name)
+        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
+
+@login_required
 def new_script(request):
-    pipeline = request.POST['actions_media_type']
+    pipeline = simplejson.loads(request.POST['actions_media_type'])
     name = request.POST['name']
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  
-    
-    script = Script.objects.create(name = name, description = description, workspace = workspace, pipeline = pipeline)
-    
     events = request.POST.getlist('event')
-    workspace = request.session.get('workspace')
-    for event_name in events:
-        event = Event.objects.get(name = event_name)
-        EventRegistration.objects.create(event = event, listener = script)
-        
+    _new_script(name, description, workspace, pipeline, events)
+    
     return HttpResponse(simplejson.dumps({'success': True}))
 
 
@@ -130,5 +135,7 @@ def delete_script(request):
     else:
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
     return HttpResponse(simplejson.dumps({'success': True}))
+
+
 
     
