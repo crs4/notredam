@@ -186,6 +186,14 @@ class SaveAction(BaseAction):
         
         return output_media_type
     
+    def _same_adapted_resource(self, component):
+        c = Component.objects.filter(source = component.source, parameters = component.parameters).exclude(pk = component.pk)
+        if c.count() > 0:
+            c = c[0]
+            if c._id:
+                return c._id
+        return None
+    
     def _generate_resource(self, component, adapt_parameters): 
         if adapt_parameters.has_key('rights'):
             rights = adapt_parameters.pop('rights')
@@ -203,13 +211,20 @@ class SaveAction(BaseAction):
 
         logger.debug('adapt_parameters %s'%adapt_parameters)    
         component.set_parameters(adapt_parameters) 
+        
         source_variant = Variant.objects.get(name = self.source_variant) 
         source= source_variant.get_component(self.workspace, component.item)                 
         component.source = source
-        component.save() 
-        logger.debug('generate task')
         component.save_rights_value(rights, self.workspace)
-        generate_tasks(component)
+        
+        component.save()
+        same_resource = self._same_adapted_resource(component)
+        if same_resource:
+            component._id = same_resource
+            component.save() 
+        else:
+            logger.debug('generate task')        
+            generate_tasks(component)
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)
