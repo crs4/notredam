@@ -62,7 +62,7 @@ class Script(models.Model):
     def save(self, *args, **kwargs):
         super(Script, self).save(*args, **kwargs)
         pipeline = simplejson.loads(self.pipeline)
-        media_type = pipeline['media_type'].keys()
+        media_type = pipeline.keys()
         
         media_type = Type.objects.filter(name__in = media_type)
         self.media_type.remove(*self.media_type.all())
@@ -76,7 +76,7 @@ class Script(models.Model):
     def execute(self, items):
         pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
         
-        media_types = pipeline.get('media_type', {})
+#        media_types = pipeline.keys()
                              
         actions_available = {}       
        
@@ -97,8 +97,8 @@ class Script(models.Model):
             'doc':[]
             }
         
-        logger.debug('media_types %s'%media_types)
-        for media_type, info in media_types.items():
+#        logger.debug('media_types %s'%media_types)
+        for media_type, info in pipeline.items():
             logger.debug('info %s '%info)            
             logger.debug('media_type %s'%media_type)
             source_variant = info['source_variant']
