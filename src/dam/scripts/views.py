@@ -33,12 +33,12 @@ def get_scripts(request):
     resp = {'scripts': []}
     for script in scripts:
         tmp = simplejson.loads(script.pipeline) 
-        resp['scripts'].append({'name': script.name, 'actions': tmp['media_type']})
+        resp['scripts'].append({'id': script.pk, 'name': script.name, 'actions': tmp['media_type']})
     
     return HttpResponse(simplejson.dumps(resp))
 
 
-
+@login_required
 def get_script_actions(request):
     script_id = request.POST['script']
     media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
@@ -86,6 +86,8 @@ def _new_script(name, description, workspace, pipeline, events):
         event = Event.objects.get(name = event_name)
         EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
 
+    return script
+
 @login_required
 def new_script(request):
     pipeline = simplejson.loads(request.POST['actions_media_type'])
@@ -93,11 +95,11 @@ def new_script(request):
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  
     events = request.POST.getlist('event')
-    _new_script(name, description, workspace, pipeline, events)
+    script = _new_script(name, description, workspace, pipeline, events)
     
-    return HttpResponse(simplejson.dumps({'success': True}))
+    return HttpResponse(simplejson.dumps({'success': True, 'id': script.pk}))
 
-
+@login_required
 def edit_script(request):
     script_id = request.POST['script']
     script = Script.objects.get(pk = script_id)
@@ -126,7 +128,7 @@ def edit_script(request):
     script.save()
     return HttpResponse(simplejson.dumps({'success': True}))
         
-
+@login_required
 def delete_script(request):        
     script_id = request.POST['script']
     script = Script.objects.get(pk = script_id)
