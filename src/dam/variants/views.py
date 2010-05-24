@@ -363,7 +363,7 @@ def get_variants(request):
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
             work_in_progress =  True
-            resp['variants'].append({ 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
+            resp['variants'].append({'pk': v.pk, 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
             continue
             
             #logger.exception(ex)

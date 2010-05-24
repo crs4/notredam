@@ -90,7 +90,13 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
     Create component for the given item and generate mediadart tasks. 
     Used only when user uploaded an item's variant
     """
+    
     comp = _create_variant(variant,  item, workspace)
+    logger.debug('----------------------')
+    
+    if variant.auto_generated:
+        comp.imported = True
+
     logger.debug('comp._id %s'%comp._id)
     logger.debug('res_id %s'%res_id)
     comp.file_name = file_name
@@ -117,7 +123,7 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
     try:
         generate_tasks(comp)
         
-        if variant and  variant.shared and not variant.auto_generated:
+        if not variant.auto_generated:
             for ws in item.workspaces.all():
                 EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
         
