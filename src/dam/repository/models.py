@@ -38,7 +38,11 @@ def _get_resource_url(id):
 
     storage = Storage()
 
+    if not id:
+        return None
+
     try:
+        
         if storage.exists(id):
             url = '/storage/' + id
         else:

@@ -100,6 +100,9 @@ class MetadataProperty(XMPProperty):
     item_owner_target = models.BooleanField(default=False)
     file_size_target = models.BooleanField(default=False)
     file_name_target = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name_plural = "Metadata properties"
     
     def metadata_definition(self):
         

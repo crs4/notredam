@@ -146,23 +146,11 @@ def edit(request, node_id, node_type):
     
 @permission_required('edit_metadata')
 def _save__keyword_association(request, node, items):
-    items = Item.objects.filter(pk__in = items)
-    if node.associate_ancestors:
-        nodes = node.get_ancestors().filter(depth__gt = 0)
-    else:
-        nodes = [node]
-        
-    for n in nodes:
-
-        if n.cls != 'category':
-            n.items.add(*items)
-
-        n.save_metadata(items)
+    node.save_keyword_association(items)
     
 @permission_required('edit_collection')
 def _save__collection_association(request, node, items):
-    items = Item.objects.filter(pk__in = items)
-    node.items.add(*items)
+    node.save_collection_association(items)
     
 @login_required
 def save_association(request):
@@ -244,18 +232,11 @@ def get_nodes(request):
     
 @permission_required('edit_metadata')
 def _remove_keyword_association(request,  node,  items):
-    items = Item.objects.filter(pk__in = items)
-    node.items.remove(*items)    
-    _remove_metadata(node,  items)
+    node.remove_keyword_association(items)
     
 @permission_required('edit_collection')
 def _remove_collection_association(request,  node,  items):
-    try:
-        items = Item.objects.filter(pk__in = items)
-        node.items.remove(*items)
-    except Exception, ex:
-        logger.exception(ex)
-        raise ex
+    node.remove_collection_association(items)
 
 @login_required
 def remove_association(request):
