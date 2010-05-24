@@ -153,11 +153,12 @@ def save_uploaded_item(request, upload_file, user, workspace):
     
 
 def save_uploaded_variant(request, upload_file, user, workspace):
-
+    
     variant_id = request.POST['variant_id']
     item_id = request.POST['item_id']
 
     variant =  Variant.objects.get(pk = variant_id)
+    logger.debug('***************************************VARIANT %s******************'%variant)
     item = Item.objects.get(pk = item_id)
     
     fname, extension = os.path.splitext(upload_file.name)
