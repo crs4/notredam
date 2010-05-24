@@ -36,7 +36,7 @@ def get_scripts(request):
         for action in script.actionlist_set.all():                        
             actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
              
-        resp['scripts'].append({'id': script.pk, 'name': script.name, 'actions_media_type': actions_media_type})
+        resp['scripts'].append({'id': script.pk, 'name': script.name, 'description': script.description, 'actions_media_type': actions_media_type})
     
     return HttpResponse(simplejson.dumps(resp))
 
