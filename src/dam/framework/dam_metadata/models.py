@@ -118,7 +118,8 @@ class XMPProperty(models.Model):
         ('CopyrightOwnerDetail','CopyrightOwnerDetail'),
         ('ImageCreatorDetail','ImageCreatorDetail'),
         ('ArtworkOrObjectDetails','ArtworkOrObjectDetails'),
-        ('filesize','filesize')
+        ('filesize','filesize'),
+        ('cuepoint','cuepoint')
         )
 
     namespace = models.ForeignKey(XMPNamespace)
