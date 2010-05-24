@@ -91,7 +91,7 @@ pipeline_preview = {
                   
     
         'image':{
-            'source_variant': 'original',
+            'source_variant': 'edited',
             'actions': [
                 {
                  'type': 'resize',
@@ -304,12 +304,12 @@ pipeline_fullscreen = {
     
 
 ws = DAMWorkspace.objects.get(pk = 1)
-#upload = Event.objects.get(name = 'upload')
+upload = Event.objects.create(name = 'upload')
+
 pipeline_json = simplejson.dumps(pipeline_thumb)
 _new_script(name = 'thumb_generation', description = 'thumbnail generation', workspace = ws, pipeline = pipeline_json, events = ['upload'])
 ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
 
-pipeline_json = simplejson.dumps(pipeline_preview)
 
 _new_script(name = 'preview_generation', description = 'preview generation', workspace = ws, pipeline = pipeline_json, events = ['upload'])
 ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
@@ -319,13 +319,13 @@ pipeline_json = simplejson.dumps(pipeline_fullscreen)
 _new_script(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, events = ['upload'])
 ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
 
-
-#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
 #
 #script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
 #
-
-
+#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
+#
+#
+#
 #script_thumb = Script.objects.get(pk =  1)
 #script_thumb.pipeline = pipeline_json
 #script_thumb.save()

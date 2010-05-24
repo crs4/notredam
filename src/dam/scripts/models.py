@@ -115,14 +115,14 @@ class Script(models.Model):
             media_type = action.media_type.name
             logger.debug('info %s '%info)            
             logger.debug('media_type %s'%media_type)
-            source_variant = info['source_variant']
+#            source_variant = info['source_variant']
             for action_dict in info['actions']:
                 
                 type = action_dict['type'].lower()
                 params = action_dict['parameters']
                 params['workspace'] = self.workspace
                 params['media_type'] = media_type
-                params['source_variant'] = source_variant
+                params['source_variant'] = action.source_variant
                 logger.debug('action_dict %s'%action_dict)
                 try:                    
                     action = actions_available[type](**params)                
@@ -224,14 +224,32 @@ class SaveAction(BaseAction):
             adapt_parameters['codec'] = self.output_format
 
         logger.debug('adapt_parameters %s'%adapt_parameters)    
-        component.set_parameters(adapt_parameters) 
+         
+#        component.save_rights_value(rights, self.workspace)
+        try:
+#            source_variant = Variant.objects.get(name = self.source_variant)         
+            source = source_variant.component_set.get(item = component.item, workspace = self.workspace)
+        except Exception, ex:
+#            in case edited does not exist
+            logger.error(ex)
+            source_variant = Variant.objects.get(name = 'original')
+            source = source_variant.get_component(self.workspace, component.item)                 
         
-        source_variant = Variant.objects.get(name = self.source_variant) 
-        source= source_variant.get_component(self.workspace, component.item)                 
-        component.source = source
-        component.save_rights_value(rights, self.workspace)
+        
+        
+        if component.source and component._previous_source_id == source._id and  component.get_parameters() == adapt_parameters:
+            logger.debug('component.source._id %s'%component.source._id)
+            logger.debug('source._id %s'%source._id)
+            logger.debug('component will not be regenerated, no mods in source or adapt_params')
+            return
+        
+        component.set_parameters(adapt_parameters)
+        component.set_source(source)
+        
         
         component.save()
+        component.save_rights_value(rights, self.workspace)
+        
         same_resource = self._same_adapted_resource(component)
         if same_resource:
             component._id = same_resource

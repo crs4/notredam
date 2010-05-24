@@ -209,7 +209,7 @@ class Component(AbstractComponent):
     workspace = models.ManyToManyField('workspace.DAMWorkspace')    
 #    media_type = models.ForeignKey('application.Type')
     item = models.ForeignKey('repository.Item')
-#    source_id = models.CharField(max_length=40,  null = True,  blank = True)
+    _previous_source_id = models.CharField(max_length=40,  null = True,  blank = True)
         
     uri = models.URLField(max_length=512, verify_exists = False,  blank = True,  null = True)
     imported = models.BooleanField(default = False) # if true related variant must not be regenarated from the original
@@ -222,6 +222,10 @@ class Component(AbstractComponent):
     
     class Meta:
         db_table = 'component'
+    
+    def set_source(self, source):
+        self.source = source
+        self._previous_source_id = source._id
     
     def _get_id(self):
         return self._id
