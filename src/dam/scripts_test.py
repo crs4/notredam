@@ -91,7 +91,7 @@ pipeline_preview = {
                   
     
         'image':{
-            'source_variant': 'edited',
+            'source_variant': 'original',
             'actions': [
                 {
                  'type': 'resize',

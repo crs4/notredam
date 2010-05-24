@@ -226,21 +226,22 @@ class SaveAction(BaseAction):
         logger.debug('adapt_parameters %s'%adapt_parameters)    
          
 #        component.save_rights_value(rights, self.workspace)
+        logger.debug('self.source_variant %s'%self.source_variant)
         try:
 #            source_variant = Variant.objects.get(name = self.source_variant)         
-            source = source_variant.component_set.get(item = component.item, workspace = self.workspace)
+            source = self.source_variant.component_set.get(item = component.item, workspace = self.workspace)
         except Exception, ex:
 #            in case edited does not exist
             logger.error(ex)
             source_variant = Variant.objects.get(name = 'original')
             source = source_variant.get_component(self.workspace, component.item)                 
         
+        logger.debug('source.variant %s'%source.variant.name)
         
-        
-        if component.source and component._previous_source_id == source._id and  component.get_parameters() == adapt_parameters:
+        if component.imported or( component.source and component._previous_source_id == source._id and  component.get_parameters() == adapt_parameters):
             logger.debug('component.source._id %s'%component.source._id)
             logger.debug('source._id %s'%source._id)
-            logger.debug('component will not be regenerated, no mods in source or adapt_params')
+            logger.debug('component will not be regenerated, is imported or no mods in source or adapt_params')
             return
         
         component.set_parameters(adapt_parameters)
