@@ -39,6 +39,47 @@ from mx.DateTime.Parser import DateTimeFromString
 import logger
 import re
 
+@login_required
+def get_cuepoint_keywords(request):
+
+    setting = DAMComponentSetting.objects.get(name__iexact='cue_point_list')
+    value = setting.get_user_setting_by_level().split(',')
+
+    keywords = []
+
+    for v in value:
+        keywords.append({'keyword': v})
+
+    resp = {'keywords':keywords}
+
+    return HttpResponse(simplejson.dumps(resp))
+
+@login_required
+def set_cuepoint(request):
+
+    item_id = request.POST.get('item')
+    cuepoints = simplejson.loads(request.POST.get('cuepoints'))
+    
+    schema = MetadataProperty.objects.get(field_name='CuePoint')
+    
+    item = Item.objects.get(pk=item_id)
+    
+    item.metadata.filter(schema=schema).delete()
+    
+    for x in xrange(1, len(cuepoints)+1):
+    	cp = cuepoints[x-1]
+    	keyword = cp['keyword']
+    	value = cp['value']
+    	start = cp['start']
+    	duration = cp['duration']
+
+    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPKeyword' % x, value=keyword)
+    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPStart' % x, value=start)
+    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPDuration' % x, value=duration)
+    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPValue' % x, value=value)
+
+    return HttpResponse('')
+
 def _add_sync_machine(component):
 
     end = MachineState.objects.create(name='finished')

@@ -25,6 +25,7 @@ var old_selected_nodes = [];
 var CLOSABLE_TAB_CLASS = 'x-tab-strip-closable'; 
 var cls_audio = 'loadPlayer';
 
+var cue_point_list = [];
 
 if (window['loadFirebugConsole']) {
     window.loadFirebugConsole();
@@ -40,6 +41,80 @@ if (window['loadFirebugConsole']) {
 }
 
 Ext.BLANK_IMAGE_URL = '/files/images/s.gif';
+
+function openCuePointEditor() {
+
+	var items = get_selected_items();
+
+	if (items) {
+	
+		var win = new Ext.Window({
+			height: 600,
+			width: 800,
+			resizable: false,
+			modal: true,
+			constrain:true,
+			items: [
+				{
+					title: 'CuePoint Editor',
+					html: '<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=10,0,0,0" width="750" height="500" id="taggatore" align="middle"> <param name="allowScriptAccess" value="sameDomain" /> <param name="allowFullScreen" value="false" /> <param name="movie" value="/files/cuepoint_editor/taggatore.swf" /><param name="quality" value="high" /><param name="bgcolor" value="#ffffff" /><embed src="/files/cuepoint_editor/taggatore.swf" quality="high" bgcolor="#ffffff" width="750" height="500" name="taggatore" align="middle" allowScriptAccess="sameDomain" allowFullScreen="false" type="application/x-shockwave-flash" pluginspage="http://www.adobe.com/go/getflashplayer_it" /> </object>'
+				}
+			]
+		});
+	
+		var cue_point_keywords = new Ext.data.JsonStore({
+			url: '/get_cuepoint_keywords/',
+			root: 'keywords',
+			fields: ['keyword'],
+			autoLoad: true,
+			listeners: {
+				load: function() {
+					cue_point_list = [];
+					this.each(function(r) {
+						cue_point_list.push(r.get('keyword'));
+					});
+					win.show();
+				}
+			}
+		});			
+	
+	}
+
+};
+
+function getCuePoint() {
+
+	var items = get_selected_items();
+	
+	if (items) {
+
+		var metadata_list = {item: items[0], video_url: '/redirect_to_component/' + items[0] + '/original/', metadata: cue_point_list}
+	
+		return metadata_list;
+	
+	}
+	
+};
+
+function setCuePoint(cuepoints, item) {
+
+	console.log(cuepoints);
+	console.log(item);
+
+	Ext.Ajax.request({
+		url: '/set_cuepoint/',
+		params:{
+			cuepoints: Ext.encode(cuepoints),
+			item: item			
+		},
+		success: function() {
+			Ext.MessageBox.alert('Success', 'CuePoints saved successfully.');
+		}
+	});
+
+
+};
+
 
 function play_audio(player_id){
     var player = flowplayer(player_id);

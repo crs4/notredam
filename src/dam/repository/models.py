@@ -26,7 +26,7 @@ from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
 
 import urlparse
 import logger
-import simplejson
+from django.utils import simplejson
 import time
 
 from mediadart.storage import Storage
