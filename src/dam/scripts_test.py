@@ -311,6 +311,7 @@ _new_script(name = 'thumb_generation', description = 'thumbnail generation', wor
 ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
 
 
+pipeline_json = simplejson.dumps(pipeline_preview)
 _new_script(name = 'preview_generation', description = 'preview generation', workspace = ws, pipeline = pipeline_json, events = ['upload'])
 ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
 
