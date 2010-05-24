@@ -54,14 +54,14 @@
 //    Ext.MessageBox.confirm('Confirm', "Are you sure you generate the variant '" +data.variant_name+ "'? The current one will be lost.", call_back_generate);
 //}
 //
-//function import_variant(variant_id){
-//    var variant = Ext.getCmp('variant_summary').getStore().query('pk', variant_id).items[0].data;
-//    var up = new Upload('/upload_variant/', true,
-//        {variant_id:variant.pk, item_id:variant.item_id}
-//    );
-//    up.openUpload();    
-//    
-//}
+function import_variant(variant_id){
+    var variant = Ext.getCmp('variant_summary').getStore().query('pk', variant_id).items[0].data;
+    var up = new Upload('/upload_variant/', true,
+        {variant_id:variant.pk, item_id:variant.item_id}
+    );
+    up.openUpload();    
+    
+}
 //
 //var store_variant = new Ext.data.JsonStore({
 //        url: '/get_variants/',
