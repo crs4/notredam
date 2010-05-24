@@ -40,9 +40,7 @@ from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, W
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode
-from dam.treeview.views import _save__collection_association,  _save__keyword_association,  _remove_collection_association,  _remove_keyword_association
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
-
 
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
@@ -64,9 +62,6 @@ from mimetypes import guess_type
 
 from django.template.loader import render_to_string
 from twisted.test.test_jelly import SimpleJellyTest
-
-
-
 
 def _check_parent(values):
     if  Node.objects.get(pk = values['parent_id']).depth  == 0:
@@ -1177,7 +1172,7 @@ class ItemResource(ModResource):
                 user_id = request.POST['user_id']
                 _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])
             
-            _save__collection_association(collection_node,  [item_id])
+            collection_node.save_collection_association([item_id])
         
         return HttpResponse('')
         
@@ -1206,7 +1201,7 @@ class ItemResource(ModResource):
                 logger.debug('user_id %s'% user_id)
                 _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])
             
-            _remove_collection_association(collection_node, [item_id])        
+            collection_node.remove_collection_association([item_id])        
         
         return HttpResponse('')    
     
@@ -1235,7 +1230,7 @@ class ItemResource(ModResource):
         node_ids = request.POST.getlist('keywords')
         for node_id in node_ids:
             node = Node.objects.get(pk = node_id)
-            _save__keyword_association( node, [item_id])
+            node.save_keyword_association([item_id])
             
         return HttpResponse('')    
         
@@ -1261,7 +1256,7 @@ class ItemResource(ModResource):
         node_ids = request.POST.getlist('keywords')
         for node_id in node_ids:
             node = Node.objects.get(pk = node_id)
-            _remove_keyword_association( node, [item_id])
+            node.remove_keyword_association([item_id])
         
     @exception_handler
     @api_key_required
@@ -1892,7 +1887,7 @@ class CollectionResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])        
         
         item_ids = request.POST.getlist('items') 
-        _save__collection_association( node, item_ids)
+        node.save_collection_association(item_ids)
         return HttpResponse('')        
     
     @exception_handler
@@ -1922,7 +1917,7 @@ class CollectionResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])        
         
         item_ids = request.POST.getlist('items') 
-        _remove_collection_association(node, item_ids)        
+        node.remove_collection_association(item_ids)        
         
         return HttpResponse('')
             

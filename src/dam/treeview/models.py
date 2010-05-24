@@ -157,8 +157,38 @@ class Node(AbstractNode):
                 self.save_metadata()
             
             self.associate_ancestors = associate_ancestors
-            logger.debug('node.associate_ancestors %s'%self.associate_ancestors)
             self.save()
+
+    def remove_keyword_association(self, items):
+        items = Item.objects.filter(pk__in = items)
+        self.items.remove(*items)
+        self.remove_metadata(items)
+
+    def remove_collection_association(self, items):
+        try:
+            items = Item.objects.filter(pk__in = items)
+            self.items.remove(*items)
+        except Exception, ex:
+            logger.exception(ex)
+            raise ex    
+
+    def save_keyword_association(self, items):
+        items = Item.objects.filter(pk__in = items)
+        if self.associate_ancestors:
+            nodes = self.get_ancestors().filter(depth__gt = 0)
+        else:
+            nodes = [self]
+            
+        for n in nodes:
+    
+            if n.cls != 'category':
+                n.items.add(*items)
+    
+            n.save_metadata(items)
+
+    def save_collection_association(self, items):
+        items = Item.objects.filter(pk__in = items)
+        self.items.add(*items)
 
     def save_metadata_mapping(self, metadata_schemas):
         from dam.metadata.models import MetadataProperty
@@ -179,7 +209,10 @@ class Node(AbstractNode):
     #    node.metadata_schema.add(*MetadataProperty.objects.filter(pk__in = metadata_schemas))
 
     def save_metadata(self, items=None):
-        
+        from dam.metadata.models import MetadataValue
+
+        ctype = ContentType.objects.get_for_model(Item)
+
         if items is None:
             items = self.items.all()
         
@@ -192,6 +225,7 @@ class Node(AbstractNode):
                 m = MetadataValue.objects.get_or_create(schema=s, value=keyword, object_id= item.pk, content_type = ctype)
 
     def remove_metadata(self, items):
+        from dam.metadata.models import MetadataValue
         
         ctype = ContentType.objects.get_for_model(Item)
 

@@ -750,7 +750,7 @@ def get_status(request):
         for i in items:
             item = Item.objects.get(pk=i)
     
-            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
+            thumb_url, thumb_ready = _get_thumb_url(item, workspace)
     
             my_caption = _get_thumb_caption(item, thumb_caption, default_language)
     

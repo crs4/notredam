@@ -774,15 +774,3 @@ function createTemplate(panel_id, media_type){
         );
 	
 };
-
-var more_button = function(id){
-    Ext.get('basic_metadata_' + id).setStyle('display', 'none');
-    Ext.get('full_metadata_' + id).setStyle('display', 'block');
-    
-};
-
-var less_button = function(id){
-    Ext.get('full_metadata_' + id).setStyle('display', 'none');
-    Ext.get('basic_metadata_' + id).setStyle('display', 'block');
-    
-};
