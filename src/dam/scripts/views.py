@@ -32,8 +32,11 @@ def get_scripts(request):
     scripts = Script.objects.filter(workspace = workspace, media_type__in = media_type)
     resp = {'scripts': []}
     for script in scripts:
-        tmp = simplejson.loads(script.pipeline) 
-        resp['scripts'].append({'id': script.pk, 'name': script.name, 'actions': tmp['media_type']})
+        actions_media_type = {}
+        for action in script.actionlist_set.all():                        
+            actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
+             
+        resp['scripts'].append({'id': script.pk, 'name': script.name, 'actions_media_type': actions_media_type})
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -90,7 +93,7 @@ def _new_script(name, description, workspace, pipeline, events):
 
 @login_required
 def new_script(request):
-    pipeline = simplejson.loads(request.POST['actions_media_type'])
+    pipeline = request.POST['actions_media_type']
     name = request.POST['name']
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  
