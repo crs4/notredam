@@ -46,7 +46,7 @@ function openCuePointEditor() {
 
 	var items = get_selected_items();
 
-	if (items) {
+	if (items.length > 0) {
 	
 		var win = new Ext.Window({
 			height: 600,
@@ -63,15 +63,16 @@ function openCuePointEditor() {
 		});
 	
 		var cue_point_keywords = new Ext.data.JsonStore({
+            baseParams: {item_id: items[0]},
 			url: '/get_cuepoint_keywords/',
 			root: 'keywords',
-			fields: ['keyword'],
+			fields: ['keyword', 'item_values'],
 			autoLoad: true,
 			listeners: {
 				load: function() {
 					cue_point_list = [];
 					this.each(function(r) {
-						cue_point_list.push(r.get('keyword'));
+						cue_point_list.push([r.get('keyword'), r.get('item_values')]);
 					});
 					win.show();
 				}
@@ -88,8 +89,30 @@ function getCuePoint() {
 	
 	if (items) {
 
-		var metadata_list = {item: items[0], video_url: '/redirect_to_component/' + items[0] + '/original/', metadata: cue_point_list}
+        var keywords = [];
+        var metadata = [];
+
+        var tmp_key;
+
+        for (var x=0; x < cue_point_list.length; x++) {
+            tmp_key = cue_point_list[x][0];
+            tmp_value = cue_point_list[x][1];
+            keywords.push(tmp_key);
+            metadata.push(tmp_value)
+        }
+
+        console.log(keywords, metadata);
+
+		var metadata_list = {
+		    item: items[0], 
+            
+		    video_url: '/redirect_to_component/' + items[0] + '/original/', 
+		    keywords: keywords,
+		    metadata: metadata
+		}
 	
+        console.log(metadata_list);
+		
 		return metadata_list;
 	
 	}

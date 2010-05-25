@@ -56,11 +56,17 @@ import re
 @login_required 
 @permission_required('admin', False)
 def admin_workspace(request,  ws_id):
+    """
+    Edits information for the given workspace (name, description)
+    """
     ws = Workspace.objects.get(pk = ws_id)
     return _admin_workspace(request,  ws)
 
 @login_required 
 def create_workspace(request):
+    """
+    Creates a new workspace
+    """
     user = User.objects.get(pk=request.session['_auth_user_id'])
     if not user.has_perm('dam_workspace.add_workspace'):
         resp = simplejson.dumps({'failure': True})
@@ -161,14 +167,12 @@ def _remove_items(ws, items):
         
 @login_required
 @permission_required('add_item', False)
-def add_items_to_ws(request):   
+def add_items_to_ws(request):
     try:
         item_ids = request.POST.getlist('item_id')
         ws_id = request.POST.get('ws_id')
         
         ws = Workspace.objects.get(pk = ws_id)
-#        current_ws_id = request.POST.get('current_ws_id')
-#        current_ws = Workspace.objects.get(pk = current_ws_id )
         current_ws = request.session['workspace']
         remove = request.POST.get('remove')
         move_public = request.POST.get('move_public', 'false')
@@ -668,7 +672,10 @@ def _switch_workspace(request,  workspace_id):
     return workspace
     
 @login_required
-def workspace(request,  workspace_id = None):
+def workspace(request, workspace_id = None):
+    """
+    
+    """
     user = User.objects.get(pk=request.session['_auth_user_id'])
     if not workspace_id:
         if request.session.__contains__('workspace'):
@@ -720,7 +727,11 @@ def _get_thumb_caption(item, template_string, language):
     return caption
     
 @login_required
-def get_status(request):    
+def get_status(request):
+    """
+    Returns information for the given items, including name, size, url of thumbnail and preview
+    Called every 10 seconds by the GUI for refreshing information on pending items
+    """
     try:
         items = simplejson.loads(request.POST.get('items'))
     
@@ -773,6 +784,10 @@ def get_status(request):
     
 @login_required
 def get_n_items(request):
+    """
+    Returns the number of the items of the given workspace
+    Used to avoid deletion of non-empty workspace
+    """
     workspace = request.session.get('workspace')
     n_items = workspace.items.all().count()
     resp = {'success': True,  'n_items': n_items}
@@ -780,6 +795,9 @@ def get_n_items(request):
 
 @login_required
 def get_permissions(request):
+    """
+    Returns the list of permissions for the current user
+    """
     workspace = request.session.get('workspace')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     permissions = workspace.get_permissions(user)
@@ -793,7 +811,11 @@ def get_permissions(request):
 @login_required
 @permission_required('admin',  False)
 def get_ws_members(request):
-
+    """
+    Returns the list of members for the current workspace 
+    (for workspace admins only)
+    Called by the GUI for workspace/members configuration
+    """
     ws_id = request.POST.get('ws_id', request.session.get('workspace').pk)
 
     admin_user = User.objects.get(pk=request.session['_auth_user_id'])
@@ -825,6 +847,11 @@ def get_ws_members(request):
 @login_required
 @permission_required('admin',  False)
 def get_available_users(request):
+    """
+    Returns the list of available users for the current workspace 
+    (for workspace admins only)
+    Called by the GUI for workspace/members configuration
+    """
 
     ws_id = request.POST.get('ws_id', request.session.get('workspace').pk)
 
@@ -841,6 +868,11 @@ def get_available_users(request):
 @login_required
 @permission_required('admin',  False)
 def get_available_permissions(request):
+    """
+    Returns the list of available permissions for the current workspace 
+    (for workspace admins only)
+    Called by the GUI for workspace/members configuration    
+    """
 
     ws_id = request.POST.get('ws_id', request.session.get('workspace').pk)
 
@@ -856,6 +888,11 @@ def get_available_permissions(request):
 @login_required
 @permission_required('admin',  False)
 def save_members(request):
+    """
+    Saves the members and their permissions for the current workspace 
+    (for workspace admins only)
+    Called by the GUI for workspace/members configuration    
+    """
 
     ws_id = request.POST.get('ws_id', request.session.get('workspace').pk)
 

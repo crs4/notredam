@@ -41,14 +41,39 @@ import re
 
 @login_required
 def get_cuepoint_keywords(request):
+    """
+    Get cue point keywords list from system preferences
+    """
+
+    item_id = request.POST.get('item_id')
+
+    item = Item.objects.get(pk=item_id)
+
+    schema = MetadataProperty.objects.get(field_name='CuePoint')
+    keyword_schema = MetadataProperty.objects.get(field_name='CPKeyword')
+
+    values = item.get_metadata_values(schema)
 
     setting = DAMComponentSetting.objects.get(name__iexact='cue_point_list')
     value = setting.get_user_setting_by_level().split(',')
 
+    formatted_values = []
     keywords = []
 
-    for v in value:
-        keywords.append({'keyword': v})
+    if values:
+        for el in values:
+            tmp_dict = {}
+            for k, v in el.iteritems():
+                new_key = MetadataProperty.objects.get(pk=k).field_name
+                tmp_dict[new_key] = v
+            formatted_values.append(tmp_dict)
+
+    for current_keyword in value:
+        keyword_dict = {'keyword': current_keyword, 'item_values': []}
+        for v in formatted_values:
+            if v.get('CPKeyword') == current_keyword:
+                keyword_dict['item_values'].append(v)                
+        keywords.append(keyword_dict)
 
     resp = {'keywords':keywords}
 
@@ -56,6 +81,9 @@ def get_cuepoint_keywords(request):
 
 @login_required
 def set_cuepoint(request):
+    """
+    Set cue points for the given item
+    """
 
     item_id = request.POST.get('item')
     cuepoints = simplejson.loads(request.POST.get('cuepoints'))
@@ -73,11 +101,24 @@ def set_cuepoint(request):
     	start = cp['start']
     	duration = cp['duration']
 
-    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPKeyword' % x, value=keyword)
-    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPStart' % x, value=start)
-    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPDuration' % x, value=duration)
-    	item.metadata.create(schema=schema, xpath='CuePoint[%d]/CPValue' % x, value=value)
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPKeyword' % x, value=keyword)
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPStart' % x, value=start)
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPDuration' % x, value=duration)
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPValue' % x, value=value)
 
+    return HttpResponse('')
+
+@login_required
+def get_item_cuepoint(request):
+    """
+    Retrieves cue points of the given item
+    """
+
+    item_id = request.POST.get('item')
+    
+    
+    logger.debug(values)
+    
     return HttpResponse('')
 
 def _add_sync_machine(component):

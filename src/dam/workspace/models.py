@@ -25,8 +25,17 @@ from dam.framework.dam_workspace.models import Workspace, WorkspaceManager
 
 class WSManager(WorkspaceManager):
 
-    def create_workspace(self, name, description, creator):
+    """
+    Workspace Manager
+    """
 
+    def create_workspace(self, name, description, creator):
+        """
+        Creates a new workspace
+        @param name name of the new workspace (string)
+        @param description description of the new workspace (optional string)
+        @param creator an instance of auth.User
+        """
         from dam.scripts.models import ScriptDefault, Script
         from dam.treeview.models import Node, Category
         from dam.eventmanager.models import Event, EventRegistration
@@ -56,12 +65,20 @@ class WSManager(WorkspaceManager):
         return ws
 
 class DAMWorkspace(Workspace):
+    """
+    Subclass of dam_workspace.Workspace,
+    adds a many-to-many reference to the Item and State model 
+    """
     items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
     states = models.ManyToManyField(State)
     objects = WSManager()
     
     def remove_item(self, item):
-
+        """
+        Removes the given item from the current workspace and its inbox node
+        Also deletes item's component bound to the current workspace
+        @param item item to remove (an instance of repository.Item)
+        """
         try:
             
             inbox_nodes = Node.objects.filter(type = 'inbox', workspace = self, items = item) #just to be sure, filter instead of get
@@ -78,6 +95,9 @@ class DAMWorkspace(Workspace):
             raise ex        
     
     def get_variants(self):
+        """
+        Returns the list of variants for the current workspace
+        """
         from dam.variants.models import Variant
         return Variant.objects.filter(Q(workspace = self) | Q(workspace__isnull = True,  )).distinct()    
     
