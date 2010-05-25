@@ -37,7 +37,7 @@ class Variant(models.Model):
 #    is_global = models.BooleanField(default=False) #common for all ws
     workspace = models.ForeignKey(Workspace, null = True, blank = True)
     editable = models.BooleanField(default=True)    
-    hidden= models.BooleanField(default=False)    
+    hidden= models.BooleanField(default=False)    #mail is hidden
     media_type = models.ManyToManyField(Type)
 #    dest_media_type = models.ForeignKey(Type, null = True, blank = True, related_name = 'dest_media_type')
     auto_generated = models.BooleanField(default=True)

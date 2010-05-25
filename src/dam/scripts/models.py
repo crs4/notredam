@@ -276,6 +276,7 @@ class SaveAction(BaseAction):
         if same_resource:
             component._id = same_resource
             component.save() 
+#            TODO add copy metadata 
         else:
             logger.debug('generate task')        
             generate_tasks(component)
@@ -298,6 +299,7 @@ class SaveAs(SaveAction):
             tmp[media_type.name] = [variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = media_type)]
        
         params.append({'name':'output_variant',  'type': 'string',  'values':tmp})
+        
         
         return params
     def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
