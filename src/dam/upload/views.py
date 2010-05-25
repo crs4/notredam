@@ -97,6 +97,11 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
     """
     comp = item.create_variant(variant, workspace)
     
+    if variant.auto_generated:
+        comp.imported = True
+
+    logger.debug('comp._id %s'%comp._id)
+    logger.debug('res_id %s'%res_id)
     comp.file_name = file_name
     comp._id = res_id
     
@@ -120,6 +125,11 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
 
     try:
         generate_tasks(comp)
+        
+        if not variant.auto_generated:
+            for ws in item.workspaces.all():
+                EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+        
     except Exception, ex:
         print traceback.print_exc(ex)
         raise    
@@ -140,16 +150,17 @@ def _save_uploaded_item(request, upload_file, user, workspace):
 
     item.workspaces.add(workspace)
 
+
+    variant = Variant.objects.get(name = 'original')
     _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
-
-    EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})    
-
+#    EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+    
 def _save_uploaded_variant(request, upload_file, user, workspace):
-
     variant_id = request.POST['variant_id']
     item_id = request.POST['item_id']
 
     variant =  Variant.objects.get(pk = variant_id)
+    logger.debug('***************************************VARIANT %s******************'%variant)
     item = Item.objects.get(pk = item_id)
     
     file_name, type, res_id = _get_uploaded_info(upload_file)
@@ -336,12 +347,11 @@ def generate_tasks(component, upload_job_id = None, url = None,  force_generatio
         component.imported = True
         component.save()
         
-#    variant = component.variant
+    variant = component.variant
 #    if variant and  variant.shared and not variant.auto_generated and not check_for_existing: #the original... is shared by all the ws
-#        wss = item.workspaces.all()
+#        wss = component.item.workspaces.all()
 #    else:
 #        wss = [workspace]
-    
 #    for ws in wss:
 #        _generate_tasks( ws,  component, force_generation,  check_for_existing)            
 

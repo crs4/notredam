@@ -23,7 +23,7 @@ from dam.upload.views import generate_tasks
 from dam.variants.models import Variant
 from dam.repository.models import Component
 from dam.framework.dam_repository.models import Type
-
+from django.db.models import Q
 import logger
 
 class ScriptException(Exception):
@@ -49,34 +49,44 @@ class ScriptDefault(models.Model):
     description = models.CharField(max_length= 200)
     pipeline = models.TextField()
 
+def _get_orig():
+    return Variant.objects.get(name = 'original')
+
+class ActionList(models.Model):
+    actions = models.TextField()
+    script = models.ForeignKey('Script')
+    media_type = models.ForeignKey(Type)
+    source_variant = models.ForeignKey(Variant, default = _get_orig)
+
+
 class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
-    pipeline = models.TextField()
+#    pipeline = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
-    media_type = models.ManyToManyField(Type)
+#    media_type = models.ManyToManyField(Type, through=ActionList)
     is_global = models.BooleanField(default = False)
     
-    def save(self, *args, **kwargs):
-        super(Script, self).save(*args, **kwargs)
-        pipeline = simplejson.loads(self.pipeline)
-        media_type = pipeline['media_type'].keys()
-        
-        media_type = Type.objects.filter(name__in = media_type)
-        self.media_type.remove(*self.media_type.all())
-        self.media_type.add(*media_type)
-         
-    
+#    def save(self, *args, **kwargs):
+#        super(Script, self).save(*args, **kwargs)
+#        pipeline = simplejson.loads(self.pipeline)
+#        media_type = pipeline.keys()
+#        
+#        media_type = Type.objects.filter(name__in = media_type)
+#        self.media_type.remove(*self.media_type.all())
+#        self.media_type.add(*media_type)
+#         
+#    
     def __unicode__(self):
         return unicode(self.name)
     
     
     def execute(self, items):
-        pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
+#        pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
         
-        media_types = pipeline.get('media_type', {})
+#        media_types = pipeline.keys()
                              
         actions_available = {}       
        
@@ -97,18 +107,22 @@ class Script(models.Model):
             'doc':[]
             }
         
-        logger.debug('media_types %s'%media_types)
-        for media_type, info in media_types.items():
+#        logger.debug('media_types %s'%media_types)
+        
+#        for media_type, info in pipeline.items():
+        for action in self.actionlist_set.all():
+            info = simplejson.loads(str(action.actions))
+            media_type = action.media_type.name
             logger.debug('info %s '%info)            
             logger.debug('media_type %s'%media_type)
-            source_variant = info['source_variant']
+#            source_variant = info['source_variant']
             for action_dict in info['actions']:
                 
                 type = action_dict['type'].lower()
                 params = action_dict['parameters']
                 params['workspace'] = self.workspace
                 params['media_type'] = media_type
-                params['source_variant'] = source_variant
+                params['source_variant'] = action.source_variant
                 logger.debug('action_dict %s'%action_dict)
                 try:                    
                     action = actions_available[type](**params)                
@@ -140,7 +154,7 @@ class Script(models.Model):
 class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
-    required_parameters = []
+
     def __init__(self, media_type, source_variant, workspace, **params):   
         
 #        if media_type not in self.media_type_supported:
@@ -158,22 +172,43 @@ class BaseAction(object):
             
     def get_adapt_params(self):
         return self.parameters
-        
+    
+    @staticmethod
+    def required_parameters(workspace):
+        return []
+    
+    
+    @staticmethod
+    def get_values(workspace = None):
+        pass
 
 class SetRights(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = [{'name':'rights',  'type': 'string'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        return  [{'name':'rights',  'type': 'string'}]
+   
     def __init__(self, media_type, source_variant, workspace, rights):  
         super(SetRights, self).__init__(media_type, source_variant, workspace,  **{'rights':rights})
-        
         
 
 class SaveAction(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = [ {'name':'output_format',  'type': 'string'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        
+        return [ {'name':'output_format',  'type': 'string',  'values':{'image':['jpeg',  'gif'], 
+                                    'video': ['flv'], 
+                                    'audio': ['mp3'], 
+                                    'doc': ['jpeg']
+            }
+        }]
     def __init__(self, media_type, source_variant, workspace, output_format):  
         super(SaveAction, self).__init__(media_type, source_variant, workspace)
         self.output_format = output_format
+    
     
     def _get_output_media_type(self, adapt_parameters):
                 
@@ -185,6 +220,14 @@ class SaveAction(BaseAction):
             output_media_type = self.media_type
         
         return output_media_type
+    
+    def _same_adapted_resource(self, component):
+        c = Component.objects.filter(source = component.source, parameters = component.parameters).exclude(pk = component.pk)
+        if c.count() > 0:
+            c = c[0]
+            if c._id:
+                return c._id
+        return None
     
     def _generate_resource(self, component, adapt_parameters): 
         if adapt_parameters.has_key('rights'):
@@ -202,14 +245,41 @@ class SaveAction(BaseAction):
             adapt_parameters['codec'] = self.output_format
 
         logger.debug('adapt_parameters %s'%adapt_parameters)    
-        component.set_parameters(adapt_parameters) 
-        source_variant = Variant.objects.get(name = self.source_variant) 
-        source= source_variant.get_component(self.workspace, component.item)                 
-        component.source = source
-        component.save() 
-        logger.debug('generate task')
+         
+#        component.save_rights_value(rights, self.workspace)
+        logger.debug('self.source_variant %s'%self.source_variant)
+        try:
+#            source_variant = Variant.objects.get(name = self.source_variant)         
+            source = self.source_variant.component_set.get(item = component.item, workspace = self.workspace)
+        except Exception, ex:
+#            in case edited does not exist
+            logger.error(ex)
+            source_variant = Variant.objects.get(name = 'original')
+            source = source_variant.get_component(self.workspace, component.item)                 
+        
+        logger.debug('source.variant %s'%source.variant.name)
+        
+        if component.imported or( component.source and component._previous_source_id == source._id and  component.get_parameters() == adapt_parameters):
+            logger.debug('component.source._id %s'%component.source._id)
+            logger.debug('source._id %s'%source._id)
+            logger.debug('component will not be regenerated, is imported or no mods in source or adapt_params')
+            return
+        
+        component.set_parameters(adapt_parameters)
+        component.set_source(source)
+        
+        
+        component.save()
         component.save_rights_value(rights, self.workspace)
-        generate_tasks(component)
+        
+        same_resource = self._same_adapted_resource(component)
+        if same_resource:
+            component._id = same_resource
+            component.save() 
+#            TODO add copy metadata 
+        else:
+            logger.debug('generate task')        
+            generate_tasks(component)
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)
@@ -220,37 +290,42 @@ class SaveAction(BaseAction):
     
 class SaveAs(SaveAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = [{'name':'output_variant',  'type': 'string'}, {'name':'output_format',  'type': 'string'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        params = SaveAction.required_parameters(workspace)
+        tmp = {}
+        for media_type in Type.objects.all():
+            tmp[media_type.name] = [variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = media_type)]
+       
+        params.append({'name':'output_variant',  'type': 'string',  'values':tmp})
+        
+        
+        return params
     def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
         super(SaveAs, self).__init__(media_type, source_variant, workspace,output_format)
         self.output_variant = output_variant
     
-#    def execute(self, item, adapt_parameters):
-#        output_media_type = self._get_output_media_type(adapt_parameters)
-#        variant = Variant.objects.get(name = self.output_variant)
-#                  
-#        component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))
-#        self._generate_resource(component, adapt_parameters)    
-           
+    
+        
+        
 class SendByMail(SaveAction):
     def __init__(self, media_type, source_variant, workspace, mail,  output_format):
         output_variant = 'mail'
         super(SendByMail, self).__init__(media_type, source_variant, workspace, output_format)
         self.mail = mail
         self.output_variant = 'mail'
-#    
+    
     def execute(self, item, adapt_parameters):  
         adapt_parameters['mail'] = self.mail
         super(SendByMail, self).execute(item, adapt_parameters)
-#        output_media_type  = self._get_output_media_type(adapt_parameters)
-#        component = Component.objects.create( item = item, type = Type.objects.get(name =output_media_type))
-#        component.workspace.add(self.workspace)
-#        logger.debug('--------SENDMAIL')
-#        self._generate_resource(component, adapt_parameters)
-#    
+
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
-    required_parameters = [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
+   
     def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace)
         if media_type == 'video':
@@ -263,7 +338,10 @@ class Resize(BaseAction):
 
 class Crop(BaseAction): 
     media_type_supported = ['image',]
-    required_parameters = [{ 'name': 'upperleft_x',  'type': 'number'}, { 'name': 'upperleft_y',  'type': 'number'}, { 'name': 'lowerright_x',  'type': 'number'}, { 'name': 'lowerright_y',  'type': 'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'upperleft_x',  'type': 'number'}, { 'name': 'upperleft_y',  'type': 'number'}, { 'name': 'lowerright_x',  'type': 'number'}, { 'name': 'lowerright_y',  'type': 'number'}]
+    
     def __init__(self, media_type, source_variant, workspace,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
         params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y }
         
@@ -271,7 +349,10 @@ class Crop(BaseAction):
      
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
-    required_parameters = [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
+   
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
     
     def __init__(self, media_type, source_variant, workspace, filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
         
@@ -319,7 +400,10 @@ preset = {'video':
 class VideoEncode(BaseAction):
     """default bitrate in kb""" 
     media_type_supported = ['video']
-    required_parameters = [{ 'name': 'bitrate','type': 'number'},  { 'name': 'framerate', 'type': 'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'framerate', 'type': 'number'}]
+    
     def __init__(self, media_type, source_variant, workspace, bitrate, framerate):
         params = {'bitrate':bitrate,  'framerate': framerate}
         super(VideoEncode, self).__init__(media_type, source_variant, workspace, **params)
@@ -338,7 +422,10 @@ class VideoEncode(BaseAction):
 class AudioEncode(BaseAction):
     """default bitrate in kb"""
     media_type_supported = ['video', 'audio']
-    required_parameters = [{ 'name': 'bitrate','type': 'number'},  { 'name': 'rate', 'type': 'number'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'rate', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace)
         
@@ -349,7 +436,10 @@ class AudioEncode(BaseAction):
 
 class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['video']
-    required_parameters = [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
+    
     def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
         params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, **params)

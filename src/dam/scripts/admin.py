@@ -28,7 +28,8 @@ from scripts.models import *
 #    inlines = [ActionScriptInline]
 #
 #admin.site.register(Script,  ScriptAdmin)
-#admin.site.register(Action)
+admin.site.register(ActionList)
+admin.site.register(Script)
 ##admin.site.register(ActionScriptAssociation)
 #admin.site.register(Parameter)
 ##admin.site.register(ParameterToAction)

@@ -27,6 +27,7 @@ class Event(models.Model):
     
 class EventManager(models.Manager):
     def notify(self,  event_name, workspace, **parameters):
+        logger.debug('notifying event %s on workspace %s with parameters %s'%(event_name, workspace, parameters))
         try:
             event_registrations = self.filter(event = Event.objects.get(name = event_name), workspace = workspace)
         except Exception, ex:

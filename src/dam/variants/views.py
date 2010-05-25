@@ -147,17 +147,17 @@ def get_variant_sources(request):
 def get_variants_list(request):
     workspace = request.session['workspace']
 #    workspace = Workspace.objects.get(pk = 1)
-    media_type = request.POST['media_type']
+#    media_type = request.POST['media_type']
     type = request.POST.get('type',  'generated')
     logger.debug('type %s'%type)
         
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(is_global = True),media_type__name = media_type, auto_generated =  (type == 'generated'))
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
     
     
     resp = {'variants':[]}
     for variant in vas:
         
-        resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.is_global })
+        resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.workspace is None })
     return HttpResponse(simplejson.dumps(resp))
 
 
@@ -302,7 +302,7 @@ def get_variants(request):
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
             work_in_progress =  True
-            resp['variants'].append({ 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
+            resp['variants'].append({'pk': v.pk, 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
             continue
             
             #logger.exception(ex)

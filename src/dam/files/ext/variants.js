@@ -901,22 +901,22 @@ function variants_prefs(){
 //    
     
     
-    function create_tab(media_type){
+    function create_tab(){
     	var store = new Ext.data.JsonStore({
     	    autoDestroy: true,
     	    url: '/get_variants_list/',
     	    root: 'variants',
-    	    baseParams:{media_type:media_type},
     	    multiSelect: false,
-//    	    autoLoad: media_type == 'image',
-
+    	    autoLoad: true,
+            baseParams: {type: 'generated'},
+                
     	    fields: ['pk','name', 'is_global']
 
     	});
-    	var list_variant = new Ext.grid.EditorGridPanel({
+    	var list_variant = new Ext.grid.GridPanel({
 //    		layout:'fit',
     	    store: store,
-            id: 'variant_grid_' + media_type,
+            id: 'variant_grid',
     	    hideHeaders: true,
     	    viewConfig:{
     	    	forceFit:true
@@ -928,66 +928,46 @@ function variants_prefs(){
                 editor:  new Ext.form.TextField()
     	        
     	    }],
-            listeners: {
-                afteredit: function(e){
-                    if (!e.record.data.pk)
-                        Ext.Ajax.request({
-                        	url:'/new_variant/',
-                        	params:{
-                        		name: e.record.data.name
-                        	
-                        	}
-                        	
-                        });
-                }
-            }
     	});
 
-        var type_id = 'variant_type_' + media_type;
-    	function set_variant_type_name(name){
-            Ext.getCmp(type_id).setText(name)
-        };
+        var type_id = 'variant_type';
     	
         return new Ext.Panel({
-    		title: media_type,
     		layout:'fit',
     		items:[list_variant],
     		tbar:[
-    		      	'Type: ',
-    		      	{
-                        id: type_id,
-    		      		text: 'Generated',
-    		      		menu:[
-    		      		      new Ext.menu.CheckItem({    		      		    	  
-                                text: 'Generated',
-                                checked: true,
-                                group: 'variant_type',
-                                handler: function(){set_variant_type_name(this.text)}
-    		      		    		  
-    		      		    		  
-    		      		      }),
-    		      			new Ext.menu.CheckItem({
-    		      				text: 'Source',
-    		      				group: 'variant_type',
-                                handler: function(){set_variant_type_name(this.text)}
-    		      			})
-    		      		]
-    		      		
-    		      	},
-    		      	
-    		      	'-',
     		      {
                     text: 'Add',
                     handler: function(){
-                        list_variant.getStore().loadData({variants: [{pk: null, name: 'new variant'}]}, true);
-                        list_variant.startEditing(list_variant.getStore().getCount() -1,0);
+                       var win =new Ext.Window({
+                            layout      : 'fit',
+                            constrain: true,
+                            title: '<p style="text-align:center">Add Variant</p>',
+                            width       : 300,
+                            height      : 200,
+                            modal: true,
+                            items:[
+                                new Ext.form.FormPanel({
+                                    frame: true,
+                                    items:[new Ext.form.TextField({
+                                        fieldLabel: 'name'
+                                        })]
+                                })
+                           ],
+
+                                    
+                        });
+
+                        win.show();
                     }
                       },
     			{
-    			text: 'Edit'
+    			text: 'Edit',
+                disabled: true
     		},
     		{
-    			text: 'Remove'
+    			text: 'Remove',
+                disabled: true,
     		}
     		]
     		
@@ -1005,29 +985,7 @@ function variants_prefs(){
         height      : 400,
         modal: true,
         items:[
-            new Ext.TabPanel({
-                id:'variant_tabs',
-                activeTab: 0,
-//                layout: 'border',
-                border: false,
-                items:[
-                	create_tab('image'),
-                	create_tab('video'),
-                	create_tab('audio'),
-                	create_tab('doc'),
-                ],
-                listeners:{
-            		tabchange: function(tabpanel,tab){            			
-            			var store = tab.items.items[0].getStore();
-            			if (store && ! store.lastOptions)
-            				store.load();
-            		}
-
-        		}
-
-                })
-                
-                ],
+        create_tab()],
 
                 
     });

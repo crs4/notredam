@@ -6,45 +6,15 @@ setup_environ(settings)
 
 
 from scripts.models import *
-
+from scripts.views import _new_script
 from workspace.models import *
 from eventmanager.models import *
 from django.utils import simplejson
 
 
 
-#pipeline = {
-#    'event': 'upload',
-#    'state': '',
-#    'media_type': 'image',
-#    'source_variant': 'original', 
-#    'actions':[
-#        {
-#            'type': 'resize',
-#            'parameters':{
-#                'max_dim': 100
-#            }
-#                    
-#        },
-#        {
-#            'type': 'saveas',
-#            'parameters':{
-#                'output_format': 'jpeg',
-#                'output_variant': 'thumbnail'
-#            }
-#                    
-#        }
-#        
-#               
-#    ]
-#    
-#    }
-
 pipeline_thumb = {
-    'event': 'upload',
-    'state': '',
-     
-    'media_type':{
+    
         
                   
     
@@ -111,15 +81,12 @@ pipeline_thumb = {
                         
             }]
         }
-    }
+    
 }
 
 
 pipeline_preview = {
-    'event': 'upload',
-    'state': '',
-     
-    'media_type':{
+    
         
                   
     
@@ -141,10 +108,10 @@ pipeline_preview = {
                      }
                  },
                 {
-                'type': 'sendbymail',
+                'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'mail': 'mdrio@tiscali.it'
+                    'output_variant': 'preview'
                     
 #                    'output_variant': 'preview'
                 }
@@ -214,7 +181,14 @@ pipeline_preview = {
 #                   
 #                },
                 
-                
+#                {
+#                'type': 'sendbymail',
+#                'parameters':{
+#                    'output_format': 'flv',
+#                    'mail': 'mdrio@tiscali.it'
+#                }
+#                            
+#                },
                 {
                 'type': 'saveas',
                 'parameters':{
@@ -247,110 +221,16 @@ pipeline_preview = {
             }]
         }
         
-    }
+    
 }
 
 
 
 
 
-#pipeline_preview = {
-#    'event': 'upload',
-#    'state': '',   
-#    'source_variant': 'original', 
-#    'actions':{
-#        'image':[
-#            {
-#                'type': 'resize',
-#                'parameters':{
-#                    'max_dim': 300
-#                }
-#                        
-#            },
-#            {
-#                'type': 'saveas',
-#                'parameters':{
-#                    'output_format': 'jpeg',
-#                    'output_variant': 'preview'
-#                }
-#                        
-#            }    
-#        ],
-#        'audio':[{
-#                   'type': 'audioencode',
-#                   'parameters':{                        
-#                        'bitrate':128,
-#                        'rate':44100
-#                    }
-#                },
-#                {
-#                'type': 'saveas',
-#                'parameters':{
-#                    'output_format': 'mp3',
-#                    'output_variant': 'preview'
-#                }
-#                        
-#            }
-#                
-#                
-#                
-#                ],
-#        'video':[
-#                 {
-#                'type': 'resize',
-#                'parameters':{
-#                    'height': 300,
-#                    'width': 300
-#                    }
-#                },
-#                {
-#                   'type': 'videoencode',
-#                   'parameters':{
-#                        'framerate':'25/2',
-#                        'bitrate':640
-#                    }
-#                
-#                },                
-#                {
-#                   'type': 'audioencode',
-#                   'parameters':{                        
-#                        'bitrate':128,
-#                        'rate':44100
-#                    }
-#                
-#                },
-#                {
-#            'type': 'saveas',
-#            'parameters':{
-#                'output_format': 'flv',
-#                'output_variant': 'preview'
-#            }
-#                        
-#        }],
-#        'doc':[
-#            {
-#               'type': 'resize',
-#               'parameters':{                        
-#                    'max_dim':300,
-#                }
-#            
-#            },
-#            {
-#            'type': 'saveas',
-#            'parameters':{
-#                'output_format': 'jpeg',
-#                'output_variant': 'preview'
-#            }
-#                        
-#        }]
-#    }
-#}
-
 
 pipeline_fullscreen = {
-    'event': 'upload',
-    'state': '',   
-    'media_type':{
+   
     
         'image':{
             'source_variant': 'original',
@@ -419,59 +299,46 @@ pipeline_fullscreen = {
                  
         },
     
-        }
 }
 
-
-
-
-#    
-#    {
-#           'type': 'audioencode',
-#           'parameters':{                        
-#                'bitrate':128,
-#                'rate':44100
-#            }
-#                
-#        },
-#        {
-#            'type': 'saveas',
-#            'parameters':{
-#                'output_format': 'mp3',
-#                'output_variant': 'preview'
-#            }
-#                    
-#        }
-    
-    
-    
-    
     
 
-ws = Workspace.objects.get(pk = 1)
+ws = DAMWorkspace.objects.get(pk = 1)
+upload = Event.objects.create(name = 'upload')
 
-#pipeline_json = simplejson.dumps(pipeline_thumb)
+pipeline_json = simplejson.dumps(pipeline_thumb)
+_new_script(name = 'thumb_generation', description = 'thumbnail generation', workspace = ws, pipeline = pipeline_json, events = ['upload'])
+ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
+
+
+pipeline_json = simplejson.dumps(pipeline_preview)
+_new_script(name = 'preview_generation', description = 'preview generation', workspace = ws, pipeline = pipeline_json, events = ['upload'])
+ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
+
+pipeline_json = simplejson.dumps(pipeline_fullscreen)
+
+_new_script(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, events = ['upload'])
+ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
+
+#
 #script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
 #
-#ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
-
-
+#script_thumb = Script.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, workspace = ws, is_global = True )
+#
+#
+#
 #script_thumb = Script.objects.get(pk =  1)
 #script_thumb.pipeline = pipeline_json
 #script_thumb.save()
 
-#upload = Event.objects.create(name = 'upload')
+
 #EventRegistration.objects.create(event = upload, listener = script_thumb, workspace = ws)
 
-pipeline_json = simplejson.dumps(pipeline_preview)
 
-#script_preview = Script.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json, workspace = ws,is_global = True )
-#ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
 
-#
-script_preview = Script.objects.get(pk =  2)
-script_preview.pipeline = pipeline_json
-script_preview.save()
+#script_preview = Script.objects.get(pk =  2)
+#script_preview.pipeline = pipeline_json
+#script_preview.save()
 
 #upload = Event.objects.create(name = 'upload')
 #upload = Event.objects.get(name = 'upload')
