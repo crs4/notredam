@@ -97,59 +97,59 @@ def _admin_workspace(request,  ws):
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     if ws not in item.workspaces.all():
         item.workspaces.add(ws)
-        
-#                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
-        components = item.component_set.all().filter(variant__is_global = True, workspace = current_ws)
-        
-        for comp in components:
-            
-            if not comp.variant.auto_generated:
-                comp.workspace.add(ws)
-            
-#                    elif comp.variant.shared:
-#                        logger.debug('shared %s'%comp.variant)
-#                        new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID)
-#                        new_comp.workspace.add(ws)
-            
-            elif comp.imported:
-                new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID,  imported = True)
-#                    else:
-#                        new_comp = Component.objects.create(variant = comp.variant,  item = item, _id = comp.ID )
-#                        new_comp.workspace.add(ws)
-#                        new_comp.preferences = comp.preferences
-#                        new_comp.source_id = comp.source_id
-#                        new_comp.save()
-            
-            
-#                    default_source_variant = comp.variant.get_source
-        ws_variants = Variant.objects.filter(Q(workspace = ws) | Q(is_global = True),  auto_generated = True,  media_type = item.type)
-        
-#                logger.debug('item.component_set.filter(workspace = ws)[0].variant.pk %s' %item.component_set.filter(workspace = ws)[0].variant.pk)
-        for variant in ws_variants:
-            if item.component_set.filter(variant = variant, workspace = ws).count() == 0: #if component for variant has not been created yet
-                
-                
-                comps = item.component_set.filter(variant = variant, workspace = current_ws) 
-                if comps.count() > 0: #if variant exists in the current ws
-                    comp = comps[0]
-#                    new_comp = _create_variant(variant,  item, ws)
-#                    new_comp._id = comp._id
-#                    new_comp.save()
-
+#        
+##                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
+#        components = item.component_set.all().filter(variant__is_global = True, workspace = current_ws)
+#        
+#        for comp in components:
+#            
+#            if not comp.variant.auto_generated:
+#                comp.workspace.add(ws)
+#            
+##                    elif comp.variant.shared:
+##                        logger.debug('shared %s'%comp.variant)
+##                        new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID)
+##                        new_comp.workspace.add(ws)
+#            
+#            elif comp.imported:
+#                new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID,  imported = True)
+##                    else:
+##                        new_comp = Component.objects.create(variant = comp.variant,  item = item, _id = comp.ID )
+##                        new_comp.workspace.add(ws)
+##                        new_comp.preferences = comp.preferences
+##                        new_comp.source_id = comp.source_id
+##                        new_comp.save()
+#            
+#            
+##                    default_source_variant = comp.variant.get_source
+#        ws_variants = Variant.objects.filter(Q(workspace = ws) | Q(is_global = True),  auto_generated = True,  media_type = item.type)
+#        
+##                logger.debug('item.component_set.filter(workspace = ws)[0].variant.pk %s' %item.component_set.filter(workspace = ws)[0].variant.pk)
+#        for variant in ws_variants:
+#            if item.component_set.filter(variant = variant, workspace = ws).count() == 0: #if component for variant has not been created yet
+#                
+#                
+#                comps = item.component_set.filter(variant = variant, workspace = current_ws) 
+#                if comps.count() > 0: #if variant exists in the current ws
+#                    comp = comps[0]
+##                    new_comp = _create_variant(variant,  item, ws)
+##                    new_comp._id = comp._id
+##                    new_comp.save()
+#
+##                    new_comp = Component.objects.create(variant = variant,  item = item,  _id = comp._id)
 #                    new_comp = Component.objects.create(variant = variant,  item = item,  _id = comp._id)
-                    new_comp = Component.objects.create(variant = variant,  item = item,  _id = comp._id)
-#                        new_comp.preferences = comp.preferences
-#                        new_comp.source_id = comp.source_id
-
-                else:
-                    new_comp = Component.objects.create(variant = variant,  item = item,  )
-#                    new_comp = _create_variant(variant,  item, ws)
-                    
-                    
-                new_comp.workspace.add(ws)                        
-#               TODO: event for upload scripts
-#                generate_tasks(variant,  ws,  item,  check_for_existing = True)
-        
+##                        new_comp.preferences = comp.preferences
+##                        new_comp.source_id = comp.source_id
+#
+#                else:
+#                    new_comp = Component.objects.create(variant = variant,  item = item,  )
+##                    new_comp = _create_variant(variant,  item, ws)
+#                    
+#                    
+#                new_comp.workspace.add(ws)                        
+##               TODO: event for upload scripts
+##                generate_tasks(variant,  ws,  item,  check_for_existing = True)
+#        
         return True
     
     return False
