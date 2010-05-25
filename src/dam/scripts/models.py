@@ -315,6 +315,12 @@ class SendByMail(SaveAction):
         super(SendByMail, self).__init__(media_type, source_variant, workspace, output_format)
         self.mail = mail
         self.output_variant = 'mail'
+        
+    @staticmethod
+    def required_parameters(workspace = None):
+        params = SaveAction.required_parameters(workspace)               
+        params.append({'name':'mail',  'type': 'string'})
+        return params
     
     def execute(self, item, adapt_parameters):  
         adapt_parameters['mail'] = self.mail

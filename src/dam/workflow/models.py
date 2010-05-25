@@ -29,5 +29,12 @@ class StateItemAssociation(models.Model):
 	workspace = models.ForeignKey('workspace.DAMWorkspace')
 	item = models.ForeignKey('repository.Item')
 	
+	def save(self, *args, **kwargs):
+		from scripts.models import Script
+		super(StateItemAssociation, self).save(*args, **kwargs)
+		for script in Script.objects.filter(workspace = workspace, state = state):
+		  script.execute(self.item)
+		
+	
 	def __unicode__(self):
 		return "%s in %s: %s" % (self.item, self.workspace, self.state)
