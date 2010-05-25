@@ -49,7 +49,7 @@ class WSManager(WorkspaceManager):
             global_scripts = ScriptDefault.objects.all()
             upload = Event.objects.get(name = 'upload')
             for glob_script in global_scripts:
-                _new_script(name = glob_script.name, description = glob_script.description, workspace = ws, pipeline = glob_script.pipeline, events = ['upload'])
+                _new_script(name = glob_script.name, description = glob_script.description, workspace = ws, pipeline = glob_script.pipeline, events = ['upload', 'item copy'])
 #                script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
 #                EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
             

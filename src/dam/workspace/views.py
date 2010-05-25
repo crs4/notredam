@@ -102,7 +102,7 @@ def _admin_workspace(request,  ws):
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     if ws not in item.workspaces.all():
         item.workspaces.add(ws)
-        EventRegistration.objects.notify('upload',  ws,  **{'items':[item]})
+        EventRegistration.objects.notify('item copy',  ws,  **{'items':[item]})
 #        
 ##                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
 #        components = item.component_set.all().filter(variant__is_global = True, workspace = current_ws)
