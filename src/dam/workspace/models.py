@@ -23,6 +23,7 @@ from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.framework.dam_workspace.models import Workspace, WorkspaceManager
 
+
 class WSManager(WorkspaceManager):
 
     """
@@ -37,6 +38,7 @@ class WSManager(WorkspaceManager):
         @param creator an instance of auth.User
         """
         from dam.scripts.models import ScriptDefault, Script
+        from dam.scripts.views import _new_script
         from dam.treeview.models import Node, Category
         from dam.eventmanager.models import Event, EventRegistration
 
@@ -47,8 +49,9 @@ class WSManager(WorkspaceManager):
             global_scripts = ScriptDefault.objects.all()
             upload = Event.objects.get(name = 'upload')
             for glob_script in global_scripts:
-                script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
-                EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
+                _new_script(name = glob_script.name, description = glob_script.description, workspace = ws, pipeline = glob_script.pipeline, events = ['upload'])
+#                script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
+#                EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
             
             root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'keyword',  cls = 'keyword')
             col_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'collection')

@@ -311,8 +311,10 @@ def send_mail(component, machine):
             [mail])
     storage = Storage()
     email.attach_file(storage.abspath(component.source.ID))
-    reactor.callInThread(email.send)
+#    reactor.callInThread(email.send)
+    email.send()
     logger.debug("[SendMail.end] component %s" % component.ID)
+    machine_to_next_state(machine)
 
 def read_xmp_features(item, features, component):
     from time import strptime

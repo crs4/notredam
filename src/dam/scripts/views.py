@@ -32,13 +32,16 @@ def get_scripts(request):
     scripts = Script.objects.filter(workspace = workspace, media_type__in = media_type)
     resp = {'scripts': []}
     for script in scripts:
-        tmp = simplejson.loads(script.pipeline) 
-        resp['scripts'].append({'name': script.name, 'actions': tmp['media_type']})
+        actions_media_type = {}
+        for action in script.actionlist_set.all():                        
+            actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
+             
+        resp['scripts'].append({'id': script.pk, 'name': script.name, 'description': script.description, 'actions_media_type': actions_media_type})
     
     return HttpResponse(simplejson.dumps(resp))
 
 
-
+@login_required
 def get_script_actions(request):
     script_id = request.POST['script']
     media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
@@ -52,12 +55,17 @@ def get_script_actions(request):
 @login_required
 def get_actions(request):  
     media_type = request.POST.get('media_type') # if no media_type all actions will be returned
-    
+    workspace = request.session.get('workspace')
     logger.debug('media_type %s'%media_type)  
     actions = {'actions':[]}    
+    classes = []
+    classes.extend(BaseAction.__subclasses__())
+    classes.extend(SaveAction.__subclasses__())
     
-    for action in BaseAction.__subclasses__():
-            
+    for action in classes:
+            if action == SaveAction:
+                continue
+                
             if media_type:
                 if media_type in action.media_type_supported:
                     add_action = True
@@ -67,32 +75,42 @@ def get_actions(request):
                 add_action = True
             
             if add_action:
-            
-                actions['actions'].append({                                
+               
+                tmp = {                                 
                         'name':action.__name__.lower(),
                         'media_type': action.media_type_supported,
-                        'parameters': action.required_parameters                    
-                })
+                        'parameters': action.required_parameters(workspace)                    
+                }
+                actions['actions'].append(tmp)
     logger.debug('actions %s'%actions)        
     return HttpResponse(simplejson.dumps(actions))
-         
+
+def _new_script(name, description, workspace, pipeline, events):
+    script = Script.objects.create(name = name, description = description, workspace = workspace)
+    pipeline = simplejson.loads(pipeline)
+    for media_type, actions in pipeline.items():
+        source_variant_name = actions.get('source_variant',  'original')
+        source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
+        ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
+    
+    for event_name in events:
+        event = Event.objects.get(name = event_name)
+        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
+
+    return script
+
+@login_required
 def new_script(request):
-    pipeline = simple_json.loads(request.POST['actions'])
+    pipeline = request.POST['actions_media_type']
     name = request.POST['name']
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  
-    
-    script = Script.objects.create(name = name, description = description, workspace = workspace, pipeline = pipeline)
-    
     events = request.POST.getlist('event')
-    workspace = request.session.get('workspace')
-    for event_name in events:
-        event = Event.objects.get(name = event_name)
-        EventRegistration.objects.create(event = event, listener = script)
-        
-    return HttpResponse(simplejson.dumps({'success': True}))
+    script = _new_script(name, description, workspace, pipeline, events)
+    
+    return HttpResponse(simplejson.dumps({'success': True, 'id': script.pk}))
 
-
+@login_required
 def edit_script(request):
     script_id = request.POST['script']
     script = Script.objects.get(pk = script_id)
@@ -100,7 +118,7 @@ def edit_script(request):
     if script.is_global:        
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
         
-    pipeline_str = request.POST.get('actions')
+    pipeline_str = request.POST.get('actions_media_type')
     if pipeline_str:        
         script.pipeline = pipeline_str
         
@@ -121,7 +139,7 @@ def edit_script(request):
     script.save()
     return HttpResponse(simplejson.dumps({'success': True}))
         
-
+@login_required
 def delete_script(request):        
     script_id = request.POST['script']
     script = Script.objects.get(pk = script_id)
@@ -130,5 +148,7 @@ def delete_script(request):
     else:
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
     return HttpResponse(simplejson.dumps({'success': True}))
+
+
 
     

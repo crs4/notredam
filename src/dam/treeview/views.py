@@ -40,6 +40,9 @@ import logger
 @login_required
 @permission_required('edit_taxonomy')
 def move_node(request):
+    """
+    Moves a node to another parent
+    """
     node_source = Node.objects.get(pk = request.POST['node_id'])
     node_dest = Node.objects.get(pk = request.POST['dest'])
     workspace = request.session['workspace']
@@ -55,6 +58,9 @@ def rename_collection(request,  node, label, workspace):
         
 @login_required
 def edit_node(request):
+    """
+    Edits the given nodes
+    """
     workspace = request.session['workspace']
     user = User.objects.get(pk=request.session['_auth_user_id'])
     try:
@@ -92,7 +98,9 @@ def _add_collection(request, node,  label,  workspace):
 
 @login_required
 def add(request = None,  workspace = None,  name = None, parent_id = None):
-
+    """
+    Adds a new node to an existing one
+    """
     if request:
         workspace = request.session['workspace']
         name = request.POST.get('name',  request.POST['label'])
@@ -129,6 +137,9 @@ def _delete_keyword(request,  node):
     
 @login_required
 def delete(request):
+    """
+    Deletes an existing node
+    """
     node = Node.objects.get(pk = int(request.POST['node_id']))
     if node.type == 'collection':
         _delete_collection(request, node)
@@ -136,13 +147,6 @@ def delete(request):
        _delete_keyword(request, node)
     resp = simplejson.dumps({'success':True})
     return HttpResponse(resp)
-
-@login_required
-def edit(request, node_id, node_type):
-   if node_type== 'keyword' or node_type== 'category':
-        return _edit_keyword(request, node_id, node_type)
-   else:
-        return _edit_collection(request, node_id, node_type)
     
 @permission_required('edit_metadata')
 def _save__keyword_association(request, node, items):
@@ -154,6 +158,9 @@ def _save__collection_association(request, node, items):
     
 @login_required
 def save_association(request):
+    """
+    Saves association between the given items and node
+    """
     items = request.POST.getlist('items')
 
     node= request.POST['node']
@@ -171,6 +178,9 @@ def save_association(request):
     return HttpResponse(resp)    
 
 def get_nodes(request):
+    """
+    Retrieves the requested nodes
+    """
     workspace = request.session['workspace']
     node_id = request.POST.get('node',  'root')
     last_added = request.POST.get('last_added')
