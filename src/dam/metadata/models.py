@@ -270,7 +270,7 @@ class MetadataManager(models.Manager):
     
         if (len(results) == 0 or multiple_values) and not metadataschema.editable:
             to_be_deleted = True
-    
+        
         return values, multiple_values, to_be_deleted
 
     def save_descriptor_structure_values(self, descriptor, schema_id, items, values, workspace, variant_name='original'):
