@@ -22,6 +22,10 @@ from django.contrib.auth.forms import UserCreationForm
 
 class Registration(UserCreationForm):
 
+    """
+    Form for user registration
+    """
+
     email = forms.EmailField()
     
     def __init__(self,  *args,  **kwargs):

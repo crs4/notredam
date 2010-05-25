@@ -27,7 +27,7 @@ from django.db.models import Q
 
 from dam.repository.models import Item, Component
 from dam.preferences.models import DAMComponent, DAMComponentSetting
-from dam.preferences.views import get_user_setting, get_metadata_default_language
+from dam.preferences.views import get_metadata_default_language
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant
@@ -38,6 +38,88 @@ from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
 from mx.DateTime.Parser import DateTimeFromString
 import logger
 import re
+
+@login_required
+def get_cuepoint_keywords(request):
+    """
+    Get cue point keywords list from system preferences
+    """
+
+    item_id = request.POST.get('item_id')
+
+    item = Item.objects.get(pk=item_id)
+
+    schema = MetadataProperty.objects.get(field_name='CuePoint')
+    keyword_schema = MetadataProperty.objects.get(field_name='CPKeyword')
+
+    values = item.get_metadata_values(schema)
+
+    setting = DAMComponentSetting.objects.get(name__iexact='cue_point_list')
+    value = setting.get_user_setting_by_level().split(',')
+
+    formatted_values = []
+    keywords = []
+
+    if values:
+        for el in values:
+            tmp_dict = {}
+            for k, v in el.iteritems():
+                new_key = MetadataProperty.objects.get(pk=k).field_name
+                tmp_dict[new_key] = v
+            formatted_values.append(tmp_dict)
+
+    for current_keyword in value:
+        keyword_dict = {'keyword': current_keyword, 'item_values': []}
+        for v in formatted_values:
+            if v.get('CPKeyword') == current_keyword:
+                keyword_dict['item_values'].append(v)                
+        keywords.append(keyword_dict)
+
+    resp = {'keywords':keywords}
+
+    return HttpResponse(simplejson.dumps(resp))
+
+@login_required
+def set_cuepoint(request):
+    """
+    Set cue points for the given item
+    """
+
+    item_id = request.POST.get('item')
+    cuepoints = simplejson.loads(request.POST.get('cuepoints'))
+    
+    schema = MetadataProperty.objects.get(field_name='CuePoint')
+    
+    item = Item.objects.get(pk=item_id)
+    
+    item.metadata.filter(schema=schema).delete()
+    
+    for x in xrange(1, len(cuepoints)+1):
+    	cp = cuepoints[x-1]
+    	keyword = cp['keyword']
+    	value = cp['value']
+    	start = cp['start']
+    	duration = cp['duration']
+
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPKeyword' % x, value=keyword)
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPStart' % x, value=start)
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPDuration' % x, value=duration)
+    	item.metadata.create(schema=schema, xpath='notreDAM:CuePoint[%d]/notreDAM:CPValue' % x, value=value)
+
+    return HttpResponse('')
+
+@login_required
+def get_item_cuepoint(request):
+    """
+    Retrieves cue points of the given item
+    """
+
+    item_id = request.POST.get('item')
+    
+    
+    logger.debug(values)
+    
+    return HttpResponse('')
 
 def _add_sync_machine(component):
 
@@ -383,6 +465,7 @@ def _simple_metadata_view(item_list, workspace, default_language, metadata_objec
                     
     return form_list
 
+@login_required
 def get_metadata_structures(request):
     """
     Returns the list of XMP Structures and their definitions
@@ -452,6 +535,9 @@ def _get_ws_groups(workspace, type=None):
 
 @login_required
 def wsadmin_config_descriptors(request, type='basic_summary'):
+    """
+    Workspace Metadata Configuration: retrieve descriptors
+    """
     workspace = request.session.get('workspace')
     
     groups = _get_ws_groups(workspace, type)
@@ -473,6 +559,10 @@ def wsadmin_config_descriptors(request, type='basic_summary'):
     
 @login_required
 def wsadmin_get_descriptor_properties(request):
+    """
+    Workspace Metadata Configuration: retrieve XMP properties
+    """
+
     prop_list = simplejson.loads(request.POST.get('prop_list'))
     variant_only = request.POST.get('variant', 'all')
     if variant_only == 'variant':
@@ -513,6 +603,10 @@ def _get_new_desc(d):
 
 @login_required
 def wsadmin_save_ws_descriptors(request):
+    """
+    Workspace Metadata Configuration: Save descriptors for the current workspace
+    """
+
     workspace = request.session.get('workspace')
 
     basic_list = simplejson.loads(request.POST.get('basic'))
@@ -563,6 +657,9 @@ def wsadmin_save_ws_descriptors(request):
 
 @login_required
 def wsadmin_config_descriptor_groups(request):
+    """
+    Workspace Metadata Configuration: retrieve descriptor groups
+    """
 
     workspace = request.session.get('workspace')
     
@@ -589,6 +686,10 @@ def wsadmin_config_descriptor_groups(request):
 
 @login_required
 def wsadmin_set_default_descriptors(request):
+    """
+    Workspace Metadata Configuration: Reset configuration to defaults
+    """
+
     workspace = request.session.get('workspace')
 
     my_groups = MetadataDescriptorGroup.objects.filter(workspace=workspace)

@@ -46,6 +46,72 @@ class DAMComponent(models.Model):
     def __unicode__(self):
         return "%s" % (self.name)
 
+class SettingManager(models.Manager):
+
+    def clear_preferences(self, obj, setting):
+        """
+        Clear the preferences for the given object (it can be a user, a workspace or None for system preferences)
+        @param obj an instance of django.contrib.auth.User or dam.workspace.models.Workspace or None
+        @param setting setting instance of dam.preference.models.DAMComponentSetting
+        """
+    
+        if isinstance(obj, User):
+            UserSetting.objects.filter(user=obj, component_setting=setting).delete()
+        elif isinstance(obj, Workspace):
+            WSSetting.objects.filter(user=obj, component_setting=setting).delete()
+        else:
+            SystemSetting.objects.filter(component_setting=setting).delete()
+    
+    def create_preferences(self, obj, setting, value, choices):
+        """
+        Save the preference of the given obj (it can be a user, a workspace or None for system preferences)
+        @param obj an instance of django.contrib.auth.User or dam.workspace.models.Workspace or None
+        @param setting setting instance of dam.preference.models.DAMComponentSetting
+        @param value the value of the given setting
+        @param choices a list of choice
+        """
+    
+        if isinstance(obj, User):
+            pref = UserSetting.objects.create(user=obj, component_setting=setting, value=value)
+        elif isinstance(obj, Workspace):
+            pref = WSSetting.objects.create(user=obj, component_setting=setting, value=value)
+        else:
+            pref = SystemSetting.objects.create(component_setting=setting, value=value)
+        
+        for c in choices:
+            pref.user_choices.add(c)
+    
+    def save_preference(self, request, obj):
+        """
+        Get the preference value from request.POST and save it
+        """
+        for key in request.POST.keys():
+            if key.startswith('pref__'):
+                setting_id = key.split("__")[1]
+                setting = self.get(pk=setting_id)
+                self.clear_preferences(obj, setting)
+            
+                choices = []
+                if setting.type == 'choice': 
+                    setting_value = request.POST.get(key)
+                    if setting_value :
+                        choice = setting.choices.get(name = setting_value)
+                        choices.append(choice)
+                        value = choice.name
+    
+                elif setting.type == 'multiple_choice':
+                    setting_value = request.POST.getlist(key)
+                    for key in setting_value:
+                        choice = setting.choices.get_or_create(name = key)[0]
+                        
+                        choices.append(choice)
+                    value = ",".join([x.name for x in choices])	
+                else:
+                    setting_value = request.POST.get(key)
+                    value = setting_value
+    
+                self.create_preferences(obj, setting, value, choices)
+
 class DAMComponentSetting(models.Model):
     """
     Setting of a DAM Component. The settings can be managed by the developers using the django admin. 
@@ -64,10 +130,57 @@ class DAMComponentSetting(models.Model):
     type = models.CharField(max_length=16, choices=(('choice', 'choice'), ('int', 'int'), ('string','string'), ('boolean', 'boolean'), ('email', 'email'), ('multiple_choice', 'multiple_choice')))
     setting_level = models.CharField(max_length=16, default="S", choices=(('S', 'System'), ('U', 'User'), ('W','Workspace')))
 #    is_preferences = models.BooleanField(default = True)
+    objects = SettingManager()
 
     def __unicode__(self):
         return "%s" % (self.name)
-
+        
+    def get_user_setting_by_level(self, workspace=None, user=None, force_priority=None):
+        """
+        Returns the user value of the given setting, or the default value if user didn't make a choice yet  . 
+        @param user user instance of django.contrib.auth.User
+        @param setting setting instance of dam.preference.models.DAMComponentSetting
+        """
+        
+        preferences_list = self.get_preferences_by_level(user, workspace)
+    
+        if force_priority:
+            priority_levels = force_priority
+        elif self.setting_level == 'W':
+            priority_levels = ['W', 'U', 'S']
+        elif self.setting_level == 'U':
+            priority_levels = ['U', 'S']
+        else:
+            priority_levels = ['S']
+        
+        for l in priority_levels:
+            user_setting = preferences_list[l]
+            if user_setting:
+                break
+    
+        if self.type == 'choice' or self.type == 'multiple_choice': 
+            if user_setting is None:
+                value = self.default_value
+            else:
+                value = ",".join([x.name for x in user_setting.user_choices.all()])
+        else:
+            if user_setting is None:
+                value = self.default_value
+            else:
+                value = user_setting.value
+                
+        return value
+        
+    def get_user_setting(self, user, workspace=None):
+        """
+        Returns the user value of the given setting, or the default value if user didn't make a choice yet  . 
+        @param user user instance of django.contrib.auth.User
+        """
+    
+        value = self.get_user_setting_by_level(workspace=workspace, user=user)
+    
+        return value        
+    
     def get_system_preference(self):
         try:
             pref = SystemSetting.objects.get(component_setting=self)

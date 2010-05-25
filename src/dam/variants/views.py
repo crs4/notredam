@@ -109,30 +109,6 @@ def delete_variant(request):
 
 	return HttpResponse(simplejson.dumps({'success':True}))
 
-def get_variant_media_type(item_id,  variant_name, workspace):
-    try:
-        item = Item.objects.get(pk = item_id)
-        logger.debug('variant_name %s' %variant_name)
-        if variant_name == 'original' or variant_name ==  'edited':
-            logger.debug('original or edited')
-            return item.type.name
-        logger.debug('item %s' %item)
-        logger.debug('variant name %s' %variant_name)
-        
-        v = Variant.objects.get(Q(workspace = workspace) | Q(workspace__isnull = True), variant_name = variant_name, media_type = item.type)
-        
-        logger.debug('item_id %s' %item_id)
-        
-        logger.debug('workspace%s' %workspace)
-        logger.debug('varaiant %s' %v)
-        
-        vp = v.ImagePreferences_set.all()[0]
-        media_type = vp.media_type.name
-        return media_type
-    except Exception,  ex:
-        logger.exception(ex)
-        raise ex
-
 @login_required
 @permission_required('admin')
 def force_variant_generation(request,  variant_id,  item_id):
@@ -155,43 +131,6 @@ def force_variant_generation(request,  variant_id,  item_id):
         logger.exception(ex)
     
     return HttpResponse(simplejson.dumps({'success': True}))
-    
-def _create_variant(variant,  item, ws,  media_type = None):
-    logger.debug('variant %s'%variant)
-    logger.debug('item.type %s'%item.type.name)
-    if not media_type:
-        media_type = item.type
-    logger.debug('ws %s'%ws)
-#    if variant_name =='original':
-#        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
-#    else:        
-
-#    variant = Variant.objects.get(name = variant_name)
-    
-    try:
-        if variant.shared:
-            comp = Component.objects.get(item = item, variant= variant)
-            comp.workspace.add(ws)
-            comp.workspace.add(*item.workspaces.all())
-        else:
-            comp = Component.objects.get(item = item, variant= variant,  workspace = ws,  type = media_type)
-        comp.metadata.all().delete()
-        comp.save()
-        
-    except Component.DoesNotExist:
-        logger.debug('variant does not exist yet')
-      
-                
-        comp = Component.objects.create(variant = variant,  item = item, type = media_type)
-        comp.workspace.add(ws)
-        
-        if variant.shared:
-            comp.workspace.add(*item.workspaces.all())
-    
-    logger.debug('============== COMPONENT_VARIANT =========== %s' % comp.variant)
-    
-    return comp
-    
 
 @login_required
 def get_variant_sources(request):

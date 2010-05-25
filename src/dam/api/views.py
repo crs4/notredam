@@ -39,14 +39,13 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
-from dam.treeview.views import _move_node,  _add_node, InvalidNode,  WrongWorkspace,  NotMovableNode,  _rename_node,  NotEditableNode, save_association,  _save__collection_association,  _save__keyword_association,  _remove_collection_association,  _remove_keyword_association,  _save_metadata_mapping,  _edit_node
+from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
-
 
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.upload.views import generate_tasks, _get_upload_url,  _create_variant, guess_media_type,  _uploaded_item
+from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type
 from dam.workflow.views import _set_state 
 from decorators import *
 from exceptions import *
@@ -63,9 +62,6 @@ from mimetypes import guess_type
 
 from django.template.loader import render_to_string
 from twisted.test.test_jelly import SimpleJellyTest
-
-
-
 
 def _check_parent(values):
     if  Node.objects.get(pk = values['parent_id']).depth  == 0:
@@ -834,7 +830,7 @@ class ItemResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_metadata'])
 #        variant = VariantAssociation.objects.get(pk = variant_id).variant
         variant = Variant.objects.get(pk = variant_id)
-        comp = _create_variant(variant,  item, ws)
+        comp = item.create_variant(variant, ws)
         
 #        url  = request.POST.get('url')
 #        if request.POST.has_key('external'):
@@ -1176,7 +1172,7 @@ class ItemResource(ModResource):
                 user_id = request.POST['user_id']
                 _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])
             
-            _save__collection_association(collection_node,  [item_id])
+            collection_node.save_collection_association([item_id])
         
         return HttpResponse('')
         
@@ -1205,7 +1201,7 @@ class ItemResource(ModResource):
                 logger.debug('user_id %s'% user_id)
                 _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])
             
-            _remove_collection_association(collection_node, [item_id])        
+            collection_node.remove_collection_association([item_id])        
         
         return HttpResponse('')    
     
@@ -1234,7 +1230,7 @@ class ItemResource(ModResource):
         node_ids = request.POST.getlist('keywords')
         for node_id in node_ids:
             node = Node.objects.get(pk = node_id)
-            _save__keyword_association( node, [item_id])
+            node.save_keyword_association([item_id])
             
         return HttpResponse('')    
         
@@ -1260,7 +1256,7 @@ class ItemResource(ModResource):
         node_ids = request.POST.getlist('keywords')
         for node_id in node_ids:
             node = Node.objects.get(pk = node_id)
-            _remove_keyword_association( node, [item_id])
+            node.remove_keyword_association([item_id])
         
     @exception_handler
     @api_key_required
@@ -1530,8 +1526,7 @@ class ItemResource(ModResource):
 
         item = Item.objects.create(uploader = user,  type = media_type,)
         ws.items.add(item)
-        _uploaded_item(item,  ws)      
-        
+        item.add_to_uploaded_inbox(ws)        
         
 #        if request.POST.has_key('metadata'):
 #            self._set_metadata(request,  item_id,)
@@ -1716,7 +1711,7 @@ class CollectionResource(ModResource):
             workspace = parent_node.workspace        
             
         _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])        
-        node = _add_node(parent_node, label, workspace)
+        node = parent_node.add_node(label, workspace)
         json_response = json.dumps({'model': 'collection',  'id': node.pk, 'label': label, 'parent_id': parent_id, 'workspace_id': workspace.id,  })
         logger.debug('add: json_response %s'%json_response )
         return HttpResponse(json_response) 
@@ -1814,7 +1809,7 @@ class CollectionResource(ModResource):
         if request.POST.has_key('label'):
             label = request.POST['label']
             logger.debug('label %s' %label)
-            _rename_node(node,  label,  ws)   
+            node.rename_node(label,  ws)   
             return HttpResponse('') 
         else:
             raise MissingArgs
@@ -1844,7 +1839,7 @@ class CollectionResource(ModResource):
             node_dest = Node.objects.get(pk = request.GET['parent_id'])  
         
         logger.debug('moving...')        
-        _move_node(node_source, node_dest,  ws)
+        node_source.move_node(node_dest,  ws)
         return HttpResponse('')         
         
     @exception_handler
@@ -1892,7 +1887,7 @@ class CollectionResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])        
         
         item_ids = request.POST.getlist('items') 
-        _save__collection_association( node, item_ids)
+        node.save_collection_association(item_ids)
         return HttpResponse('')        
     
     @exception_handler
@@ -1922,7 +1917,7 @@ class CollectionResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])        
         
         item_ids = request.POST.getlist('items') 
-        _remove_collection_association(node, item_ids)        
+        node.remove_collection_association(item_ids)        
         
         return HttpResponse('')
             
@@ -2123,9 +2118,9 @@ class KeywordsResource(ModResource):
         if new_node.count() > 0:
             new_node = new_node[0]
         else:
-            new_node = _add_node(node_parent,  request.POST['label'],  ws, type, associate_ancestors)   
+            new_node = node_parent.add_node(request.POST['label'],  ws, type, associate_ancestors)   
             if len(metadata_schema) > 0:
-                _save_metadata_mapping(new_node , metadata_schema)
+                new_node.save_metadata_mapping(metadata_schema)
         
         items  = request.POST.getlist('items')
 #        TODO: test it
@@ -2162,7 +2157,7 @@ class KeywordsResource(ModResource):
         metadata_schema = self._prepare_metadata_schema(request)
         
         
-        _edit_node(node,  label,  metadata_schema, associate_ancestors,  ws)
+        node.edit_node(label,  metadata_schema, associate_ancestors,  ws)
         
         return HttpResponse('') 
     
@@ -2192,7 +2187,7 @@ class KeywordsResource(ModResource):
             node_dest = Node.objects.get(pk = request.POST['parent_id'])  
         
         logger.debug('moving...')        
-        _move_node(node_source ,  node_dest,  ws)                        
+        node_source.move_node(node_dest,  ws)                        
         
         return HttpResponse('') 
     

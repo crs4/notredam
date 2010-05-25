@@ -20,15 +20,23 @@ class StorageUploadedFile(UploadedFile):
         file = open(fpath, 'wb')
         super(StorageUploadedFile, self).__init__(file, name, content_type, size, charset)
 
-    def rename(self, ext):
-        self.file.close()        
+    def rename(self):
+
+        fname, ext = os.path.splitext(self.name)
+
+        self.file.close()
         new_name = self.file.name + ext
-        print self.file.name, new_name
         shutil.move(self.file.name, new_name)
         self.file = open(new_name, 'r')
         
     def get_filename(self):
         return self.file.name
+        
+    def get_res_id(self):
+        uploaded_fname = self.get_filename()
+        path, res_id = os.path.split(uploaded_fname)    
+        
+        return res_id
 
     def close(self):
         try:

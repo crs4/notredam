@@ -19,16 +19,61 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
-
+from django.utils import simplejson
 from django.contrib.auth.models import User
-from dam.workspace.models import DAMWorkspace as Workspace
-from dam.repository.models import Item, Component
-from dam.framework.dam_repository.models import Type
+
+from dam.repository.models import Item
 from dam.framework.dam_tree.models import AbstractNode
 
 import logger
 
+class InvalidNode(Exception):
+    pass
+
+class NotEditableNode(Exception):
+    pass
+
+class WrongWorkspace(Exception):
+    pass
+    
+class NotMovableNode(Exception):
+    pass
+
+class SiblingsWithSameLabel(Exception):
+    pass
+
 class NodeManager(models.Manager):
+
+    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None):
+    #    if not node.parent:
+    #        raise InvalidNode
+            
+        node.check_ws(workspace)
+    
+        logger.debug('label %s'%label)
+        if node.children.filter(label = label).count():
+            raise SiblingsWithSameLabel
+        logger.debug('node.cls %s'%node.cls)
+    
+    #    if node.type == 'keyword':
+    #        cls = 'keyword'
+    #    else:
+    #        cls = node.cls
+            
+        new_node = self.create(workspace= workspace, label = label,  type = node.type)
+        if cls:
+            new_node.cls = cls
+        
+        if associate_ancestors:
+            new_node.associate_ancestors = associate_ancestors      
+        
+        new_node.parent = node
+        new_node.depth = (node.depth)+1
+        new_node.count = 0
+        new_node.save()
+        
+    #    Node.objects.get_root(workspace).rebuild_tree(1)
+        return new_node
     
     def get_from_path(self,  path, type = 'collection',   separator='/'):
         def _to_path(nodes):
@@ -91,11 +136,129 @@ class Node(AbstractNode):
     is_draggable = models.BooleanField(default = True)
     is_drop_target= models.BooleanField(default = True)
     editable = models.BooleanField(default = True)
-    workspace = models.ForeignKey(Workspace)
+    workspace = models.ForeignKey('workspace.DAMWorkspace', related_name='tree_nodes')
     objects = NodeManager()
     items = models.ManyToManyField('repository.Item')
     metadata_schema = models.ManyToManyField('metadata.MetadataProperty',  through = 'NodeMetadataAssociation',  blank=True, null=True)
     associate_ancestors = models.BooleanField(default = False)
+    
+    def check_ws(self, ws):
+        if self.workspace != ws:
+            raise WrongWorkspace
+
+    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace):
+    
+        if label :
+            self.rename_node(label, workspace)
+        
+        if self.cls != 'category':
+            if metadata_schemas:
+                self.save_metadata_mapping(metadata_schemas)        
+                self.save_metadata()
+            
+            self.associate_ancestors = associate_ancestors
+            self.save()
+
+    def remove_keyword_association(self, items):
+        items = Item.objects.filter(pk__in = items)
+        self.items.remove(*items)
+        self.remove_metadata(items)
+
+    def remove_collection_association(self, items):
+        try:
+            items = Item.objects.filter(pk__in = items)
+            self.items.remove(*items)
+        except Exception, ex:
+            logger.exception(ex)
+            raise ex    
+
+    def save_keyword_association(self, items):
+        items = Item.objects.filter(pk__in = items)
+        if self.associate_ancestors:
+            nodes = self.get_ancestors().filter(depth__gt = 0)
+        else:
+            nodes = [self]
+            
+        for n in nodes:
+    
+            if n.cls != 'category':
+                n.items.add(*items)
+    
+            n.save_metadata(items)
+
+    def save_collection_association(self, items):
+        items = Item.objects.filter(pk__in = items)
+        self.items.add(*items)
+
+    def save_metadata_mapping(self, metadata_schemas):
+        from dam.metadata.models import MetadataProperty
+        
+        node_associations_to_delete = NodeMetadataAssociation.objects.filter(node = self)
+       
+        for item in self.items.all():
+            for n_a in node_associations_to_delete:
+                metadata = item.metadata.filter(schema = n_a.metadata_schema,  value = n_a.value)
+                if metadata.count() >0:
+                    metadata[0].delete()
+                    
+        node_associations_to_delete.delete()
+        for ms in metadata_schemas:
+            if not isinstance(ms,  dict):
+                ms = simplejson.loads(ms)
+            NodeMetadataAssociation.objects.create(node = self,  value = ms['value'],  metadata_schema = MetadataProperty.objects.get(pk = ms['id']))
+    #    node.metadata_schema.add(*MetadataProperty.objects.filter(pk__in = metadata_schemas))
+
+    def save_metadata(self, items=None):
+        from dam.metadata.models import MetadataValue
+
+        ctype = ContentType.objects.get_for_model(Item)
+
+        if items is None:
+            items = self.items.all()
+        
+        for item in items: 
+            schema = self.metadata_schema.all()
+            for s in schema:
+                node_association= NodeMetadataAssociation.objects.get(node = self,  metadata_schema = s)
+                keyword = node_association.value
+                
+                m = MetadataValue.objects.get_or_create(schema=s, value=keyword, object_id= item.pk, content_type = ctype)
+
+    def remove_metadata(self, items):
+        from dam.metadata.models import MetadataValue
+        
+        ctype = ContentType.objects.get_for_model(Item)
+
+        for item in items: 
+            schema = self.metadata_schema.all()
+            for s in schema:
+                n_a = NodeMetadataAssociation.objects.get(node = self,  metadata_schema = s)
+                MetadataValue.objects.filter(schema=s, value=n_a.value, object_id= item.pk, content_type = ctype).delete()
+
+    def rename_node(self, label, workspace):
+    #    if not node.parent:
+    #        raise InvalidNode
+        if not self.editable:
+            raise NotEditableNode
+        self.check_ws(workspace)
+        self.label = label
+        self.save()
+    
+    def move_node(self, node_dest, workspace):
+        if not self.parent :
+            raise InvalidNode
+        
+    #    TODO: check move parent to children
+        self.check_ws(node_dest.workspace)
+        self.check_ws(workspace)
+        self.check_ws(workspace)
+        
+    #    if node_source.depth <= 2:
+    #        raise NotEditableNode
+        self.parent = node_dest
+        self.depth = node_dest.depth+1
+        self.save()
+    #    Node.objects.get_root(workspace).rebuild_tree(1)
     
     def get_ancestors(self):
         nodes = Node.objects.filter(type = self.type)
@@ -156,7 +319,7 @@ class SmartFolderNodeAssociation(models.Model):
 class SmartFolder(models.Model):
     label = models.CharField(max_length= 200)
     and_condition = models.BooleanField(default = True)
-    workspace = models.ForeignKey(Workspace)
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
     nodes = models.ManyToManyField('Node',  through = 'SmartFolderNodeAssociation')
 
     def get_complex_query(self):

@@ -1,3 +1,7 @@
+"""
+Views used in /dam_admin/
+"""
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import simplejson
 from django.http import HttpResponse
@@ -12,7 +16,6 @@ from dam.framework.dam_metadata.models import XMPNamespace
 from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, RightsValue, RightsXMPValue
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermissionsGroup, WorkspacePermission
-from dam.preferences.views import get_user_setting_by_level
 
 @staff_member_required
 def dam_admin(request):
@@ -30,12 +33,16 @@ def get_admin_settings(request):
     data = {'prefs':[]}
     for s in settings:
         choices = [[c.name, c.description] for c in s.choices.all()]
-        value = get_user_setting_by_level(s)
+        value = s.get_user_setting_by_level()
         data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': s.component.name,  'type': s.type,  'value': value,  'choices':choices})
     return HttpResponse(simplejson.dumps(data))    
 
 @staff_member_required
 def damadmin_get_desc_groups(request):
+    """
+    Retrieve descriptor groups
+    """
+
     groups = MetadataDescriptorGroup.objects.filter(workspace__isnull=True).order_by('name')
     data = {'groups':[]}
     current_desc_id = request.POST.get('desc_id', 0)
@@ -70,6 +77,10 @@ def damadmin_get_desc_groups(request):
 
 @staff_member_required
 def damadmin_get_desc_list(request):
+    """
+    Retrieve descriptor list
+    """
+
     descs = MetadataDescriptor.objects.filter(custom=False).order_by('name')
     current_group_id = request.POST.get('group_id', 0)
     
@@ -93,6 +104,10 @@ def damadmin_get_desc_list(request):
     
 @staff_member_required
 def damadmin_get_descriptor_properties(request):
+    """
+    Retrieve XMP properties for the given descriptor
+    """
+
     props = MetadataProperty.objects.all().exclude(xmpstructure__in=XMPStructure.objects.all()).exclude(metadatadescriptor__in=MetadataDescriptor.objects.all())
     current_desc_id = request.POST.get('desc_id', 0)
     data = {'elements':[]}
@@ -109,6 +124,9 @@ def damadmin_get_descriptor_properties(request):
     
 @staff_member_required
 def damadmin_save_descriptor(request):
+    """
+    Save descriptor
+    """
     prop_list_ids = simplejson.loads(request.POST.get('prop_list'))
     group_list_ids = simplejson.loads(request.POST.get('group_list'))
 
@@ -133,6 +151,9 @@ def damadmin_save_descriptor(request):
     
 @staff_member_required
 def damadmin_save_descriptor_group(request):
+    """
+    Save descripto group
+    """
     desc_list_ids = simplejson.loads(request.POST.get('desc_list'))
 
     current_group_id = request.POST.get('group_id', 0)
@@ -165,18 +186,27 @@ def damadmin_save_descriptor_group(request):
     
 @staff_member_required
 def damadmin_delete_descriptor(request):
+    """
+    Delete descriptor(s)
+    """
     desc_ids = simplejson.loads(request.POST.get('obj_list'))
     MetadataDescriptor.objects.filter(pk__in=desc_ids).delete()
     return HttpResponse(simplejson.dumps({'success': True}))    
 
 @staff_member_required
 def damadmin_delete_descriptor_group(request):
+    """
+    Delete descriptor group(s)
+    """
     desc_ids = simplejson.loads(request.POST.get('obj_list'))
     MetadataDescriptorGroup.objects.filter(pk__in=desc_ids).delete()
     return HttpResponse(simplejson.dumps({'success': True}))    
 
 @staff_member_required
 def damadmin_delete_rights(request):
+    """
+    Delete rights
+    """
     rights_ids = simplejson.loads(request.POST.get('obj_list'))
     RightsXMPValue.objects.filter(rightsvalue__pk__in=rights_ids).delete()
     RightsValue.objects.filter(pk__in=rights_ids).delete()
@@ -184,6 +214,9 @@ def damadmin_delete_rights(request):
     
 @staff_member_required
 def damadmin_get_rights_list(request):
+    """
+    Retrieve rights list
+    """
     rights = RightsValue.objects.all().order_by('value')
 
     data = {'rights':[]}
@@ -193,6 +226,9 @@ def damadmin_get_rights_list(request):
     
 @staff_member_required
 def damadmin_get_rights_properties(request):
+    """
+    Retrieve rights mapping to XMP properties
+    """
     current_rights = request.POST.get('rights_id', 0)
     add_mode = request.POST.get('add_mode', 0)
    
@@ -213,6 +249,10 @@ def damadmin_get_rights_properties(request):
        
 @staff_member_required
 def damadmin_save_rights(request):
+    """
+    Save rights
+    """
+
     prop_list_ids = simplejson.loads(request.POST.get('prop_list'))
 
     current_rights_id = request.POST.get('rights_id', 0)
@@ -290,6 +330,10 @@ def _get_is_target(schema):
         
 @staff_member_required
 def damadmin_get_xmp_list(request):
+    """
+    Retrieve XMP Properties
+    """
+
     data = {'xmp':[]}
     props = MetadataProperty.objects.all()
     for p in props: 
@@ -316,6 +360,9 @@ def damadmin_get_xmp_list(request):
 
 @staff_member_required
 def damadmin_get_xmp_namespaces(request):
+    """
+    Retrieve XMP Namespace list
+    """
     data = {'elements':[]}
     namespaces = XMPNamespace.objects.all()
     for p in namespaces: 
@@ -325,7 +372,9 @@ def damadmin_get_xmp_namespaces(request):
 
 @staff_member_required
 def damadmin_save_ns(request):
-
+    """
+    Save XMP Namespace
+    """
     current_ns_id = request.POST.get('ns_id', 0)
 
     ns_name = request.POST.get('ns_name')
@@ -381,7 +430,9 @@ def _get_xmp_params(request):
 
 @staff_member_required
 def damadmin_save_xmp(request):
-
+    """
+    Save XMP Property
+    """
     current_xmp_id = request.POST.get('xmp_id', 0)
 
     new_params, new_types = _get_xmp_params(request)
@@ -404,30 +455,49 @@ def damadmin_save_xmp(request):
                 
 @staff_member_required
 def damadmin_delete_namespace(request):
+    """
+    Delete XMP Namespace
+    """
     ns_ids = simplejson.loads(request.POST.get('obj_list'))
     XMPNamespace.objects.filter(pk__in=ns_ids).delete()
     return HttpResponse(simplejson.dumps({'success': True}))           
         
 @staff_member_required
 def damadmin_delete_xmp(request):
+    """
+    Delete XMP Property
+    """
+
     xmp_ids = simplejson.loads(request.POST.get('obj_list'))
     MetadataProperty.objects.filter(pk__in=xmp_ids).delete()
     return HttpResponse(simplejson.dumps({'success': True}))           
 
 @staff_member_required
 def damadmin_delete_user(request):
+    """
+    Delete user(s)
+    """
+
     ids = simplejson.loads(request.POST.get('obj_list'))
     User.objects.filter(pk__in=ids).delete()
     return HttpResponse(simplejson.dumps({'success': True}))
 
 @staff_member_required
 def damadmin_delete_ws(request):
+    """
+    Delete workspace(s)
+    """
+
     ids = simplejson.loads(request.POST.get('obj_list'))
     Workspace.objects.filter(pk__in=ids).delete()
     return HttpResponse(simplejson.dumps({'success': True}))
         
 @staff_member_required
 def damadmin_get_xmp_structures(request):
+    """
+    Retrieve XMP structures
+    """
+
     data = {'elements':[]}
     structures = XMPStructure.objects.all()
     for s in structures: 
@@ -437,6 +507,10 @@ def damadmin_get_xmp_structures(request):
 
 @staff_member_required
 def damadmin_get_user_list(request):
+    """
+    Retrieve user list
+    """
+
     data = {'elements':[]}
     users = User.objects.all()
     for s in users: 
@@ -446,6 +520,9 @@ def damadmin_get_user_list(request):
 
 @staff_member_required
 def damadmin_get_user_permissions(request):
+    """
+    Retrieve user permissions
+    """
 
     current_id = request.POST.get('id', 0)
 
@@ -472,6 +549,9 @@ def damadmin_get_user_permissions(request):
 
 @staff_member_required
 def damadmin_save_user(request):
+    """
+    Save user
+    """
 
     current_id = request.POST.get('id', 0)
     username = request.POST.get('username')
@@ -543,6 +623,9 @@ def damadmin_save_user(request):
     
 @staff_member_required
 def damadmin_get_workspaces(request):
+    """
+    Retrieve workspace list
+    """
 
     resp = {'elements':[]}
 
@@ -557,6 +640,9 @@ def damadmin_get_workspaces(request):
 
 @staff_member_required
 def damadmin_get_ws_users(request):
+    """
+    Retrieve workspace users
+    """
 
     current_id = request.POST.get('id', 0)
 
@@ -603,6 +689,9 @@ def _get_ws_groups(ws_id):
 
 @staff_member_required
 def damadmin_get_ws_groups(request):
+    """
+    Retrieve workspace permission groups
+    """
 
     current_id = request.POST.get('id', 0)
 
@@ -612,6 +701,9 @@ def damadmin_get_ws_groups(request):
 
 @staff_member_required
 def damadmin_save_ws(request):
+    """
+    Save Workspace
+    """
 
     current_id = request.POST.get('id', 0)
     ws_name = request.POST.get('name')

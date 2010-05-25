@@ -35,7 +35,6 @@ from dam.treeview.models import Node
 from dam.batch_processor.models import MachineState, Machine, Action
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.framework.dam_workspace.decorators import permission_required
-from dam.variants.views import _create_variant
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
@@ -49,13 +48,6 @@ import mimetypes
 import os.path, traceback
 import time
 import tempfile
-
-def _uploaded_item(item,  workspace):
-
-    uploaded = Node.objects.get(depth = 1,  label = 'Uploaded',  type = 'inbox',  workspace = workspace)
-    time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
-    node = Node.objects.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  workspace = workspace,  depth = 2)[0]
-    node.items.add(item)
 
 def _get_upload_url(user, workspace, number):
 
@@ -78,21 +70,32 @@ def get_upload_url(request):
     n = request.POST['n']
 
     workspace = request.session.get('workspace')
-    user = User.objects.get(pk = request.session['_auth_user_id'])    
+    user = User.objects.get(pk = request.session['_auth_user_id'])
 
     urls = _get_upload_url(user, workspace, n)
 
     resp = simplejson.dumps({'urls': urls})
     return HttpResponse(resp)
     
-def save_uploaded_component(request, res_id, file_name, variant, item, user, workspace):
+def _get_uploaded_info(upload_file):
+
+    file_name = upload_file.name
+
+    type = guess_media_type(file_name)
+    
+    upload_file.rename()
+    
+    res_id = upload_file.get_res_id()
+
+    return (file_name, type, res_id)
+
+    
+def _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace):
     """
     Create component for the given item and generate mediadart tasks. 
     Used only when user uploaded an item's variant
     """
-    
-    comp = _create_variant(variant,  item, workspace)
-    logger.debug('----------------------')
+    comp = item.create_variant(variant, workspace)
     
     if variant.auto_generated:
         comp.imported = True
@@ -131,17 +134,11 @@ def save_uploaded_component(request, res_id, file_name, variant, item, user, wor
         print traceback.print_exc(ex)
         raise    
     
-def save_uploaded_item(request, upload_file, user, workspace):
+def _save_uploaded_item(request, upload_file, user, workspace):
 
-    type = guess_media_type(upload_file.name)
-    
-    fname, extension = os.path.splitext(upload_file.name)
+    variant = Variant.objects.get(name = 'original')
 
-    upload_file.rename(extension)
-
-    uploaded_fname = upload_file.get_filename()
-    path, res_id = os.path.split(uploaded_fname)
-    file_name = upload_file.name
+    file_name, type, res_id = _get_uploaded_info(upload_file)
     
     item_ctype = ContentType.objects.get_for_model(Item)
 
@@ -149,17 +146,16 @@ def save_uploaded_item(request, upload_file, user, workspace):
     
     item = Item.objects.create(owner = user, uploader = user,  type = media_type)
     item_id = item.pk
-    _uploaded_item(item, workspace) 
+    item.add_to_uploaded_inbox(workspace)
 
     item.workspaces.add(workspace)
 
+
     variant = Variant.objects.get(name = 'original')
-    save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
+    _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
 #    EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
     
-
-def save_uploaded_variant(request, upload_file, user, workspace):
-    
+def _save_uploaded_variant(request, upload_file, user, workspace):
     variant_id = request.POST['variant_id']
     item_id = request.POST['item_id']
 
@@ -167,28 +163,9 @@ def save_uploaded_variant(request, upload_file, user, workspace):
     logger.debug('***************************************VARIANT %s******************'%variant)
     item = Item.objects.get(pk = item_id)
     
-    fname, extension = os.path.splitext(upload_file.name)
-
-    upload_file.rename(extension)
-
-    uploaded_fname = upload_file.get_filename()
-    path, res_id = os.path.split(uploaded_fname)
-    file_name = upload_file.name    
-            
-    save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
-
-def get_user_ws_from_url(url):
-    """
-    Retrieve user and workspace from the unique upload url
-    """
-
-    find_url = UploadURL.objects.get(url=url)
-    user = find_url.user
-    workspace = find_url.workspace
-
-    find_url.delete()
-
-    return (user, workspace)
+    file_name, type, res_id = _get_uploaded_info(upload_file)
+                
+    _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
     
 def upload_item(request):
 
@@ -202,9 +179,9 @@ def upload_item(request):
         url = request.POST['unique_url']
         upload_file = request.FILES['Filedata']
         
-        user, workspace = get_user_ws_from_url(url)
+        user, workspace = UploadURL.objects.get_user_ws_from_url(url)
     
-        save_uploaded_item(request, upload_file, user, workspace)
+        _save_uploaded_item(request, upload_file, user, workspace)
     
         resp = simplejson.dumps({})
         return HttpResponse(resp)
@@ -222,9 +199,9 @@ def upload_variant(request):
     url = request.POST['unique_url']    
     upload_file = request.FILES['Filedata']
     
-    user, workspace = get_user_ws_from_url(url)
+    user, workspace = UploadURL.objects.get_user_ws_from_url(url)
 
-    save_uploaded_variant(request, upload_file, user, workspace)        
+    _save_uploaded_variant(request, upload_file, user, workspace)        
 
     resp = simplejson.dumps({})
     return HttpResponse(resp)
@@ -278,15 +255,6 @@ def guess_media_type (file):
         raise Exception('unsupported media type')
 
     return media_type
-
-def  copy_metadata(comp,  comp_source):
-    """
-    Copies metadata from comp_source to comp
-    """
-    for metadata in comp_source.metadata.all():
-        MetadataValue.objects.create(schema = metadata.schema, xpath=metadata.xpath, content_object = comp,  value = metadata.value, language=metadata.language)
-
-
 
 def _generate_tasks( component, force_generation,  check_for_existing):
     
@@ -361,10 +329,6 @@ def _generate_tasks( component, force_generation,  check_for_existing):
         
 #        ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
 
-         
-
-            
-#def generate_tasks(variant, workspace, item, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
 def generate_tasks(component, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
     
     """
@@ -388,8 +352,6 @@ def generate_tasks(component, upload_job_id = None, url = None,  force_generatio
 #        wss = component.item.workspaces.all()
 #    else:
 #        wss = [workspace]
-#    
-#    
 #    for ws in wss:
 #        _generate_tasks( ws,  component, force_generation,  check_for_existing)            
 

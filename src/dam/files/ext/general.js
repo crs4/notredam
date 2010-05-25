@@ -149,6 +149,7 @@ var old_selected_nodes = [];
 var CLOSABLE_TAB_CLASS = 'x-tab-strip-closable'; 
 var cls_audio = 'loadPlayer';
 
+var cue_point_list = [];
 
 if (window['loadFirebugConsole']) {
     window.loadFirebugConsole();
@@ -164,6 +165,103 @@ if (window['loadFirebugConsole']) {
 }
 
 Ext.BLANK_IMAGE_URL = '/files/images/s.gif';
+
+function openCuePointEditor() {
+
+	var items = get_selected_items();
+
+	if (items.length > 0) {
+	
+		var win = new Ext.Window({
+			height: 600,
+			width: 800,
+			resizable: false,
+			modal: true,
+			constrain:true,
+			items: [
+				{
+					title: 'CuePoint Editor',
+					html: '<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=10,0,0,0" width="750" height="500" id="taggatore" align="middle"> <param name="allowScriptAccess" value="sameDomain" /> <param name="allowFullScreen" value="false" /> <param name="movie" value="/files/cuepoint_editor/taggatore.swf" /><param name="quality" value="high" /><param name="bgcolor" value="#ffffff" /><embed src="/files/cuepoint_editor/taggatore.swf" quality="high" bgcolor="#ffffff" width="750" height="500" name="taggatore" align="middle" allowScriptAccess="sameDomain" allowFullScreen="false" type="application/x-shockwave-flash" pluginspage="http://www.adobe.com/go/getflashplayer_it" /> </object>'
+				}
+			]
+		});
+	
+		var cue_point_keywords = new Ext.data.JsonStore({
+            baseParams: {item_id: items[0]},
+			url: '/get_cuepoint_keywords/',
+			root: 'keywords',
+			fields: ['keyword', 'item_values'],
+			autoLoad: true,
+			listeners: {
+				load: function() {
+					cue_point_list = [];
+					this.each(function(r) {
+						cue_point_list.push([r.get('keyword'), r.get('item_values')]);
+					});
+					win.show();
+				}
+			}
+		});			
+	
+	}
+
+};
+
+function getCuePoint() {
+
+	var items = get_selected_items();
+	
+	if (items) {
+
+        var keywords = [];
+        var metadata = [];
+
+        var tmp_key;
+
+        for (var x=0; x < cue_point_list.length; x++) {
+            tmp_key = cue_point_list[x][0];
+            tmp_value = cue_point_list[x][1];
+            keywords.push(tmp_key);
+            metadata.push(tmp_value)
+        }
+
+        console.log(keywords, metadata);
+
+		var metadata_list = {
+		    item: items[0], 
+            
+		    video_url: '/redirect_to_component/' + items[0] + '/original/', 
+		    keywords: keywords,
+		    metadata: metadata
+		}
+	
+        console.log(metadata_list);
+		
+		return metadata_list;
+	
+	}
+	
+};
+
+function setCuePoint(cuepoints, item) {
+
+	console.log(cuepoints);
+	console.log(item);
+
+	Ext.Ajax.request({
+		url: '/set_cuepoint/',
+		params:{
+			cuepoints: Ext.encode(cuepoints),
+			item: item			
+		},
+		success: function() {
+			Ext.MessageBox.alert('Success', 'CuePoints saved successfully.');
+		}
+	});
+
+
+};
+
 
 function play_audio(player_id){
     var player = flowplayer(player_id);
@@ -319,8 +417,8 @@ var mv_ws_menu = new Ext.menu.Menu({
 function get_selected_items(){
     var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
     var selNodes= view.getSelectedNodes();
+    var selected_ids = [];
     if(selNodes && selNodes.length > 0){ 
-        var selected_ids = [];
         for (var i=0; i < selNodes.length; i++) {
             var data = view.store.getAt(view.store.findExact('pk', selNodes[i].id)).data;
             selected_ids.push(data.pk);
@@ -822,16 +920,4 @@ function createTemplate(panel_id, media_type){
 			tpl_str 
         );
 	
-};
-
-var more_button = function(id){
-    Ext.get('basic_metadata_' + id).setStyle('display', 'none');
-    Ext.get('full_metadata_' + id).setStyle('display', 'block');
-    
-};
-
-var less_button = function(id){
-    Ext.get('full_metadata_' + id).setStyle('display', 'none');
-    Ext.get('basic_metadata_' + id).setStyle('display', 'block');
-    
 };

@@ -56,7 +56,8 @@ def check_item_wss(request):
 @permission_required('remove_item')
 def delete_item(request):
     """
-    Delete an item from the current workspace or from all workspaces where the user is a member: these options are sent via request.POST
+    Delete an item from the current workspace or from all workspaces 
+    where the user is a member: these options are sent via request.POST
     """
 
     cw = request.session['workspace']

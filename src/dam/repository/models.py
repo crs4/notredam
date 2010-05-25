@@ -22,12 +22,12 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
-from dam.workflow.models import StateItemAssociation
 from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
 
 import urlparse
 import logger
-import simplejson
+from django.utils import simplejson
+import time
 
 from mediadart.storage import Storage
 
@@ -38,7 +38,11 @@ def _get_resource_url(id):
 
     storage = Storage()
 
+    if not id:
+        return None
+
     try:
+        
         if storage.exists(id):
             url = '/storage/' + id
         else:
@@ -49,8 +53,11 @@ def _get_resource_url(id):
 
 class Item(AbstractItem):
 
-    """ Base model describing items. They can contain components """
-
+    """
+    Concrete class that inherits from the abstract class AbstractItem found in framework/dam_repository/models.py     
+    Base model describing items. They can contain components only.
+    """
+    
     metadata = generic.GenericRelation('metadata.MetadataValue')
 
     class Meta:
@@ -60,10 +67,72 @@ class Item(AbstractItem):
         return self.get_file_name()
 
     def get_workspaces_count(self):
-        return self.workspaces.all().count()    
+        """
+        Number of workspaces where the current item has been added
+        """
+        return self.workspaces.all().count()
+        
+    def create_variant(self, variant, ws,  media_type = None):
+        """
+        Create a new component for this item, using the given variant/media_type 
+        and add it to the given workspace
+        @param variant an instance of variants.Variant
+        @param ws an instance of workspace.DAMWorkspace
+        @param media_type an instance of dam_repository.Type
+        """
+        logger.debug('variant %s'%variant)
+        logger.debug('item.type %s'%self.type.name)
+        if not media_type:
+            media_type = self.type
+        logger.debug('ws %s'%ws)
+    #    if variant_name =='original':
+    #        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
+    #    else:        
+    
+    #    variant = Variant.objects.get(name = variant_name)
+        
+        try:
+            if variant.shared:
+                comp = Component.objects.get(item = self, variant= variant)
+                comp.workspace.add(ws)
+                comp.workspace.add(*self.workspaces.all())
+            else:
+                comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
+            comp.metadata.all().delete()
+            comp.save()
+            
+        except Component.DoesNotExist:
+            logger.debug('variant does not exist yet')
+          
+                    
+            comp = Component.objects.create(variant = variant, item = self, type = media_type)
+            comp.workspace.add(ws)
+            
+            if variant.shared:
+                comp.workspace.add(*self.workspaces.all())
+        
+        logger.debug('============== COMPONENT_VARIANT =========== %s' % comp.variant)
+        
+        return comp
+
+    def add_to_uploaded_inbox(self, workspace):
+        """
+        Add the item to the uploaded inbox of the given workspace
+        @param ws an instance of workspace.DAMWorkspace
+        """
+        
+        uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
+        time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
+        node = workspace.tree_nodes.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  depth = 2)[0]
+        node.items.add(self)
 
     def delete_from_ws(self, user, workspaces=None):
-    
+        """
+        Delete the item from the given workspaces 
+        If workspaces is not specified, remove the item from the user's workspaces
+        @param user an instance of auth.User
+        @param workspaces a querySet of workspace.DAMWorkspace (optional)
+        """
         if not workspaces:
             q1 = Workspace.objects.filter( Q(workspacepermissionassociation__permission__codename = 'admin') | Q(workspacepermissionassociation__permission__codename = 'remove_item'), members = user,workspacepermissionassociation__users = user)
             q2 =  Workspace.objects.filter(Q(workspacepermissionsgroup__permissions__codename = 'admin') | Q(workspacepermissionsgroup__permissions__codename = 'remove_item'), members = user, workspacepermissionsgroup__users = user)
@@ -80,6 +149,11 @@ class Item(AbstractItem):
                 inbox.items.remove(self)
             
     def get_metadata_values(self, metadataschema=None):
+        """
+        Returns item's metadata for the given XMP Property 
+        If the XMP Property is not specified, all the metadata will be returned
+        @param metadataschema an instance of metadata.MetadataProperty
+        """
         from dam.metadata.models import MetadataValue
     
         values = []
@@ -108,6 +182,12 @@ class Item(AbstractItem):
         return values
 
     def get_formatted_descriptors(self, user, workspace):
+        """
+        Retrieves all the values for the descriptors for the current item
+        and returns them in the format required by the Metadata GUI
+        @param user an instance of auth.User
+        @param workspace an instance of workspace.DAMWorkspace
+        """
         from dam.metadata.models import MetadataDescriptor, MetadataProperty
         from dam.preferences.views import get_metadata_default_language
 
@@ -139,7 +219,12 @@ class Item(AbstractItem):
         
         return values
 
-    def get_descriptors(self, workspace=None):
+    def get_descriptors(self, workspace=None):  
+        """
+        Retrieve descriptor values of the current item for the 
+        given workspace
+        @param workspace an instance of workspace.DAMWorkspace
+        """
         from dam.metadata.models import MetadataDescriptorGroup
 
         if workspace:
@@ -162,6 +247,9 @@ class Item(AbstractItem):
         return descriptors
 
     def get_file_name(self):
+        """
+        Returns the file name found in the original variant
+        """
         from dam.variants.models import Variant
         try:
             orig = self.component_set.get(variant__name = 'original')
@@ -171,28 +259,47 @@ class Item(AbstractItem):
         return name
 
     def get_file_size(self):
+        """
+        Returns the file size found in the original variant
+        """
         from dam.variants.models import Variant
         orig = self.component_set.get(variant = Variant.objects.get(name = 'original'))
         return float(orig.size)
 
     def get_states(self, workspace=None):
+        from dam.workflow.models import StateItemAssociation
+
         if workspace is None:
             return StateItemAssociation.objects.filter(item = self)
         else:
             return StateItemAssociation.get(item=self, workspace=workspace)
 
     def get_variant(self, workspace, variant):
+        """
+        Retrieve the component for the given variant and workspace
+        @param workspace an instance of workspace.DAMWorkspace
+        @param variant an instance of variants.Variant
+        """
         from dam.variants.models import Variant
         return self.component_set.get(variant = variant, workspace = workspace)
 
     def get_variants(self, workspace):
+        """
+        Retrieve all the item's components
+        """
         from dam.variants.models import Variant
         return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(workspace__pk = workspace.pk), media_type = self.type),  workspace = workspace)
 
     def keywords(self):    
+        """
+        Retrieve all the keywords (taxonomy nodes)
+        """
         self.node_set.filter(type = 'keyword').values('id','label')
 
     def uploaded_by(self):
+        """
+        Return the uploader username (or unknown)
+        """
         try:
             return self.uploader.username
         except:
@@ -200,7 +307,10 @@ class Item(AbstractItem):
                                 
 class Component(AbstractComponent):
 
-    """ Base model describing components. They can be contained by items."""
+    """ 
+    Concrete class that inherits from the abstract class AbstractComponent found in framework/dam_repository/models.py
+    Base model describing components. They can be contained by items.
+    """
 
     _id = models.CharField(max_length=40,  db_column = 'md_id')
     metadata = generic.GenericRelation('metadata.MetadataValue')
@@ -218,11 +328,13 @@ class Component(AbstractComponent):
     parameters = models.TextField(null = True,  blank = True)
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False)    
-
     
     class Meta:
         db_table = 'component'
-    
+
+    def __unicode__(self):
+        return self.ID
+            
     def set_source(self, source):
         self.source = source
         self._previous_source_id = source._id
@@ -238,11 +350,17 @@ class Component(AbstractComponent):
             
     def _get_id(self):
         return self._id
-        
-    ID = property(fget=_get_id)
+
+    def _get_media_type(self):
+        return self.type            
+
+    ID = property(fget=_get_id)     
+    media_type = property(fget=_get_media_type)
     
     def get_component_url(self):
-    
+        """
+        Returns the component url (something like /storage/res_id.ext)
+        """
         from dam.application.views import NOTAVAILABLE
 
         url = NOTAVAILABLE    
@@ -265,6 +383,8 @@ class Component(AbstractComponent):
         """
         Save license to the given component and set xmp 
         values according to right rules (as defined in XMPRightsValue)
+        @param license_value an instance of metadata.RightsValue
+        @param workspace an instance of workspace.DAMWorkspace
         """
     
         logger.debug("SAVING RIGHTS")
@@ -297,6 +417,10 @@ class Component(AbstractComponent):
                 MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = self,  value = m.value, language=m.language)
     
     def set_parameters(self, params):
+        """
+        Set adaptation parameters (ex. max_size, transcoding format, and so on)
+        @param params a dictionary containing the adaptation parameters
+        """
         params_str = ''
         logger.debug('params %s'%params)
         logger.debug('params.keys()%s'%params.keys())
@@ -309,6 +433,10 @@ class Component(AbstractComponent):
         self.save()
         
     def get_parameters(self):
+        """
+        Get adaptation parameters (ex. max_size, transcoding format, and so on)
+        """
+    
         logger.debug('self.parameters %s'%self.parameters)
         if self.parameters:
             tmp = dict(urlparse.parse_qsl(self.parameters))
@@ -321,21 +449,22 @@ class Component(AbstractComponent):
             return tmp
         else:
             return {}
-        
-    
-    def _get_media_type(self):        
-            return self.type            
-     
-    media_type = property(fget=_get_media_type)
-    
-    def __str__(self):
-        return self.ID
-
+                
     def get_formatted_filesize(self):
+        """
+        Returns the file size (something like 1.4 KB, 2.7 MB, ...)
+        """
         from dam.metadata.views import format_filesize
         return format_filesize(self.size)
     
     def get_metadata_values(self, metadataschema=None):
+        """
+        Returns the metadata values for the current component and the given
+        XMP Property
+        If the XMP Property is not specified, it retrieves the metadata values
+        for all the XMP Properties
+        @param metadataschema an instance of metadata.MetadataProperty (optional)
+        """
         from dam.metadata.models import MetadataValue
         values = []
         if metadataschema:
@@ -362,6 +491,13 @@ class Component(AbstractComponent):
         return values
 
     def get_formatted_descriptors(self, group, user, workspace):
+        """
+        Retrieves all the values for the descriptors for the current component
+        and returns them in the format required by the Metadata GUI
+        @param group an instance of MetadataDescriptorGroup
+        @param user an instance of auth.User
+        @param workspace an instance of workspace.DAMWorkspace
+        """
         from dam.metadata.models import MetadataDescriptor, MetadataProperty
         from dam.preferences.views import get_metadata_default_language
     
@@ -394,7 +530,10 @@ class Component(AbstractComponent):
         return values
 
     def get_descriptors(self, desc_group):
-
+        """
+        Returns the descriptors value for the given descriptor group
+        @param desc_group an instance of metadata.MetadataDescriptorGroup
+        """
         item_list = [self.item.pk]
         descriptors = {}
         for d in desc_group.descriptors.all():
@@ -407,5 +546,8 @@ class Component(AbstractComponent):
         return descriptors
     
     def get_variant(self):
+        """
+        Returns the component's variant
+        """
         return self.variant
                 
