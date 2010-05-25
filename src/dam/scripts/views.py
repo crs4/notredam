@@ -55,12 +55,17 @@ def get_script_actions(request):
 @login_required
 def get_actions(request):  
     media_type = request.POST.get('media_type') # if no media_type all actions will be returned
-    
+    workspace = request.session.get('workspace')
     logger.debug('media_type %s'%media_type)  
     actions = {'actions':[]}    
+    classes = []
+    classes.extend(BaseAction.__subclasses__())
+    classes.extend(SaveAction.__subclasses__())
     
-    for action in BaseAction.__subclasses__():
-            
+    for action in classes:
+            if action == SaveAction:
+                continue
+                
             if media_type:
                 if media_type in action.media_type_supported:
                     add_action = True
@@ -70,12 +75,13 @@ def get_actions(request):
                 add_action = True
             
             if add_action:
-            
-                actions['actions'].append({                                
+               
+                tmp = {                                 
                         'name':action.__name__.lower(),
                         'media_type': action.media_type_supported,
-                        'parameters': action.required_parameters                    
-                })
+                        'parameters': action.required_parameters(workspace)                    
+                }
+                actions['actions'].append(tmp)
     logger.debug('actions %s'%actions)        
     return HttpResponse(simplejson.dumps(actions))
 

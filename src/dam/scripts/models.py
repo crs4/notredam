@@ -23,7 +23,7 @@ from dam.upload.views import generate_tasks
 from dam.variants.models import Variant
 from dam.repository.models import Component
 from dam.framework.dam_repository.models import Type
-
+from django.db.models import Q
 import logger
 
 class ScriptException(Exception):
@@ -154,7 +154,7 @@ class Script(models.Model):
 class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
-    required_parameters = []
+
     def __init__(self, media_type, source_variant, workspace, **params):   
         
 #        if media_type not in self.media_type_supported:
@@ -172,22 +172,43 @@ class BaseAction(object):
             
     def get_adapt_params(self):
         return self.parameters
-        
+    
+    @staticmethod
+    def required_parameters(workspace):
+        return []
+    
+    
+    @staticmethod
+    def get_values(workspace = None):
+        pass
 
 class SetRights(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = [{'name':'rights',  'type': 'string'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        return  [{'name':'rights',  'type': 'string'}]
+   
     def __init__(self, media_type, source_variant, workspace, rights):  
         super(SetRights, self).__init__(media_type, source_variant, workspace,  **{'rights':rights})
-        
         
 
 class SaveAction(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = [ {'name':'output_format',  'type': 'string'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        
+        return [ {'name':'output_format',  'type': 'string',  'values':{'image':['jpeg',  'gif'], 
+                                    'video': ['flv'], 
+                                    'audio': ['mp3'], 
+                                    'doc': ['jpeg']
+            }
+        }]
     def __init__(self, media_type, source_variant, workspace, output_format):  
         super(SaveAction, self).__init__(media_type, source_variant, workspace)
         self.output_format = output_format
+    
     
     def _get_output_media_type(self, adapt_parameters):
                 
@@ -268,37 +289,41 @@ class SaveAction(BaseAction):
     
 class SaveAs(SaveAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    required_parameters = [{'name':'output_variant',  'type': 'string'}, {'name':'output_format',  'type': 'string'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        params = SaveAction.required_parameters(workspace)
+        tmp = {}
+        for media_type in Type.objects.all():
+            tmp[media_type.name] = [variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = media_type)]
+       
+        params.append({'name':'output_variant',  'type': 'string',  'values':tmp})
+        
+        return params
     def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
         super(SaveAs, self).__init__(media_type, source_variant, workspace,output_format)
         self.output_variant = output_variant
     
-#    def execute(self, item, adapt_parameters):
-#        output_media_type = self._get_output_media_type(adapt_parameters)
-#        variant = Variant.objects.get(name = self.output_variant)
-#                  
-#        component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))
-#        self._generate_resource(component, adapt_parameters)    
-           
+    
+        
+        
 class SendByMail(SaveAction):
     def __init__(self, media_type, source_variant, workspace, mail,  output_format):
         output_variant = 'mail'
         super(SendByMail, self).__init__(media_type, source_variant, workspace, output_format)
         self.mail = mail
         self.output_variant = 'mail'
-#    
+    
     def execute(self, item, adapt_parameters):  
         adapt_parameters['mail'] = self.mail
         super(SendByMail, self).execute(item, adapt_parameters)
-#        output_media_type  = self._get_output_media_type(adapt_parameters)
-#        component = Component.objects.create( item = item, type = Type.objects.get(name =output_media_type))
-#        component.workspace.add(self.workspace)
-#        logger.debug('--------SENDMAIL')
-#        self._generate_resource(component, adapt_parameters)
-#    
+
 class Resize(BaseAction): 
     media_type_supported = ['image', 'video',  'doc']
-    required_parameters = [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
+   
     def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace)
         if media_type == 'video':
@@ -311,7 +336,10 @@ class Resize(BaseAction):
 
 class Crop(BaseAction): 
     media_type_supported = ['image',]
-    required_parameters = [{ 'name': 'upperleft_x',  'type': 'number'}, { 'name': 'upperleft_y',  'type': 'number'}, { 'name': 'lowerright_x',  'type': 'number'}, { 'name': 'lowerright_y',  'type': 'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'upperleft_x',  'type': 'number'}, { 'name': 'upperleft_y',  'type': 'number'}, { 'name': 'lowerright_x',  'type': 'number'}, { 'name': 'lowerright_y',  'type': 'number'}]
+    
     def __init__(self, media_type, source_variant, workspace,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
         params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y }
         
@@ -319,7 +347,10 @@ class Crop(BaseAction):
      
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
-    required_parameters = [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
+   
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
     
     def __init__(self, media_type, source_variant, workspace, filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
         
@@ -367,7 +398,10 @@ preset = {'video':
 class VideoEncode(BaseAction):
     """default bitrate in kb""" 
     media_type_supported = ['video']
-    required_parameters = [{ 'name': 'bitrate','type': 'number'},  { 'name': 'framerate', 'type': 'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'framerate', 'type': 'number'}]
+    
     def __init__(self, media_type, source_variant, workspace, bitrate, framerate):
         params = {'bitrate':bitrate,  'framerate': framerate}
         super(VideoEncode, self).__init__(media_type, source_variant, workspace, **params)
@@ -386,7 +420,10 @@ class VideoEncode(BaseAction):
 class AudioEncode(BaseAction):
     """default bitrate in kb"""
     media_type_supported = ['video', 'audio']
-    required_parameters = [{ 'name': 'bitrate','type': 'number'},  { 'name': 'rate', 'type': 'number'}]
+    
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'rate', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace)
         
@@ -397,7 +434,10 @@ class AudioEncode(BaseAction):
 
 class ExtractVideoThumbnail(BaseAction):
     media_type_supported = ['video']
-    required_parameters = [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
+    @staticmethod
+    def required_parameters(workspace):
+        return [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
+    
     def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
         params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, **params)
