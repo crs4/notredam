@@ -900,6 +900,103 @@ function variants_prefs(){
 //    }    
 //    
     
+    function edit_window(variant_id){
+    	var win;
+    	var form = new Ext.form.FormPanel({
+    		id:'form_variant',
+    		buttonAlign: 'center',
+            frame: true,
+            monitorValid: true,
+            clienValidation: true,
+            items:[new Ext.form.TextField({
+                fieldLabel: 'name' ,
+                name: 'name',
+                id: 'name',
+                allowBlank: false
+                }),
+                new Ext.form.CheckboxGroup({
+                    id:'media_type_selection',
+                    allowBlank: false,
+                    validationEvent: 'click',
+                    fieldLabel: 'Media Type',
+                    columns: 2,
+                    listeners:{
+                		invalid: function(){
+                			console.log('invalid');
+                		},
+                		valid: function(){
+                			console.log('valid');
+                		}                	
+                	
+                	},
+                    items: [
+                        {boxLabel: 'Image', name: 'image', id: 'image'},
+                        {boxLabel: 'Video', name: 'video',id: 'video'},
+                        {boxLabel: 'Audio', name: 'audio', id:'audio'},
+                        {boxLabel: 'Doc', name: 'doc', id: 'doc'}
+                    ]
+                })
+                
+                ],
+                buttons:[{
+                	text: 'Save',
+                	handler: function(){
+                	var params;
+                	if (variant_id)
+                		params = {variant_id: variant_id};
+                	else
+                		params = {}
+                	
+                		Ext.getCmp('form_variant').getForm().submit({
+                			clientValidation: true,
+                		    url: '/edit_variant/',
+                		    params: params,
+                		    success: function(){
+                				Ext.getCmp('variant_grid').getStore().reload();
+                				win.close();
+                			},
+                			failure: function(form, action) {
+                				console.log('action.failureType');
+                				console.log(action);
+                				console.log(form);
+                			}
+});
+                	}
+                },
+                {
+                	text: 'Cancel',
+                	handler: function(){
+                		win.close();
+                	} 
+                	
+                	
+                }]
+        });
+    	Ext.getCmp('form_variant').getForm().on('beforeaction', function(){
+    		Ext.getCmp('media_type_selection').validate();
+    		
+    	});
+    	
+    	win =new Ext.Window({
+            layout      : 'fit',
+            constrain: true,
+            title: '<p style="text-align:center">Add Variant</p>',
+            width       : 350,
+            height      : 200,
+            modal: true,
+            items:[form]
+        });
+    	
+    	if (variant_id)
+    		form.getForm().load({
+    			url: '/get_variant_info/',
+    			params:{
+    				variant_id: variant_id
+    			}
+    			
+    		});
+        win.show();
+    }
     
     function create_tab(){
     	var store = new Ext.data.JsonStore({
@@ -928,6 +1025,31 @@ function variants_prefs(){
                 editor:  new Ext.form.TextField()
     	        
     	    }],
+    	    sm: new Ext.grid.RowSelectionModel({
+    	    	listeners:{
+    	    		selectionchange: function(sm){
+	    	    		variant_selected = sm.getSelected();
+	    	    		console.log(variant_selected);
+	    	    		
+	    	    		if (variant_selected){
+	    	    			if (!variant_selected.data.is_global){
+	    	    				Ext.getCmp('edit_variant').enable();
+	    	    				Ext.getCmp('remove_variant').enable();
+	    	    				return;
+	    	    			}
+	    	    			
+	    	    				
+	    	    		}
+	    	    		
+    	    			Ext.getCmp('edit_variant').disable();
+	    				Ext.getCmp('remove_variant').disable();
+    	    		
+	    	    			
+    	    	
+    	    		}
+    	    	
+    	    	}
+    	    })
     	});
 
         var type_id = 'variant_type';
@@ -937,37 +1059,51 @@ function variants_prefs(){
     		items:[list_variant],
     		tbar:[
     		      {
-                    text: 'Add',
+                    text: 'Add',                   
                     handler: function(){
-                       var win =new Ext.Window({
-                            layout      : 'fit',
-                            constrain: true,
-                            title: '<p style="text-align:center">Add Variant</p>',
-                            width       : 300,
-                            height      : 200,
-                            modal: true,
-                            items:[
-                                new Ext.form.FormPanel({
-                                    frame: true,
-                                    items:[new Ext.form.TextField({
-                                        fieldLabel: 'name'
-                                        })]
-                                })
-                           ],
-
-                                    
-                        });
-
-                        win.show();
+    		    	  edit_window();
                     }
-                      },
+                 },
     			{
     			text: 'Edit',
-                disabled: true
+    			id: 'edit_variant',
+    			handler: function(){
+                	 var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
+                	 if (variant_selected)
+                		 edit_window(variant_selected.data.pk);
+                   },
+//               
+                 disabled: true
     		},
     		{
     			text: 'Remove',
+    			id: 'remove_variant',
                 disabled: true,
+                handler: function(){
+    			var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
+           	 	if (variant_selected)
+	           	 	Ext.Msg.confirm(
+	           	 	   'Delete Variant',
+	           	 	   'Are you sure you want to delete the variant "' +variant_selected.data.name+ '"?',
+	           	 	   function(btn){
+	           	 			console.log(btn);
+		           	 		if (btn == 'yes')
+			           	 		Ext.Ajax.request({
+			           	 			url: '/delete_variant/',
+			           	 			params:{
+			           	 				variant_id:variant_selected.data.pk
+			           	 			},
+			           	 			callback: function(){
+			           	 			Ext.getCmp('variant_grid').getStore().reload();
+			           	 			}
+			           	 			
+			           	 		});
+	           	 		}
+	           	 	   
+	           	 	   
+	           	 	);
+    			
+    			}
     		}
     		]
     		
@@ -981,8 +1117,8 @@ function variants_prefs(){
         layout      : 'fit',
         constrain: true,
         title: '<p style="text-align:center">Workspace configuration: variants</p>',
-        width       : 500,
-        height      : 400,
+        width       : 400,
+        height      : 300,
         modal: true,
         items:[
         create_tab()],

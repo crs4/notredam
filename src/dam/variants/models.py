@@ -42,25 +42,10 @@ class Variant(models.Model):
 #    dest_media_type = models.ForeignKey(Type, null = True, blank = True, related_name = 'dest_media_type')
     auto_generated = models.BooleanField(default=True)
     shared = models.BooleanField(default= False) #the same component will be shared through ws
-#    default_rank = models.IntegerField(null = True, blank = True) #not null for imported variants. variant with rank 1 will be used for generating  the others
-#    resizable = models.BooleanField(default=True)
-#    TODO foreign key to ws
-#    def is_original(self):
-#        return self.name == 'original' and self.is_global
-#    
-#    def get_source(self,  workspace,  item):
-##        if not self.auto_generated:
-##            return None
+#
 #            
-#        sources = SourceVariant.objects.filter(destination = self,  workspace = workspace)
-#        for source_variant in sources:
-#            v = source_variant.source
-#            logger.debug('source_variant.source %s'%v)
-#            if Component.objects.filter(item = item, variant = v).count( ) > 0:
-#                return v
-#            
-           
-  
+    class Meta:
+        unique_together = (('name', 'workspace'),) 
     def get_component(self, workspace,  item,  media_type = None):
         try:
             return self.component_set.get(item = item,  workspace = workspace)
@@ -78,7 +63,7 @@ class Variant(models.Model):
         return self.name
 
 #    def save(self,  *args,  **kwargs):
-#        if self.is_global and Variant.objects.filter(name = self.name,  is_global = True,  media_type= self.media_type).count() > 0:
+#        if not self.workspace and Variant.objects.filter(name = self.name,  is_global = True,  media_type= self.media_type).count() > 0:
 #            raise Exception('A global variant with name %s already exists'%self.name)
 #        super(Variant, self).save(*args,  **kwargs)
 

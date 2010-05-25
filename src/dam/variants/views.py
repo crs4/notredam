@@ -25,6 +25,7 @@ from django.views.generic.simple import redirect_to
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.db import IntegrityError
 from django.utils import simplejson
 
 from dam.settings import ROOT_PATH
@@ -41,31 +42,59 @@ import os
 import logger
 import os, time
 
-@login_required
-@permission_required('admin')
-def new_variant(request):
-    workspace = request.session['workspace']
-    media_type = request.POST['media_type']
-    name = request.POST.get('name',  'new variant')
-    is_source = request.POST.get('is_source',  False)
-    logger.debug('is_source %s'%is_source)
-    
-    prefs = {'image': ImagePreferences,  'audio': AudioPreferences,  'video': VideoPreferences}
-    v = Variant.objects.create(name = name,  workspace = workspace, media_type = Type.objects.get(name = media_type),  is_global = False,  auto_generated =  not is_source)
-    
-    return HttpResponse(simplejson.dumps({'success': True}))
+class MediaTypeNotFound(Exception):
+    pass
+
+def _edit_variant(variant_id,name, workspace, media_type):
+    if not media_type:
+        raise MediaTypeNotFound
+    if not variant_id:
+        v = Variant.objects.create(name = name,  workspace = workspace, auto_generated =  True)
+        v.media_type = []
+        v.media_type.add(*media_type)
+    else:
+        v = Variant.objects.get(pk = variant_id, workspace = workspace)    
+        if name:
+            v.name = name
+        if media_type:
+            v.media_type = []
+            v.media_type.add(*media_type)
+        v.save()
+    return v
     
 
 @login_required
 @permission_required('admin')
 def edit_variant(request):
     workspace = request.session['workspace']
-    variant_id = request.POST['variant_id']
-    v = Variant.objects.get(pk = variant_id)    
-    name = request.POST['name']
-    v.name = name
-    v.save()
-    return HttpResponse(simplejson.dumps({'success': True}))
+    
+    
+    media_type =  Type.objects.filter(name__in = request.POST.keys())
+    logger.debug('media_type %s'%media_type)
+    name = request.POST.get('name')
+    variant_id = request.POST.get('variant_id')
+    
+    try:
+        v = _edit_variant(variant_id,name, workspace, media_type)
+    except Variant.DoesNotExist:
+        return HttpResponse(simplejson.dumps({'success': False, 'msg':'variant does not exist or is not editable'}))
+    except MediaTypeNotFound:
+        return HttpResponse(simplejson.dumps({'success': False, 'msg':'no media type selected'}))
+    except IntegrityError:
+        return HttpResponse(simplejson.dumps({'success': False, 'errors':[{'id': 'name', 'msg':'a variant with the same name already exists'}]}))
+    return HttpResponse(simplejson.dumps({'success': True, 'pk': v.pk}))
+    
+
+#@login_required
+#@permission_required('admin')
+#def edit_variant(request):
+#    workspace = request.session['workspace']
+#    variant_id = request.POST['variant_id']
+#    v = Variant.objects.get(pk = variant_id)    
+#    name = request.POST['name']
+#    v.name = name
+#    v.save()
+#    return HttpResponse(simplejson.dumps({'success': True}))
     
 @login_required
 @permission_required('admin')
@@ -73,10 +102,10 @@ def delete_variant(request):
 	
 	variant_id = request.POST['variant_id']
 	var =  Variant.objects.get(pk = variant_id )
-	if not var.is_global:
+	if var.workspace:
 		var.delete()	
 	else:
-		raise Exception('global variant cannot be deleted, sorry')
+		HttpResponse(simplejson.dumps({'success':False}))
 
 	return HttpResponse(simplejson.dumps({'success':True}))
 
@@ -163,25 +192,19 @@ def get_variants_list(request):
 
 @login_required
 @permission_required('admin')
-def get_variant_prefs(request):
-    workspace = request.session['workspace']
-    variant_id = request.POST.get('variant_id')
-    form_classes = {'image':ImagePreferencesForm,  'doc': DocPreferencesForm,  'video': VideoPreferencesForm,  'audio': AudioPreferencesForm}
-    if variant_id:
-        pass
-#        va = VariantAssociation.objects.get(variant__pk = variant_id,  workspace = workspace)
-#    #    resp = {'success': True,  'data': prefs}
-#        
-#        form_class = form_classes[va.preferences.media_type.name]        
-#            
-#        prefs = {'success': True,  'data': form_class(va.preferences).get_form()}
-    else:
-        media_type = request.POST['media_type']
-        form_class = form_classes[media_type]
-        prefs = {'success': True,  'data': form_class().get_form()}
-    logger.debug('form_class %s'%form_class)
-    logger.debug(form_class)
-    resp = simplejson.dumps(prefs)
+def get_variant_info(request):
+    
+    variant_id = request.POST['variant_id']
+    variant = Variant.objects.get(pk = variant_id)
+    
+    resp = {'data':{'name': variant.name}, 'success': True}
+    
+    variant_media_type = variant.media_type.all()
+    for media_type in Type.objects.all():
+        if media_type in variant_media_type:
+            resp['data'][media_type.name] = True  
+     
+    resp = simplejson.dumps(resp)
     return HttpResponse(resp)
 
 
