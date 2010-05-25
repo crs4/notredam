@@ -89,7 +89,9 @@ def _new_script(name, description, workspace, pipeline, events):
     script = Script.objects.create(name = name, description = description, workspace = workspace)
     pipeline = simplejson.loads(pipeline)
     for media_type, actions in pipeline.items():
-        ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = Variant.objects.get(name = actions['source_variant'], auto_generated = False ))
+        source_variant_name = actions.get('source_variant',  'original')
+        source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
+        ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
     
     for event_name in events:
         event = Event.objects.get(name = event_name)
