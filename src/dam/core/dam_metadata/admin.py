@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.contrib import admin
-from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure, XMPPropertyChoice
+from dam.core.dam_metadata.models import XMPNamespace, XMPStructure, XMPPropertyChoice
 
 admin.site.register(XMPNamespace)
 admin.site.register(XMPStructure)

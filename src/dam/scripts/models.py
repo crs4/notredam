@@ -22,7 +22,7 @@ from django.contrib.contenttypes import generic
 from dam.upload.views import generate_tasks
 from dam.variants.models import Variant
 from dam.repository.models import Component
-from dam.framework.dam_repository.models import Type
+from dam.core.dam_repository.models import Type
 from django.db.models import Q
 import logger
 

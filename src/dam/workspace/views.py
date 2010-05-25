@@ -27,15 +27,15 @@ from django.contrib.auth.models import User
 from django.utils import simplejson
 from dam.basket.models import Basket
 from dam.repository.models import Item, Component
-from dam.framework.dam_workspace.decorators import permission_required, membership_required
+from dam.core.dam_workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.framework.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
+from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.variants.models import Variant      
 from dam.upload.views import generate_tasks
 from dam.workspace.forms import AdminWorkspaceForm
-from dam.framework.dam_repository.models import Type
+from dam.core.dam_repository.models import Type
 from dam.geo_features.models import GeoInfo
 from dam.batch_processor.models import MachineState, Machine
 from dam.settings import GOOGLE_KEY, DATABASE_ENGINE

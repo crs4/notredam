@@ -26,7 +26,7 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Component
 from dam.metadata.models import RightsValue
 
-from dam.framework.dam_repository.models import Type
+from dam.core.dam_repository.models import Type
 
 import logger
 import time

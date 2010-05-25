@@ -21,7 +21,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from dam.framework.dam_metadata.models import AbstractMetadataLanguage, XMPProperty, XMPStructure, XMPPropertyChoice
+from dam.core.dam_metadata.models import AbstractMetadataLanguage, XMPProperty, XMPStructure, XMPPropertyChoice
 
 import re
 

@@ -23,7 +23,7 @@ from django.utils import simplejson
 from django.contrib.auth.models import User
 
 from dam.repository.models import Item
-from dam.framework.dam_tree.models import AbstractNode
+from dam.core.dam_tree.models import AbstractNode
 
 import logger
 

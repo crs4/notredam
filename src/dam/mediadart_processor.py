@@ -40,7 +40,7 @@ from dam.repository.models import Item, Component
 
 
 from dam.metadata.models import MetadataProperty, MetadataValue
-from dam.framework.dam_metadata.models import XMPNamespace
+from dam.core.dam_metadata.models import XMPNamespace
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 from dam.variants.models import Variant
 

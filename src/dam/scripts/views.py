@@ -22,7 +22,7 @@ from django.contrib.auth.decorators import login_required
 from dam.scripts.models import *
 from dam.eventmanager.models import Event, EventRegistration
 from dam.workspace.models import Workspace
-from dam.framework.dam_repository.models import Type
+from dam.core.dam_repository.models import Type
 from httplib import HTTP
 
 @login_required

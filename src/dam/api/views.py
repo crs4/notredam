@@ -33,10 +33,10 @@ from django_restapi.responder import *
 from django.contrib.auth.models import Permission
 
 from dam.repository.models import Item,  Component, _get_resource_url
-from dam.framework.dam_repository.models import Type
-from dam.framework.dam_metadata.models import XMPStructure
+from dam.core.dam_repository.models import Type
+from dam.core.dam_metadata.models import XMPStructure
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
+from dam.core.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode

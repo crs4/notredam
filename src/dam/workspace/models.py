@@ -21,7 +21,7 @@ from django.db.models import Q
 
 from dam.repository.models import Item
 from dam.workflow.models import State
-from dam.framework.dam_workspace.models import Workspace, WorkspaceManager
+from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 
 
 class WSManager(WorkspaceManager):

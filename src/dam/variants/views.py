@@ -30,10 +30,10 @@ from django.utils import simplejson
 
 from dam.settings import ROOT_PATH
 from dam.variants.models import Variant
-from dam.framework.dam_repository.models import Type
+from dam.core.dam_repository.models import Type
 from dam.repository.models import Component
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.framework.dam_workspace.decorators import permission_required
+from dam.core.dam_workspace.decorators import permission_required
 from dam.repository.models import Component,  Item
 from dam.metadata.views import _get_ws_groups
 from dam.batch_processor.models import Machine

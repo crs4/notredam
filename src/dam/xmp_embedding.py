@@ -21,7 +21,7 @@ import os
 import re
 
 from dam.metadata.models import MetadataProperty, MetadataValue
-from dam.framework.dam_metadata.models import XMPStructure
+from dam.core.dam_metadata.models import XMPStructure
 
 def reset_modified_flag(comp):
 

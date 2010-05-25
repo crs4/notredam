@@ -34,7 +34,7 @@ from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
 
-from dam.framework.dam_workspace.decorators import permission_required
+from dam.core.dam_workspace.decorators import permission_required
 
 from mediadart.storage import Storage
 

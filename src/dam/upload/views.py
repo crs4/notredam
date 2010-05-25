@@ -28,13 +28,13 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 
 from dam.repository.models import Item, Component
-from dam.framework.dam_repository.models import Type
+from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
 from dam.treeview.models import Node
 from dam.batch_processor.models import MachineState, Machine, Action
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.framework.dam_workspace.decorators import permission_required
+from dam.core.dam_workspace.decorators import permission_required
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
@@ -263,7 +263,7 @@ def _generate_tasks( component, force_generation,  check_for_existing):
     """
 
     logger.debug('_generate_tasks')
-    from dam.framework.dam_repository.models import Type
+    from dam.core.dam_repository.models import Type
     variant = component.variant
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
     

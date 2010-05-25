@@ -22,7 +22,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
-from dam.framework.dam_repository.models import AbstractItem, AbstractComponent
+from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 
 import urlparse
 import logger
@@ -54,7 +54,7 @@ def _get_resource_url(id):
 class Item(AbstractItem):
 
     """
-    Concrete class that inherits from the abstract class AbstractItem found in framework/dam_repository/models.py     
+    Concrete class that inherits from the abstract class AbstractItem found in core/dam_repository/models.py     
     Base model describing items. They can contain components only.
     """
     
@@ -308,7 +308,7 @@ class Item(AbstractItem):
 class Component(AbstractComponent):
 
     """ 
-    Concrete class that inherits from the abstract class AbstractComponent found in framework/dam_repository/models.py
+    Concrete class that inherits from the abstract class AbstractComponent found in core/dam_repository/models.py
     Base model describing components. They can be contained by items.
     """
 

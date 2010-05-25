@@ -31,9 +31,9 @@ from dam.preferences.views import get_metadata_default_language
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant
-from dam.framework.dam_workspace import decorators
+from dam.core.dam_workspace import decorators
 from dam.batch_processor.models import MachineState, Action, Machine
-from dam.framework.dam_metadata.models import XMPNamespace, XMPStructure
+from dam.core.dam_metadata.models import XMPNamespace, XMPStructure
 
 from mx.DateTime.Parser import DateTimeFromString
 import logger

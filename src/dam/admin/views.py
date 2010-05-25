@@ -10,12 +10,12 @@ from django.template import RequestContext
 from django.contrib.auth.models import User, Permission
 
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
-from dam.framework.dam_repository.models import Type
-from dam.framework.dam_metadata.models import XMPStructure
-from dam.framework.dam_metadata.models import XMPNamespace
+from dam.core.dam_repository.models import Type
+from dam.core.dam_metadata.models import XMPStructure
+from dam.core.dam_metadata.models import XMPNamespace
 from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, RightsValue, RightsXMPValue
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.framework.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermissionsGroup, WorkspacePermission
+from dam.core.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermissionsGroup, WorkspacePermission
 
 @staff_member_required
 def dam_admin(request):
