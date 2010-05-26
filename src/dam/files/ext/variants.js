@@ -900,6 +900,82 @@ function variants_prefs(){
 //    }    
 //    
     
+    function edit_window(variant_id){
+    	var win;
+    	var form = new Ext.form.FormPanel({
+    		id:'form_variant',
+    		buttonAlign: 'center',
+            frame: true,
+            items:[new Ext.form.TextField({
+                fieldLabel: 'name' ,
+                name: 'name',
+                id: 'name'
+                }),
+                new Ext.form.CheckboxGroup({
+                    id:'media_type_selection',
+                    allowBlank: false,
+                    xtype: 'checkboxgroup',
+                    fieldLabel: 'Media Type',
+//                    itemCls: 'x-check-group-alt',
+                    // Put all controls in a single column with width 100%
+                    columns: 2,
+                    items: [
+                        {boxLabel: 'image', name: 'image', id: 'image'},
+                        {boxLabel: 'Video', name: 'video',id: 'video'},
+                        {boxLabel: 'Audio', name: 'audio', id:'audio'},
+                        {boxLabel: 'Doc', name: 'doc', id: 'doc'}
+                    ]
+                })
+                
+                ],
+                buttons:[{
+                	text: 'Save',
+                	handler: function(){
+                	var params;
+                	if (variant_id)
+                		params = {variant_id: variant_id};
+                	else
+                		params = {}
+                		Ext.getCmp('form_variant').getForm().submit({
+                			clientValidation: true,
+                		    url: '/edit_variant/',
+                		    params: params,
+                		    success: function(){
+                				Ext.getCmp('variant_grid').getStore().reload();
+                				win.close()
+                			}
+});
+                	}
+                },
+                {
+                	text: 'Cancel',
+                	handler: function(){
+                		win.close();
+                	} 
+                	
+                	
+                }]
+        });
+    	win =new Ext.Window({
+            layout      : 'fit',
+            constrain: true,
+            title: '<p style="text-align:center">Add Variant</p>',
+            width       : 300,
+            height      : 200,
+            modal: true,
+            items:[form]
+        });
+    	
+    	if (variant_id)
+    		form.getForm().load({
+    			url: '/get_variant_info/',
+    			params:{
+    				variant_id: variant_id
+    			}
+    			
+    		});
+        win.show();
+    }
     
     function create_tab(){
     	var store = new Ext.data.JsonStore({
@@ -939,35 +1015,22 @@ function variants_prefs(){
     		      {
                     text: 'Add',
                     handler: function(){
-                       var win =new Ext.Window({
-                            layout      : 'fit',
-                            constrain: true,
-                            title: '<p style="text-align:center">Add Variant</p>',
-                            width       : 300,
-                            height      : 200,
-                            modal: true,
-                            items:[
-                                new Ext.form.FormPanel({
-                                    frame: true,
-                                    items:[new Ext.form.TextField({
-                                        fieldLabel: 'name'
-                                        })]
-                                })
-                           ],
-
-                                    
-                        });
-
-                        win.show();
+    		    	  edit_window();
                     }
-                      },
+                 },
     			{
     			text: 'Edit',
-                disabled: true
+    			handler: function(){
+                	 var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected()
+                	 if (variant_selected)
+                	 edit_window(variant_selected.data.pk);
+                   }
+//                disabled: true
     		},
     		{
     			text: 'Remove',
                 disabled: true,
+//                handler:
     		}
     		]
     		
