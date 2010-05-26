@@ -227,6 +227,15 @@ class Component(AbstractComponent):
         self.source = source
         self._previous_source_id = source._id
     
+    def copy_metadata(self, component):
+        from dam.metadata.models import MetadataValue, MetadataProperty
+        values = component.metadata.all().values('xpath', 'language', 'schema_id', 'value', 'content_type_id')
+        for value in values:
+            schema_id = value.pop('schema_id')
+            value['schema'] = MetadataProperty.objects.get(pk = schema_id)
+            value['object_id'] = self.pk
+            MetadataValue.objects.create(**value)
+            
     def _get_id(self):
         return self._id
         

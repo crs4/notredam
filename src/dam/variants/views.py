@@ -94,10 +94,10 @@ def delete_variant(request):
 	
 	variant_id = request.POST['variant_id']
 	var =  Variant.objects.get(pk = variant_id )
-	if not var.is_global:
+	if var.workspace:
 		var.delete()	
 	else:
-		raise Exception('global variant cannot be deleted, sorry')
+		HttpResponse(simplejson.dumps({'success':False}))
 
 	return HttpResponse(simplejson.dumps({'success':True}))
 
