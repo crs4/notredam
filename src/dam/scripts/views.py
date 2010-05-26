@@ -85,13 +85,21 @@ def get_actions(request):
     logger.debug('actions %s'%actions)        
     return HttpResponse(simplejson.dumps(actions))
 
-def _new_script(name, description, workspace, pipeline, events):
-    script = Script.objects.create(name = name, description = description, workspace = workspace)
-    pipeline = simplejson.loads(pipeline)
-    for media_type, actions in pipeline.items():
-        source_variant_name = actions.get('source_variant',  'original')
-        source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
-        ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
+def _new_script(name = None, description = None, workspace = None, pipeline = None, events = [], script = None):
+    
+    if script:        
+        if pipeline:
+            ActionList.objects.get(script = script).delete()
+    else:
+        script = Script.objects.create(name = name, description = description, workspace = workspace)
+    
+    if pipeline:
+        pipeline = simplejson.loads(pipeline)
+    
+        for media_type, actions in pipeline.items():
+            source_variant_name = actions.get('source_variant',  'original')
+            source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
+            ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
     
     for event_name in events:
         event = Event.objects.get(name = event_name)
@@ -118,25 +126,14 @@ def edit_script(request):
     if script.is_global:        
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
         
-    pipeline_str = request.POST.get('actions_media_type')
-    if pipeline_str:        
-        script.pipeline = pipeline_str
-        
+    pipeline = request.POST.get('actions_media_type')
+   
     name = request.POST.get('name')
-    if name:
-        script.name = name
-        
     description = request.POST.get('description')
-    if description:
-        script.description = description
-    
     events = request.POST.getlist('event')
-    workspace = request.session.get('workspace')
-    for event_name in events:
-        event = Event.objects.get(name = event_name)
-        EventRegistration.objects.get_or_create(event = event, listener = script, workspace = workspace)
+    _new_script(name, description, workspace, pipeline, events, script)
     
-    script.save()
+    
     return HttpResponse(simplejson.dumps({'success': True}))
         
 @login_required
