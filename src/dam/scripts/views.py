@@ -89,7 +89,7 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
     
     if script:        
         if pipeline:
-            ActionList.objects.get(script = script).delete()
+            ActionList.objects.filter(script = script).delete()
     else:
         script = Script.objects.create(name = name, description = description, workspace = workspace)
     
@@ -127,7 +127,7 @@ def edit_script(request):
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
         
     pipeline = request.POST.get('actions_media_type')
-   
+    workspace = request.session.get('workspace')
     name = request.POST.get('name')
     description = request.POST.get('description')
     events = request.POST.getlist('event')
