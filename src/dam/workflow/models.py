@@ -20,13 +20,22 @@ from django.db import models
 
 class State(models.Model):
 	name = models.CharField(max_length=256)
-
+	workspace = models.ForeignKey('workspace.DAMWorkspace')
+	
+	class Meta:
+		unique_together = (('name', 'workspace'),)
+	
+	def save(self, *args, **kwargs):
+		from eventmanager.models import Event
+		super(State, self).save(*args, **kwargs)
+		Event.objects.create(name = 'state change to '+ self.name, workspace = self.workspace)
+	
 	def __unicode__(self):
 		return self.name	
 
 class StateItemAssociation(models.Model):
 	state = models.ForeignKey(State)
-	workspace = models.ForeignKey('workspace.DAMWorkspace')
+#	workspace = models.ForeignKey('workspace.DAMWorkspace')
 	item = models.ForeignKey('repository.Item')
 	
 	def save(self, *args, **kwargs):

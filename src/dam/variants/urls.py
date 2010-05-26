@@ -19,7 +19,6 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
-    (r'^new_variant/$', 'dam.variants.views.new_variant'),
     (r'^edit_variant/$', 'dam.variants.views.edit_variant'),
     (r'^delete_variant/$', 'dam.variants.views.delete_variant'),
     (r'^force_variant_generation/(.+)/(.+)/$', 'dam.variants.views.force_variant_generation'),

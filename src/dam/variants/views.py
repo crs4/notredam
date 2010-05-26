@@ -180,8 +180,8 @@ def get_variants_list(request):
     type = request.POST.get('type',  'generated')
     logger.debug('type %s'%type)
         
-#    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
-    vas = Variant.objects.filter(workspace = workspace, auto_generated =  (type == 'generated'),  hidden = False)
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
+#    vas = Variant.objects.filter(workspace = workspace, auto_generated =  (type == 'generated'),  hidden = False)
     
     
     resp = {'variants':[]}
