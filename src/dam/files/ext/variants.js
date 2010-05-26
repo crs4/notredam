@@ -906,14 +906,17 @@ function variants_prefs(){
     		id:'form_variant',
     		buttonAlign: 'center',
             frame: true,
+            clienValidation: true,
             items:[new Ext.form.TextField({
                 fieldLabel: 'name' ,
                 name: 'name',
-                id: 'name'
+                id: 'name',
+                allowBlank: false
                 }),
                 new Ext.form.CheckboxGroup({
                     id:'media_type_selection',
                     allowBlank: false,
+                    
                     xtype: 'checkboxgroup',
                     fieldLabel: 'Media Type',
 //                    itemCls: 'x-check-group-alt',
@@ -960,7 +963,7 @@ function variants_prefs(){
             layout      : 'fit',
             constrain: true,
             title: '<p style="text-align:center">Add Variant</p>',
-            width       : 300,
+            width       : 330,
             height      : 200,
             modal: true,
             items:[form]
@@ -1061,16 +1064,26 @@ function variants_prefs(){
                 handler: function(){
     			var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
            	 	if (variant_selected)
-           	 		Ext.Ajax.request({
-           	 			url: '/delete_variant/',
-           	 			params:{
-           	 				variant_id:variant_selected.data.pk
-           	 			},
-           	 			callback: function(){
-           	 			Ext.getCmp('variant_grid').getStore().reload();
-           	 			}
-           	 			
-           	 		});
+	           	 	Ext.Msg.confirm(
+	           	 	   'Delete Variant',
+	           	 	   'Are you sure you want to delete the variant "' +variant_selected.data.name+ '"?',
+	           	 	   function(btn){
+	           	 			console.log(btn);
+		           	 		if (btn == 'yes')
+			           	 		Ext.Ajax.request({
+			           	 			url: '/delete_variant/',
+			           	 			params:{
+			           	 				variant_id:variant_selected.data.pk
+			           	 			},
+			           	 			callback: function(){
+			           	 			Ext.getCmp('variant_grid').getStore().reload();
+			           	 			}
+			           	 			
+			           	 		});
+	           	 		}
+	           	 	   
+	           	 	   
+	           	 	);
     			
     			}
     		}
