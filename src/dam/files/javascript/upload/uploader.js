@@ -327,6 +327,8 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
             		var stats = swfu.getStats();
                     var queued = stats.files_queued;
                     
+                    var start = stats.successful_uploads + stats.upload_errors
+                    
                     Ext.Ajax.request({
                         url:'/get_upload_url/',
                         params: {n: queued},
@@ -334,9 +336,10 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
                             var resp_json = Ext.util.JSON.decode(resp.responseText)
                             var urls = resp_json.urls;
                             var file;
-                            for (var i=0; i < queued; i++) {
+                            var x=0;
+                            for (var i=start; i < queued + start; i++) {
                                 file = obj.swfu.getFile(i);
-                                obj.swfu.addFileParam(file.id, 'unique_url', urls[i]);
+                                obj.swfu.addFileParam(file.id, 'unique_url', urls[x++]);
                             }
                             
                             obj.swfu.startUpload();
