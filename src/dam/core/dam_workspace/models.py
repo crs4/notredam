@@ -24,9 +24,12 @@ from operator import and_, or_
 
 class PermissionManager(models.Manager):
     """
-    
+    Workspace Permission manager
     """
     def with_permissions(self, user, permissions):
+        """
+        Finds the list of workspaces where the given user has the given permissions
+        """
         wss_1= super(PermissionManager,  self).filter(workspacepermissionassociation__permission__in = permissions,  workspacepermissionassociation__users = user)        
         wss_2 = super(PermissionManager,  self).filter(workspacepermissionsgroup__permissions__in = permissions,  workspacepermissionsgroup__users = user)
         wss = reduce(or_, [wss_1,  wss_2]).distinct()
@@ -34,9 +37,15 @@ class PermissionManager(models.Manager):
 
 class WorkspaceManager(models.Manager):
     """
-    
+    Workspace Manager
     """
     def create_workspace(self, name, description, creator):
+        """
+        Creates a new workspace with the given attributes
+        @param name a string containing the workspace name
+        @param description a string containing the workspace's description
+        @param creator an instance of auth.User (the creator and admin of the new workspace)
+        """
         ws = self.model(None, name=name, description=description, creator=creator)
         ws.save()
 
@@ -52,7 +61,7 @@ class WorkspaceManager(models.Manager):
 
 class Workspace(models.Model):
     """
-
+    Virtual space where users can collaborate with different permissions
     """
     name = models.CharField(max_length=128)
     description = models.CharField(max_length=512)
@@ -67,7 +76,11 @@ class Workspace(models.Model):
         return "%s" % (self.name)
 
     def add_member(self, user, permissions):
-
+        """
+        Adds the given user to the workspace with the given permissions
+        @param user an instance of auth.User
+        @param permissions a list of dam_workspace.WorkspacePermission
+        """
         self.members.add(user)
 
         self.remove_member_permissions(user)
@@ -77,7 +90,10 @@ class Workspace(models.Model):
             wspa.users.add(user)
 
     def remove_member(self, user):
-
+        """
+        Removes the given user from the current workspace
+        @param user an instance of auth.User        
+        """
         perms = self.ws_permissions.all()
         for p in perms:
             p.users.remove(user)
@@ -85,6 +101,11 @@ class Workspace(models.Model):
         self.members.remove(user)   
 
     def remove_member_permissions(self, user, permission=None):
+        """
+        Removes the given permissions from the given user in the current workspace
+        @param user an instance of auth.User
+        @param permission an instance of dam_workspace.WorkspacePermission (optional)
+        """
 
         if permission:
 
@@ -100,18 +121,37 @@ class Workspace(models.Model):
                 p.users.remove(user)
                         
     def get_members(self):
+        """
+        Returns the workspace members
+        """
         return self.members.all()
         
     def has_member(self, user):
+        """
+        Checks if the given user is a member of the current workspace
+        @param user an instance of auth.User
+        """
         return user in self.get_members()
 
     def has_permission(self, user, permission):
+        """
+        Checks if the given user has the given permission in the current workspace        
+        @param user an instance of auth.User
+        @param permission the permission codename (a string)   
+        """
         return self.get_permissions(user).filter(Q(codename = 'admin') | Q(codename = permission)).count() > 0
         
     def get_permissions(self,  user):
+        """
+        Returns permissions of the given user
+        @param user an instance of auth.User
+        """
         return WorkspacePermission.objects.filter(Q(workspacepermissionassociation__in = WorkspacePermissionAssociation.objects.filter(Q(users=user, workspace = self)) ) | Q(workspacepermissionsgroup__in= WorkspacePermissionsGroup.objects.filter(users = user, workspace = self) )).distinct()
 
 class WorkspacePermission(models.Model):
+    """
+    Defines all the available permissions for workspaces
+    """
     name = models.CharField(max_length=40)
     codename = models.CharField(max_length=40)
     
@@ -125,6 +165,9 @@ class WorkspacePermission(models.Model):
         return unicode(self.name)
 
 class WorkspacePermissionAssociation(models.Model):
+    """
+    Associates permission, workspace and users
+    """
     permission = models.ForeignKey('WorkspacePermission')
     workspace = models.ForeignKey('Workspace', related_name='ws_permissions')
     users = models.ManyToManyField(User)
@@ -133,6 +176,9 @@ class WorkspacePermissionAssociation(models.Model):
     class Admin:pass
     
 class WorkspacePermissionsGroup(models.Model):
+    """
+    Defines a group of workspace permissions
+    """
     name = models.CharField(max_length=40)
     workspace = models.ForeignKey('Workspace')
     users = models.ManyToManyField(User, blank = True)

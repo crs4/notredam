@@ -22,7 +22,10 @@ class NodeManager(models.Manager):
     
     """ Node Manager """
     
-    def get_from_path(self,  path, type = 'collection', separator='/'):
+    def get_from_path(self, path, type = 'collection', separator='/'):
+        """
+        Finds the node identified by the given path 
+        """
         def _to_path(nodes):
             return separator.join([n.label for n in nodes])
             
@@ -37,12 +40,21 @@ class NodeManager(models.Manager):
         return None
                 
     def get_root(self, type):        
+        """
+        Gets the root for the given type
+        """
         return Node.objects.get(depth = 0,  type = type)
       
-    def rebuild_tree(self, type):
+    def rebuild_tree(self, type):   
+        """
+        Rebuilds the tree
+        """
         self.get_root(type).rebuild_tree(1)
 
     def get_tree(self, type):
+        """
+        Returns the tree
+        """
         root = Node.objects.get_or_create(type = type, label = 'root', parent__isnull = True)[0]         
            
         nodes = root.get_branch()
@@ -53,7 +65,7 @@ class AbstractNode(models.Model):
     
     """
         Tree Node Implementation
-        The root node of a tree is identified by the couple (depth=0, type)
+        The root node of a tree is identified by (depth=0, type)
     """
 
     label = models.CharField(max_length= 200)
@@ -71,6 +83,9 @@ class AbstractNode(models.Model):
         abstract = True
     
     def save(self,*args,  **kwargs):
+        """
+        Saves the node and checks if the tree needs to be rebuild
+        """
         rebuild_tree = False
         if self.id:
             db_node = self.__class__.objects.get(pk = self.pk)
@@ -90,6 +105,9 @@ class AbstractNode(models.Model):
                 raise ex    
     
     def get_path(self):
+        """
+        Returns the path for the current node
+        """
         path = self.type + ':/'
         ancestors = self.get_ancestors()
         for anc in ancestors:
@@ -99,6 +117,9 @@ class AbstractNode(models.Model):
         return path
     
     def rebuild_tree(self, left):
+        """
+        Rebuilds tree
+        """
         right = left+1
         for c in self.__class__.objects.filter(parent=self).order_by('depth'):
             right = c.rebuild_tree(right)
@@ -110,11 +131,17 @@ class AbstractNode(models.Model):
         return right+1
         
     def get_ancestors(self):
+        """
+        Gets node ancestors
+        """
         nodes = self.__class__.objects.filter(type = self.type)
         nodes = nodes.extra(where=['lft <=%s and rgt>=%s'], params=[self.lft, self.rgt]).order_by('lft')
         return nodes
     
     def get_branch(self, depth = None):
+        """
+        Gets node branch
+        """
         nodes = self.__class__.objects.filter(type = self.type)
         if depth:
             nodes = nodes.extra(where=['lft between %s and %s', 'depth <=%s', ], params=[self.lft, self.rgt, self.depth + depth ])
@@ -126,6 +153,9 @@ class AbstractNode(models.Model):
         return nodes.order_by('lft').distinct()
     
     def delete(self,  *args,  **kwargs):
+        """
+        Deletes node
+        """
         super(self.__class__, self).delete(*args,  **kwargs)
         root = self.__class__.objects.filter(depth= 0, type = self.type)
         root[0].rebuild_tree(1)
@@ -134,6 +164,9 @@ class AbstractNode(models.Model):
         return unicode(self.label)
     
     def has_child(self):
+        """
+        Checks if the node has children
+        """
         childrens=self.get_branch()
         if len(childrens) > 1:
             has_child = True
