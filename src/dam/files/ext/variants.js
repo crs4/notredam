@@ -920,7 +920,7 @@ function variants_prefs(){
                     // Put all controls in a single column with width 100%
                     columns: 2,
                     items: [
-                        {boxLabel: 'image', name: 'image', id: 'image'},
+                        {boxLabel: 'Image', name: 'image', id: 'image'},
                         {boxLabel: 'Video', name: 'video',id: 'video'},
                         {boxLabel: 'Audio', name: 'audio', id:'audio'},
                         {boxLabel: 'Doc', name: 'doc', id: 'doc'}
@@ -1004,6 +1004,31 @@ function variants_prefs(){
                 editor:  new Ext.form.TextField()
     	        
     	    }],
+    	    sm: new Ext.grid.RowSelectionModel({
+    	    	listeners:{
+    	    		selectionchange: function(sm){
+	    	    		variant_selected = sm.getSelected();
+	    	    		console.log(variant_selected);
+	    	    		
+	    	    		if (variant_selected){
+	    	    			if (!variant_selected.data.is_global){
+	    	    				Ext.getCmp('edit_variant').enable();
+	    	    				Ext.getCmp('remove_variant').enable();
+	    	    				return;
+	    	    			}
+	    	    			
+	    	    				
+	    	    		}
+	    	    		
+    	    			Ext.getCmp('edit_variant').disable();
+	    				Ext.getCmp('remove_variant').disable();
+    	    		
+	    	    			
+    	    	
+    	    		}
+    	    	
+    	    	}
+    	    })
     	});
 
         var type_id = 'variant_type';
@@ -1013,23 +1038,26 @@ function variants_prefs(){
     		items:[list_variant],
     		tbar:[
     		      {
-                    text: 'Add',
+                    text: 'Add',                   
                     handler: function(){
     		    	  edit_window();
                     }
                  },
     			{
     			text: 'Edit',
+    			id: 'edit_variant',
     			handler: function(){
                 	 var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
                 	 if (variant_selected)
                 		 edit_window(variant_selected.data.pk);
-                   }
-//                disabled: true
+                   },
+//               
+                 disabled: true
     		},
     		{
     			text: 'Remove',
-//                disabled: true,
+    			id: 'remove_variant',
+                disabled: true,
                 handler: function(){
     			var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
            	 	if (variant_selected)
@@ -1058,8 +1086,8 @@ function variants_prefs(){
         layout      : 'fit',
         constrain: true,
         title: '<p style="text-align:center">Workspace configuration: variants</p>',
-        width       : 500,
-        height      : 400,
+        width       : 400,
+        height      : 300,
         modal: true,
         items:[
         create_tab()],
