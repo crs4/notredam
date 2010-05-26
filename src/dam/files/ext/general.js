@@ -16,6 +16,130 @@
 *
 */
 
+
+
+//for load checkboxgroup by ajax, from http://www.extjs.com/forum/showthread.php?47243-Load-data-in-checkboxgroup/page2, used in variant.js
+
+Ext.form.CheckboxGroup.prototype.initComponent = function(){
+    Ext.form.CheckboxGroup.superclass.initComponent.call(this);
+    var panelCfg = {
+        cls: this.groupCls,
+        layout: 'column',
+        border: false,
+    };
+    var colCfg = {
+        defaultType: this.defaultType,
+        layout: 'form',
+        border: false,
+        defaults: {
+            hideLabel: true,
+            anchor: '100%'
+        }
+    }
+    if(this.items[0].items){
+        Ext.apply(panelCfg, {
+            layoutConfig: {columns: this.items.length},
+            defaults: this.defaults,
+            items: this.items
+        })
+        for(var i=0, len=this.items.length; i<len; i++){
+            Ext.applyIf(this.items[i], colCfg);
+        };
+    }else{
+        var numCols, cols = [];
+        if(typeof this.columns == 'string'){
+            this.columns = this.items.length;
+        }
+        if(!Ext.isArray(this.columns)){
+            var cs = [];
+            for(var i=0; i<this.columns; i++){
+                cs.push((100/this.columns)*.01);
+            };
+            this.columns = cs;
+        }
+        numCols = this.columns.length;
+        for(var i=0; i<numCols; i++){
+            var cc = Ext.apply({items:[]}, colCfg);
+            cc[this.columns[i] <= 1 ? 'columnWidth' : 'width'] = this.columns[i];
+            if(this.defaults){
+                cc.defaults = Ext.apply(cc.defaults || {}, this.defaults)
+            }
+            cols.push(cc);
+        };
+        if(this.vertical){
+        var rows = Math.ceil(this.items.length / numCols), ri = 0;
+            for(var i=0, len=this.items.length; i<len; i++){
+                if(i>0 && i%rows==0){
+                    ri++;
+                }
+                if(this.items[i].fieldLabel){
+                    this.items[i].hideLabel = false;
+                }
+                cols[ri].items.push(this.items[i]);
+            };
+        }else{
+            for(var i=0, len=this.items.length; i<len; i++){
+                var ci = i % numCols;
+                if(this.items[i].fieldLabel){
+                    this.items[i].hideLabel = false;
+                }
+                cols[ci].items.push(this.items[i]);
+            };
+        }
+        Ext.apply(panelCfg, {
+            layoutConfig: {columns: numCols},
+            items: cols
+        });
+    }
+    this.panel = new Ext.Panel(panelCfg);
+    if(this.forId && this.itemCls){
+        var l = this.el.up(this.itemCls).child('label', true);
+        if(l){
+            l.setAttribute('htmlFor', this.forId);
+        }
+    }
+    var fields = this.panel.findBy(function(c){
+        return c.isFormField;
+    }, this);
+    this.items = new Ext.util.MixedCollection();
+    this.items.addAll(fields);
+};
+Ext.form.CheckboxGroup.prototype.onRender = function(ct, position){
+    if(!this.el){
+        this.panel.render(ct, position);
+        this.el = this.panel.getEl();
+    }
+    Ext.form.CheckboxGroup.superclass.onRender.call(this, ct, position);
+};
+Ext.FormPanel.prototype.initFields = function(){
+    var f = this.form;
+    var formPanel = this;
+    var fn = function(c){
+        if(c.isFormField){
+            if (!c.items){
+                f.add(c);
+            }else{
+                c.items.each(fn);
+            }
+        }else if(c.doLayout && c != formPanel){
+            Ext.applyIf(c, {
+                labelAlign: c.ownerCt.labelAlign,
+                labelWidth: c.ownerCt.labelWidth,
+                itemCls: c.ownerCt.itemCls
+            });
+            if(c.items){
+                c.items.each(fn);
+            }
+        }
+    }
+    this.items.each(fn);
+};
+
+
+
+
+
+
 var ws_grid_view, store_tabs, pref_store, pref_ws_store;
 var pageSize = 25;
 var firstlayout = true;
