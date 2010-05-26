@@ -16,10 +16,20 @@
 #
 #########################################################################
 
-from django.conf.urls.defaults import *
 
-urlpatterns = patterns('',
-    (r'^event/register/(.+)/$','eventmanager.test.register'),
-    (r'^event/makeithappen/(.+)/$','eventmanager.test.makeithappen'),
-    (r'^get_events/$','eventmanager.views.get_events'),
-)
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseForbidden
+from django.utils import simplejson
+from django.db.models import Q
+
+from dam.eventmanager.models import Event
+
+@login_required
+def get_events(request):
+    workspace = request.session.get('workspace')
+    
+    resp = {'events':[]}
+    for event in Event.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True)):
+        resp['events'].append({'name': event.name})
+    
+    return HttpResponse(simplejson.dumps(resp)) 

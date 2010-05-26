@@ -28,8 +28,10 @@ from httplib import HTTP
 @login_required
 def get_scripts(request):
     workspace = request.session.get('workspace')
-    media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
-    scripts = Script.objects.filter(workspace = workspace, media_type__in = media_type)
+    media_type = request.POST.getlist('media_type')
+    if not media_type:
+        media_type =  Type.objects.all().values_list('name', flat = True)
+    scripts = Script.objects.filter(workspace = workspace, actionlist__media_type__name__in = media_type).distinct()
     resp = {'scripts': []}
     for script in scripts:
         actions_media_type = {}
@@ -146,6 +148,24 @@ def delete_script(request):
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
     return HttpResponse(simplejson.dumps({'success': True}))
 
-
+@login_required
+def run_script(request):
+    from dam.repository import Item
+    script_id = request.POST['script_id']
+    items = request.POST.getlist('items')
+    items = Item.objects.filter(pk__in = items)
+    
+    script = Script.objects.get(pk = script_id)
+    script.execute(items)
+    return HttpResponse(simplejson.dumps({'success': True}))
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     

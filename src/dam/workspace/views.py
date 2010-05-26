@@ -631,7 +631,7 @@ def load_items(request, view_type=None, unlimited=False, ):
             thumb_url,thumb_ready = _get_thumb_url(item, workspace)
             logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
 
-            states = item.stateitemassociation_set.filter(workspace = workspace)
+            states = item.stateitemassociation_set.all()
 
             my_caption = _get_thumb_caption(item, thumb_caption, default_language)
             if inprogress:
