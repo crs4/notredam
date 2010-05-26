@@ -942,7 +942,7 @@ function variants_prefs(){
                 		    params: params,
                 		    success: function(){
                 				Ext.getCmp('variant_grid').getStore().reload();
-                				win.close()
+                				win.close();
                 			}
 });
                 	}
@@ -1021,16 +1021,30 @@ function variants_prefs(){
     			{
     			text: 'Edit',
     			handler: function(){
-                	 var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected()
+                	 var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
                 	 if (variant_selected)
-                	 edit_window(variant_selected.data.pk);
+                		 edit_window(variant_selected.data.pk);
                    }
 //                disabled: true
     		},
     		{
     			text: 'Remove',
-                disabled: true,
-//                handler:
+//                disabled: true,
+                handler: function(){
+    			var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
+           	 	if (variant_selected)
+           	 		Ext.Ajax.request({
+           	 			url: '/delete_variant/',
+           	 			params:{
+           	 				variant_id:variant_selected.data.pk
+           	 			},
+           	 			callback: function(){
+           	 			Ext.getCmp('variant_grid').getStore().reload();
+           	 			}
+           	 			
+           	 		});
+    			
+    			}
     		}
     		]
     		

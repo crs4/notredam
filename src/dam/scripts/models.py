@@ -226,7 +226,7 @@ class SaveAction(BaseAction):
         if c.count() > 0:
             c = c[0]
             if c._id:
-                return c._id
+                return c
         return None
     
     def _generate_resource(self, component, adapt_parameters): 
@@ -274,9 +274,9 @@ class SaveAction(BaseAction):
         
         same_resource = self._same_adapted_resource(component)
         if same_resource:
-            component._id = same_resource
-            component.save() 
-#            TODO add copy metadata 
+            component._id = same_resource._id
+            component.save()
+            component.copy_metadata(same_resource) 
         else:
             logger.debug('generate task')        
             generate_tasks(component)
