@@ -30,6 +30,7 @@ import os
 import shutil
 import uuid
 import time
+import mimetypes
 
 from django.db.models import Q
 from django.db import reset_queries
@@ -37,7 +38,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.mail import EmailMessage
 from dam.batch_processor.models import Machine, MachineState, Action
 from dam.repository.models import Item, Component
-
 
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.core.dam_metadata.models import XMPNamespace
@@ -458,10 +458,21 @@ def save_component_features(component, features, extractor):
 
     ctype = ContentType.objects.get_for_model(c)
 
+    try:
+        mime_type = mimetypes.guess_type(c._id)[0]
+        ext = mime_type.split('/')[1]
+        c.format = ext
+        c.save()
+        metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
+        MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=c, value=mime_type)
+    except:
+        pass
+
     if extractor == 'xmp_extractor':
         item = Item.objects.get(component = c)
         xmp_metadata_list, xmp_delete_list = read_xmp_features(item, features, c)
     elif extractor == 'media_basic':
+        
         for stream in features['streams']:
             if isinstance(features['streams'][stream], dict):
                 m_list, d_list = save_features(c, features['streams'][stream])
@@ -479,7 +490,7 @@ def save_component_features(component, features, extractor):
 
     for x in xmp_metadata_list:
         x.save()
-
+    
     logger.debug("[ExtractMetadata.end] component %s" % component.ID)
 
 def remove_sm(sm):
