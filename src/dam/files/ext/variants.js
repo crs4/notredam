@@ -906,6 +906,7 @@ function variants_prefs(){
     		id:'form_variant',
     		buttonAlign: 'center',
             frame: true,
+            monitorValid: true,
             clienValidation: true,
             items:[new Ext.form.TextField({
                 fieldLabel: 'name' ,
@@ -916,12 +917,18 @@ function variants_prefs(){
                 new Ext.form.CheckboxGroup({
                     id:'media_type_selection',
                     allowBlank: false,
-                    
-                    xtype: 'checkboxgroup',
+                    validationEvent: 'click',
                     fieldLabel: 'Media Type',
-//                    itemCls: 'x-check-group-alt',
-                    // Put all controls in a single column with width 100%
                     columns: 2,
+                    listeners:{
+                		invalid: function(){
+                			console.log('invalid');
+                		},
+                		valid: function(){
+                			console.log('valid');
+                		}                	
+                	
+                	},
                     items: [
                         {boxLabel: 'Image', name: 'image', id: 'image'},
                         {boxLabel: 'Video', name: 'video',id: 'video'},
@@ -939,6 +946,7 @@ function variants_prefs(){
                 		params = {variant_id: variant_id};
                 	else
                 		params = {}
+                	
                 		Ext.getCmp('form_variant').getForm().submit({
                 			clientValidation: true,
                 		    url: '/edit_variant/',
@@ -946,6 +954,11 @@ function variants_prefs(){
                 		    success: function(){
                 				Ext.getCmp('variant_grid').getStore().reload();
                 				win.close();
+                			},
+                			failure: function(form, action) {
+                				console.log('action.failureType');
+                				console.log(action);
+                				console.log(form);
                 			}
 });
                 	}
@@ -959,11 +972,16 @@ function variants_prefs(){
                 	
                 }]
         });
+    	Ext.getCmp('form_variant').getForm().on('beforeaction', function(){
+    		Ext.getCmp('media_type_selection').validate();
+    		
+    	});
+    	
     	win =new Ext.Window({
             layout      : 'fit',
             constrain: true,
             title: '<p style="text-align:center">Add Variant</p>',
-            width       : 330,
+            width       : 350,
             height      : 200,
             modal: true,
             items:[form]
