@@ -241,7 +241,8 @@ def get_variants_list(request):
     type = request.POST.get('type',  'generated')
     logger.debug('type %s'%type)
         
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
+#    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
+    vas = Variant.objects.filter(workspace = workspace, auto_generated =  (type == 'generated'),  hidden = False)
     
     
     resp = {'variants':[]}
@@ -353,15 +354,17 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = item.type).distinct()
+    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = item.type, hidden = False).distinct()
     logger.debug('item_variants %s'%item_variants)
 
     now = time.time()
     resp = {'variants':[]}
     for v in item_variants:
-                
+        auto_generated = v.auto_generated     
         try:
+            logger.debug('variant  %s'%v)
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
+            
             work_in_progress = Machine.objects.filter(current_state__action__component = comp).count() > 0
             resource_url = "/redirect_to_component/%s/%s/?t=%s"% (item_id,  v.name,  now)
             info_list = []
@@ -373,7 +376,7 @@ def get_variants(request):
                 else:
                     extension = None
                     
-            auto_generated = v.auto_generated
+           
             media_type = comp.media_type.name 
             imported = comp.imported
             
@@ -385,7 +388,9 @@ def get_variants(request):
             
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
+            logger.exception(ex)
             work_in_progress =  True
+          
             resp['variants'].append({'pk': v.pk, 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
             continue
             
