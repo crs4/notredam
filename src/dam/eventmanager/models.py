@@ -33,6 +33,7 @@ class EventManager(models.Manager):
         except Exception, ex:
             logger.debug(ex)
             return
+        logger.debug('event_registrations %s'%event_registrations)
         for event_reg in event_registrations:
             listener = event_reg.listener
             try:
