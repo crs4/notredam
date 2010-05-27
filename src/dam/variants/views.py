@@ -25,6 +25,7 @@ from django.views.generic.simple import redirect_to
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.db import IntegrityError
 from django.utils import simplejson
 
 from dam.settings import ROOT_PATH
@@ -41,11 +42,15 @@ import os
 import logger
 import os, time
 
-
+class MediaTypeNotFound(Exception):
+    pass
 
 def _edit_variant(variant_id,name, workspace, media_type):
+    if not media_type:
+        raise MediaTypeNotFound
     if not variant_id:
         v = Variant.objects.create(name = name,  workspace = workspace, auto_generated =  True)
+        v.media_type = []
         v.media_type.add(*media_type)
     else:
         v = Variant.objects.get(pk = variant_id, workspace = workspace)    
@@ -71,9 +76,12 @@ def edit_variant(request):
     
     try:
         v = _edit_variant(variant_id,name, workspace, media_type)
-    except:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors':'variant does not exist or is not editable'}))
-    
+    except Variant.DoesNotExist:
+        return HttpResponse(simplejson.dumps({'success': False, 'msg':'variant does not exist or is not editable'}))
+    except MediaTypeNotFound:
+        return HttpResponse(simplejson.dumps({'success': False, 'msg':'no media type selected'}))
+    except IntegrityError:
+        return HttpResponse(simplejson.dumps({'success': False, 'errors':[{'id': 'name', 'msg':'a variant with the same name already exists'}]}))
     return HttpResponse(simplejson.dumps({'success': True, 'pk': v.pk}))
     
 
