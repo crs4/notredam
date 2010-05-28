@@ -62,32 +62,19 @@ class ActionList(models.Model):
 class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
-#    pipeline = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     event = generic.GenericRelation('eventmanager.EventRegistration')
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
-#    media_type = models.ManyToManyField(Type, through=ActionList)
+
     is_global = models.BooleanField(default = False)
     
-#    def save(self, *args, **kwargs):
-#        super(Script, self).save(*args, **kwargs)
-#        pipeline = simplejson.loads(self.pipeline)
-#        media_type = pipeline.keys()
-#        
-#        media_type = Type.objects.filter(name__in = media_type)
-#        self.media_type.remove(*self.media_type.all())
-#        self.media_type.add(*media_type)
-#         
-#    
+
     def __unicode__(self):
         return unicode(self.name)
     
     
     def execute(self, items):
-#        pipeline = simplejson.loads(str(self.pipeline)) #cast needed, unicode keywords in Pipe.__init__ will not work
-        
-#        media_types = pipeline.keys()
-                             
+
         actions_available = {}       
        
         classes = []
@@ -187,7 +174,10 @@ class SetRights(BaseAction):
     
     @staticmethod
     def required_parameters(workspace):
-        return  [{'name':'rights',  'type': 'string'}]
+        from metadata.models import RightsValue
+        values = RightsValue.objects.all().values_list('value', flat = True)
+
+        return  [{'name':'rights',  'type': 'string', 'values': values}]
    
     def __init__(self, media_type, source_variant, workspace, rights):  
         super(SetRights, self).__init__(media_type, source_variant, workspace,  **{'rights':rights})
