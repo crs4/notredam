@@ -175,7 +175,7 @@ class SetRights(BaseAction):
     @staticmethod
     def required_parameters(workspace):
         from metadata.models import RightsValue
-        values = RightsValue.objects.all().values_list('value', flat = True)
+        values = [str(right) for right in RightsValue.objects.all().values_list('value', flat = True)]
 
         return  [{'name':'rights',  'type': 'string', 'values': values}]
    
