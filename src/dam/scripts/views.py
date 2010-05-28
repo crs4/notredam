@@ -148,6 +148,21 @@ def delete_script(request):
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
     return HttpResponse(simplejson.dumps({'success': True}))
 
-
+@login_required
+def run_script(request):
+    script_id = request.POST['script_id']
+    items = request.POST.getlist('items')
+    script = Script.objects.get(pk = 'script_id')
+    script.execute(items)
+    return HttpResponse(simplejson.dumps({'success': True}))
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
