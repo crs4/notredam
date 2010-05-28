@@ -31,7 +31,7 @@ def get_scripts(request):
     media_type = request.POST.getlist('media_type')
     if not media_type:
         media_type =  Type.objects.all().values_list('name', flat = True)
-    scripts = Script.objects.filter(workspace = workspace, media_type__name__in = media_type).distinct()
+    scripts = Script.objects.filter(workspace = workspace, actionlist__media_type__name__in = media_type).distinct()
     resp = {'scripts': []}
     for script in scripts:
         actions_media_type = {}
