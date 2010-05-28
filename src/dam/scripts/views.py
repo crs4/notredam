@@ -152,7 +152,9 @@ def delete_script(request):
 def run_script(request):
     script_id = request.POST['script_id']
     items = request.POST.getlist('items')
-    script = Script.objects.get(pk = 'script_id')
+    items = Item.objects.filter(pk__in = items)
+    
+    script = Script.objects.get(pk = script_id)
     script.execute(items)
     return HttpResponse(simplejson.dumps({'success': True}))
     
