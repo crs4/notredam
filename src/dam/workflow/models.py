@@ -20,7 +20,13 @@ from django.db import models
 
 class State(models.Model):
 	name = models.CharField(max_length=256)
-
+	
+#	def save(self, *args, **kwargs):
+#		from eventmanager.models import Event
+#		super(State, self).save(*args, **kwargs)
+#		Event.objects.create(name = 'state')
+		
+	
 	def __unicode__(self):
 		return self.name	
 
