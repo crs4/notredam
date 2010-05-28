@@ -28,7 +28,9 @@ from httplib import HTTP
 @login_required
 def get_scripts(request):
     workspace = request.session.get('workspace')
-    media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
+    media_type = request.POST.getlist('media_type')
+    if not media_type:
+        media_type =  Type.objects.all().values_list('name', flat = True)
     scripts = Script.objects.filter(workspace = workspace, media_type__in = media_type)
     resp = {'scripts': []}
     for script in scripts:
