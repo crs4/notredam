@@ -175,8 +175,10 @@ class SetRights(BaseAction):
     @staticmethod
     def required_parameters(workspace):
         from metadata.models import RightsValue
-        values = [str(right) for right in RightsValue.objects.all().values_list('value', flat = True)]
-
+        tmp = [str(right) for right in RightsValue.objects.all().values_list('value', flat = True)]
+        values = {}
+        for media_type in Type.objects.all():
+            values[str(media_type)] = tmp
         return  [{'name':'rights',  'type': 'string', 'values': values}]
    
     def __init__(self, media_type, source_variant, workspace, rights):  
