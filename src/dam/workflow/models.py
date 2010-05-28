@@ -41,8 +41,6 @@ class StateItemAssociation(models.Model):
 	def save(self, *args, **kwargs):
 		from scripts.models import Script
 		super(StateItemAssociation, self).save(*args, **kwargs)
-		for script in Script.objects.filter(workspace = workspace, state = state):
-		  script.execute(self.item)
 		
 	
 	def __unicode__(self):

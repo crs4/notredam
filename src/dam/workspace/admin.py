@@ -28,7 +28,7 @@ class WorkspaceAdmin(admin.ModelAdmin):
         }),
         ('Advanced options', {
             'classes': ('collapse',),
-            'fields': ('members','items', 'states')
+            'fields': ('members','items')
         }),
     )
 

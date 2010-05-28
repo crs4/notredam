@@ -73,7 +73,7 @@ class DAMWorkspace(Workspace):
     adds a many-to-many reference to the Item and State model 
     """
     items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
-    states = models.ManyToManyField(State)
+#    states = models.ManyToManyField(State)
     objects = WSManager()
     
     def remove_item(self, item):
