@@ -150,7 +150,7 @@ def delete_script(request):
 
 @login_required
 def run_script(request):
-    from dam.repository import Item
+    from dam.repository.models import Item
     script_id = request.POST['script_id']
     items = request.POST.getlist('items')
     items = Item.objects.filter(pk__in = items)
