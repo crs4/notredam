@@ -20,6 +20,7 @@ from django.db import models
 
 class State(models.Model):
 	name = models.CharField(max_length=256)
+#	workspace = 
 	
 #	def save(self, *args, **kwargs):
 #		from eventmanager.models import Event
