@@ -16,8 +16,20 @@
 #
 #########################################################################
 
-from django.contrib import admin
-from eventmanager.models import EventRegistration, Event
 
-#admin.site.register(EventRegistration)
-admin.site.register(Event)
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseForbidden
+from django.utils import simplejson
+from django.db.models import Q
+
+from dam.eventmanager.models import Event
+
+@login_required
+def get_events(request):
+    workspace = request.session.get('workspace')
+    
+    resp = {'events':[]}
+    for event in Event.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True)):
+        resp['events'].append({'name': event.name})
+    
+    return HttpResponse(simplejson.dumps(resp)) 
