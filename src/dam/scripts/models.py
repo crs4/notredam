@@ -251,11 +251,11 @@ class SaveAction(BaseAction):
         
         logger.debug('source.variant %s'%source.variant.name)
         
-        if component.imported or( component.source and component._previous_source_id == source._id and  component.get_parameters() == adapt_parameters):
-            logger.debug('component.source._id %s'%component.source._id)
-            logger.debug('source._id %s'%source._id)
-            logger.debug('component will not be regenerated, is imported or no mods in source or adapt_params')
-            return
+#        if component.imported or( component.source and component._previous_source_id == source._id and  component.get_parameters() == adapt_parameters):
+#            logger.debug('component.source._id %s'%component.source._id)
+#            logger.debug('source._id %s'%source._id)
+#            logger.debug('component will not be regenerated, is imported or no mods in source or adapt_params')
+#            return
         
         component.set_parameters(adapt_parameters)
         component.set_source(source)

@@ -767,7 +767,7 @@ def get_status(request):
             my_caption = _get_thumb_caption(item, thumb_caption, default_language)
     
             if tasks_pending.filter(current_state__action__component__item=item).count() > 0:
-                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready, 'inprogress': 1,
+                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
                                   "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
             else:
                 preview_available = tasks_pending.filter(current_state__action__component__variant__name = 'preview', current_state__action__component__item=item).count()
