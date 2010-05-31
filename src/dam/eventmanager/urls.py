@@ -23,5 +23,6 @@ urlpatterns = patterns('',
 #    (r'^event/makeithappen/(.+)/$','eventmanager.test.makeithappen'),
     (r'^get_events/$','eventmanager.views.get_events'),
     (r'^set_script_associations/$','eventmanager.views.set_script_associations'),
+    (r'^get_scripts/$','eventmanager.views.get_scripts'),
     
 )

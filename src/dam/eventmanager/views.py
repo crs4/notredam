@@ -21,6 +21,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden
 from django.utils import simplejson
 from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
 
 from dam.eventmanager.models import Event, EventRegistration
 from dam.scripts.models import Script
@@ -48,6 +49,19 @@ def set_script_associations(request):
     
     return HttpResponse(simplejson.dumps({'success': True})) 
     
+
+@login_required
+def get_scripts(request):
+    workspace = request.session.get('workspace')
+    event_id = Event.objects.get(pk = event_id)
+    event = Event.objects.get(pk = event_id) 
+    workspace = request.session.get('workspace')
+    resp = {'scripts':[]}
+    script_ctype = ContentType.objects.get_for_model(Script)
+    event_regs = EventRegistration.objects.filter(event = event, content_type = script_ctype, workspace = request.session.get('workspace'))
+    for event_reg in event_regs:
+        resp['scripts'].append({'id': event_reg.listener.pk, 'name': event_reg.listener})
     
-    
+    return HttpResponse(simplejson.dumps(resp))
+
     
