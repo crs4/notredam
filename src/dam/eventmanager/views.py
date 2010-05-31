@@ -51,7 +51,7 @@ def set_script_associations(request):
     
 
 @login_required
-def get_scripts(request):
+def get_event_scripts(request):
     workspace = request.session.get('workspace')
     event_id = Event.objects.get(pk = event_id)
     event = Event.objects.get(pk = event_id) 
