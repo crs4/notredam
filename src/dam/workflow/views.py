@@ -25,15 +25,15 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item
 from dam.core.dam_workspace.decorators import permission_required
 
-def _set_state(items, workspace, state):
+def _set_state(items,state):
     
     for item in items:
         try:
-            sa = StateItemAssociation.objects.get(workspace=workspace , item=item)
+            sa = StateItemAssociation.objects.get(item=item)
             sa.state = state
             sa.save()
         except:
-            sa = StateItemAssociation.objects.create(state=state, item=item, workspace=workspace)
+            sa = StateItemAssociation.objects.create(state=state, item=item)
 
 @login_required
 @permission_required('set_state')
@@ -43,13 +43,13 @@ def set_state(request):
     items = Item.objects.filter(pk__in = item_ids)
     state = State.objects.get(pk = request.POST['state_id'])
     
-    _set_state(items, workspace, state)
+    _set_state(items, state)
     return HttpResponse(simplejson.dumps({'success': True}))
 
 @login_required
 def get_states(request):
     workspace = request.session['workspace']
-    states = State.objects.filter(damworkspace = workspace)
+    states = State.objects.filter(workspace = workspace)
     states_resp = []
     for state in states:
         states_resp.append({'pk': state.pk,  'name':  state.name})
@@ -69,11 +69,8 @@ def save_states(request):
                 state.name = s['name']
                 state.save()                
         else:
-            state = State.objects.create(name = s['name'])          
-            workspace.states.add(state)
-        
+            state = State.objects.create(name = s['name'], workspace = workspace)          
+                    
         existing_states.append(state.pk)    
-    states_to_remove = State.objects.exclude(pk__in = existing_states)
-    workspace.states.remove(*states_to_remove)
     
     return HttpResponse(simplejson.dumps({'success': True}))

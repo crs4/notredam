@@ -39,10 +39,9 @@ class StateItemAssociation(models.Model):
 	item = models.ForeignKey('repository.Item')
 	
 	def save(self, *args, **kwargs):
-		from scripts.models import Script
+		from eventmanager.models import EventRegistration
 		super(StateItemAssociation, self).save(*args, **kwargs)
-		for script in Script.objects.filter(workspace = workspace, state = state):
-		  script.execute(self.item)
+		EventRegistration.objects.notify('state change to ' + self.state.name, self.state.workspace,  **{'items':[self.item]})
 		
 	
 	def __unicode__(self):

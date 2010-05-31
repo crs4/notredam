@@ -25,6 +25,12 @@ import logger
 class Event(models.Model):
     name = models.CharField(max_length=128, unique = True)
     workspace = models.ForeignKey('workspace.DAMWorkspace', null = True, blank = True) #for state caange event
+    
+    def unicode(self):
+        return unicode(self.name)
+    
+    def __str__(self):
+        return unicode(self.name)
         
 class EventManager(models.Manager):
     def notify(self,  event_name, workspace, **parameters):

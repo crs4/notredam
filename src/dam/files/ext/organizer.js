@@ -1268,9 +1268,13 @@ Ext.onReady(function(){
                     for (var i = 0; i < store.getCount(); i++) {
                         var current_item = store.getAt(i);
                         var item_data = current_item.data;
+                        
+                        if(item_data.inprogress == 0 && view.getSelectedIndexes().length == 1 && view.getSelectedIndexes()[0] == i)
+                        	items.push(item_data.pk); //check if selected item changed,since some script has been run 
+                        	
                         if (item_data.inprogress == 1) {
                             items.push(item_data.pk);                          
-                            
+                            console.log(item_data);
                             if(i == 0 &&  view.getSelectionCount()  ==  1 && Ext.getCmp('detail_tabs').isVisible() && Ext.getCmp('detail_tabs').getActiveTab().id == 'preview_panel' && store_variant.lastOptions && store_variant.lastOptions.params.items == item_data.pk) {
                                 reload_details = true;
                             }
