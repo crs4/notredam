@@ -19,5 +19,5 @@
 from django.contrib import admin
 from eventmanager.models import EventRegistration, Event
 
-#admin.site.register(EventRegistration)
+admin.site.register(EventRegistration)
 admin.site.register(Event)
