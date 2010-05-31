@@ -19,7 +19,9 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
-    (r'^event/register/(.+)/$','eventmanager.test.register'),
-    (r'^event/makeithappen/(.+)/$','eventmanager.test.makeithappen'),
+#    (r'^event/register/(.+)/$','eventmanager.test.register'),
+#    (r'^event/makeithappen/(.+)/$','eventmanager.test.makeithappen'),
     (r'^get_events/$','eventmanager.views.get_events'),
+    (r'^set_script_associations/$','eventmanager.views.set_script_associations'),
+    
 )
