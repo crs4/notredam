@@ -698,7 +698,7 @@ Ext.onReady(function(){
         items: [{
             text: 'Tutorial',
             handler: function() {
-                window.open('http://www.notre-dam.org/NotreDAM/QuickGuide.html', 'tutorial');
+                window.open('http://www.opendam.org/opendam/QuickGuide.html', 'tutorial');
             }
         }, {
             text: 'Info',
@@ -709,8 +709,8 @@ Ext.onReady(function(){
                         modal: true,
                         resizable: false,
                         width: 400,
-                        title: 'NotreDAM Info',
-                        html: '<div>NotreDAM Beta, Copyright 2009, <a href="http://www.sardegnaricerche.it/" target="_blank">Sardegna Ricerche.</a></div><div>Web site: <a href="http://www.notre-dam.org/" target="_blank">http://www.notre-dam.org/</a></div><div>Email: <a href="mailto:labcontdigit@sardegnaricerche.it">labcontdigit@sardegnaricerche.it</a> </div><br/><div>NotreDAM is released under the <a href="http://www.gnu.org/licenses/gpl.html" target="_blank">GPL v.3 license</a>.</div><div>Open-sourced works used: <p><a href="http://www.extjs.com" target="_blank">ExtJS 3.0</a> (GPL v.3 license)</p><p><a href="http://www.flowplayer.org" target="_blank">FlowPlayer 3.1.5</a> (GPL v.3 license)</p><p><a href="http://www.famfamfam.com/lab/icons/silk/" target="_blank">Silk Icons</a> (Creative Commons Attribution)</p><p>MapIconMaker and DragZoom js script (Apache License 2.0)</p></div><br/><div>More information can be found in the license headers of the source files<br/> or in the LICENSE file included in this release.</div>'
+                        title: 'OpenDam Info',
+                        html: '<div>OpenDam Beta, Copyright 2009, <a href="http://www.sardegnaricerche.it/" target="_blank">Sardegna Ricerche.</a></div><div>Web site: <a href="http://www.opendam.org/" target="_blank">http://www.opendam.org/</a></div><div>Email: <a href="mailto:labcontdigit@sardegnaricerche.it">labcontdigit@sardegnaricerche.it</a> </div><br/><div>OpenDam is released under the <a href="http://www.gnu.org/licenses/gpl.html" target="_blank">GPL v.3 license</a>.</div><div>Open-sourced works used: <p><a href="http://www.extjs.com" target="_blank">ExtJS 3.0</a> (GPL v.3 license)</p><p><a href="http://www.flowplayer.org" target="_blank">FlowPlayer 3.1.5</a> (GPL v.3 license)</p><p><a href="http://www.famfamfam.com/lab/icons/silk/" target="_blank">Silk Icons</a> (Creative Commons Attribution)</p><p>MapIconMaker and DragZoom js script (Apache License 2.0)</p></div><br/><div>More information can be found in the license headers of the source files<br/> or in the LICENSE file included in this release.</div>'
                             
                 });
                 win.show();
