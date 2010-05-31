@@ -60,7 +60,7 @@ def get_event_scripts(request):
     script_ctype = ContentType.objects.get_for_model(Script)
     event_regs = EventRegistration.objects.filter(event = event, content_type = script_ctype, workspace = request.session.get('workspace'))
     for event_reg in event_regs:
-        resp['scripts'].append({'id': event_reg.listener.pk, 'name': event_reg.listener})
+        resp['scripts'].append({'id': event_reg.listener.pk, 'name': event_reg.listener.name})
     
     return HttpResponse(simplejson.dumps(resp))
 
