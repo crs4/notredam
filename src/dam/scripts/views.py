@@ -160,12 +160,3 @@ def run_script(request):
     return HttpResponse(simplejson.dumps({'success': True}))
     
     
-    
-    
-    
-    
-    
-    
-    
-
-    

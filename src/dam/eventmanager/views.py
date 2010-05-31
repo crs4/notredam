@@ -22,7 +22,8 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.utils import simplejson
 from django.db.models import Q
 
-from dam.eventmanager.models import Event
+from dam.eventmanager.models import Event, EventRegistration
+from dam.scripts.models import Script
 
 @login_required
 def get_events(request):
@@ -30,6 +31,22 @@ def get_events(request):
     
     resp = {'events':[]}
     for event in Event.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True)):
-        resp['events'].append({'name': event.name})
+        resp['events'].append({'id': event.pk, 'name': event.name})
     
-    return HttpResponse(simplejson.dumps(resp)) 
+    return HttpResponse(simplejson.dumps(resp))
+ 
+@login_required
+def set_script_associations(request):
+    workspace = request.session.get('workspace')
+    event_id = request.POST['event_id']
+    script_id = request.getlist('script_id')
+    scripts = Script.objects.filter(pk__in =script_id)
+    event = Event.objects.get(pk = event_id)
+    for script in scripts:
+        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
+    
+    return HttpResponse(simplejson.dumps({'success': True})) 
+    
+    
+    
+    
