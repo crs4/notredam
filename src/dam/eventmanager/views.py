@@ -40,7 +40,7 @@ def get_events(request):
 def set_script_associations(request):
     workspace = request.session.get('workspace')
     event_id = request.POST['event_id']
-    script_id = request.getlist('script_id')
+    script_id = request.POST.getlist('script_id')
     scripts = Script.objects.filter(pk__in = script_id)
     event = Event.objects.get(pk = event_id) 
     for script in scripts:
