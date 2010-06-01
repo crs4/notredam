@@ -110,6 +110,7 @@ class Script(models.Model):
                 params['workspace'] = self.workspace
                 params['media_type'] = media_type
                 params['source_variant'] = action.source_variant
+                params['script'] = self
                 logger.debug('action_dict %s'%action_dict)
                 try:                    
                     action = actions_available[type](**params)                
@@ -142,7 +143,7 @@ class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
 
-    def __init__(self, media_type, source_variant, workspace, **params):   
+    def __init__(self, media_type, source_variant, workspace, script, **params):   
         
 #        if media_type not in self.media_type_supported:
 #            raise MediaTypeNotSupported('media_type %s not supported by action %s'%(media_type, self.__class__.__name__))
@@ -151,6 +152,7 @@ class BaseAction(object):
         self.media_type = media_type
         logger.debug('self.media_type %s'%self.media_type)
         self.source_variant = source_variant
+        self.script = script
         self.workspace = workspace
         if params:
             self.parameters = params
@@ -181,8 +183,8 @@ class SetRights(BaseAction):
             values[str(media_type)] = tmp
         return  [{'name':'rights',  'type': 'string', 'values': values}]
    
-    def __init__(self, media_type, source_variant, workspace, rights):  
-        super(SetRights, self).__init__(media_type, source_variant, workspace,  **{'rights':rights})
+    def __init__(self, media_type, source_variant, workspace, script, rights):  
+        super(SetRights, self).__init__(media_type, source_variant, workspace, script,  **{'rights':rights})
         
 
 class SaveAction(BaseAction):
@@ -197,8 +199,8 @@ class SaveAction(BaseAction):
                                     'doc': ['jpeg']
             }
         }]
-    def __init__(self, media_type, source_variant, workspace, output_format):  
-        super(SaveAction, self).__init__(media_type, source_variant, workspace)
+    def __init__(self, media_type, source_variant, workspace, script, output_format):  
+        super(SaveAction, self).__init__(media_type, source_variant, workspace, script)
         self.output_format = output_format
     
     
@@ -260,7 +262,7 @@ class SaveAction(BaseAction):
         component.set_parameters(adapt_parameters)
         component.set_source(source)
         
-        
+        component.script = self.script
         component.save()
         component.save_rights_value(rights, self.workspace)
         
@@ -294,17 +296,17 @@ class SaveAs(SaveAction):
         
         
         return params
-    def __init__(self, media_type, source_variant, workspace, output_variant, output_format):  
-        super(SaveAs, self).__init__(media_type, source_variant, workspace,output_format)
+    def __init__(self, media_type, source_variant, workspace, script, output_variant, output_format):  
+        super(SaveAs, self).__init__(media_type, source_variant, workspace, script,output_format)
         self.output_variant = output_variant
     
     
         
         
 class SendByMail(SaveAction):
-    def __init__(self, media_type, source_variant, workspace, mail,  output_format):
+    def __init__(self, media_type, source_variant, workspace, script, mail,  output_format):
         output_variant = 'mail'
-        super(SendByMail, self).__init__(media_type, source_variant, workspace, output_format)
+        super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output_format)
         self.mail = mail
         self.output_variant = 'mail'
         
@@ -324,8 +326,8 @@ class Resize(BaseAction):
     def required_parameters(workspace):
         return [{'name':'max_height',  'type':'number'},{'name':'max_width','type':'number'}]
    
-    def __init__(self, media_type, source_variant, workspace,  max_height, max_width):
-        super(Resize, self).__init__(media_type, source_variant, workspace)
+    def __init__(self, media_type, source_variant, workspace, script,  max_height, max_width):
+        super(Resize, self).__init__(media_type, source_variant, workspace, script)
         if media_type == 'video':
             self.parameters['video_height'] = max_height
             self.parameters['video_width'] = max_width
@@ -340,10 +342,10 @@ class Crop(BaseAction):
     def required_parameters(workspace):
         return [{ 'name': 'upperleft_x',  'type': 'number'}, { 'name': 'upperleft_y',  'type': 'number'}, { 'name': 'lowerright_x',  'type': 'number'}, { 'name': 'lowerright_y',  'type': 'number'}]
     
-    def __init__(self, media_type, source_variant, workspace,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
+    def __init__(self, media_type, source_variant, workspace, script,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
         params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y }
         
-        super(Crop, self).__init__(media_type, source_variant, workspace, **params)
+        super(Crop, self).__init__(media_type, source_variant, workspace, script, **params)
      
 class Watermark(BaseAction): 
     media_type_supported = ['image', 'video']
@@ -352,9 +354,9 @@ class Watermark(BaseAction):
     def required_parameters(workspace):
         return [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
     
-    def __init__(self, media_type, source_variant, workspace, filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
+    def __init__(self, media_type, source_variant, workspace, script,  filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
         
-        super(Watermark,  self).__init__(media_type, source_variant, workspace)
+        super(Watermark,  self).__init__(media_type, source_variant, workspace, script)
         self.parameters['watermark_filename'] = filename
         
          
@@ -402,9 +404,9 @@ class VideoEncode(BaseAction):
     def required_parameters(workspace):
         return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'framerate', 'type': 'number'}]
     
-    def __init__(self, media_type, source_variant, workspace, bitrate, framerate):
+    def __init__(self, media_type, source_variant, workspace, script, bitrate, framerate):
         params = {'bitrate':bitrate,  'framerate': framerate}
-        super(VideoEncode, self).__init__(media_type, source_variant, workspace, **params)
+        super(VideoEncode, self).__init__(media_type, source_variant, workspace, script, **params)
         
        
         if self.parameters.has_key('bitrate'):
@@ -424,8 +426,8 @@ class AudioEncode(BaseAction):
     @staticmethod
     def required_parameters(workspace):
         return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'rate', 'type': 'number'}]
-    def __init__(self, media_type, source_variant, workspace, rate, bitrate):
-        super(AudioEncode, self).__init__(media_type, source_variant, workspace)
+    def __init__(self, media_type, source_variant, workspace, script, rate, bitrate):
+        super(AudioEncode, self).__init__(media_type, source_variant, workspace, script)
         
 
         self.parameters['audio_bitrate'] = int(bitrate)            
@@ -438,8 +440,8 @@ class ExtractVideoThumbnail(BaseAction):
     def required_parameters(workspace):
         return [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
     
-    def __init__(self, media_type, source_variant, workspace, max_height,  max_width):
+    def __init__(self, media_type, source_variant, workspace , script, max_height,  max_width):
         params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
-        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, **params)
+        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, script, **params)
     
 

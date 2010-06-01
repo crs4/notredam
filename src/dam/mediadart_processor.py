@@ -36,8 +36,10 @@ from django.db.models import Q
 from django.db import reset_queries
 from django.contrib.contenttypes.models import ContentType
 from django.core.mail import EmailMessage
+from django.utils import simplejson
 from dam.batch_processor.models import Machine, MachineState, Action
 from dam.repository.models import Item, Component
+
 
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.core.dam_metadata.models import XMPNamespace
@@ -95,6 +97,7 @@ def embed_xmp(component, machine):
     d.addCallbacks(embedding_cb, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
 
 def adapt_resource(component, machine):
+    from scripts.models import Script
 
     def save_and_extract_features(result, component, machine):
         if result:
@@ -126,49 +129,37 @@ def adapt_resource(component, machine):
     if item.type.name == 'image':
         
         args ={}
+        argv = [] #for calling imagemagick
         height = int(vp.get('max_height', -1))        
         width = int(vp.get('max_width', -1))
         
+        
+        script = Script.objects.get(component = component)
+        logger.debug('script %s'%script)
+        acts = script.actionlist_set.get(media_type__name  = 'image')
+        actions = simplejson.loads(acts.actions)['actions']
+        logger.debug('actions %s'%actions)
+        for action in actions:
+            if action['type'] == 'resize':
+                argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
+            elif action['type'] == 'crop':
+                argv +=  ['-crop', '%dx%d+%d+%d' % (action['parameters']['lowerright_x'] - action['parameters']['upperleft_x'],action['parameters']['lowerright_y'] - action['parameters']['upperleft_y'],  action['parameters']['upperleft_x'], action['parameters']['upperleft_y'])]
+            
+            elif action['type'] == 'watermark':
+                
+                argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (action['parameters']['pos_x'],action['parameters']['pos_y']), '-composite']
+            
+        
         args['dest_size'] = (width, height)
+#        argv +=  ['-resize', '%dx%d' % (width, height)]
+        
         
         cropping  = vp.get('upperleft_x', False)
         if cropping:
             args['crop_box'] = (vp['upperleft_x'], vp['upperleft_y'], vp['lowerright_x'], vp['lowerright_y'])
-        
-        
-
-#        if cropping:
-# 
-#             extractors = {'image': 'image_basic', 'movie': 'video_basic', 'audio': 'audio_basic', 'doc': ''}
-# 
-#             my_media_type = orig.media_type.name
-#             my_extractor = extractors[my_media_type]
-# 
-#             f = t.get_features(orig.ID, [my_extractor])
-#             features = yield f.parse()
-#             width = int(features[my_extractor]['width'])
-#             height = int(features[my_extractor]['height'])
-#             if width > 0 and height > 0:
-#                 delta = int((width - height) / 2)
-#                 if delta > 0:
-#                     src_x = delta
-#                     src_y = 0
-#                     src_height = src_width = height
-#                 else:
-#                     src_x = 0
-#                     src_y = -delta
-#                     src_height = src_width = width
-#             if max_dim > src_width:
-#                 crop_dim = src_width
-#             else:
-#                 crop_dim = max_dim
-# 
-#             if watermark_enabled:
-#                 (res_id, job_id) = yield m.adapt_image(transcoding_format, src_x = src_x, src_y = src_y, src_width = src_width, src_height = src_height, dest_width = crop_dim, dest_height = crop_dim, watermark='/opt/mediadart/share/logo-s.png', output_res_id=component.ID)
-#             else:
-#                 (res_id, job_id) = yield m.adapt_image(transcoding_format, src_x = src_x, src_y = src_y, src_width = src_width, src_height = src_height, dest_width = crop_dim, dest_height = crop_dim, output_res_id=component.ID)
-#                 
-
+            
+            argv +=  ['-crop', '%dx%d+%d+%d' % (vp['lowerright_x'] -vp['upperleft_x'],vp['lowerright_y'] - vp['upperleft_y'],  vp['upperleft_x'], vp['upperleft_y'])]
+            
         
 
         transcoding_format = vp.get('codec', orig.format) #change to original format
@@ -179,7 +170,7 @@ def adapt_resource(component, machine):
         if watermark_filename:
             args['watermark_filename'] = watermark_filename
             args['watermark_corner'] = (int(vp['pos_x']),int(vp['pos_y']))
-            
+#            argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (vp['pos_x'],vp['pos_y']), '-composite']
             
             
             if vp['alpha'] is not None:
@@ -190,7 +181,9 @@ def adapt_resource(component, machine):
 #        else:
 #            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
 
-        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
+        
+        d = adapter_proxy.adapt_image_magick(orig.ID, dest_res_id, argv)
+#        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
     elif item.type.name == 'video':
        
