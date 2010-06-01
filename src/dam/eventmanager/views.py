@@ -43,8 +43,9 @@ def set_script_associations(request):
     script_id = request.POST.getlist('script_id')
     scripts = Script.objects.filter(pk__in = script_id)
     event = Event.objects.get(pk = event_id) 
+    EventRegistration.objects.filter(event = event, workspace = workspace).delete()
     for script in scripts:
-        EventRegistration.objects.filter(event = event, workspace = workspace).delete()
+        
         EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
     
     return HttpResponse(simplejson.dumps({'success': True})) 
