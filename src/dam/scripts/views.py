@@ -79,7 +79,7 @@ def get_actions(request):
             if add_action:
                
                 tmp = {                                 
-                        'name':action.__name__.lower(),
+                        'name':action.verbose_name.lower(),
                         'media_type': action.media_type_supported,
                         'parameters': action.required_parameters(workspace)                    
                 }

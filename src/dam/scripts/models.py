@@ -84,9 +84,12 @@ class Script(models.Model):
         for subclass in classes:
             if subclass != SaveAction:
                 actions_available[subclass.__name__.lower()] = subclass
+                actions_available[subclass.verbose_name.lower()] = subclass
+            
             
         actions_available[SendByMail.__name__.lower()] = SendByMail
-        
+        actions_available[SendByMail.verbose_name.lower()] = SendByMail
+       
         actions = {
             'image':[],
             'video':[],
@@ -173,7 +176,7 @@ class BaseAction(object):
 
 class SetRights(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    
+    verbose_name = 'set rights'
     @staticmethod
     def required_parameters(workspace):
         from metadata.models import RightsValue
@@ -284,6 +287,7 @@ class SaveAction(BaseAction):
     
 class SaveAs(SaveAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
+    verbose_name = 'save'
     
     @staticmethod
     def required_parameters(workspace):
@@ -304,6 +308,8 @@ class SaveAs(SaveAction):
         
         
 class SendByMail(SaveAction):
+    verbose_name = 'send by mail'
+    
     def __init__(self, media_type, source_variant, workspace, script, mail,  output_format):
         output_variant = 'mail'
         super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output_format)
@@ -321,6 +327,7 @@ class SendByMail(SaveAction):
         super(SendByMail, self).execute(item, adapt_parameters)
 
 class Resize(BaseAction): 
+    verbose_name = 'resize'
     media_type_supported = ['image', 'video',  'doc']
     @staticmethod
     def required_parameters(workspace):
@@ -337,6 +344,7 @@ class Resize(BaseAction):
                 
 
 class Crop(BaseAction): 
+    verbose_name = 'crop'
     media_type_supported = ['image',]
     @staticmethod
     def required_parameters(workspace):
@@ -348,6 +356,7 @@ class Crop(BaseAction):
         super(Crop, self).__init__(media_type, source_variant, workspace, script, **params)
      
 class Watermark(BaseAction): 
+    verbose_name = 'watermark'
     media_type_supported = ['image', 'video']
    
     @staticmethod
@@ -398,6 +407,7 @@ preset = {'video':
 
         
 class VideoEncode(BaseAction):
+    verbose_name = 'video encode'
     """default bitrate in kb""" 
     media_type_supported = ['video']
     @staticmethod
@@ -420,6 +430,7 @@ class VideoEncode(BaseAction):
             self.parameters['video_framerate'] = self.parameters.pop('framerate')
                 
 class AudioEncode(BaseAction):
+    verbose_name = 'audio encode'
     """default bitrate in kb"""
     media_type_supported = ['video', 'audio']
     
@@ -435,6 +446,7 @@ class AudioEncode(BaseAction):
                 
 
 class ExtractVideoThumbnail(BaseAction):
+    verbose_name = 'extract video thumbnail'
     media_type_supported = ['video']
     @staticmethod
     def required_parameters(workspace):
