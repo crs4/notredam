@@ -102,7 +102,9 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
             source_variant_name = actions.get('source_variant',  'original')
             source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
             ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
+
     
+    EventRegistration.objects.filter( listener = script, workspace = workspace).delete()
     for event_name in events:
         event = Event.objects.get(name = event_name)
         EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
@@ -134,10 +136,27 @@ def edit_script(request):
     description = request.POST.get('description')
     events = request.POST.getlist('event')
     _new_script(name, description, workspace, pipeline, events, script)
+    return HttpResponse(simplejson.dumps({'success': True}))
+
+@login_required
+def rename_script(request):
+    script_id = request.POST['script']
+    script = Script.objects.get(pk = script_id)
     
+    if script.is_global:        
+        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+        
+    workspace = request.session.get('workspace')
+    name = request.POST['name']
+    description = request.POST['description']
+    script.name = name
+    script.description = description
+    script.save()
     
     return HttpResponse(simplejson.dumps({'success': True}))
-        
+
+
+
 @login_required
 def delete_script(request):        
     script_id = request.POST['script']
