@@ -980,7 +980,7 @@ function variants_prefs(){
     	win =new Ext.Window({
             layout      : 'fit',
             constrain: true,
-            title: '<p style="text-align:center">Add Variant</p>',
+            title: '<p style="text-align:center">Add Rendition</p>',
             width       : 350,
             height      : 200,
             modal: true,
@@ -1083,8 +1083,8 @@ function variants_prefs(){
     			var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
            	 	if (variant_selected)
 	           	 	Ext.Msg.confirm(
-	           	 	   'Delete Variant',
-	           	 	   'Are you sure you want to delete the variant "' +variant_selected.data.name+ '"?',
+	           	 	   'Delete Rendtion',
+	           	 	   'Are you sure you want to delete the rendition "' +variant_selected.data.name+ '"?',
 	           	 	   function(btn){
 	           	 			console.log(btn);
 		           	 		if (btn == 'yes')
@@ -1116,7 +1116,7 @@ function variants_prefs(){
     ws_win = new Ext.Window({
         layout      : 'fit',
         constrain: true,
-        title: '<p style="text-align:center">Workspace configuration: variants</p>',
+        title: '<p style="text-align:center">Workspace configuration: renditions</p>',
         width       : 400,
         height      : 300,
         modal: true,

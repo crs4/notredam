@@ -418,7 +418,7 @@ def get_variants_menu_list(request):
     """
     workspace = request.session['workspace']
     
-    vas = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True)).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
+    vas = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False).exclude(name='original').exclude(name='thumbnail').order_by('name').values_list('name', flat=True)  
     
     vas = set(vas)
     

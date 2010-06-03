@@ -1114,7 +1114,7 @@ Ext.onReady(function(){
 
     var changeVariant = function(menu) {
         var tbar = Ext.getCmp('metadata_variant');
-        tbar.setText('Variant: ' + menu.text);
+        tbar.setText('Rendition: ' + menu.text);
 
         var metadata_grid = Ext.getCmp('metadata_panel');
         metadata_grid.variant = menu.text;
@@ -1229,7 +1229,7 @@ Ext.onReady(function(){
             icon: '/files/images/flag_icons/us.png'
             }, {
             id: 'metadata_variant',
-            text:'Variant: original',
+            text:'Rendition: original',
             menu: variant_menu
             }
         ]}
@@ -1347,8 +1347,8 @@ Ext.onReady(function(){
                     var pending = data.pending + data.failed;
                     var text, iconCls;
                     if (pending == 0) {
-//                        text = 'No tasks pending';
-                        text = 'No items pending';
+                        text = 'No tasks pending';
+//                        text = 'No items pending';
                         iconCls = 'status-ok';
                         
                         if (Ext.query('.'+ cls_audio).length > 0)
@@ -1362,10 +1362,10 @@ Ext.onReady(function(){
                         text = '';
 
                         if (data.pending > 0) {
-                            text += data.pending + ' item(s) pending ';
+                            text += data.pending + ' task(s) pending ';
                         }
                         if (data.failed > 0) {
-                            text += data.failed + ' item(s) failed ';
+                            text += data.failed + ' task(s) failed ';
                         }
 //                        tip_text = '';
 
