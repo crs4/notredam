@@ -288,7 +288,7 @@ class Item(AbstractItem):
         Retrieve all the item's components
         """
         from dam.variants.models import Variant
-        return self.component_set.filter(variant__in = Variant.objects.filter(Q(is_global = True,) | Q(workspace__pk = workspace.pk), media_type = self.type),  workspace = workspace)
+        return self.component_set.filter(variant__in = Variant.objects.filter(Q(workspace__isnull = True) | Q(workspace__pk = workspace.pk), hidden = False,  media_type = self.type),  workspace = workspace)
 
     def keywords(self):    
         """

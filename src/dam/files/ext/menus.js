@@ -531,7 +531,7 @@ Ext.onReady(function(){
                             handler: function(){ open_ws_pref(); }
                         
                             },
-                        { text: 'Variants',                                                      
+                        { text: 'Renditions',                                                      
                             handler: variants_prefs 
                             
                             }
@@ -612,7 +612,7 @@ Ext.onReady(function(){
                         items: [
                             {
                                 xtype: 'checkboxgroup',
-                                fieldLabel: 'Choose variants',
+                                fieldLabel: 'Choose renditions',
                                 columns: 3,
                                 items: variants_list
                             }
