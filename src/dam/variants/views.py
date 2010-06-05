@@ -188,6 +188,8 @@ def get_variants_list(request):
     for variant in vas:
         
         resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.workspace is None })
+    logger.debug('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+    logger.debug(resp)
     return HttpResponse(simplejson.dumps(resp))
 
 

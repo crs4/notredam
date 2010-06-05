@@ -22,7 +22,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import simplejson
 
-from dam.repository.models import Item, Component
+from dam.repository.models import Item, Component, Watermark
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.treeview.models import Node
@@ -91,3 +91,15 @@ def delete_item(request):
         i.delete_from_ws(user, workspaces)
                 
     return HttpResponse(simplejson.dumps({'inbox_to_reload': inbox_deleted,  'success': True}))
+
+@login_required
+def get_watermarks(request):
+    workspace = request.session.get('workspace')
+    watermarks = Watermark.objects.filter(workspace = workspace)
+    logger.debug('watermarks %s' %watermarks)
+    resp = {'watermarks':[]}
+    for watermark in watermarks:
+        resp['watermarks'].append({'id': watermark._id, 'file_name': watermark.file_name, 'url' : watermark.get_url()})
+        logger.debug(watermark)
+    
+    return HttpResponse(simplejson.dumps(resp))
