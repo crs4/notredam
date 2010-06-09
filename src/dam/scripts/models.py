@@ -233,7 +233,7 @@ class SaveAction(BaseAction):
             rights = None
         logger.debug('rights %s'%rights)
             
-        logger.debug('self.output_variant %s'%self.output_variant)
+        logger.debug('self.output %s'%self.output_variant)
         logger.debug('self.media_type %s'%self.media_type)
          
         if self.media_type == 'video' or self.media_type == 'audio':
@@ -244,7 +244,7 @@ class SaveAction(BaseAction):
         logger.debug('adapt_parameters %s'%adapt_parameters)    
          
 #        component.save_rights_value(rights, self.workspace)
-        logger.debug('self.source_variant %s'%self.source_variant)
+        logger.debug('self.source %s'%self.source_variant)
         try:
 #            source_variant = Variant.objects.get(name = self.source_variant)         
             source = self.source_variant.component_set.get(item = component.item, workspace = self.workspace)
@@ -296,13 +296,13 @@ class SaveAs(SaveAction):
         for media_type in Type.objects.all():
             tmp[media_type.name] = [variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type = media_type)]
        
-        params.append({'name':'output_variant',  'type': 'string',  'values':tmp})
+        params.append({'name':'output',  'type': 'string',  'values':tmp})
         
         
         return params
-    def __init__(self, media_type, source_variant, workspace, script, output_variant, output_format):  
+    def __init__(self, media_type, source_variant, workspace, script, output, output_format):  
         super(SaveAs, self).__init__(media_type, source_variant, workspace, script,output_format)
-        self.output_variant = output_variant
+        self.output_variant = output
     
     
         
