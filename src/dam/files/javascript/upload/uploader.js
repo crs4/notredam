@@ -1,6 +1,6 @@
 
 var Upload = function(upload_url, single_file, post_params, done_callback) {
-
+	
     this.record_entries = [    
         {name:'queue_id', type: 'int'},    
         {name:'filename', type: 'string'},
@@ -134,23 +134,27 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
     
     this.queueCompleteHandler = function(upload_count) {
 
-        Ext.MessageBox.alert('Upload',  upload_count + ' object(s) uploaded successfully.');    
-
-        var tab = Ext.getCmp('media_tabs').getActiveTab();
-        var view = tab.getComponent(0);
-        var selecteds = view.getSelectedRecords();
-        var store = view.getStore();
-        store.reload({
-            scope: view,
-            callback:function(){
-                ids = []
-                for(i = 0; i<selecteds.length; i++){
-                    ids.push(selecteds[i].data.pk)
-                    }
-                this.select(ids)
-                
-                }
-            });
+        if (done_callback){
+        	done_callback();
+        }else{
+	    	Ext.MessageBox.alert('Upload',  upload_count + ' object(s) uploaded successfully.');    
+	
+	        var tab = Ext.getCmp('media_tabs').getActiveTab();
+	        var view = tab.getComponent(0);
+	        var selecteds = view.getSelectedRecords();
+	        var store = view.getStore();
+	        store.reload({
+	            scope: view,
+	            callback:function(){
+	                ids = []
+	                for(i = 0; i<selecteds.length; i++){
+	                    ids.push(selecteds[i].data.pk)
+	                    }
+	                this.select(ids)
+	                
+	                }
+	            });
+        }
     
     };
 

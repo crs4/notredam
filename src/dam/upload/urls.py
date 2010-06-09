@@ -22,6 +22,6 @@ urlpatterns = patterns('',
     (r'^get_metadata_upload/$', 'dam.upload.views.get_metadata_upload'),
     (r'^get_upload_url/$', 'dam.upload.views.get_upload_url'),
     (r'^upload_item/$', 'dam.upload.views.upload_item'),
-    (r'^upload_variant/$', 'dam.upload.views.upload_variant')
-
+    (r'^upload_variant/$', 'dam.upload.views.upload_variant'),
+    (r'^upload_watermark/$', 'dam.upload.views.upload_watermark')
 )

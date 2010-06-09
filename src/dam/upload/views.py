@@ -27,7 +27,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from dam.repository.models import Item, Component
+from dam.repository.models import Item, Component, Watermark
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
@@ -204,6 +204,32 @@ def upload_variant(request):
     _save_uploaded_variant(request, upload_file, user, workspace)        
 
     resp = simplejson.dumps({})
+    return HttpResponse(resp)
+
+def upload_watermark(request):
+    """
+    Used for uploading/replacing the watermark for the given workspace. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
+    """
+
+    request.upload_handlers = [StorageHandler()]
+
+    url = request.POST['unique_url']    
+    upload_file = request.FILES['Filedata']
+
+    user, workspace = UploadURL.objects.get_user_ws_from_url(url)
+
+    file_name, type, res_id = _get_uploaded_info(upload_file)
+
+    logger.debug('file_name %s' % file_name)
+    logger.debug('res_id %s' % res_id)
+
+    comp= Watermark.objects.create(type = Type.objects.get(name=type), workspace=workspace)
+
+    comp.file_name = file_name
+    comp._id = res_id
+    comp.save()
+    
+    resp = simplejson.dumps({'res_id': res_id})
     return HttpResponse(resp)
 
 @login_required

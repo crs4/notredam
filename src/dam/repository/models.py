@@ -552,3 +552,42 @@ class Component(AbstractComponent):
         """
         return self.variant
                 
+class Watermark(AbstractComponent):
+
+    """ 
+    Concrete class that inherits from the abstract class AbstractComponent found in core/dam_repository/models.py
+    Base model describing watermark images. They can be contained by workspaces only.
+    """
+
+    _id = models.CharField(max_length=40,  db_column = 'md_id')
+    workspace = models.ForeignKey('workspace.DAMWorkspace')    
+    
+    class Meta:
+        db_table = 'watermark'
+
+    def __unicode__(self):
+        return self.ID
+    
+    def _get_id(self):
+        return self._id
+
+    def get_url(self):
+        """
+        Returns the component url (something like /storage/res_id.ext)
+        """
+        from dam.application.views import NOTAVAILABLE
+
+        url = NOTAVAILABLE    
+       
+        try:
+            url = _get_resource_url(self.ID)
+            logger.debug('url : %s' %url)
+        except Exception,ex:
+            logger.error(ex)
+            url = NOTAVAILABLE    
+            
+        return url
+
+    ID = property(fget=_get_id)     
+
+    
