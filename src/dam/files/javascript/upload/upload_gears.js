@@ -12,7 +12,12 @@
         }
                      
 function Upload(fields, ajax_url, singleFile, done_upload_callback, post_params, single_upload_finished_callback,tbar_grid){
-  
+	console.log('upload!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+	console.log(fields);
+	console.log(ajax_url);
+	console.log(singleFile);
+	console.log(done_upload_callback);
+	
     this.singleFile = singleFile
     this.keyword_submitted = false
     this.new_keywords = false

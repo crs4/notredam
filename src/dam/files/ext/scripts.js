@@ -75,13 +75,26 @@ function reset_watermarking(){
     }
 }
 
+function _set_hidden_position_percent(id){
+	var pos_x = ((id-1) % 3) * 33 + 5;
+	var pos_y = (parseInt((id-1) / 3)) * 33 + 5;
+	Ext.getCmp('panel_watermarks_views').get('hidden_pos_x_percent').setValue(parseInt(pos_x));
+	Ext.getCmp('panel_watermarks_views').get('hidden_pos_y_percent').setValue(parseInt(pos_y));
+}
+
 function watermarking(id){	
     reset_watermarking();
+    _set_hidden_position_percent(id);
     Ext.get('square'+id).setStyle({
         background: 'green',
         opacity: 0.6
         });
     watermarking_position = id;
+}
+
+function _update_watermarks(){  
+	console.log('stampaaaaaaaaaaaaa');
+	Ext.getCmp('dataview_watermarks').getStore().load();
 }
 
 function generate_details_forms(panel, grid, selected, actionsStore, media_type) {
@@ -91,7 +104,8 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     var i = 0;
     watermarking_position = 0; // 0 mean undefined
     var recApp;
-//    console.log('generate_details_forms');
+    console.log('generate_detail_form')
+    console.log(selected.data);
 
 // remove all component
     panel.removeAll()
@@ -99,8 +113,6 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     //add new component
     if (name_action == 'watermark'){
     	//watermark
-    	console.log('watermark');
-        console.log(panel);
 
         watermarking_position_id = Ext.id();
         
@@ -121,100 +133,36 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     	}; 
 
     	var id_watermark = Ext.id();
-
-//    	var form_water = new Ext.Panel({
-//    		layout : 'border',
-//    		items : [new Ext.form.Field({
-//	//	    	    fieldLabel:'position',
-//	    			region  : 'center',
-//		    	    id : watermarking_position_id,
-//		    	    name: 'watermarking_position',
-//		    	    autoCreate:{
-//		    	        tag:'div',
-//			    	    style: 'text-align:left !important; margin-left:26 ',
-//			    	    cls: 'container_position_watermarking',
-//			    	    children:children_box_position
-//			        },
-//		    	    listeners:{
-//		    	        render: function(){
-//		    	            if(watermarking_position != 0){
-//		    	                watermarking(watermarking_position);                    
-//		    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
-//		    	            }
-//		    	            else{
-//		    	                watermarking(1);     
-//		    	                console.log(Ext.getCmp(watermarking_position_id));
-//		    	                Ext.getCmp(watermarking_position_id).setValue(1);
-//		    	            }
-//			            }                
-//			        }            
-//	    		}),
-//        		new Ext.Button({
-//        			region : 'south',
-//        			text: 'Upload',
-//        			autoWidth : true,
-//        			handler: function() {
-//        				var up = new Upload('/upload_watermark/', true);
-//        				up.openUpload();
-//        			}
-//        		})
-//        	] 
-//    	});
-//    	panel.add(form_water);
-    	
-//    	panel.add(
-//    			[new Ext.form.Field({
-//	//	    	    fieldLabel:'position',
-//		    	    id : watermarking_position_id,
-//		    	    name: 'watermarking_position',
-//		    	    autoCreate:{
-//		    	        tag:'div',
-//			    	    style: 'text-align:left !important; margin-left:26 ',
-//			    	    cls: 'container_position_watermarking',
-//			    	    children:children_box_position
-//			        },
-//		    	    listeners:{
-//		    	        render: function(){
-//		    	            if(watermarking_position != 0){
-//		    	                watermarking(watermarking_position);                    
-//		    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
-//		    	            }
-//		    	            else{
-//		    	                watermarking(1);     
-//		    	                console.log(Ext.getCmp(watermarking_position_id));
-//		    	                Ext.getCmp(watermarking_position_id).setValue(1);
-//		    	            }
-//			            }                
-//			        }            
-//	    		}),
-//        		new Ext.Button({
-//        			text : 'Upload',
-//        			autoWidth : true,
-//        			handler: function() {
-//        				var up = new Upload('/upload_watermark/', true);
-//        				up.openUpload();
-//        			}
-//        		})
-//        	]
-//    	);
-    	var tpl_str = '<tpl for=".">';
-    	tpl_str += '<div class="thumb-wrap" id="{pk}">';
-    	tpl_str += '<div class="thumb">';
-    	tpl_str += '<!--img src="{url}" class="thumb-img"--><div style="width: 50; height: 50; background: url({url}) no-repeat bottom center; border:1px solid white;"></div></div>';                
-		tpl_str += '<span>{file_name}</span></div>';
-		tpl_str += '</tpl>';
-	    	
+    	var storeview = new Ext.data.JsonStore({
+		    url      : '/get_watermarks/',
+		    method   :'POST',
+		    root     : 'watermarks',
+		    fields   : ['id', 'file_name', 'url'],
+		    listeners :{ 
+		    	load : function(){
+					i = 0;
+					while (parameters[i]['name'] != 'filename' && i<parameters.length)
+						i++;
+					console.log('watermarks number');
+					console.log(this.data.items.length);
+					if (parameters[i]['name'] == 'filename' && parameters[i]['value']){
+						Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
+						Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
+					}
+		    	}
+    		}
+	    });
+    	storeview.load();
 
     	panel.add(
-    			
     			{ 
     	            layout:'column', 
     	            items:[{ 
-    	                columnWidth:.5, 
+    	                columnWidth:.27, 
     	                layout: 'form', 
+    	                hideLabels: true,
     	                items: [
     	                	new Ext.form.Field({
-        		//	    	    fieldLabel:'position',
         			    	    id : watermarking_position_id,
         			    	    name: 'watermarking_position',
         			    	    autoCreate:{
@@ -224,74 +172,93 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
         				        },
         			    	    listeners:{
         			    	        render: function(){
-        			    	            if(watermarking_position != 0){
-        			    	                watermarking(watermarking_position);                    
-        			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
-        			    	            }
-        			    	            else{
-        			    	                watermarking(1);     
-        			    	                console.log(Ext.getCmp(watermarking_position_id));
-        			    	                Ext.getCmp(watermarking_position_id).setValue(1);
-        			    	            }
-        				            }                
+        				            	console.log(selected.data);
+        				            	i = 0;
+	    				        		while (parameters[i]['name'] != 'pos_x_percent' && i<parameters.length){
+	    				        			i++;
+	    				        		}	
+					        			if (parameters[i]['name'] == 'pos_x_percent' && parameters[i]['value']){      			    	            	
+	        				        		var pos_x = ((parameters[i]['value'] - 5) / 33) + 1;
+		                					var pos_y = ((parameters[i+1]['value'] - 5) / 33) + 1;
+	        				        		watermarking_position = (pos_y-1) * 3 + pos_x;
+	    			    	            	watermarking(watermarking_position);                    
+	    			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
+	    			    	            }else    				        			
+	    				        		if(watermarking_position != 0){
+	    				        			watermarking(watermarking_position);                    
+	    			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
+	    			    	            }
+	    			    	            else{
+	    			    	                watermarking(1);
+	    			    	                Ext.getCmp(watermarking_position_id).setValue(1);
+	    			    	                console.log(Ext.getCmp(watermarking_position_id));
+	    			    	            }
+					        		    console.log(selected.data);
+        				        	}                
         				        }            
         		    		})    	                	
     	                ] 
     	            },{
-	                columnWidth:.5, 
+	                columnWidth:.73, 
 	                layout: 'form', 
 	                items: [
 	                    	new Ext.Panel({
-	                    	    frame:true,
+	                    	    id : 'panel_watermarks_views',
+	                    		frame:true,
 	                    	    title:'Select Watermark',
-	                    	    collapsible:true,
+	                    	    autoScroll : true,
 	                    	    height : 140,
 	                    	    bbar : [new Ext.Button({
                         			text : 'Upload',
-                        			width : 291,
+                        			width : 433,
                         			handler: function() {
-                        				var up = new Upload('/upload_watermark/', true);
+                        				var up = new Upload('/upload_watermark/', true, {}, _update_watermarks);
                         				up.openUpload();
                         			}
                         		})
 	                    	    ],
 	                    	    items:[
 	                				new Ext.DataView({
-	                		            multiSelect : true,
+	                					id : 'dataview_watermarks',
+	                					enable : true,
+	                					autoHeight:true,
+	                					autoScroll : true,
+	                					singleSelect: true,
 	                		            itemSelector: 'div.watermark-wrap',
-	                		            autoScroll  : true,
-	                				    store: new Ext.data.JsonStore({
-	                		    		    url      : '/get_watermarks/',
-	                		    		    method   :'POST',
-	                		    		    autoLoad :true,
-	                		    		    root     : 'watermarks',
-	                		    		    fields   : ['id', 'file_name', 'url']
-	                		    	    }),
+	                				    store: storeview,
 	                		    	    tpl : new Ext.XTemplate(
 	                		    	    		'<tpl for=".">',
 	                		    	            '<div class="watermark-wrap" id="{id}">',
-	                		    			    '<div class="watermark"><img src="{url}" title="{file_name} width="50" height="50""></div></div>',
-	                		    	        '</tpl>',
-	                		    	        '<div class="x-clear"></div>'
+	                		    			    '<div class="watermark"><img src="{url}" title="{file_name}" width="50" height="50"></div></div>',
+	                		    	        '</tpl>'
 	                		    		),
-	                				    emptyText: 'No images to display'
-	                				})
-//,
-//	                				new Ext.Button({
-////	                					region : 'center',
-//	                        			text : 'Upload',
-//	                        			autoWidth : true,
-//	                        			handler: function() {
-//	                        				var up = new Upload('/upload_watermark/', true);
-//	                        				up.openUpload();
-//	                        			}
-//	                        		})
+	                				    emptyText: 'No images to display',
+	                				    listeners :{ 
+	                						click  : function(index, node, e){
+	                							//set filename to hidden.
+	                							Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(index.getSelectedRecords()[0].data.id);
+	                						}
+	                					}	                					
+	                				}),{
+	                					xtype:'hidden', 
+	                					id : 'hidden_file_name',
+	                					name:'filename'
+	                				},{
+	                					xtype:'hidden', 
+	                					id : 'hidden_pos_x_percent',
+	                					name:'pos_x_percent'
+	                				},{
+	                					xtype:'hidden', 
+	                					id : 'hidden_pos_y_percent',
+	                					name:'pos_y_percent'
+	                				}
 	                    	    ]
 	                    	})
 	                    ]
     	            }]
     	        }         
     			);
+
    	
     }else{
     	for (i=0;i<parameters.length;i++){
@@ -340,6 +307,8 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 	    }
     }
 //reload panel
+	console.log('panel');
+	console.log(panel);
 	panel.doLayout();
 }
 
@@ -363,21 +332,25 @@ function newRecord(data, media_type){
 }
 
 function _pull_data(sm,media_type){
-	//	console.log(sm);
+	console.log("_pull_data");
+
 	if 	(sm.getSelected()){
 		var newParams = [];
 		var appParams = {};
 		var r = sm.getSelected();
     	var params = r.get('parameters');
-	    for (i=0;i<params.length;i++){
+
+    	for (i=0;i<params.length;i++){
     		appParams = params[i];
     		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
     		newParams.push(appParams); 
 	    }
+    	console.log(newParams);
 	    r.set('parameters',newParams);
 	    r.commit();
 	}
 }
+
 function _get_layout_tab(obj, media_type){
 	var cols = obj.get_cols();
 	var actionStore = obj.get_actionStore(media_type);
@@ -762,7 +735,7 @@ function load_data_script(data){
 		//load actions
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
         	var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
-//        	console.log(newRec);
+        	console.log(newRec);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
 		}
 
