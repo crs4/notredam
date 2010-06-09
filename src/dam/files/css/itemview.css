@@ -84,8 +84,8 @@ select{
 
 .watermark{
     background: transparent;
-    padding:3px;
-        border: 3px solid transparent;
+    padding:2px;
+        border: 2px solid transparent;
         height: 55px;
         width: 55px;
         text-align: center;
@@ -93,18 +93,14 @@ select{
 }
 .watermark-wrap{
     float: left;
-    margin: 4px;
+    margin: 2px;
     margin-right: 0;
-    padding: 5px;
+    padding: 3px;
 }
-.watermark img{
-    border:1px solid white;
-        max-height: 55px;
-        max-width: 55px;
-//  height: 60px;
-//  width: 80px;
+.x-view-selected .watermark{
+//  background:#8db2e3;
+        border: 2px solid #8db2e3;
 }
-
 .media_icon{
     position:absolute; 
     top:90;
