@@ -118,7 +118,10 @@ def new_script(request):
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  
     events = request.POST.getlist('event')
-    script = _new_script(name, description, workspace, pipeline, events)
+    try:
+        script = _new_script(name, description, workspace, pipeline, events)
+    except Script.DoesNotExist:
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
     
     return HttpResponse(simplejson.dumps({'success': True, 'id': script.pk}))
 
