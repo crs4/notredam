@@ -537,7 +537,24 @@ Ext.onReady(function(){
                             }
                         ]
                     }
-                }            
+                },{
+                    id: 'preferences_scripts',
+                    text: 'Scripts',
+                    menu:{
+                        items:[{
+                                text    : 'New',
+                                handler : function(){script_detail_form('', '', '', false);}
+                            
+                            },{ 
+                            	text    : 'Manage Scripts',                                                      
+	                            handler : function(){manage_script();}                   
+                            },{ 
+                            	text    : 'Manage Event',
+                            	handler : function(){manage_events();}
+                            }
+                        ]
+                    }
+                }
             ]
         });
     };
@@ -688,8 +705,87 @@ Ext.onReady(function(){
                 id: 'set_state_to',
                 menu: states_menu,
                 disabled: true
+            },{
+                text     :'Run scripts',
+                id       : 'runscript',
+                disabled : true,
+            	handler  : function(){
+            		var open_script_win = new Ext.Window({
+	            	    constrain   : true,
+	            	    title       : 'Choose scripts',
+	            	    layout      : 'fit',
+	            	    width       : 400,
+	            	    height      : 440,
+	            	    modal       : true,
+	            	    resizable   : false,
+	            	    items:[new Ext.FormPanel({
+	            	        id      :'open_form',
+	            		    layout  : 'fit',
+	            	        frame   :true,
+	            	        items:[ 
+	            	           	new Ext.grid.GridPanel({
+	            	                id          : 'my_scripts' ,
+	            	        	    store            : new Ext.data.JsonStore({
+	            	        		    url      : '/get_scripts/',
+	            	        		    method   :'POST',
+	            	        		    autoLoad :true,
+	            	        		    root     : 'scripts',
+	            	        		    fields   : ['id', 'name', 'description', 'actions_media_type']
+	            	        	    }),
+	            	        	    columns          : [
+	            	        		        	        { id : 'name',  header: "Name", dataIndex: 'name', sortable: true},
+	            	        		        	        { id : 'description',  header: "Description", dataIndex: 'description'}
+	            	        	    ],
+	            	        	    stripeRows       : true,
+	            	        	    autoExpandColumn : 'name',
+	            	        		frame            : true,
+	            	                hideHeaders      : true,
+	            	        		sm               : new Ext.grid.RowSelectionModel({
+	            	        								singleSelect : true
+	            	        							})
+	
+	            	           	})
+	            	        ]
+	            	    })],
+	                    buttons: [{
+	            	        text: 'Run',
+	            	        type: 'submit',
+	            	        handler: function(){
+	            		    		var my_win = this.findParentByType('window');
+	            		    		
+	            		    		var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
+	            		    		var selNodes= view.getSelectedNodes();
+	            		    		console.log(my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data.id);
+	            		    		if(selNodes && selNodes.length > 0){ 
+	                                    var selected_ids = get_selected_items();
+	                                    console.log('selected_ids');
+	                                    console.log(selected_ids);
+	            						Ext.Ajax.request({
+	            					        url: '/run_script/',
+	            			                params: {
+	            								items: selected_ids,
+	            								script_id : my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data.id
+	            							},
+	            					        success: function(data){
+//	            					            var data = Ext.decode(data.responseText);
+//	            		                        delete_items_selection(selected_ids, data.multiple_ws);
+	            					        }
+	            					    });
+	                                }
+	            		    		my_win.close();
+	            	        }
+	                    },{
+        		        text: 'Cancel',
+        		        handler: function(){
+        			            var my_win = this.findParentByType('window');
+        			            my_win.close();
+        		        	}
+        		        }]          
+	                });
+	            	open_script_win.show(); 
+            		
+            	}
             }
-            
         ]
     });
 

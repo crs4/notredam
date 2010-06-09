@@ -59,7 +59,7 @@ class AbstractComponent(models.Model):
 
     """ Base abstract model describing components."""
 
-    owner =  models.ForeignKey(User, related_name='owned_components', null=True, blank=True)
+    owner =  models.ForeignKey(User, null=True, blank=True)
     type =  models.ForeignKey(Type)
     creation_time = models.DateTimeField(auto_now = True)
     update_time = models.DateTimeField(auto_now = True)

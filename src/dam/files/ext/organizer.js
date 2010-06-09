@@ -436,6 +436,7 @@ var showDetails = function(view){
         
         
         Ext.getCmp('object_menu').menu.items.get('addto').enable();
+        Ext.getCmp('object_menu').menu.items.get('runscript').enable();
 
         var admin = ws_permissions_store.find('name', 'admin') > -1;        
         var add_item = ws_permissions_store.find('name', 'add_item') > -1;
@@ -499,6 +500,7 @@ var showDetails = function(view){
         Ext.getCmp('object_menu').menu.items.get('mvto').disable();
         Ext.getCmp('object_menu').menu.items.get('remove_from_ws').disable();
         Ext.getCmp('object_menu').menu.items.get('set_state_to').disable();
+        Ext.getCmp('object_menu').menu.items.get('runscript').disable();
 //            preview = Ext.getCmp('preview_panel').body;
 //            preview.update('');
         if(active_tab) {

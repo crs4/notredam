@@ -82,7 +82,25 @@ select{
     background: transparent url(/files/images/inprogress_audio.png) no-repeat bottom right;
 }
 
-
+.watermark{
+    background: transparent;
+    padding:2px;
+        border: 2px solid transparent;
+        height: 55px;
+        width: 55px;
+        text-align: center;
+        position: relative;
+}
+.watermark-wrap{
+    float: left;
+    margin: 2px;
+    margin-right: 0;
+    padding: 3px;
+}
+.x-view-selected .watermark{
+//  background:#8db2e3;
+        border: 2px solid #8db2e3;
+}
 .media_icon{
     position:absolute; 
     top:90;

@@ -186,4 +186,4 @@ def run_script(request):
     script.execute(items)
     return HttpResponse(simplejson.dumps({'success': True}))
     
-    
+  
