@@ -24,6 +24,7 @@ from dam.eventmanager.models import Event, EventRegistration
 from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
 from httplib import HTTP
+from django.db import IntegrityError
 
 @login_required
 def get_scripts(request):
@@ -113,6 +114,7 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
 
 @login_required
 def new_script(request):
+    
     pipeline = request.POST['actions_media_type']
     name = request.POST['name']
     description = request.POST.get('description')
@@ -120,7 +122,7 @@ def new_script(request):
     events = request.POST.getlist('event')
     try:
         script = _new_script(name, description, workspace, pipeline, events)
-    except Script.DoesNotExist:
+    except IntegrityError:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
     
     return HttpResponse(simplejson.dumps({'success': True, 'id': script.pk}))
@@ -138,7 +140,10 @@ def edit_script(request):
     name = request.POST.get('name')
     description = request.POST.get('description')
     events = request.POST.getlist('event')
-    _new_script(name, description, workspace, pipeline, events, script)
+    try:
+        _new_script(name, description, workspace, pipeline, events, script)
+    except IntegrityError:
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
     return HttpResponse(simplejson.dumps({'success': True}))
 
 @login_required
