@@ -103,3 +103,16 @@ def get_watermarks(request):
         logger.debug(watermark)
     
     return HttpResponse(simplejson.dumps(resp))
+
+@login_required
+def delete_watermark(request):
+    watermark_id = request.POST['watermark']
+    try:
+        Watermark.objects.get(pk = watermark_id).delete()
+    except:
+        pass
+    return HttpResponse(simplejson.dumps({'success': True}))
+        
+        
+        
+    
