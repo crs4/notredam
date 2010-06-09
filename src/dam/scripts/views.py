@@ -115,7 +115,8 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
 @login_required
 def new_script(request):
     
-    pipeline = request.POST['actions_media_type']
+    no_actions = simplejson.dumps({'image':[], 'audio': [], 'video': [], 'doc': []})
+    pipeline = request.get('actions_media_type', no_actions)
     name = request.POST['name']
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  

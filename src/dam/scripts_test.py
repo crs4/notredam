@@ -34,7 +34,7 @@ pipeline_thumb = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'thumbnail'
+                    'output': 'thumbnail'
                 }
                         
             }    
@@ -56,7 +56,7 @@ pipeline_thumb = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'thumbnail'
+                    'output': 'thumbnail'
                 }
                             
             }]
@@ -76,7 +76,7 @@ pipeline_thumb = {
             'type': 'saveas',
             'parameters':{
                 'output_format': 'jpeg',
-                'output_variant': 'thumbnail'
+                'output': 'thumbnail'
             }
                         
             }]
@@ -111,9 +111,9 @@ pipeline_preview = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'preview'
+                    'output': 'preview'
                     
-#                    'output_variant': 'preview'
+#                    'output': 'preview'
                 }
                         
             }    
@@ -134,7 +134,7 @@ pipeline_preview = {
                     'type': 'saveas',
                     'parameters':{
                         'output_format': 'mp3',
-                        'output_variant': 'preview'
+                        'output': 'preview'
                     }
                             
                 }]
@@ -193,7 +193,7 @@ pipeline_preview = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'flv',
-                    'output_variant': 'preview'
+                    'output': 'preview'
                 }
                             
                 }]
@@ -215,7 +215,7 @@ pipeline_preview = {
             'type': 'saveas',
             'parameters':{
                 'output_format': 'jpeg',
-                'output_variant': 'preview'
+                'output': 'preview'
             }
                         
             }]
@@ -269,7 +269,7 @@ pipeline_fullscreen = {
                 'type': 'saveas',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output_variant': 'fullscreen'
+                    'output': 'fullscreen'
                 }
                         
             },
@@ -287,7 +287,7 @@ pipeline_fullscreen = {
 #                'type': 'saveas',
 #                'parameters':{
 #                    'output_format': 'jpeg',
-#                    'output_variant': 'fullscreen'
+#                    'output': 'fullscreen'
 #                }
 #                        
 #            }
@@ -305,6 +305,8 @@ pipeline_fullscreen = {
 
 ws = DAMWorkspace.objects.get(pk = 1)
 
+Event.objects.create(name = 'upload')
+Event.objects.create(name = 'item copy')
 
 pipeline_json = simplejson.dumps(pipeline_thumb)
 _new_script(name = 'thumb_generation', description = 'thumbnail generation', workspace = ws, pipeline = pipeline_json, events = ['upload', 'item copy'])
