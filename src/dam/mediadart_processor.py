@@ -147,7 +147,7 @@ def adapt_resource(component, machine):
             
             elif action['type'] == 'watermark':
                 
-                argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (action['parameters']['pos_x'],action['parameters']['pos_y']), '-composite']
+                argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (action['parameters']['pos_x_percent'],action['parameters']['pos_y_percent']), '-composite']
             
         
         args['dest_size'] = (width, height)
@@ -300,7 +300,7 @@ def send_mail(component, machine):
     
     mail = component.get_parameters()['mail']
     
-    email = EmailMessage('OpenDam Rendition', 'Hi, a OpenDam rendition has been attached.  ', EMAIL_SENDER,
+    email = EmailMessage('OpenDam Rendition', 'Hi, an OpenDam rendition has been attached.  ', EMAIL_SENDER,
             [mail])
     storage = Storage()
     email.attach_file(storage.abspath(component.source.ID))
