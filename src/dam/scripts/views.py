@@ -116,7 +116,7 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
 def new_script(request):
     
     no_actions = simplejson.dumps({'image':[], 'audio': [], 'video': [], 'doc': []})
-    pipeline = request.get('actions_media_type', no_actions)
+    pipeline = request.POST.get('actions_media_type', no_actions)
     name = request.POST['name']
     description = request.POST.get('description')
     workspace = request.session.get('workspace')  
@@ -124,7 +124,7 @@ def new_script(request):
     try:
         script = _new_script(name, description, workspace, pipeline, events)
     except IntegrityError:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'id': 'script_name', 'msg': 'script named %s already exist'%name}]}))
     
     return HttpResponse(simplejson.dumps({'success': True, 'id': script.pk}))
 
