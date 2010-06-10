@@ -68,6 +68,12 @@ class Script(models.Model):
 
     is_global = models.BooleanField(default = False)
     
+    def save(self, *args,**kwargs):
+        #avoiding empty string saving
+        if self.name == '':
+            self.name = None
+        super(Script, self).save(*args,**kwargs)
+
 
     def __unicode__(self):
         return unicode(self.name)
