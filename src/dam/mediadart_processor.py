@@ -297,13 +297,13 @@ def extract_features(component, machine):
 def send_mail(component, machine):
     
     logger.debug("[SendMail.execute] component %s" % component.ID)
-    
+    logger.debug('component.get_parameters() %s'%component.get_parameters())
     mail = component.get_parameters()['mail']
     
     email = EmailMessage('OpenDam Rendition', 'Hi, an OpenDam rendition has been attached.  ', EMAIL_SENDER,
             [mail])
     storage = Storage()
-    email.attach_file(storage.abspath(component.source.ID))
+    email.attach_file(storage.abspath(component.ID))
 #    reactor.callInThread(email.send)
     email.send()
     logger.debug("[SendMail.end] component %s" % component.ID)
