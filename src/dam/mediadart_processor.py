@@ -167,16 +167,16 @@ def adapt_resource(component, machine):
         
         
         
-        if watermark_filename:
-            args['watermark_filename'] = watermark_filename
-            args['watermark_corner'] = (int(vp['pos_x']),int(vp['pos_y']))
-#            argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (vp['pos_x'],vp['pos_y']), '-composite']
-            
-            
-            if vp['alpha'] is not None:
-                vp['alpha']  = int(vp['alpha'])
-                
-            args['alpha'] = vp['alpha']
+#        if watermark_filename:
+#            args['watermark_filename'] = watermark_filename
+#            args['watermark_corner'] = (int(vp['pos_x']),int(vp['pos_y']))
+##            argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (vp['pos_x'],vp['pos_y']), '-composite']
+#            
+#            
+#            if vp['alpha'] is not None:
+#                vp['alpha']  = int(vp['alpha'])
+#                
+#            args['alpha'] = vp['alpha']
 #            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark_filename=watermark_filename, watermark_corner = watermark_corner, alpha = alpha)
 #        else:
 #            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
