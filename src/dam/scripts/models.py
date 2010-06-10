@@ -378,7 +378,10 @@ class Watermark(BaseAction):
         
         if self.media_type == 'image':
             if not (pos_x and pos_y):
-                raise MissingActionParameters('pos_x or pos_y parameter is missing: they are required')
+#                TMP waiting for mediadart
+                pos_x = pos_x_percent
+                pos_y = pos_y_percent
+#                raise MissingActionParameters('pos_x or pos_y parameter is missing: they are required')
             
             self.parameters['alpha'] = alpha
             self.parameters['pos_x'] = pos_x
