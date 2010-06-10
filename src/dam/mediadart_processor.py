@@ -295,12 +295,12 @@ def extract_features(component, machine):
     logger.debug("[FeatureExtraction.end] component %s" % component.ID)
 
 def send_mail(component, machine):
-
+    
     logger.debug("[SendMail.execute] component %s" % component.ID)
     
     mail = component.get_parameters()['mail']
     
-    email = EmailMessage('Notredam Generated Variant', 'A copy of the generated variant is attached', EMAIL_SENDER,
+    email = EmailMessage('OpenDam Rendition', 'Hi, a OpenDam rendition has been attached.  ', EMAIL_SENDER,
             [mail])
     storage = Storage()
     email.attach_file(storage.abspath(component.source.ID))
