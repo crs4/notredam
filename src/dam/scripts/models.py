@@ -367,7 +367,7 @@ class Watermark(BaseAction):
    
     @staticmethod
     def required_parameters(workspace):
-        return [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x','type': 'number'}, { 'name': 'pos_y',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
+        return [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
     
     def __init__(self, media_type, source_variant, workspace, script,  filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
         
@@ -377,15 +377,15 @@ class Watermark(BaseAction):
          
         
         if self.media_type == 'image':
-            if not (pos_x and pos_y):
-#                TMP waiting for mediadart
-                pos_x = pos_x_percent
-                pos_y = pos_y_percent
-#                raise MissingActionParameters('pos_x or pos_y parameter is missing: they are required')
+#            if not (pos_x and pos_y):
+##                TMP waiting for mediadart
+#                pos_x = pos_x_percent
+#                pos_y = pos_y_percent
+##                raise MissingActionParameters('pos_x or pos_y parameter is missing: they are required')
             
             self.parameters['alpha'] = alpha
-            self.parameters['pos_x'] = pos_x
-            self.parameters['pos_y'] = pos_y
+            self.parameters['pos_x_percent'] = pos_x_percent
+            self.parameters['pos_y_percent'] = pos_y_percent
             
         else:
             if not ((pos_x and pos_y) or (pos_x_percent and pos_y_percent)):
