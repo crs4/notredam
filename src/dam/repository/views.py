@@ -108,9 +108,10 @@ def get_watermarks(request):
 def delete_watermark(request):
     watermark_id = request.POST['watermark']
     try:
-        Watermark.objects.get(pk = watermark_id).delete()
-    except:
+        Watermark.objects.get(_id = watermark_id).delete()
+    except Watermark.DoesNotExist:
         pass
+        
     return HttpResponse(simplejson.dumps({'success': True}))
         
         
