@@ -22,6 +22,9 @@ urlpatterns = patterns('',
 
     (r'^delete_item/', 'dam.repository.views.delete_item'),
     (r'^check_item_wss/', 'dam.repository.views.check_item_wss'),
-    (r'^get_watermarks/', 'dam.repository.views.get_watermarks')
+    (r'^get_watermarks/', 'dam.repository.views.get_watermarks'),
+    (r'^delete_watermark/', 'dam.repository.views.delete_watermark')
+    
+    
 
 )
