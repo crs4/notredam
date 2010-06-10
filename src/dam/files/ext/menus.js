@@ -543,7 +543,7 @@ Ext.onReady(function(){
                     menu:{
                         items:[{
                                 text    : 'New',
-                                handler : function(){script_detail_form('', '', '', false);}
+                                handler : function(){new_script(true,'New Script');}
                             
                             },{ 
                             	text    : 'Manage Scripts',                                                      
