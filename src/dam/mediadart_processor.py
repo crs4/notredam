@@ -146,8 +146,9 @@ def adapt_resource(component, machine):
                 argv +=  ['-crop', '%dx%d+%d+%d' % (action['parameters']['lowerright_x'] - action['parameters']['upperleft_x'],action['parameters']['lowerright_y'] - action['parameters']['upperleft_y'],  action['parameters']['upperleft_x'], action['parameters']['upperleft_y'])]
             
             elif action['type'] == 'watermark':
-                
-                argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (action['parameters']['pos_x_percent'],action['parameters']['pos_y_percent']), '-composite']
+                pos_x = int(int(action['parameters']['pos_x_percent'])*component.source.width/100)
+                pos_y = int(int(action['parameters']['pos_y_percent'])*component.source.height/100)
+                argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
             
         
         args['dest_size'] = (width, height)
