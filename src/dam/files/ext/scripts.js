@@ -93,7 +93,6 @@ function watermarking(id){
 }
 
 function _update_watermarks(){  
-	console.log('stampaaaaaaaaaaaaa');
 	Ext.getCmp('dataview_watermarks').getStore().load();
 }
 
@@ -210,10 +209,32 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 	                    	    height : 140,
 	                    	    bbar : [new Ext.Button({
                         			text : 'Upload',
-                        			width : 433,
+                        			width : 216,
                         			handler: function() {
                         				var up = new Upload('/upload_watermark/', true, {}, _update_watermarks);
                         				up.openUpload();
+                        			}
+                        		}),
+                        		new Ext.Button({
+                        			text : 'Delete',
+                        			width : 216,
+                        			handler: function() {
+                    	        		if (Ext.getCmp('dataview_watermarks').getSelectedRecords().length > 0){
+	                        				Ext.Ajax.request({
+	                    	                    url: '/delete_watermark/',
+	                    	                    params:{ 
+	                    	        				watermark : Ext.getCmp('dataview_watermarks').getSelectedRecords()[0].data.id
+	                    	        			},
+	                    	                    success: function(response) {
+	                    	                        if (Ext.decode(response.responseText)['success']){
+	                    	                        	Ext.MessageBox.alert('Success', 'Watermark removed.');
+	                    	                        	_update_watermarks();
+	                    	                        }else
+	                    	                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+	                    	                    }
+	                    	                });
+                    	        		}else
+                    	        			Ext.MessageBox.alert('Success', 'Select one watermark!');
                         			}
                         		})
 	                    	    ],
@@ -554,6 +575,7 @@ function _get_scripts_fields(name, description){
 	console.log(description);
 	var field_name = new Ext.form.TextField({
         fieldLabel: 'Name',
+        id : 'script_id',
         name: 'name', 
         allowBlank:false,
         enableKeyEvents: true,
@@ -638,31 +660,11 @@ function new_script(create, name, description, id_script){
     			var my_win = this.findParentByType('window');  
     			var type = my_win.get('media_type_tabs').getActiveTab().id.slice(4);
     			_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type);
-    			var pipeline = save_data_script(name, description, my_win);
+				var pipeline = save_data_script(name, description, my_win);
 
-	    		if(create){
-//					console.log('chiamata new_script');
-//					console.log(pipeline);
-	        		//chiamata ajax
-	        		Ext.Ajax.request({
-	                    url: '/new_script/',
-	                    params:{ 
-	        				name        : pipeline['name'],
-	        				description : pipeline['description'],
-	        				state : pipeline['state'] = "",
-	        				actions_media_type : Ext.encode(pipeline['actions_media_type'])
-	        			},
-	                    success: function(response) {
-	                        if (Ext.decode(response.responseText)['success']){
-	                        	Ext.MessageBox.alert('Success', 'Script saved.');
-	                        	my_win.close();
-	                        }else
-	                        	Ext.MessageBox.alert('Script NOT saved');
-	                    }
-	                });
+				if(create){
+    				script_detail_form(null, null, null, false, pipeline, my_win);
 				}else{
-//					console.log('chiamata edit_script');
-//					console.log(pipeline);
 	        		//chiamata ajax
 	        		Ext.Ajax.request({
 	                    url: '/edit_script/',
@@ -743,12 +745,12 @@ function load_data_script(data){
 }
 
 //Show windows form scripts data ()
-function script_detail_form(id_script, name, description, flag, main_win){
+function script_detail_form(id_script, name, description, flag, pipeline, main_win){
 	var title;
 	
 	if (flag == false){
 		title = 'New Script';
-		var fields = _get_scripts_fields('','');
+		var fields = _get_scripts_fields(name, description);
 	}else{
 		title = 'Change parameters';
 		var fields = _get_scripts_fields(name, description);
@@ -763,10 +765,8 @@ function script_detail_form(id_script, name, description, flag, main_win){
 	    modal: true,
 	    resizable : false,
 	    items:[new Ext.FormPanel({
-//	        labelWidth: 75, // label settings here cascade unless overridden
-	        frame:true,
-//	        bodyStyle:'padding:5px 5px 0',
-//	        width: 450,
+	        id : 'form_detail_script',
+	    	frame:true,
 	        defaults: {width:300},
 	        defaultType: 'textfield',
 	        items:[fields]
@@ -785,36 +785,54 @@ function script_detail_form(id_script, name, description, flag, main_win){
 	        type: 'submit',
 	        handler: function(){
 		    		var my_win = this.findParentByType('window');
+		    		var my_form = Ext.getCmp('form_detail_script');
 		    		//if(field_name.value) not work
 		    		if (flag){
-		        		Ext.Ajax.request({
-		                    url: '/rename_script/',
+		    			my_form.getForm().submit({
+		    				url: '/rename_script/',
 		                    params:{ 
 		        				name        : fields[0].getValue(),
 		        				description : fields[1].getValue(),
 		        				script : id_script
 		        			},
-		                    success: function(response) {
-		                        if (Ext.decode(response.responseText)['success']){
-		                        	Ext.MessageBox.alert('Success', 'Changes saved!');
-		                        	my_win.close();
-		    		        		main_win.get('open_form').get('my_scripts').getStore().reload();
-		                        	
-		                        }else
-		                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+		                    success: function(form, action) {
+//		        				console.log(form);
+//		        				console.log(action);
+	                        	Ext.MessageBox.alert('Success', 'Changes saved!');
+	                        	my_win.close();
+	    		        		main_win.get('open_form').get('my_scripts').getStore().reload();
+		                    },
+		        			failure: function(form, action) {
+		                    	Ext.MessageBox.alert(Ext.decode(action.response.responseText));
 		                    }
-		                });
-		    		}else//New script
-		    		if(fields[0].value != ""){
-			    		new_script(true, fields[0].getValue(), fields[1].getValue());
-			    		my_win.close();
+
+		    			});
 		    		}else{
-						Ext.Msg.show({
-							   title:'Warning',
-							   msg: 'You must define name!',
-							   buttons: Ext.Msg.OK,
-							   icon: Ext.MessageBox.WARNING
-						});			    			
+		    			//New script
+		    			console.log(fields[0].getValue());
+		    			console.log(fields[1].getValue());
+		    			my_form.getForm().submit({
+		    				url: '/new_script/',
+		                    params:{ 
+		        				name        : fields[0].getValue(),
+		        				description : fields[1].getValue(),
+		        				state : pipeline['state'] = "",
+		        				actions_media_type : Ext.encode(pipeline['actions_media_type'])
+		        			},
+		                    success: function(form, action) {
+//		        				console.log(form);
+//		        				console.log(action.response.responseText);
+	                        	Ext.MessageBox.alert('Success', 'Script saved.');
+	                        	my_win.close();
+	                        	main_win.close();		                    
+		        			},
+		        			failure: function(form, action) {
+//		        				console.log(form);
+//		        				console.log(action);
+		                    	Ext.MessageBox.alert('Script NOT saved, please insert Name.');
+		                    }
+
+		    			});
 		    		}
 	    		
 	            }
@@ -920,7 +938,7 @@ function manage_script(){
 	        		var my_win = this.findParentByType('window');
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
-		        		script_detail_form(data.id, data.name, data.description, true, my_win);
+		        		script_detail_form(data.id, data.name, data.description, true, null, my_win);
 
 		    		}
 	            }
