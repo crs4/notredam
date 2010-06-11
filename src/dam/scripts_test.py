@@ -31,7 +31,7 @@ pipeline_thumb = {
                 },
                
                 {
-                'type': 'saveas',
+                'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
                     'output': 'thumbnail'
@@ -53,7 +53,7 @@ pipeline_thumb = {
                 }
             },
             {
-                'type': 'saveas',
+                'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
                     'output': 'thumbnail'
@@ -73,7 +73,7 @@ pipeline_thumb = {
             
             },
             {
-            'type': 'saveas',
+            'type': 'save',
             'parameters':{
                 'output_format': 'jpeg',
                 'output': 'thumbnail'
@@ -108,7 +108,7 @@ pipeline_preview = {
                      }
                  },
                 {
-                'type': 'saveas',
+                'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
                     'output': 'preview'
@@ -131,7 +131,7 @@ pipeline_preview = {
                         }
                     },
                     {
-                    'type': 'saveas',
+                    'type': 'save',
                     'parameters':{
                         'output_format': 'mp3',
                         'output': 'preview'
@@ -190,7 +190,7 @@ pipeline_preview = {
 #                            
 #                },
                 {
-                'type': 'saveas',
+                'type': 'save',
                 'parameters':{
                     'output_format': 'flv',
                     'output': 'preview'
@@ -212,7 +212,7 @@ pipeline_preview = {
             
             },
             {
-            'type': 'saveas',
+            'type': 'save',
             'parameters':{
                 'output_format': 'jpeg',
                 'output': 'preview'
@@ -266,7 +266,7 @@ pipeline_fullscreen = {
 #                   
 #                },
                 {
-                'type': 'saveas',
+                'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
                     'output': 'fullscreen'
@@ -284,7 +284,7 @@ pipeline_fullscreen = {
 #                 
 #                 },
 #                 {
-#                'type': 'saveas',
+#                'type': 'save',
 #                'parameters':{
 #                    'output_format': 'jpeg',
 #                    'output': 'fullscreen'
