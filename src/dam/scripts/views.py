@@ -105,10 +105,10 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
             ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
 
     
-    EventRegistration.objects.filter( script = script, workspace = workspace).delete()
-    for event_name in events:
-        event = Event.objects.get(name = event_name)
-        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
+#    EventRegistration.objects.filter( script = script, workspace = workspace).delete()
+#    for event_name in events:
+#        event = Event.objects.get(name = event_name)
+#        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
 
     return script
 
