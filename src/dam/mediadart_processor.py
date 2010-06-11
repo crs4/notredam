@@ -238,7 +238,7 @@ def adapt_resource(component, machine):
                 if key == 'preset_name':
                     continue
                 
-                if key == 'max_size':
+                if key == 'max_size' or key == 'watermark_top_percent' or key == 'watermark_left_percent':
                     param_dict[key] = int(val)
                 else:
                     param_dict[key] = val
