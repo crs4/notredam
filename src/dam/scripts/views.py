@@ -106,9 +106,9 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
 
     
 #    EventRegistration.objects.filter( script = script, workspace = workspace).delete()
-#    for event_name in events:
-#        event = Event.objects.get(name = event_name)
-#        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
+    for event_name in events:
+        event = Event.objects.get(name = event_name)
+        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
 
     return script
 
