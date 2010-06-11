@@ -146,6 +146,11 @@ def edit_script(request):
         _new_script(name, description, workspace, pipeline, events, script)
     except IntegrityError:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
+    
+
+    items = [c.item for c in script.component_set.all()]
+    script.execute(items)
+        
     return HttpResponse(simplejson.dumps({'success': True}))
 
 @login_required

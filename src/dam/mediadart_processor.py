@@ -139,27 +139,55 @@ def adapt_resource(component, machine):
         acts = script.actionlist_set.get(media_type__name  = 'image')
         actions = simplejson.loads(acts.actions)['actions']
         logger.debug('actions %s'%actions)
+        orig_width = component.source.width
+        orig_height = component.source.height
         for action in actions:
             if action['type'] == 'resize':
                 argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
+                
+                aspect_ratio = orig_height/orig_width 
+                
+                if orig_width > orig_height:
+                    orig_width = action['parameters']['max_width']
+                    orig_height = aspect_ratio*orig_width 
+                else:
+                    orig_height = action['parameters']['max_height']
+                    orig_width = orig_height/aspect_ratio 
+                    
+                
             elif action['type'] == 'crop':
-                argv +=  ['-crop', '%dx%d+%d+%d' % (action['parameters']['lowerright_x'] - action['parameters']['upperleft_x'],action['parameters']['lowerright_y'] - action['parameters']['upperleft_y'],  action['parameters']['upperleft_x'], action['parameters']['upperleft_y'])]
+                lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
+                ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
+                lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
+                ul_y = int(int(action['parameters']['upperleft_y'])*component.source.height/100)
+                
+                orig_width = lr_x -ul_x 
+                orig_height = lr_y - ul_y
+                argv +=  ['-crop', '%dx%d+%d+%d' % (orig_width, orig_height,  ul_x, ul_y)]
             
             elif action['type'] == 'watermark':
-                pos_x = int(int(action['parameters']['pos_x_percent'])*component.source.width/100)
-                pos_y = int(int(action['parameters']['pos_y_percent'])*component.source.height/100)
+                pos_x = int(int(action['parameters']['pos_x_percent'])*orig_width/100)
+                pos_y = int(int(action['parameters']['pos_y_percent'])*orig_height/100)
                 argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
             
         
-        args['dest_size'] = (width, height)
+#        args['dest_size'] = (width, height)
 #        argv +=  ['-resize', '%dx%d' % (width, height)]
         
         
-        cropping  = vp.get('upperleft_x', False)
-        if cropping:
-            args['crop_box'] = (vp['upperleft_x'], vp['upperleft_y'], vp['lowerright_x'], vp['lowerright_y'])
-            
-            argv +=  ['-crop', '%dx%d+%d+%d' % (vp['lowerright_x'] -vp['upperleft_x'],vp['lowerright_y'] - vp['upperleft_y'],  vp['upperleft_x'], vp['upperleft_y'])]
+#        cropping  = vp.get('upperleft_x', False)
+#        if cropping:
+##            args['crop_box'] = (vp['upperleft_x'], vp['upperleft_y'], vp['lowerright_x'], vp['lowerright_y'])
+#            
+#            lr_x = int(int(vp['lowerright_x'])*component.source.width/100)
+#            ul_x = int(int(vp['upperleft_x'])*component.source.width/100)
+#            
+#            lr_y = int(int(vp['lowerright_y'])*component.source.height/100)
+#            ul_y = int(int(vp['upperleft_y'])*component.source.height/100)
+#            
+#            
+#            
+##            argv +=  ['-crop', '%dx%d+%d+%d' % (lr_x -ul_x, lr_y - ul_y,  ul_x, ul_y)]
             
         
 
