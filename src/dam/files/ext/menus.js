@@ -767,11 +767,17 @@ Ext.onReady(function(){
 	            								script_id : my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data.id
 	            							},
 	            					        success: function(data){
+	            								
+//	            								console.log(view);
 //	            					            var data = Ext.decode(data.responseText);
 //	            		                        delete_items_selection(selected_ids, data.multiple_ws);
 	            					        }
 	            					    });
 	                                }
+	            		    		//Update data view
+    							    var ac = Ext.getCmp('media_tabs').getActiveTab();
+    							    var view = ac.getComponent(0);
+    							    view.refresh();
 	            		    		my_win.close();
 	            	        }
 	                    },{
