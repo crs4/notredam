@@ -23,6 +23,7 @@ var ActionRecord = Ext.data.Record.create([ // creates a subclass of Ext.data.Re
     {name: 'parameters'}
 ]);
 
+
 function scripts_store(){
 
 	var actionMem = new Ext.data.JsonStore({
@@ -78,6 +79,8 @@ function reset_watermarking(){
 function _set_hidden_position_percent(id){
 	var pos_x = ((id-1) % 3) * 33 + 5;
 	var pos_y = (parseInt((id-1) / 3)) * 33 + 5;
+	console.log(pos_x);
+	console.log(pos_y);
 	Ext.getCmp('panel_watermarks_views').get('hidden_pos_x_percent').setValue(parseInt(pos_x));
 	Ext.getCmp('panel_watermarks_views').get('hidden_pos_y_percent').setValue(parseInt(pos_y));
 }
@@ -96,6 +99,32 @@ function _update_watermarks(){
 	Ext.getCmp('dataview_watermarks').getStore().load();
 }
 
+function _check_form_detail_script(my_win){
+	//verificare che tutti i campi siano selezionati.
+	console.log('check');
+	var flag = true;
+	var StoreGridTabs = {}; // for (key in dict)
+	for (i=0;i<my_win.get('media_type_tabs').items.items.length;i++){
+		var name_tab = my_win.get('media_type_tabs').items.items[i].id;
+		var type = name_tab.slice(4);
+		StoreGridTabs[name_tab] = my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore();
+//		pipeline['actions_media_type'][type]['source_variant'] = my_win.get('media_type_tabs').get(name_tab).get('my_panel_source_'+type).get('my_combo_source_'+type).getRawValue();
+//		pipeline['actions_media_type'][type]['actions'] = [];
+//		j = -1;
+		StoreGridTabs[name_tab].each(function(rec){
+//			j++;
+			params = rec.data;
+			console.log(params);
+			for(k=0;k<params.parameters.length;k++){
+				if (!params.parameters[k].value){
+					flag = false;
+				}
+			}
+		});
+	}
+	return flag;
+}
+
 function generate_details_forms(panel, grid, selected, actionsStore, media_type) {
 		
     var name_action = selected.data.name;
@@ -103,8 +132,7 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     var i = 0;
     watermarking_position = 0; // 0 mean undefined
     var recApp;
-    console.log('generate_detail_form')
-    console.log(selected.data);
+//    console.log('generate_detail_form')
 
 // remove all component
     panel.removeAll()
@@ -142,8 +170,6 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 					i = 0;
 					while (parameters[i]['name'] != 'filename' && i<parameters.length)
 						i++;
-					console.log('watermarks number');
-					console.log(this.data.items.length);
 					if (parameters[i]['name'] == 'filename' && parameters[i]['value']){
 						Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
 						Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
@@ -171,7 +197,6 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
         				        },
         			    	    listeners:{
         			    	        render: function(){
-        				            	console.log(selected.data);
         				            	i = 0;
 	    				        		while (parameters[i]['name'] != 'pos_x_percent' && i<parameters.length){
 	    				        			i++;
@@ -190,9 +215,7 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 	    			    	            else{
 	    			    	                watermarking(1);
 	    			    	                Ext.getCmp(watermarking_position_id).setValue(1);
-	    			    	                console.log(Ext.getCmp(watermarking_position_id));
 	    			    	            }
-					        		    console.log(selected.data);
         				        	}                
         				        }            
         		    		})    	                	
@@ -272,6 +295,11 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 	                					xtype:'hidden', 
 	                					id : 'hidden_pos_y_percent',
 	                					name:'pos_y_percent'
+	                				},{
+	                					xtype:'hidden', 
+	                					id : 'hidden_alpha',
+	                					name:'alpha',
+	                					value: '1'
 	                				}
 	                    	    ]
 	                    	})
@@ -328,8 +356,6 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 	    }
     }
 //reload panel
-	console.log('panel');
-	console.log(panel);
 	panel.doLayout();
 }
 
@@ -353,7 +379,7 @@ function newRecord(data, media_type){
 }
 
 function _pull_data(sm,media_type){
-	console.log("_pull_data");
+//	console.log("_pull_data");
 
 	if 	(sm.getSelected()){
 		var newParams = [];
@@ -366,7 +392,6 @@ function _pull_data(sm,media_type){
     		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
     		newParams.push(appParams); 
 	    }
-    	console.log(newParams);
 	    r.set('parameters',newParams);
 	    r.commit();
 	}
@@ -520,6 +545,7 @@ function _get_layout_tab(obj, media_type){
 	        if (selected_grid.getSelectionModel().hasSelection()){
 	        	var selected  = selected_grid.getSelectionModel().getSelected();
 	        	selected_grid.getStore().remove(selected);
+	        	Ext.getCmp('detailAction_'+media_type).removeAll();
 	        }
 	     }
         
@@ -571,8 +597,7 @@ function _get_tabs(){
 function _get_scripts_fields(name, description){
 
 	console.log('_get_scripts_fields');
-	console.log(name);
-	console.log(description);
+	
 	var field_name = new Ext.form.TextField({
         fieldLabel: 'Name',
         id : 'script_id',
@@ -622,18 +647,16 @@ function save_data_script(name, description, my_win){
 		StoreGridTabs[name_tab].each(function(rec){
 			j++;
 			params = rec.data;
-			console.log(rec);
 			pipeline['actions_media_type'][type]['actions'][j] = {};
 			pipeline['actions_media_type'][type]['actions'][j]['type'] = params.name;
 			pipeline['actions_media_type'][type]['actions'][j]['parameters'] = {};
 			for(k=0;k<params.parameters.length;k++){
-				console.log(params.parameters[k]);
 				pipeline['actions_media_type'][type]['actions'][j]['parameters'][params.parameters[k].name] = params.parameters[k].value;
 			}
 		});
 	}
-	console.log('pipeline');
-	console.log(pipeline);
+//	console.log('pipeline');
+//	console.log(pipeline);
 	return pipeline;
 	
 }
@@ -660,29 +683,38 @@ function new_script(create, name, description, id_script){
     			var my_win = this.findParentByType('window');  
     			var type = my_win.get('media_type_tabs').getActiveTab().id.slice(4);
     			_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type);
-				var pipeline = save_data_script(name, description, my_win);
-
-				if(create){
-    				script_detail_form(null, null, null, false, pipeline, my_win);
-				}else{
-	        		//chiamata ajax
-	        		Ext.Ajax.request({
-	                    url: '/edit_script/',
-	                    params:{ 
-	        				name        : pipeline['name'],
-	        				description : pipeline['description'],
-	        				script : id_script,
-	        				actions_media_type : Ext.encode(pipeline['actions_media_type'])
-	        			},
-	                    success: function(response) {
-	                        if (Ext.decode(response.responseText)['success']){
-	                        	Ext.MessageBox.alert('Success', 'Script saved.');
-	                        	my_win.close();
-	                        }else
-	                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
-	                    }
-	                });
-		    	}
+    			if (_check_form_detail_script(my_win)){
+					var pipeline = save_data_script(name, description, my_win);
+	
+					if(create){
+	    				script_detail_form(null, null, null, false, pipeline, my_win);
+					}else{
+		        		//chiamata ajax
+		        		Ext.Ajax.request({
+		                    url: '/edit_script/',
+		                    params:{ 
+		        				name        : pipeline['name'],
+		        				description : pipeline['description'],
+		        				script : id_script,
+		        				actions_media_type : Ext.encode(pipeline['actions_media_type'])
+		        			},
+		                    success: function(response) {
+		                        if (Ext.decode(response.responseText)['success']){
+		                        	Ext.MessageBox.alert('Success', 'Script saved.');
+		                        	my_win.close();
+		                        }else
+		                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+		                    }
+		                });
+			    	}
+    			}else{
+    				Ext.Msg.show({
+    					   title:'Warning',
+    					   msg: 'Fill in all fields relating to shares.',
+    					   buttons: Ext.Msg.OK,
+    					   icon: Ext.MessageBox.WARNING
+    					});	 
+    			}
 
             }
         },{
@@ -737,7 +769,6 @@ function load_data_script(data){
 		//load actions
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
         	var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
-        	console.log(newRec);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
 		}
 
@@ -809,8 +840,6 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 		    			});
 		    		}else{
 		    			//New script
-		    			console.log(fields[0].getValue());
-		    			console.log(fields[1].getValue());
 		    			my_form.getForm().submit({
 		    				url: '/new_script/',
 		                    params:{ 
@@ -820,15 +849,11 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 		        				actions_media_type : Ext.encode(pipeline['actions_media_type'])
 		        			},
 		                    success: function(form, action) {
-//		        				console.log(form);
-//		        				console.log(action.response.responseText);
 	                        	Ext.MessageBox.alert('Success', 'Script saved.');
 	                        	my_win.close();
 	                        	main_win.close();		                    
 		        			},
 		        			failure: function(form, action) {
-//		        				console.log(form);
-//		        				console.log(action);
 		                    	Ext.MessageBox.alert('Script NOT saved, please insert Name.');
 		                    }
 
@@ -995,17 +1020,14 @@ function manage_events(){
 						        				event_id  : record.data.id
 						        			},
 						                    success: function(response) {
-						                        	console.log(response.responseText)
 						        					var scripts = Ext.decode(response.responseText);
 						                        	var i;
-						                        	console.log(scripts['scripts']);
 						                        	if (scripts['scripts'].length > 0 ){
 					                        			var store = grid_scripts.getStore();
 					                        			var recApp = [];
 						                        		for(i=0; i<scripts['scripts'].length;i++){
 						                        			recApp.push(store.getAt(store.findExact('id', scripts['scripts'][i].id)));
 						                        		}
-						                        		console.log(recApp);
 					                        			grid_scripts.getSelectionModel().selectRecords(recApp);
 						                        	}else
 						                        		grid_scripts.getSelectionModel().clearSelections();
@@ -1051,13 +1073,9 @@ function manage_events(){
 		        		event = Ext.getCmp('id_combo_events').getValue();
 		        		scripts = Ext.getCmp('grid_panel_scripts').getSelectionModel().getSelections();
 		        		if (event){
-//			        			console.log(event);
-//				        		console.log(scripts);
 			        		for(i=0;i<scripts.length;i++){
 			        			scripts_id.push(scripts[i].data.id);
 			        		}
-//				        		console.log(scripts_id);
-//			        		set_script_associations/
 			        		Ext.Ajax.request({
 			                    url: '/set_script_associations/',
 			                    params:{ 
