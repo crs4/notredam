@@ -79,6 +79,8 @@ function reset_watermarking(){
 function _set_hidden_position_percent(id){
 	var pos_x = ((id-1) % 3) * 33 + 5;
 	var pos_y = (parseInt((id-1) / 3)) * 33 + 5;
+	console.log(pos_x);
+	console.log(pos_y);
 	Ext.getCmp('panel_watermarks_views').get('hidden_pos_x_percent').setValue(parseInt(pos_x));
 	Ext.getCmp('panel_watermarks_views').get('hidden_pos_y_percent').setValue(parseInt(pos_y));
 }
