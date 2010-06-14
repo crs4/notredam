@@ -660,11 +660,16 @@ function save_data_script(name, description, my_win){
 	return pipeline;
 	
 }
-function new_script(create, name, description, id_script){
+
+function new_script(create, name, description, id_script, already_run, run){
 	//create true new_script
 	//create false edit_script
 	var tabs = _get_tabs();
-
+	if (run)
+		text_button_submit = 'Save and Run';
+	else
+		text_button_submit = 'Save';
+	
     var edit_script_win = new Ext.Window({
         id:'general_form',
         constrain   : true,
@@ -677,7 +682,7 @@ function new_script(create, name, description, id_script){
         items:[tabs],
         buttons: [{
             id: 'save_details_button',
-            text: 'Save',
+            text: text_button_submit,
             type: 'submit',
             handler: function(){
     			var my_win = this.findParentByType('window');  
@@ -687,10 +692,11 @@ function new_script(create, name, description, id_script){
 					var pipeline = save_data_script(name, description, my_win);
 	
 					if(create){
-	    				script_detail_form(null, null, null, false, pipeline, my_win);
+	    				script_detail_form(null, null, null, false, pipeline, my_win, run);
 					}else{
 		        		//chiamata ajax
-		        		Ext.Ajax.request({
+
+						Ext.Ajax.request({
 		                    url: '/edit_script/',
 		                    params:{ 
 		        				name        : pipeline['name'],
@@ -700,7 +706,31 @@ function new_script(create, name, description, id_script){
 		        			},
 		                    success: function(response) {
 		                        if (Ext.decode(response.responseText)['success']){
-		                        	Ext.MessageBox.alert('Success', 'Script saved.');
+		    		        		if (already_run){
+		    		        			Ext.Msg.show({
+		    		        				   title:'Option.',
+		    		        				   msg: 'Your script saved. Do you want to run the script on the objects on which the script is executed?',
+		    		        				   buttons: Ext.Msg.YESNO,
+		    		        				   fn: function(btn){
+				    		        			    if (btn == 'yes'){
+				    		        			    	//run script
+				    		        			    	Ext.Ajax.request({
+				                					        url: '/run_script/',
+				                			                params: {
+				    		        			    			script_id : id_script,
+				                								run_again : true
+				                							},
+				                					        success: function(data){
+				                								Ext.MessageBox.alert('Success', 'Script run.');
+				                					        }
+				                						});
+				    		        			    }
+		    		        					},
+		    		        				   animEl: 'elId',
+		    		        				   icon: Ext.MessageBox.QUESTION
+		    		        				});	
+		    		        		}else
+		    		        			Ext.MessageBox.alert('Success', 'Script saved.');
 		                        	my_win.close();
 		                        }else
 		                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
@@ -776,7 +806,7 @@ function load_data_script(data){
 }
 
 //Show windows form scripts data ()
-function script_detail_form(id_script, name, description, flag, pipeline, main_win){
+function script_detail_form(id_script, name, description, flag, pipeline, main_win, run){
 	var title;
 	
 	if (flag == false){
@@ -850,8 +880,21 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 		        			},
 		                    success: function(form, action) {
 	                        	Ext.MessageBox.alert('Success', 'Script saved.');
+	                        	if (run){//this script must be run now.
+	                        		var selected_ids = get_selected_items();
+            						Ext.Ajax.request({
+            					        url: '/run_script/',
+            			                params: {
+            								items: selected_ids,
+            								script_id : Ext.decode(action.response.responseText)['id']
+            							},
+            					        success: function(data){
+            								Ext.MessageBox.alert('Success', 'Script run.');
+            					        }
+            						});		                    
+	                        	}
 	                        	my_win.close();
-	                        	main_win.close();		                    
+	                        	main_win.close();
 		        			},
 		        			failure: function(form, action) {
 		                    	Ext.MessageBox.alert('Script NOT saved, please insert Name.');
@@ -896,7 +939,7 @@ function manage_script(){
 	        		    method   :'POST',
 	        		    autoLoad :true,
 	        		    root     : 'scripts',
-	        		    fields   : ['id', 'name', 'description', 'actions_media_type']
+	        		    fields   : ['id', 'name', 'description', 'actions_media_type', 'already_run']
 	        	    }),
 	        	    columns          : [
 	        		        	        { id : 'name',  header: "Name", dataIndex: 'name', sortable: true},
@@ -923,7 +966,7 @@ function manage_script(){
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
 			    		my_win.close();
-			    		new_script(false, data.name, data.description, data.id);
+			    		new_script(false, data.name, data.description, data.id, data.already_run, false);
 			    		load_data_script(data);
 		    		}
 	            }
@@ -1050,7 +1093,7 @@ function manage_events(){
 	       		    method   :'POST',
 	       		    autoLoad :true,
 	       		    root     : 'scripts',
-	       		    fields   : ['id', 'name', 'description', 'actions_media_type']
+	       		    fields   : ['id', 'name', 'description', 'actions_media_type', 'already_run']
         	    }),
 		        cm: new Ext.grid.ColumnModel({
 		            defaults: {
