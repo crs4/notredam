@@ -748,6 +748,15 @@ Ext.onReady(function(){
 	            	        ]
 	            	    })],
 	                    buttons: [{
+	            	        text: 'Create script',
+	            	        type: 'submit',	    
+	            	        handler: function(){
+	                    		new_script(true,'New Script', null, null, false, true);
+	                    		
+	                    		var my_win = this.findParentByType('window');
+	                    		my_win.close();
+	                    	}
+                    	},{
 	            	        text: 'Run',
 	            	        type: 'submit',
 	            	        handler: function(){
@@ -780,7 +789,7 @@ Ext.onReady(function(){
     							    view.refresh();
 	            		    		my_win.close();
 	            	        }
-	                    },{
+                    },{
         		        text: 'Cancel',
         		        handler: function(){
         			            var my_win = this.findParentByType('window');
