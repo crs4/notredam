@@ -39,7 +39,7 @@ def get_scripts(request):
         for action in script.actionlist_set.all():                        
             actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
              
-        resp['scripts'].append({'id': script.pk, 'name': script.name, 'description': script.description, 'actions_media_type': actions_media_type})
+        resp['scripts'].append({'id': script.pk, 'name': script.name, 'description': script.description, 'actions_media_type': actions_media_type, 'already_run': script.component_set.all().count() > 0})
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -50,7 +50,7 @@ def get_script_actions(request):
     media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
     script = Script.objects.get(pk = script_id)
     tmp = simplejson.loads(script.pipeline)
-    resp = {'actions': tmp['media_type']}
+    resp = {'actions': tmp['media_type'], 'already_run': script.component_set.all().count() > 0}
     return HttpResponse(simplejson.dumps(resp))
 
     
@@ -185,10 +185,15 @@ def delete_script(request):
 def run_script(request):
     from dam.repository.models import Item
     script_id = request.POST['script_id']
-    items = request.POST.getlist('items')
-    items = Item.objects.filter(pk__in = items)
-    
     script = Script.objects.get(pk = script_id)
+    
+    run_again = request.POST.get('run_again')
+    if run_again:
+        items = [c.item for c in script.component_set.all()]
+    else:
+        items = request.POST.getlist('items')
+        items = Item.objects.filter(pk__in = items)
+    
     script.execute(items)
     return HttpResponse(simplejson.dumps({'success': True}))
     
