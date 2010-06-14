@@ -387,10 +387,12 @@ class Component(AbstractComponent):
         @param license_value an instance of metadata.RightsValue
         @param workspace an instance of workspace.DAMWorkspace
         """
+        from metadata.models import RightsValue,  MetadataValue
     
         logger.debug("SAVING RIGHTS")
 
         try:    
+            logger.debug('try')
             if isinstance(license_value, RightsValue):
                 license = license_value
             else:
@@ -406,8 +408,9 @@ class Component(AbstractComponent):
                 xmp_values[m.xmp_property.id] = m.value
             MetadataValue.objects.save_metadata_value(item_list, xmp_values, self.variant.name, workspace)
 
-        except:
-
+        except Exception,  ex:
+            logger.error(ex)
+            logger.debug('ex')
             self.metadata.filter(schema__rights_target=True).delete()
 
             original_comp = self.source
