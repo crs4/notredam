@@ -26,13 +26,15 @@ from django.db.models import Q
 
 from exceptions import *
 from treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
-from treeview.views import  _add_node
+
 from variants.models import Variant
 #from variants.models import VariantAssociation,   SourceVariant,  PresetParameterValue
-from workspace.models import Workspace,  WorkSpacePermissionAssociation,  WorkSpacePermission
+from core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
+
+from workspace.models import DAMWorkspace as Workspace
 from repository.models import Item,  Component
 from metadata.models import MetadataProperty,  MetadataValue
-from application.models import Type
+from core.dam_repository.models import Type
 from workflow.models import State, StateItemAssociation
 
 import hashlib

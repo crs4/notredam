@@ -395,8 +395,8 @@ class Watermark(BaseAction):
                 self.parameters['watermark_top'] = pos_x
                 self.parameters['watermark_left'] = pos_y
             else:
-                self.parameters['watermark_top_percent'] = pos_x_percent
-                self.parameters['watermark_left_percent'] = pos_y_percent
+                self.parameters['watermark_top_percent'] = pos_y_percent
+                self.parameters['watermark_left_percent'] = pos_x_percent
                 
                 
             

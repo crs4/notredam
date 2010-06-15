@@ -45,7 +45,7 @@ from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type
+from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type, _save_uploaded_variant
 from dam.workflow.views import _set_state 
 from decorators import *
 from exceptions import *
@@ -811,69 +811,22 @@ class ItemResource(ModResource):
 
         """       
         
-        variant_id = request.POST.get('variant_id') 
-        if not variant_id:
-            raise MissingArgs
-            
+        
+             
+        upload_file = request.FILES['Filedata']
+        
         ws_id = request.POST.get('workspace_id')
         if not ws_id:
             raise MissingArgs
         
-        ws = Workspace.objects.get(pk = ws_id)    
-            
+        ws = Workspace.objects.get(pk = ws_id)   
         user_id = request.POST ['user_id']
-        logger.debug('user_id %s'% user_id)
-        item  = Item.objects.get(pk = item_id)
-        if ws not in item.workspaces.all():
-            raise WrongWorkspace
-            
-        _check_app_permissions(ws,  user_id,  ['admin',  'edit_metadata'])
-#        variant = VariantAssociation.objects.get(pk = variant_id).variant
-        variant = Variant.objects.get(pk = variant_id)
-        comp = item.create_variant(variant, ws)
+        user = User.objects.get(pk = user_id)
+        request = request.copy()
+        request['item_id'] = item_id
+        _save_uploaded_variant(request, upload_file, user, workspace)
         
-#        url  = request.POST.get('url')
-#        if request.POST.has_key('external'):
-#            if not url:
-#                raise MissingArgs
-#            if int(request.POST.get('external')) == 1:
-#                comp.uri = request.POST.get('url')
-#                comp.save()
-#                return HttpResponse('')
-#        else:
-#            if not url:
-        fsize  = request.POST.get('fsize')                
-        file_name = request.POST.get('file_name')
-     
-        ext = file_name.split('.')[1]
-        if not fsize:
-            raise MissingArgs({'args': ['no fsize passed']}) 
-        
-        resp, job_id = _get_upload_url(comp.ID, fsize, ext)
-#                resp,  job_id = ('aaaa',  'aaaa')
-        logger.debug('ext %s'%ext)
-        comp.format = ext
-        comp.imported = True
-        if file_name:
-            comp.file_name = file_name
-            
-        comp.save()
-        mime_type = mimetypes.guess_type("test.%s"%ext)[0]
-        
-        logger.debug('mime_type %s'%mime_type)
-
-#            else:
-#                job_id = None
-#                resp = ''
-#                mime_type = guess_media_type(url)[0]
-
-        item_ctype = ContentType.objects.get_for_model(item)
-        metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-        metadata_mimetype = MetadataValue.objects.get_or_create(schema=metadataschema_mimetype, object_id=item.ID, content_type=item_ctype, value=mime_type)
-        orig = MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
-
-        generate_tasks(variant, ws, item,  upload_job_id=job_id)
-
+      
         return HttpResponse(simplejson.dumps(resp))
         
     @exception_handler
