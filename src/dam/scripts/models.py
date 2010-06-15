@@ -392,8 +392,8 @@ class Watermark(BaseAction):
                 raise MissingActionParameters('no coordinates for watermark are passed (pos_x, pos_y or pos_x_percent, pos_y_percent): they are required')
             
             if (pos_x and pos_y):
-                self.parameters['watermark_top'] = pos_x
-                self.parameters['watermark_left'] = pos_y
+                self.parameters['watermark_top'] = pos_y
+                self.parameters['watermark_left'] = pos_x
             else:
                 self.parameters['watermark_top_percent'] = pos_y_percent
                 self.parameters['watermark_left_percent'] = pos_x_percent

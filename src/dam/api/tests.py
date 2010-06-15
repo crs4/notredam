@@ -509,12 +509,18 @@ class WSTestCase(MyTestCase):
         
         
 class ItemTest(MyTestCase):  
-    fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'variants/fixtures/test_data.json', 'workspace/fixtures/test_data.json' ,  'metadata/fixtures/test_data.json' ]    
+    fixtures = ['api/fixtures/test_data.json', 
+                'treeview/fixtures/test_data.json', 
+                 'repository/fixtures/test_data.json',  
+#                 'variants/fixtures/test_data.json',
+                  'workspace/fixtures/test_data.json' , 
+                   'metadata/fixtures/test_data.json' 
+                   ]    
     
     def test_create(self):
         workspace_id = 1
         metadata_dict = {'namespace':'dc',  'name':'title',  'value': 'test',  'lang': 'en', }
-        params = {'workspace_id':workspace_id,  }
+        params = {'workspace_id':workspace_id, 'media_type': 'image' }
     
         params = self.get_final_parameters(params)                
         
@@ -522,7 +528,7 @@ class ItemTest(MyTestCase):
         resp_dict = json.loads(response.content)
         self.assertTrue(resp_dict.has_key('id'))
         item = Item.objects.get(pk = resp_dict['id'])
-        self.assertTrue(item.type == 'image')
+        self.assertTrue(item.type.name == 'image')
         self.assertTrue(resp_dict['workspace_id'] == str(workspace_id))
             
 #        m = item.metadata.all()
@@ -535,18 +541,7 @@ class ItemTest(MyTestCase):
 #        self.assertTrue(m.value == metadata_dict['value'])
 #        self.assertTrue(m.language == metadata_dict['lang'])
 #        
-    def test_create_media_type(self):
-        workspace_id = 1
-        media_type = 'audio'
-        params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': media_type})
-        
-        response = self.client.post('/api/item/new/', params,)                
-        resp_dict = json.loads(response.content)
-        self.assertTrue(resp_dict.has_key('id'))
-        item = Item.objects.get(pk = resp_dict['id'])
-        self.assertTrue(item.type == media_type)
-#        self.assertTrue(resp_dict['model'] == 'item') 
-        self.assertTrue(resp_dict['workspace_id'] == str(workspace_id))
+    
         
         
     def test_create_media_type_exception(self):
@@ -581,7 +576,8 @@ class ItemTest(MyTestCase):
         print "item.node_set.filter(type = 'collection')%s"%item.node_set.filter(type = 'collection')
         self.assertTrue(resp_dict['collections'] == [c.pk for c in item.node_set.filter(type = 'collection')])
     
-        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
+        metadata = {'dc_title': {'en-US': 'test'}}
+#        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
         self.assertTrue(resp_dict['metadata'] == metadata)
         
         
@@ -806,26 +802,24 @@ class ItemTest(MyTestCase):
         
         
     def test_upload(self):
-        params = self.get_final_parameters({ 'workspace_id': 1,  'media_type':'image'}) 
-        response = self.client.post('/api/item/new/', params, )            
-        resp_dict = json.loads(response.content)
-        item_id = resp_dict['id']
-        print item_id
-        params = self.get_final_parameters({ 'workspace_id': 1,  'variant_id':3,  'fsize': 1000,  'file_name':'test.jpg'})                
-        response = self.client.post('/api/item/%s/upload/'%item_id, params, )            
+        from django.test import client 
+        from batch_processor.models import Action
+        workspace = Workspace.objects.all()[0]
+        image = Type.objects.get(name = 'image')
+        item = Item.objects.create(type = image)
+        item.workspaces.add(workspace)
+        
+        file = open('files/images/logo_blue.jpg')
+        params = self.get_final_parameters({ 'workspace_id': 1,  'variant_id':1})                
+        params['Filedata'] = file
+        
+        response = self.client.post('/api/item/%s/upload/'%item.pk, params, )            
+        file.close()
         
         print response.content 
-        resp = json.loads(response.content)
-        self.assertTrue(Component.objects.filter(file_name = 'test.jpg',  item__pk = item_id).count() == 1)
-        self.assertTrue(resp.has_key('job_id'))
-        self.assertTrue(resp.has_key('unique_key'))
-        self.assertTrue(resp.has_key('ip'))
-        self.assertTrue(resp.has_key('port'))
-        self.assertTrue(resp.has_key('chunk_size'))
-        self.assertTrue(resp.has_key('chunks'))
-        self.assertTrue(resp.has_key('res_id'))
-#        self.assertTrue(resp.has_key('id'))
-#        self.assertTrue(response.content == '')         
+        self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
+        self.assertTrue(Action.objects.filter(component__in = item.component_set.all()).count() == 7) #(adapt + extract feat)*3 + extract feat orig
+                 
         
     def test_get_state(self):
         
