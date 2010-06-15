@@ -35,7 +35,7 @@ from django.contrib.auth.models import Permission
 from dam.repository.models import Item,  Component, _get_resource_url
 from dam.core.dam_repository.models import Type
 from dam.core.dam_metadata.models import XMPStructure
-from dam.workspace.models import DAMWorkspace as Workspace
+from dam.workspace.models import DAMWorkspace
 from dam.core.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
@@ -52,6 +52,7 @@ from exceptions import *
 from workspace.forms import AdminWorkspaceForm
 
 from django.contrib.auth import authenticate,  login
+from upload.uploadhandler import StorageHandler
 
 #from django.contrib.sessions.backends.db import SessionStore
 
@@ -793,8 +794,8 @@ class ItemResource(ModResource):
         return HttpResponse('')
         
         
-    @exception_handler
-    @api_key_required
+#    @exception_handler
+#    @api_key_required
     def upload_variant(self,  request,  item_id,):
 #    TODO:FINISH DOC
         """ 
@@ -803,31 +804,29 @@ class ItemResource(ModResource):
             - params:
                 - workspace_id
                 - variant_id
-                - file_name
-                - fsize
+                - Filedata: the file to upload
             
-        - returns: json formatted information for uploading a resource
-         {"job_id": "e2f076bd89eac4f4397d5a89e0c32ef87f212158", "unique_key": "5bf3b0667a210bcafa4b38fa7f5453d75d0ae5ad", "ip": "127.0.0.1", "port": 10000, "chunk_size": 524288, "chunks": 1, "res_id": "c8230f4147cd45a55032405b5401a962ae42733c", "id": "d7faee99860c35f77e7c502bf47026c47d0cee10"}
+        - returns: empty string
 
         """       
         
         
-             
+        
+        request.upload_handlers = [StorageHandler()]
         upload_file = request.FILES['Filedata']
         
         ws_id = request.POST.get('workspace_id')
         if not ws_id:
             raise MissingArgs
         
-        ws = Workspace.objects.get(pk = ws_id)   
+        ws = DAMWorkspace.objects.get(pk = ws_id)   
         user_id = request.POST ['user_id']
         user = User.objects.get(pk = user_id)
-        request = request.copy()
-        request['item_id'] = item_id
-        _save_uploaded_variant(request, upload_file, user, workspace)
-        
-      
-        return HttpResponse(simplejson.dumps(resp))
+        request.POST = request.POST.copy()
+        request.POST['item_id'] = item_id
+        _save_uploaded_variant(request, upload_file, user, ws)
+              
+        return HttpResponse('')
         
     @exception_handler
     @api_key_required
@@ -1290,7 +1289,7 @@ class ItemResource(ModResource):
         user_id = request.POST.get('user_id')
         
         workspace_id = request.POST['workspace_id']        
-        ws = Workspace.objects.get(pk = workspace_id)        
+        ws = DAMWorkspace.objects.get(pk = workspace_id)        
         item = Item.objects.get(pk = item_id)
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
         current_ws = item.workspaces.exclude(pk = ws.pk)[0]
@@ -1341,41 +1340,16 @@ class ItemResource(ModResource):
         collection_ids = [c.pk for c in colls]
             
         wss = item.workspaces.all()
-        
-        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': item.type}
+        logger.debug('wss %s'%wss)
+        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': item.type.name}
         try:
             upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace
             resp['upload_workspace']= upload_workspace.pk
         except Node.DoesNotExist:
             pass
         
-#        metadata = item.get_metadata_values()
-
-#        metadata_list = []
-#        metadata_array_value_dict =  {}
-#        for data in metadata:
-#            namespace = data.schema.namespace.prefix
-#            name = data.schema.name
-#            value = data.value
-#            logger.debug('is_array %s'%data.schema.is_array  )
-#            if data.schema.is_array == 'not_array' or data.schema.is_array == 'alt':
-#                name = data.schema.name
-#                value = data.value
-#                tmp_dict = {'namespace': namespace,  'name': name,  'value': value}
-#                if data.schema.is_array == 'alt' and data.schema.type == 'lang':
-#                    tmp_dict['lang'] = data.language
-#                metadata_list.append(tmp_dict)
-#            else:
-#                key = (namespace,  name)
-#                if not metadata_array_value_dict.has_key(key):
-#                    metadata_array_value_dict[key] = []
-#                metadata_array_value_dict[key].append(value)
-#                    
-#        for key,  value in metadata_array_value_dict.items():
-#            metadata_list.append({'namespace': key[0],  'name': key[1],  'value': value})
-#        
-#        resp['metadata'] = metadata_list
         
+        logger.debug('item.component_set.all() %s'% item.component_set.get(variant__name = 'original').workspace.all())
         metadata = self._get_metadata(item)
         resp['metadata'] = metadata
         
@@ -1432,7 +1406,7 @@ class ItemResource(ModResource):
         for c in component_list:
             v = c.variant
                             
-            va = v.variantassociation_set.get(workspace__pk = workspace_id)
+            
             logger.debug('v %s'%v)
             url  = c.get_component_url()        
 #            item.variants[va.pk] = url
@@ -1460,19 +1434,21 @@ class ItemResource(ModResource):
         if not request.POST.has_key('workspace_id'):
             raise MissingArgs
         
-        types = [t.name for t in Type.objects.all()]
-        
-        media_type = request.POST.get('media_type',  'image')
-        
-        if media_type not in types:
+        media_type = request.POST['media_type']
+        try:
+            media_type = Type.objects.get(name = media_type)
+            
+        except Type.DoesNotExist:
             raise InvalidMediaType
+        
+            
         
         user_id = request.POST ['user_id']
         logger.debug('user_id %s'%user_id)
         user = User.objects.get(pk = user_id)
         
         ws_id = request.POST ['workspace_id']            
-        ws = Workspace.objects.get(pk = ws_id)
+        ws = DAMWorkspace.objects.get(pk = ws_id)
         
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
 

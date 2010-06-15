@@ -154,7 +154,7 @@ class Item(AbstractItem):
         If the XMP Property is not specified, all the metadata will be returned
         @param metadataschema an instance of metadata.MetadataProperty
         """
-        from dam.metadata.models import MetadataValue
+        from dam.metadata.models import MetadataValue, MetadataProperty
     
         values = []
         original_component = Component.objects.get(item=self, variant__name='original', workspace=self.workspaces.all()[0])
