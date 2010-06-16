@@ -39,7 +39,7 @@ def get_scripts(request):
         for action in script.actionlist_set.all():                        
             actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
              
-        resp['scripts'].append({'id': script.pk, 'name': script.name, 'description': script.description, 'actions_media_type': actions_media_type, 'already_run': script.component_set.all().count() > 0})
+        resp['scripts'].append({'id': script.pk, 'name': script.name, 'description': script.description, 'is_global': script.is_global,  'actions_media_type': actions_media_type, 'already_run': script.component_set.all().count() > 0})
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -88,13 +88,13 @@ def get_actions(request):
     logger.debug('actions %s'%actions)        
     return HttpResponse(simplejson.dumps(actions))
 
-def _new_script(name = None, description = None, workspace = None, pipeline = None, events = [], script = None):
+def _new_script(name = None, description = None, workspace = None, pipeline = None, events = [], script = None,  is_global = False):
     
     if script:        
         if pipeline:
             ActionList.objects.filter(script = script).delete()
     else:
-        script = Script.objects.create(name = name, description = description, workspace = workspace)
+        script = Script.objects.create(name = name, description = description, workspace = workspace,  is_global = is_global)
     
     if pipeline:
         pipeline = simplejson.loads(pipeline)

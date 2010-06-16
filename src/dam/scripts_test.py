@@ -309,17 +309,17 @@ Event.objects.create(name = 'upload')
 Event.objects.create(name = 'item copy')
 
 pipeline_json = simplejson.dumps(pipeline_thumb)
-_new_script(name = 'thumb_generation', description = 'thumbnail generation', workspace = ws, pipeline = pipeline_json, events = ['upload', 'item copy'])
+_new_script(name = 'thumb_generation', description = 'thumbnail generation', workspace = ws,  pipeline = pipeline_json, events = ['upload', 'item copy'],  is_global = True)
 ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
 
 
 pipeline_json = simplejson.dumps(pipeline_preview)
-_new_script(name = 'preview_generation', description = 'preview generation', workspace = ws, pipeline = pipeline_json, events = ['upload', 'item copy'])
+_new_script(name = 'preview_generation', description = 'preview generation', workspace = ws, pipeline = pipeline_json, events = ['upload', 'item copy'], is_global = True)
 ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
 
 pipeline_json = simplejson.dumps(pipeline_fullscreen)
 
-_new_script(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, events = ['upload', 'item copy'])
+_new_script(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, events = ['upload', 'item copy'], is_global = True)
 ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
 
 #
