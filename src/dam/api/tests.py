@@ -804,30 +804,7 @@ class ItemTest(MyTestCase):
 class KeywordsTest(MyTestCase):
     fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json']   
     
-#    def test_get(self):
-#             
-#        ws_pk = 1
-#        params = self.get_final_parameters({'workspace_id':ws_pk})
-#        response = self.client.get('/api/keyword/get/', params,  )        
-#        resp_dict = json.loads(response.content)   
-#        ws = Workspace.objects.get(pk = ws_pk)
-#        nodes = Node.objects.filter(type = 'keyword',  depth = 1, workspace = ws)
-#        self.assertTrue(resp_dict.has_key('keywords'))
-#        self.assertTrue(isinstance(resp_dict['keywords'],  list))
-#        self.assertTrue(len(resp_dict['keywords']) ==  nodes.count() )  
-#        node_id = resp_dict['keywords'][0]['id']
-#        node = Node.objects.get(pk = node_id)
-#       
-#        self.assertTrue(resp_dict['keywords'][0]['workspace'] == node.workspace.pk)
-#        self.assertTrue(resp_dict['keywords'][0]['parent_id'] == None)
-#        self.assertTrue(resp_dict['keywords'][0]['label'] == node.label)
-#        
-#        items = node.items.all()
-#        self.assertTrue(resp_dict['keywords'][0]['items'] == [i.pk for i in items])
-#        self.assertTrue(len(resp_dict['keywords'][0]['children'] )== node.children.all().count())
-#       
-#        print resp_dict['keywords']
-        
+
     def test_get_single(self):        
              
         ws_pk = 1
@@ -1052,7 +1029,7 @@ class KeywordsTest(MyTestCase):
         workspace_id = 1
         ws = Workspace.objects.get(pk = workspace_id)
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
-        item = Item.objects.create(uploader = User.objects.get(pk = 1),  type = 'image',)
+        item = Item.objects.create(uploader = User.objects.get(pk = 1),  type = Type.objects.get(name = 'image'),)
         
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
         item = Item.objects.all()[0]

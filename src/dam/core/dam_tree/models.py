@@ -156,7 +156,7 @@ class AbstractNode(models.Model):
         """
         Deletes node
         """
-        super(self.__class__, self).delete(*args,  **kwargs)
+        super(AbstractNode, self).delete(*args,  **kwargs)
         root = self.__class__.objects.filter(depth= 0, type = self.type)
         root[0].rebuild_tree(1)
 
