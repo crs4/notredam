@@ -742,8 +742,7 @@ class ItemTest(MyTestCase):
         
         
     def test_add_to_ws(self):
-        
-        workspace = Workspace.objects.all()[1]
+        workspace = Workspace.objects.create(name = 'test_ws',  creator = self.user)
         workspace_id = workspace.pk
         
         
