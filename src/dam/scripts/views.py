@@ -134,8 +134,8 @@ def edit_script(request):
     script_id = request.POST['script']
     script = Script.objects.get(pk = script_id)
     
-    if script.is_global:        
-        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+#    if script.is_global:        
+#        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
         
     pipeline = request.POST.get('actions_media_type')
     workspace = request.session.get('workspace')
