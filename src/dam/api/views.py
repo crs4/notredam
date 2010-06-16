@@ -869,7 +869,8 @@ class ItemResource(ModResource):
         
         """
         try:
-            return self._set_metadata(request,  item_id,)   
+            
+            return self._set_metadata(request,  item_id)   
         except Exception, ex:
             logger.exception(ex)
             raise ex
@@ -965,7 +966,7 @@ class ItemResource(ModResource):
                 new_metadata[str(property.pk)] = metadata[data]
                 
         logger.debug('new_metadata %s' %new_metadata)
-        MetadataValue.objects.save_metadata_value([item_id], new_metadata,  'original', workspace)
+        MetadataValue.objects.save_metadata_value([item], new_metadata,  'original', workspace)
         
 #        for data in metadata:            
 #            logger.debug('metadata %s '%metadata )
