@@ -634,38 +634,16 @@ class ItemTest(MyTestCase):
         self.assertTrue(sub[0].value == 'test')
         self.assertTrue(sub[1].value == 'test2')
        
-        
-        
-#    def test_metadata_2(self):
-#        item = Item.objects.all()[0]
-#        item_id = item.pk
-#        
-#        metadata_dict = {'namespace':'dc',  'name':'subject',  'value': ['test',  'test2']}
-#        params = self.get_final_parameters({'metadata':json.dumps([metadata_dict]),  'workspace_id': 1})        
-#        response = self.client.post('/api/item/%s/set_metadata/'%item_id, params, )            
-#
-#        self.assertTrue(response.content == '')
-#        m = item.metadata.all()
-#        self.assertTrue(m.count() == 2)
-#        m_0,  m_1 = m
-#      
-#        self.assertTrue(m_0.schema.namespace == metadata_dict['namespace'])
-#        self.assertTrue(m_0.schema.name== metadata_dict['name'])
-#        self.assertTrue(m_0.value == metadata_dict['value'][0])
-#        
-#        self.assertTrue(m_1.schema.namespace == metadata_dict['namespace'])
-#        self.assertTrue(m_1.schema.name== metadata_dict['name'])
-#        self.assertTrue(m_1.value == metadata_dict['value'][1])
-        
+     
     def test_remove_metadata_single(self):
         workspace_id = 1
-        params = self.get_final_parameters({'workspace_id':workspace_id})        
+        params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': 'image'})        
         response = self.client.post('/api/item/new/', params,  )                
         
         resp_dict = json.loads(response.content)        
         item_id = resp_dict.get('id')
         item = Item.objects.get(pk = item_id)
-        self.assertTrue(not item.is_public)
+       
         
 #        metadata_dict = {'namespace':'dc',  'name':'subject',  'value': ['test',  'test2']}
         metadata_dict = {'dc_subject': ['test', 'test2']}
@@ -689,13 +667,12 @@ class ItemTest(MyTestCase):
         
     def test_remove_metadata_all(self):
         workspace_id = 1
-        params = self.get_final_parameters({ 'workspace_id':workspace_id})        
+        params = self.get_final_parameters({ 'workspace_id':workspace_id,  'media_type': 'image'})        
         response = self.client.post('/api/item/new/', params,  )                
         
         resp_dict = json.loads(response.content)        
         item_id = resp_dict.get('id')
         item = Item.objects.get(pk = item_id)
-        self.assertTrue(not item.is_public)
         
         metadata_dict = {'namespace':'dc',  'name':'subject',  'value': ['test',  'test2']}
         params = self.get_final_parameters({ 'metadata':json.dumps([metadata_dict])})        

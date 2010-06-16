@@ -407,7 +407,6 @@ class MetadataManager(models.Manager):
                     obj = Component.objects.get(item=item, variant__name=variant_name, workspace=workspace)
                     ctype = ctype_obj
                 else:
-                    print('--------------------------item %s'%item)
                     obj = item
                     ctype = ctype_item
     
