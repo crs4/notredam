@@ -2009,7 +2009,7 @@ class KeywordsResource(ModResource):
             ws = node_parent.workspace        
             
         elif request.POST.has_key('workspace_id'):
-            ws = Workspace.objects.get(pk = request.POST['workspace_id'])
+            ws = DAMWorkspace.objects.get(pk = request.POST['workspace_id'])
             node_parent = Node.objects.get(type = 'keyword',  depth = 0,  workspace = ws)
         else:
             raise MissingArgs        
@@ -2048,7 +2048,7 @@ class KeywordsResource(ModResource):
         if new_node.count() > 0:
             new_node = new_node[0]
         else:
-            new_node = node_parent.add_node(request.POST['label'],  ws, type, associate_ancestors)   
+            new_node = Node.objects.add_node(node_parent, request.POST['label'],  ws, type, associate_ancestors)   
             if len(metadata_schema) > 0:
                 new_node.save_metadata_mapping(metadata_schema)
         
