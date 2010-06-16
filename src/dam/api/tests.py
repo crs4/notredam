@@ -743,7 +743,7 @@ class ItemTest(MyTestCase):
         
     def test_add_to_ws(self):
         
-        workspace = Workspace.objects.all()[1]
+        workspace = DAMWorkspace.objects.all()[1]
         workspace_id = workspace.pk
         
         
