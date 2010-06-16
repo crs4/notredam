@@ -844,7 +844,7 @@ class ItemResource(ModResource):
             raise MissingArgs
 
         ws_id = request.GET['workspace_id']            
-        ws = Workspace.objects.get(pk = ws_id)        
+        ws = DAMWorkspace.objects.get(pk = ws_id)        
         item = Item.objects.get(pk = item_id)
         
         user_id = request.GET['user_id']        
