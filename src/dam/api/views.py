@@ -1547,10 +1547,10 @@ class ItemResource(ModResource):
         
         
         try:
-            logger.debug('StateItemAssociation.objects.get(item=item, workspace= ws) %s'%StateItemAssociation.objects.get(item=item, workspace=ws))
-            state = StateItemAssociation.objects.get(item=item, workspace=ws).state
+            state = item.stateitemassociation_set.get(state__workspace = ws).state
             resp = {'name': state.name}
-        except:
+        except Exception, ex:
+            logger.exception(ex)
             resp = ''
         
             
@@ -1600,7 +1600,7 @@ class ItemResource(ModResource):
         
         
         workspace = Workspace.objects.get(pk = ws_id)
-        _set_state(items, workspace, state) 
+        _set_state(items, state) 
         return HttpResponse('')   
 
 

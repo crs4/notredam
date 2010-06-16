@@ -743,7 +743,7 @@ class ItemTest(MyTestCase):
         
     def test_add_to_ws(self):
         
-        workspace = DAMWorkspace.objects.all()[1]
+        workspace = Workspace.objects.all()[1]
         workspace_id = workspace.pk
         
         
@@ -753,29 +753,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(response.content == '')        
         self.assertTrue(item in workspace.items.all()) 
         
-#    def test_generate_variants(self):        
-#        item = Item.objects.all()[0]
-#        ws = Workspace.objects.all()[0]
-#      
-#        params = self.getp_final_parameters({ 'workspace_id':ws.pk,})        
-#        
-#        response = self.client.post('/api/item/%s/generate_variants/'%item.pk, params, )            
-#        self.assertTrue(response.content == '')         
-#       
-#        
-#    def test_private_generate_variants(self):        
-#        item = Item.objects.all()[0]
-#        ws = Workspace.objects.all()[0]
-#        item.type = 'movie'
-#        item.save()
-#        media_type = 'image'
-#        params = self.get_final_parameters({ 'workspace_id':ws.pk,'media_type': media_type})        
-#        
-#        response = self.client.post('/api/private/item/%s/generate_variants/'%item.pk, params, )            
-#        self.assertTrue(response.content == '')         
-#        item = Item.objects.all()[0]
-#        self.assertTrue(item.type == media_type)
-#        
+
         
         
     def test_upload(self):
@@ -802,25 +780,25 @@ class ItemTest(MyTestCase):
         
         workspace = Workspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
-        state = State.objects.create(name = 'test')
-        state_association = StateItemAssociation.objects.create(state = state, item = item, workspace = workspace)
+        state = State.objects.create(name = 'test',  workspace = workspace)
+        state_association = StateItemAssociation.objects.create(state = state, item = item, )
         params = self.get_final_parameters({ 'workspace_id': workspace.pk,  }) 
         response = self.client.post('/api/item/%s/get_state/'%item.pk, params, )            
         resp_dict = json.loads(response.content)
-        print resp_dict
+        print '-------------------------',  resp_dict
         self.assertTrue(resp_dict == {'name': 'test'})
         
     
     def test_set_state(self): 
         workspace = Workspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
-        state = State.objects.create(name = 'test')
-        state_association = StateItemAssociation.objects.create(state = state, item = item, workspace = workspace)
+        state = State.objects.create(name = 'test',  workspace = workspace)
+        state_association = StateItemAssociation.objects.create(state = state, item = item)
         params = self.get_final_parameters({ 'workspace_id': workspace.pk, 'state': state.name}) 
         response = self.client.post('/api/item/%s/set_state/'%item.pk, params, )            
         
         self.assertTrue(response.content == '')
-        self.assertTrue(StateItemAssociation.objects.get(workspace = workspace, item = item).state.name == 'test')
+        self.assertTrue(StateItemAssociation.objects.get(item = item).state.name == 'test')
         
         
 
