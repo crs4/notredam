@@ -165,9 +165,13 @@ class Node(AbstractNode):
         self.remove_metadata(items)
 
     def remove_collection_association(self, items):
+        logger.debug('items %s'%items)
         try:
-            items = Item.objects.filter(pk__in = items)
+            items = self.items.filter(pk__in = items)
+            logger.debug('items %s'%items)
+            logger.debug('self.items %s'%self.items.all())
             self.items.remove(*items)
+            logger.debug('self.items %s'%self.items.all())
         except Exception, ex:
             logger.exception(ex)
             raise ex    
