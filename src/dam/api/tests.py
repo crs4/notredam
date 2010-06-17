@@ -29,9 +29,9 @@ from treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  Smart
 
 from variants.models import Variant
 #from variants.models import VariantAssociation,   SourceVariant,  PresetParameterValue
-from core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
+#from core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
 
-from workspace.models import DAMWorkspace as Workspace
+from workspace.models import DAMWorkspace
 from repository.models import Item,  Component
 from metadata.models import MetadataProperty,  MetadataValue
 from core.dam_repository.models import Type
@@ -108,7 +108,7 @@ class WSTestCase(MyTestCase):
         
     def test_add_members(self):
         ws_pk = 1
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         u = User.objects.create(username = 'test')
         
         params = self.get_final_parameters({'users': u.username, 'permissions':'admin'})
@@ -121,7 +121,7 @@ class WSTestCase(MyTestCase):
 
     def test_set_permissions(self):
         ws_pk = 1
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         u = User.objects.create(username = 'test')
         
         params = self.get_final_parameters({'users': u.username, 'permissions':'admin'})
@@ -143,7 +143,7 @@ class WSTestCase(MyTestCase):
         
     def test_remove_members(self):
         ws_pk = 1
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         u = User.objects.create(username = 'test')
         
         params = self.get_final_parameters({'users': u.username, 'permissions':'admin'})
@@ -226,7 +226,7 @@ class WSTestCase(MyTestCase):
         ws_pk = 1
        
         variant = Variant.objects.get(name = 'preview',  media_type__name = 'image')
-        workspace = Workspace.objects.get(pk = ws_pk)        
+        workspace = DAMWorkspace.objects.get(pk = ws_pk)        
         
         params = {
             'codec': 'gif', 
@@ -249,7 +249,7 @@ class WSTestCase(MyTestCase):
        
       
     def test_search(self):
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({ 'query': 'test', 
             'media_type': 'image', 
             'start':0,
@@ -268,7 +268,7 @@ class WSTestCase(MyTestCase):
         
     
     def test_search_keywords(self):
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         node = Node.objects.get(label = 'test_remove_1')
         
         params = self.get_final_parameters({ 'keyword': node.pk, 
@@ -288,7 +288,7 @@ class WSTestCase(MyTestCase):
              
             
     def test_search_collections(self):
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         collection = Node.objects.get(label = 'test_with_item')
         params = self.get_final_parameters({ 'collection': collection.pk, 
             'media_type': 'image', 
@@ -306,7 +306,7 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
         
     def test_search_smart_folders(self):
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         smart_folder = SmartFolder.objects.get(pk = 1)
         
         params = self.get_final_parameters({ 
@@ -328,7 +328,7 @@ class WSTestCase(MyTestCase):
 
 
     def test_search_complex(self):
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({ 
             'keyword': 18,
             'query': '"test prova"' ,
@@ -349,7 +349,7 @@ class WSTestCase(MyTestCase):
         
     
     def test_search_collections_no_results(self):
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({ 'collection': -1, 
             'media_type': 'image', 
             'start':0,
@@ -376,13 +376,13 @@ class WSTestCase(MyTestCase):
         
         response = self.client.get('/api/workspace/%s/get_keywords/'%ws_pk, params,  )        
         resp_dict = json.loads(response.content)        
-#        ws = Workspace.objects.get(pk = ws_pk)
+#        ws = DAMWorkspace.objects.get(pk = ws_pk)
 #        nodes = Node.objects.filter(workspace = ws,  type = 'keyword')        
 #        self.assertTrue(resp_dict.has_key('keywords'))
 #        self.assertTrue(isinstance(resp_dict['keywords'],  list))
 #        self.assertTrue(len(resp_dict['keywords']) ==  nodes.count() )   
 
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         nodes = Node.objects.filter(type = 'keyword',  depth = 1, workspace = ws)
         self.assertTrue(resp_dict.has_key('keywords'))
         self.assertTrue(isinstance(resp_dict['keywords'],  list))
@@ -428,7 +428,7 @@ class WSTestCase(MyTestCase):
         response = self.client.post('/api/workspace/%s/set_name/'%ws_pk, params,)        
         self.assertTrue(response.content == '')
         
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         self.assertTrue(ws.name == 'test_')
         
         
@@ -439,7 +439,7 @@ class WSTestCase(MyTestCase):
         response = self.client.post('/api/workspace/%s/set_description/'%ws_pk, params)        
         self.assertTrue(response.content == '')
         
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         self.assertTrue(ws.description == 'test_')
         
     def test_get(self):
@@ -450,7 +450,7 @@ class WSTestCase(MyTestCase):
         
         resp_dict = json.loads(response.content)    
         print 'resp_dict ',  resp_dict 
-        ws = Workspace.objects.get(pk = ws_pk)        
+        ws = DAMWorkspace.objects.get(pk = ws_pk)        
         self.assertTrue(resp_dict['id'] == str(ws.pk))
         self.assertTrue(resp_dict['name'] == ws.name)
         self.assertTrue(resp_dict['description'] == ws.description)
@@ -467,7 +467,7 @@ class WSTestCase(MyTestCase):
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/delete/'%ws_pk, params)        
         self.assertTrue(response.content == '')
-        self.assertRaises(Workspace.DoesNotExist,  Workspace.objects.get,  pk = ws_pk)
+        self.assertRaises(DAMWorkspace.DoesNotExist,  DAMWorkspace.objects.get,  pk = ws_pk)
 
     def test_create(self):
              
@@ -477,7 +477,7 @@ class WSTestCase(MyTestCase):
         response = self.client.post('/api/workspace/new/', params, )        
         resp_dict = json.loads(response.content)        
         ws_pk = resp_dict['id']
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         self.assertTrue(ws.name == name)
         self.assertTrue(resp_dict.has_key('description'))
         self.assertTrue(resp_dict.get('name') == name)
@@ -491,7 +491,7 @@ class WSTestCase(MyTestCase):
         params = self.get_final_parameters({'creator_id':u.pk})
         response = self.client.post('/api/workspace/%s/set_creator/'%ws_id, params, )        
 
-        ws = Workspace.objects.get(pk = ws_id)
+        ws = DAMWorkspace.objects.get(pk = ws_id)
         self.assertTrue(response.content == '')
 
         self.assertTrue(ws.creator == u)
@@ -501,7 +501,7 @@ class WSTestCase(MyTestCase):
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/get_smartfolders/'%ws_id, params, )        
 
-        ws = Workspace.objects.get(pk = ws_id)
+        ws = DAMWorkspace.objects.get(pk = ws_id)
         resp_dict = json.loads(response.content)        
         print resp_dict 
         self.assertTrue(resp_dict.has_key('smartfolders'))
@@ -586,7 +586,7 @@ class ItemTest(MyTestCase):
        
         item_id = Item.objects.all()[0].pk
         user = User.objects.get(pk = 1)
-        ws_new = Workspace.objects.create_workspace('test', '', user)
+        ws_new = DAMWorkspace.objects.create_workspace('test', '', user)
         
         params = self.get_final_parameters({'workspace_id':ws_new.pk})
         response = self.client.post('/api/item/%s/add_to_workspace/'%item_id, params,  )             
@@ -688,7 +688,7 @@ class ItemTest(MyTestCase):
         
     def test_add_keywords(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         new_node = Node.objects.get(label = 'test',  type = 'keyword', workspace = ws)
         item = Item.objects.all()[0]
         
@@ -701,7 +701,7 @@ class ItemTest(MyTestCase):
         
     def test_remove_keywords(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         new_node = Node.objects.get(label = 'test_remove_1',  type = 'keyword', workspace = ws)
         item = Item.objects.all()[0]
         item_id = item.pk
@@ -715,7 +715,7 @@ class ItemTest(MyTestCase):
         
     def test_add_to_collection(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         collection_node = Node.objects.get(label = 'test1',  type = 'collection')
         item = Item.objects.all()[0]
         params = self.get_final_parameters({ 'collection_id': collection_node.pk})        
@@ -730,7 +730,7 @@ class ItemTest(MyTestCase):
         
     def test_remove_from_collection(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         collection_node = Node.objects.get(label = 'test1',  type = 'collection')        
         item = Item.objects.all()[0]
         params = self.get_final_parameters({ 'collection_id': collection_node.pk})        
@@ -742,7 +742,8 @@ class ItemTest(MyTestCase):
         
         
     def test_add_to_ws(self):
-        workspace = Workspace.objects.create(name = 'test_ws',  creator = self.user)
+        
+        workspace = DAMWorkspace.objects.create(name = 'test', creator = self.user)
         workspace_id = workspace.pk
         
         
@@ -758,7 +759,7 @@ class ItemTest(MyTestCase):
     def test_upload(self):
         from django.test import client 
         from batch_processor.models import Action
-        workspace = Workspace.objects.all()[0]
+        workspace = DAMWorkspace.objects.all()[0]
         image = Type.objects.get(name = 'image')
         item = Item.objects.create(type = image)
         item.workspaces.add(workspace)
@@ -777,7 +778,7 @@ class ItemTest(MyTestCase):
         
     def test_get_state(self):
         
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
         state = State.objects.create(name = 'test',  workspace = workspace)
         state_association = StateItemAssociation.objects.create(state = state, item = item, )
@@ -789,7 +790,7 @@ class ItemTest(MyTestCase):
         
     
     def test_set_state(self): 
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
         state = State.objects.create(name = 'test',  workspace = workspace)
         state_association = StateItemAssociation.objects.create(state = state, item = item)
@@ -808,7 +809,7 @@ class KeywordsTest(MyTestCase):
     def test_get_single(self):        
              
         ws_pk = 1
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         params = self.get_final_parameters({})        
         node = Node.objects.get(label = 'test_remove_1',  workspace = ws)
         response = self.client.get('/api/keyword/%s/get/'%node.pk, params)        
@@ -831,7 +832,7 @@ class KeywordsTest(MyTestCase):
     def test_get_single_category(self):        
              
         ws_pk = 1
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         params = self.get_final_parameters({})        
         node = Node.objects.get(label = 'People',  workspace = ws)
         response = self.client.get('/api/keyword/%s/get/'%node.pk, params)        
@@ -921,7 +922,7 @@ class KeywordsTest(MyTestCase):
         
     def test_create_category(self):
             
-        ws = Workspace.objects.get(pk = 1)
+        ws = DAMWorkspace.objects.get(pk = 1)
         label = 'test_category'
         parent_node = Node.objects.get(pk = 3)
         params = self.get_final_parameters({ 'parent_id':parent_node.pk,  'label':label, 'type': 'category' })     
@@ -938,7 +939,7 @@ class KeywordsTest(MyTestCase):
     def test_edit(self):
 
         ws_pk = 1 
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         node = Node.objects.get(label = 'People',  workspace = ws)        
         params = self.get_final_parameters({'label':'test'})        
         self.assertTrue(node.associate_ancestors == False)
@@ -952,7 +953,7 @@ class KeywordsTest(MyTestCase):
     def test_edit_1(self):
 
         ws_pk = 1 
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         node = Node.objects.get(label = 'test',  workspace = ws)        
         params = self.get_final_parameters({'associate_ancestors':'true'})        
         self.assertTrue(node.associate_ancestors == False)
@@ -964,7 +965,7 @@ class KeywordsTest(MyTestCase):
     def test_edit_metadata(self):
 
         ws_pk = 1 
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         node = Node.objects.get(label = 'test',  workspace = ws)  
         
         label = '_test_'
@@ -989,7 +990,7 @@ class KeywordsTest(MyTestCase):
 
     def test_move(self):
         ws_pk = 1 
-        ws = Workspace.objects.get(pk = ws_pk)        
+        ws = DAMWorkspace.objects.get(pk = ws_pk)        
         node_id = Node.objects.get(label = 'test').pk
         
         new_parent_node_pk = parent_node = Node.objects.get(workspace = ws, label = 'Places',  depth = 1).pk
@@ -1004,7 +1005,7 @@ class KeywordsTest(MyTestCase):
         
     def test_delete(self):
         ws_pk = 1 
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         node_id = Node.objects.get(label = 'test').pk
         
         params = self.get_final_parameters({})
@@ -1015,7 +1016,7 @@ class KeywordsTest(MyTestCase):
         
     def test_add_items(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
         item = Item.objects.all()[0]
         item_id = item.pk
@@ -1027,7 +1028,7 @@ class KeywordsTest(MyTestCase):
       
     def test_remove_items(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
         item = Item.objects.create(uploader = User.objects.get(pk = 1),  type = Type.objects.get(name = 'image'),)
         
@@ -1046,7 +1047,7 @@ class CollectionsTest(MyTestCase):
     def test_get_single(self):        
              
         ws_pk = 1
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         params = self.get_final_parameters()
         label ='test1'
         node = Node.objects.get(label = label,  workspace = ws)
@@ -1069,7 +1070,7 @@ class CollectionsTest(MyTestCase):
 #        response = self.client.get('/api/collection/get/', params,  )        
 #        resp_dict = json.loads(response.content)    
 #
-#        ws = Workspace.objects.get(pk = ws_pk)
+#        ws = DAMWorkspace.objects.get(pk = ws_pk)
 #        
 #        collections = Node.objects.filter( type = 'collection',  workspace = ws,  depth= 1)       
 #        self.assertTrue(resp_dict.has_key('collections'))
@@ -1095,7 +1096,7 @@ class CollectionsTest(MyTestCase):
 #    
     def test_create(self):             
         
-        ws = Workspace.objects.get(pk = 1)
+        ws = DAMWorkspace.objects.get(pk = 1)
         label = 'collection_test'
         params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
         response = self.client.post('/api/collection/new/', params,  )  
@@ -1120,7 +1121,7 @@ class CollectionsTest(MyTestCase):
         
     def test_move(self):
         ws_pk = 1 
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         
         node_id = Node.objects.get(label = 'test1', depth = 1).pk
         dest_id= Node.objects.get(label = 'test2', depth = 1).pk
@@ -1134,7 +1135,7 @@ class CollectionsTest(MyTestCase):
         
     def test_move_to_the_top(self):
         ws_pk = 1 
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         
         node_id = Node.objects.get(label = 'test1_child', ).pk
         root_pk = Node.objects.get(workspace = ws, type ="collection",depth = 0).id
@@ -1156,7 +1157,7 @@ class CollectionsTest(MyTestCase):
 
     def test_add_items(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         coll= Node.objects.get(label = 'test1',  workspace = ws,  type = 'collection')
         item = Item.objects.all()[0]        
         
@@ -1170,7 +1171,7 @@ class CollectionsTest(MyTestCase):
         
     def test_remove_items(self):
         workspace_id = 1
-        ws = Workspace.objects.get(pk = workspace_id)
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
         coll = Node.objects.get(label = 'test_with_item',  workspace = ws)
         item = Item.objects.all()[0]
         items = coll.items.all()        
@@ -1243,7 +1244,7 @@ class VariantsTest(MyTestCase):
     def test_get_single(self):
         variant_pk = 1
         variant = Variant.objects.get(pk = variant_pk)
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({'workspace_id': workspace.pk})
     
         response = self.client.get('/api/variant/%s/get/'%variant.pk, params)                
@@ -1260,7 +1261,7 @@ class VariantsTest(MyTestCase):
     def test_get_single_preset(self):
         
         variant = Variant.objects.get(name = 'preview',  media_type__name = 'video')
-        workspace = Workspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.get(pk = 1)
         prefs = VariantAssociation.objects.get(workspace = workspace,  variant = variant).preferences
         
         
@@ -1286,7 +1287,7 @@ class VariantsTest(MyTestCase):
         
 #    def test_get(self):
 #        
-#        workspace = Workspace.objects.get(pk = 1)        
+#        workspace = DAMWorkspace.objects.get(pk = 1)        
 #        
 #        params = self.get_final_parameters({'workspace_id': workspace.pk})
 #    
@@ -1300,7 +1301,7 @@ class VariantsTest(MyTestCase):
     def test_edit(self):
     
         variant = Variant.objects.get(name = 'preview',  media_type__name = 'image')
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         
         params = {
             'codec': 'gif', 
@@ -1325,7 +1326,7 @@ class VariantsTest(MyTestCase):
     def test_edit_wm(self):
     
         variant = Variant.objects.get(name = 'preview',  media_type__name = 'image')
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         
         params = {
             'codec': 'gif', 
@@ -1361,7 +1362,7 @@ class VariantsTest(MyTestCase):
     def test_edit_preset(self):
     
         variant = Variant.objects.get(name = 'preview',  media_type__name = 'video')
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         
         params = {
             'audio_bitrate_kb':256, 
@@ -1391,7 +1392,7 @@ class VariantsTest(MyTestCase):
     
     def test_create_auto_generated_no_preset(self):
         
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         name = 'test'
         auto_generated = True
         media_type = 'image'
@@ -1421,7 +1422,7 @@ class VariantsTest(MyTestCase):
         
     def test_create_source(self):
         
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         name = 'test'
         auto_generated = False
         media_type = 'image'
@@ -1448,7 +1449,7 @@ class VariantsTest(MyTestCase):
         
     def test_create_auto_generated_preset(self):
         
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         name = 'test'
         auto_generated = True
         media_type = 'video'
@@ -1495,7 +1496,7 @@ class VariantsTest(MyTestCase):
 
     
     def test_delete(self):
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         name = 'test'
         auto_generated = True
         media_type = Type.objects.get(name = 'image')
@@ -1528,7 +1529,7 @@ class VariantsTest(MyTestCase):
         self.assertTrue(resp.has_key('res_id'))
 
     def test_delete_exception(self):
-        workspace = Workspace.objects.get(pk = 1)        
+        workspace = DAMWorkspace.objects.get(pk = 1)        
         name = 'test'
         auto_generated = True
         media_type = Type.objects.get(name = 'image')
@@ -1551,7 +1552,7 @@ class SmartFolderTest(MyTestCase):
     
     def test_get_single(self):
         ws_pk = 1
-        ws = Workspace.objects.get(pk = ws_pk)
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
         params = self.get_final_parameters({})        
         sm = SmartFolder.objects.get(label = 'test',  workspace = ws)
         response = self.client.get('/api/smartfolder/%s/get/'%sm.pk, params)        
@@ -1573,7 +1574,7 @@ class SmartFolderTest(MyTestCase):
         
 #    def test_get(self):
 #        ws_pk = 1
-#        ws = Workspace.objects.get(pk = ws_pk)
+#        ws = DAMWorkspace.objects.get(pk = ws_pk)
 #        params = self.get_final_parameters({'workspace_id': ws.pk})        
 #        sm = SmartFolder.objects.get(label = 'test',  workspace = ws)
 #        response = self.client.get('/api/smartfolder/get/', params)        
