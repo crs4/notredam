@@ -1632,7 +1632,7 @@ class CollectionResource(ModResource):
         if not label:
             raise MissingArgs
         if  ws_id:           
-            workspace = Workspace.objects.get(pk = ws_id)
+            workspace = DAMWorkspace.objects.get(pk = ws_id)
             parent_node = Node.objects.get(workspace = workspace, type = 'collection', depth= 0)
         else:
             if not parent_id:
@@ -1641,7 +1641,7 @@ class CollectionResource(ModResource):
             workspace = parent_node.workspace        
             
         _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])        
-        node = parent_node.add_node(label, workspace)
+        node = Node.objects.add_node(parent_node,label, workspace)
         json_response = json.dumps({'model': 'collection',  'id': node.pk, 'label': label, 'parent_id': parent_id, 'workspace_id': workspace.id,  })
         logger.debug('add: json_response %s'%json_response )
         return HttpResponse(json_response) 
@@ -1847,7 +1847,10 @@ class CollectionResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])        
         
         item_ids = request.POST.getlist('items') 
-        node.remove_collection_association(item_ids)        
+        logger.debug('item_ids %s'%item_ids)
+        logger.debug('nodes %s'%node.items.all())
+        node.remove_collection_association(item_ids)  
+        logger.debug('nodes %s'%node.items.all())      
         
         return HttpResponse('')
             

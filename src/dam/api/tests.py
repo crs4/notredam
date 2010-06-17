@@ -1111,7 +1111,7 @@ class CollectionsTest(MyTestCase):
     def test_rename(self):
         "changing label"
 
-        node_id = Node.objects.get(label = 'test_rename',  depth = 1).pk
+        node_id = Node.objects.get(label = 'test1',  depth = 1).pk
         new_label = 'new_label'
         params = self.get_final_parameters({'label':new_label})        
         response = self.client.post('/api/collection/%s/rename/'%node_id , params,  )                
@@ -1147,7 +1147,7 @@ class CollectionsTest(MyTestCase):
         self.assertTrue(node.parent.pk == root_pk)        
         
     def test_delete(self):       
-        node = Node.objects.get(label = 'test_delete')
+        node = Node.objects.get(label = 'test1')
         params = self.get_final_parameters()
         response = self.client.get('/api/collection/%s/delete/'%node.pk, params,  ) 
         
