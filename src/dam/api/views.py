@@ -245,8 +245,8 @@ class WorkspaceResource(ModResource):
     def _set_permissions(self, ws, users, permissions_list):
         
         for perm_name in permissions_list:
-            permission = WorkSpacePermission.objects.get(name = perm_name)
-            wspa, created = WorkSpacePermissionAssociation.objects.get_or_create(permission  = permission, workspace = ws)
+            permission = WorkspacePermission.objects.get(name = perm_name)
+            wspa, created = WorkspacePermissionAssociation.objects.get_or_create(permission  = permission, workspace = ws)
             wspa.users.add(*users)
             
     
@@ -303,7 +303,7 @@ class WorkspaceResource(ModResource):
                 raise WorkspaceAdminDeletion
         
         ws.members.remove(*users)
-        wspa =  WorkSpacePermissionAssociation.objects.filter(users__in = users, workspace = ws).delete()
+        wspa =  WorkspacePermissionAssociation.objects.filter(users__in = users, workspace = ws).delete()
         
         return HttpResponse('')
 
@@ -510,7 +510,7 @@ class WorkspaceResource(ModResource):
         
         """
         
-        vas = VariantAssociation.objects.filter(workspace__pk = workspace_id)
+        vas = Variant.objects.filter(Q(workspace__pk = workspace_id) |Q (workspace__isnull = True))
         resp = {}
         workspace = Workspace.objects.get(pk = workspace_id)
         
@@ -554,25 +554,6 @@ class WorkspaceResource(ModResource):
         resp = [i.pk for i in items]            
         json_resp = json.dumps(resp)
         return HttpResponse(json_resp)
-    
-       
-    
-    @exception_handler
-    @api_key_required   
-    def set_variant_preferences(self,  request,  workspace_id):    
-        """"
-        Allows to edit the preferences of a variant
-
-        - Method: POST
-            - parameters: depends on the type of the variant.video ad audio variants use presets, while image and doc ones do not.
-        - Returns: empty string
-        """
-        
-        variant_id = request.POST.get('variant_id')
-        new_post = request.POST.copy()
-        new_post['workspace_id'] = workspace_id
-        request.POST= new_post
-        return VariantsResource()._edit(request,  variant_id)
         
     
     @exception_handler
@@ -624,7 +605,7 @@ class WorkspaceResource(ModResource):
         
         user_id = request.POST .get('user_id')
         name = request.POST .get('name')
-        description = request.POST .get('description')
+        description = request.POST .get('description', '')
 
         ws = Workspace()
         form = _update_ws(ws,  {'name': name,  'description': description})
@@ -635,7 +616,7 @@ class WorkspaceResource(ModResource):
             raise ArgsValidationError(form.errors  )
         
         user = User.objects.get(pk = user_id)
-        ws = Workspace.objects.create_workspace(name, description, user)
+        ws = DAMWorkspace.objects.create_workspace(name, description, user)
 
         resp = {'id': ws.pk, 'name': ws.name,  'description': ws.description}
         json_resp = json.dumps(resp)
@@ -704,48 +685,30 @@ class WorkspaceResource(ModResource):
         items = Item.objects.filter(workspaces__pk = workspace_id)
         
         items = _search(request,  items, workspace).distinct()
-        
+     
         if media_type:
-            items = items.filter(type = media_type)
+            items = items.filter(type__name = media_type)
         resp = {'items': []}
         variants = request.POST.getlist('variants')
         logger.debug('variants %s'%variants)
-        
-        
-        
-        
+                
         state = request.POST.get('state')
+        logger.debug('state %s'%state)
         if state:
             items = items.filter(stateitemassociation__state__name = state)
         
         
+        logger.debug('items %s'%items)
         totalCount = items.count()
         if start and limit and items.count():
             items = items[start:start + limit]
-            
+     
         items = items.distinct()
-        
-#        TODO: ordering
-#        property = None
-#        if order_by:
-#            property_namespace, property_field_name = order_by.split('_')
-#                
-#            try:
-#                property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
-#            except MetadataProperty.DoesNotExist:
-#                pass
-#            
-#        
-##        TODO: fix order by,  metadata value with the same schema and item can exist
-#        property = None
-#        
+    
         item_res = ItemResource()
-#        if property:
-#            mvs = MetadataValue.objects.filter(schema = property, item__in = items).order_by('value').distinct()
-#            for mv in mvs:
-#                resp['items'].append(item_res._get_item_info(mv.content_object, workspace,variants, metadata))
-#        else:
+
         for item in items:
+            logger.debug(item)
             resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
     
         resp['totalCount'] = totalCount
@@ -1050,7 +1013,7 @@ class ItemResource(ModResource):
         
     
     def _get_item_info(self, item, workspace, variants, metadata):
-        media_type = item.type
+        media_type = item.type.name
                 
         tmp = {'pk': item.pk, 'media_type': media_type}
         for m in metadata:
@@ -2731,7 +2694,7 @@ class SmartFolderResource(ModResource):
         """
                 
         workspace_id = request.POST.get('workspace_id')
-        workspace = Workspace.objects.get(pk = workspace_id)
+        workspace = DAMWorkspace.objects.get(pk = workspace_id)
         label = request.POST.get('label')
         queries = request.POST.get('queries')
         and_condition = request.POST.get('and_condition',  False)

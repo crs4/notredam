@@ -464,13 +464,16 @@ def _search(request,  items, workspace = None):
                     queries.append(items.filter(Q(geoinfo__longitude__gte=sw_lng) | Q(geoinfo__longitude__lte=ne_lng), geoinfo__latitude__lte=ne_lat, geoinfo__latitude__gte=sw_lat))
             
             for word in words:
+                logger.debug('word %s'%word)
                 if DATABASE_ENGINE == 'sqlite3':
                     q = Q(metadata__value__iregex = u'(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%word.strip())                
                     queries.append(items.filter(q))
+                    logger.debug('items.filter(q) %s'%items.filter(q))
                 elif DATABASE_ENGINE == 'mysql':
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%word.strip())
                     queries.append(items.filter(q))
-                    
+                
+                
             for words in multi_words:
                 tmp = re.findall('\s*(.+)\s*', words,  re.U)
                 if DATABASE_ENGINE == 'sqlite3':
@@ -478,6 +481,7 @@ def _search(request,  items, workspace = None):
                     words_joined = words_joined.strip() 
 #                    q = Q(metadata__value__iregex = '(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%words_joined)
                     q = Q(metadata__value__iregex = '%s'%words_joined)
+                    
 
                     queries.append(items.filter(q))
                 
@@ -485,14 +489,18 @@ def _search(request,  items, workspace = None):
                     words_joined = '[[:blank:]]+'.join(tmp)
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%words_joined)
                     queries.append(items.filter(q))
-                
+                    
+        
+#        logger.debug('queries %s'%queries)
         if queries:
+            logger.debug('queries %s'%queries)
             if len(queries) == 1:
                 items = queries[0]
+                
             else:
                 
                 items = reduce(operator.and_,  queries)
-        
+    logger.debug('items %s'%items)
     items.distinct()       
     property = None
     
