@@ -52,7 +52,7 @@ def get_states(request):
     states = State.objects.filter(workspace = workspace)
     states_resp = []
     for state in states:
-        states_resp.append({'pk': state.pk,  'name':  state.name})
+        states_resp.append({'pk': state.pk,  'name':  state.name, 'description': state.description})
     resp = {'success': True,  'states': states_resp}
     return HttpResponse(simplejson.dumps(resp))
 
