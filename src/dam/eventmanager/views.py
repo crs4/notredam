@@ -32,7 +32,7 @@ def get_events(request):
     
     resp = {'events':[]}
     for event in Event.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True)):
-        resp['events'].append({'id': event.pk, 'name': event.name})
+        resp['events'].append({'id': event.pk, 'name': event.name, 'description': event.name})
     
     return HttpResponse(simplejson.dumps(resp))
  
