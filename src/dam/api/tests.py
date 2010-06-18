@@ -1201,8 +1201,7 @@ class VariantsTest(MyTestCase):
         self.assertTrue(resp_dict['caption'] == variant.caption)
         self.assertTrue(resp_dict['media_type'] == [media_type.name for media_type in variant.media_type.all()])
         self.assertTrue(resp_dict['auto_generated'] == variant.auto_generated)
-        
-        
+      
           
     def test_edit(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
@@ -1222,6 +1221,31 @@ class VariantsTest(MyTestCase):
         print 'variant.media_type.all() %s'%variant.media_type.all()
         self.assertTrue(len(variant.media_type.all()) == len(params['media_type']))
         self.assertTrue(variant.media_type.all()[0].name == params['media_type'][0])
+        
+        
+        
+    def test_create(self):
+        
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        params = {'name': 'test_create', 'media_type': ['image'], 'workspace_id': 1, 'caption':'test create'}
+        params = self.get_final_parameters(params)
+        
+        
+        response = self.client.post('/api/variant/new/',  params)                
+        resp_dict = json.loads(response.content)     
+                
+        self.assertTrue(Variant.objects.filter(pk = resp_dict['id']).count() == 1)
+        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).workspace.pk == params['workspace_id'])
+        
+        
+    def test_delete(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        params = self.get_final_parameters({})
+        variant = Variant.objects.create(name = 'test', auto_generated = True, workspace = workspace)
+        response = self.client.get('/api/variant/%s/delete/'%variant.pk, params)
+        self.assertTrue(response.content == '')
+        self.assertTrue(Variant.objects.filter(pk = variant.pk).count() == 0)
+    
 
 class SmartFolderTest(MyTestCase):
     fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   

@@ -101,8 +101,7 @@ urlpatterns = patterns('',
 #   url(r'^api/variant/get/$', VariantsResource(permitted_methods=('GET'), ).read),   
    url(r'^api/variant/(\d+)/edit/$', VariantsResource(permitted_methods=('POST'), ).edit),   
    url(r'^api/variant/(\d+)/delete/$', VariantsResource(permitted_methods=('GET'), ).delete),   
-   url(r'^api/variant/get_watermarking_uri/$', VariantsResource(permitted_methods=('POST'), ).upload_watermarking),   
-   
+  
    url(r'^api/smartfolder/new/$', SmartFolderResource(permitted_methods=('POST'), ).create),   
    url(r'^api/smartfolder/(\d+)/get/$', SmartFolderResource(permitted_methods=('GET')).read),   
 #   url(r'^api/smartfolder/get/$', SmartFolderResource(permitted_methods=('GET'), ).read),   
