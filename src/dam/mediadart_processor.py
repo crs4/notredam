@@ -58,6 +58,8 @@ from mediadart.storage import Storage
 from mediadart.storage import new_id
 from mediadart.mqueue.mqclient_twisted import Proxy
 
+from scripts.models import PRESETS
+
 def cb_error(result, component, machine):
     current_state = machine.current_state
     new_action = current_state.action
@@ -227,23 +229,25 @@ def adapt_resource(component, machine):
             d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
 
         else:
-
-            preset_name = vp['preset_name']
+            
+            preset_name = PRESETS['video'][vp['preset_name']]['preset']
+            logger.debug('preset_name %s'%preset_name)
 
             param_dict = vp
 
-            dest_res_id = dest_res_id + '.' + preset_name
+            dest_res_id = dest_res_id + '.' + PRESETS['video'][vp['preset_name']]['extension']
             
             for key, val in vp.items():
-                if key == 'preset_name':
-                    continue
-                
+#                if key == 'preset_name':
+#                    param_dict[key] = preset_name
+#                
                 if key == 'max_size' or key == 'watermark_top_percent' or key == 'watermark_left_percent':
                     param_dict[key] = int(val)
                 else:
                     param_dict[key] = val
             
-            
+            param_dict['preset_name'] = preset_name
+            logger.debug('param_dict %s'%param_dict)
 #            if watermark_filename:
 #                tmp = vp.get('watermark_top')
 #                if tmp:
@@ -265,12 +269,12 @@ def adapt_resource(component, machine):
             
 
     elif item.type.name == 'audio':
-
-        
-        preset_name = vp['preset_name']        
+        preset_name = PRESETS['audio'][vp['preset_name']]['preset']
+        ext = PRESETS['audio'][vp['preset_name']]['extension']
+        vp['preset_name'] = preset_name        
         param_dict = dict(vp)        
         logger.debug("[Adaptation] param_dict %s" % param_dict)
-        dest_res_id = dest_res_id + '.' + preset_name
+        dest_res_id = dest_res_id + '.' + ext
         
         
         d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)

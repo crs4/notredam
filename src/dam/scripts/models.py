@@ -26,6 +26,24 @@ from dam.core.dam_repository.models import Type
 from django.db.models import Q
 import logger
 
+PRESETS = {'video':{
+            'flv': {'preset':'flv', 'extension': 'flv'},
+             'mkv aac':{'preset': 'matroska_mpeg4_aac', 'extension':'mkv'},
+             'mp4':{'preset': 'mp4_h264_aaclow', 'extension':'mp4'},
+             'avi':{'preset': 'avi', 'extension':'avi'},
+             'mpegts':{'preset': 'mpegts', 'extension':'mpeg'},
+             'flv h264 aac':{'preset': 'flv_h264_aac', 'extension':'flv'},
+             'theora': {'preset': 'theora', 'extension':'ogv'}
+        },
+        'audio':{
+            'wav': {'preset':'wav', 'extension': 'wav'},
+            'ogg': {'preset':'ogg', 'extension': 'ogg'},
+            'mp3': {'preset':'mp3', 'extension': 'mp3'},
+            'aac': {'preset':'aac', 'extension': 'aac'}                 
+        }
+}
+
+
 class ScriptException(Exception):
     pass
   
@@ -198,13 +216,13 @@ class SetRights(BaseAction):
 
 class SaveAction(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
-    
+ 
     @staticmethod
     def required_parameters(workspace):
         
-        return [ {'name':'output_format',  'type': 'string',  'values':{'image':['jpeg',  'gif'], 
-                                    'video': ['flv'], 
-                                    'audio': ['mp3'], 
+        return [ {'name':'output_format',  'type': 'string',  'values':{'image':['jpeg',  'gif','png', 'bmp'], 
+                                    'video': PRESETS['video'].keys(), 
+                                    'audio':  PRESETS['audio'].keys(), 
                                     'doc': ['jpeg']
             }
         }]
