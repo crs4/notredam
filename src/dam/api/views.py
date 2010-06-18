@@ -50,7 +50,7 @@ from dam.workflow.views import _set_state
 from decorators import *
 from exceptions import *
 from workspace.forms import AdminWorkspaceForm
-
+from dam.variants.views import _edit_variant
 from django.contrib.auth import authenticate,  login
 from upload.uploadhandler import StorageHandler
 
@@ -2322,43 +2322,19 @@ class VariantsResource(ModResource):
     def get_info(self, variant,  workspace):
         logger.debug('variant %s'%variant)
         logger.debug('workspace %s'%workspace)
-        va = VariantAssociation.objects.get(variant =variant,  workspace = workspace)
+        
         resp = {
             'id': variant.pk, 
             'name': variant.name, 
             'caption': variant.caption, 
-            'media_type': variant.media_type.name, 
+            'media_type': [media_type.name for media_type in variant.media_type.all()], 
             'auto_generated': variant.auto_generated, 
         }
 
-        if not variant.is_global:
-            try:
-                variant_association = VariantAssociation.objects.get(variant = variant)
-                resp['workspace_id'] = variant_association.workspace.pk
-                
-            except Exception, ex:
-                logger.exception(ex)
+        if variant.workspace:
+            resp['workspace_id'] = variant.workspace.pk
         
-        
-        if variant.auto_generated:
-            prefs = va.preferences
-            resp['preferences'] = prefs.get_prefs()
-            resp['sources'] = []
-            if resp['preferences'].has_key('watermarking'):
-                if not resp['preferences']['watermarking']:
-                    try:
-                        resp['preferences'].pop('watermark_uri')
-                        resp['preferences'].pop('watermarking_position')
-                    except:
-                        pass
-                    
-                else:
-                    #adding watermarking_url
-                    resp['preferences']['watermarking_url'] = _get_resource_url(resp['preferences']['watermark_uri'])
-            
-            for source in SourceVariant.objects.filter(workspace = workspace,  destination = variant).order_by('rank'):
-                resp['sources'] .append({'id': source.source.pk, 'name': source.source.name })
-            
+     
         logger.debug('resp %s'%resp)
         return resp
     
@@ -2405,27 +2381,6 @@ class VariantsResource(ModResource):
 
 
     
-    def _edit_prefs(self, request,  prefs):
-        value_dict = request.POST.copy()
-        if isinstance(prefs,  PresetPreferences):
-            preset = request.POST.get('preset')
-            if preset:
-               
-                new_preset = Preset.objects.filter(name = preset)
-                if new_preset.count() == 0:
-                    raise InvalidArg({'preset': 'preset %s does not exist'%preset})
-                
-                prefs.preset = new_preset[0]
-                value_dict.update({'preset':prefs.preset.pk})
-            
-#            for param in prefs.preset.parameters.all():
-#                param_name = request.POST.get(param.name)
-#                if not param_name:
-#                    raise MissingArgs({'args': ['no value for %s parameter passed'%param.name]})
-#                        
-#                logger.debug('-------------saving prefs')
-        
-        prefs.save_func(value_dict)    
     
     @exception_handler
     @api_key_required
@@ -2441,23 +2396,29 @@ class VariantsResource(ModResource):
         
         """
         
-        return self._edit(request, variant_id)
+      
+        media_type = request.POST.getlist('media_type')
+        media_type = Type.objects.filter(name__in = media_type)
+        variant = Variant.objects.get(pk = variant_id)
+      
+        name = request.POST.get('name')
+        if name:
+            variant.name = name
+            variant.save()
+        if media_type:
+            variant.media_type = []
+            variant.media_type.add(*media_type)
+        
+        return HttpResponse('')
         
     
     def _edit(self,  request, variant_id):
-        workspace_id = request.POST.get('workspace_id')
-        if not workspace_id:
-            raise MissingArgs({'args': ['no workspace id passed']})
-        workspace = Workspace.objects.get(pk = workspace_id)
-        
-        variant = Variant.objects.get(pk = variant_id)
-        
+      
+        variant = Variant.objects.get(pk = variant_id)        
         if not variant.auto_generated:
             raise ImportedVariant
             
-        prefs = variant.variantassociation_set.get(workspace = workspace).preferences
-        
-        self._edit_prefs(request,  prefs, )
+     
         return HttpResponse('')
     
 

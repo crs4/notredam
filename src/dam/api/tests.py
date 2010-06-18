@@ -1186,272 +1186,42 @@ class TestLogin(MyTestCase):
 class VariantsTest(MyTestCase):
     fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   
     
-#    def test_get_single(self):
-#        variant_pk = 1
-#        variant = Variant.objects.get(pk = variant_pk)
-#        workspace = DAMWorkspace.objects.get(pk = 1)
-#        params = self.get_final_parameters({'workspace_id': workspace.pk})
-#    
-#        response = self.client.get('/api/variant/%s/get/'%variant.pk, params)                
-#        
-#        resp_dict = json.loads(response.content)     
-#        
-#        self.assertTrue(resp_dict['id'] == variant_pk)
-#        self.assertTrue(resp_dict['name'] == variant.name)
-#        self.assertTrue(resp_dict['caption'] == variant.caption)
-#        self.assertTrue(resp_dict['media_type'] == variant.media_type.name)
-#        self.assertTrue(resp_dict['auto_generated'] == variant.auto_generated)
+    def test_get_single(self):
+        variant_pk = 1
+        variant = Variant.objects.get(pk = variant_pk)
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        params = self.get_final_parameters({'workspace_id': workspace.pk})
+    
+        response = self.client.get('/api/variant/%s/get/'%variant.pk, params)                
+        
+        resp_dict = json.loads(response.content)     
+        
+        self.assertTrue(resp_dict['id'] == variant_pk)
+        self.assertTrue(resp_dict['name'] == variant.name)
+        self.assertTrue(resp_dict['caption'] == variant.caption)
+        self.assertTrue(resp_dict['media_type'] == [media_type.name for media_type in variant.media_type.all()])
+        self.assertTrue(resp_dict['auto_generated'] == variant.auto_generated)
         
         
           
-#    def test_edit(self):
-#    
-#        variant = Variant.objects.get(name = 'preview',  media_type__name = 'image')
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        
-#        params = {
-#            'codec': 'gif', 
-#            'max_dim': 400, 
-##            'cropping':False,  
-##            'watermarking': '',
-#            'workspace_id': workspace.pk,     
-#        }
-#        params = self.get_final_parameters(params)
-#        
-#        
-#        response = self.client.post('/api/variant/%s/edit/'%variant.pk,  params)                
-#
-#        prefs = variant.variantassociation_set.get(workspace = workspace).preferences
-#        print '---------prefs.watermarking ',  prefs.watermarking
-#        self.assertTrue(prefs.codec == params['codec'])
-#        self.assertTrue(prefs.max_dim == 300)
-#        self.assertTrue(prefs.cropping == False)
-#        self.assertTrue(prefs.watermarking== False)
-#
-#
-#    def test_edit_wm(self):
-#    
-#        variant = Variant.objects.get(name = 'preview',  media_type__name = 'image')
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        
-#        params = {
-#            'codec': 'gif', 
-#            'max_dim': 400, 
-##            'cropping':False,  
-##            'watermarking': '',
-#            'workspace_id': workspace.pk, 
-#            'watermarking': True,
-#            'watermark_uri': 'a123b',
-#            'watermarking_position': 2    
-#        }
-#        params = self.get_final_parameters(params)
-#        
-#        
-#        response = self.client.post('/api/variant/%s/edit/'%variant.pk,  params)                
-#
-#        prefs = variant.variantassociation_set.get(workspace = workspace).preferences
-#        print '---------prefs.watermarking ',  prefs.watermarking
-#        print '---------prefs.watermark_uri ',  prefs.watermark_uri
-#        print '---------prefs.watermarking_position ',  prefs.watermarking_position
-#
-#
-#        self.assertTrue(prefs.codec == params['codec'])
-#        self.assertTrue(prefs.max_dim == 300)
-#        self.assertTrue(prefs.cropping == False)
-#        self.assertTrue(prefs.watermarking== True)
-#
-#        self.assertTrue(prefs.watermark_uri == params['watermark_uri'])
-#        self.assertTrue(int(prefs.watermarking_position) == int(params['watermarking_position']))
-#
-#
-#
-#    def test_edit_preset(self):
-#    
-#        variant = Variant.objects.get(name = 'preview',  media_type__name = 'video')
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        
-#        params = {
-#            'audio_bitrate_kb':256, 
-#            'audio_rate':44100, 
-#            'preset': 'flv', 
-#            'sources': [11,  10], 
-#            'video_bitrate_b': 640000, 
-#            'video_framerate':	25/1,       
-#            'workspace_id': workspace.pk, 
-#            'max_size':300
-#        
-#        }
-#        params = self.get_final_parameters(params)
-#        
-#        
-#        response = self.client.post('/api/variant/%s/edit/'%variant.pk,  params)                
-#        print response.content
-#        prefs = variant.variantassociation_set.get(workspace = workspace).preferences
-#        
-#        for param_value in prefs.values.all():
-#            print 'params[param_value.parameter.name]',  params[param_value.parameter.name]
-#            print 'param_value.value',  param_value.value
-#            self.assertTrue(str(params[param_value.parameter.name]) == str(param_value.value))
-#        
-#      
-##        self.assertTrue(len(resp_dict['variants']) == workspace.get_variants().count())
-#    
-#    def test_create_auto_generated_no_preset(self):
-#        
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        name = 'test'
-#        auto_generated = True
-#        media_type = 'image'
-#        caption = 'test'
-#        params = {
-#            'workspace_id': workspace.pk, 
-#            'name': name, 
-#            'auto_generated': auto_generated, 
-#            'media_type': media_type, 
-#            'caption': caption, 
-#            'codec': 'gif', 
-#            'max_dim': 400, 
-#            
-#        }
-#        params = self.get_final_parameters(params)
-#        
-#        response = self.client.post('/api/variant/new/',  params)                
-#        resp_dict = json.loads(response.content)
-#        print 'resp_dict',  resp_dict
-#        self.assertTrue(Variant.objects.filter(pk = resp_dict['id']).count() == 1)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).name == name)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).auto_generated == auto_generated)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).media_type.name == media_type)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).caption == caption)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).get_preferences(workspace).codec == params['codec'])
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).get_preferences(workspace).max_dim == params['max_dim'])
-#        
-#    def test_create_source(self):
-#        
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        name = 'test'
-#        auto_generated = False
-#        media_type = 'image'
-#        caption = 'test'
-#        params = {
-#            'workspace_id': workspace.pk, 
-#            'name': name, 
-##            'auto_generated': auto_generated, 
-#            'media_type': media_type, 
-#            'caption': caption, 
-#            
-#        }
-#        params = self.get_final_parameters(params)
-#        
-#        response = self.client.post('/api/variant/new/',  params)                
-#        resp_dict = json.loads(response.content)
-#        print 'resp_dict',  resp_dict
-#        self.assertTrue(Variant.objects.filter(pk = resp_dict['id']).count() == 1)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).name == name)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).auto_generated == auto_generated)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).media_type.name == media_type)
-#        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).caption == caption)
-#        
-#        
-#    def test_create_auto_generated_preset(self):
-#        
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        name = 'test'
-#        auto_generated = True
-#        media_type = 'video'
-#        caption = 'test'
-#        preset_name = 'flv'
-#        params = {
-#            'workspace_id': workspace.pk, 
-#            'name': name, 
-#            'auto_generated': auto_generated, 
-#            'media_type': media_type, 
-#            'caption': caption, 
-#           'preset': preset_name, 
-#           
-#           'audio_bitrate_kb':256, 
-#            'audio_rate':44100, 
-#            'sources': [11,  10], 
-#            'video_bitrate_b': 640000, 
-#            'video_framerate':	25/1,       
-#            'max_size':300
-#           
-#            
-#        }
-#        params = self.get_final_parameters(params)
-#        
-#        response = self.client.post('/api/variant/new/',  params)                
-#        resp_dict = json.loads(response.content)
-#        print 'resp_dict',  resp_dict
-#        variant = Variant.objects.get(pk = resp_dict['id'])
-#        self.assertTrue(Variant.objects.filter(pk = resp_dict['id']).count() == 1)
-#        self.assertTrue(variant.name == name)
-#        self.assertTrue(variant.auto_generated == auto_generated)
-##        self.assertTrue(Variant.objects.get(pk = resp_dict['id']).media_type.name == media_type)
-#        self.assertTrue(variant.caption == caption)
-#        
-#        
-#        
-#        prefs = variant.variantassociation_set.get(workspace = workspace).preferences
-#        
-#        for param_value in prefs.values.all():
-#            print 'params[param_value.parameter.name]',  params[param_value.parameter.name]
-#            print 'param_value.value',  param_value.value
-#            self.assertTrue(str(params[param_value.parameter.name]) == str(param_value.value))
-#        
-#
-#    
-#    def test_delete(self):
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        name = 'test'
-#        auto_generated = True
-#        media_type = Type.objects.get(name = 'image')
-#        caption = 'test'
-#        
-#        variant = Variant.objects.create(name = name, caption = caption,  auto_generated = auto_generated,  media_type = media_type)
-#        va = VariantAssociation.objects.create(variant = variant,  workspace = workspace)       
-#    
-#        params = self.get_final_parameters({})        
-#        response = self.client.post('/api/variant/%s/delete/'%variant.pk,  params) 
-#        
-#        self.assertTrue(response.content == '')
-#        self.assertTrue(Variant.objects.filter(pk = variant.pk).count() == 0)
-#        
-#
-#
-#    def test_upload_wm(self):
-#        
-#        params = self.get_final_parameters({'file_name':'test.jpg',  'fsize': 128})        
-#        response = self.client.post('/api/variant/get_watermarking_uri/',  params) 
-#        print 'response.content',  response.content
-#        resp = json.loads(response.content)
-#        
-#        self.assertTrue(resp.has_key('job_id'))
-#        self.assertTrue(resp.has_key('unique_key'))
-#        self.assertTrue(resp.has_key('ip'))
-#        self.assertTrue(resp.has_key('port'))
-#        self.assertTrue(resp.has_key('chunk_size'))
-#        self.assertTrue(resp.has_key('chunks'))
-#        self.assertTrue(resp.has_key('res_id'))
-#
-#    def test_delete_exception(self):
-#        workspace = DAMWorkspace.objects.get(pk = 1)        
-#        name = 'test'
-#        auto_generated = True
-#        media_type = Type.objects.get(name = 'image')
-#        caption = 'test'
-#        
-##        variant = Variant.objects.create(name = name, caption = caption,  auto_generated = auto_generated,  media_type = media_type)
-##        va = VariantAssociation.objects.create(variant = variant,  workspace = workspace)       
-##    
-#        variant_id = 1
-#        params = self.get_final_parameters({})        
-#        response = self.client.post('/api/variant/%s/delete/'%variant_id,  params) 
-#        resp_dict = json.loads(response.content)
-#        
-#        self.assertTrue(resp_dict['error code'] == GlobalVariantDeletion.error_code)
-#        self.assertTrue(Variant.objects.filter(pk = variant_id).count() == 1)
+    def test_edit(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        variant = Variant.objects.create(name = 'test', auto_generated = True, workspace = workspace)
+        variant.media_type.add(*Type.objects.all())
         
+                
+        
+        params = {'name': 'test_rename', 'media_type': ['image']}
+        params = self.get_final_parameters(params)
+        
+        
+        response = self.client.post('/api/variant/%s/edit/'%variant.pk,  params)                
+
+        variant = Variant.objects.get(pk = variant.pk)
+        self.assertTrue(variant.name == params['name'])
+        print 'variant.media_type.all() %s'%variant.media_type.all()
+        self.assertTrue(len(variant.media_type.all()) == len(params['media_type']))
+        self.assertTrue(variant.media_type.all()[0].name == params['media_type'][0])
 
 class SmartFolderTest(MyTestCase):
     fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   
