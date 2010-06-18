@@ -19,7 +19,8 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.generic.simple import redirect_to
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden,\
+    HttpResponseNotFound
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -171,3 +172,35 @@ def confirm_user(request, url):
     ws = Workspace.objects.create_workspace(user.username, '', user)
 
     return render_to_response('registration_completed.html', RequestContext(request,{'usr':user}))
+
+
+@login_required
+def download_component(request,  item_id, variant_name):
+    
+    workspace = request.session.get('workspace', None)
+    try:
+        item = Item.objects.get(pk=item_id)
+        variant = workspace.get_variants().distinct().get(name = variant_name)
+        comp = item.get_variant(workspace, variant)
+        url = comp.get_component_url()
+    except Exception,  ex:
+        logger.exception(ex)
+        return HttpResponseNotFound()
+    
+    response = get_component(request, item_id, variant_name)
+    if variant_name == 'original':
+        file_name = comp.file_name
+    else:
+        
+        
+        orig = comp.source
+        try:
+            tmp = orig.file_name.split('.')
+            file_name = tmp[0] + '_' +  variant_name + '.' + comp.format
+        except:
+            file_name = 'resource_' + variant_name   
+        
+        
+    response['Content-Disposition'] = 'attachment; filename=%s'%file_name
+    return response
+    

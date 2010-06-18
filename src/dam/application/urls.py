@@ -28,5 +28,6 @@ urlpatterns = patterns('',
     (r'^redirect_to_resource/(.+)/$','dam.application.views.redirect_to_resource'),
     (r'^registration/$','dam.application.views.registration'),
     (r'^confirm_user/(.+)/$','dam.application.views.confirm_user'),
+    (r'^download_component/(.+)/(.+)/$', 'dam.application.views.download_component'),
 
 )
