@@ -2442,65 +2442,22 @@ class VariantsResource(ModResource):
         name = request.POST.get('name')
         caption = request.POST.get('caption')
         media_type = request.POST.get('media_type')
-        generated = request.POST.get('auto_generated',  False)
-        sources_list =  request.POST.getlist('sources')
         
+    
         
-        prefs = {'image': ImagePreferences,  'audio': AudioPreferences,  'video': VideoPreferences,  'doc':  ImagePreferences}
-        if media_type not in prefs.keys():
-            raise ArgsValidationError({'media_type': ['media_type must be audio, video, image or doc ']})
-        
-        
-        workspace = Workspace.objects.get(pk = workspace_id)
+        workspace = DAMWorkspace.objects.get(pk = workspace_id)
         
         arg_dict = {'workspace_id': workspace_id, 'name': name, 'caption': caption, 'media_type': media_type}
         for arg in arg_dict.keys():
             if  arg_dict[arg] is None:
                 raise MissingArgs({arg: ['argument %s is missing'%arg]})
                     
-        type_obj = Type.objects.get(name = media_type)
+        
              
-        variant = Variant.objects.create(name = name, caption = caption,  auto_generated = generated,  media_type = type_obj)
-        va = VariantAssociation.objects.create(variant = variant,  workspace = workspace)
-        if generated:
-            logger.debug('type %s'%type_obj)
-            logger.debug('media_type]) %s'%type(prefs[media_type]))
-            logger.debug('prefs[media_type].__base__ %s'%prefs[media_type].__base__)
-            logger.debug('isinstance(prefs[media_type],  PresetPreferences) %s'%isinstance(prefs[media_type],  PresetPreferences))
-            if prefs[media_type].__base__ == PresetPreferences:
-                preset_name = request.POST.get('preset')
-                logger.debug('preset %s'%preset_name)
-                if not preset_name:
-                    raise MissingArgs({arg: ['preset name is missing']})
-                preset = Preset.objects.get(name = preset_name)
-                preferences = prefs[media_type].objects.create(preset = preset)
-            else:
-                preferences = prefs[media_type].objects.create()
-            
-            va.preferences = preferences
-            va.save()
-            self._edit_prefs(request,  preferences)
-            
-            
-            
-            if not sources_list:
-                sources = Variant.objects.filter(is_global = True,  auto_generated = False,    media_type = type_obj)
-                for source in sources:
-                    SourceVariant.objects.create(workspace = workspace,  destination = variant,  rank = source.default_rank,  source = source)    
-            
-            else:
-                sources = Variant.objects.filter(is_global = True,  auto_generated = False, media_type = type_obj)
-                sources = sources.filter(pk__in = sources_list)
-                if sources.count() == 0:
-                    raise ArgsValidationError({arg: ['no sources found with id in %s'%sources_list]})
+        variant = Variant.objects.create(name = name, caption = caption,  auto_generated = True, workspace = workspace)
+        variant.media_type.add(*Type.objects.filter(name__in = media_type))
+        
                    
-                
-                for source in sources:
-                    rank = sources_list.index(unicode(source.pk)) + 1
-                    SourceVariant.objects.create(workspace = workspace,  destination = variant,  rank = source.default_rank,  source = source)
-
-            
-            
         resp = simplejson.dumps(self.get_info(variant,  workspace))
         logger.debug('resp %s'%resp)
         return HttpResponse(resp)
@@ -2563,7 +2520,7 @@ class VariantsResource(ModResource):
         """
         
         var =  Variant.objects.get(pk = variant_id)
-        if not var.is_global:
+        if  var.workspace:
             var.delete()	
         else:
             raise GlobalVariantDeletion
