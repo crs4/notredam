@@ -24,7 +24,8 @@ import logger
 
 class Event(models.Model):
     name = models.CharField(max_length=128, unique = True)
-    workspace = models.ForeignKey('workspace.DAMWorkspace', null = True, blank = True) #for state caange event
+    description = models.CharField(max_length=512)
+    workspace = models.ForeignKey('workspace.DAMWorkspace', null = True, blank = True) #for state change event
     
     def unicode(self):
         return unicode(self.name)

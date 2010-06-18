@@ -28,7 +28,7 @@ class State(models.Model):
 	def save(self, *args, **kwargs):
 		from eventmanager.models import Event
 		super(State, self).save(*args, **kwargs)
-		Event.objects.create(name = 'state change to '+ self.name, workspace = self.workspace)
+		Event.objects.create(name = 'state change to '+ self.name,description = 'event fired when a list of items is associated to state %s'%self.name, workspace = self.workspace)
 	
 	def __unicode__(self):
 		return self.name	
