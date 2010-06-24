@@ -282,7 +282,7 @@ def guess_media_type (file):
 
     return media_type
 
-def _generate_tasks( component, force_generation,  check_for_existing):
+def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp):
     
     """
     Generates MediaDART tasks
@@ -313,6 +313,26 @@ def _generate_tasks( component, force_generation,  check_for_existing):
         
 
         end = MachineState.objects.create(name='finished')
+        
+        
+        if  variant.name == 'mail':
+            
+            send_mail_action = Action.objects.create(component=component, function='send_mail')
+            send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
+            end_state = send_mail_state
+        else:
+            end_state = end
+        
+        
+        
+        if embed_xmp:
+            embed_action = Action.objects.create(component=component, function='embed_xmp')
+            embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action)    
+            if  variant.name == 'mail':
+                embed_state.next_state = send_mail_state
+            else:
+                embed_state.next_state = end
+            embed_state.save()
 
                 
         feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
@@ -326,16 +346,10 @@ def _generate_tasks( component, force_generation,  check_for_existing):
 #        source_machine = None
         logger.debug('source_machine %s'%source_machine)
                
-        end = MachineState.objects.create(name='finished')
+#        end = MachineState.objects.create(name='finished')
         logger.debug('----------------- VARIANT %s'%variant)
 #        if not variant:
-        if  variant.name == 'mail':
-            
-            send_mail_action = Action.objects.create(component=component, function='send_mail')
-            send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
-            end_state = send_mail_state
-        else:
-            end_state = end
+        
         
         fe_action = Action.objects.create(component=component, function='extract_features')
         fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=end_state)
@@ -355,30 +369,17 @@ def _generate_tasks( component, force_generation,  check_for_existing):
         
 #        ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
 
-def generate_tasks(component, upload_job_id = None, url = None,  force_generation = False,  check_for_existing = False):
+def generate_tasks(component, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
     
     """
     Generate MediaDART Tasks for the given variant, item and workspace
     """
     logger.debug('generate_tasks')
-#    component = variant.get_component(workspace,  item)
-#    try:
-#        component = variant.get_component(workspace,  item)    
-#        
-#    except Component.DoesNotExist:
-#        component = Component.objects.create(variant = variant,  item = item)
-#        component.workspace.add(workspace)
-        
+
     if upload_job_id:
         component.imported = True
         component.save()
         
-    variant = component.variant
-#    if variant and  variant.shared and not variant.auto_generated and not check_for_existing: #the original... is shared by all the ws
-#        wss = component.item.workspaces.all()
-#    else:
-#        wss = [workspace]
-#    for ws in wss:
-#        _generate_tasks( ws,  component, force_generation,  check_for_existing)            
+  
 
-    _generate_tasks(component, force_generation,  check_for_existing)
+    _generate_tasks(component, force_generation,  check_for_existing, embed_xmp)
