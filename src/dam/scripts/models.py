@@ -225,11 +225,15 @@ class SaveAction(BaseAction):
                                     'audio':  PRESETS['audio'].keys(), 
                                     'doc': ['jpeg']
             }
-        }]
-    def __init__(self, media_type, source_variant, workspace, script, output_format):  
+        },
+        {'name':'embed_xmp',  'type': 'boolean'}
+        
+        ]
+    def __init__(self, media_type, source_variant, workspace, script, output_format, embed_xmp):  
         super(SaveAction, self).__init__(media_type, source_variant, workspace, script)
         self.output_format = output_format
-    
+        self.embed_xmp = embed_xmp
+        
     
     def _get_output_media_type(self, adapt_parameters):
                 
@@ -300,7 +304,7 @@ class SaveAction(BaseAction):
             component.copy_metadata(same_resource) 
         else:
             logger.debug('generate task')        
-            generate_tasks(component)
+            generate_tasks(component, embed_xmp = True)
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)
