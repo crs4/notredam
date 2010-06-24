@@ -383,11 +383,18 @@ class Crop(BaseAction):
     media_type_supported = ['image',]
     @staticmethod
     def required_parameters(workspace):
-        return [{ 'name': 'upperleft_x',  'type': 'number'}, { 'name': 'upperleft_y',  'type': 'number'}, { 'name': 'lowerright_x',  'type': 'number'}, { 'name': 'lowerright_y',  'type': 'number'}]
+        return [{ 'name': 'upperleft_x',  'type': 'number'}, 
+                { 'name': 'upperleft_y',  'type': 'number'}, 
+                { 'name': 'lowerright_x',  'type': 'number'}, 
+                { 'name': 'lowerright_y',  'type': 'number'},
+                
+                
+                { 'name': 'ratio',  'type': 'string'}, 
+                ]
     
-    def __init__(self, media_type, source_variant, workspace, script,  upperleft_x, upperleft_y, lowerright_x, lowerright_y):
-        params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y }
-        
+    def __init__(self, media_type, source_variant, workspace, script,  upperleft_x, upperleft_y, lowerright_x, lowerright_y, ratio = None ):
+        params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y, 'ratio': ratio }
+            
         super(Crop, self).__init__(media_type, source_variant, workspace, script, **params)
      
 class Watermark(BaseAction): 

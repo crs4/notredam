@@ -159,10 +159,27 @@ def adapt_resource(component, machine):
                     
                 
             elif action['type'] == 'crop':
-                lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
-                ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
-                lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
-                ul_y = int(int(action['parameters']['upperleft_y'])*component.source.height/100)
+                if action['parameters']['ratio']:
+                    y_ratio, x_ratio = action['parameters']['ratio'].split(':')
+                    y_ratio = int(y_ratio)
+                    x_ratio = int(x_ratio)
+                    final_height = x_ratio/y_ratio*orig_width
+                    logger.debug('final_height %s'%final_height)
+                    
+                    ul_y = (orig_height - final_height)/2
+                    ul_x = 0
+                    
+                    lr_y = ul_y + final_height
+                    lr_x = orig_width 
+                
+                     
+                    
+                else:
+                    
+                    lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
+                    ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
+                    lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
+                    ul_y = int(int(action['parameters']['upperleft_y'])*component.source.height/100)
                 
                 orig_width = lr_x -ul_x 
                 orig_height = lr_y - ul_y
