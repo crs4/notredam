@@ -319,15 +319,25 @@ def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp
             
             send_mail_action = Action.objects.create(component=component, function='send_mail')
             send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
-            end_state = send_mail_state
-        else:
+            if embed_xmp:
+                embed_action = Action.objects.create(component=component, function='embed_xmp')
+                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = send_mail_state)
+                end_state = embed_state
+            else:
+                end_state = send_mail_state
+                
+        elif embed_xmp: 
+                embed_action = Action.objects.create(component=component, function='embed_xmp')
+                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = end)
+                end_state = embed_state
+        else:    
             end_state = end
         
         
         
         if embed_xmp:
-            embed_action = Action.objects.create(component=component, function='embed_xmp')
-            embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action)    
+            logger.debug('----------------------creating embed xmp state-----------------------')
+            
             if  variant.name == 'mail':
                 embed_state.next_state = send_mail_state
             else:

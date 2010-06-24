@@ -84,7 +84,8 @@ def add(component, machine):
     machine_to_next_state(machine)
 
 def embed_xmp(component, machine):
-
+    logger.debug('STARTING embed_xmp')
+    
     def embedding_cb(result, component, machine):
         if result:
             reset_modified_flag(component)
