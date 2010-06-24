@@ -226,10 +226,10 @@ class SaveAction(BaseAction):
                                     'doc': ['jpeg']
             }
         },
-        {'name':'embed_xmp',  'type': 'boolean'}
+#        {'name':'embed_xmp',  'type': 'boolean'}
         
         ]
-    def __init__(self, media_type, source_variant, workspace, script, output_format, embed_xmp):  
+    def __init__(self, media_type, source_variant, workspace, script, output_format, embed_xmp = True):  
         super(SaveAction, self).__init__(media_type, source_variant, workspace, script)
         self.output_format = output_format
         self.embed_xmp = embed_xmp
@@ -259,7 +259,14 @@ class SaveAction(BaseAction):
             rights = adapt_parameters.pop('rights')
         else:
             rights = None
+        
+        if adapt_parameters.has_key('embed_xmp'):
+            embed_xmp = adapt_parameters.pop('embed_xmp')
+        else:    
+            embed_xmp = None
+            
         logger.debug('rights %s'%rights)
+        logger.debug('embed_xmp %s'%embed_xmp)
             
         logger.debug('self.output %s'%self.output_variant)
         logger.debug('self.media_type %s'%self.media_type)
@@ -304,7 +311,7 @@ class SaveAction(BaseAction):
             component.copy_metadata(same_resource) 
         else:
             logger.debug('generate task')        
-            generate_tasks(component, embed_xmp = True)
+            generate_tasks(component, embed_xmp = embed_xmp)
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)
