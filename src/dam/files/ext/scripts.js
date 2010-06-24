@@ -127,237 +127,304 @@ function _check_form_detail_script(my_win){
 	return flag;
 }
 
+function _global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action )
+{
+    var i = 0;
+    var recApp;
+    var item_array = new Array();
+    
+    for (i=0;i<parameters.length;i++){
+//    	cercare il name_action nella gridlistactions, e verificare se ha values
+        recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
+        
+        //in sendbymail restituisce in ordine inverso.
+        if (parameters[i].name != recApp['data']['parameters'][i].name){
+        	var j = 0;
+        	while (parameters[i].name != recApp['data']['parameters'][j].name) {
+        		  j++;
+        	}
+        }else j = i;
+        
+    	if (recApp['data']['parameters'][j]['values']){
+    		var val;
+    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+    		
+    		if (parameters[i]['value']) 
+    			val = parameters[i]['value'];
+    		else 
+    			val = recApp['data']['parameters'][j]['values'][media_type][0];
+    		console.log(val);
+    		item_array.push(new Ext.form.ComboBox({                            
+    			fieldLabel   : parameters[i].name.replace("_"," "),
+    			store        : recAppValues,
+				triggerAction: 'all',
+				value        : val,
+				name         : parameters[i].name
+    	    }));
+    	}
+    	else if (parameters[i].type == 'number'){
+    		item_array.push(new Ext.form.NumberField({                            
+    	          fieldLabel: parameters[i].name.replace("_"," "),
+    	          value     : parameters[i].value,
+    	          name      : parameters[i].name,
+    	          msgTarget :'side'                            
+    	      	}));
+    	}
+    	else if (parameters[i].type == 'string'){
+    		item_array.push(new Ext.form.TextField({                            
+	          fieldLabel  : parameters[i].name.replace("_"," "),
+	          value       : parameters[i].value,
+	          name        : parameters[i].name,
+	          msgTarget   : 'side'                            
+	      	}));
+    	}
+    }
+    
+	return item_array;
+}
+
+function _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters)
+{
+	watermarking_position = 0; // 0 mean undefined
+
+	watermarking_position_id = Ext.id();
+    
+	var children_box_position = [];
+	for(i=1; i<= 9; i++){
+	    children_box_position.push({
+	        tag:'div',
+	        id: 'square' + i,
+	        cls: 'position_watermarking',
+	        onclick: String.format('watermarking({0}); Ext.getCmp("{1}").setValue({0})', i, watermarking_position_id)
+	    })
+	}
+
+	var box_position_div = {
+	    tag:'div',
+	    cls: 'container_position_watermarking',
+	    children:children_box_position
+	}; 
+
+	var id_watermark = Ext.id();
+	var storeview = new Ext.data.JsonStore({
+	    url      : '/get_watermarks/',
+	    method   :'POST',
+	    root     : 'watermarks',
+	    fields   : ['id', 'file_name', 'url'],
+	    listeners :{ 
+	    	load : function(){
+				i = 0;
+				while (parameters[i]['name'] != 'filename' && i<parameters.length)
+					i++;
+				if (parameters[i]['name'] == 'filename' && parameters[i]['value']){
+					Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
+					Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
+				}
+	    	}
+		}
+    });
+	storeview.load();
+
+	panel.add(
+			{ 
+	            layout:'column', 
+	            items:[{ 
+	                columnWidth:.27, 
+	                layout: 'form', 
+	                hideLabels: true,
+	                items: [
+	                	new Ext.form.Field({
+    			    	    id : watermarking_position_id,
+    			    	    name: 'watermarking_position',
+    			    	    autoCreate:{
+    			    	        tag:'div',
+    				    	    cls: 'container_position_watermarking',
+    				    	    children:children_box_position
+    				        },
+    			    	    listeners:{
+    			    	        render: function(){
+    				            	i = 0;
+    				        		while (parameters[i]['name'] != 'pos_x_percent' && i<parameters.length){
+    				        			i++;
+    				        		}	
+				        			if (parameters[i]['name'] == 'pos_x_percent' && parameters[i]['value']){      			    	            	
+        				        		var pos_x = ((parameters[i]['value'] - 5) / 33) + 1;
+	                					var pos_y = ((parameters[i+1]['value'] - 5) / 33) + 1;
+        				        		watermarking_position = (pos_y-1) * 3 + pos_x;
+    			    	            	watermarking(watermarking_position);                    
+    			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
+    			    	            }else    				        			
+    				        		if(watermarking_position != 0){
+    				        			watermarking(watermarking_position);                    
+    			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
+    			    	            }
+    			    	            else{
+    			    	                watermarking(1);
+    			    	                Ext.getCmp(watermarking_position_id).setValue(1);
+    			    	            }
+    				        	}                
+    				        }            
+    		    		})    	                	
+	                ] 
+	            },{
+                columnWidth:.73, 
+                layout: 'form', 
+                items: [
+                    	new Ext.Panel({
+                    	    id : 'panel_watermarks_views',
+                    		frame:true,
+                    	    title:'Select Watermark',
+                    	    autoScroll : true,
+                    	    height : 140,
+                    	    bbar : [new Ext.Button({
+                    			text : 'Upload',
+                    			width : 216,
+                    			handler: function() {
+                    				var up = new Upload('/upload_watermark/', true, {}, _update_watermarks);
+                    				up.openUpload();
+                    			}
+                    		}),
+                    		new Ext.Button({
+                    			text : 'Delete',
+                    			width : 216,
+                    			handler: function() {
+                	        		if (Ext.getCmp('dataview_watermarks').getSelectedRecords().length > 0){
+                        				Ext.Ajax.request({
+                    	                    url: '/delete_watermark/',
+                    	                    params:{ 
+                    	        				watermark : Ext.getCmp('dataview_watermarks').getSelectedRecords()[0].data.id
+                    	        			},
+                    	                    success: function(response) {
+                    	                        if (Ext.decode(response.responseText)['success']){
+                    	                        	Ext.MessageBox.alert('Success', 'Watermark removed.');
+                    	                        	_update_watermarks();
+                    	                        }else
+                    	                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+                    	                    }
+                    	                });
+                	        		}else
+                	        			Ext.MessageBox.alert('Success', 'Select one watermark!');
+                    			}
+                    		})
+                    	    ],
+                    	    items:[
+                				new Ext.DataView({
+                					id : 'dataview_watermarks',
+                					enable : true,
+                					autoHeight:true,
+                					autoScroll : true,
+                					singleSelect: true,
+                		            itemSelector: 'div.watermark-wrap',
+                				    store: storeview,
+                		    	    tpl : new Ext.XTemplate(
+                		    	    		'<tpl for=".">',
+                		    	            '<div class="watermark-wrap" id="{id}">',
+                		    			    '<div class="watermark"><img src="{url}" title="{file_name}" width="50" height="50"></div></div>',
+                		    	        '</tpl>'
+                		    		),
+                				    emptyText: 'No images to display',
+                				    listeners :{ 
+                						click  : function(index, node, e){
+                							//set filename to hidden.
+                							Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(index.getSelectedRecords()[0].data.id);
+                						}
+                					}	                					
+                				}),{
+                					xtype:'hidden', 
+                					id : 'hidden_file_name',
+                					name:'filename'
+                				},{
+                					xtype:'hidden', 
+                					id : 'hidden_pos_x_percent',
+                					name:'pos_x_percent'
+                				},{
+                					xtype:'hidden', 
+                					id : 'hidden_pos_y_percent',
+                					name:'pos_y_percent'
+                				},{
+                					xtype:'hidden', 
+                					id : 'hidden_alpha',
+                					name:'alpha',
+                					value: '1'
+                				}
+                    	    ]
+                    	})
+                    ]
+	            }]
+	        }         
+			);
+
+	return panel;
+}
+
+function _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action)
+{
+	console.log(name_action);
+	panel2 = new Ext.Panel({
+    	frame:true,
+	});
+	panel.add(
+			{ 
+	            layout:'column', 
+	            items:[{ 
+	                columnWidth:.5,
+	                layout : 'form',
+	                items: [{
+	                    xtype: 'checkbox',
+	                    boxLabel: 'Custom',
+	                    listeners: {
+	                		check : function(checked){
+	    						if (checked){
+		                			//able all input text 
+	    							console.log()
+	    						}else{
+	    							//disable all input text
+	    						}
+	                		}
+	                	}
+	                },_global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action )]
+	            },{
+	            	columnWidth:.5,
+	            	layout : 'form',
+	                items : [{
+						xtype: 'radiogroup',
+						fieldLabel: 'Standard crop',
+			            columns: 1,
+						items: [
+						    {boxLabel: 'Item 1', name: 'rb-auto', inputValue: 1},
+						    {boxLabel: 'Item 2', name: 'rb-auto', inputValue: 2, checked: true},
+						    {boxLabel: 'Item 3', name: 'rb-auto', inputValue: 3},
+						    {boxLabel: 'Item 4', name: 'rb-auto', inputValue: 4}
+						]
+	                	}
+	                ]
+	            }]
+	        }         
+	);
+
+	return panel;
+	
+}
+
 function generate_details_forms(panel, grid, selected, actionsStore, media_type) {
-		
+
+	console.log('generate_details_forms');
     var name_action = selected.data.name;
     var parameters = selected.get('parameters');
-    var i = 0;
-    watermarking_position = 0; // 0 mean undefined
-    var recApp;
+    var array_field;
 //  console.log('generate_detail_form')
-
 // remove all component
     panel.removeAll()
 
     //add new component
     if (name_action == 'watermark'){
-    	//watermark
-
-        watermarking_position_id = Ext.id();
-        
-    	var children_box_position = [];
-    	for(i=1; i<= 9; i++){
-    	    children_box_position.push({
-    	        tag:'div',
-    	        id: 'square' + i,
-    	        cls: 'position_watermarking',
-    	        onclick: String.format('watermarking({0}); Ext.getCmp("{1}").setValue({0})', i, watermarking_position_id)
-    	    })
-    	}
-
-    	var box_position_div = {
-    	    tag:'div',
-    	    cls: 'container_position_watermarking',
-    	    children:children_box_position
-    	}; 
-
-    	var id_watermark = Ext.id();
-    	var storeview = new Ext.data.JsonStore({
-		    url      : '/get_watermarks/',
-		    method   :'POST',
-		    root     : 'watermarks',
-		    fields   : ['id', 'file_name', 'url'],
-		    listeners :{ 
-		    	load : function(){
-					i = 0;
-					while (parameters[i]['name'] != 'filename' && i<parameters.length)
-						i++;
-					if (parameters[i]['name'] == 'filename' && parameters[i]['value']){
-						Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
-						Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
-					}
-		    	}
-    		}
-	    });
-    	storeview.load();
-
-    	panel.add(
-    			{ 
-    	            layout:'column', 
-    	            items:[{ 
-    	                columnWidth:.27, 
-    	                layout: 'form', 
-    	                hideLabels: true,
-    	                items: [
-    	                	new Ext.form.Field({
-        			    	    id : watermarking_position_id,
-        			    	    name: 'watermarking_position',
-        			    	    autoCreate:{
-        			    	        tag:'div',
-        				    	    cls: 'container_position_watermarking',
-        				    	    children:children_box_position
-        				        },
-        			    	    listeners:{
-        			    	        render: function(){
-        				            	i = 0;
-	    				        		while (parameters[i]['name'] != 'pos_x_percent' && i<parameters.length){
-	    				        			i++;
-	    				        		}	
-					        			if (parameters[i]['name'] == 'pos_x_percent' && parameters[i]['value']){      			    	            	
-	        				        		var pos_x = ((parameters[i]['value'] - 5) / 33) + 1;
-		                					var pos_y = ((parameters[i+1]['value'] - 5) / 33) + 1;
-	        				        		watermarking_position = (pos_y-1) * 3 + pos_x;
-	    			    	            	watermarking(watermarking_position);                    
-	    			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
-	    			    	            }else    				        			
-	    				        		if(watermarking_position != 0){
-	    				        			watermarking(watermarking_position);                    
-	    			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
-	    			    	            }
-	    			    	            else{
-	    			    	                watermarking(1);
-	    			    	                Ext.getCmp(watermarking_position_id).setValue(1);
-	    			    	            }
-        				        	}                
-        				        }            
-        		    		})    	                	
-    	                ] 
-    	            },{
-	                columnWidth:.73, 
-	                layout: 'form', 
-	                items: [
-	                    	new Ext.Panel({
-	                    	    id : 'panel_watermarks_views',
-	                    		frame:true,
-	                    	    title:'Select Watermark',
-	                    	    autoScroll : true,
-	                    	    height : 140,
-	                    	    bbar : [new Ext.Button({
-                        			text : 'Upload',
-                        			width : 216,
-                        			handler: function() {
-                        				var up = new Upload('/upload_watermark/', true, {}, _update_watermarks);
-                        				up.openUpload();
-                        			}
-                        		}),
-                        		new Ext.Button({
-                        			text : 'Delete',
-                        			width : 216,
-                        			handler: function() {
-                    	        		if (Ext.getCmp('dataview_watermarks').getSelectedRecords().length > 0){
-	                        				Ext.Ajax.request({
-	                    	                    url: '/delete_watermark/',
-	                    	                    params:{ 
-	                    	        				watermark : Ext.getCmp('dataview_watermarks').getSelectedRecords()[0].data.id
-	                    	        			},
-	                    	                    success: function(response) {
-	                    	                        if (Ext.decode(response.responseText)['success']){
-	                    	                        	Ext.MessageBox.alert('Success', 'Watermark removed.');
-	                    	                        	_update_watermarks();
-	                    	                        }else
-	                    	                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
-	                    	                    }
-	                    	                });
-                    	        		}else
-                    	        			Ext.MessageBox.alert('Success', 'Select one watermark!');
-                        			}
-                        		})
-	                    	    ],
-	                    	    items:[
-	                				new Ext.DataView({
-	                					id : 'dataview_watermarks',
-	                					enable : true,
-	                					autoHeight:true,
-	                					autoScroll : true,
-	                					singleSelect: true,
-	                		            itemSelector: 'div.watermark-wrap',
-	                				    store: storeview,
-	                		    	    tpl : new Ext.XTemplate(
-	                		    	    		'<tpl for=".">',
-	                		    	            '<div class="watermark-wrap" id="{id}">',
-	                		    			    '<div class="watermark"><img src="{url}" title="{file_name}" width="50" height="50"></div></div>',
-	                		    	        '</tpl>'
-	                		    		),
-	                				    emptyText: 'No images to display',
-	                				    listeners :{ 
-	                						click  : function(index, node, e){
-	                							//set filename to hidden.
-	                							Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(index.getSelectedRecords()[0].data.id);
-	                						}
-	                					}	                					
-	                				}),{
-	                					xtype:'hidden', 
-	                					id : 'hidden_file_name',
-	                					name:'filename'
-	                				},{
-	                					xtype:'hidden', 
-	                					id : 'hidden_pos_x_percent',
-	                					name:'pos_x_percent'
-	                				},{
-	                					xtype:'hidden', 
-	                					id : 'hidden_pos_y_percent',
-	                					name:'pos_y_percent'
-	                				},{
-	                					xtype:'hidden', 
-	                					id : 'hidden_alpha',
-	                					name:'alpha',
-	                					value: '1'
-	                				}
-	                    	    ]
-	                    	})
-	                    ]
-    	            }]
-    	        }         
-    			);
-
-   	
+    	panel = _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
+    }else if (name_action == 'crop'){
+    	panel = _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
     }else{
-    	for (i=0;i<parameters.length;i++){
-//	    	cercare il name_action nella gridlistactions, e verificare se ha values
-	        recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
-	        
-	        //in sendbymail restituisce in ordine inverso.
-	        if (parameters[i].name != recApp['data']['parameters'][i].name){
-	        	var j = 0;
-	        	while (parameters[i].name != recApp['data']['parameters'][j].name) {
-	        		  j++;
-	        	}
-	        }else j = i;
-	        
-	    	if (recApp['data']['parameters'][j]['values']){
-	    		var val;
-	    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
-	    		
-	    		if (parameters[i]['value']) 
-	    			val = parameters[i]['value'];
-	    		else 
-	    			val = recApp['data']['parameters'][j]['values'][media_type][0];
-	    		console.log(val);
-	    		panel.add(new Ext.form.ComboBox({                            
-	    			fieldLabel   : parameters[i].name.replace("_"," "),
-	    			store        : recAppValues,
-					triggerAction: 'all',
-					value        : val,
-					name         : parameters[i].name
-	    	    }));
-	    	}
-	    	else if (parameters[i].type == 'number'){
-	    		panel.add(new Ext.form.NumberField({                            
-	    	          fieldLabel: parameters[i].name.replace("_"," "),
-	    	          value     : parameters[i].value,
-	    	          name      : parameters[i].name,
-	    	          msgTarget :'side'                            
-	    	      	}));
-	    	}
-	    	else if (parameters[i].type == 'string'){
-		    	panel.add(new Ext.form.TextField({                            
-		          fieldLabel  : parameters[i].name.replace("_"," "),
-		          value       : parameters[i].value,
-		          name        : parameters[i].name,
-		          msgTarget   : 'side'                            
-		      	}));
-	    	}
-	    }
+    	
+    	array_field = _global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action );
+    	panel.add(array_field);
     }
 //reload panel
 	panel.doLayout();
@@ -964,13 +1031,14 @@ function manage_script(){
 	        		    fields   : ['id', 'name', 'description', 'actions_media_type', 'already_run', 'is_global']
 	        	    }),
 	        	    columns          : [
-	        		        	        { id : 'name',  header: "Name", dataIndex: 'name', sortable: true},
-	        		        	        { id : 'description',  header: "Description", dataIndex: 'description'}
+	        		        	        { id : 'name',  header: "Name", dataIndex: 'name', sortable: true, width   : 120},
+	        		        	        { id : 'description',  header: "Description", dataIndex: 'description', width : 185},
+	        		        	        { id : 'is_global',  header: "Global", dataIndex: 'is_global', width : 45}
 	        	    ],
 	        	    stripeRows       : true,
 	        	    autoExpandColumn : 'name',
 	        		frame            : true,
-	                hideHeaders      : true,
+//	                hideHeaders      : true,
 	        		sm               : new Ext.grid.RowSelectionModel({
 	        								singleSelect : true
 	        							})
@@ -1139,7 +1207,8 @@ function manage_events(){
 		            columns: [
 		                sm,
 		                { id : 'name',         header: "Name",        dataIndex: 'name'},
-	        	        { id : 'description',  header: "Description", dataIndex: 'description'}
+	        	        { id : 'description',  header: "Description", dataIndex: 'description', width : 185},
+	        	        { id : 'is_global',    header: "Global",      dataIndex: 'is_global',      width : 45}
 		            ]
 		        }),
 		        tbar:[{
