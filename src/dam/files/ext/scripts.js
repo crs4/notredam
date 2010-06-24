@@ -117,6 +117,8 @@ function _check_form_detail_script(my_win){
 			console.log(params);
 			for(k=0;k<params.parameters.length;k++){
 				if (!params.parameters[k].value){
+					console.log('parametro null.');
+					console.log(params.parameters);
 					flag = false;
 				}
 			}
@@ -132,7 +134,7 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     var i = 0;
     watermarking_position = 0; // 0 mean undefined
     var recApp;
-//    console.log('generate_detail_form')
+//  console.log('generate_detail_form')
 
 // remove all component
     panel.removeAll()
@@ -325,17 +327,19 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 	    	if (recApp['data']['parameters'][j]['values']){
 	    		var val;
 	    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+	    		
 	    		if (parameters[i]['value']) 
 	    			val = parameters[i]['value'];
 	    		else 
 	    			val = recApp['data']['parameters'][j]['values'][media_type][0];
-		    		panel.add(new Ext.form.ComboBox({                            
-		    			fieldLabel   : parameters[i].name.replace("_"," "),
-		    			store        : recAppValues,
-						triggerAction: 'all',
-						value        : val,
-						name         : parameters[i].name
-		    	    }));
+	    		console.log(val);
+	    		panel.add(new Ext.form.ComboBox({                            
+	    			fieldLabel   : parameters[i].name.replace("_"," "),
+	    			store        : recAppValues,
+					triggerAction: 'all',
+					value        : val,
+					name         : parameters[i].name
+	    	    }));
 	    	}
 	    	else if (parameters[i].type == 'number'){
 	    		panel.add(new Ext.form.NumberField({                            
@@ -392,6 +396,7 @@ function _pull_data(sm,media_type){
     		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
     		newParams.push(appParams); 
 	    }
+//    	console.log(newParams);
 	    r.set('parameters',newParams);
 	    r.commit();
 	}
@@ -533,6 +538,7 @@ function _get_layout_tab(obj, media_type){
 				Ext.Msg.show({
 				   title:'Warning',
 				   msg: 'You must select one row!',
+				   width: 300,
 				   buttons: Ext.Msg.OK,
 				   icon: Ext.MessageBox.WARNING
 				});	        				
@@ -589,7 +595,16 @@ function _get_tabs(){
 	        id : 'tab_doc',
 	        layout: 'border',
 	    	items : [layoutDoc]
-	    }]
+	    }
+	    ],
+	    listeners :{
+			beforetabchange : function(newTab, currentTab) {
+				var type = currentTab.id.slice(4);
+				_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type);
+	    	}
+	    } 	    
+	    	
+
 	});
 	return [tabs]
 }
@@ -661,7 +676,13 @@ function save_data_script(name, description, my_win){
 	
 }
 
-function new_script(create, name, description, id_script, already_run, run){
+function reload_main_data_view(){
+	var tab = Ext.getCmp('media_tabs').getActiveTab();
+    var view = tab.getComponent(0);
+    var store = view.getStore();
+    store.reload();
+}
+function new_script(create, name, description, id_script, is_global, run){
 	//create true new_script
 	//create false edit_script
 	var tabs = _get_tabs();
@@ -706,10 +727,11 @@ function new_script(create, name, description, id_script, already_run, run){
 		        			},
 		                    success: function(response) {
 		                        if (Ext.decode(response.responseText)['success']){
-		    		        		if (already_run){
+		                        	if (is_global){
 		    		        			Ext.Msg.show({
 		    		        				   title:'Option.',
-		    		        				   msg: 'Your script saved. Do you want to run the script on the objects on which the script is executed?',
+		    		        				   msg: 'This global script is saved, do you want to run on all objects in the workspace?',
+		    		        				   width: 300,
 		    		        				   buttons: Ext.Msg.YESNO,
 		    		        				   fn: function(btn){
 				    		        			    if (btn == 'yes'){
@@ -721,7 +743,7 @@ function new_script(create, name, description, id_script, already_run, run){
 				                								run_again : true
 				                							},
 				                					        success: function(data){
-				                								Ext.MessageBox.alert('Success', 'Script run.');
+				                								reload_main_data_view();
 				                					        }
 				                						});
 				    		        			    }
@@ -731,7 +753,7 @@ function new_script(create, name, description, id_script, already_run, run){
 		    		        				});	
 		    		        		}else
 		    		        			Ext.MessageBox.alert('Success', 'Script saved.');
-		                        	my_win.close();
+		                        		my_win.close();
 		                        }else
 		                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
 		                    }
@@ -741,6 +763,7 @@ function new_script(create, name, description, id_script, already_run, run){
     				Ext.Msg.show({
     					   title:'Warning',
     					   msg: 'Fill in all fields relating to shares.',
+    					   width: 300,
     					   buttons: Ext.Msg.OK,
     					   icon: Ext.MessageBox.WARNING
     					});	 
@@ -879,7 +902,6 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 		        				actions_media_type : Ext.encode(pipeline['actions_media_type'])
 		        			},
 		                    success: function(form, action) {
-	                        	Ext.MessageBox.alert('Success', 'Script saved.');
 	                        	if (run){//this script must be run now.
 	                        		var selected_ids = get_selected_items();
             						Ext.Ajax.request({
@@ -889,7 +911,7 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
             								script_id : Ext.decode(action.response.responseText)['id']
             							},
             					        success: function(data){
-            								Ext.MessageBox.alert('Success', 'Script run.');
+            								reload_main_data_view();
             					        }
             						});		                    
 	                        	}
@@ -939,7 +961,7 @@ function manage_script(){
 	        		    method   :'POST',
 	        		    autoLoad :true,
 	        		    root     : 'scripts',
-	        		    fields   : ['id', 'name', 'description', 'actions_media_type', 'already_run']
+	        		    fields   : ['id', 'name', 'description', 'actions_media_type', 'already_run', 'is_global']
 	        	    }),
 	        	    columns          : [
 	        		        	        { id : 'name',  header: "Name", dataIndex: 'name', sortable: true},
@@ -966,7 +988,7 @@ function manage_script(){
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
 			    		my_win.close();
-			    		new_script(false, data.name, data.description, data.id, data.already_run, false);
+			    		new_script(false, data.name, data.description, data.id, data.is_global, false);
 			    		load_data_script(data);
 		    		}
 	            }
@@ -983,21 +1005,31 @@ function manage_script(){
 		            var my_win = this.findParentByType('window');
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			            var selScript = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected();
-	            		Ext.Ajax.request({
-	                        url: '/delete_script/',
-	                        params:{ 
-	            				script : selScript.data.id
-	            			},
-	                        success: function(response) {
-	                            if (Ext.decode(response.responseText)['success'])
-	                				Ext.MessageBox.alert('Script deleted');
-	                            else
-	                            	Ext.MessageBox.alert('Script NOT deleted');
-	                        }
-	                    });
-	            		my_win.get('open_form').get('my_scripts').getStore().reload();
+			            console.log(selScript);
+	            		if (!selScript.data.is_global){
+				            Ext.Ajax.request({
+		                        url: '/delete_script/',
+		                        params:{ 
+		            				script : selScript.data.id
+		            			},
+		                        success: function(response) {
+//		                            if (Ext.decode(response.responseText)['success'])
+//		                				Ext.MessageBox.alert('Script deleted');
+//		                            else
+//		                            	Ext.MessageBox.alert('Script NOT deleted');
+		                        }
+		                    });
+		            		my_win.get('open_form').get('my_scripts').getStore().reload();
+		    			}else{
+		    				Ext.Msg.show({
+		    					   title:'Warning',
+		    					   msg: 'Selected script can not be deleted.',
+		    					   width: 300,
+		    					   buttons: Ext.Msg.OK,
+		    					   icon: Ext.MessageBox.WARNING
+		    					});
+		    			}
 		    		}
-//            		my_win.close();
 		     	}
 	        },{
 	            text: 'Change paramenters',
@@ -1018,6 +1050,9 @@ function manage_script(){
 function manage_events(){
 
 	var sm = new Ext.grid.CheckboxSelectionModel();
+
+	Ext.QuickTips.init();
+
 	//show choose window
 	var manage_events_win = new Ext.Window({
 	    constrain   : true,
@@ -1045,9 +1080,10 @@ function manage_events(){
 				        		    url        : '/get_events/',
 				        		    method     : 'POST',
 				        		    root       : 'events',
-				        		    fields     : ['id', 'name'],
+				        		    fields     : ['id', 'name', 'description'],
 				        		    autoLoad   : true
 				        		}),
+				        		tpl: '<tpl for="."><div ext:qtip="{description}" class="x-combo-list-item">{description}</div></tpl>',
 							    displayField : 'name',
 							    typeAhead    : true,
 							    mode         : 'local',
@@ -1093,7 +1129,7 @@ function manage_events(){
 	       		    method   :'POST',
 	       		    autoLoad :true,
 	       		    root     : 'scripts',
-	       		    fields   : ['id', 'name', 'description', 'actions_media_type', 'already_run']
+	       		    fields   : ['id', 'name', 'description', 'actions_media_type', 'already_run', 'is_global']
         	    }),
 		        cm: new Ext.grid.ColumnModel({
 		            defaults: {
