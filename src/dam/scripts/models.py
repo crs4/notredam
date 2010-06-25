@@ -220,13 +220,15 @@ class SaveAction(BaseAction):
     @staticmethod
     def required_parameters(workspace):
         
-        return [ {'name':'output_format',  'type': 'string',  'values':{'image':['jpeg',  'gif','png', 'bmp'], 
+        return [
+                {'name':'embed_xmp',  'type': 'boolean'},
+                 {'name':'output_format',  'type': 'string',  'values':{'image':['jpeg',  'gif','png', 'bmp'], 
                                     'video': PRESETS['video'].keys(), 
                                     'audio':  PRESETS['audio'].keys(), 
                                     'doc': ['jpeg']
             }
         },
-        {'name':'embed_xmp',  'type': 'boolean'}
+
         
         ]
     def __init__(self, media_type, source_variant, workspace, script, output_format, embed_xmp = True):  
