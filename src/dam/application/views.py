@@ -215,14 +215,16 @@ def download_component(request, item_id, variant_name):
         item = Item.objects.get(pk=item_id)
         variant = workspace.get_variants().distinct().get(name = variant_name)
         comp = item.get_variant(workspace, variant)
-        url = comp.get_component_url()
+
+        path = comp._id
+
     except Exception,  ex:
         logger.exception(ex)
         return HttpResponseNotFound()
     
     
-    logger.debug('url %s'%url)
-    response = serve(request, url, document_root = MEDIADART_STORAGE)
+    
+    response = serve(request, path, document_root = MEDIADART_STORAGE)
     
     if variant_name == 'original':
         file_name = comp.file_name
