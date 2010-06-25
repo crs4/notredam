@@ -159,20 +159,32 @@ def adapt_resource(component, machine):
                     
                 
             elif action['type'] == 'crop':
-#                action['parameters']['ratio'] = '4:3'
+                action['parameters']['ratio'] = '2:3'
                 
                 if action['parameters']['ratio']:
-                    y_ratio, x_ratio = action['parameters']['ratio'].split(':')
+                    x_ratio, y_ratio = action['parameters']['ratio'].split(':')
                     y_ratio = int(y_ratio)
                     x_ratio = int(x_ratio)
-                    final_height = x_ratio/y_ratio*orig_width
+                    logger.debug('x_ratio %s'%x_ratio)
+                    logger.debug('y_ratio %s'%y_ratio)
+                    
+                    if x_ratio > y_ratio:
+                        final_height = y_ratio*orig_width/x_ratio
+                        final_width = orig_width
+                    else:
+                        final_height = orig_height
+                        final_width = x_ratio*orig_height/y_ratio
+                        
+                        
                     logger.debug('final_height %s'%final_height)
+                    logger.debug('orig_height %s'%orig_height)
+                    logger.debug('orig_width %s'%orig_width)
                     
                     ul_y = (orig_height - final_height)/2
                     ul_x = 0
                     
                     lr_y = ul_y + final_height
-                    lr_x = orig_width 
+                    lr_x = final_width 
                 
                      
                     
