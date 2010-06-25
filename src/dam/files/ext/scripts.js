@@ -151,12 +151,10 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     	if (recApp['data']['parameters'][j]['values']){
     		var val;
     		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
-    		
     		if (parameters[i]['value']) 
     			val = parameters[i]['value'];
     		else 
     			val = recApp['data']['parameters'][j]['values'][media_type][0];
-    		console.log(val);
     		item_array.push(new Ext.form.ComboBox({                            
     			fieldLabel   : parameters[i].name.replace("_"," "),
     			store        : recAppValues,
@@ -183,14 +181,19 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     	}else if (parameters[i].type == 'boolean'){
     		item_array.push(new Ext.form.Checkbox({                            
   	          fieldLabel  : parameters[i].name.replace("_"," "),
-  	          checked     : false,
-  	          value       : false,
+  	          checked     : parameters[i].value,
+  	          value       : parameters[i].value,
   	          name        : parameters[i].name,
   	          msgTarget   : 'side',
   	          listeners   : {
     			  	check : function(checked){
     					this.value = checked;
     			  	}
+//    			  	afterrender : function(){
+//    			  		console.log('ooooooooooooooo');
+//    			  		console.log(parameters[i]);
+//    			  		this.setValue(parameters[i].value);
+//    			  	}
     		  }
   	      	}));    		
     	}
@@ -908,10 +911,9 @@ function newRecordLoad(data,type){
 		if (data.parameters[name])
 			tmp['value'] = data.parameters[name];
 			//get list of values if exist
-//			if()
-//				tmp['values'] = 
 		else
 			tmp['value'] = "";
+
 		cloned_parameters.push(tmp);
 	}
 
