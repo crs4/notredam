@@ -393,6 +393,7 @@ class Crop(BaseAction):
                 ]
     
     def __init__(self, media_type, source_variant, workspace, script,  upperleft_x, upperleft_y, lowerright_x, lowerright_y, ratio = None ):
+       
         params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y, 'ratio': ratio }
             
         super(Crop, self).__init__(media_type, source_variant, workspace, script, **params)

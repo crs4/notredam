@@ -175,7 +175,7 @@ def confirm_user(request, url):
 
 
 @login_required
-def download_component(request,  item_id, variant_name):
+def download_component_old(request,  item_id, variant_name):
     
     workspace = request.session.get('workspace', None)
     try:
@@ -203,4 +203,39 @@ def download_component(request,  item_id, variant_name):
         
     response['Content-Disposition'] = 'attachment; filename=%s'%file_name
     return response
+    
+    
+@login_required
+def download_component(request, item_id, variant_name):
+    from django.views.static import serve
+    from settings import MEDIADART_STORAGE
+    
+    workspace = request.session.get('workspace', None)
+    try:
+        item = Item.objects.get(pk=item_id)
+        variant = workspace.get_variants().distinct().get(name = variant_name)
+        comp = item.get_variant(workspace, variant)
+        url = comp.get_component_url()
+    except Exception,  ex:
+        logger.exception(ex)
+        return HttpResponseNotFound()
+    
+    
+    logger.debug('url %s'%url)
+    response = serve(request, url, document_root = MEDIADART_STORAGE)
+    
+    if variant_name == 'original':
+        file_name = comp.file_name
+    else:
+        
+        orig = comp.source
+        try:
+            tmp = orig.file_name.split('.')
+            file_name = tmp[0] + '_' +  variant_name + '.' + comp.format
+        except:
+            file_name = 'resource_' + variant_name   
+        
+    response['Content-Disposition'] = 'attachment; filename=%s'%file_name
+    return response
+    
     
