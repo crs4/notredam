@@ -159,6 +159,8 @@ def adapt_resource(component, machine):
                     
                 
             elif action['type'] == 'crop':
+                action['parameters']['ratio'] = '4:3'
+                
                 if action['parameters']['ratio']:
                     y_ratio, x_ratio = action['parameters']['ratio'].split(':')
                     y_ratio = int(y_ratio)
