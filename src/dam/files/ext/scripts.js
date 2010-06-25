@@ -189,11 +189,6 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     			  	check : function(checked){
     					this.value = checked;
     			  	}
-//    			  	afterrender : function(){
-//    			  		console.log('ooooooooooooooo');
-//    			  		console.log(parameters[i]);
-//    			  		this.setValue(parameters[i].value);
-//    			  	}
     		  }
   	      	}));    		
     	}
@@ -413,6 +408,7 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	                		},
 	                		afterrender : function(){
 	                			console.log('afterrender');
+	                			console.log(parameters[4]);
 	                			if (parameters[4]['value'])
 	                				this.setValue(parameters[4]['value'], true);
 	                			else
@@ -895,13 +891,17 @@ function new_script(create, name, description, id_script, is_global, run){
 function newRecordLoad(data,type){
 	var cloned_parameters = [];
 	var tmp = {};
-//	console.log(data.parameters);
+	console.log('newRecordLoad');
 	//for get list of actions
 	for (name in data.parameters) {
 		tmp = {};
 		tmp['name']  = name;
 		if (!isNaN(data.parameters[name])){
-			if (data.parameters[name] == true || data.parameters[name] == false)
+			console.log('data.parameters')
+			console.log(data.parameters);
+			console.log('name')
+			console.log(name);			
+			if (name == 'embed_xmp')
 				tmp['type']  = 'boolean';
 			else
 				tmp['type']  = 'number';
@@ -933,9 +933,9 @@ function load_data_script(data){
 		//load actions
 		console.log('load action');
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
-			console.log('new action');
         	var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
-        	console.log(newRec);
+			console.log('newRec');
+			console.log(newRec);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
 		}
 
