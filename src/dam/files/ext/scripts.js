@@ -116,10 +116,13 @@ function _check_form_detail_script(my_win){
 			params = rec.data;
 			console.log(params);
 			for(k=0;k<params.parameters.length;k++){
-				if (!params.parameters[k].value){
+				if (!params.parameters[k].value && params.parameters[k].type != 'boolean'){
 					console.log('parametro null.');
-					console.log(params.parameters);
+					console.log(params.parameters[k]);
 					flag = false;
+				}
+				if (params.parameters[k].name == "ratio" && params.parameters[k].value != "custom"){
+					flag = true;
 				}
 			}
 		});
@@ -132,11 +135,11 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     var i = 0;
     var recApp;
     var item_array = new Array();
-    
+    console.log(parameters);
     for (i=0;i<parameters.length;i++){
 //    	cercare il name_action nella gridlistactions, e verificare se ha values
         recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
-        
+        console.log(recApp);
         //in sendbymail restituisce in ordine inverso.
         if (parameters[i].name != recApp['data']['parameters'][i].name){
         	var j = 0;
@@ -170,13 +173,26 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     	          msgTarget :'side'                            
     	      	}));
     	}
-    	else if (parameters[i].type == 'string'){
+    	else if (parameters[i].type == 'string' && parameters[i].name != 'ratio'){
     		item_array.push(new Ext.form.TextField({                            
 	          fieldLabel  : parameters[i].name.replace("_"," "),
 	          value       : parameters[i].value,
 	          name        : parameters[i].name,
 	          msgTarget   : 'side'                            
 	      	}));
+    	}else if (parameters[i].type == 'boolean'){
+    		item_array.push(new Ext.form.Checkbox({                            
+  	          fieldLabel  : parameters[i].name.replace("_"," "),
+  	          checked     : false,
+  	          value       : false,
+  	          name        : parameters[i].name,
+  	          msgTarget   : 'side',
+  	          listeners   : {
+    			  	check : function(checked){
+    					this.value = checked;
+    			  	}
+    		  }
+  	      	}));    		
     	}
     }
     
@@ -359,10 +375,10 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
 
 function _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action)
 {
+	console.log('_crop_generate_details_forms');
 	console.log(name_action);
-	panel2 = new Ext.Panel({
-    	frame:true,
-	});
+	console.log(parameters);
+	
 	panel.add(
 			{ 
 	            layout:'column', 
@@ -370,35 +386,49 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	                columnWidth:.5,
 	                layout : 'form',
 	                items: [{
-	                    xtype: 'checkbox',
-	                    boxLabel: 'Custom',
-	                    listeners: {
-	                		check : function(checked){
-	    						if (checked){
-		                			//able all input text 
-	    							console.log()
-	    						}else{
-	    							//disable all input text
-	    						}
-	                		}
-	                	}
-	                },_global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action )]
-	            },{
-	            	columnWidth:.5,
-	            	layout : 'form',
-	                items : [{
 						xtype: 'radiogroup',
+						id : 'radio_custom_crop',
 						fieldLabel: 'Standard crop',
 			            columns: 1,
 						items: [
-						    {boxLabel: 'Item 1', name: 'rb-auto', inputValue: 1},
-						    {boxLabel: 'Item 2', name: 'rb-auto', inputValue: 2, checked: true},
-						    {boxLabel: 'Item 3', name: 'rb-auto', inputValue: 3},
-						    {boxLabel: 'Item 4', name: 'rb-auto', inputValue: 4}
-						]
+						    {boxLabel: '1:1 - Square', name: 'type-crop', value: '1:1', id: '1:1'},
+						    {boxLabel: '2:3', name: 'type-crop', value: '2:3', id: '2:3'},
+						    {boxLabel: '3:4', name: 'type-crop', value: '3:4', id: '3:4'},
+						    {boxLabel: '4:5', name: 'type-crop', value: '4:5', id: '4:5'},
+						    {boxLabel: 'Custom', name: 'type-crop', value: 'custom', id: 'custom', checked: true}
+						],
+						listeners : {
+	                		change  : function (newValue, oldValue){
+		            			console.log('change');
+	                			if(newValue.getValue().value != 'custom'){
+	                				//disable panel_custom_fields
+	                				Ext.getCmp('panel_custom_fields').setVisible(false);
+	                			}else{
+	                				//enable panel_custom_fields
+	                				Ext.getCmp('panel_custom_fields').setVisible(true);;
+	                			}
+	                		},
+	                		afterrender : function(){
+	                			console.log('afterrender');
+	                			if (parameters[4]['value'])
+	                				this.setValue(parameters[4]['value'], true);
+	                			else
+	                				this.setValue('custom', true);
+	                		}
 	                	}
-	                ]
-	            }]
+	                	}]
+	            	},{
+		            	columnWidth:.5,
+		            	layout : 'form',
+		                items : [new Ext.Panel({
+                    	    id : 'panel_custom_fields',
+                    		frame:true,
+                    		layout : 'form',
+                    		items : [_global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action )]
+		                })
+		                ]
+	                }
+	            ]
 	        }         
 	);
 
@@ -422,7 +452,6 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     }else if (name_action == 'crop'){
     	panel = _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
     }else{
-    	
     	array_field = _global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action );
     	panel.add(array_field);
     }
@@ -450,20 +479,29 @@ function newRecord(data, media_type){
 }
 
 function _pull_data(sm,media_type){
-//	console.log("_pull_data");
+	console.log("_pull_data");
 
 	if 	(sm.getSelected()){
 		var newParams = [];
 		var appParams = {};
 		var r = sm.getSelected();
-    	var params = r.get('parameters');
+		var params = r.get('parameters');
 
-    	for (i=0;i<params.length;i++){
+
+		for (i=0;i<params.length;i++){
     		appParams = params[i];
-    		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
-    		newParams.push(appParams); 
+    		if (appParams.name != 'ratio'){
+	    		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
+    		}else{
+    			appParams = {};
+    			appParams['name']  = 'ratio';
+    			appParams['type']  = 'string';
+    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
+    		}
+    		newParams.push(appParams);
 	    }
-//    	console.log(newParams);
+		console.log("_pull_data");
+		console.log(newParams);
 	    r.set('parameters',newParams);
 	    r.commit();
 	}
@@ -523,6 +561,7 @@ function _get_layout_tab(obj, media_type){
 									}, 
 									selectionchange : function(){
 							        	//show form details
+										console.log(this.getSelected());
 										if (this.getSelected()){
 								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(),Ext.getCmp('action_list_'+media_type).getStore(), media_type);
 										}
@@ -859,7 +898,10 @@ function newRecordLoad(data,type){
 		tmp = {};
 		tmp['name']  = name;
 		if (!isNaN(data.parameters[name])){
-			tmp['type']  = 'number';
+			if (data.parameters[name] == true || data.parameters[name] == false)
+				tmp['type']  = 'boolean';
+			else
+				tmp['type']  = 'number';
 		}else
 			tmp['type']  = 'string';
 
@@ -878,7 +920,7 @@ function newRecordLoad(data,type){
 }
 
 function load_data_script(data){
-//	console.log('load');
+	console.log('load');
 //	console.log(data);
 	var i;//count
 	var type, name_tab;
@@ -887,8 +929,11 @@ function load_data_script(data){
 		name_tab = 'tab_' + type;
 		my_win.get('media_type_tabs').get(name_tab).get('my_panel_source_'+type).get('my_combo_source_'+type).setValue(data['actions_media_type'][type]['source_variant']);
 		//load actions
+		console.log('load action');
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
+			console.log('new action');
         	var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
+        	console.log(newRec);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
 		}
 
@@ -1055,6 +1100,8 @@ function manage_script(){
 		    		//Open script
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
+			    		console.log('dataaaaaaaaaaaaaaa');
+			    		console.log(data);
 			    		my_win.close();
 			    		new_script(false, data.name, data.description, data.id, data.is_global, false);
 			    		load_data_script(data);
