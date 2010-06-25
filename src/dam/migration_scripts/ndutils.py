@@ -22,7 +22,7 @@ from hashlib import sha1
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
 
-DEBUG = False
+DEBUG = True
 
 class ImportExport(object):
     """
@@ -167,49 +167,49 @@ class Exporter(ImportExport):
         - returns:
             - JSON example:{'creator': 'test', 'description': '', 'name': 'test workspace', 'id': '2'}
         """
-        return self._call_server('GET', '/api/workspaces/get/')
+        return self._call_server('GET', '/api/workspace/get/')
 
     def _workspace_get(self, workspace_id):
-        return self._call_server('GET', '/api/workspaces/%s/get/' % workspace_id)
+        return self._call_server('GET', '/api/workspace/%s/get/' % workspace_id)
 
     def _workspace_get_items(self, workspace_id):
-        return self._call_server('GET', '/api/workspaces/%s/get_items/' % workspace_id)
+        return self._call_server('GET', '/api/workspace/%s/get_items/' % workspace_id)
 
     def _workspace_get_variants(self, workspace_id):
-        return self._call_server('GET', '/api/workspaces/%s/get_variants/' % workspace_id)
+        return self._call_server('GET', '/api/workspace/%s/get_variants/' % workspace_id)
 
     def _workspace_get_collections(self, workspace_id):
-        return self._call_server('GET', '/api/workspaces/%s/get_collections/' % workspace_id)
+        return self._call_server('GET', '/api/workspace/%s/get_collections/' % workspace_id)
 
     def _workspace_get_smartfolders(self,param):
-        return self._call_server('GET','/api/smartfolders/get/' ,**param)
+        return self._call_server('GET','/api/smartfolder/get/' ,**param)
 
     def _workspace_get_keywords(self, workspace_id):
-        return self._call_server('GET', '/api/workspaces/%s/get_keywords/' % workspace_id)
+        return self._call_server('GET', '/api/workspace/%s/get_keywords/' % workspace_id)
 
     def _workspace_get_members(self, workspace_id):
-        return self._call_server('GET', '/api/workspaces/%s/get_members/' % workspace_id)
+        return self._call_server('GET', '/api/workspace/%s/get_members/' % workspace_id)
     
     def _item_variant_get(self, param):
-        return self._call_server('GET', '/api/variants/get/' ,**param)
+        return self._call_server('GET', '/api/variant/get/' ,**param)
 
     def _item_get(self, item_id, workspace_id=None):
         if workspace_id:
-            return self._call_server('GET', '/api/items/%s/get/' % item_id, variants_workspace=workspace_id)
+            return self._call_server('GET', '/api/item/%s/get/' % item_id, variants_workspace=workspace_id)
         else:
-            return self._call_server('GET', '/api/items/%s/get/' % item_id)
+            return self._call_server('GET', '/api/item/%s/get/' % item_id)
 
     def _collection_get_list(self, workspace_id):
-        return self._call_server('GET', '/api/collections/get/', workspace_id=workspace_id )
+        return self._call_server('GET', '/api/collection/get/', workspace_id=workspace_id )
 
     def _collection_get(self, collection_id):
-        return self._call_server('GET', '/api/collections/%s/get/' % collection_id)
+        return self._call_server('GET', '/api/collection/%s/get/' % collection_id)
 
     def _keyword_get_list(self, workspace_id):
-        return self._call_server('GET', '/api/keywords/get/', workspace_id=workspace_id)
+        return self._call_server('GET', '/api/keyword/get/', workspace_id=workspace_id)
 
     def _keyword_get(self, keyword_id):
-        return self._call_server('GET', '/api/keywords/%s/get/' % keyword_id)
+        return self._call_server('GET', '/api/keyword/%s/get/' % keyword_id)
 
 
     def write(self):
@@ -224,57 +224,57 @@ class Importer(ImportExport):
         return self._call_server('POST', '/api/add_user/',**param)
 
     def _api_workspace_set_creator(self,id_workspace, param):
-        return self._call_server('POST', '/api/workspaces/%s/set_creator/' %id_workspace ,**param)
+        return self._call_server('POST', '/api/workspace/%s/set_creator/' %id_workspace ,**param)
 
     def _workspace_new(self,param):
-        return self._call_server('POST', '/api/workspaces/new/',**param)
+        return self._call_server('POST', '/api/workspace/new/',**param)
 
     def _workspace_set_name(self,id_workspace, param):
-        return self._call_server('POST', '/api/workspaces/%s/set_name/' % id_workspace, **param)
+        return self._call_server('POST', '/api/workspace/%s/set_name/' % id_workspace, **param)
 
     def _workspace_set_description(self,id_workspace, param):
-        return self._call_server('POST', '/api/workspaces/%s/set_description/' % id_workspace, **param)
+        return self._call_server('POST', '/api/workspace/%s/set_description/' % id_workspace, **param)
 
     def _workspace_add_members(self,id_workspace, param):
-        return self._call_server('POST', '/api/workspaces/%s/add_members/' % id_workspace, *param)
+        return self._call_server('POST', '/api/workspace/%s/add_members/' % id_workspace, *param)
 
     def _variants_edit(self,id_variant, param):
-        return self._call_server('POST', '/api/variants/%s/edit/' % id_variant, *param)
+        return self._call_server('POST', '/api/variant/%s/edit/' % id_variant, *param)
 
     def _variants_new(self, param):
-        return self._call_server('POST', '/api/variants/new/', *param)
+        return self._call_server('POST', '/api/variant/new/', *param)
 
     def _variants_upload_watermarking(self, param):
-        return self._call_server('POST', '/api/variants/get_watermarking_uri/', *param)
+        return self._call_server('POST', '/api/variant/get_watermarking_uri/', *param)
 
     def _keyword_new(self, param):
-        return self._call_server('POST','/api/keywords/new/', **param)
+        return self._call_server('POST','/api/keyword/new/', **param)
 
     def _keyword_delete(self, id):
-        return self._call_server('GET','/api/keywords/%s/delete/' % id)
+        return self._call_server('GET','/api/keyword/%s/delete/' % id)
 
     def _keyword_add(self, id_keywords, param):
-        return self._call_server('POST','/api/keywords/%s/add_items/' % id_keywords, *param)
+        return self._call_server('POST','/api/keyword/%s/add_items/' % id_keywords, *param)
 
     def _collections_new(self, param):
-        return self._call_server('POST','/api/collections/new/', **param)
+        return self._call_server('POST','/api/collection/new/', **param)
 
     def _collections_add(self,id_collection, param):
-        return self._call_server('POST','/api/collections/%s/add_items/' % id_collection, *param)
+        return self._call_server('POST','/api/collection/%s/add_items/' % id_collection, *param)
 
     def _smartfolders_add(self, param):
-        return self._call_server('POST','/api/smartfolders/new/', **param)
+        return self._call_server('POST','/api/smartfolder/new/', **param)
 
     def _item_new(self,param):
-        return self._call_server('POST','/api/items/new/', **param)
+        return self._call_server('POST','/api/item/new/', **param)
     
     def _item_upload_variant(self,item_id,param):
-        return self._call_server('POST','/api/items/%s/upload/' % item_id, **param)
+        return self._call_server('POST','/api/item/%s/upload/' % item_id, **param)
         
     def _item_add_to_ws(self,item_id,param):
-        return self._call_server('POST','/api/items/%s/add_to_workspace/' % item_id, **param)
+        return self._call_server('POST','/api/item/%s/add_to_workspace/' % item_id, **param)
 
     def _item_set_metadata(self,item_id,param):
-        return self._call_server('POST','/api/items/%s/set_metadata/' % item_id, **param)
+        return self._call_server('POST','/api/item/%s/set_metadata/' % item_id, **param)
         
         

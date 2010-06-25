@@ -226,7 +226,7 @@ class SaveAction(BaseAction):
                                     'doc': ['jpeg']
             }
         },
-#        {'name':'embed_xmp',  'type': 'boolean'}
+        {'name':'embed_xmp',  'type': 'boolean'}
         
         ]
     def __init__(self, media_type, source_variant, workspace, script, output_format, embed_xmp = True):  
