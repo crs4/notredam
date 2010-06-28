@@ -2705,7 +2705,9 @@ class SmartFolderResource(ModResource):
         return HttpResponse('')
 
 
-class ScriptResource(ModResource):   
+class ScriptResource(ModResource):  
+    from scripts.models import Script 
+    
     @exception_handler
     @api_key_required
     def create(self,  request):
@@ -2720,4 +2722,15 @@ class ScriptResource(ModResource):
         script  = _new_script(name = name, description = description, workspace =workspace, pipeline = pipeline, events = events)
         return HttpResponse(simplejson.dumps({'id': script.pk,  'name': script.name,  'description': description}))
         
+    @exception_handler
+    @api_key_required
+    def run(self,  request):
+        from scripts.views import _run_script
+        script_id = request.POST['script_id']
+        run_again = request.POST.get('run_again')
+        items = request.POST.getlist('items')
+        script = Script.objects.get(pk = script_id)
+        _run_script(script, items ,   run_again )
+        return HttpResponse(simplejson.dumps({'id': script.pk,  'name': script.name,  'description': description}))
+
         
