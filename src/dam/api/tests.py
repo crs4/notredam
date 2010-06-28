@@ -1443,7 +1443,7 @@ class ScriptsTest(MyTestCase):
         
         params = self.get_final_parameters({ 'items': [item.pk for item in Item.objects.all()]})     
                 
-        response = self.client.post('/api/script/%s/'%script_id, params,  )  
+        response = self.client.post('/api/script/%s/run/'%script_id, params,  )  
         resp_dict = json.loads(response.content)        
         self.assertTrue(resp_dict.has_key('id'))
         self.assertTrue(resp_dict['name'] == name)
