@@ -1463,3 +1463,12 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(resp_dict['name'] == script.name)
         self.assertTrue(resp_dict['description'] == script.description)
         
+    def test_get_all(self):
+        script = Script.objects.get(name = 'test_run')
+        ws = DAMWorkspace.objects.get(pk = 1)
+        params = self.get_final_parameters({ })     
+        response = self.client.post('/api/workspace/%s/get_scripts/'%ws.pk , params,  )  
+        resp_dict = json.loads(response.content)        
+   
+        self.assertTrue(len(resp_dict['scripts']) == ws.script_set.all().count())
+        

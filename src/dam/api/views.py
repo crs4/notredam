@@ -665,6 +665,20 @@ class WorkspaceResource(ModResource):
         
     @exception_handler
     @api_key_required
+    def get_scripts(self,  request,  workspace_id,  ):      
+        """
+        """ 
+        from scripts.views import _get_scripts_info
+        scripts = Script.objects.filter(workspace__pk = workspace_id)            
+                   
+        resp = {'scripts':[]}
+        for script in scripts:
+           resp['scripts'].append(_get_scripts_info(script))
+        
+        return HttpResponse(simplejson.dumps(resp))
+        
+    @exception_handler
+    @api_key_required
     def search(self,  request, workspace_id):        
         """
         Allows to retrieve items according to a given query.
