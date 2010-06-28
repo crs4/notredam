@@ -396,11 +396,15 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 						    {boxLabel: '2:3', name: 'type-crop', value: '2:3', id: '2:3'},
 						    {boxLabel: '3:4', name: 'type-crop', value: '3:4', id: '3:4'},
 						    {boxLabel: '4:5', name: 'type-crop', value: '4:5', id: '4:5'},
-						    {boxLabel: 'Custom', name: 'type-crop', value: 'custom', id: 'custom'}
+						    {boxLabel: 'Custom', 
+  					    	 name: 'type-crop', 
+					    	 value: 'custom', 
+					    	 id: 'custom'
+					    	 }
 						],
 						listeners : {
 	                		change  : function (newValue, oldValue){
-		            			console.log('change');
+//		            			console.log('change');
 	                			if(newValue.getValue().value != 'custom'){
 	                				//disable panel_custom_fields
 	                				Ext.getCmp('panel_custom_fields').setVisible(false);
@@ -411,27 +415,39 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	                		},
 	                		afterrender : function(){
 	                			console.log('afterrender');
-	                			console.log(parameters[0]);
-	                			var i,k;
-	                			for(i=0;i < parameters.length;i++){
-	                				if (parameters[i]['name'] == "ratio")
-	                					k = i;
-	                			}
-	                			if (parameters[k]['value'])
-	                				this.setValue(parameters[k]['value'], true);
-	                			else
+	                			console.log(parameters);
+	                			if (parameters[0]['value'] == '1:1' || parameters[0]['value']== '2:3' || parameters[0]['value']== '3:4' || parameters[0]['value']== '4:5')
+	                				this.setValue(parameters[0]['value'], true);
+	                			else{
 	                				this.setValue('custom', true);
+	                				if (parameters[0]['value']){
+		                				var str = parameters[0]['value'];
+		                				console.log(str);
+		                				Ext.getCmp('crop_width_custom').value = str[0];
+		                				Ext.getCmp('crop_height_custom').value = str[2];
+									}
+	                			}
 	                		}
 	                	}
-	                	}]
-	            	},{
+	                }]
+	            },{
 		            	columnWidth:.5,
 		            	layout : 'form',
 		                items : [new Ext.Panel({
                     	    id : 'panel_custom_fields',
                     		frame:true,
                     		layout : 'form',
-                    		items : [_global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action )]
+                    		items : [{
+                	            xtype     : 'numberfield',
+                	            id        : 'crop_width_custom',
+                	            fieldLabel: 'width',
+                	            width     : 20
+                    		},{
+                	            xtype     : 'numberfield',
+                	            id        : 'crop_height_custom',
+                	            fieldLabel: 'height',
+                	            width     : 20                    			
+                    		}]
 		                })
 		                ]
 	                }
@@ -504,6 +520,11 @@ function _pull_data(sm,media_type){
     			appParams['name']  = 'ratio';
     			appParams['type']  = 'string';
     			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
+    			if (appParams['value'] == 'custom'){
+    				var w = Ext.getCmp('crop_width_custom').value;
+    				var h = Ext.getCmp('crop_height_custom').value;
+    				appParams['value'] = w+':'+h;
+    			}
     		}
     		newParams.push(appParams);
 	    }
