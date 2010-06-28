@@ -157,28 +157,28 @@ if __name__ == '__main__':
                 f.close()
                                 
                 #Backup item's resources/variants
-#                for v_id, data in item['variants'].items():
-#                    
-#                    try:
-#                        filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
-#                    except AttributeError: #Some resource is None
-#                        print "%s WAS None" % str(v_id)                    
-#                        continue
-#                    
-#                    print 'aaaaaaaaaaaaaa'
-#                    
-#                    if DEBUG:
-#                        #raise Exception, url
-#                        print 'abbbb'
-#                        print url
-#                        split1 = urllib.splittype(url)
-#                        split2 = urllib.splithost(split1[-1])
-#                        finalurl = 'http://%s:7000' %  host + split2[-1]
-#                        print 'a:',  finalurl
-#                        urllib.urlretrieve(finalurl, filename)
-#                    else:
-#                        urllib.urlretrieve(data['url'], filename)
-#                    print 'bbbbbbbbbbbbbbbbb'
+                for v_id, data in item['variants'].items():
+                    
+                    try:
+                        filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
+                    except AttributeError: #Some resource is None
+                        print "%s WAS None" % str(v_id)                    
+                        continue
+                   
+                    if DEBUG:
+            
+                        #raise Exception, url
+
+                        split1 = urllib.splittype(url)
+                        split2 = urllib.splithost(split1[-1])
+                        finalurl = 'http://%s:7000' %  host + split2[-1]
+                        print 'a:',  finalurl
+                        urllib.urlretrieve(finalurl, filename)
+                    else:
+                     
+                        urllib.urlretrieve(data['url'], filename)
+        
+
         t = tarfile.open(backup_file, 'w')
         t.add(basedir,arcname='backup')
         t.close()
