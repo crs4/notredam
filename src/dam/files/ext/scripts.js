@@ -103,6 +103,7 @@ function _check_form_detail_script(my_win){
 	//verificare che tutti i campi siano selezionati.
 	console.log('check');
 	var flag = true;
+	var ratio = false;
 	var StoreGridTabs = {}; // for (key in dict)
 	for (i=0;i<my_win.get('media_type_tabs').items.items.length;i++){
 		var name_tab = my_win.get('media_type_tabs').items.items[i].id;
@@ -122,9 +123,11 @@ function _check_form_detail_script(my_win){
 					flag = false;
 				}
 				if (params.parameters[k].name == "ratio" && params.parameters[k].value != "custom"){
-					flag = true;
+					ratio = true
 				}
 			}
+			if (ratio == true)
+				flag = true;
 		});
 	}
 	return flag;
@@ -393,7 +396,7 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 						    {boxLabel: '2:3', name: 'type-crop', value: '2:3', id: '2:3'},
 						    {boxLabel: '3:4', name: 'type-crop', value: '3:4', id: '3:4'},
 						    {boxLabel: '4:5', name: 'type-crop', value: '4:5', id: '4:5'},
-						    {boxLabel: 'Custom', name: 'type-crop', value: 'custom', id: 'custom', checked: true}
+						    {boxLabel: 'Custom', name: 'type-crop', value: 'custom', id: 'custom'}
 						],
 						listeners : {
 	                		change  : function (newValue, oldValue){
@@ -408,9 +411,14 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	                		},
 	                		afterrender : function(){
 	                			console.log('afterrender');
-	                			console.log(parameters[4]);
-	                			if (parameters[4]['value'])
-	                				this.setValue(parameters[4]['value'], true);
+	                			console.log(parameters[0]);
+	                			var i,k;
+	                			for(i=0;i < parameters.length;i++){
+	                				if (parameters[i]['name'] == "ratio")
+	                					k = i;
+	                			}
+	                			if (parameters[k]['value'])
+	                				this.setValue(parameters[k]['value'], true);
 	                			else
 	                				this.setValue('custom', true);
 	                		}
