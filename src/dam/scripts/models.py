@@ -386,18 +386,13 @@ class Crop(BaseAction):
     media_type_supported = ['image',]
     @staticmethod
     def required_parameters(workspace):
-        return [{ 'name': 'upperleft_x',  'type': 'number'}, 
-                { 'name': 'upperleft_y',  'type': 'number'}, 
-                { 'name': 'lowerright_x',  'type': 'number'}, 
-                { 'name': 'lowerright_y',  'type': 'number'},
-                
-                
+        return [
                 { 'name': 'ratio',  'type': 'string'}, 
                 ]
     
-    def __init__(self, media_type, source_variant, workspace, script,  upperleft_x, upperleft_y, lowerright_x, lowerright_y, ratio = None ):
+    def __init__(self, media_type, source_variant, workspace, script,  ratio ):
        
-        params = {'upperleft_x':upperleft_x, 'upperleft_y':upperleft_y, 'lowerright_x':lowerright_x, 'lowerright_y':lowerright_y, 'ratio': ratio }
+        params = { 'ratio': ratio }
             
         super(Crop, self).__init__(media_type, source_variant, workspace, script, **params)
      

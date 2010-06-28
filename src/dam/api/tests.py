@@ -1440,6 +1440,7 @@ class ScriptsTest(MyTestCase):
 
     def test_run(self):
         script = Script.objects.get(name = 'preview_generation')
-        params = self.get_final_parameters({ 'items': [item.pk for item in Item.objects.all()]})     
+        params = self.get_final_parameters({ 'items': Item.objects.all()[0].pk})     
+        print '...................................Item.objects.all()[0].pk %s' %Item.objects.all()[0].type.__class__
         response = self.client.post('/api/script/%s/run/'%script.pk, params,  )  
        
