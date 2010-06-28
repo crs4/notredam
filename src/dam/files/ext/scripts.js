@@ -122,12 +122,18 @@ function _check_form_detail_script(my_win){
 					console.log(params.parameters[k]);
 					flag = false;
 				}
-				if (params.parameters[k].name == "ratio" && params.parameters[k].value != "custom"){
-					ratio = true
+				if (params.parameters[k].name == "ratio"){
+					console.log('dentro ratio');
+					var str = params.parameters[k].value;
+					var index = params.parameters[k].value.indexOf(':');
+					console.log(str.slice(0,index));
+					console.log(str.slice(index+1,str.length));
+        			if 	( !(parseInt(str.slice(0,index)) + "" == str.slice(0,index)) || !(parseInt(str.slice(index+1,str.length)) + "" == str.slice(index+1,str.length))){
+        				console.log('dentro');
+        				flag = false;
+        			}
 				}
 			}
-			if (ratio == true)
-				flag = true;
 		});
 	}
 	return flag;
@@ -422,9 +428,9 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	                				this.setValue('custom', true);
 	                				if (parameters[0]['value']){
 		                				var str = parameters[0]['value'];
-		                				console.log(str);
-		                				Ext.getCmp('crop_width_custom').value = str[0];
-		                				Ext.getCmp('crop_height_custom').value = str[2];
+		                				var index = str.indexOf(':');
+		                				Ext.getCmp('crop_width_custom').value = str.slice(0,index);
+		                				Ext.getCmp('crop_height_custom').value = str.slice(index+1,str.length);
 									}
 	                			}
 	                		}
@@ -446,7 +452,7 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
                 	            xtype     : 'numberfield',
                 	            id        : 'crop_height_custom',
                 	            fieldLabel: 'height',
-                	            width     : 20                    			
+                	            width     : 20 
                     		}]
 		                })
 		                ]
@@ -521,8 +527,10 @@ function _pull_data(sm,media_type){
     			appParams['type']  = 'string';
     			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
     			if (appParams['value'] == 'custom'){
-    				var w = Ext.getCmp('crop_width_custom').value;
-    				var h = Ext.getCmp('crop_height_custom').value;
+    				var w = Ext.getCmp('crop_width_custom').getValue();
+    				var h = Ext.getCmp('crop_height_custom').getValue();
+    				console.log(w);
+    				console.log(h);
     				appParams['value'] = w+':'+h;
     			}
     		}

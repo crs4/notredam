@@ -783,10 +783,10 @@ Ext.onReady(function(){
 	            					        }
 	            					    });
 	                                }
-	            		    		//Update data view
-    							    var ac = Ext.getCmp('media_tabs').getActiveTab();
-    							    var view = ac.getComponent(0);
-    							    view.refresh();
+//	            		    		//Update data view
+//    							    var ac = Ext.getCmp('media_tabs').getActiveTab();
+//    							    var view = ac.getComponent(0);
+//    							    view.refresh();
 	            		    		my_win.close();
 	            	        }
                     },{
