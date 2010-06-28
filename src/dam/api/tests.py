@@ -36,7 +36,7 @@ from repository.models import Item,  Component
 from metadata.models import MetadataProperty,  MetadataValue
 from core.dam_repository.models import Type
 from workflow.models import State, StateItemAssociation
-
+from scripts.models import Script
 import hashlib
 
 class MyTestCase(TestCase):
@@ -1439,13 +1439,7 @@ class ScriptsTest(MyTestCase):
 #        
 
     def test_run(self):
-        script_id = 1
-        
+        script = Script.objects.get(name = 'preview_generation')
         params = self.get_final_parameters({ 'items': [item.pk for item in Item.objects.all()]})     
-                
-        response = self.client.post('/api/script/%s/run/'%script_id, params,  )  
-        resp_dict = json.loads(response.content)        
-        self.assertTrue(resp_dict.has_key('id'))
-        self.assertTrue(resp_dict['name'] == name)
-        self.assertTrue(resp_dict['description'] == description)
-        
+        response = self.client.post('/api/script/%s/run/'%script.pk, params,  )  
+       

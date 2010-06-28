@@ -338,7 +338,7 @@ class SaveAs(SaveAction):
         
         
         return params
-    def __init__(self, media_type, source_variant, workspace, script, output,  output_format,   embed_xmp):  
+    def __init__(self, media_type, source_variant, workspace, script, output,  output_format,   embed_xmp = False):  
         super(SaveAs, self).__init__(media_type, source_variant, workspace, script,output_format,   embed_xmp)
         self.output_variant = output
     
@@ -348,7 +348,7 @@ class SaveAs(SaveAction):
 class SendByMail(SaveAction):
     verbose_name = 'send by mail'
     
-    def __init__(self, media_type, source_variant, workspace, script, mail,  output_format,   embed_xmp):
+    def __init__(self, media_type, source_variant, workspace, script, mail,  output_format,   embed_xmp= False):
         output_variant = 'mail'
         super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output_format,   embed_xmp)
         self.mail = mail

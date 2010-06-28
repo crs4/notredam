@@ -41,7 +41,7 @@ from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
-
+from scripts.models import Script 
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
@@ -2706,7 +2706,7 @@ class SmartFolderResource(ModResource):
 
 
 class ScriptResource(ModResource):  
-    from scripts.models import Script 
+   
     
     @exception_handler
     @api_key_required
@@ -2724,9 +2724,9 @@ class ScriptResource(ModResource):
         
     @exception_handler
     @api_key_required
-    def run(self,  request):
+    def run(self,  request,  script_id):
         from scripts.views import _run_script
-        script_id = request.POST['script_id']
+       
         run_again = request.POST.get('run_again')
         items = request.POST.getlist('items')
         script = Script.objects.get(pk = script_id)
