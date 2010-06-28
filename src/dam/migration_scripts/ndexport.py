@@ -114,14 +114,14 @@ if __name__ == '__main__':
             f.close()
 
             #Backup watermarking
-            waterdir = os.path.join(workspacedir, 'watermarking')
-            os.mkdir(waterdir) 
-            for v in variant.keys():
-                for v_type in variant[v].keys():
-                    if variant[v][v_type].get('preferences') and variant[v][v_type]['preferences'].get('watermarking_url') != None: 
-                        filename = os.path.join(waterdir,variant[v][v_type]['preferences']['watermark_uri'] + os.path.splitext(variant[v][v_type]['preferences'].get('watermarking_url'))[-1])
-#                        print 'file_name: %s , url water: %s' %(variant[v][v_type]['preferences']['watermark_uri'],variant[v][v_type]['preferences'].get('watermarking_url'))
-                        urllib.urlretrieve(variant[v][v_type]['preferences'].get('watermarking_url'), filename)
+#            waterdir = os.path.join(workspacedir, 'watermarking')
+#            os.mkdir(waterdir) 
+#            for v in variant.keys():
+#                for v_type in variant[v].keys():
+#                    if variant[v][v_type].get('preferences') and variant[v][v_type]['preferences'].get('watermarking_url') != None: 
+#                        filename = os.path.join(waterdir,variant[v][v_type]['preferences']['watermark_uri'] + os.path.splitext(variant[v][v_type]['preferences'].get('watermarking_url'))[-1])
+##                        print 'file_name: %s , url water: %s' %(variant[v][v_type]['preferences']['watermark_uri'],variant[v][v_type]['preferences'].get('watermarking_url'))
+#                        urllib.urlretrieve(variant[v][v_type]['preferences'].get('watermarking_url'), filename)
 
             #Backup smartfolder configuration
             f = file(os.path.join(workspacedir, 'smartfolders.json'),'w')
@@ -141,7 +141,8 @@ if __name__ == '__main__':
                 #print "==========="
                 #print item['id']
     
-                itemdir = os.path.join(workspacedir, 'i_' + item['id'])
+
+                itemdir = os.path.join(workspacedir, 'i_' + str(item['id']))
                 os.mkdir(itemdir)    
                 itemjson = json_enc.encode(item)
                 f = file(os.path.join(itemdir,'item.json'),'w')
@@ -156,25 +157,31 @@ if __name__ == '__main__':
                 f.close()
                                 
                 #Backup item's resources/variants
-                for v_id, data in item['variants'].items():
-                    try:
-                        filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
-                    except AttributeError: #Some resource is None
-                        print "%s WAS None" % str(v_id)                    
-                        continue
-                    
-                    if DEBUG:
-                        #raise Exception, url
-                        split1 = urllib.splittype(url)
-                        split2 = urllib.splithost(split1[-1])
-                        finalurl = 'http://%s:7000' %  host + split2[-1]
-                        urllib.urlretrieve(finalurl, filename)
-                    else:
-                        urllib.urlretrieve(data['url'], filename)
-    
+#                for v_id, data in item['variants'].items():
+#                    
+#                    try:
+#                        filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
+#                    except AttributeError: #Some resource is None
+#                        print "%s WAS None" % str(v_id)                    
+#                        continue
+#                    
+#                    print 'aaaaaaaaaaaaaa'
+#                    
+#                    if DEBUG:
+#                        #raise Exception, url
+#                        print 'abbbb'
+#                        print url
+#                        split1 = urllib.splittype(url)
+#                        split2 = urllib.splithost(split1[-1])
+#                        finalurl = 'http://%s:7000' %  host + split2[-1]
+#                        print 'a:',  finalurl
+#                        urllib.urlretrieve(finalurl, filename)
+#                    else:
+#                        urllib.urlretrieve(data['url'], filename)
+#                    print 'bbbbbbbbbbbbbbbbb'
         t = tarfile.open(backup_file, 'w')
         t.add(basedir,arcname='backup')
-        t.close
+        t.close()
     
     
         print "DONE"
