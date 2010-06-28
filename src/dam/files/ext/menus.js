@@ -836,7 +836,7 @@ Ext.onReady(function(){
         
         
         tb.add({
-                text:'<span style="' + style_tb + '">Object</span>',
+                text:'<span style="' + style_tb + '">Item</span>',
                 menu: menu, 
                 id: 'object_menu'
             }, '-',

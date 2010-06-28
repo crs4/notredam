@@ -405,7 +405,8 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 						    {boxLabel: 'Custom', 
   					    	 name: 'type-crop', 
 					    	 value: 'custom', 
-					    	 id: 'custom'
+					    	 id: 'custom',
+					    	 html : '<table><tr><td><input type="text" name="w" /></td><td>:</td><td><input type="text" name="h" /></td></tr></table> '
 					    	 }
 						],
 						listeners : {
