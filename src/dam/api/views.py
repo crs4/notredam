@@ -2703,3 +2703,21 @@ class SmartFolderResource(ModResource):
         sm.save()
         
         return HttpResponse('')
+
+
+class ScriptResource(ModResource):   
+    @exception_handler
+    @api_key_required
+    def create(self,  request):
+        from scripts.views import _new_script
+        name = request.POST['name']
+        description = request.POST['description']
+        pipeline = request.POST['pipeline']
+        events = request.POST.getlist('events')
+        workspace_id = request.POST.get('workspace_id')
+        workspace = DAMWorkspace.objects.get(pk = workspace_id)        
+        
+        script  = _new_script(name = name, description = description, workspace =workspace, pipeline = pipeline, events = events)
+        return HttpResponse(simplejson.dumps({'id': script.pk,  'name': script.name,  'description': description}))
+        
+        
