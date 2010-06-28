@@ -48,6 +48,7 @@ from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLangu
 from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type, _save_uploaded_variant
 from dam.workflow.views import _set_state 
 from scripts.views import _new_script,  _get_scripts_info
+from settings import SERVER_PUBLIC_ADDRESS
 
 from decorators import *
 from exceptions import *
@@ -1373,7 +1374,7 @@ class ItemResource(ModResource):
             logger.debug('v %s'%v)
             url  = c.get_component_url()        
 #            item.variants[va.pk] = url
-            item.variants[v.name] = url
+            item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
     
     @exception_handler
     @api_key_required
