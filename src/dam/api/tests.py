@@ -1346,3 +1346,106 @@ class SmartFolderTest(MyTestCase):
         self.assertTrue(SmartFolderNodeAssociation.objects.get(node = node,  smart_folder = sm).negated ==  query['negated'])
         
     
+
+class ScriptsTest(MyTestCase):
+    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json']   
+   
+    def test_create(self):
+        ws = DAMWorkspace.objects.get(pk = 1)
+        name = 'test'
+        description = 'test'
+        pipeline =  {
+        'image':{
+            'source_variant': 'original',
+            'actions': [
+                {
+                 'type': 'resize',
+                'parameters':{
+                   'max_height': 300,
+                   'max_width': 300,
+                }
+                        
+                },
+                {
+                     'type': 'setrights',
+                     'parameters':{
+                        'rights': 'creative commons by'
+                     }
+                 },
+                {
+                'type': 'save',
+                'parameters':{
+                    'output_format': 'jpeg',
+                    'output': 'preview'
+                    
+#                    'output': 'preview'
+                }
+                        
+            }    
+        ]
+                 
+        }}
+        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+                
+        response = self.client.post('/api/script/new/', params,  )  
+        resp_dict = json.loads(response.content)        
+        self.assertTrue(resp_dict.has_key('id'))
+        self.assertTrue(resp_dict['name'] == name)
+        self.assertTrue(resp_dict['description'] == description)
+        
+        
+#         def test_edit(self):
+#        ws = DAMWorkspace.objects.get(pk = 1)
+#        name = 'test_edit'
+#        description = 'test_edit'
+#        pipeline =  {
+#        'image':{
+#            'source_variant': 'original',
+#            'actions': [
+#                {
+#                 'type': 'resize',
+#                'parameters':{
+#                   'max_height': 300,
+#                   'max_width': 300,
+#                }
+#                        
+#                },
+#                {
+#                     'type': 'setrights',
+#                     'parameters':{
+#                        'rights': 'creative commons by'
+#                     }
+#                 },
+#                {
+#                'type': 'save',
+#                'parameters':{
+#                    'output_format': 'jpeg',
+#                    'output': 'preview'
+#                    
+##                    'output': 'preview'
+#                }
+#                        
+#            }    
+#        ]
+#                 
+#        }}
+#        params = self.get_final_parameters({ 'script_id':ws.pk,  'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+#                
+#        response = self.client.post('/api/script/new/', params,  )  
+#        resp_dict = json.loads(response.content)        
+#        self.assertTrue(resp_dict.has_key('id'))
+#        self.assertTrue(resp_dict['name'] == name)
+#        self.assertTrue(resp_dict['description'] == description)
+#        
+
+    def test_run(self):
+        script_id = 1
+        
+        params = self.get_final_parameters({ 'items': [item.pk for item in Item.objects.all()]})     
+                
+        response = self.client.post('/api/script/%s/'%script_id, params,  )  
+        resp_dict = json.loads(response.content)        
+        self.assertTrue(resp_dict.has_key('id'))
+        self.assertTrue(resp_dict['name'] == name)
+        self.assertTrue(resp_dict['description'] == description)
+        

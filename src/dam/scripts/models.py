@@ -98,7 +98,7 @@ class Script(models.Model):
     
     
     def execute(self, items):
-
+        logger.debug('execute')
         actions_available = {}       
        
         classes = []
@@ -124,6 +124,7 @@ class Script(models.Model):
 #        logger.debug('media_types %s'%media_types)
         
 #        for media_type, info in pipeline.items():
+        logger.debug('self.actionlist_set.all() %s'%self.actionlist_set.all())
         for action in self.actionlist_set.all():
             info = simplejson.loads(str(action.actions))
             media_type = action.media_type.name
@@ -231,7 +232,7 @@ class SaveAction(BaseAction):
 
         
         ]
-    def __init__(self, media_type, source_variant, workspace, script, output_format, embed_xmp = True):  
+    def __init__(self, media_type, source_variant, workspace, script, output_format, embed_xmp):  
         super(SaveAction, self).__init__(media_type, source_variant, workspace, script)
         self.output_format = output_format
         self.embed_xmp = embed_xmp
@@ -337,8 +338,8 @@ class SaveAs(SaveAction):
         
         
         return params
-    def __init__(self, media_type, source_variant, workspace, script, output, output_format):  
-        super(SaveAs, self).__init__(media_type, source_variant, workspace, script,output_format)
+    def __init__(self, media_type, source_variant, workspace, script, output,  output_format,   embed_xmp):  
+        super(SaveAs, self).__init__(media_type, source_variant, workspace, script,output_format,   embed_xmp)
         self.output_variant = output
     
     
@@ -347,9 +348,9 @@ class SaveAs(SaveAction):
 class SendByMail(SaveAction):
     verbose_name = 'send by mail'
     
-    def __init__(self, media_type, source_variant, workspace, script, mail,  output_format):
+    def __init__(self, media_type, source_variant, workspace, script, mail,  output_format,   embed_xmp):
         output_variant = 'mail'
-        super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output_format)
+        super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output_format,   embed_xmp)
         self.mail = mail
         self.output_variant = 'mail'
         

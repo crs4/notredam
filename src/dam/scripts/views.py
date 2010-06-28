@@ -181,6 +181,17 @@ def delete_script(request):
         return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
     return HttpResponse(simplejson.dumps({'success': True}))
 
+
+
+def _run_script(script, items = None,   run_again = False):
+    if run_again:
+        items = [c.item for c in script.component_set.all()]
+    logger.debug('items %s'%items)
+    logger.debug('script %s'%script)
+    logger.debug('script.actionlist_set.all() %s'%script.actionlist_set.all())
+    script.execute(items)
+    
+    
 @login_required
 def run_script(request):
     from dam.repository.models import Item
@@ -188,13 +199,15 @@ def run_script(request):
     script = Script.objects.get(pk = script_id)
     
     run_again = request.POST.get('run_again')
-    if run_again:
-        items = [c.item for c in script.component_set.all()]
-    else:
+   
+    if not run_again:
         items = request.POST.getlist('items')
         items = Item.objects.filter(pk__in = items)
-    
-    script.execute(items)
+    else:
+        items = []
+        
+    _run_script(script,  items,  run_again)
+   
     return HttpResponse(simplejson.dumps({'success': True}))
     
   

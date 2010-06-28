@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.conf.urls.defaults import *
-from views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource
+from views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource,  ScriptResource
 
 
 
@@ -108,7 +108,7 @@ urlpatterns = patterns('',
    url(r'^api/smartfolder/(\d+)/edit/$', SmartFolderResource(permitted_methods=('POST'), ).edit),   
    url(r'^api/smartfolder/(\d+)/delete/$', SmartFolderResource(permitted_methods=('GET'), ).delete),   
 #   
-   
+   url(r'^api/script/new/$', ScriptResource(permitted_methods=('POST'), ).create),   
    
    
    url(r'^api/login/$', Auth(permitted_methods=('POST'), )._login),   
