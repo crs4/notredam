@@ -776,10 +776,10 @@ Ext.onReady(function(){
 	            								script_id : my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data.id
 	            							},
 	            					        success: function(data){
-	            								var tab = Ext.getCmp('media_tabs').getActiveTab();
-	        					                var view = tab.getComponent(0);
-	    					                    var store = view.getStore();
-	    					                    store.reload();
+//	            								var tab = Ext.getCmp('media_tabs').getActiveTab();
+//	        					                var view = tab.getComponent(0);
+//	    					                    var store = view.getStore();
+//	    					                    store.reload();
 	            					        }
 	            					    });
 	                                }
