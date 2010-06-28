@@ -551,7 +551,7 @@ function Upload(fields, ajax_url, singleFile, done_upload_callback, post_params,
 
         if(!tbar_grid)
             tbar_grid = [{
-                    text: 'Add File',
+                    text: 'Add Files',
                     iconCls: 'add_icon',
                     handler : function(){
                         obj.on_loadbutton_click();
