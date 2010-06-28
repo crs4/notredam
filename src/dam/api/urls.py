@@ -109,6 +109,7 @@ urlpatterns = patterns('',
    url(r'^api/smartfolder/(\d+)/delete/$', SmartFolderResource(permitted_methods=('GET'), ).delete),   
 #   
    url(r'^api/script/new/$', ScriptResource(permitted_methods=('POST'), ).create),   
+   url(r'^api/script/(\d+)/run/$', ScriptResource(permitted_methods=('POST'), ).run),   
    
    
    url(r'^api/login/$', Auth(permitted_methods=('POST'), )._login),   
