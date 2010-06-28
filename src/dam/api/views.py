@@ -47,6 +47,8 @@ from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type, _save_uploaded_variant
 from dam.workflow.views import _set_state 
+from scripts.views import _new_script,  _get_scripts_info
+
 from decorators import *
 from exceptions import *
 from workspace.forms import AdminWorkspaceForm
@@ -2706,12 +2708,11 @@ class SmartFolderResource(ModResource):
 
 
 class ScriptResource(ModResource):  
-   
     
     @exception_handler
     @api_key_required
     def create(self,  request):
-        from scripts.views import _new_script
+       
         name = request.POST['name']
         description = request.POST['description']
         pipeline = request.POST['pipeline']
@@ -2722,6 +2723,21 @@ class ScriptResource(ModResource):
         script  = _new_script(name = name, description = description, workspace =workspace, pipeline = pipeline, events = events)
         return HttpResponse(simplejson.dumps({'id': script.pk,  'name': script.name,  'description': description}))
         
+        
+    @exception_handler
+    @api_key_required
+    def edit(self,  request,  script_id):
+        script = Script.objects.get(pk = script_id)
+        name = request.POST['name']
+        description = request.POST['description']
+        pipeline = request.POST['pipeline']
+        events = request.POST.getlist('events')
+        workspace_id = request.POST.get('workspace_id')
+        workspace = DAMWorkspace.objects.get(pk = workspace_id)        
+        
+        script  = _new_script(name = name, description = description, workspace =workspace, script = script,  pipeline = pipeline, events = events)
+        return HttpResponse('')
+        
     @exception_handler
     @api_key_required
     def run(self,  request,  script_id):
@@ -2730,7 +2746,25 @@ class ScriptResource(ModResource):
         run_again = request.POST.get('run_again')
         items = request.POST.getlist('items')
         script = Script.objects.get(pk = script_id)
+        items = Item.objects.filter(pk__in = items)
         _run_script(script, items ,   run_again )
-        return HttpResponse(simplejson.dumps({'id': script.pk,  'name': script.name,  'description': description}))
+        return HttpResponse('')
+
+    @exception_handler
+    @api_key_required
+    def delete(self,  request,  script_id):
+        script = Script.objects.get(pk = script_id)
+        if not script.is_global:
+            script.delete()
+        else:
+             raise GlobalScriptDeletion
+        return HttpResponse('')
+
+    @exception_handler
+    @api_key_required
+    def read(self,  request,  script_id):
+        script = Script.objects.get(pk = script_id)
+        info = _get_scripts_info(script)
+        return HttpResponse(simplejson.dumps(info))
 
         

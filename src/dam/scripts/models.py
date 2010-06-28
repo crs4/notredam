@@ -152,6 +152,7 @@ class Script(models.Model):
         logger.debug('actions %s'%actions)
         for item in items:
             adapt_parameters = {}   
+          
             media_type = item.type.name
                 
             for action in actions[media_type]:

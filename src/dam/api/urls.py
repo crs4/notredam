@@ -110,6 +110,9 @@ urlpatterns = patterns('',
 #   
    url(r'^api/script/new/$', ScriptResource(permitted_methods=('POST'), ).create),   
    url(r'^api/script/(\d+)/run/$', ScriptResource(permitted_methods=('POST'), ).run),   
+   url(r'^api/script/(\d+)/edit/$', ScriptResource(permitted_methods=('POST'), ).edit),   
+   url(r'^api/script/(\d+)/delete/$', ScriptResource(permitted_methods=('POST'), ).delete),   
+   url(r'^api/script/(\d+)/get/$', ScriptResource(permitted_methods=('GET'), ).read),   
    
    
    url(r'^api/login/$', Auth(permitted_methods=('POST'), )._login),   

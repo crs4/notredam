@@ -1348,7 +1348,7 @@ class SmartFolderTest(MyTestCase):
     
 
 class ScriptsTest(MyTestCase):
-    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json']   
+    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'scripts/fixtures/test_data.json']   
    
     def test_create(self):
         ws = DAMWorkspace.objects.get(pk = 1)
@@ -1394,53 +1394,72 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(resp_dict['description'] == description)
         
         
-#         def test_edit(self):
-#        ws = DAMWorkspace.objects.get(pk = 1)
-#        name = 'test_edit'
-#        description = 'test_edit'
-#        pipeline =  {
-#        'image':{
-#            'source_variant': 'original',
-#            'actions': [
-#                {
-#                 'type': 'resize',
-#                'parameters':{
-#                   'max_height': 300,
-#                   'max_width': 300,
-#                }
-#                        
-#                },
-#                {
-#                     'type': 'setrights',
-#                     'parameters':{
-#                        'rights': 'creative commons by'
-#                     }
-#                 },
-#                {
-#                'type': 'save',
-#                'parameters':{
-#                    'output_format': 'jpeg',
+    def test_edit(self):
+        ws = DAMWorkspace.objects.get(pk = 1)
+        name = 'test_edit'
+        description = 'test_edit'
+        pipeline =  {
+        'image':{
+            'source_variant': 'original',
+            'actions': [
+                {
+                 'type': 'resize',
+                'parameters':{
+                   'max_height': 300,
+                   'max_width': 300,
+                }
+                        
+                },
+                {
+                     'type': 'setrights',
+                     'parameters':{
+                        'rights': 'creative commons by'
+                     }
+                 },
+                {
+                'type': 'save',
+                'parameters':{
+                    'output_format': 'jpeg',
+                    'output': 'preview'
+                    
 #                    'output': 'preview'
-#                    
-##                    'output': 'preview'
-#                }
-#                        
-#            }    
-#        ]
-#                 
-#        }}
-#        params = self.get_final_parameters({ 'script_id':ws.pk,  'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
-#                
-#        response = self.client.post('/api/script/new/', params,  )  
-#        resp_dict = json.loads(response.content)        
-#        self.assertTrue(resp_dict.has_key('id'))
-#        self.assertTrue(resp_dict['name'] == name)
-#        self.assertTrue(resp_dict['description'] == description)
-#        
-
+                }
+                        
+            }    
+        ]
+                 
+        }}
+        script = Script.objects.get(name = 'preview_generation')
+        params = self.get_final_parameters({ 'script_id':script.pk, 'workspace_id': ws.pk,   'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+                
+        response = self.client.post('/api/script/%s/edit/'%script.pk, params,  )  
+        script = Script.objects.get(pk = script.pk)
+        self.assertTrue(response.content == '')
+        print script.name
+        self.assertTrue(script.name == params['name'])
+       
     def test_run(self):
         script = Script.objects.get(name = 'preview_generation')
         params = self.get_final_parameters({ 'items': Item.objects.all()[0].pk})     
         print '...................................Item.objects.all()[0].pk %s' %Item.objects.all()[0].type.__class__
         response = self.client.post('/api/script/%s/run/'%script.pk, params,  )  
+        self.assertTrue(response.content == '')
+        
        
+    def test_delete(self):
+        script = Script.objects.get(name = 'test_run')
+        params = self.get_final_parameters({ })     
+        response = self.client.post('/api/script/%s/delete/'%script.pk, params,  )  
+        self.assertTrue(response.content == '')
+        self.assertTrue(Script.objects.filter(pk = script.pk).count() == 0)
+       
+    def test_get(self):
+        script = Script.objects.get(name = 'test_run')
+        params = self.get_final_parameters({ })     
+        response = self.client.post('/api/script/%s/get/'%script.pk, params,  )  
+        resp_dict = json.loads(response.content)        
+   
+        self.assertTrue(resp_dict['id'] == script.pk)
+        self.assertTrue(resp_dict['name'] == script.name)
+        self.assertTrue(resp_dict['description'] == script.description)
+        

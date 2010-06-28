@@ -26,6 +26,13 @@ from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
 
+def _get_scripts_info(script):
+    actions_media_type = {}
+    for action in script.actionlist_set.all():                        
+        actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
+    
+    return {'id': script.pk, 'name': script.name, 'description': script.description, 'is_global': script.is_global,  'actions_media_type': actions_media_type, 'already_run': script.component_set.all().count() > 0}
+
 @login_required
 def get_scripts(request):
     workspace = request.session.get('workspace')
@@ -38,8 +45,9 @@ def get_scripts(request):
         actions_media_type = {}
         for action in script.actionlist_set.all():                        
             actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
-             
-        resp['scripts'].append({'id': script.pk, 'name': script.name, 'description': script.description, 'is_global': script.is_global,  'actions_media_type': actions_media_type, 'already_run': script.component_set.all().count() > 0})
+        
+        info =  _get_scripts_info(script)
+        resp['scripts'].append(info)
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -93,9 +101,15 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
     if script:        
         if pipeline:
             ActionList.objects.filter(script = script).delete()
+        if name:
+            script.name = name
+        if description:
+            script.description = description
+        script.save()
     else:
         script = Script.objects.create(name = name, description = description, workspace = workspace,  is_global = is_global)
-    
+ 
+        
     if pipeline:
         pipeline = simplejson.loads(pipeline)
     
@@ -157,9 +171,9 @@ def rename_script(request):
     script_id = request.POST['script']
     script = Script.objects.get(pk = script_id)
     
-    if script.is_global:        
-        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
-        
+#    if script.is_global:        
+#        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+#        
     workspace = request.session.get('workspace')
     name = request.POST['name']
     description = request.POST['description']
@@ -168,7 +182,6 @@ def rename_script(request):
     script.save()
     
     return HttpResponse(simplejson.dumps({'success': True}))
-
 
 
 @login_required

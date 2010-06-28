@@ -132,3 +132,7 @@ class GlobalVariantDeletion(CodeErrorException):
 class WorkspaceAdminDeletion(CodeErrorException):
     error_code = 89
     error_message = 'Workspace admin cannot be deleted'
+
+class GlobalScriptDeletion(CodeErrorException):
+    error_code = 211
+    error_message = 'global script cannot be deleted'
