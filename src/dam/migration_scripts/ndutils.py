@@ -182,7 +182,7 @@ class Exporter(ImportExport):
         return self._call_server('GET', '/api/workspace/%s/get_collections/' % workspace_id)
 
     def _workspace_get_smartfolders(self,param):
-        return self._call_server('GET','/api/smartfolder/get/' ,**param)
+        return self._call_server('GET','/api/workspace/%s/get_smartfolders/'%param['workspace_id'] ,**param)
 
     def _workspace_get_keywords(self, workspace_id):
         return self._call_server('GET', '/api/workspace/%s/get_keywords/' % workspace_id)
@@ -191,7 +191,8 @@ class Exporter(ImportExport):
         return self._call_server('GET', '/api/workspace/%s/get_members/' % workspace_id)
     
     def _item_variant_get(self, param):
-        return self._call_server('GET', '/api/variant/get/' ,**param)
+#        return self._call_server('GET', '/api/variant/get/' ,**param)
+        return self._call_server('GET', '/api/workspace/%s/get_variants/' % param['workspace_id'],  **param)
 
     def _item_get(self, item_id, workspace_id=None):
         if workspace_id:
@@ -200,13 +201,13 @@ class Exporter(ImportExport):
             return self._call_server('GET', '/api/item/%s/get/' % item_id)
 
     def _collection_get_list(self, workspace_id):
-        return self._call_server('GET', '/api/collection/get/', workspace_id=workspace_id )
+        return self._call_server('GET', '/api/workspace/%s/get_collections/'%workspace_id )
 
     def _collection_get(self, collection_id):
         return self._call_server('GET', '/api/collection/%s/get/' % collection_id)
 
     def _keyword_get_list(self, workspace_id):
-        return self._call_server('GET', '/api/keyword/get/', workspace_id=workspace_id)
+        return self._call_server('GET', '/api/workspace/%s/get_keywords/'%workspace_id)
 
     def _keyword_get(self, keyword_id):
         return self._call_server('GET', '/api/keyword/%s/get/' % keyword_id)

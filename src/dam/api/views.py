@@ -513,33 +513,16 @@ class WorkspaceResource(ModResource):
         """
         
         vas = Variant.objects.filter(Q(workspace__pk = workspace_id) |Q (workspace__isnull = True))
-        resp = {}
+        resp = {'variants':[]}
         workspace = Workspace.objects.get(pk = workspace_id)
         
         
         for va in vas:           
-            tmp = VariantsResource().get_info(va.variant,  workspace)
-            tmp.pop('name')
-            
-            
-#            if va.preferences:
-#                tmp = {'params':va.preferences.__dict__}
-#                tmp['dest_media_type'] =  va.preferences.media_type.name
-#                tmp['params'].pop('id')
-#            else:
-#                tmp = {}     
-#            
-#            tmp['id'] = va.variant.pk            
-            v_name = va.variant.name
-            media_type = va.variant.media_type.name
-                
-            if resp.has_key(v_name):
-                
-                resp[v_name][media_type] = tmp
-            else:
-                resp[v_name] = {media_type:tmp}
+            tmp = VariantsResource().get_info(va,  workspace)
+            resp['variants'].append( tmp)
                 
         json_resp = json.dumps(resp)
+        logger.debug(json_resp)
         return HttpResponse(json_resp)
         
     @exception_handler
