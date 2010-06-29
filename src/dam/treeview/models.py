@@ -75,16 +75,21 @@ class NodeManager(models.Manager):
     #    Node.objects.get_root(workspace).rebuild_tree(1)
         return new_node
     
-    def get_from_path(self,  path, type = 'collection',   separator='/'):
+    def get_from_path(self,  path, workspace, type = 'collection',   separator='/'):
         def _to_path(nodes):
             return separator.join([n.label for n in nodes])
             
         labels = path.split(separator)
         if labels:
-            nodes = Node.objects.filter(label = labels.pop(),  type = type)
+            logger.debug('labels %s '%labels)
+            nodes = Node.objects.filter(label = labels.pop(),  type = type, workspace = workspace)
+            logger.debug(nodes)
             for node in nodes:
+                logger.debug('node.get_ancestors() %s'%node.get_ancestors())
                 node_path = _to_path(node.get_ancestors().exclude(depth = 0)) 
+                logger.debug('node_path %s'%node_path)
                 if node_path == path:
+                    logger.debug('node.pk %s'%node.pk)
                     return node           
         
         return None
