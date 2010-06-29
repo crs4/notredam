@@ -420,14 +420,14 @@ def _search(request,  items, workspace = None):
             
             for inbox_el in inbox:
                 logger.debug('path %s'%inbox_el)
-                node = Node.objects.get_from_path(inbox_el,  'inbox')
-                logger.debug('node found %s'%node)
+                node = Node.objects.get_from_path(inbox_el, workspace,   'inbox')
+                logger.debug('node found in inbox %s'%node.pk)
                 queries.append(items.filter(node = node))
                 
             for keyword in keywords:
                 if keyword: 
                     logger.debug('keyword: %s'%keyword)
-                    node = Node.objects.get_from_path(keyword,  'keyword')
+                    node = Node.objects.get_from_path(keyword, workspace,  'keyword')
                     logger.debug('node found %s'%node)
                     
                     queries.append(search_node(node, not show_associated_items))
@@ -444,7 +444,7 @@ def _search(request,  items, workspace = None):
     #                q = Q(node__label__iexact = collection.strip(),  node__type = 'collection')
     #                queries.append(items.filter(q))
                 logger.debug('path %s'%coll)
-                node = Node.objects.get_from_path(coll,  'collection')
+                node = Node.objects.get_from_path(coll, workspace,  'collection')
                 logger.debug('node found %s'%node)
                 queries.append(items.filter(node = node))
                     

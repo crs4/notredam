@@ -187,8 +187,11 @@ def get_nodes(request):
     child = request.POST.get('child')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     items = request.POST.getlist('items')
-    
-    items.remove('')
+    logger.debug('items %s'%items)
+    try:
+        items.remove('')
+    except:
+        pass
    
     if node_id == 'root':
         node = Node.objects.get_root(workspace, type = 'keyword')
@@ -230,6 +233,7 @@ def get_nodes(request):
         
 #        if n.type == 'keyword':
         if n.cls != 'category' and n.cls != 'new_keyword' and n.cls!= 'no_keyword' and n.type != 'inbox' :
+            
             n_items = n.items.filter(pk__in = items) 
             n_items_count = n_items.count()
             tmp['checked'] =  n_items_count > 0
