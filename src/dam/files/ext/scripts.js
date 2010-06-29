@@ -1298,9 +1298,9 @@ function manage_events(){
 	        	        { id : 'is_global',    header: "Global",      dataIndex: 'is_global',      width : 45}
 		            ]
 		        }),
-		        tbar:[{
+		        bbar:[{
 		            text:'Save change',
-		            tooltip:'Save change',
+		            tooltip:'Save change for this action',
 		            handler: function(){
 		        		var my_win = this.findParentByType('window');
 		        		var i;
@@ -1337,13 +1337,7 @@ function manage_events(){
 		       var my_win = this.findParentByType('window');
 		       my_win.close();
 			}
-		   },{
-		   text: 'Cancel',
-		   handler: function(){
-		       var my_win = this.findParentByType('window');
-		       my_win.close();
-		   	}
-		   }]          
+	   }]          
     });
  
 	manage_events_win.show();
