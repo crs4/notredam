@@ -457,8 +457,11 @@ function create_tree(title, id){
             
             allowContainerDrop: true,            
             onContainerOver: function( source, e, data ){
-//        		console.log(source);
-        		if (source.dragData.node && source.dragData.node.attributes.type == 'keyword'){
+//        		console.log(source.dragData.type);
+        		if(source.dragData.type == 'items')
+        			return this.dropNotAllowed;
+        			
+        		if (source.dragData.node.attributes.type == 'keyword'){
         			if(!source.dragData.node.attributes.isCategory)
         				return this.dropNotAllowed;
         		}        		
@@ -468,7 +471,10 @@ function create_tree(title, id){
         	},
         	onContainerDrop: function( source, e, data ){
         		
-        		if (source.dragData.node && source.dragData.node.attributes.type == 'keyword'){
+        		if(source.dragData.type == 'items')
+        			return false;
+//        		console.log(source.dragData)
+        		if (source.dragData.node.attributes.type == 'keyword'){
         			if(!source.dragData.node.attributes.isCategory)
         				return false;
         		}        		
