@@ -23,7 +23,6 @@ var ActionRecord = Ext.data.Record.create([ // creates a subclass of Ext.data.Re
     {name: 'parameters'}
 ]);
 
-
 function scripts_store(){
 
 	var actionMem = new Ext.data.JsonStore({
@@ -319,14 +318,17 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
                     	        			},
                     	                    success: function(response) {
                     	                        if (Ext.decode(response.responseText)['success']){
-                    	                        	Ext.MessageBox.alert('Success', 'Watermark removed.');
+                    	                        	Ext.Msg.show({title:'Success', msg: 'Watermark removed.', width: 300,
+         					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
                     	                        	_update_watermarks();
                     	                        }else
-                    	                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+                    			        			Ext.Msg.show({title:'Warning', msg: Ext.decode(response.responseText), width: 300,
+                    			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
                     	                    }
                     	                });
                 	        		}else
-                	        			Ext.MessageBox.alert('Success', 'Select one watermark!');
+        			        			Ext.Msg.show({title:'Warning', msg: 'Select one watermark!', width: 300,
+     			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
                     			}
                     		})
                     	    ],
@@ -895,10 +897,12 @@ function new_script(create, name, description, id_script, is_global, run){
 		    		        				   icon: Ext.MessageBox.QUESTION
 		    		        				});	
 		    		        		}else
-		    		        			Ext.MessageBox.alert('Success', 'Script saved.');
+        	                        	Ext.Msg.show({title:'Success', msg: 'Script saved.', width: 300,
+					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 		                        		my_win.close();
 		                        }else
-		                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+    			        			Ext.Msg.show({title:'Warning', msg: Ext.decode(response.responseText), width: 300,
+  			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		                    }
 		                });
 			    	}
@@ -1034,12 +1038,14 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 		                    success: function(form, action) {
 //		        				console.log(form);
 //		        				console.log(action);
-	                        	Ext.MessageBox.alert('Success', 'Changes saved!');
+	                        	Ext.Msg.show({title:'Success', msg: 'Changes saved!', width: 300,
+			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 	                        	my_win.close();
 	    		        		main_win.get('open_form').get('my_scripts').getStore().reload();
 		                    },
 		        			failure: function(form, action) {
-		                    	Ext.MessageBox.alert(Ext.decode(action.response.responseText));
+			        			Ext.Msg.show({title:'Warning', msg: Ext.decode(action.response.responseText), width: 300,
+			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		                    }
 
 		    			});
@@ -1071,7 +1077,8 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 	                        	main_win.close();
 		        			},
 		        			failure: function(form, action) {
-		                    	Ext.MessageBox.alert('Script NOT saved, please insert Name.');
+			        			Ext.Msg.show({title:'Warning', msg: 'Script NOT saved, please insert Name.', width: 300,
+			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		                    }
 
 		    			});
@@ -1319,13 +1326,16 @@ function manage_events(){
 			        			},
 			                    success: function(response) {
 			                        if (Ext.decode(response.responseText)['success']){
-			                        	Ext.MessageBox.alert('Success', 'Assosiation saved.');
+					        			Ext.Msg.show({title:'Success', msg: 'Assosiation saved.', width: 300,
+					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 			                        }else
-			                        	Ext.MessageBox.alert('Assosiation NOT saved.');
+					        			Ext.Msg.show({title:'Warning', msg: 'Assosiation NOT saved.', width: 300,
+					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 			                    }
 			                });
 		        		}else
-		        			Ext.MessageBox.alert('Selected one event.');
+		        			Ext.Msg.show({title:'Warning', msg: 'Selected one event.', width: 300,
+		        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		        	}
 		        },'-']
 		    })
