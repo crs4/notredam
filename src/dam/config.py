@@ -1,0 +1,25 @@
+import os
+# MediaDART path containing security certs (default to /home/user/node00/crypto)
+MD_CERT_PATH = os.path.join(os.getenv('HOME'), 'node00', 'crypto')
+
+# MediaDART configuration (to be changed if you installed MediaDART on a remote node, default to local install configuration)
+MEDIADART_CONF = {
+        "node_ip" : "192.168.100.3",
+        "node_port" :"7000",
+        "client_key" : os.path.join(MD_CERT_PATH, "client.key"),
+        "client_certificate" : os.path.join(MD_CERT_PATH, "client.crt"),
+        "client_key_cert" : os.path.join(MD_CERT_PATH, "client-key-cert.pem"),
+        "ca_certificate" : os.path.join(MD_CERT_PATH, "myca.crt"), 
+}
+
+GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
+
+
+
+DATABASE_ENGINE = 'sqlite3'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'dam.db'	         # Or path to database file if using sqlite3.
+DATABASE_USER = ''	         # Not used with sqlite3.
+DATABASE_PASSWORD = ''	     # Not used with sqlite3.
+
+DATABASE_HOST = ''	         # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_PORT = ''	         # Set to empty string for default. Not used with sqlite3.
