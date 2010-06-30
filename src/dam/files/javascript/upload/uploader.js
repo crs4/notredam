@@ -288,7 +288,7 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
 
         var tbar_grid = [
             {
-                text: 'Add File',
+                text: 'Add Files',
                 iconCls: 'add_icon',
                 listeners: {
                     render: function() {

@@ -783,10 +783,10 @@ Ext.onReady(function(){
 	            					        }
 	            					    });
 	                                }
-	            		    		//Update data view
-    							    var ac = Ext.getCmp('media_tabs').getActiveTab();
-    							    var view = ac.getComponent(0);
-    							    view.refresh();
+//	            		    		//Update data view
+//    							    var ac = Ext.getCmp('media_tabs').getActiveTab();
+//    							    var view = ac.getComponent(0);
+//    							    view.refresh();
 	            		    		my_win.close();
 	            	        }
                     },{
@@ -836,7 +836,7 @@ Ext.onReady(function(){
         
         
         tb.add({
-                text:'<span style="' + style_tb + '">Object</span>',
+                text:'<span style="' + style_tb + '">Item</span>',
                 menu: menu, 
                 id: 'object_menu'
             }, '-',

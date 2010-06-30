@@ -23,7 +23,6 @@ var ActionRecord = Ext.data.Record.create([ // creates a subclass of Ext.data.Re
     {name: 'parameters'}
 ]);
 
-
 function scripts_store(){
 
 	var actionMem = new Ext.data.JsonStore({
@@ -122,12 +121,18 @@ function _check_form_detail_script(my_win){
 					console.log(params.parameters[k]);
 					flag = false;
 				}
-				if (params.parameters[k].name == "ratio" && params.parameters[k].value != "custom"){
-					ratio = true
+				if (params.parameters[k].name == "ratio"){
+					console.log('dentro ratio');
+					var str = params.parameters[k].value;
+					var index = params.parameters[k].value.indexOf(':');
+					console.log(str.slice(0,index));
+					console.log(str.slice(index+1,str.length));
+        			if 	( !(parseInt(str.slice(0,index)) + "" == str.slice(0,index)) || !(parseInt(str.slice(index+1,str.length)) + "" == str.slice(index+1,str.length))){
+        				console.log('dentro');
+        				flag = false;
+        			}
 				}
 			}
-			if (ratio == true)
-				flag = true;
 		});
 	}
 	return flag;
@@ -313,14 +318,17 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
                     	        			},
                     	                    success: function(response) {
                     	                        if (Ext.decode(response.responseText)['success']){
-                    	                        	Ext.MessageBox.alert('Success', 'Watermark removed.');
+                    	                        	Ext.Msg.show({title:'Success', msg: 'Watermark removed.', width: 300,
+         					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
                     	                        	_update_watermarks();
                     	                        }else
-                    	                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+                    			        			Ext.Msg.show({title:'Warning', msg: Ext.decode(response.responseText), width: 300,
+                    			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
                     	                    }
                     	                });
                 	        		}else
-                	        			Ext.MessageBox.alert('Success', 'Select one watermark!');
+        			        			Ext.Msg.show({title:'Warning', msg: 'Select one watermark!', width: 300,
+     			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
                     			}
                     		})
                     	    ],
@@ -399,7 +407,8 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 						    {boxLabel: 'Custom', 
   					    	 name: 'type-crop', 
 					    	 value: 'custom', 
-					    	 id: 'custom'
+					    	 id: 'custom',
+					    	 html : '<table><tr><td><input type="text" name="w" /></td><td>:</td><td><input type="text" name="h" /></td></tr></table> '
 					    	 }
 						],
 						listeners : {
@@ -422,9 +431,9 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	                				this.setValue('custom', true);
 	                				if (parameters[0]['value']){
 		                				var str = parameters[0]['value'];
-		                				console.log(str);
-		                				Ext.getCmp('crop_width_custom').value = str[0];
-		                				Ext.getCmp('crop_height_custom').value = str[2];
+		                				var index = str.indexOf(':');
+		                				Ext.getCmp('crop_width_custom').value = str.slice(0,index);
+		                				Ext.getCmp('crop_height_custom').value = str.slice(index+1,str.length);
 									}
 	                			}
 	                		}
@@ -446,7 +455,7 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
                 	            xtype     : 'numberfield',
                 	            id        : 'crop_height_custom',
                 	            fieldLabel: 'height',
-                	            width     : 20                    			
+                	            width     : 20 
                     		}]
 		                })
 		                ]
@@ -521,8 +530,10 @@ function _pull_data(sm,media_type){
     			appParams['type']  = 'string';
     			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
     			if (appParams['value'] == 'custom'){
-    				var w = Ext.getCmp('crop_width_custom').value;
-    				var h = Ext.getCmp('crop_height_custom').value;
+    				var w = Ext.getCmp('crop_width_custom').getValue();
+    				var h = Ext.getCmp('crop_height_custom').getValue();
+    				console.log(w);
+    				console.log(h);
     				appParams['value'] = w+':'+h;
     			}
     		}
@@ -886,10 +897,12 @@ function new_script(create, name, description, id_script, is_global, run){
 		    		        				   icon: Ext.MessageBox.QUESTION
 		    		        				});	
 		    		        		}else
-		    		        			Ext.MessageBox.alert('Success', 'Script saved.');
+        	                        	Ext.Msg.show({title:'Success', msg: 'Script saved.', width: 300,
+					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 		                        		my_win.close();
 		                        }else
-		                        	Ext.MessageBox.alert(Ext.decode(response.responseText));
+    			        			Ext.Msg.show({title:'Warning', msg: Ext.decode(response.responseText), width: 300,
+  			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		                    }
 		                });
 			    	}
@@ -1025,12 +1038,14 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 		                    success: function(form, action) {
 //		        				console.log(form);
 //		        				console.log(action);
-	                        	Ext.MessageBox.alert('Success', 'Changes saved!');
+	                        	Ext.Msg.show({title:'Success', msg: 'Changes saved!', width: 300,
+			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 	                        	my_win.close();
 	    		        		main_win.get('open_form').get('my_scripts').getStore().reload();
 		                    },
 		        			failure: function(form, action) {
-		                    	Ext.MessageBox.alert(Ext.decode(action.response.responseText));
+			        			Ext.Msg.show({title:'Warning', msg: Ext.decode(action.response.responseText), width: 300,
+			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		                    }
 
 		    			});
@@ -1062,7 +1077,8 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 	                        	main_win.close();
 		        			},
 		        			failure: function(form, action) {
-		                    	Ext.MessageBox.alert('Script NOT saved, please insert Name.');
+			        			Ext.Msg.show({title:'Warning', msg: 'Script NOT saved, please insert Name.', width: 300,
+			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		                    }
 
 		    			});
@@ -1289,9 +1305,9 @@ function manage_events(){
 	        	        { id : 'is_global',    header: "Global",      dataIndex: 'is_global',      width : 45}
 		            ]
 		        }),
-		        tbar:[{
+		        bbar:[{
 		            text:'Save change',
-		            tooltip:'Save change',
+		            tooltip:'Save change for this action',
 		            handler: function(){
 		        		var my_win = this.findParentByType('window');
 		        		var i;
@@ -1310,13 +1326,16 @@ function manage_events(){
 			        			},
 			                    success: function(response) {
 			                        if (Ext.decode(response.responseText)['success']){
-			                        	Ext.MessageBox.alert('Success', 'Assosiation saved.');
+					        			Ext.Msg.show({title:'Success', msg: 'Assosiation saved.', width: 300,
+					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 			                        }else
-			                        	Ext.MessageBox.alert('Assosiation NOT saved.');
+					        			Ext.Msg.show({title:'Warning', msg: 'Assosiation NOT saved.', width: 300,
+					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 			                    }
 			                });
 		        		}else
-		        			Ext.MessageBox.alert('Selected one event.');
+		        			Ext.Msg.show({title:'Warning', msg: 'Selected one event.', width: 300,
+		        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 		        	}
 		        },'-']
 		    })
@@ -1328,13 +1347,7 @@ function manage_events(){
 		       var my_win = this.findParentByType('window');
 		       my_win.close();
 			}
-		   },{
-		   text: 'Cancel',
-		   handler: function(){
-		       var my_win = this.findParentByType('window');
-		       my_win.close();
-		   	}
-		   }]          
+	   }]          
     });
  
 	manage_events_win.show();
