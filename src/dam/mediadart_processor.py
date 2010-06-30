@@ -146,6 +146,8 @@ def adapt_resource(component, machine):
         orig_height = component.source.height
         for action in actions:
             if action['type'] == 'resize':
+                action['parameters']['max_width'] = min(action['parameters']['max_width'],  orig_width)
+                action['parameters']['max_height'] = min(action['parameters']['max_height'],  orig_height)
                 argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
                 
                 aspect_ratio = orig_height/orig_width 
@@ -169,22 +171,7 @@ def adapt_resource(component, machine):
                     logger.debug('y_ratio %s'%y_ratio)
                     final_width = min(orig_width, orig_height*x_ratio/y_ratio)
                     final_height = final_width*y_ratio/x_ratio
-                    
-                    
-#                    if x_ratio > y_ratio:
-#                        final_height = y_ratio*orig_width/x_ratio
-#                        final_width = orig_width
-#                    elif x_ratio < y_ratio:
-#                        final_height = orig_height
-#                        final_width = x_ratio*orig_height/y_ratio
-#                    else:
-#                        if orig_height > orig_width:
-#                            final_width = orig_width
-#                            final_height = orig_width
-#                            
-#                        else:
-#                            final_width = orig_height
-#                            final_height = orig_height 
+   
                         
                     logger.debug('final_height %s'%final_height)
                     logger.debug('orig_height %s'%orig_height)
@@ -213,47 +200,11 @@ def adapt_resource(component, machine):
                 pos_x = int(int(action['parameters']['pos_x_percent'])*orig_width/100)
                 pos_y = int(int(action['parameters']['pos_y_percent'])*orig_height/100)
                 argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
-            
-        
-#        args['dest_size'] = (width, height)
-#        argv +=  ['-resize', '%dx%d' % (width, height)]
-        
-        
-#        cropping  = vp.get('upperleft_x', False)
-#        if cropping:
-##            args['crop_box'] = (vp['upperleft_x'], vp['upperleft_y'], vp['lowerright_x'], vp['lowerright_y'])
-#            
-#            lr_x = int(int(vp['lowerright_x'])*component.source.width/100)
-#            ul_x = int(int(vp['upperleft_x'])*component.source.width/100)
-#            
-#            lr_y = int(int(vp['lowerright_y'])*component.source.height/100)
-#            ul_y = int(int(vp['upperleft_y'])*component.source.height/100)
-#            
-#            
-#            
-##            argv +=  ['-crop', '%dx%d+%d+%d' % (lr_x -ul_x, lr_y - ul_y,  ul_x, ul_y)]
-            
-        
-
+ 
         transcoding_format = vp.get('codec', orig.format) #change to original format
         dest_res_id = dest_res_id + '.' + transcoding_format
         
         
-        
-#        if watermark_filename:
-#            args['watermark_filename'] = watermark_filename
-#            args['watermark_corner'] = (int(vp['pos_x']),int(vp['pos_y']))
-##            argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (vp['pos_x'],vp['pos_y']), '-composite']
-#            
-#            
-#            if vp['alpha'] is not None:
-#                vp['alpha']  = int(vp['alpha'])
-#                
-#            args['alpha'] = vp['alpha']
-#            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size, watermark_filename=watermark_filename, watermark_corner = watermark_corner, alpha = alpha)
-#        else:
-#            d = adapter_proxy.adapt_image(orig.ID, dest_res_id, dest_size=dest_size)
-
         
         d = adapter_proxy.adapt_image_magick(orig.ID, dest_res_id, argv)
 #        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
