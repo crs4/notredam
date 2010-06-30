@@ -41,16 +41,19 @@ def reload_item(request):
         user = User.objects.get(pk=request.session['_auth_user_id'])
         workspace = request.session['workspace']
         items_post = request.POST.getlist('items')
+        logger.debug('items_post %s'%items_post)
 
         basket = Basket.get_basket(user, workspace)
-        items = Item.objects.filter(pk__in=items_post)       
+        items = Item.objects.filter(pk__in=items_post)     
+        logger.debug('items %s'%items)
+        logger.debug('basket.items %s'%Basket.objects.all())  
         basket.add_items(items)
 	
     except Exception,  ex:
         logger.exception(ex)
         raise ex
 
-    return HttpResponse(Basket.objects.all().count())
+    return HttpResponse(basket.items.all().count())
 
 @login_required
 def remove_from_basket(request):

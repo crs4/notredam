@@ -21,7 +21,7 @@ import sys
 
 DEMO_STRING="Development Demo" 
 #PYTHONPATH= os.path.join(os.getenv('HOME'), "work/mediadart-application/application/"  )
-PYTHONPATH= "/opt/mediadart-application/" 
+PYTHONPATH= "/opt/mediadart-mq/" 
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,8 +42,8 @@ if DATABASE_ENGINE == 'sqlite3':
 
 EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
-#SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
-SERVER_PUBLIC_ADDRESS = '10.211.55.4:8000'
+SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
+#SERVER_PUBLIC_ADDRESS = '10.211.55.4:8000'
 
 METADATA_DEFAULT_LANGUAGE = 'en-US'
 DEMO_STRING="Development Demo" 
@@ -129,23 +129,28 @@ TEMPLATE_CONTEXT_PROCESSORS = ("django.core.context_processors.auth",
 "django.core.context_processors.media", "django.core.context_processors.request")
 
 INSTALLED_APPS = (
-	'django.contrib.auth',
-	'django.contrib.contenttypes',
-	'django.contrib.sessions',
-	'django.contrib.sites',
-	'django.contrib.admin', 
-	'dam.repository',
-	'dam.treeview',
-	'dam.metadata',
-	'dam.variants',
-	'dam.preferences',
-	'dam.workspace',
-	'dam.application',
-	'dam.api',
-	'dam.batch_processor',
-	'dam.workflow',
-	'dam.eventmanager',
-	'dam.geo_features',
-	'dam.basket',
-    'dam.scripts'
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.admin', 
+    'dam.core.dam_repository',
+    'dam.repository',
+    'dam.treeview',
+    'dam.core.dam_metadata',
+    'dam.metadata',
+    'dam.variants',
+    'dam.preferences',
+    'dam.core.dam_workspace',
+    'dam.workspace',
+    'dam.application',
+    'dam.api',
+    'dam.batch_processor',
+    'dam.workflow',
+    'dam.eventmanager',
+    'dam.geo_features',
+    'dam.basket',
+    'dam.scripts',
+    'dam.upload'
+
 )
