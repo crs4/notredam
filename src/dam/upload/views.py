@@ -390,6 +390,7 @@ def generate_tasks(component, upload_job_id = None, force_generation = False,  c
         component.imported = True
         component.save()
         
-  
+    
+    Action.objects.filter(component=component).delete()
 
     _generate_tasks(component, force_generation,  check_for_existing, embed_xmp)
