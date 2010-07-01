@@ -146,19 +146,29 @@ def adapt_resource(component, machine):
         orig_height = component.source.height
         for action in actions:
             if action['type'] == 'resize':
+                
                 action['parameters']['max_width'] = min(action['parameters']['max_width'],  orig_width)
                 action['parameters']['max_height'] = min(action['parameters']['max_height'],  orig_height)
                 argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
-                
+                logger.debug('argv %s'%argv)
                 aspect_ratio = orig_height/orig_width 
                 
-                if orig_width > orig_height:
-                    orig_width = action['parameters']['max_width']
-                    orig_height = aspect_ratio*orig_width 
-                else:
-                    orig_height = action['parameters']['max_height']
-                    orig_width = orig_height/aspect_ratio 
-                    
+                alfa = min(action['parameters']['max_width']/orig_width, action['parameters']['max_height']/orig_height)
+                orig_width = alfa*orig_width
+                orig_height = alfa*orig_height
+                
+                        
+                
+#                if orig_width > orig_height:
+#                    
+#                    
+#                    orig_width = action['parameters']['max_width']
+#                    orig_height = aspect_ratio*orig_width 
+#                else:
+#                    
+#                    orig_height = action['parameters']['max_height']
+#                    orig_width = orig_height/aspect_ratio 
+#                    logger.debug('elsesssssss orig_height %s'%orig_height)
                 
             elif action['type'] == 'crop':
 #                action['parameters']['ratio'] = '2:3'
@@ -174,6 +184,7 @@ def adapt_resource(component, machine):
    
                         
                     logger.debug('final_height %s'%final_height)
+                    logger.debug('final_width %s'%final_width)
                     logger.debug('orig_height %s'%orig_height)
                     logger.debug('orig_width %s'%orig_width)
                     
@@ -194,8 +205,14 @@ def adapt_resource(component, machine):
                 
                 orig_width = lr_x -ul_x 
                 orig_height = lr_y - ul_y
+                
+                logger.debug('orig_height %s'%orig_height)
+                logger.debug('orig_width %s'%orig_width)
+                
+                
                 argv +=  ['-crop', '%dx%d+%d+%d' % (orig_width, orig_height,  ul_x, ul_y)]
-            
+                
+                logger.debug('argv %s'%argv)
             elif action['type'] == 'watermark':
                 pos_x = int(int(action['parameters']['pos_x_percent'])*orig_width/100)
                 pos_y = int(int(action['parameters']['pos_y_percent'])*orig_height/100)
