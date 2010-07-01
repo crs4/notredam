@@ -495,13 +495,15 @@ class ExtractVideoThumbnail(SaveAction):
         
         params = [{ 'name': 'max_height','type': 'number'},
                 { 'name': 'max_width', 'type': 'number'},
-                { 'name': 'mail','type': 'string'},
-                
                 {'name':'output_format',  'type': 'string',  'values':{'video':['jpeg',  'gif','png', 'bmp'],
                                                                        'image': [],
                                                                        'audio': [],
                                                                        'doc':[]
                                                                        }},
+                                                                    
+                { 'name': 'mail','type': 'string'},
+                
+                
                 {'name':'output',  'type': 'string',  'values':{'audio': [],
                    'image': [],
                    'doc':[],
