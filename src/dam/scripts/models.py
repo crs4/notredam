@@ -374,12 +374,9 @@ class Resize(BaseAction):
    
     def __init__(self, media_type, source_variant, workspace, script,  max_height, max_width):
         super(Resize, self).__init__(media_type, source_variant, workspace, script)
-        if media_type == 'video':
-            self.parameters['video_height'] = max_height
-            self.parameters['video_width'] = max_width
-        else:
-            self.parameters['max_height'] = max_height
-            self.parameters['max_width'] = max_width
+        
+        self.parameters['max_height'] = max_height
+        self.parameters['max_width'] = max_width
                 
 
 class Crop(BaseAction): 
