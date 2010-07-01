@@ -487,15 +487,42 @@ class AudioEncode(BaseAction):
         self.parameters['audio_rate'] = int(rate)
                 
 
-class ExtractVideoThumbnail(BaseAction):
+class ExtractVideoThumbnail(SaveAction):
     verbose_name = 'extract video thumbnail'
     media_type_supported = ['video']
     @staticmethod
     def required_parameters(workspace):
-        return [{ 'name': 'max_height','type': 'number'},  { 'name': 'max_width', 'type': 'number'}]
+        
+        params = [{ 'name': 'max_height','type': 'number'},
+                { 'name': 'max_width', 'type': 'number'},
+                { 'name': 'mail','type': 'string'},
+                
+                {'name':'output_format',  'type': 'string',  'values':{'video':['jpeg',  'gif','png', 'bmp'],
+                                                                       'image': [],
+                                                                       'audio': [],
+                                                                       'doc':[]
+                                                                       }},
+                {'name':'output',  'type': 'string',  'values':{'audio': [],
+                   'image': [],
+                   'doc':[],
+                  
+                  'video':[variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'image',  auto_generated = True)]}}
+                
+                ]
+        
+        return params
     
-    def __init__(self, media_type, source_variant, workspace , script, max_height,  max_width):
-        params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
+    
+         
+    def __init__(self, media_type, source_variant, workspace, script, max_height,  max_width, output, mail, output_format,   embed_xmp = False):  
+        params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image', 'output': output, 'mail': mail, 'embed_xmp': embed_xmp }
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, script, **params)
+        
+       
+        self.output_variant = output
+    
+#    def __init__(self, media_type, source_variant, workspace , script, max_height,  max_width):
+#        params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
+#        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, script, **params)
     
 

@@ -72,28 +72,31 @@ def get_actions(request):
     classes = []
     classes.extend(BaseAction.__subclasses__())
     classes.extend(SaveAction.__subclasses__())
-    
-    for action in classes:
-            if action == SaveAction:
-                continue
-                
-            if media_type:
-                if media_type in action.media_type_supported:
-                    add_action = True
+    try:
+        for action in classes:
+                if action == SaveAction:
+                    continue
+                    
+                if media_type:
+                    if media_type in action.media_type_supported:
+                        add_action = True
+                    else:
+                        add_action = False
                 else:
-                    add_action = False
-            else:
-                add_action = True
-            
-            if add_action:
-               
-                tmp = {                                 
-                        'name':action.verbose_name.lower(),
-                        'media_type': action.media_type_supported,
-                        'parameters': action.required_parameters(workspace)                    
-                }
-                actions['actions'].append(tmp)
-    logger.debug('actions %s'%actions)        
+                    add_action = True
+                
+                if add_action:
+                   
+                    tmp = {                                 
+                            'name':action.verbose_name.lower(),
+                            'media_type': action.media_type_supported,
+                            'parameters': action.required_parameters(workspace)                    
+                    }
+                    actions['actions'].append(tmp)
+        logger.debug('actions %s'%actions)
+    except Exception, ex:
+        logger.exception(ex)
+        raise ex        
     return HttpResponse(simplejson.dumps(actions))
 
 def _new_script(name = None, description = None, workspace = None, pipeline = None, events = [], script = None,  is_global = False):
