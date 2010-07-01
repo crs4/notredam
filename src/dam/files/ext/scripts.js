@@ -16,13 +16,20 @@
 *
 */
 
-// Helper class for organizing the buttons
+
+DEBUG_SCRIPT = false;
+/**
+  * Helper class for organizing the buttons
+  */
 var ActionRecord = Ext.data.Record.create([ // creates a subclass of Ext.data.Record
     {name: 'name'},
     {name: 'media_type'},
     {name: 'parameters'}
 ]);
 
+/**
+ * @class This class develop store for the type items. 
+ */
 function scripts_store(){
 
 	var actionMem = new Ext.data.JsonStore({
@@ -66,6 +73,10 @@ function scripts_store(){
 	}
 }
 
+/**
+ * This function develop reset of watermark position. 
+ * @return
+ */
 function reset_watermarking(){	
     for (i=1; i<10; i++){
         Ext.get('square'+i).setStyle({
@@ -75,15 +86,30 @@ function reset_watermarking(){
     }
 }
 
+/**
+ * This function insert value into hidden input for watermark position. 
+ * @param id
+ * @return
+ */
 function _set_hidden_position_percent(id){
 	var pos_x = ((id-1) % 3) * 33 + 5;
 	var pos_y = (parseInt((id-1) / 3)) * 33 + 5;
-	console.log(pos_x);
-	console.log(pos_y);
+	
+	if (DEBUG_SCRIPT){
+		console.log(pos_x);
+		console.log(pos_y);
+	}
+	
 	Ext.getCmp('panel_watermarks_views').get('hidden_pos_x_percent').setValue(parseInt(pos_x));
 	Ext.getCmp('panel_watermarks_views').get('hidden_pos_y_percent').setValue(parseInt(pos_y));
 }
 
+
+/**
+ * This function set position of watermark. 
+ * @param id
+ * @return
+ */
 function watermarking(id){	
     reset_watermarking();
     _set_hidden_position_percent(id);
@@ -94,13 +120,25 @@ function watermarking(id){
     watermarking_position = id;
 }
 
+/**
+ * This function update data view of watermark. 
+ * @return
+ */
+
 function _update_watermarks(){  
 	Ext.getCmp('dataview_watermarks').getStore().load();
 }
 
+/**
+ * This function verify that all fields of all action are fill. 
+ * @param my_win
+ * @return
+ */
+
 function _check_form_detail_script(my_win){
 	//verificare che tutti i campi siano selezionati.
-	console.log('check');
+	if (DEBUG_SCRIPT)
+		console.log('check');
 	var flag = true;
 	var ratio = false;
 	var StoreGridTabs = {}; // for (key in dict)
@@ -114,21 +152,21 @@ function _check_form_detail_script(my_win){
 		StoreGridTabs[name_tab].each(function(rec){
 //			j++;
 			params = rec.data;
-			console.log(params);
+			if (DEBUG_SCRIPT){
+				console.log(params);
+			}
 			for(k=0;k<params.parameters.length;k++){
 				if (!params.parameters[k].value && params.parameters[k].type != 'boolean'){
-					console.log('parametro null.');
-					console.log(params.parameters[k]);
+					if (DEBUG_SCRIPT){
+						console.log('parametro null.');
+						console.log(params.parameters[k]);
+					}
 					flag = false;
 				}
 				if (params.parameters[k].name == "ratio"){
-					console.log('dentro ratio');
 					var str = params.parameters[k].value;
 					var index = params.parameters[k].value.indexOf(':');
-					console.log(str.slice(0,index));
-					console.log(str.slice(index+1,str.length));
         			if 	( !(parseInt(str.slice(0,index)) + "" == str.slice(0,index)) || !(parseInt(str.slice(index+1,str.length)) + "" == str.slice(index+1,str.length))){
-        				console.log('dentro');
         				flag = false;
         			}
 				}
@@ -138,16 +176,26 @@ function _check_form_detail_script(my_win){
 	return flag;
 }
 
+/**
+ * This function generate detail form except for crop and watermark action. 
+ * @param grid
+ * @param selected
+ * @param actionsStore
+ * @param media_type
+ * @param parameters
+ * @param name_action
+ * @return
+ */
+
 function _global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action )
 {
     var i = 0;
     var recApp;
     var item_array = new Array();
-    console.log(parameters);
     for (i=0;i<parameters.length;i++){
 //    	cercare il name_action nella gridlistactions, e verificare se ha values
         recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
-        console.log(recApp);
+
         //in sendbymail restituisce in ordine inverso.
         if (parameters[i].name != recApp['data']['parameters'][i].name){
         	var j = 0;
@@ -204,6 +252,17 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     
 	return item_array;
 }
+
+/**
+ * This function generate detail form watermark action. 
+ * @param panel
+ * @param grid
+ * @param selected
+ * @param actionsStore
+ * @param media_type
+ * @param parameters
+ * @return
+ */
 
 function _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters)
 {
@@ -382,17 +441,25 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
 	return panel;
 }
 
+/**
+ * This function generate detail form crop action. 
+ * @param panel
+ * @param grid
+ * @param selected
+ * @param actionsStore
+ * @param media_type
+ * @param parameters
+ * @param name_action
+ * @return
+ */
+
 function _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action)
 {
-	console.log('_crop_generate_details_forms');
-	console.log(name_action);
-	console.log(parameters);
-	
 	panel.add(
 			{ 
 	            layout:'column', 
 	            items:[{ 
-	                columnWidth:.5,
+	                columnWidth:.3,
 	                layout : 'form',
 	                items: [{
 						xtype: 'radiogroup',
@@ -400,31 +467,29 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 						fieldLabel: 'Standard crop',
 			            columns: 1,
 						items: [
-						    {boxLabel: '1:1 - Square', name: 'type-crop', value: '1:1', id: '1:1'},
+						    {boxLabel: '1:1 Square', name: 'type-crop', value: '1:1', id: '1:1'},
 						    {boxLabel: '2:3', name: 'type-crop', value: '2:3', id: '2:3'},
 						    {boxLabel: '3:4', name: 'type-crop', value: '3:4', id: '3:4'},
 						    {boxLabel: '4:5', name: 'type-crop', value: '4:5', id: '4:5'},
-						    {boxLabel: 'Custom', 
+						    {boxLabel: '  Custom', 
   					    	 name: 'type-crop', 
 					    	 value: 'custom', 
-					    	 id: 'custom',
-					    	 html : '<table><tr><td><input type="text" name="w" /></td><td>:</td><td><input type="text" name="h" /></td></tr></table> '
+					    	 id: 'custom'
 					    	 }
 						],
 						listeners : {
 	                		change  : function (newValue, oldValue){
-//		            			console.log('change');
 	                			if(newValue.getValue().value != 'custom'){
 	                				//disable panel_custom_fields
-	                				Ext.getCmp('panel_custom_fields').setVisible(false);
+	                				Ext.getCmp('crop_width_custom').setDisabled(true);
+	                				Ext.getCmp('crop_height_custom').setDisabled(true);
 	                			}else{
 	                				//enable panel_custom_fields
-	                				Ext.getCmp('panel_custom_fields').setVisible(true);;
+	                				Ext.getCmp('crop_width_custom').setDisabled(false);
+	                				Ext.getCmp('crop_height_custom').setDisabled(false);
 	                			}
 	                		},
 	                		afterrender : function(){
-	                			console.log('afterrender');
-	                			console.log(parameters);
 	                			if (parameters[0]['value'] == '1:1' || parameters[0]['value']== '2:3' || parameters[0]['value']== '3:4' || parameters[0]['value']== '4:5')
 	                				this.setValue(parameters[0]['value'], true);
 	                			else{
@@ -439,27 +504,35 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	                		}
 	                	}
 	                }]
-	            },{
-		            	columnWidth:.5,
-		            	layout : 'form',
-		                items : [new Ext.Panel({
-                    	    id : 'panel_custom_fields',
-                    		frame:true,
-                    		layout : 'form',
-                    		items : [{
-                	            xtype     : 'numberfield',
-                	            id        : 'crop_width_custom',
-                	            fieldLabel: 'width',
-                	            width     : 20
-                    		},{
-                	            xtype     : 'numberfield',
-                	            id        : 'crop_height_custom',
-                	            fieldLabel: 'height',
-                	            width     : 20 
-                    		}]
-		                })
-		                ]
-	                }
+	            },{columnWidth:.038,
+	            	layout : 'form',
+	            	items :[{
+        	            xtype     : 'numberfield',
+        	            id        : 'crop_width_custom',
+        	            hideLabel : true,
+        	            height    : 18,
+        	            style     :'margin-top:104px',
+        	            width     : 20
+            		}]
+        	      },{columnWidth:.01,
+	            	layout : 'form',
+	            	style :'margin-top:105px',
+	            	items :[{
+                            xtype : 'label',
+                            text  : ':',
+                            width : 3
+	            	}]
+        	      },{columnWidth:.05,
+	            	layout : 'form',
+	            	items :[{
+	                    xtype     : 'numberfield',
+	                    id        : 'crop_height_custom',
+	                    hideLabel : true,
+	                    height    : 18,
+        	            style     :'margin-top:104px',
+	                    width     : 20
+	                }]
+        	      }
 	            ]
 	        }         
 	);
@@ -467,15 +540,23 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	return panel;
 	
 }
+/**
+ * This function generate detail form. 
+ * @param panel
+ * @param grid
+ * @param selected
+ * @param actionsStore
+ * @param media_type
+ * @return
+ */
 
 function generate_details_forms(panel, grid, selected, actionsStore, media_type) {
 
-	console.log('generate_details_forms');
     var name_action = selected.data.name;
     var parameters = selected.get('parameters');
     var array_field;
-//  console.log('generate_detail_form')
-// remove all component
+
+    //  remove all component
     panel.removeAll()
 
     //add new component
@@ -490,6 +571,13 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 //reload panel
 	panel.doLayout();
 }
+
+/**
+ * This method create a new record because the copy() not work, but make a move. 
+ * @param data data to insert in new record
+ * @param media_type type of tabPanel ('image', 'movie')
+ * @return
+ */
 
 function newRecord(data, media_type){
 	//why copy() not work
@@ -510,8 +598,13 @@ function newRecord(data, media_type){
 	return new ActionRecord({name: data.name, parameters: cloned_parameters});
 }
 
+/**
+ * This function pull data from form and memorize data.
+ * @param sm selection row of data grid
+ * @param media_type type of media ('image', 'movie'...)
+ * @return
+ */
 function _pull_data(sm,media_type){
-	console.log("_pull_data");
 
 	if 	(sm.getSelected()){
 		var newParams = [];
@@ -532,15 +625,15 @@ function _pull_data(sm,media_type){
     			if (appParams['value'] == 'custom'){
     				var w = Ext.getCmp('crop_width_custom').getValue();
     				var h = Ext.getCmp('crop_height_custom').getValue();
-    				console.log(w);
-    				console.log(h);
     				appParams['value'] = w+':'+h;
     			}
     		}
     		newParams.push(appParams);
 	    }
-		console.log("_pull_data");
-		console.log(newParams);
+		if (DEBUG_SCRIPT){
+			console.log("_pull_data");
+			console.log(newParams);
+		}
 	    r.set('parameters',newParams);
 	    r.commit();
 	}
@@ -593,14 +686,11 @@ function _get_layout_tab(obj, media_type){
 								listeners    :{
 									beforerowselect : function(sm,rowIndex, keepExisting, record){
 								        //pull data
-//										console.log('before');
 								        _pull_data(sm,media_type);
-
 							        	return true;
 									}, 
 									selectionchange : function(){
 							        	//show form details
-										console.log(this.getSelected());
 										if (this.getSelected()){
 								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(),Ext.getCmp('action_list_'+media_type).getStore(), media_type);
 										}
@@ -755,8 +845,6 @@ function _get_tabs(){
 }
 
 function _get_scripts_fields(name, description){
-
-	console.log('_get_scripts_fields');
 	
 	var field_name = new Ext.form.TextField({
         fieldLabel: 'Name',
@@ -815,8 +903,10 @@ function save_data_script(name, description, my_win){
 			}
 		});
 	}
-//	console.log('pipeline');
-//	console.log(pipeline);
+	if (DEBUG_SCRIPT){
+		console.log('pipeline');
+		console.log(pipeline);
+	}
 	return pipeline;
 	
 }
@@ -933,16 +1023,11 @@ function new_script(create, name, description, id_script, is_global, run){
 function newRecordLoad(data,type){
 	var cloned_parameters = [];
 	var tmp = {};
-	console.log('newRecordLoad');
 	//for get list of actions
 	for (name in data.parameters) {
 		tmp = {};
 		tmp['name']  = name;
 		if (!isNaN(data.parameters[name])){
-			console.log('data.parameters')
-			console.log(data.parameters);
-			console.log('name')
-			console.log(name);			
 			if (name == 'embed_xmp')
 				tmp['type']  = 'boolean';
 			else
@@ -964,8 +1049,7 @@ function newRecordLoad(data,type){
 }
 
 function load_data_script(data){
-	console.log('load');
-//	console.log(data);
+
 	var i;//count
 	var type, name_tab;
 	var my_win = Ext.getCmp('general_form');
@@ -976,8 +1060,6 @@ function load_data_script(data){
 		console.log('load action');
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
         	var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
-			console.log('newRec');
-			console.log(newRec);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
 		}
 
@@ -1036,8 +1118,6 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 		        				script : id_script
 		        			},
 		                    success: function(form, action) {
-//		        				console.log(form);
-//		        				console.log(action);
 	                        	Ext.Msg.show({title:'Success', msg: 'Changes saved!', width: 300,
 			        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 	                        	my_win.close();
@@ -1147,8 +1227,6 @@ function manage_script(){
 		    		//Open script
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
-			    		console.log('dataaaaaaaaaaaaaaa');
-			    		console.log(data);
 			    		my_win.close();
 			    		new_script(false, data.name, data.description, data.id, data.is_global, false);
 			    		load_data_script(data);
@@ -1167,7 +1245,6 @@ function manage_script(){
 		            var my_win = this.findParentByType('window');
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			            var selScript = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected();
-			            console.log(selScript);
 	            		if (!selScript.data.is_global){
 				            Ext.Ajax.request({
 		                        url: '/delete_script/',
@@ -1326,10 +1403,10 @@ function manage_events(){
 			        			},
 			                    success: function(response) {
 			                        if (Ext.decode(response.responseText)['success']){
-					        			Ext.Msg.show({title:'Success', msg: 'Assosiation saved.', width: 300,
+					        			Ext.Msg.show({title:'Success', msg: 'Association saved.', width: 300,
 					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 			                        }else
-					        			Ext.Msg.show({title:'Warning', msg: 'Assosiation NOT saved.', width: 300,
+					        			Ext.Msg.show({title:'Warning', msg: 'Association NOT saved.', width: 300,
 					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 			                    }
 			                });
