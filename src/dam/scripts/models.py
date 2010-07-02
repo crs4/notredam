@@ -156,7 +156,8 @@ class Script(models.Model):
             media_type = item.type.name
                 
             for action in actions[media_type]:
-                if isinstance(action, SaveAs) or isinstance(action, SendByMail):
+#                if isinstance(action, SaveAs) or isinstance(action, SendByMail) or isinstance:
+                if action.__class__.__base__ == SaveAction:
                     action.execute(item,adapt_parameters)
                 else:
                     tmp_adapt_parameters = action.get_adapt_params()
@@ -508,23 +509,45 @@ class ExtractVideoThumbnail(SaveAction):
                    'image': [],
                    'doc':[],
                   
-                  'video':[variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'image',  auto_generated = True)]}}
+                  'video':[variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'video',  auto_generated = True)]}}
                 
                 ]
         
         return params
     
     
+    
          
-    def __init__(self, media_type, source_variant, workspace, script, max_height,  max_width, output, mail, output_format,   embed_xmp = False):  
-        params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image', 'output': output, 'mail': mail, 'embed_xmp': embed_xmp }
-        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, script, **params)
+    def __init__(self, media_type, source_variant, workspace, script, max_height,  max_width, output_format, output= None, mail = None):  
+        media_type = 'image'
+        params = {'max_height': max_height,  'max_width':max_width,   'output': output, 'mail': mail}
+        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, script,output_format,   False)
+        logger.debug('---------------------------------------------media_type %s'%media_type)
         
-       
-        self.output_variant = output
+        if mail:
+            self.mail = mail
+            self.output_variant = 'mail'
+        else:
+            self.output_variant = output
+            self.mail = ''
+            
+        self.output_media_type= 'image'
+        self.max_height = max_height
+        self.max_width = max_width 
+        
     
 #    def __init__(self, media_type, source_variant, workspace , script, max_height,  max_width):
 #        params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
 #        super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, script, **params)
     
+    def execute(self, item, adapt_parameters):  
+        if self.mail:
+            adapt_parameters['mail'] = self.mail        
+     
+        adapt_parameters['max_height'] = self.max_height
+        adapt_parameters['max_width'] = self.max_width
+        return super(ExtractVideoThumbnail, self).execute(item, adapt_parameters)
+        
+        
+        
 

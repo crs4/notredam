@@ -50,16 +50,19 @@ pipeline_thumb = {
                 'parameters':{
                 'max_height': 100,
                 'max_width': 100,
-                }
-            },
-            {
-                'type': 'save',
-                'parameters':{
-                    'output_format': 'jpeg',
+                   'output_format': 'jpeg',
                     'output': 'thumbnail'
                 }
-                            
-            }]
+            },
+#            {
+#                'type': 'save',
+#                'parameters':{
+#                    'output_format': 'jpeg',
+#                    'output': 'thumbnail'
+#                }
+#                            
+#            }
+            ]
         },
         'doc':{
             'source_variant': 'original',
