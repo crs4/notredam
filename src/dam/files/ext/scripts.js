@@ -170,6 +170,9 @@ function _check_form_detail_script(my_win){
         				flag = false;
         			}
 				}
+				if (params.parameters[k].name == "mail"){
+					flag = true;
+				}
 			}
 		});
 	}
@@ -211,12 +214,20 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     			val = parameters[i]['value'];
     		else 
     			val = recApp['data']['parameters'][j]['values'][media_type][0];
+    		var width_combobox;
+    		if (name_action == 'set rights'){
+    			width_combobox = 300;
+    		}else
+    			width_combobox = 140;
+    			
+    		
     		item_array.push(new Ext.form.ComboBox({                            
     			fieldLabel   : parameters[i].name.replace("_"," "),
     			store        : recAppValues,
 				triggerAction: 'all',
 				value        : val,
-				name         : parameters[i].name
+				name         : parameters[i].name,
+				width        : width_combobox
     	    }));
     	}
     	else if (parameters[i].type == 'number'){
@@ -224,7 +235,8 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     	          fieldLabel: parameters[i].name.replace("_"," "),
     	          value     : parameters[i].value,
     	          name      : parameters[i].name,
-    	          msgTarget :'side'                            
+    	          msgTarget :'side',                            
+    	          width     : 140
     	      	}));
     	}
     	else if (parameters[i].type == 'string' && parameters[i].name != 'ratio'){
@@ -232,7 +244,8 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
 	          fieldLabel  : parameters[i].name.replace("_"," "),
 	          value       : parameters[i].value,
 	          name        : parameters[i].name,
-	          msgTarget   : 'side'                            
+	          msgTarget   : 'side',                            
+	          width       : 140                            
 	      	}));
     	}else if (parameters[i].type == 'boolean'){
     		item_array.push(new Ext.form.Checkbox({                            
@@ -540,6 +553,152 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	return panel;
 	
 }
+
+function _extract_video_thubnail_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action ){
+    if (DEBUG_SCRIPT){
+		console.log('_extract_video_thubnail_generate_details_forms');
+	    console.log(parameters);
+    }
+	var i = 0;
+    var recApp;
+    var item_array = new Array();
+    recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
+    
+    for (i=0;i<parameters.length;i++){
+
+    	if (parameters[i]['name'] == 'max_height'){
+    		var max_height = new Ext.form.NumberField({                            
+  	          fieldLabel: parameters[i].name.replace("_"," "),
+  	          value     : parameters[i].value,
+  	          name      : parameters[i].name,
+  	          msgTarget :'side',                            
+  	          width     : 140
+  	      	});    		
+    	}else if (parameters[i]['name'] == 'max_width'){
+    		var max_width = new Ext.form.NumberField({                            
+  	          fieldLabel: parameters[i].name.replace("_"," "),
+  	          value     : parameters[i].value,
+  	          name      : parameters[i].name,
+  	          msgTarget :'side',                            
+  	          width     : 140
+  	      	});    		
+    	}else if (parameters[i]['name'] == 'output_format'){
+    		var val;
+            //restituisce in ordine inverso devo recuperare l'indice.
+            if (parameters[i].name != recApp['data']['parameters'][i].name){
+            	var j = 0;
+            	while (parameters[i].name != recApp['data']['parameters'][j].name) {
+            		  j++;
+            	}
+            }else j = i;
+            
+    		if (DEBUG_SCRIPT)
+    			console.log(recApp['data']['parameters']);
+    		
+    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+    		if (parameters[i]['value']) 
+    			val = parameters[i]['value'];
+    		else 
+    			val = recApp['data']['parameters'][j]['values'][media_type][0]; 
+    		
+    		var output_format = new Ext.form.ComboBox({                            
+    			fieldLabel   : parameters[i].name.replace("_"," "),
+    			store        : recAppValues,
+				triggerAction: 'all',
+				value        : val,
+				name         : parameters[i].name,
+				width        : 140
+    	    });    		
+    	}else if (parameters[i]['name'] == 'mail'){
+    		var mail = new Ext.form.TextField({                            
+  	          value       : parameters[i].value,
+  	          id          : 'mail_radiobutton',
+  	          name        : parameters[i].name,
+  	          msgTarget   : 'side',  
+	            style     :'margin-top:75px',
+	            hideLabel : true,
+  	          width       : 140                            
+  	      	});    		
+    	}else if(parameters[i]['name'] == 'output'){
+    		var val;
+            if (parameters[i].name != recApp['data']['parameters'][i].name){
+            	var j = 0;
+            	while (parameters[i].name != recApp['data']['parameters'][j].name) {
+            		  j++;
+            	}
+            }else j = i;
+    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+    		if (parameters[i]['value']) 
+    			val = parameters[i]['value'];
+    		else 
+    			val = recApp['data']['parameters'][j]['values'][media_type][0]; 
+    		
+    		var output = new Ext.form.ComboBox({                            
+    			store        : recAppValues,
+    			id           : 'output_radiobutton',
+				triggerAction: 'all',
+				value        : val,
+				name         : parameters[i].name,
+	            hideLabel    : true,
+				width        : 140
+    	    });     		
+    	}
+    }
+
+	panel.add({ 
+        layout:'column', 
+        items:[{ 
+            columnWidth:.4,
+            layout : 'form',
+            items: [max_height,
+                    max_width,
+                    output_format,
+                    {
+						xtype: 'radiogroup',
+						id : 'radio_output_extract',
+						fieldLabel: 'Output',
+			            columns: 1,
+						items: [
+						    {boxLabel: 'Mail', name: 'type-output', value: 'mail', id: 'mail'},
+						    {boxLabel: 'Output', name: 'type-output', value: 'output', id: 'output'}
+						],
+						listeners : {
+	                		change  : function (newValue, oldValue){
+	                			if(newValue.getValue().value == 'mail'){
+	                				Ext.getCmp('output_radiobutton').setDisabled(true);
+	                				Ext.getCmp('mail_radiobutton').setDisabled(false);
+	                			}else{
+	                				//enable panel_custom_fields
+	                				Ext.getCmp('mail_radiobutton').setValue('');
+	                				Ext.getCmp('mail_radiobutton').setDisabled(true);
+	                				Ext.getCmp('output_radiobutton').setDisabled(false);
+	                			}
+	                		},
+	                		afterrender : function(){
+	                			if (DEBUG_SCRIPT)
+	                				console.log(Ext.getCmp('mail_radiobutton').getValue());
+	                			if (Ext.getCmp('mail_radiobutton').getValue() == ''){
+	                				this.setValue('output',true);
+	                			}else{
+	                				this.setValue('mail',true);
+	                			}
+	                		}
+	                	}
+                    }
+            ]
+        },
+        { columnWidth:.5,
+          layout : 'form',
+          items : [
+				mail,
+				output
+          ]
+	     }]
+	});   
+	
+	return panel;
+}
+
 /**
  * This function generate detail form. 
  * @param panel
@@ -558,12 +717,15 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 
     //  remove all component
     panel.removeAll()
-
+    if (DEBUG_SCRIPT)
+    	console.log(name_action);
     //add new component
     if (name_action == 'watermark'){
     	panel = _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
     }else if (name_action == 'crop'){
     	panel = _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
+    }else if (name_action == 'extract video thumbnail'){
+    	panel = _extract_video_thubnail_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
     }else{
     	array_field = _global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action );
     	panel.add(array_field);
@@ -610,13 +772,17 @@ function _pull_data(sm,media_type){
 		var newParams = [];
 		var appParams = {};
 		var r = sm.getSelected();
-		var params = r.get('parameters');
-
-
+		
+		var params = r.get('parameters');		
+		
 		for (i=0;i<params.length;i++){
     		appParams = params[i];
+    		if (DEBUG_SCRIPT)
+    			console.log(appParams.name)
+
     		if (appParams.name != 'ratio'){
 	    		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
+	    		newParams.push(appParams);
     		}else{
     			appParams = {};
     			appParams['name']  = 'ratio';
@@ -627,9 +793,9 @@ function _pull_data(sm,media_type){
     				var h = Ext.getCmp('crop_height_custom').getValue();
     				appParams['value'] = w+':'+h;
     			}
+    			newParams.push(appParams);
     		}
-    		newParams.push(appParams);
-	    }
+    	}
 		if (DEBUG_SCRIPT){
 			console.log("_pull_data");
 			console.log(newParams);
@@ -1057,7 +1223,8 @@ function load_data_script(data){
 		name_tab = 'tab_' + type;
 		my_win.get('media_type_tabs').get(name_tab).get('my_panel_source_'+type).get('my_combo_source_'+type).setValue(data['actions_media_type'][type]['source_variant']);
 		//load actions
-		console.log('load action');
+		if (DEBUG_SCRIPT)
+			console.log('load action');
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
         	var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
