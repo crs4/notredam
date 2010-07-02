@@ -349,7 +349,10 @@ def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp
         logger.debug('feat_extract_orig %s'%feat_extract_orig)
         
         if feat_extract_orig.count(): 
-            source_machine = feat_extract_orig[0].machine_set.all()[0]  
+            try:
+                source_machine = feat_extract_orig[0].machine_set.all()[0]
+            except:
+                source_machine = None  
         else:
             source_machine = None
         

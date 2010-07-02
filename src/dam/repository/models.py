@@ -411,6 +411,7 @@ class Component(AbstractComponent):
         except Exception,  ex:
             logger.error(ex)
             logger.debug('ex')
+            logger.debug(self.variant.name)
             self.metadata.filter(schema__rights_target=True).delete()
 
             original_comp = self.source

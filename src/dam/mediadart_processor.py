@@ -227,7 +227,7 @@ def adapt_resource(component, machine):
 #        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
     elif item.type.name == 'video':
-       
+        logger.debug('---------vp %s'%vp)
         
         logger.debug('component.media_type.name %s'%component.media_type.name)
         if component.media_type.name == "image":
@@ -235,7 +235,8 @@ def adapt_resource(component, machine):
             dim_x = vp['max_width']
             dim_y = vp['max_height']
             
-
+            transcoding_format = vp.get('codec', orig.format) #change to original format
+            dest_res_id = dest_res_id + '.' + transcoding_format
             d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
 
         else:
@@ -495,13 +496,15 @@ def save_component_features(component, features, extractor):
     ctype = ContentType.objects.get_for_model(c)
 
     try:
+        logger.debug('c._id %s'%c._id)
         mime_type = mimetypes.guess_type(c._id)[0]
         ext = mime_type.split('/')[1]
         c.format = ext
         c.save()
         metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
         MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=c, value=mime_type)
-    except:
+    except Exception, ex:
+        logger.exception(ex)
         pass
 
     if extractor == 'xmp_extractor':
