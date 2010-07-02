@@ -146,19 +146,29 @@ def adapt_resource(component, machine):
         orig_height = component.source.height
         for action in actions:
             if action['type'] == 'resize':
+                
                 action['parameters']['max_width'] = min(action['parameters']['max_width'],  orig_width)
                 action['parameters']['max_height'] = min(action['parameters']['max_height'],  orig_height)
                 argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
-                
+                logger.debug('argv %s'%argv)
                 aspect_ratio = orig_height/orig_width 
                 
-                if orig_width > orig_height:
-                    orig_width = action['parameters']['max_width']
-                    orig_height = aspect_ratio*orig_width 
-                else:
-                    orig_height = action['parameters']['max_height']
-                    orig_width = orig_height/aspect_ratio 
-                    
+                alfa = min(action['parameters']['max_width']/orig_width, action['parameters']['max_height']/orig_height)
+                orig_width = alfa*orig_width
+                orig_height = alfa*orig_height
+                
+                        
+                
+#                if orig_width > orig_height:
+#                    
+#                    
+#                    orig_width = action['parameters']['max_width']
+#                    orig_height = aspect_ratio*orig_width 
+#                else:
+#                    
+#                    orig_height = action['parameters']['max_height']
+#                    orig_width = orig_height/aspect_ratio 
+#                    logger.debug('elsesssssss orig_height %s'%orig_height)
                 
             elif action['type'] == 'crop':
 #                action['parameters']['ratio'] = '2:3'
@@ -174,6 +184,7 @@ def adapt_resource(component, machine):
    
                         
                     logger.debug('final_height %s'%final_height)
+                    logger.debug('final_width %s'%final_width)
                     logger.debug('orig_height %s'%orig_height)
                     logger.debug('orig_width %s'%orig_width)
                     
@@ -194,8 +205,14 @@ def adapt_resource(component, machine):
                 
                 orig_width = lr_x -ul_x 
                 orig_height = lr_y - ul_y
+                
+                logger.debug('orig_height %s'%orig_height)
+                logger.debug('orig_width %s'%orig_width)
+                
+                
                 argv +=  ['-crop', '%dx%d+%d+%d' % (orig_width, orig_height,  ul_x, ul_y)]
-            
+                
+                logger.debug('argv %s'%argv)
             elif action['type'] == 'watermark':
                 pos_x = int(int(action['parameters']['pos_x_percent'])*orig_width/100)
                 pos_y = int(int(action['parameters']['pos_y_percent'])*orig_height/100)
@@ -210,7 +227,7 @@ def adapt_resource(component, machine):
 #        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
     elif item.type.name == 'video':
-       
+        logger.debug('---------vp %s'%vp)
         
         logger.debug('component.media_type.name %s'%component.media_type.name)
         if component.media_type.name == "image":
@@ -218,7 +235,8 @@ def adapt_resource(component, machine):
             dim_x = vp['max_width']
             dim_y = vp['max_height']
             
-
+            transcoding_format = vp.get('codec', orig.format) #change to original format
+            dest_res_id = dest_res_id + '.' + transcoding_format
             d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
 
         else:
@@ -478,13 +496,15 @@ def save_component_features(component, features, extractor):
     ctype = ContentType.objects.get_for_model(c)
 
     try:
+        logger.debug('c._id %s'%c._id)
         mime_type = mimetypes.guess_type(c._id)[0]
         ext = mime_type.split('/')[1]
         c.format = ext
         c.save()
         metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
         MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=c, value=mime_type)
-    except:
+    except Exception, ex:
+        logger.exception(ex)
         pass
 
     if extractor == 'xmp_extractor':

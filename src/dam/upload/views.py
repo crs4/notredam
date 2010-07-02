@@ -344,17 +344,23 @@ def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp
                 embed_state.next_state = end
             embed_state.save()
 
-                
-        feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
-        logger.debug('feat_extract_orig %s'%feat_extract_orig)
         
-        if feat_extract_orig.count(): 
-            source_machine = feat_extract_orig[0].machine_set.all()[0]  
+        if source.metadata.all().count() == 0: #features not extracted yet        
+            feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
+            logger.debug('feat_extract_orig %s'%feat_extract_orig)
+            
+            if feat_extract_orig.count(): 
+                try:
+                    source_machine = feat_extract_orig[0].machine_set.all()[0]
+                except:
+                    source_machine = None  
+            else:
+                source_machine = None
         else:
             source_machine = None
-        
+            
 #        source_machine = None
-        logger.debug('source_machine %s'%source_machine)
+        logger.debug('******************************************************source_machine %s'%source_machine)
                
 #        end = MachineState.objects.create(name='finished')
         logger.debug('----------------- VARIANT %s'%variant)

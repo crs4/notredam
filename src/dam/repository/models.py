@@ -98,8 +98,8 @@ class Item(AbstractItem):
                 comp.workspace.add(*self.workspaces.all())
             else:
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
-            comp.metadata.all().delete()
-            comp.save()
+#                comp.metadata.all().delete()
+            
             
         except Component.DoesNotExist:
             logger.debug('variant does not exist yet')
@@ -399,6 +399,7 @@ class Component(AbstractComponent):
                 license = RightsValue.objects.get(value__iexact = license_value)
 
             self.comp_rights = []
+            logger.debug('license %s'%license)
             self.metadata.filter(schema__rights_target=True).delete()
             license.components.add(self)
             item_list = [self.item]
@@ -406,11 +407,13 @@ class Component(AbstractComponent):
             xmp_values = {}
             for m in license.xmp_values.all():
                 xmp_values[m.xmp_property.id] = m.value
+            logger.debug('xmp_values %s'%xmp_values)
             MetadataValue.objects.save_metadata_value(item_list, xmp_values, self.variant.name, workspace)
 
         except Exception,  ex:
             logger.error(ex)
             logger.debug('ex')
+            logger.debug(self.variant.name)
             self.metadata.filter(schema__rights_target=True).delete()
 
             original_comp = self.source
@@ -418,7 +421,8 @@ class Component(AbstractComponent):
             self.comp_rights = []
             self.comp_rights.add(*original_comp.comp_rights.all())
             for m in original_comp.metadata.filter(schema__rights_target=True):
-                MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = self,  value = m.value, language=m.language)
+                mv = MetadataValue.objects.create(schema = m.schema, xpath=m.xpath, content_object = self,  value = m.value, language=m.language)
+                logger.debug('mv %s'%mv)
     
     def set_parameters(self, params):
         """
