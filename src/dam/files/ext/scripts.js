@@ -1453,10 +1453,40 @@ function manage_script(){
 	manage_script_win.show(); 
 }
 
+function _save_association()
+{
+	var i;
+	var scripts_id = [];
+	event = Ext.getCmp('id_combo_events').getValue();
+	scripts = Ext.getCmp('grid_panel_scripts').getSelectionModel().getSelections();
+	if (event){
+		for(i=0;i<scripts.length;i++){
+			scripts_id.push(scripts[i].data.id);
+		}
+		Ext.Ajax.request({
+	        url: '/set_script_associations/',
+	        params:{ 
+				event_id  : event,
+				script_id : scripts_id
+			},
+	        success: function(response) {
+	            if (Ext.decode(response.responseText)['success']){
+	    			Ext.Msg.show({title:'Success', msg: 'Association saved.', width: 300,
+	    				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
+	            }else
+	    			Ext.Msg.show({title:'Warning', msg: 'Association NOT saved.', width: 300,
+	    				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
+	        }
+	    });
+	}else
+		Ext.Msg.show({title:'Warning', msg: 'Selected one event.', width: 300,
+			   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
+}
+
 function manage_events(){
 
 	var sm = new Ext.grid.CheckboxSelectionModel();
-
+	var flag = false;
 	Ext.QuickTips.init();
 
 	//show choose window
@@ -1518,7 +1548,7 @@ function manage_events(){
 						                        		grid_scripts.getSelectionModel().clearSelections();
 						                    }
 						                });
-				            		}
+				            		} 
 				            	}
 							})
 				       ]
@@ -1553,33 +1583,7 @@ function manage_events(){
 		            text:'Save change',
 		            tooltip:'Save change for this action',
 		            handler: function(){
-		        		var my_win = this.findParentByType('window');
-		        		var i;
-		        		var scripts_id = [];
-		        		event = Ext.getCmp('id_combo_events').getValue();
-		        		scripts = Ext.getCmp('grid_panel_scripts').getSelectionModel().getSelections();
-		        		if (event){
-			        		for(i=0;i<scripts.length;i++){
-			        			scripts_id.push(scripts[i].data.id);
-			        		}
-			        		Ext.Ajax.request({
-			                    url: '/set_script_associations/',
-			                    params:{ 
-			        				event_id  : event,
-			        				script_id : scripts_id
-			        			},
-			                    success: function(response) {
-			                        if (Ext.decode(response.responseText)['success']){
-					        			Ext.Msg.show({title:'Success', msg: 'Association saved.', width: 300,
-					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
-			                        }else
-					        			Ext.Msg.show({title:'Warning', msg: 'Association NOT saved.', width: 300,
-					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
-			                    }
-			                });
-		        		}else
-		        			Ext.Msg.show({title:'Warning', msg: 'Selected one event.', width: 300,
-		        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
+		        		_save_association();
 		        	}
 		        },'-']
 		    })
