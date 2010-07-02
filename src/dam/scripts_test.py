@@ -104,12 +104,12 @@ pipeline_preview = {
                 }
                         
                 },
-                {
-                     'type': 'setrights',
-                     'parameters':{
-                        'rights': 'creative commons by'
-                     }
-                 },
+#                {
+#                     'type': 'setrights',
+#                     'parameters':{
+#                        'rights': 'creative commons by'
+#                     }
+#                 },
                 {
                 'type': 'save',
                 'parameters':{
