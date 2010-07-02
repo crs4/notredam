@@ -98,8 +98,8 @@ class Item(AbstractItem):
                 comp.workspace.add(*self.workspaces.all())
             else:
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
-            comp.metadata.all().delete()
-            comp.save()
+                comp.metadata.all().delete()
+            
             
         except Component.DoesNotExist:
             logger.debug('variant does not exist yet')
