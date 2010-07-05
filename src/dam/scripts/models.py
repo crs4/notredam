@@ -456,7 +456,9 @@ class VideoEncode(BaseAction):
     media_type_supported = ['video']
     @staticmethod
     def required_parameters(workspace):
-        return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'framerate', 'type': 'number'}]
+        return [{ 'name': 'bitrate','type': 'number', 
+                 'values': [64,128, 192, 256, 590, 640 ,1024 , 1536, 2048, 4096, 8192, 12288, 20040],
+                 },  { 'name': 'framerate', 'type': 'number'}]
     
     def __init__(self, media_type, source_variant, workspace, script, bitrate, framerate):
         params = {'bitrate':bitrate,  'framerate': framerate}
@@ -480,7 +482,7 @@ class AudioEncode(BaseAction):
     
     @staticmethod
     def required_parameters(workspace):
-        return [{ 'name': 'bitrate','type': 'number'},  { 'name': 'rate', 'type': 'number'}]
+        return [{ 'name': 'bitrate','type': 'number', 'values': [64, 80, 96, 112,128, 160, 192, 224, 256,590]},  { 'name': 'rate', 'type': 'number'}]
     def __init__(self, media_type, source_variant, workspace, script, rate, bitrate):
         super(AudioEncode, self).__init__(media_type, source_variant, workspace, script)
         
