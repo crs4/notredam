@@ -144,6 +144,8 @@ def adapt_resource(component, machine):
         logger.debug('actions %s'%actions)
         orig_width = component.source.width
         orig_height = component.source.height
+        logger.debug('orig_width %s'%orig_width)
+        logger.debug('orig_height %s'%orig_height)
         for action in actions:
             if action['type'] == 'resize':
                 
