@@ -496,7 +496,7 @@ def save_component_features(component, features, extractor):
     ctype = ContentType.objects.get_for_model(c)
 
     try:
-        logger.debug('c._id %s'%c._id)
+        logger.debug('*****************************c._id %s'%c._id)
         mime_type = mimetypes.guess_type(c._id)[0]
         ext = mime_type.split('/')[1]
         c.format = ext
