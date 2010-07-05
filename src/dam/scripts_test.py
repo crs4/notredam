@@ -105,7 +105,7 @@ pipeline_preview = {
                         
                 },
 #                {
-#                     'type': 'setrights',
+#                     'type': 'set rights',
 #                     'parameters':{
 #                        'rights': 'creative commons by'
 #                     }
@@ -127,7 +127,7 @@ pipeline_preview = {
         'audio':{
                  'source_variant': 'original',
                  'actions':[{
-                   'type': 'audioencode',
+                   'type': 'audio encode',
                    'parameters':{                        
                         'bitrate':128,
                         'rate':44100
@@ -157,7 +157,7 @@ pipeline_preview = {
                     }
                 },
                 {
-                   'type': 'videoencode',
+                   'type': 'video encode',
                    'parameters':{
                         'framerate':'25/2',
                         'bitrate':640
@@ -165,7 +165,7 @@ pipeline_preview = {
                 
                 },                
                 {
-                   'type': 'audioencode',
+                   'type': 'audio encode',
                    'parameters':{                        
                         'bitrate':128,
                         'rate':44100

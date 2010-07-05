@@ -1388,7 +1388,9 @@ class ScriptsTest(MyTestCase):
         params = self.get_final_parameters({ 'workspace_id':ws.pk,  'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
                 
         response = self.client.post('/api/script/new/', params,  )  
-        resp_dict = json.loads(response.content)        
+        
+        resp_dict = json.loads(response.content)     
+        print resp_dict   
         self.assertTrue(resp_dict.has_key('id'))
         self.assertTrue(resp_dict['name'] == name)
         self.assertTrue(resp_dict['description'] == description)
