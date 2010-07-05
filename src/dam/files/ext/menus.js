@@ -764,11 +764,8 @@ Ext.onReady(function(){
 	            		    		
 	            		    		var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
 	            		    		var selNodes= view.getSelectedNodes();
-	            		    		console.log(my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data.id);
 	            		    		if(selNodes && selNodes.length > 0){ 
 	                                    var selected_ids = get_selected_items();
-	                                    console.log('selected_ids');
-	                                    console.log(selected_ids);
 	            						Ext.Ajax.request({
 	            					        url: '/run_script/',
 	            			                params: {
