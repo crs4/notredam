@@ -312,6 +312,7 @@ class SaveAction(BaseAction):
         same_resource = self._same_adapted_resource(component)
         if same_resource:
             component._id = same_resource._id
+            component.format = same_resource.format
             component.save()
             component.copy_metadata(same_resource) 
         else:
