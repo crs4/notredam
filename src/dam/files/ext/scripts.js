@@ -554,6 +554,17 @@ function _crop_generate_details_forms(panel, grid, selected, actionsStore, media
 	
 }
 
+/**
+ * 
+ * @param panel
+ * @param grid
+ * @param selected
+ * @param actionsStore
+ * @param media_type
+ * @param parameters
+ * @param name_action
+ * @return
+ */
 function _extract_video_thubnail_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action ){
     if (DEBUG_SCRIPT){
 		console.log('_extract_video_thubnail_generate_details_forms');
@@ -805,6 +816,12 @@ function _pull_data(sm,media_type){
 	}
 }
 
+/**
+ * 
+ * @param obj
+ * @param media_type
+ * @return
+ */
 function _get_layout_tab(obj, media_type){
 	var cols = obj.get_cols();
 	var actionStore = obj.get_actionStore(media_type);
@@ -961,6 +978,10 @@ function _get_layout_tab(obj, media_type){
     return [comboSource, my_action, button_panel, action_list, detailAction];
 }
 
+/**
+ * 
+ * @return
+ */
 function _get_tabs(){
 	
 	var objImage =  new scripts_store();
@@ -1010,6 +1031,12 @@ function _get_tabs(){
 	return [tabs]
 }
 
+/**
+ * 
+ * @param name
+ * @param description
+ * @return
+ */
 function _get_scripts_fields(name, description){
 	
 	var field_name = new Ext.form.TextField({
@@ -1036,6 +1063,13 @@ function _get_scripts_fields(name, description){
     
 }
 
+/**
+ * 
+ * @param name
+ * @param description
+ * @param my_win
+ * @return
+ */
 function save_data_script(name, description, my_win){
 	//Post:
 	//name=name
@@ -1077,12 +1111,27 @@ function save_data_script(name, description, my_win){
 	
 }
 
+/**
+ * 
+ * @return
+ */
 function reload_main_data_view(){
 	var tab = Ext.getCmp('media_tabs').getActiveTab();
     var view = tab.getComponent(0);
     var store = view.getStore();
     store.reload();
 }
+
+/**
+ * 
+ * @param create
+ * @param name
+ * @param description
+ * @param id_script
+ * @param is_global
+ * @param run
+ * @return
+ */
 function new_script(create, name, description, id_script, is_global, run){
 	//create true new_script
 	//create false edit_script
@@ -1186,6 +1235,12 @@ function new_script(create, name, description, id_script, is_global, run){
     edit_script_win.show();     
 }
 
+/**
+ * 
+ * @param data
+ * @param type
+ * @return
+ */
 function newRecordLoad(data,type){
 	var cloned_parameters = [];
 	var tmp = {};
@@ -1214,6 +1269,11 @@ function newRecordLoad(data,type){
 
 }
 
+/**
+ * 
+ * @param data
+ * @return
+ */
 function load_data_script(data){
 
 	var i;//count
@@ -1233,7 +1293,18 @@ function load_data_script(data){
 	}
 }
 
-//Show windows form scripts data ()
+/**
+ * Show windows form scripts data
+ * @param id_script
+ * @param name
+ * @param description
+ * @param flag
+ * @param pipeline
+ * @param main_win
+ * @param run
+ * @return
+ */
+
 function script_detail_form(id_script, name, description, flag, pipeline, main_win, run){
 	var title;
 	
@@ -1345,6 +1416,10 @@ function script_detail_form(id_script, name, description, flag, pipeline, main_w
 	
 }
 
+/**
+ * 
+ * @return
+ */
 function manage_script(){
 	//show choose window
 	var manage_script_win = new Ext.Window({
@@ -1453,6 +1528,10 @@ function manage_script(){
 	manage_script_win.show(); 
 }
 
+/**
+ * 
+ * @return
+ */
 function _save_association()
 {
 	var i;
@@ -1483,6 +1562,10 @@ function _save_association()
 			   buttons: Ext.Msg.OK, icon: Ext.MessageBox.WARNING });
 }
 
+/**
+ * 
+ * @return
+ */
 function manage_events(){
 
 	var sm = new Ext.grid.CheckboxSelectionModel();
