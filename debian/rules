@@ -64,9 +64,6 @@ install: build
 	mkdir $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ -p
 	cp -R $(CURDIR)/src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
 
-	mkdir -p $(CURDIR)/debian/notredam/var/spool/notredam 
-	chgrp -R admin $(CURDIR)/debian/notredam/var/spool/notredam
-	chmod -R g+w $(CURDIR)/debian/notredam/var/spool/notredam
 	mkdir -p $(CURDIR)/debian/notredam/etc/mediadart
 	cp $(CURDIR)/src/dam/001-notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
  
