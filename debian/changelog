@@ -1,4 +1,10 @@
-notredam (1.0.0-rc1) stable; urgency=low
+notredam (1.0.0-rc2) stable; urgency=low
+
+  *  Version Bump
+
+ -- Mauro Del Rio <mauro@crs4.it>  Tue, 06 Jul 2010 15:42:37 +0100
+
+nnotredam (1.0.0-rc1) stable; urgency=low
 
   *  Version Bump
 
