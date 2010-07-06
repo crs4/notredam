@@ -67,7 +67,8 @@ install: build
 	mkdir -p $(CURDIR)/debian/notredam/var/spool/notredam 
 	chgrp -R admin $(CURDIR)/debian/notredam/var/spool/notredam
 	chmod -R g+w $(CURDIR)/debian/notredam/var/spool/notredam
-	cp $(CURDIR)/src/dam/1_notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
+	mkdir -p $(CURDIR)/debian/notredam/etc/mediadart
+	cp $(CURDIR)/src/dam/001-notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
  
 
 # Build architecture-independent files here.
