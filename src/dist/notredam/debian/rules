@@ -65,10 +65,12 @@ install: build
 
 	mkdir $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ -p
 	cp -R $(CURDIR)/../../../src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
+
+	mkdir -p $(CURDIR)/debian/notredam/var/spool/notredam 
+	chgroup -r admin $(CURDIR)/debian/notredam/var/spool/notredam
+	chmod -r g+w $(CURDIR)/debian/notredam/var/spool/notredam
+	cp $(CURDIR)/../../../src/dam/1_notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
  
-
-
-
 
 # Build architecture-independent files here.
 binary-indep: build install
