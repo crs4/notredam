@@ -17,7 +17,7 @@
 */
 
 
-DEBUG_SCRIPT = false;
+DEBUG_SCRIPT = true;
 /**
   * Helper class for organizing the buttons
   */
@@ -207,6 +207,7 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
         	}
         }else j = i;
         
+        
     	if (recApp['data']['parameters'][j]['values']){
     		var val;
     		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
@@ -247,7 +248,7 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
 	          msgTarget   : 'side',                            
 	          width       : 140                            
 	      	}));
-    	}else if (parameters[i].type == 'boolean'){
+    	}else if (parameters[i].type == 'boolean' && media_type == 'image'){
     		item_array.push(new Ext.form.Checkbox({                            
   	          fieldLabel  : parameters[i].name.replace("_"," "),
   	          checked     : parameters[i].value,
@@ -607,6 +608,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
     			console.log(recApp['data']['parameters']);
     		
     		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+    		console.log(recAppValues);
     		if (parameters[i]['value']) 
     			val = parameters[i]['value'];
     		else 
