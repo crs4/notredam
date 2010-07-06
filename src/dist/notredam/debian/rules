@@ -63,6 +63,8 @@ install: build
 	mv $(CURDIR)/debian/notredam/opt/notredam/dam/notredam.py $(CURDIR)/debian/notredam/opt/notredam/
 	chmod 777 $(CURDIR)/debian/notredam/opt/notredam/notredam.py
 
+	mkdir $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ -p
+	cp -R $(CURDIR)/../../../src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
  
 
 
