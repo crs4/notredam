@@ -42,8 +42,6 @@ clean:
 	rm -rf $(CURDIR)/debian/notredam
 
 
-	dh_clean  --exclude ./dam/batch_processor.py.orig --exclude ./dam/logger.py.orig --exclude ./dam/files/ext/resources/css/ext-all.css.orig
-
 install: build
 	dh_testdir
 	dh_testroot
@@ -55,7 +53,7 @@ install: build
 
 	mkdir -p $(CURDIR)/debian/notredam/opt/notredam/dam/
 	
-	cp -R $(CURDIR)/../../dam/* $(CURDIR)/debian/notredam/opt/notredam/dam/
+	cp -R $(CURDIR)/src/dam/* $(CURDIR)/debian/notredam/opt/notredam/dam/
 
 	cp $(CURDIR)/debian/notredam/opt/notredam/dam/settings.py.default $(CURDIR)/debian/notredam/opt/notredam/dam/settings.py
 	chmod 777 $(CURDIR)/debian/notredam/opt/notredam/dam/settings.py
@@ -64,12 +62,12 @@ install: build
 	chmod 777 $(CURDIR)/debian/notredam/opt/notredam/notredam.py
 
 	mkdir $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ -p
-	cp -R $(CURDIR)/../../../src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
+	cp -R $(CURDIR)/src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
 
 	mkdir -p $(CURDIR)/debian/notredam/var/spool/notredam 
-	chgroup -r admin $(CURDIR)/debian/notredam/var/spool/notredam
-	chmod -r g+w $(CURDIR)/debian/notredam/var/spool/notredam
-	cp $(CURDIR)/../../../src/dam/1_notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
+	chgrp -R admin $(CURDIR)/debian/notredam/var/spool/notredam
+	chmod -R g+w $(CURDIR)/debian/notredam/var/spool/notredam
+	cp $(CURDIR)/src/dam/1_notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
  
 
 # Build architecture-independent files here.
