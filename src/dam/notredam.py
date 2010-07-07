@@ -69,7 +69,7 @@ def run(runserver,  address):
             _run(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'runserver', '--noreload'],  'server', stdout )        
             
         print 'running server'
-    _run(['/usr/bin/python',  '/opt/notredam/dam/batch_processor.py'],  'batch_processor')  
+    _run(['/usr/bin/python',  '/opt/notredam/dam/mediadart_processor.py'],  'mediadart_processor')  
     print 'running batch processor'
     
     
@@ -94,7 +94,7 @@ def stop():
     server_stopped = kill_proc('server')
     if server_stopped:
         print 'server stopped'
-    bp_stopped = kill_proc('batch_processor')
+    bp_stopped = kill_proc('mediadart_processor')
     if bp_stopped:
         print 'batch processor stopped'
     
