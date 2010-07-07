@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 #CONFIGURATION GOES HERE
 ERROR_STR= """Error removing %(path)s, %(error)s """
-DEBUG = False
+DEBUG = True
 
 def custom_listfiles(path):
     """
@@ -509,6 +509,9 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
     """
     for itemdir in custom_listdirs(current_workspace):
         current_item = current_workspace + '/' +  itemdir
+        if DEBUG:
+            print 'current_item'
+            print current_item
         if os.path.isdir(current_item) and itemdir != 'watermarking':#exclude folder watermarking
             paramitem = custom_open_file(current_item, 'item.json')
             paramitem['workspace_id'] = ws_origTows_new[paramworkspace['id']]
@@ -686,7 +689,7 @@ if __name__ == '__main__':
             #ws_origTows_new {'id_ws_orig': id_ws_new}
             ws_origTows_new = {}
             add_workspaces(i,e,users,path_extract,ws_origTows_new)
-            
+ 
             #corrispettivo id_item_old con id_item_new
             id_orig_itemToid_new_item = {}
             
