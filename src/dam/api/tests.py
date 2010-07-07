@@ -453,6 +453,18 @@ class WSTestCase(MyTestCase):
         self.assertTrue(len(resp_dict['smartfolders']) == 1)
         
         
+    def test_get_renditions(self):
+        ws_id = 1
+        params = self.get_final_parameters({})
+        response = self.client.get('/api/workspace/%s/get_renditions/'%ws_id, params, )        
+
+        ws = DAMWorkspace.objects.get(pk = ws_id)
+        resp_dict = json.loads(response.content)        
+        print resp_dict 
+        self.assertTrue(resp_dict.has_key('renditions'))
+        
+        
+        
 class ItemTest(MyTestCase):  
     fixtures = ['api/fixtures/test_data.json', 
                 'treeview/fixtures/test_data.json', 
@@ -710,7 +722,7 @@ class ItemTest(MyTestCase):
         item.workspaces.add(workspace)
         
         file = open('files/images/logo_blue.jpg')
-        params = self.get_final_parameters({ 'workspace_id': 1,  'variant_id':1})                
+        params = self.get_final_parameters({ 'workspace_id': 1,  'rendition_id':1})                
         params['Filedata'] = file
         
         response = self.client.post('/api/item/%s/upload/'%item.pk, params, )            
@@ -1192,7 +1204,7 @@ class VariantsTest(MyTestCase):
         workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({'workspace_id': workspace.pk})
     
-        response = self.client.get('/api/variant/%s/get/'%variant.pk, params)                
+        response = self.client.get('/api/rendition/%s/get/'%variant.pk, params)                
         
         resp_dict = json.loads(response.content)     
         
@@ -1214,7 +1226,7 @@ class VariantsTest(MyTestCase):
         params = self.get_final_parameters(params)
         
         
-        response = self.client.post('/api/variant/%s/edit/'%variant.pk,  params)                
+        response = self.client.post('/api/rendition/%s/edit/'%variant.pk,  params)                
 
         variant = Variant.objects.get(pk = variant.pk)
         self.assertTrue(variant.name == params['name'])
@@ -1231,7 +1243,7 @@ class VariantsTest(MyTestCase):
         params = self.get_final_parameters(params)
         
         
-        response = self.client.post('/api/variant/new/',  params)                
+        response = self.client.post('/api/rendition/new/',  params)                
         resp_dict = json.loads(response.content)     
                 
         self.assertTrue(Variant.objects.filter(pk = resp_dict['id']).count() == 1)
@@ -1242,7 +1254,7 @@ class VariantsTest(MyTestCase):
         workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({})
         variant = Variant.objects.create(name = 'test', auto_generated = True, workspace = workspace)
-        response = self.client.get('/api/variant/%s/delete/'%variant.pk, params)
+        response = self.client.get('/api/rendition/%s/delete/'%variant.pk, params)
         self.assertTrue(response.content == '')
         self.assertTrue(Variant.objects.filter(pk = variant.pk).count() == 0)
     

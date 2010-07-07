@@ -156,7 +156,7 @@ def _save_uploaded_item(request, upload_file, user, workspace):
 #    EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
     
 def _save_uploaded_variant(request, upload_file, user, workspace):
-    variant_id = request.POST['variant_id']
+    variant_id = request.POST['rendition_id']
     item_id = request.POST['item_id']
 
     variant =  Variant.objects.get(pk = variant_id)
