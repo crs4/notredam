@@ -67,6 +67,15 @@ class ScriptDefault(models.Model):
     description = models.CharField(max_length= 200)
     pipeline = models.TextField()
 
+def get_all_actions():
+    classes = []
+    classes.extend(BaseAction.__subclasses__())
+    classes.extend(SaveAction.__subclasses__())
+    classes.append(SendByMail)
+    
+    return classes
+    
+
 def _get_orig():
     return Variant.objects.get(name = 'original')
 
@@ -92,9 +101,7 @@ class Script(models.Model):
     def get_actions(self, for_json = False):
         actions_available = {}       
        
-        classes = []
-        classes.extend(BaseAction.__subclasses__())
-        classes.extend(SaveAction.__subclasses__())
+        classes = get_all_actions()
         
         for subclass in classes:
             if subclass != SaveAction:
