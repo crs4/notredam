@@ -514,13 +514,13 @@ class WorkspaceResource(ModResource):
         """
         
         vas = Variant.objects.filter(Q(workspace__pk = workspace_id) |Q (workspace__isnull = True))
-        resp = {'variants':[]}
+        resp = {'renditions':[]}
         workspace = Workspace.objects.get(pk = workspace_id)
         
         
         for va in vas:           
             tmp = VariantsResource().get_info(va,  workspace)
-            resp['variants'].append( tmp)
+            resp['renditions'].append( tmp)
                 
         json_resp = json.dumps(resp)
         logger.debug(json_resp)
@@ -689,7 +689,7 @@ class WorkspaceResource(ModResource):
         if media_type:
             items = items.filter(type__name = media_type)
         resp = {'items': []}
-        variants = request.POST.getlist('variants')
+        variants = request.POST.getlist('renditions')
         logger.debug('variants %s'%variants)
                 
         state = request.POST.get('state')
@@ -2467,44 +2467,44 @@ class VariantsResource(ModResource):
         
 
 
-    @exception_handler
-    @api_key_required
-    def upload_watermarking(self,  request):
-        """
-        Allows to get a valid watermarking uri. Once you get it, you first have to upload the resource, then you can edit or create a variant passing the watermarking uri and the its position.
-        Note that watermarking is available only for image a video resources (coming soon for doc ones)  
-        - method: POST
-        - parameters: 
-            - file_name: note that it must contain a valid extension, for example watermark.jpg
-            - fsize: dimension in bytes of the resource that will be used for watermarking
-        - returns: json formatted information for uploading a resource as watermarking
-         {"job_id": "e2f076bd89eac4f4397d5a89e0c32ef87f212158", "unique_key": "5bf3b0667a210bcafa4b38fa7f5453d75d0ae5ad", "ip": "127.0.0.1", "port": 10000, "chunk_size": 524288, "chunks": 1, "res_id": "c8230f4147cd45a55032405b5401a962ae42733c", "id": "d7faee99860c35f77e7c502bf47026c47d0cee10"}
-
-        """
-        file_name = request.POST.get('file_name')
-        fsize = request.POST.get('fsize')
-                
-        if not fsize:
-            raise MissingArgs({'args': ['no fsize passed']}) 
-        
-        if not file_name :
-            raise MissingArgs({'args': ['no file_name passed']}) 
-                
-        try:
-            ext = file_name.split('.')[1]
-        except:
-            raise ArgsValidationError({'args': ['invalid file_name, no valid extension found']})
-        
-#         res_id = _new_md_id()
-#         resp,  job_id = _get_upload_url(res_id,  fsize, ext)
-        
-        #TODO: replace _get_upload_url 
-        resp = []
-        
-        resp = simplejson.dumps(resp)
-        return HttpResponse(resp)
-        
-        
+#    @exception_handler
+#    @api_key_required
+#    def upload_watermarking(self,  request):
+#        """
+#        Allows to get a valid watermarking uri. Once you get it, you first have to upload the resource, then you can edit or create a variant passing the watermarking uri and the its position.
+#        Note that watermarking is available only for image a video resources (coming soon for doc ones)  
+#        - method: POST
+#        - parameters: 
+#            - file_name: note that it must contain a valid extension, for example watermark.jpg
+#            - fsize: dimension in bytes of the resource that will be used for watermarking
+#        - returns: json formatted information for uploading a resource as watermarking
+#         {"job_id": "e2f076bd89eac4f4397d5a89e0c32ef87f212158", "unique_key": "5bf3b0667a210bcafa4b38fa7f5453d75d0ae5ad", "ip": "127.0.0.1", "port": 10000, "chunk_size": 524288, "chunks": 1, "res_id": "c8230f4147cd45a55032405b5401a962ae42733c", "id": "d7faee99860c35f77e7c502bf47026c47d0cee10"}
+#
+#        """
+#        file_name = request.POST.get('file_name')
+#        fsize = request.POST.get('fsize')
+#                
+#        if not fsize:
+#            raise MissingArgs({'args': ['no fsize passed']}) 
+#        
+#        if not file_name :
+#            raise MissingArgs({'args': ['no file_name passed']}) 
+#                
+#        try:
+#            ext = file_name.split('.')[1]
+#        except:
+#            raise ArgsValidationError({'args': ['invalid file_name, no valid extension found']})
+#        
+##         res_id = _new_md_id()
+##         resp,  job_id = _get_upload_url(res_id,  fsize, ext)
+#        
+#        #TODO: replace _get_upload_url 
+#        resp = []
+#        
+#        resp = simplejson.dumps(resp)
+#        return HttpResponse(resp)
+#        
+#        
 
         
 
