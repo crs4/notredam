@@ -462,12 +462,12 @@ class AsyncChunkUploader:
            return False
 
 class SimpleUploader:
-	def __init__(self, workspace_id, item_id, variant_id, filename):
-		self.item_id = item_id
-		self.variant_id = variant_id
-		self.filename = filename
-		self.workspace_id = workpace_id
+    def __init__(self, workspace_id, item_id, variant_id, filename):
+        self.item_id = item_id
+        self.variant_id = variant_id
+        self.filename = filename
+        self.workspace_id = workpace_id
 		
-	def uploadFile(self):
-		
-		
+    def uploadFile(self):
+        pass
+    

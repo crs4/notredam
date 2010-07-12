@@ -17,7 +17,7 @@
 */
 
 
-DEBUG_SCRIPT = false;
+DEBUG_SCRIPT = true;
 /**
   * Helper class for organizing the buttons
   */
@@ -195,10 +195,16 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     var i = 0;
     var recApp;
     var item_array = new Array();
+    var dict;
+	var val;
+	var recAppValues;
+	
+	if(DEBUG_SCRIPT)
+    	console.log(name_action);
+    
     for (i=0;i<parameters.length;i++){
 //    	cercare il name_action nella gridlistactions, e verificare se ha values
         recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
-
         //in sendbymail restituisce in ordine inverso.
         if (parameters[i].name != recApp['data']['parameters'][i].name){
         	var j = 0;
@@ -207,20 +213,35 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
         	}
         }else j = i;
         
+        
+        if (DEBUG_SCRIPT)
+        	console.log(recApp['data']);
     	if (recApp['data']['parameters'][j]['values']){
-    		var val;
-    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
-    		if (parameters[i]['value']) 
-    			val = parameters[i]['value'];
-    		else 
-    			val = recApp['data']['parameters'][j]['values'][media_type][0];
+    		if (recApp['data']['parameters'][j]['name'] == 'output'){
+    			dict = recApp['data']['parameters'][j]['values'][media_type];
+    			recAppValues = [];
+    			for (key in dict) {
+    				if (dict.hasOwnProperty(key)) { 
+    					console.log(dict[key]);
+    					recAppValues.push(dict[key]);
+    					val = dict[key];
+    				}
+    			}
+	    		if (parameters[i]['value']) 
+	    			val = dict[parameters[i]['value']];  			
+    		}else{
+	    		recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+	    		if (parameters[i]['value']) 
+	    			val = parameters[i]['value'];
+	    		else 
+	    			val = recApp['data']['parameters'][j]['values'][media_type][0];
+    		}
     		var width_combobox;
     		if (name_action == 'set rights'){
     			width_combobox = 300;
     		}else
     			width_combobox = 140;
     			
-    		
     		item_array.push(new Ext.form.ComboBox({                            
     			fieldLabel   : parameters[i].name.replace("_"," "),
     			store        : recAppValues,
@@ -240,14 +261,25 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     	      	}));
     	}
     	else if (parameters[i].type == 'string' && parameters[i].name != 'ratio'){
-    		item_array.push(new Ext.form.TextField({                            
-	          fieldLabel  : parameters[i].name.replace("_"," "),
-	          value       : parameters[i].value,
-	          name        : parameters[i].name,
-	          msgTarget   : 'side',                            
-	          width       : 140                            
-	      	}));
-    	}else if (parameters[i].type == 'boolean'){
+    		if (name_action != 'send by mail'){
+	    		item_array.push(new Ext.form.TextField({                            
+				    fieldLabel  : parameters[i].name.replace("_"," "),
+				    value       : parameters[i].value,
+				    name        : parameters[i].name,
+				    msgTarget   : 'side',                            
+				    width       : 140                            
+			    }));
+    		}else {
+	    		item_array.push(new Ext.form.TextField({                            
+				    fieldLabel  : parameters[i].name.replace("_"," "),
+				    value       : parameters[i].value,
+				    name        : parameters[i].name,
+				    vtype       : 'email',
+				    msgTarget   : 'side',                            
+				    width       : 140                            
+			    }));
+    		}
+    	}else if (parameters[i].type == 'boolean' && media_type == 'image'){ //for check embedded xmp
     		item_array.push(new Ext.form.Checkbox({                            
   	          fieldLabel  : parameters[i].name.replace("_"," "),
   	          checked     : parameters[i].value,
@@ -777,7 +809,9 @@ function newRecord(data, media_type){
  * @param media_type type of media ('image', 'movie'...)
  * @return
  */
-function _pull_data(sm,media_type){
+function _pull_data(sm,media_type, actionsStore){
+
+	var i,j;
 
 	if 	(sm.getSelected()){
 		var newParams = [];
@@ -789,12 +823,8 @@ function _pull_data(sm,media_type){
 		for (i=0;i<params.length;i++){
     		appParams = params[i];
     		if (DEBUG_SCRIPT)
-    			console.log(appParams.name)
-
-    		if (appParams.name != 'ratio'){
-	    		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
-	    		newParams.push(appParams);
-    		}else{
+    			console.log(appParams.name);
+    		if (appParams.name == 'ratio'){
     			appParams = {};
     			appParams['name']  = 'ratio';
     			appParams['type']  = 'string';
@@ -804,8 +834,21 @@ function _pull_data(sm,media_type){
     				var h = Ext.getCmp('crop_height_custom').getValue();
     				appParams['value'] = w+':'+h;
     			}
-    			newParams.push(appParams);
+    		}else if (appParams.name == 'output'){
+    			//recuperare dizionario
+    			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
+    			for (key in dict['data']['parameters'][2]['values'][media_type]) {
+    				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
+    					console.log(key)
+    					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
+    						appParams['value'] = key;
+    					}
+    				}
+    			}
+    		}else{
+    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
     		}
+    		newParams.push(appParams);
     	}
 		if (DEBUG_SCRIPT){
 			console.log("_pull_data");
@@ -869,7 +912,7 @@ function _get_layout_tab(obj, media_type){
 								listeners    :{
 									beforerowselect : function(sm,rowIndex, keepExisting, record){
 								        //pull data
-								        _pull_data(sm,media_type);
+								        _pull_data(sm,media_type,Ext.getCmp('action_list_'+media_type).getStore());
 							        	return true;
 									}, 
 									selectionchange : function(){
@@ -1022,7 +1065,7 @@ function _get_tabs(){
 	    listeners :{
 			beforetabchange : function(newTab, currentTab) {
 				var type = currentTab.id.slice(4);
-				_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type);
+				_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type, Ext.getCmp('action_list_'+type).getStore());
 	    	}
 	    } 	    
 	    	
@@ -1158,7 +1201,7 @@ function new_script(create, name, description, id_script, is_global, run){
             handler: function(){
     			var my_win = this.findParentByType('window');  
     			var type = my_win.get('media_type_tabs').getActiveTab().id.slice(4);
-    			_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type);
+    			_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type, Ext.getCmp('action_list_'+type).getStore());
     			if (_check_form_detail_script(my_win)){
 					var pipeline = save_data_script(name, description, my_win);
 	
@@ -1592,14 +1635,16 @@ function manage_events(){
 			            align:'middle'
 			        },
 			        frame : true,
-				    items  :[
+				    items  :[new Ext.form.Label({
+				    			text : "Select event :   "
+				    		}),
 				            new Ext.form.ComboBox({
 				        		id           : 'id_combo_events',
 				        		store        : new Ext.data.JsonStore({
 				        		    url        : '/get_events/',
 				        		    method     : 'POST',
 				        		    root       : 'events',
-				        		    fields     : ['id', 'name', 'description'],
+				        		    fields     : ['id', 'Script name', 'description'],
 				        		    autoLoad   : true
 				        		}),
 				        		tpl: '<tpl for="."><div ext:qtip="{description}" class="x-combo-list-item">{description}</div></tpl>',
