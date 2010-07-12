@@ -75,6 +75,8 @@ def get_actions(request):
     classes = []
     classes.extend(BaseAction.__subclasses__())
     classes.extend(SaveAction.__subclasses__())
+    classes.append(SendByMail)
+    logger.debug('classes %s'%classes)
     try:
         for action in classes:
                 if action == SaveAction:
