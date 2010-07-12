@@ -549,7 +549,7 @@ Ext.onReady(function(){
                             	text    : 'Manage Scripts',                                                      
 	                            handler : function(){manage_script();}                   
                             },{ 
-                            	text    : 'Manage Event',
+                            	text    : 'Manage Events',
                             	handler : function(){manage_events();}
                             }
                         ]

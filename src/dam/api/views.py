@@ -772,23 +772,26 @@ class ItemResource(ModResource):
         - returns: empty string
 
         """       
-        
-        
-        
-        request.upload_handlers = [StorageHandler()]
-        upload_file = request.FILES['Filedata']
-        
-        ws_id = request.POST.get('workspace_id')
-        if not ws_id:
-            raise MissingArgs
-        
-        ws = DAMWorkspace.objects.get(pk = ws_id)   
-        user_id = request.POST ['user_id']
-        user = User.objects.get(pk = user_id)
-        request.POST = request.POST.copy()
-        request.POST['item_id'] = item_id
-        _save_uploaded_variant(request, upload_file, user, ws)
-              
+        logger.debug(request.POST)
+        logger.debug('request.META')
+        logger.debug(request.META)
+        try:
+            request.upload_handlers = [StorageHandler()]
+            upload_file = request.FILES['Filedata']
+            
+            ws_id = request.POST.get('workspace_id')
+            if not ws_id:
+                raise MissingArgs
+            
+            ws = DAMWorkspace.objects.get(pk = ws_id)   
+            user_id = request.POST ['user_id']
+            user = User.objects.get(pk = user_id)
+            request.POST = request.POST.copy()
+            request.POST['item_id'] = item_id
+            _save_uploaded_variant(request, upload_file, user, ws)
+        except Exception,ex:
+            logger.exception(ex)
+            raise ex  
         return HttpResponse('')
         
     @exception_handler
