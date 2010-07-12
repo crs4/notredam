@@ -10,6 +10,7 @@ from scripts.views import _new_script
 from workspace.models import *
 from eventmanager.models import *
 from django.utils import simplejson
+from variants.models import Variant
 
 
 
@@ -19,7 +20,7 @@ pipeline_thumb = {
                   
     
         'image':{
-            'source_variant': 'original',
+            'source_variant': Variant.objects.get(name = 'original').pk,
             'actions': [
                 {'type': 'resize',
                 'parameters':{
@@ -34,7 +35,7 @@ pipeline_thumb = {
                 'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output': 'thumbnail',
+                    'output': Variant.objects.get(name = 'thumbnail').pk,
                     'embed_xmp': False
                 }
                         
@@ -45,14 +46,14 @@ pipeline_thumb = {
         },
 #        'audio':{},
         'video':{
-            'source_variant': 'original',
+            'source_variant': Variant.objects.get(name = 'original').pk,
             'actions':[{
                 'type': 'extractvideothumbnail',
                 'parameters':{
                 'max_height': 100,
                 'max_width': 100,
                    'output_format': 'jpeg',
-                    'output': 'thumbnail'
+                    'output': Variant.objects.get(name = 'thumbnail').pk
                 }
             },
 #            {
@@ -66,7 +67,7 @@ pipeline_thumb = {
             ]
         },
         'doc':{
-            'source_variant': 'original',
+            'source_variant': Variant.objects.get(name = 'original').pk,
             'actions': [
             {
                'type': 'resize',
@@ -80,7 +81,7 @@ pipeline_thumb = {
             'type': 'save',
             'parameters':{
                 'output_format': 'jpeg',
-                'output': 'thumbnail'
+                'output': Variant.objects.get(name = 'thumbnail').pk
             }
                         
             }]
@@ -95,7 +96,7 @@ pipeline_preview = {
                   
     
         'image':{
-            'source_variant': 'original',
+            'source_variant': Variant.objects.get(name = 'original').pk,
             'actions': [
                 {
                  'type': 'resize',
@@ -115,7 +116,7 @@ pipeline_preview = {
                 'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output': 'preview',
+                    'output': Variant.objects.get(name = 'preview').pk,
                      'embed_xmp': False
                     
 #                    'output': 'preview'
@@ -127,7 +128,7 @@ pipeline_preview = {
                  
         },
         'audio':{
-                 'source_variant': 'original',
+                 'source_variant': Variant.objects.get(name = 'original').pk,
                  'actions':[{
                    'type': 'audio encode',
                    'parameters':{                        
@@ -139,7 +140,7 @@ pipeline_preview = {
                     'type': 'save',
                     'parameters':{
                         'output_format': 'mp3',
-                        'output': 'preview'
+                        'output': Variant.objects.get(name = 'preview').pk
                     }
                             
                 }]
@@ -148,7 +149,7 @@ pipeline_preview = {
                  
                  },
         'video':{
-            'source_variant': 'original',
+            'source_variant': Variant.objects.get(name = 'original').pk,
             'actions':[
                     
                  {
@@ -198,7 +199,7 @@ pipeline_preview = {
                 'type': 'save',
                 'parameters':{
                     'output_format': 'flv',
-                    'output': 'preview'
+                    'output': Variant.objects.get(name = 'preview').pk
                 }
                             
                 }]
@@ -206,7 +207,7 @@ pipeline_preview = {
         },
         
         'doc':{
-            'source_variant': 'original',
+            'source_variant': Variant.objects.get(name = 'original').pk,
             'actions': [
             {
                'type': 'resize',
@@ -220,7 +221,7 @@ pipeline_preview = {
             'type': 'save',
             'parameters':{
                 'output_format': 'jpeg',
-                'output': 'preview'
+                'output': Variant.objects.get(name = 'preview').pk
             }
                         
             }]
@@ -238,7 +239,7 @@ pipeline_fullscreen = {
    
     
         'image':{
-            'source_variant': 'original',
+            'source_variant': Variant.objects.get(name = 'original').pk,
             'actions': [
                 {
                  'type': 'resize',
@@ -274,7 +275,7 @@ pipeline_fullscreen = {
                 'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output': 'fullscreen',
+                    'output': Variant.objects.get(name = 'fullscreen').pk,
                      'embed_xmp': False
                 }
                         
