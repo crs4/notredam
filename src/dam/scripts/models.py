@@ -140,7 +140,7 @@ class Script(models.Model):
             logger.debug('media_type %s'%media_type)
             
             if for_json:
-                actions[media_type]['source_variant'] = action.source_variant.pk
+                actions[media_type]['source_variant'] = action.source_variant.name
 #            source_variant = info['source_variant']
             for action_dict in info['actions']:
                 
