@@ -375,7 +375,10 @@ class SaveAs(SaveAction):
         params = SaveAction.required_parameters(workspace)
         tmp = {}
         for media_type in Type.objects.all():
-            tmp[media_type.name] = [{variant.pk: variant. name} for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type = media_type,  auto_generated = True)]
+            tmp_dict ={}
+            for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type = media_type,  auto_generated = True):
+                tmp_dict[variant.pk] = variant.name
+            tmp[media_type.name] = tmp_dict
        
         params.append({'name':'output',  'type': 'string',  'values':tmp})
         
