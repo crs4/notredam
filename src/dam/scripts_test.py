@@ -20,7 +20,7 @@ pipeline_thumb = {
                   
     
         'image':{
-            'source_variant': Variant.objects.get(name = 'original').pk,
+            'source_variant': 'original',
             'actions': [
                 {'type': 'resize',
                 'parameters':{
@@ -46,7 +46,7 @@ pipeline_thumb = {
         },
 #        'audio':{},
         'video':{
-            'source_variant': Variant.objects.get(name = 'original').pk,
+            'source_variant': 'original',
             'actions':[{
                 'type': 'extractvideothumbnail',
                 'parameters':{
@@ -67,7 +67,7 @@ pipeline_thumb = {
             ]
         },
         'doc':{
-            'source_variant': Variant.objects.get(name = 'original').pk,
+            'source_variant': 'original',
             'actions': [
             {
                'type': 'resize',
@@ -96,7 +96,7 @@ pipeline_preview = {
                   
     
         'image':{
-            'source_variant': Variant.objects.get(name = 'original').pk,
+            'source_variant': 'original',
             'actions': [
                 {
                  'type': 'resize',
@@ -128,7 +128,7 @@ pipeline_preview = {
                  
         },
         'audio':{
-                 'source_variant': Variant.objects.get(name = 'original').pk,
+                 'source_variant': 'original',
                  'actions':[{
                    'type': 'audio encode',
                    'parameters':{                        
@@ -149,7 +149,7 @@ pipeline_preview = {
                  
                  },
         'video':{
-            'source_variant': Variant.objects.get(name = 'original').pk,
+            'source_variant': 'original',
             'actions':[
                     
                  {
@@ -207,7 +207,7 @@ pipeline_preview = {
         },
         
         'doc':{
-            'source_variant': Variant.objects.get(name = 'original').pk,
+            'source_variant': 'original',
             'actions': [
             {
                'type': 'resize',
@@ -239,7 +239,7 @@ pipeline_fullscreen = {
    
     
         'image':{
-            'source_variant': Variant.objects.get(name = 'original').pk,
+            'source_variant': 'original',
             'actions': [
                 {
                  'type': 'resize',
