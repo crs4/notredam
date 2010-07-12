@@ -72,10 +72,7 @@ def get_actions(request):
     workspace = request.session.get('workspace')
     logger.debug('media_type %s'%media_type)  
     actions = {'actions':[]}    
-    classes = []
-    classes.extend(BaseAction.__subclasses__())
-    classes.extend(SaveAction.__subclasses__())
-    classes.append(SendByMail)
+    classes = get_all_actions()
     logger.debug('classes %s'%classes)
     try:
         for action in classes:
