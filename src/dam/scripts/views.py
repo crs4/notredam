@@ -72,9 +72,8 @@ def get_actions(request):
     workspace = request.session.get('workspace')
     logger.debug('media_type %s'%media_type)  
     actions = {'actions':[]}    
-    classes = []
-    classes.extend(BaseAction.__subclasses__())
-    classes.extend(SaveAction.__subclasses__())
+    classes = get_all_actions()
+    logger.debug('classes %s'%classes)
     try:
         for action in classes:
                 if action == SaveAction:
@@ -120,8 +119,8 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
         pipeline = simplejson.loads(pipeline)
     
         for media_type, actions in pipeline.items():
-            source_variant_pk = actions.get('source_variant',  'original')
-            source_variant = Variant.objects.get(pk = source_variant_pk, auto_generated = False )
+            source_variant_name = actions.get('source_variant',  'original')
+            source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
             ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
 
     
