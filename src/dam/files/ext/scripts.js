@@ -465,7 +465,7 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
                 				}),{
                 					xtype:'hidden', 
                 					id : 'hidden_file_name',
-                					name:'filename'
+                					name:'watermark_filename'
                 				},{
                 					xtype:'hidden', 
                 					id : 'hidden_pos_x_percent',
