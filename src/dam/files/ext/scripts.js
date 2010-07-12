@@ -308,8 +308,10 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
  * @return
  */
 
-function _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters)
+function _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action)
 {
+	console.log(parameters)
+	
 	watermarking_position = 0; // 0 mean undefined
 
 	watermarking_position_id = Ext.id();
@@ -340,9 +342,9 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
 	    listeners :{ 
 	    	load : function(){
 				i = 0;
-				while (parameters[i]['name'] != 'watermark_filename' && i<parameters.length)
+				while (parameters[i]['name'] != 'filename' && i<parameters.length)
 					i++;
-				if (parameters[i]['name'] == 'watermark_filename' && parameters[i]['value']){
+				if (parameters.length>0 && parameters[i]['name'] == 'filename' && parameters[i]['value']){
 					Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
 					Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
 				}
@@ -465,7 +467,7 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
                 				}),{
                 					xtype:'hidden', 
                 					id : 'hidden_file_name',
-                					name:'watermark_filename'
+                					name:'filename'
                 				},{
                 					xtype:'hidden', 
                 					id : 'hidden_pos_x_percent',
@@ -760,6 +762,8 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 
     var name_action = selected.data.name;
     var parameters = selected.get('parameters');
+    console.log('selected');
+    console.log(selected.get('parameters'));
     var array_field;
 
     //  remove all component
@@ -768,7 +772,7 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     	console.log(name_action);
     //add new component
     if (name_action == 'watermark'){
-    	panel = _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
+    	panel = _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action);
     }else if (name_action == 'crop'){
     	panel = _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
     }else if (name_action == 'extract video thumbnail'){
@@ -921,8 +925,10 @@ function _get_layout_tab(obj, media_type){
 									}, 
 									selectionchange : function(){
 							        	//show form details
+										console.log('selection change');
 										if (this.getSelected()){
-								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(),Ext.getCmp('action_list_'+media_type).getStore(), media_type);
+											console.log(this.getSelected());
+								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(), Ext.getCmp('action_list_'+media_type).getStore(), media_type);
 										}
 
 										
@@ -1516,6 +1522,8 @@ function manage_script(){
 		    		//Open script
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
+			    		console.log('dataaaa');
+			    		console.log(data);
 			    		my_win.close();
 			    		new_script(false, data.name, data.description, data.id, data.is_global, false);
 			    		load_data_script(data);
