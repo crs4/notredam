@@ -86,19 +86,10 @@ class Script(models.Model):
 
     is_global = models.BooleanField(default = False)
     
-    def save(self, *args,**kwargs):
-        #avoiding empty string saving
-        if self.name == '':
-            self.name = None
-        super(Script, self).save(*args,**kwargs)
-
-
-    def __unicode__(self):
-        return unicode(self.name)
     
     
-    def execute(self, items):
-        logger.debug('execute')
+    
+    def get_actions(self, for_json = False):
         actions_available = {}       
        
         classes = []
@@ -113,14 +104,24 @@ class Script(models.Model):
             
         actions_available[SendByMail.__name__.lower()] = SendByMail
         actions_available[SendByMail.verbose_name.lower()] = SendByMail
-       
-        actions = {
-            'image':[],
-            'video':[],
-            'audio':[],
-            'doc':[]
-            }
         
+        if for_json:
+             actions = {
+                'image':{'actions':[]},
+                'video':{'actions':[]},
+                'audio':{'actions':[]},
+                'doc':{'actions':[]}
+                }
+        
+        else:
+            actions = {
+                'image':[],
+                'video':[],
+                'audio':[],
+                'doc':[]
+                }
+            
+    
 #        logger.debug('media_types %s'%media_types)
         
 #        for media_type, info in pipeline.items():
@@ -130,6 +131,9 @@ class Script(models.Model):
             media_type = action.media_type.name
             logger.debug('info %s '%info)            
             logger.debug('media_type %s'%media_type)
+            
+            if for_json:
+                actions[media_type]['source_variant'] = action.source_variant.pk
 #            source_variant = info['source_variant']
             for action_dict in info['actions']:
                 
@@ -141,14 +145,31 @@ class Script(models.Model):
                 params['script'] = self
                 logger.debug('action_dict %s'%action_dict)
                 try:                    
-                    action = actions_available[type](**params)                
+                    action_tmp = actions_available[type](**params)                
                 except Exception, ex:              
                     logger.exception(ex)                
-                    raise ActionError('action %s does not exist'%type)
-                actions[media_type].append(action)
-  
-        
-        
+                    raise ActionError('action_tmp %s does not exist'%type)
+                if for_json:
+                    actions[media_type]['actions'].append(action_tmp._get_params())
+                else:
+                    actions[media_type].append(action_tmp)
+        return actions
+    
+    def save(self, *args,**kwargs):
+        #avoiding empty string saving
+        if self.name == '':
+            self.name = None
+        super(Script, self).save(*args,**kwargs)
+
+
+    def __unicode__(self):
+        return unicode(self.name)
+    
+    
+    def execute(self, items):
+        logger.debug('execute')
+        actions = self.get_actions()
+
         logger.debug('actions %s'%actions)
         for item in items:
             adapt_parameters = {}   
@@ -172,7 +193,7 @@ class Script(models.Model):
 class BaseAction(object):
     
     media_type_supported = ['image', 'video', 'audio', 'doc']
-
+    verbose_name = ''
     def __init__(self, media_type, source_variant, workspace, script, **params):   
         
 #        if media_type not in self.media_type_supported:
@@ -191,6 +212,12 @@ class BaseAction(object):
             
     def get_adapt_params(self):
         return self.parameters
+    
+    def _get_params(self):
+        return {
+            'type': self.verbose_name,
+            'parameters':self.get_adapt_params()                       
+        }
     
     @staticmethod
     def required_parameters(workspace):
@@ -219,7 +246,8 @@ class SetRights(BaseAction):
 
 class SaveAction(BaseAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
- 
+       
+       
     @staticmethod
     def required_parameters(workspace):
         
@@ -321,7 +349,7 @@ class SaveAction(BaseAction):
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)
-        variant = Variant.objects.get(name = self.output_variant)                  
+        variant = Variant.objects.get(pk = self.output_variant)                  
         component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))
         self._generate_resource(component, adapt_parameters)
     
@@ -330,12 +358,24 @@ class SaveAs(SaveAction):
     media_type_supported = ['image', 'video',  'doc', 'audio']
     verbose_name = 'save'
     
+    def _get_params(self):
+        return {
+                'type': self.verbose_name,
+                'parameters':
+                    {
+                    'output': self.output_variant,
+#                    'output_name': Variant.objects.get(pk = self.output_variant).name,
+                    'output_format': self.output_format,
+                    'embed_xmp': self.embed_xmp,
+                
+                }}
+    
     @staticmethod
     def required_parameters(workspace):
         params = SaveAction.required_parameters(workspace)
         tmp = {}
         for media_type in Type.objects.all():
-            tmp[media_type.name] = [variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type = media_type,  auto_generated = True)]
+            tmp[media_type.name] = [(variant. name, variant.pk) for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type = media_type,  auto_generated = True)]
        
         params.append({'name':'output',  'type': 'string',  'values':tmp})
         
@@ -348,14 +388,14 @@ class SaveAs(SaveAction):
     
         
         
-class SendByMail(SaveAction):
+class SendByMail(SaveAs):
     verbose_name = 'send by mail'
     
     def __init__(self, media_type, source_variant, workspace, script, mail,  output_format,   embed_xmp= False):
-        output_variant = 'mail'
-        super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output_format,   embed_xmp)
+        output = Variant.objects.get(name = 'mail').pk
+        super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output, output_format,   embed_xmp)
         self.mail = mail
-        self.output_variant = 'mail'
+         
         
     @staticmethod
     def required_parameters(workspace = None):
@@ -531,7 +571,7 @@ class ExtractVideoThumbnail(SaveAction):
                    'image': [],
                    'doc':[],
                   
-                  'video':[variant. name for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'video',  auto_generated = True)]}}
+                  'video':[(variant. name, variant.pk) for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'video',  auto_generated = True)]}}
                 
                 ]
         

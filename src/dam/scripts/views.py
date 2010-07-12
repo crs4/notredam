@@ -28,10 +28,13 @@ from django.db import IntegrityError
 
 def _get_scripts_info(script):
     actions_media_type = {}
-    for action in script.actionlist_set.all():                        
-        actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
+    actions = script.get_actions(True)
     
-    return {'id': script.pk, 'name': script.name, 'description': script.description, 'is_global': script.is_global,  'actions_media_type': actions_media_type, 'already_run': script.component_set.all().count() > 0}
+#    
+#    for action in script.actionlist_set.all():                        
+#        actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
+    
+    return {'id': script.pk, 'name': script.name, 'description': script.description, 'is_global': script.is_global,  'actions_media_type': actions, 'already_run': script.component_set.all().count() > 0}
 
 @login_required
 def get_scripts(request):
@@ -41,13 +44,12 @@ def get_scripts(request):
         media_type =  Type.objects.all().values_list('name', flat = True)
     scripts = Script.objects.filter(workspace = workspace, actionlist__media_type__name__in = media_type).distinct()
     resp = {'scripts': []}
+            
     for script in scripts:
-        actions_media_type = {}
-        for action in script.actionlist_set.all():                        
-            actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
-        
         info =  _get_scripts_info(script)
         resp['scripts'].append(info)
+        
+    resp['scripts'].append(info)
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -58,6 +60,7 @@ def get_script_actions(request):
     media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
     script = Script.objects.get(pk = script_id)
     tmp = simplejson.loads(script.pipeline)
+    
     resp = {'actions': tmp['media_type'], 'already_run': script.component_set.all().count() > 0}
     return HttpResponse(simplejson.dumps(resp))
 
@@ -117,8 +120,8 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
         pipeline = simplejson.loads(pipeline)
     
         for media_type, actions in pipeline.items():
-            source_variant_name = actions.get('source_variant',  'original')
-            source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
+            source_variant_pk = actions.get('source_variant',  'original')
+            source_variant = Variant.objects.get(pk = source_variant_pk, auto_generated = False )
             ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
 
     
