@@ -209,21 +209,38 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
         }else j = i;
         
         
-        console.log(parameters[i].type);
+        console.log(recApp['data']);
     	if (recApp['data']['parameters'][j]['values']){
     		var val;
-    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
-    		if (parameters[i]['value']) 
-    			val = parameters[i]['value'];
-    		else 
-    			val = recApp['data']['parameters'][j]['values'][media_type][0];
+    		var recAppValues
+    		if (recApp['data']['parameters'][j]['name'] == 'output'){
+    			console.log(recApp['data']['parameters'][j]['values'][media_type]);
+    			var dict = recApp['data']['parameters'][j]['values'][media_type];
+    			recAppValues = [];
+    			for (key in dict) {
+    				if (dict.hasOwnProperty(key)) { 
+    					console.log(dict[key]);
+    					recAppValues.push(dict[key]);
+    					val = dict[key];
+    				}
+    			}
+	    		if (parameters[i]['value']) 
+	    			val = dict[parameters[i]['value']];  			
+    		}else{
+	    		recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+	    		if (parameters[i]['value']) 
+	    			val = parameters[i]['value'];
+	    		else 
+	    			val = recApp['data']['parameters'][j]['values'][media_type][0];
+    		}
     		var width_combobox;
     		if (name_action == 'set rights'){
     			width_combobox = 300;
     		}else
     			width_combobox = 140;
     			
-    		
+    		console.log('valoreeeeeeeeeeeee');
+    		console.log(val);
     		item_array.push(new Ext.form.ComboBox({                            
     			fieldLabel   : parameters[i].name.replace("_"," "),
     			store        : recAppValues,
@@ -781,7 +798,9 @@ function newRecord(data, media_type){
  * @param media_type type of media ('image', 'movie'...)
  * @return
  */
-function _pull_data(sm,media_type){
+function _pull_data(sm,media_type, actionsStore){
+
+	var i,j;
 
 	if 	(sm.getSelected()){
 		var newParams = [];
@@ -793,12 +812,10 @@ function _pull_data(sm,media_type){
 		for (i=0;i<params.length;i++){
     		appParams = params[i];
     		if (DEBUG_SCRIPT)
-    			console.log(appParams.name)
-
-    		if (appParams.name != 'ratio'){
-	    		appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
-	    		newParams.push(appParams);
-    		}else{
+    			console.log(appParams.name);
+    		console.log('sssssssssssss');
+    		console.log(appParams.name);
+    		if (appParams.name == 'ratio'){
     			appParams = {};
     			appParams['name']  = 'ratio';
     			appParams['type']  = 'string';
@@ -808,8 +825,27 @@ function _pull_data(sm,media_type){
     				var h = Ext.getCmp('crop_height_custom').getValue();
     				appParams['value'] = w+':'+h;
     			}
-    			newParams.push(appParams);
+    		}else if (appParams.name == 'output'){
+    			//recuperare dizionario
+    			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
+    			console.log('eeeeeeeeeeeeeeeeeeeeeee');
+    			console.log(appParams);
+    			console.log(appParams['values']);
+    			for (key in appParams['values']) {
+    				if (appParams['values'].hasOwnProperty(key)) {
+    					console.log(key)
+    					if (appParams['values'][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
+    						appParams['value'] = key;
+    						console.log('keyyyyyyyyyyyyyyyyyyyy')
+    						console.log(key)
+    					}
+    					
+    				}
+    			}
+    		}else{
+    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
     		}
+    		newParams.push(appParams);
     	}
 		if (DEBUG_SCRIPT){
 			console.log("_pull_data");
@@ -873,7 +909,7 @@ function _get_layout_tab(obj, media_type){
 								listeners    :{
 									beforerowselect : function(sm,rowIndex, keepExisting, record){
 								        //pull data
-								        _pull_data(sm,media_type);
+								        _pull_data(sm,media_type,Ext.getCmp('action_list_'+media_type).getStore());
 							        	return true;
 									}, 
 									selectionchange : function(){
@@ -1026,7 +1062,7 @@ function _get_tabs(){
 	    listeners :{
 			beforetabchange : function(newTab, currentTab) {
 				var type = currentTab.id.slice(4);
-				_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type);
+				_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type, Ext.getCmp('action_list_'+type).getStore());
 	    	}
 	    } 	    
 	    	
@@ -1162,7 +1198,7 @@ function new_script(create, name, description, id_script, is_global, run){
             handler: function(){
     			var my_win = this.findParentByType('window');  
     			var type = my_win.get('media_type_tabs').getActiveTab().id.slice(4);
-    			_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type);
+    			_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type, Ext.getCmp('action_list_'+type).getStore());
     			if (_check_form_detail_script(my_win)){
 					var pipeline = save_data_script(name, description, my_win);
 	
