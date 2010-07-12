@@ -34,7 +34,8 @@ pipeline_thumb = {
                 'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output': 'thumbnail'
+                    'output': 'thumbnail',
+                    'embed_xmp': False
                 }
                         
             }    
@@ -114,7 +115,8 @@ pipeline_preview = {
                 'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output': 'preview'
+                    'output': 'preview',
+                     'embed_xmp': False
                     
 #                    'output': 'preview'
                 }
@@ -272,7 +274,8 @@ pipeline_fullscreen = {
                 'type': 'save',
                 'parameters':{
                     'output_format': 'jpeg',
-                    'output': 'fullscreen'
+                    'output': 'fullscreen',
+                     'embed_xmp': False
                 }
                         
             },
