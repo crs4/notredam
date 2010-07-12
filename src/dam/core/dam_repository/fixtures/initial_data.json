@@ -1,0 +1,1 @@
+[{"pk": 1, "model": "dam_repository.type", "fields": {"name": "image"}}, {"pk": 2, "model": "dam_repository.type", "fields": {"name": "video"}}, {"pk": 3, "model": "dam_repository.type", "fields": {"name": "doc"}}, {"pk": 4, "model": "dam_repository.type", "fields": {"name": "audio"}}]

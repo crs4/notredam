@@ -1,0 +1,12 @@
+notredam (0.9beta-2) unstable; urgency=low
+
+  *  New batch_processor
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 03 Dec 2009 12:06:37 +0100
+
+notredam (0.9beta-1) unstable; urgency=low
+
+  *  Initial release (Closes: #nnnn)  
+
+ -- Mauro Del Rio <mauro@crs4.it>  Fri, 27 Nov 2009 15:56:37 +0100
+

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<application xmlns="http://ns.adobe.com/air/application/1.0">
+  	<name>NotreDAM Uploader</name>
+ 	<id>nduploader</id>
+  	<version>1.0</version>
+  	<filename>NotreDAM Uploader</filename>
+  	<description>NotreDAM Uploader</description>
+  	<copyright>(c) 2010 </copyright>
+	<initialWindow>
+	    <title>NotreDAM Uploader</title>
+		<visible>false</visible>
+		<content>main.html</content>
+	</initialWindow>
+	<installFolder>NotreDAM/Uploader</installFolder>
+	<programMenuFolder>NotreDAM/Uploader</programMenuFolder>
+	<icon>
+	  	<image16x16>extjs/resources/icons/extlogo16.png</image16x16>
+		<image32x32>extjs/resources/icons/extlogo32.png</image32x32>
+		<image48x48>extjs/resources/icons/extlogo48.png</image48x48>
+		<image128x128>extjs/resources/icons/extlogo128.png</image128x128>
+	</icon>
+	<fileTypes></fileTypes>
+</application>
