@@ -195,6 +195,7 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     var i = 0;
     var recApp;
     var item_array = new Array();
+    console.log(name_action);
     for (i=0;i<parameters.length;i++){
 //    	cercare il name_action nella gridlistactions, e verificare se ha values
         recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
@@ -208,6 +209,7 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
         }else j = i;
         
         
+        console.log(parameters[i].type);
     	if (recApp['data']['parameters'][j]['values']){
     		var val;
     		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
@@ -1594,14 +1596,16 @@ function manage_events(){
 			            align:'middle'
 			        },
 			        frame : true,
-				    items  :[
+				    items  :[new Ext.form.Label({
+				    			text : "Select event :   "
+				    		}),
 				            new Ext.form.ComboBox({
 				        		id           : 'id_combo_events',
 				        		store        : new Ext.data.JsonStore({
 				        		    url        : '/get_events/',
 				        		    method     : 'POST',
 				        		    root       : 'events',
-				        		    fields     : ['id', 'name', 'description'],
+				        		    fields     : ['id', 'Script name', 'description'],
 				        		    autoLoad   : true
 				        		}),
 				        		tpl: '<tpl for="."><div ext:qtip="{description}" class="x-combo-list-item">{description}</div></tpl>',

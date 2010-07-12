@@ -93,21 +93,25 @@ if __name__ == '__main__':
             items = e._workspace_get_items(w['id'])
     
     
+            print "workspace.json"
             f = file(os.path.join(workspacedir, 'workspace.json'), 'w')
             f.write(json_enc.encode(e._workspace_get(w['id'])))
             f.close()
     
             #Backup collections
+            print "collections.json"
             f = file(os.path.join(workspacedir, 'collections.json'),'w')
             f.write(json_enc.encode(e._collection_get_list(w['id'])))    
             f.close()
     
             #Backup keywords
+            print "keywords.json"
             f = file(os.path.join(workspacedir, 'keywords.json'),'w')
             f.write(json_enc.encode(e._keyword_get_list(w['id'])))
             f.close()
             
             #Backup variants configuration
+            print "variants.json"
             f = file(os.path.join(workspacedir, 'variants.json'),'w')
             variant = e._workspace_get_variants(w['id'])
             f.write(json_enc.encode(variant))
@@ -124,22 +128,25 @@ if __name__ == '__main__':
 #                        urllib.urlretrieve(variant[v][v_type]['preferences'].get('watermarking_url'), filename)
 
             #Backup smartfolder configuration
+            print "smartfolders.json"
             f = file(os.path.join(workspacedir, 'smartfolders.json'),'w')
             f.write(json_enc.encode(e._workspace_get_smartfolders({'workspace_id': w['id']})))
             f.close()
     
             #_workspace_get_members
+            print "members.json"
             f = file(os.path.join(workspacedir, 'members.json'),'w')
             f.write(json_enc.encode(e._workspace_get_members(w['id'])))
             f.close()
     
             
             #Backup items
+            print "items %s" %items
             for i in items:
                 #Backup item's metadata
                 item = e._item_get(i, workspace_id=w['id'])
-                #print "==========="
-                #print item['id']
+                print "==========="
+                print item['id']
     
 
                 itemdir = os.path.join(workspacedir, 'i_' + str(item['id']))
@@ -158,24 +165,14 @@ if __name__ == '__main__':
                                 
                 #Backup item's resources/variants
                 for v_id, data in item['variants'].items():
-                    
+                    print "v_id %s" %v_id
+                    print "data %s" %data
                     try:
                         filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
                     except AttributeError: #Some resource is None
                         print "%s WAS None" % str(v_id)                    
                         continue
                    
-                    if DEBUG:
-            
-                        #raise Exception, url
-
-                        split1 = urllib.splittype(url)
-                        split2 = urllib.splithost(split1[-1])
-                        finalurl = 'http://%s:7000' %  host + split2[-1]
-                        print 'a:',  finalurl
-                        urllib.urlretrieve(finalurl, filename)
-                    else:
-                     
                         urllib.urlretrieve(data['url'], filename)
         
 

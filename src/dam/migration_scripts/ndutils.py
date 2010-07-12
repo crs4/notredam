@@ -22,7 +22,7 @@ from hashlib import sha1
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
 
-DEBUG = False
+DEBUG = True
 
 class ImportExport(object):
     """
