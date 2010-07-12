@@ -222,7 +222,6 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     			recAppValues = [];
     			for (key in dict) {
     				if (dict.hasOwnProperty(key)) { 
-    					console.log(dict[key]);
     					recAppValues.push(dict[key]);
     					val = dict[key];
     				}
@@ -315,6 +314,7 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
 
 	watermarking_position_id = Ext.id();
     
+	var i, j;
 	var children_box_position = [];
 	for(i=1; i<= 9; i++){
 	    children_box_position.push({
@@ -340,9 +340,9 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
 	    listeners :{ 
 	    	load : function(){
 				i = 0;
-				while (parameters[i]['name'] != 'filename' && i<parameters.length)
+				while (parameters[i]['name'] != 'watermark_filename' && i<parameters.length)
 					i++;
-				if (parameters[i]['name'] == 'filename' && parameters[i]['value']){
+				if (parameters[i]['name'] == 'watermark_filename' && parameters[i]['value']){
 					Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
 					Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
 				}
@@ -373,9 +373,13 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
     				        		while (parameters[i]['name'] != 'pos_x_percent' && i<parameters.length){
     				        			i++;
     				        		}	
+    				            	j = 0;
+    				        		while (parameters[j]['name'] != 'pos_y_percent' && j<parameters.length){
+    				        			j++;
+    				        		}	
 				        			if (parameters[i]['name'] == 'pos_x_percent' && parameters[i]['value']){      			    	            	
         				        		var pos_x = ((parameters[i]['value'] - 5) / 33) + 1;
-	                					var pos_y = ((parameters[i+1]['value'] - 5) / 33) + 1;
+	                					var pos_y = ((parameters[j]['value'] - 5) / 33) + 1;
         				        		watermarking_position = (pos_y-1) * 3 + pos_x;
     			    	            	watermarking(watermarking_position);                    
     			    	                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
