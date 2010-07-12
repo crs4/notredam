@@ -195,11 +195,16 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     var i = 0;
     var recApp;
     var item_array = new Array();
-    console.log(name_action);
+    var dict;
+	var val;
+	var recAppValues;
+	
+	if(DEBUG_SCRIPT)
+    	console.log(name_action);
+    
     for (i=0;i<parameters.length;i++){
 //    	cercare il name_action nella gridlistactions, e verificare se ha values
         recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
-
         //in sendbymail restituisce in ordine inverso.
         if (parameters[i].name != recApp['data']['parameters'][i].name){
         	var j = 0;
@@ -209,13 +214,11 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
         }else j = i;
         
         
-        console.log(recApp['data']);
+        if (DEBUG_SCRIPT)
+        	console.log(recApp['data']);
     	if (recApp['data']['parameters'][j]['values']){
-    		var val;
-    		var recAppValues
     		if (recApp['data']['parameters'][j]['name'] == 'output'){
-    			console.log(recApp['data']['parameters'][j]['values'][media_type]);
-    			var dict = recApp['data']['parameters'][j]['values'][media_type];
+    			dict = recApp['data']['parameters'][j]['values'][media_type];
     			recAppValues = [];
     			for (key in dict) {
     				if (dict.hasOwnProperty(key)) { 
@@ -239,8 +242,6 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     		}else
     			width_combobox = 140;
     			
-    		console.log('valoreeeeeeeeeeeee');
-    		console.log(val);
     		item_array.push(new Ext.form.ComboBox({                            
     			fieldLabel   : parameters[i].name.replace("_"," "),
     			store        : recAppValues,
@@ -260,14 +261,25 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
     	      	}));
     	}
     	else if (parameters[i].type == 'string' && parameters[i].name != 'ratio'){
-    		item_array.push(new Ext.form.TextField({                            
-	          fieldLabel  : parameters[i].name.replace("_"," "),
-	          value       : parameters[i].value,
-	          name        : parameters[i].name,
-	          msgTarget   : 'side',                            
-	          width       : 140                            
-	      	}));
-    	}else if (parameters[i].type == 'boolean' && media_type == 'image'){
+    		if (name_action != 'send by mail'){
+	    		item_array.push(new Ext.form.TextField({                            
+				    fieldLabel  : parameters[i].name.replace("_"," "),
+				    value       : parameters[i].value,
+				    name        : parameters[i].name,
+				    msgTarget   : 'side',                            
+				    width       : 140                            
+			    }));
+    		}else {
+	    		item_array.push(new Ext.form.TextField({                            
+				    fieldLabel  : parameters[i].name.replace("_"," "),
+				    value       : parameters[i].value,
+				    name        : parameters[i].name,
+				    vtype       : 'email',
+				    msgTarget   : 'side',                            
+				    width       : 140                            
+			    }));
+    		}
+    	}else if (parameters[i].type == 'boolean' && media_type == 'image'){ //for check embedded xmp
     		item_array.push(new Ext.form.Checkbox({                            
   	          fieldLabel  : parameters[i].name.replace("_"," "),
   	          checked     : parameters[i].value,
@@ -627,7 +639,6 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
     			console.log(recApp['data']['parameters']);
     		
     		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
-    		console.log(recAppValues);
     		if (parameters[i]['value']) 
     			val = parameters[i]['value'];
     		else 
@@ -813,8 +824,6 @@ function _pull_data(sm,media_type, actionsStore){
     		appParams = params[i];
     		if (DEBUG_SCRIPT)
     			console.log(appParams.name);
-    		console.log('sssssssssssss');
-    		console.log(appParams.name);
     		if (appParams.name == 'ratio'){
     			appParams = {};
     			appParams['name']  = 'ratio';
@@ -828,18 +837,12 @@ function _pull_data(sm,media_type, actionsStore){
     		}else if (appParams.name == 'output'){
     			//recuperare dizionario
     			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
-    			console.log('eeeeeeeeeeeeeeeeeeeeeee');
-    			console.log(appParams);
-    			console.log(appParams['values']);
-    			for (key in appParams['values']) {
-    				if (appParams['values'].hasOwnProperty(key)) {
+    			for (key in dict['data']['parameters'][2]['values'][media_type]) {
+    				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
     					console.log(key)
-    					if (appParams['values'][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
+    					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
     						appParams['value'] = key;
-    						console.log('keyyyyyyyyyyyyyyyyyyyy')
-    						console.log(key)
     					}
-    					
     				}
     			}
     		}else{
