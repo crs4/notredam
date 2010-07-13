@@ -606,16 +606,16 @@ class ExtractVideoThumbnail(SaveAction):
 #            self.output_variant = 'mail'
             self.output_variant = Variant.objects.get(name = 'mail').pk
             self.parameters['mail'] =  mail
-            self.parameters['output_variant'] =  Variant.objects.get(name = 'mail').pk
+            self.parameters['output'] =  Variant.objects.get(name = 'mail').pk
         else:
             self.output_variant = output
-            self.parameters['output_variant'] =  output
+            self.parameters['output'] =  output
             self.mail = ''
             
         self.output_media_type= 'image'
         self.max_height = max_height
         self.max_width = max_width 
-        
+        self.parameters['output_format'] = output_format 
         self.parameters['max_width'] =  max_width
         
         self.parameters['max_height'] =  max_height
