@@ -310,7 +310,6 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
 
 function _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action)
 {
-	console.log(parameters)
 	
 	watermarking_position = 0; // 0 mean undefined
 
@@ -342,9 +341,9 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
 	    listeners :{ 
 	    	load : function(){
 				i = 0;
-				while (parameters[i]['name'] != 'filename' && i<parameters.length)
+				while (parameters[i]['name'] != 'watermark_filename' && i<parameters.length)
 					i++;
-				if (parameters.length>0 && parameters[i]['name'] == 'filename' && parameters[i]['value']){
+				if (parameters.length>0 && parameters[i]['name'] == 'watermark_filename' && parameters[i]['value']){
 					Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
 					Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
 				}
@@ -467,7 +466,7 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
                 				}),{
                 					xtype:'hidden', 
                 					id : 'hidden_file_name',
-                					name:'filename'
+                					name:'watermark_filename'
                 				},{
                 					xtype:'hidden', 
                 					id : 'hidden_pos_x_percent',
@@ -762,8 +761,6 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 
     var name_action = selected.data.name;
     var parameters = selected.get('parameters');
-    console.log('selected');
-    console.log(selected.get('parameters'));
     var array_field;
 
     //  remove all component
@@ -847,7 +844,6 @@ function _pull_data(sm,media_type, actionsStore){
     			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
     			for (key in dict['data']['parameters'][2]['values'][media_type]) {
     				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
-    					console.log(key)
     					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
     						appParams['value'] = key;
     					}
@@ -925,9 +921,7 @@ function _get_layout_tab(obj, media_type){
 									}, 
 									selectionchange : function(){
 							        	//show form details
-										console.log('selection change');
 										if (this.getSelected()){
-											console.log(this.getSelected());
 								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(), Ext.getCmp('action_list_'+media_type).getStore(), media_type);
 										}
 
@@ -1522,8 +1516,6 @@ function manage_script(){
 		    		//Open script
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
-			    		console.log('dataaaa');
-			    		console.log(data);
 			    		my_win.close();
 			    		new_script(false, data.name, data.description, data.id, data.is_global, false);
 			    		load_data_script(data);
