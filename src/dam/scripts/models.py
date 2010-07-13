@@ -566,6 +566,10 @@ class ExtractVideoThumbnail(SaveAction):
     @staticmethod
     def required_parameters(workspace):
         
+        tmp_output = {}
+        for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'video',  auto_generated = True):
+            tmp_output[variant.pk] = variant.name
+        
         params = [{ 'name': 'max_height','type': 'number'},
                 { 'name': 'max_width', 'type': 'number'},
                 {'name':'output_format',  'type': 'string',  'values':{'video':['jpeg',  'gif','png', 'bmp'],
@@ -581,7 +585,8 @@ class ExtractVideoThumbnail(SaveAction):
                    'image': [],
                    'doc':[],
                   
-                  'video':[(variant. name, variant.pk) for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'video',  auto_generated = True)]}}
+                  'video': tmp_output
+            }}
                 
                 ]
         
