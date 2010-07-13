@@ -668,6 +668,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
   	          width       : 140                            
   	      	});    		
     	}else if(parameters[i]['name'] == 'output'){
+
     		var val;
             if (parameters[i].name != recApp['data']['parameters'][i].name){
             	var j = 0;
