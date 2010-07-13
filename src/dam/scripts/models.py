@@ -610,7 +610,9 @@ class ExtractVideoThumbnail(SaveAction):
         else:
             self.output_variant = output
             self.parameters['output'] =  output
+            
             self.mail = ''
+            self.parameters['mail'] =  ''
             
         self.output_media_type= 'image'
         self.max_height = max_height
