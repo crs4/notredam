@@ -559,12 +559,15 @@ class AudioEncode(BaseAction):
         self.parameters['audio_bitrate'] = int(bitrate)            
         self.parameters['audio_rate'] = int(rate)
                 
-
 class ExtractVideoThumbnail(SaveAction):
     verbose_name = 'extract video thumbnail'
     media_type_supported = ['video']
     @staticmethod
     def required_parameters(workspace):
+        
+        tmp_output = {}
+        for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'video',  auto_generated = True):
+            tmp_output[variant.pk] = variant.name
         
         params = [{ 'name': 'max_height','type': 'number'},
                 { 'name': 'max_width', 'type': 'number'},
@@ -581,7 +584,8 @@ class ExtractVideoThumbnail(SaveAction):
                    'image': [],
                    'doc':[],
                   
-                  'video':[(variant. name, variant.pk) for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False, media_type__name = 'video',  auto_generated = True)]}}
+                  'video': tmp_output
+            }}
                 
                 ]
         
