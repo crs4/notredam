@@ -600,17 +600,25 @@ class ExtractVideoThumbnail(SaveAction):
         super(ExtractVideoThumbnail, self).__init__(media_type, source_variant, workspace, script,output_format,   False)
         logger.debug('---------------------------------------------media_type %s'%media_type)
         
+        self.parameters = {}
         if mail:
             self.mail = mail
-            self.output_variant = 'mail'
+#            self.output_variant = 'mail'
+            self.output_variant = Variant.objects.get(name = 'mail').pk
+            self.parameters['mail'] =  mail
+            self.parameters['output_variant'] =  Variant.objects.get(name = 'mail').pk
         else:
             self.output_variant = output
+            self.parameters['output_variant'] =  output
             self.mail = ''
             
         self.output_media_type= 'image'
         self.max_height = max_height
         self.max_width = max_width 
         
+        self.parameters['max_width'] =  max_width
+        
+        self.parameters['max_height'] =  max_height
     
 #    def __init__(self, media_type, source_variant, workspace , script, max_height,  max_width):
 #        params = {'max_height': max_height,  'max_width':max_width,  'output_media_type': 'image'}
