@@ -690,7 +690,13 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
     		if (parameters[i]['value']) 
     			val = dict[parameters[i]['value']]; 
     		    		
-    		var output = new Ext.form.ComboBox({                            
+			console.log('dict');
+			console.log(dict);
+			console.log(recAppValues);
+			console.log(val);
+			
+
+			var output = new Ext.form.ComboBox({                            
     			store        : recAppValues,
     			id           : 'output_radiobutton',
 				triggerAction: 'all',
@@ -701,7 +707,11 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
     	    });     		
     	}
     }
-
+    console.log(max_height);
+    console.log(max_width);
+    console.log(output_format);
+    console.log(output);
+    
 	panel.add({ 
         layout:'column', 
         items:[{ 
@@ -732,6 +742,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
 	                			}
 	                		},
 	                		afterrender : function(){
+	                			console.log('after render');
 	                			if (DEBUG_SCRIPT)
 	                				console.log(Ext.getCmp('mail_radiobutton').getValue());
 	                			if (Ext.getCmp('mail_radiobutton').getValue() == ''){
@@ -752,7 +763,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
           ]
 	     }]
 	});   
-	
+	console.log('panel');
 	return panel;
 }
 
@@ -789,6 +800,10 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     	array_field = _global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action );
     	panel.add(array_field);
     }
+    
+    if (DEBUG_SCRIPT){
+    	console.log('generate_details_forms finished');
+    }   
 //reload panel
 	panel.doLayout();
 }
