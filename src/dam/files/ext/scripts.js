@@ -216,7 +216,8 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
         
         if (DEBUG_SCRIPT)
         	console.log(recApp['data']);
-    	if (recApp['data']['parameters'][j]['values']){
+
+        if (recApp['data']['parameters'][j]['values']){
     		if (recApp['data']['parameters'][j]['name'] == 'output'){
     			dict = recApp['data']['parameters'][j]['values'][media_type];
     			recAppValues = [];
@@ -308,8 +309,9 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
  * @return
  */
 
-function _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters)
+function _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action)
 {
+	
 	watermarking_position = 0; // 0 mean undefined
 
 	watermarking_position_id = Ext.id();
@@ -342,7 +344,7 @@ function _watermark_generate_details_forms(panel, grid, selected, actionsStore, 
 				i = 0;
 				while (parameters[i]['name'] != 'watermark_filename' && i<parameters.length)
 					i++;
-				if (parameters[i]['name'] == 'watermark_filename' && parameters[i]['value']){
+				if (parameters.length>0 && parameters[i]['name'] == 'watermark_filename' && parameters[i]['value']){
 					Ext.getCmp('dataview_watermarks').select(this.find('id', parameters[i]['value']));
 					Ext.getCmp('panel_watermarks_views').get('hidden_file_name').setValue(parameters[i]['value']);
 				}
@@ -667,6 +669,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
   	          width       : 140                            
   	      	});    		
     	}else if(parameters[i]['name'] == 'output'){
+
     		var val;
             if (parameters[i].name != recApp['data']['parameters'][i].name){
             	var j = 0;
@@ -674,13 +677,26 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
             		  j++;
             	}
             }else j = i;
-    		var recAppValues = recApp['data']['parameters'][j]['values'][media_type];
+
+            
+			dict = recApp['data']['parameters'][j]['values'][media_type];
+			recAppValues = [];
+			for (key in dict) {
+				if (dict.hasOwnProperty(key)) { 
+					recAppValues.push(dict[key]);
+					val = dict[key];
+				}
+			}
     		if (parameters[i]['value']) 
-    			val = parameters[i]['value'];
-    		else 
-    			val = recApp['data']['parameters'][j]['values'][media_type][0]; 
-    		
-    		var output = new Ext.form.ComboBox({                            
+    			val = dict[parameters[i]['value']]; 
+    		    		
+			console.log('dict');
+			console.log(dict);
+			console.log(recAppValues);
+			console.log(val);
+			
+
+			var output = new Ext.form.ComboBox({                            
     			store        : recAppValues,
     			id           : 'output_radiobutton',
 				triggerAction: 'all',
@@ -691,7 +707,11 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
     	    });     		
     	}
     }
-
+    console.log(max_height);
+    console.log(max_width);
+    console.log(output_format);
+    console.log(output);
+    
 	panel.add({ 
         layout:'column', 
         items:[{ 
@@ -722,6 +742,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
 	                			}
 	                		},
 	                		afterrender : function(){
+	                			console.log('after render');
 	                			if (DEBUG_SCRIPT)
 	                				console.log(Ext.getCmp('mail_radiobutton').getValue());
 	                			if (Ext.getCmp('mail_radiobutton').getValue() == ''){
@@ -742,7 +763,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
           ]
 	     }]
 	});   
-	
+	console.log('panel');
 	return panel;
 }
 
@@ -764,11 +785,13 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
 
     //  remove all component
     panel.removeAll()
-    if (DEBUG_SCRIPT)
+    if (DEBUG_SCRIPT){
     	console.log(name_action);
+    	console.log(selected);
+    }
     //add new component
     if (name_action == 'watermark'){
-    	panel = _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
+    	panel = _watermark_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action);
     }else if (name_action == 'crop'){
     	panel = _crop_generate_details_forms(panel, grid, selected, actionsStore, media_type, parameters, name_action );
     }else if (name_action == 'extract video thumbnail'){
@@ -777,6 +800,10 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
     	array_field = _global_generate_details_form(grid, selected, actionsStore, media_type, parameters, name_action );
     	panel.add(array_field);
     }
+    
+    if (DEBUG_SCRIPT){
+    	console.log('generate_details_forms finished');
+    }   
 //reload panel
 	panel.doLayout();
 }
@@ -843,7 +870,6 @@ function _pull_data(sm,media_type, actionsStore){
     			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
     			for (key in dict['data']['parameters'][2]['values'][media_type]) {
     				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
-    					console.log(key)
     					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
     						appParams['value'] = key;
     					}
@@ -922,7 +948,8 @@ function _get_layout_tab(obj, media_type){
 									selectionchange : function(){
 							        	//show form details
 										if (this.getSelected()){
-								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(),Ext.getCmp('action_list_'+media_type).getStore(), media_type);
+											console.log(this.getSelected());
+								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(), Ext.getCmp('action_list_'+media_type).getStore(), media_type);
 										}
 
 										
@@ -1330,10 +1357,13 @@ function load_data_script(data){
 		name_tab = 'tab_' + type;
 		my_win.get('media_type_tabs').get(name_tab).get('my_panel_source_'+type).get('my_combo_source_'+type).setValue(data['actions_media_type'][type]['source_variant']);
 		//load actions
-		if (DEBUG_SCRIPT)
+		if (DEBUG_SCRIPT){
 			console.log('load action');
+
+		}
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
-        	var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
+			console.log(data['actions_media_type'][type]['actions'][i]);
+			var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
 		}
 
@@ -1512,10 +1542,12 @@ function manage_script(){
 	        type: 'submit',
 	        handler: function(){
 		    		var my_win = this.findParentByType('window');
-//		    		if(field_name.value) not work
+		    		if(DEBUG_SCRIPT) 
+		    			console.log('Open');
 		    		//Open script
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
+			    		console.log(data);
 			    		my_win.close();
 			    		new_script(false, data.name, data.description, data.id, data.is_global, false);
 			    		load_data_script(data);
