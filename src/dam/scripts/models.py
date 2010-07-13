@@ -559,7 +559,6 @@ class AudioEncode(BaseAction):
         self.parameters['audio_bitrate'] = int(bitrate)            
         self.parameters['audio_rate'] = int(rate)
                 
-
 class ExtractVideoThumbnail(SaveAction):
     verbose_name = 'extract video thumbnail'
     media_type_supported = ['video']
