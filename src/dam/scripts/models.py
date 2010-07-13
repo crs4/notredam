@@ -452,12 +452,12 @@ class Watermark(BaseAction):
    
     @staticmethod
     def required_parameters(workspace):
-        return [{ 'name': 'filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
+        return [{ 'name': 'watermark_filename',  'type': 'string'}, { 'name': 'pos_x_percent','type': 'number'}, { 'name': 'pos_y_percent',  'type': 'number'}, { 'name': 'alpha',  'type': 'number'}]
     
-    def __init__(self, media_type, source_variant, workspace, script,  filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
+    def __init__(self, media_type, source_variant, workspace, script,  watermark_filename, pos_x = None, pos_y = None, pos_x_percent = None, pos_y_percent = None, alpha = None):
         
         super(Watermark,  self).__init__(media_type, source_variant, workspace, script)
-        self.parameters['watermark_filename'] = filename
+        self.parameters['watermark_filename'] = watermark_filename
         
          
         
