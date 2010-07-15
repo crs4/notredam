@@ -570,7 +570,7 @@ class AudioEncode(BaseAction):
     def get_adapt_params(self):
         tmp = dict(self.parameters)
         tmp['bitrate'] = tmp.pop('audio_bitrate')
-        tmp['rate'] = tmp.pop('audio_erate')
+        tmp['rate'] = tmp.pop('audio_rate')
         
         return tmp
             
