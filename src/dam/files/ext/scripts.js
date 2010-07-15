@@ -199,15 +199,22 @@ function _global_generate_details_form(grid, selected, actionsStore, media_type,
 	var val;
 	var recAppValues;
 	
-	if(DEBUG_SCRIPT)
+	if(DEBUG_SCRIPT){
     	console.log(name_action);
-    
+    	console.log('parameters');
+		console.log(parameters);
+	}
     for (i=0;i<parameters.length;i++){
 //    	cercare il name_action nella gridlistactions, e verificare se ha values
         recApp = actionsStore.getAt(actionsStore.findExact('name', name_action));
         //in sendbymail restituisce in ordine inverso.
+        if (DEBUG_SCRIPT){
+        	console.log('recApp[data]');
+        	console.log(recApp['data']);
+        }
         if (parameters[i].name != recApp['data']['parameters'][i].name){
         	var j = 0;
+        	console.log(recApp['data']['parameters'][j]);
         	while (parameters[i].name != recApp['data']['parameters'][j].name) {
         		  j++;
         	}
@@ -663,6 +670,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
   	          value       : parameters[i].value,
   	          id          : 'mail_radiobutton',
   	          name        : parameters[i].name,
+  	          vtype       : 'mail',
   	          msgTarget   : 'side',  
 	            style     :'margin-top:75px',
 	            hideLabel : true,
@@ -690,12 +698,6 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
     		if (parameters[i]['value']) 
     			val = dict[parameters[i]['value']]; 
     		    		
-			console.log('dict');
-			console.log(dict);
-			console.log(recAppValues);
-			console.log(val);
-			
-
 			var output = new Ext.form.ComboBox({                            
     			store        : recAppValues,
     			id           : 'output_radiobutton',
@@ -707,10 +709,6 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
     	    });     		
     	}
     }
-    console.log(max_height);
-    console.log(max_width);
-    console.log(output_format);
-    console.log(output);
     
 	panel.add({ 
         layout:'column', 
@@ -742,9 +740,11 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
 	                			}
 	                		},
 	                		afterrender : function(){
-	                			console.log('after render');
-	                			if (DEBUG_SCRIPT)
+	                			
+	                			if (DEBUG_SCRIPT){
+	                				console.log('after render');
 	                				console.log(Ext.getCmp('mail_radiobutton').getValue());
+	                			}
 	                			if (Ext.getCmp('mail_radiobutton').getValue() == ''){
 	                				this.setValue('output',true);
 	                			}else{
@@ -763,7 +763,7 @@ function _extract_video_thubnail_generate_details_forms(panel, grid, selected, a
           ]
 	     }]
 	});   
-	console.log('panel');
+
 	return panel;
 }
 
@@ -843,7 +843,11 @@ function newRecord(data, media_type){
 function _pull_data(sm,media_type, actionsStore){
 
 	var i,j;
-
+	if (DEBUG_SCRIPT){
+		console.log('pull_data init');
+		console.log(sm.getSelected());
+	}
+	
 	if 	(sm.getSelected()){
 		var newParams = [];
 		var appParams = {};
@@ -867,6 +871,7 @@ function _pull_data(sm,media_type, actionsStore){
     			}
     		}else if (appParams.name == 'output'){
     			//recuperare dizionario
+    			
     			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
     			for (key in dict['data']['parameters'][2]['values'][media_type]) {
     				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
@@ -881,11 +886,13 @@ function _pull_data(sm,media_type, actionsStore){
     		newParams.push(appParams);
     	}
 		if (DEBUG_SCRIPT){
-			console.log("_pull_data");
+			console.log("_pull_data finished");
 			console.log(newParams);
 		}
 	    r.set('parameters',newParams);
 	    r.commit();
+	}else{
+		console.log('else sm.getSelected()');
 	}
 }
 
@@ -948,7 +955,6 @@ function _get_layout_tab(obj, media_type){
 									selectionchange : function(){
 							        	//show form details
 										if (this.getSelected()){
-											console.log(this.getSelected());
 								        	generate_details_forms(Ext.getCmp('detailAction_'+media_type),this.grid, this.getSelected(), Ext.getCmp('action_list_'+media_type).getStore(), media_type);
 										}
 
@@ -1094,9 +1100,19 @@ function _get_tabs(){
 	    }
 	    ],
 	    listeners :{
-			beforetabchange : function(newTab, currentTab) {
-				var type = currentTab.id.slice(4);
-				_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type, Ext.getCmp('action_list_'+type).getStore());
+			beforetabchange : function(panel, newTab, currentTab) {
+				if (currentTab){
+					
+					if (DEBUG_SCRIPT)
+						console.log(currentTab.id.slice(4));
+					
+					var type = currentTab.id.slice(4);
+					if (DEBUG_SCRIPT){
+						console.log('beforetabchange');
+						console.log(Ext.getCmp('my_action_'+type));
+					}
+					_pull_data(Ext.getCmp('my_action_'+type).getSelectionModel(), type, Ext.getCmp('action_list_'+type).getStore());
+				}
 	    	}
 	    } 	    
 	    	
@@ -1350,6 +1366,7 @@ function newRecordLoad(data,type){
  */
 function load_data_script(data){
 
+	console.log('load action');
 	var i;//count
 	var type, name_tab;
 	var my_win = Ext.getCmp('general_form');
@@ -1359,11 +1376,12 @@ function load_data_script(data){
 		//load actions
 		if (DEBUG_SCRIPT){
 			console.log('load action');
-
+			console.log(data['actions_media_type']);
 		}
 		for(i=0;i<data['actions_media_type'][type]['actions'].length;i++){
-			console.log(data['actions_media_type'][type]['actions'][i]);
 			var newRec = newRecordLoad(data['actions_media_type'][type]['actions'][i],type);
+			console.log('neww reccc');
+			console.log(newRec);
         	my_win.get('media_type_tabs').get(name_tab).get('my_action_'+type).getStore().add(newRec);
 		}
 
@@ -1542,11 +1560,12 @@ function manage_script(){
 	        type: 'submit',
 	        handler: function(){
 		    		var my_win = this.findParentByType('window');
-		    		if(DEBUG_SCRIPT) 
+		    		if (DEBUG_SCRIPT) 
 		    			console.log('Open');
 		    		//Open script
 		    		if (my_win.get('open_form').get('my_scripts').getSelectionModel().hasSelection()){
 			    		var data = my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data;
+			    		console.log('dataaaaaaaaa');
 			    		console.log(data);
 			    		my_win.close();
 			    		new_script(false, data.name, data.description, data.id, data.is_global, false);
@@ -1615,7 +1634,11 @@ function _save_association()
 {
 	var i;
 	var scripts_id = [];
+	
+	console.log('save_association');
 	event = Ext.getCmp('id_combo_events').getValue();
+	console.log(Ext.getCmp('id_combo_events').getStore().findExact('name',event));
+	
 	scripts = Ext.getCmp('grid_panel_scripts').getSelectionModel().getSelections();
 	if (event){
 		for(i=0;i<scripts.length;i++){
@@ -1624,7 +1647,7 @@ function _save_association()
 		Ext.Ajax.request({
 	        url: '/set_script_associations/',
 	        params:{ 
-				event_id  : event,
+				event_id  : Ext.getCmp('id_combo_events').getStore().findExact('name',event),
 				script_id : scripts_id
 			},
 	        success: function(response) {
@@ -1680,7 +1703,7 @@ function manage_events(){
 				        		    url        : '/get_events/',
 				        		    method     : 'POST',
 				        		    root       : 'events',
-				        		    fields     : ['id', 'Script name', 'description'],
+				        		    fields     : ['id', 'name', 'description'],
 				        		    autoLoad   : true
 				        		}),
 				        		tpl: '<tpl for="."><div ext:qtip="{description}" class="x-combo-list-item">{description}</div></tpl>',
@@ -1689,9 +1712,10 @@ function manage_events(){
 							    mode         : 'local',
 							    triggerAction: 'all',
 							    resizable    : false,
-							    valueField   : 'id',
+//							    valueField   : 'id',
 							    listeners    : {
 						        	select : function(combo, record, index){
+//				            			console.log(combo.getStore());
 				            			var grid_scripts = Ext.getCmp('grid_panel_scripts');
 				            			Ext.Ajax.request({
 						                    url: '/get_event_scripts/',
