@@ -499,17 +499,18 @@ class Watermark(BaseAction):
        
        
     def _get_params(self):
-        return {
-                'type': self.verbose_name,
-                'parameters':
-                    {
-                    'watermark_filename': self.parameters['watermark_filename'],
-#                    'output_name': Variant.objects.get(pk = self.output_variant).name,
-                    'pos_y_percent': self.parameters['watermark_top_percent'],
-                    'pos_x_percent': self.parameters['watermark_left_percent'],
-                
-                }}
-             
+        if self.media_type == 'video': 
+            return {
+                    'type': self.verbose_name,
+                    'parameters':
+                        {
+                        'watermark_filename': self.parameters['watermark_filename'],
+                        'pos_y_percent': self.parameters['watermark_top_percent'],
+                        'pos_x_percent': self.parameters['watermark_left_percent'],
+                    
+            }}
+        else:
+            return super(Watermark, self)._get_params() 
             
 #    def get_adapt_params(self):
 #        if self.media_type == 'image':
