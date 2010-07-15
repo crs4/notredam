@@ -496,18 +496,31 @@ class Watermark(BaseAction):
                 self.parameters['watermark_top_percent'] = pos_y_percent
                 self.parameters['watermark_left_percent'] = pos_x_percent
                 
+       
+       
+    def _get_params(self):
+        return {
+                'type': self.verbose_name,
+                'parameters':
+                    {
+                    'watermark_filename': self.parameters['watermark_filename'],
+#                    'output_name': Variant.objects.get(pk = self.output_variant).name,
+                    'pos_y_percent': self.parameters['watermark_top_percent'],
+                    'pos_x_percent': self.parameters['watermark_left_percent'],
                 
+                }}
+             
             
-    def get_adapt_params(self):
-        if self.media_type == 'image':
-            return self.parameters
-        else:
-            tmp = dict(self.parameters)
-            tmp['pos_y_percent'] = tmp.pop('watermark_top_percent')
-            tmp['pos_x_percent'] = tmp.pop('watermark_left_percent')
-            
-            return tmp
-#        TODO: watermark corner
+#    def get_adapt_params(self):
+#        if self.media_type == 'image':
+#            return self.parameters
+#        else:
+#            tmp = dict(self.parameters)
+#            tmp['pos_y_percent'] = tmp.pop('watermark_top_percent')
+#            tmp['pos_x_percent'] = tmp.pop('watermark_left_percent')
+#            
+#            return tmp
+
         
 
 preset = {'video':
