@@ -498,7 +498,15 @@ class Watermark(BaseAction):
                 
                 
             
-        
+    def get_adapt_params(self):
+        if self.media_type == 'image':
+            return self.parameters
+        else:
+            tmp = dict(self.parameters)
+            tmp['pos_y_percent'] = tmp.pop('watermark_top_percent')
+            tmp['pos_x_percent'] = tmp.pop('watermark_left_percent')
+            
+            return tmp
 #        TODO: watermark corner
         
 
