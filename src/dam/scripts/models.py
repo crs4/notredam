@@ -531,6 +531,14 @@ class VideoEncode(BaseAction):
         
         if self.parameters.has_key('framerate'): 
             self.parameters['video_framerate'] = self.parameters.pop('framerate')
+            
+            
+    def get_adapt_params(self):
+        tmp = dict(self.parameters)
+        tmp['bitrate'] = tmp.pop('video_bitrate')
+        tmp['framerate'] = tmp.pop('video_framerate')
+        
+        return tmp
                 
 class AudioEncode(BaseAction):
     verbose_name = 'audio encode'
@@ -557,7 +565,15 @@ class AudioEncode(BaseAction):
 
         self.parameters['audio_bitrate'] = int(bitrate)            
         self.parameters['audio_rate'] = int(rate)
-                
+        
+    
+    def get_adapt_params(self):
+        tmp = dict(self.parameters)
+        tmp['bitrate'] = tmp.pop('audio_bitrate')
+        tmp['rate'] = tmp.pop('audio_erate')
+        
+        return tmp
+            
 class ExtractVideoThumbnail(SaveAction):
     verbose_name = 'extract video thumbnail'
     media_type_supported = ['video']
