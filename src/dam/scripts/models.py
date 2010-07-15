@@ -100,7 +100,7 @@ class Script(models.Model):
     
     def get_actions(self, for_json = False):
         actions_available = {}       
-       
+        logger.debug('--------- script %s' %self)
         classes = get_all_actions()
         
         for subclass in classes:
@@ -150,7 +150,8 @@ class Script(models.Model):
                 params['media_type'] = media_type
                 params['source_variant'] = action.source_variant
                 params['script'] = self
-                logger.debug('action_dict %s'%action_dict)
+                logger.debug('----action_dict %s'%action_dict)
+                logger.debug('params %s'%params)
                 try:                    
                     action_tmp = actions_available[type](**params)                
                 except Exception, ex:              
@@ -507,15 +508,13 @@ class VideoEncode(BaseAction):
     @staticmethod
     def required_parameters(workspace):
         return [{ 'name': 'bitrate','type': 'number', 
-                 'values': {'video': [64,128, 192, 256, 590, 640 ,1024 , 1536, 2048, 4096, 8192, 12288, 20040]},
-                  'audio': [], 'image':[], 'doc': []
-                 ,
-                 }, 
+                 'values': {'video': [64,128, 192, 256, 590, 640 ,1024 , 1536, 2048, 4096, 8192, 12288, 20040],
+                  'audio': [], 'image':[], 'doc': []}
+                },
                 { 'name': 'framerate', 'type': 'number',
 #                 'values': [[\"25/2\", 12.5], [\"24/1\", 24], [\"25/1\", 25], [\"57000/1001\", 29.97],[\"57/1\", 57]]
                 'values': {'video':['25/2','24/1', '25/1', '57000/1001', '57/1'], 'audio': [], 'image':[], 'doc': []}
-                 }
-                
+                 }                
                 ]
     
     def __init__(self, media_type, source_variant, workspace, script, bitrate, framerate):
