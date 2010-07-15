@@ -407,6 +407,18 @@ class SendByMail(SaveAs):
         super(SendByMail, self).__init__(media_type, source_variant, workspace, script, output, output_format,   embed_xmp)
         self.mail = mail
          
+         
+    def _get_params(self):
+        return {
+                'type': self.verbose_name,
+                'parameters':
+                    {
+                    'mail': self.mail,
+#                    'output_name': Variant.objects.get(pk = self.output_variant).name,
+                    'output_format': self.output_format,
+                    'embed_xmp': self.embed_xmp,
+                
+                }}
         
     @staticmethod
     def required_parameters(workspace = None):
