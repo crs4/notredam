@@ -1322,14 +1322,14 @@ class ItemResource(ModResource):
         resp['metadata'] = metadata
         
 #            request.POST.['get_variant_urls'] = workspace
-        if request.GET.__contains__('variants_workspace'):
-            ws_id = request.GET.get('variants_workspace')
-            variants = request.GET.getlist('variants')
+        if request.GET.__contains__('renditions_workspace'):
+            ws_id = request.GET.get('renditions_workspace')
+            variants = request.GET.getlist('renditions')
             
             self.get_variant_urls(user,  item, ws_id, variants )
             
             logger.debug(item.variants)
-            resp['variants'] = {}
+            resp['renditions'] = {}
                 
             for variant_name,  value in item.variants.items():
                 tmp = {}
@@ -1341,7 +1341,7 @@ class ItemResource(ModResource):
                 tmp['url'] = value
 
                 
-                resp['variants'] [variant_name] = tmp
+                resp['renditions'] [variant_name] = tmp
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
