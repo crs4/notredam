@@ -19,26 +19,38 @@
 import os.path, os
 import sys
 
-MEDIADART_STORAGE = '/tmp/prova/'
+MEDIADART_STORAGE = '/home/mauro/work/mediadart_files'
 
 GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
 
 DEMO_STRING="Development Demo" 
-PYTHONPATH= os.path.join(os.getenv('HOME'), "/opt/mediadart-application/"  )
+PYTHONPATH= "/home/mauro/work/mediadart/src/"
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(PYTHONPATH)
 sys.path.append(ROOT_PATH)
 
-INSTALLATIONPATH = ROOT_PATH
-THUMBS_DIR = os.path.join(INSTALLATIONPATH, 'files', 'thumbs')
+
+INSTALLATIONPATH = os.path.join(os.getenv('HOME'), ".dam"  )
+sys.path.append(INSTALLATIONPATH)
+
+THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
+
+from config import *
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
+MEDIADART_CONF['log_path'] = dir_log
+
+if DATABASE_ENGINE == 'sqlite3':
+    DATABASE_NAME = os.path.join(INSTALLATIONPATH,  DATABASE_NAME)
+
+
+
 
 EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
-#SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
-SERVER_PUBLIC_ADDRESS = '10.211.55.4:8000'
+SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
+#SERVER_PUBLIC_ADDRESS = '10.211.55.4:8000'
 
 METADATA_DEFAULT_LANGUAGE = 'en-US'
 DEMO_STRING="Development Demo" 
@@ -51,11 +63,6 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-
-DATABASE_ENGINE = 'sqlite3'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'dam.db'	         # Or path to database file if using sqlite3.
-DATABASE_USER = ''	         # Not used with sqlite3.
-DATABASE_PASSWORD = ''	     # Not used with sqlite3.
 
 #DATABASE_HOST = ''	         # Set to empty string for localhost. Not used with sqlite3.
 #DATABASE_PORT = ''	         # Set to empty string for default. Not used with sqlite3.
