@@ -506,7 +506,7 @@ class WorkspaceResource(ModResource):
     @api_key_required   
     def get_variants(self,  request,  workspace_id):
         """
-        Allows to get informations about the variants of the workspace.
+        Allows to get informations about the renditions of the workspace.
         - method: GET
             - parameters: none
         - returns: information on renditions for example: {"renditions": [{"caption": "Original", "auto_generated": false, "id": 1, "media_type": ["image", "video", "doc", "audio"], "name": "original"}, {"caption": "edited", "auto_generated": false, "id": 2, "media_type": ["image", "video", "doc", "audio"], "name": "edited"}, {"caption": "Thumbnail", "auto_generated": true, "id": 3, "media_type": ["image", "video", "doc"], "name": "thumbnail"}, {"caption": "Preview", "auto_generated": true, "id": 4, "media_type": ["image", "video", "doc", "audio"], "name": "preview"}, {"caption": "Fullscreen", "auto_generated": true, "id": 5, "media_type": ["image"], "name": "fullscreen"}, {"caption": "mail", "auto_generated": true, "id": 6, "media_type": ["image", "video", "doc", "audio"], "name": "mail"}]}
@@ -514,7 +514,7 @@ class WorkspaceResource(ModResource):
         
         """
         
-        vas = Variant.objects.filter(Q(workspace__pk = workspace_id) |Q (workspace__isnull = True))
+        vas = Variant.objects.filter(Q(workspace__pk = workspace_id) |Q (workspace__isnull = True), hidden = False)
         resp = {'renditions':[]}
         workspace = Workspace.objects.get(pk = workspace_id)
         
