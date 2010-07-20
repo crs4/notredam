@@ -773,9 +773,7 @@ class ItemResource(ModResource):
         - returns: empty string
 
         """       
-        logger.debug(request.POST)
-        logger.debug('request.META')
-        logger.debug(request.META)
+
         try:
             request.upload_handlers = [StorageHandler()]
             upload_file = request.FILES['Filedata']
