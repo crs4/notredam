@@ -169,7 +169,7 @@ class WSTestCase(MyTestCase):
         
     def test_get_collections(self):
         ws_pk = 1
-        params = {'workspace_id':ws_pk}        
+        params = {}        
         params = self.get_final_parameters(params)
         response = self.client.get('/api/workspace/%s/get_collections/'%ws_pk,  params)                
         resp_dict = json.loads(response.content)        
