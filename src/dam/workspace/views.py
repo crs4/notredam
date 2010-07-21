@@ -645,6 +645,7 @@ def load_items(request, view_type=None, unlimited=False, ):
             except:
                 # problems retrieving thumb, skip this items
                 continue
+#                my_caption = ''
             if inprogress:
                 preview_available = tasks_pending_obj.filter(action__component__variant__name = 'preview', action__component__item = item, action__function = 'adapt_resource').count()
             else:

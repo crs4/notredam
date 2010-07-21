@@ -203,7 +203,7 @@ class WorkspaceResource(ModResource):
             information about the workspace collections, for example:{"collections": [{'items': [], 'label': 'test_with_item', 'parent_id': None, 'workspace': 1, 'id': 19, 'children': []}]}
         """
         
-        workspace_id = request.GET.get('workspace_id')
+        
         ws = Workspace.objects.get(pk = workspace_id)
         
         kws = []
