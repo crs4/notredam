@@ -640,8 +640,11 @@ def load_items(request, view_type=None, unlimited=False, ):
             logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
 
             states = item.stateitemassociation_set.all()
-
-            my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+            try:
+                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+            except:
+                # problems retrieving thumb, skip this items
+                continue
             if inprogress:
                 preview_available = tasks_pending_obj.filter(action__component__variant__name = 'preview', action__component__item = item, action__function = 'adapt_resource').count()
             else:
