@@ -407,10 +407,10 @@ class WorkspaceResource(ModResource):
                     
 #        resp = json.dumps(tax)            
 #        return HttpResponse(resp)        
-        new_post = request.POST.copy()
-        new_post['workspace_id'] = workspace_id
-        request.POST= new_post
-        return KeywordsResource().read(request)
+        new_GET = request.GET.copy()
+        new_GET['workspace_id'] = workspace_id
+        request.GET= new_GET
+        return KeywordsResource()._read(request)
     
     @exception_handler
     @api_key_required
@@ -1821,29 +1821,10 @@ class CollectionResource(ModResource):
             
 class KeywordsResource(ModResource):    
 
+
+    
     @exception_handler
-    @api_key_required
-    def read(self,  request,  node_id = None):
-        """
-        Returns information about a given keyword or all keywords of a workspace
-        @param node_id:optional, required if no workspace_id is passed
-        - method: GET
-            - parameters: 
-                
-                - workspace_id: optional, required if no node_id is passed. Use it to get all the keywords of the given workspace
-        
-        - returns :
-            JSON example: {
-                                    'id': 1,
-                                    'label': 'test', 
-                                    'parent_id': null, 
-                                    'workspace': 1  
-                                    'associate_ancestors': false,
-                                    'metadata_schemas': ['id': 22, 'name': 'test', 'namespace': 'test'],
-                                    items: ['123', '345']
-                                    }                   
-        """   
-        
+    def _read(self, request,  node_id = None):
         def get_info(kw,  get_branch = False):
             kw_info = {
                 'id': kw.pk,  
@@ -1876,8 +1857,6 @@ class KeywordsResource(ModResource):
                     kw_info['children'].append(get_info(child,  True))
             else:
                 kw_info['children'] = [i.pk for i in kw.children.all()] 
-                
-                
             
             return kw_info
         
@@ -1922,7 +1901,35 @@ class KeywordsResource(ModResource):
             resp = json.dumps(tax)
         
         
-        return HttpResponse(resp)   
+        return HttpResponse(resp)
+        
+        
+        
+    @exception_handler
+    @api_key_required
+    def read(self,  request,  node_id = None):
+        """
+        Returns information about a given keyword or all keywords of a workspace
+        @param node_id:optional, required if no workspace_id is passed
+        - method: GET
+            - parameters: 
+                
+                - workspace_id: optional, required if no node_id is passed. Use it to get all the keywords of the given workspace
+        
+        - returns :
+            JSON example: {
+                                    'id': 1,
+                                    'label': 'test', 
+                                    'parent_id': null, 
+                                    'workspace': 1  
+                                    'associate_ancestors': false,
+                                    'metadata_schemas': ['id': 22, 'name': 'test', 'namespace': 'test'],
+                                    items: ['123', '345']
+                                    }                   
+        """   
+                
+        return self._read(request, node_id)
+   
     
     
     def _prepare_metadata_schema(self,  request):        

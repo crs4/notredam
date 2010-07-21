@@ -316,7 +316,7 @@ class WSTestCase(MyTestCase):
     def test_keywords(self):
              
         ws_pk = 1
-        params = {'workspace_id':ws_pk}        
+        params = {}        
         params = self.get_final_parameters(params)
         
         response = self.client.get('/api/workspace/%s/get_keywords/'%ws_pk, params,  )        
@@ -729,6 +729,7 @@ class ItemTest(MyTestCase):
         file.close()
         
         print response.content 
+        self.assertTrue(response.content == '')
         self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
         self.assertTrue(Action.objects.filter(component__in = item.component_set.all()).count() == 7) #(adapt + extract feat)*3 + extract feat orig
                  
