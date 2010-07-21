@@ -1332,10 +1332,11 @@ class ItemResource(ModResource):
             for variant_name,  value in item.variants.items():
                 tmp = {}
                 try:
-                    file_name = item.component_set.get(variant__pk = variant_name, workspace__pk = ws_id).file_name
+                    file_name = item.component_set.get(variant__name = variant_name, workspace__pk = ws_id).file_name
                     tmp['file_name'] = file_name
-                except:
-                    pass
+                except Exception, ex:
+                    logger.exception(ex)
+                    
                 tmp['url'] = value
 
                 
@@ -2019,7 +2020,7 @@ class KeywordsResource(ModResource):
         user_id = request.POST.get('user_id') 
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_taxonomy'])
         
-        new_node =Node.objects.filter(parent = node_parent, label = request.POST['label'])
+        new_node = Node.objects.filter(parent = node_parent, label = request.POST['label'])
         if new_node.count() > 0:
             new_node = new_node[0]
         else:
