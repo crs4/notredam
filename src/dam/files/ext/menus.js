@@ -24,7 +24,7 @@ Ext.onReady(function(){
         var current_ws = ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk;
 
         var members_store = new Ext.data.JsonStore({
-            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", "edit_collection"],
+            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", "edit_collection", 'edit_scripts', 'run_scripts'],
             root: 'elements',
             baseParams: {ws_id: current_ws},
             proxy : new Ext.data.HttpProxy({
@@ -115,7 +115,30 @@ Ext.onReady(function(){
                 trueText: 'Yes',
                 falseText: 'No',
                 editor: booleditor
-            }]
+            },
+            
+             {
+                header: 'Can edit scripts',
+                dataIndex: 'edit_scripts',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            },
+             {
+                header: 'Can run scripts',
+                dataIndex: 'run_scripts',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            }
+            
+            
+            
+            ]
         });    
 
         var members_panel = new Ext.Panel({
@@ -153,7 +176,8 @@ Ext.onReady(function(){
                             title: 'User permissions',
                             labelWidth: 150, 
                             defaults: {width: 100},
-                            height: 200,
+                            height: 300,
+                            autoScroll: true,
                             id: 'new_user_permissions',
                             items: [{
                                 fieldLabel: 'Is admin',
@@ -179,7 +203,21 @@ Ext.onReady(function(){
                                 fieldLabel: 'Can edit collections',
                                 name: 'edit_collection',
                                 xtype: 'checkbox'       
-                            }]
+                            },
+                            {
+                                fieldLabel: 'Can edit scripts',
+                                name: 'edit_scripts',
+                                xtype: 'checkbox'       
+                            },
+                            {
+                                fieldLabel: 'Can run scripts',
+                                name: 'run_scripts',
+                                xtype: 'checkbox'       
+                            }
+                            
+                            
+                            
+                            ]
                         }); 
 
                         var list_panel = new Ext.Panel({
@@ -220,6 +258,14 @@ Ext.onReady(function(){
                                     }
                                     if (values.edit_collection) {
                                         perm_values.edit_collection = 1;
+                                    }
+                                    
+                                    if (values.run_scripts) {
+                                        perm_values.run_scripts = 1;
+                                    }
+                                    
+                                     if (values.edit_scripts) {
+                                        perm_values.edit_scripts = 1;
                                     }
                                     var selected = Ext.getCmp('available_users').getSelectedRecords();
                                     if (selected.length == 0) {
@@ -289,7 +335,7 @@ Ext.onReady(function(){
             constrain: true,
             plain: true,
             modal: true,
-            width: 800,
+            width: 950,
             height: 400,
             id: 'members_conf',
             title: 'Members configuration',
