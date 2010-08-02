@@ -110,10 +110,10 @@ var ws_permissions_store = new Ext.data.JsonStore({
                 else
                     Ext.getCmp('preferences_scripts').disable();
                 
-                 if(run_scripts)
-                    Ext.getCmp('runscript').enable();
-                else
-                    Ext.getCmp('runscript').disable();
+//                 if(run_scripts)
+//                    Ext.getCmp('runscript').enable();
+//                else
+//                    Ext.getCmp('runscript').disable();
                 
                 if(ws_state_store.getCount()) {
                     Ext.getCmp('set_state_to').show();               

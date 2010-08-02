@@ -504,6 +504,8 @@ var showDetails = function(view){
         Ext.getCmp('object_menu').menu.items.get('mvto').disable();
         Ext.getCmp('object_menu').menu.items.get('remove_from_ws').disable();
         Ext.getCmp('object_menu').menu.items.get('set_state_to').disable();
+        
+        
         Ext.getCmp('object_menu').menu.items.get('runscript').disable();
 //            preview = Ext.getCmp('preview_panel').body;
 //            preview.update('');
