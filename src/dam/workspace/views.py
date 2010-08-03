@@ -525,7 +525,9 @@ def _search(request,  items, workspace = None):
 #                language_selected = get_user_setting_by_level(language_settings,workspace)
 #                TODO: change when gui multilanguage ready
                 language_selected = 'en-US' 
-                items = items.extra(select=SortedDict([(order_by, 'select value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s or language=null')]),  select_params = (str(property.id),  language_selected))
+                logger.debug('------------- items.query %s'%items.query)
+                items = items.extra(select=SortedDict([(order_by, 'select distinct value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s')]),  select_params = (str(property.id),  language_selected))
+                logger.debug('------------- items.query %s'%items.query)
                 
         if order_mode == 'decrescent':
             items = items.order_by('-%s'%order_by)

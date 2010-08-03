@@ -846,12 +846,11 @@ function createMediaPanel(config, autoLoad) {
         order_mode: 'decrescent',
         iconCls:'sort_desc',
         sort: function(){
-            Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload({
-                params: {
-                    order_by: this.query,
-                    order_mode: this.order_mode
-                }
-            });
+            var store = Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore();
+            store.baseParams.order_by = this.query;
+            store.baseParams.order_mode = this.order_mode;
+            store.reload();
+                        
             
         },
         handler: function(){
