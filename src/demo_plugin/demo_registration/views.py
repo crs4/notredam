@@ -26,7 +26,7 @@ from django.contrib.auth.models import User, Permission
 from django.utils import simplejson
 from django.core.mail import EmailMessage
 
-from dam.settings import EMAIL_SENDER
+from dam.settings import EMAIL_SENDER, EMAIL_ADMIN
 from dam.application.forms import Registration
 from dam.workspace.models import Workspace
 
@@ -37,7 +37,8 @@ def registration(request):
     """
     Creates registration form or saves registration info
     """
-    from dam.workspace.views import _create_workspace
+    #from dam.workspace.views import _create_workspace
+    from dam.workspace.models import DAMWorkspace as Workspace
 
     def save_user(form):
         form.save(commit = True)
@@ -48,8 +49,9 @@ def registration(request):
         user.user_permissions.add(add_ws_permission)
 
         user.save()
-        ws = Workspace(name=user.username)
-        _create_workspace(ws,  user)
+        #ws = Workspace(name=user.username)
+        #_create_workspace(ws,  user)
+        Workspace.objects.create_workspace(user.username, '', user)        
         return user
 
     if request.method == 'POST': 
@@ -60,6 +62,11 @@ def registration(request):
             user = save_user(form)
 
             resp = simplejson.dumps({'success': True, 'errors': []})
+            
+            email = EmailMessage('Registration required', 'Hi Administrator,\n\nactive this account  %s.'%(user.username), 'NotreDAM <%s>' % EMAIL_SENDER,
+            [EMAIL_ADMIN], [],
+            headers = {'Reply-To': 'NotreDAM <%s>' % EMAIL_SENDER})
+            email.send()
             return HttpResponse(resp)
 
         else:
@@ -82,7 +89,6 @@ def confirm_user(request):
     """
 
     ids = simplejson.loads(request.POST.get('obj_list'))
-
     for id in ids:
     
         user = User.objects.get(pk=id)
@@ -90,11 +96,9 @@ def confirm_user(request):
         user.is_active = True
         user.date_joined = datetime.datetime.today()
         user.save()
-
-        email = EmailMessage('Registration confirmation', 'Hi %s,\n\nYour account has been created.\n\nVisit http://public-demo.notre-dam.org to login.\n\nRemember that your account will be automatically disabled after 10 days.'%(user.username), 'NotreDAM <%s>' % EMAIL_SENDER,
+        email = EmailMessage('Registration confirmation', 'Hi %s,\n\nYour account has been created.\n\nVisit http://demo.notre-dam.org to login.\n\nRemember that your account will be automatically disabled after 10 days.'%(user.username), 'NotreDAM <%s>' % EMAIL_SENDER,
             [user.email], [],
             headers = {'Reply-To': 'NotreDAM <%s>' % EMAIL_SENDER})
-
         email.send()
 
     resp = simplejson.dumps({'success': True, 'errors': []})
