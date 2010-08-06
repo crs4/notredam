@@ -186,7 +186,7 @@ class Script(models.Model):
                 
             for action in actions[media_type]:
 #                if isinstance(action, SaveAs) or isinstance(action, SendByMail) or isinstance:
-                if action.__class__.__base__ == SaveAction:
+                if action.__class__.__base__ == SaveAction or action.__class__ == SendByMail:
                     action.execute(item,adapt_parameters)
                 else:
                     tmp_adapt_parameters = action.get_adapt_params()
