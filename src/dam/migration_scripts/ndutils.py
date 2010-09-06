@@ -21,8 +21,11 @@ import urllib
 from hashlib import sha1 
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
+import logging
 
-DEBUG = True
+logging.basicConfig(level=logging.DEBUG)
+
+DEBUG = False
 
 class ImportExport(object):
     """
@@ -37,7 +40,7 @@ class ImportExport(object):
         self.secret = None
         self.sessionid = None
         self.loggedin = False
-        self.userid = 1
+        self.userid = None
         self.conn = httplib.HTTPConnection(self.host, self.port)
         
     def __del__(self):
@@ -56,7 +59,7 @@ class ImportExport(object):
                 'user_id': self.userid }
 
         if DEBUG:
-            print url
+            logging.debug("%s" %url)
             
         if kwargs:
             p.update(kwargs)
@@ -66,11 +69,13 @@ class ImportExport(object):
             p.extend(kwargs.items())
             
         if DEBUG:
-            print "params ",p 
+            logging.debug("params: %s " %p) 
+            logging.debug("%s" %url)
 
         p = self._add_checksum_new(p)
         params = urllib.urlencode(p)
-
+        if DEBUG:
+            logging.debug("---------------params: %s" %params) 
         if method == 'POST':
             self.conn.request(method, url, params)
         elif method == 'GET':
@@ -81,7 +86,7 @@ class ImportExport(object):
         response = self.conn.getresponse()
         json_data = response.read()
         if DEBUG:
-            print 'response : ', json_data
+            logging.debug('response : %s' %json_data)
         if json_data != '':
             data = JSONDecoder().decode(json_data)
             return data
@@ -138,7 +143,7 @@ class ImportExport(object):
         try:
             self.secret = data['secret']
             self.sessionid = data['session_id']
-            #self.userid = data['user_id']
+            self.userid = data['user_id']
             self.loggedin = True
             return True
         except:
@@ -175,8 +180,8 @@ class Exporter(ImportExport):
     def _workspace_get_items(self, workspace_id):
         return self._call_server('GET', '/api/workspace/%s/get_items/' % workspace_id)
 
-    def _workspace_get_variants(self, workspace_id):
-        return self._call_server('GET', '/api/workspace/%s/get_variants/' % workspace_id)
+    def _workspace_get_renditions(self, workspace_id):
+        return self._call_server('GET', '/api/workspace/%s/get_renditions/' % workspace_id)
 
     def _workspace_get_collections(self, workspace_id):
         return self._call_server('GET', '/api/workspace/%s/get_collections/' % workspace_id)
@@ -190,13 +195,13 @@ class Exporter(ImportExport):
     def _workspace_get_members(self, workspace_id):
         return self._call_server('GET', '/api/workspace/%s/get_members/' % workspace_id)
     
-    def _item_variant_get(self, param):
-#        return self._call_server('GET', '/api/variant/get/' ,**param)
-        return self._call_server('GET', '/api/workspace/%s/get_variants/' % param['workspace_id'],  **param)
+    def _item_rendition_get(self, param):
+#        return self._call_server('GET', '/api/rendition/get/' ,**param)
+        return self._call_server('GET', '/api/workspace/%s/get_renditions/' % param['workspace_id'],  **param)
 
     def _item_get(self, item_id, workspace_id=None):
         if workspace_id:
-            return self._call_server('GET', '/api/item/%s/get/' % item_id, variants_workspace=workspace_id)
+            return self._call_server('GET', '/api/item/%s/get/' % item_id, renditions_workspace=workspace_id)
         else:
             return self._call_server('GET', '/api/item/%s/get/' % item_id)
 
@@ -239,14 +244,14 @@ class Importer(ImportExport):
     def _workspace_add_members(self,id_workspace, param):
         return self._call_server('POST', '/api/workspace/%s/add_members/' % id_workspace, *param)
 
-    def _variants_edit(self,id_variant, param):
-        return self._call_server('POST', '/api/variant/%s/edit/' % id_variant, *param)
+    def _renditions_edit(self,id_rendition, param):
+        return self._call_server('POST', '/api/rendition/%s/edit/' % id_rendition, *param)
 
-    def _variants_new(self, param):
-        return self._call_server('POST', '/api/variant/new/', *param)
+    def _renditions_new(self, param):
+        return self._call_server('POST', '/api/rendition/new/', *param)
 
-    def _variants_upload_watermarking(self, param):
-        return self._call_server('POST', '/api/variant/get_watermarking_uri/', *param)
+    def _renditions_upload_watermarking(self, param):
+        return self._call_server('POST', '/api/rendition/get_watermarking_uri/', *param)
 
     def _keyword_new(self, param):
         return self._call_server('POST','/api/keyword/new/', **param)
@@ -269,7 +274,7 @@ class Importer(ImportExport):
     def _item_new(self,param):
         return self._call_server('POST','/api/item/new/', **param)
     
-    def _item_upload_variant(self,item_id,param):
+    def _item_upload_rendition(self,item_id,param):
         return self._call_server('POST','/api/item/%s/upload/' % item_id, **param)
         
     def _item_add_to_ws(self,item_id,param):
