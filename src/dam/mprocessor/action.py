@@ -7,6 +7,7 @@ from dam.mprocessor import processors  # to be changed
 from dam.mprocessor.models import Job
 from dam.mprocessor.utils import MemCache
 
+
 # Create your models here.
 def new_id():
     return uuid4().hex
@@ -60,41 +61,45 @@ class ActionError(Exception):
     pass
 
 
+#
+# example of use
+# action = Action().set_component(component)\
+#                  .push('xmp_embed')\
+#                  .push('altro')\
+#                  .execute(None)
+#
+
 class Action:
     def __init__(self, job_id=None):
-        self.job_id = job_id
-        self.decoded_params = None
         if job_id:
             self.job = memcache.get(job_id) or Job.objects.get(job_id=job_id)
+            self.decoded_params = loads(self.job.params)
         else:
             self.job = Job( )
+            self.decoded_params = [ ['dummy'] ]    # first function is always discarded
 
-    def start(self, component, function_list):
-        if self.job_id:
-            raise ActionError('Error: staring a persisted action')
-        self.job_id = self.job.id
+    def push(self, function_name, *function_params):
+        self.decoded_params.append([function_name, function_params])
+        return self
+
+    def set_component(self, component):
         self.job.component = component
-        self.job.params = dumps(function_list)
-        self.job.save()
-        self.execute()
+        return self
 
-    def execute(self):
-        self.decoded_params = self.decoded_params or loads(self.job.params)
-        if not self.decoded_params:
-            return self.end_action()
-        fname = self.decoded_params[-1]
-        f = getattr(processors, fname)
-        try:
-            return f(self.job.component, self.job.job_id)
-        except Exception ,e:
-            log.error('Action.execute: error %s' % str(e))
-            return
-
-    def pop(self):
-        self.decoded_params = self.decoded_params or loads(self.job.params)
-        self.decoded_params.pop()
-        self.job.params = dumps(self.decoded_params)
-        self.job.save()
+    def execute(self, data):
+        "This changes the state of the job and it is not undoable"
+        if not self.job.component:
+            raise('Error: executing action with no component')
+        self.decoded_params.remove(self.decoded_params[0])
+        if self.decoded_params:
+            self.job.params = dumps(self.decoded_params)
+            self.job.save()
+            fname, fparams = self.decoded_params[0]
+            func = getattr(processors, fname)
+            log.debug('Action.executing: %s' % fname)
+            return func(self, data, *fparams)
+        else:
+            raise ActionError('Attempt to execute an empty action')
 
     def retire(self):
         self.job.delete()
