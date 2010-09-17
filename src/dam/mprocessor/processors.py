@@ -1,5 +1,5 @@
 import mimetypes
-from django.http import Http404, HttpResponse, HttpResponseServerError
+from uuid import uuid4
 from django.core.mail import EmailMessage
 from mediadart.mqueue.mqclient_async import Proxy
 from mediadart.storage import Storage
@@ -7,88 +7,75 @@ from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
 
+# Create your models here.
+def new_id():
+    return uuid4().hex
+
 import logging
 logger = logging.getLogger('batch_processor')
 logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/batch_processor.log')))
 logger.setLevel(logging.DEBUG)
 
 #
-# This is the views that receives responses and pushes on the chain of calls
+# Run scripts for after upload actions
 #
-def dispatch(request, job_id):
-    """General dispatcher for incoming responses"""
-    try:
-        result = loads(request.raw_post_data)
-        action = Action(job_id)
-    except Exception, e:
-        logger.ERROR('Invalid body in post: %s' % str(e))
-        return HttpResponseServerError('invalid data');
-    next_step = action.execute(result)
-    if next_step not in ('wait', 'done'):
-        logger.ERROR('Invalid return value from action')
-    if next_step == 'done':    # functions that don't invoke mediadart should be terminal
-        action.retire()        # and return done
-    elif next_step == 'wait':  # function that invoded mediadart should return wait
-        pass
-    else:
-        logger.ERROR('Invalid return value from action')
-    return HttpResponse('ok')
+
+def start_upload_event_handlers(job, result):
+    item = job.component.item
+    for ws in item.workspaces.all():
+        EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+    
 
 #
 # Embed XMP chain
 #
-def embed_xmp(action, result):
+def embed_xmp(job, result):
     logger.debug('STARTING embed_xmp')
-    component = action.component
-    xmp_embedder_proxy = Proxy('XMPEmbedder', callback='http://%s:%s/mprocessor/%s' % (host, port, action.job_id)) 
+    component = job.component
+    xmp_embedder_proxy = Proxy('XMPEmbedder', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id)) 
     metadata_dict = synchronize_metadata(component)
+    job.add_func('embed_xmp_2')
     xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
-    action.push('embed_xmp_2')
-    return 'wait'
 
-def embed_xmb_2(action, result):
+def embed_xmb_2(job, result):
     if result:
-        reset_modified_flag(action.component)
+        reset_modified_flag(job.component)
     else:
         pass  # NOTHING HERE?
-    return 'done'
 
 #
 # Extract features chain
 #
-def extract_features(action, result):
+def extract_features(job, result):
     extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
     extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job_id))
 
-    my_media_type = action.component.media_type.name
+    my_media_type = job.component.media_type.name
     my_extractor = extractors[my_media_type]
 
     if component.variant.auto_generated:
-        action.push('save_features', my_extractor)
+        job.add_func('save_features', my_extractor)
     else:
-        action.push('extract_xmp', my_extractor)
-    extractor_proxy.extract(action.component.ID, my_extractor)
-    return 'wait'
+        job.add_func('extract_xmp', my_extractor)
+    extractor_proxy.extract(job.component.ID, my_extractor)
 
-def extract_xmp(action, result, extractor):
+def extract_xmp(job, result, extractor):
     extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job_id))
-    _save_component_features(action.component, result, extractor)
+    _save_component_features(job.component, result, extractor)
+    job.add_func('save_features', 'xmp_extractor')
     extractor_proxy.extract(component.ID, 'xmp_extractor')
-    action.push('save_features', 'xmp_extractor')
-    return 'wait'
 
-def save_features(action, result, extractor):
-    _save_component_features(action.component, result, extractor)
-    return 'done'
+def save_features(job, result, extractor):
+    _save_component_features(job.component, result, extractor)
         
 
 #
 # Send Mail
 #
-def send_mail(action, result):
+def send_mail(job, result):
     logger.debug("[SendMail.execute] component %s" % component.ID)
     logger.debug('component.get_parameters() %s'%component.get_parameters())
-    mail = action.component.get_parameters()['mail']
+    mail = job.component.get_parameters()['mail']
     
     email = EmailMessage('OpenDam Rendition', 'Hi, an OpenDam rendition has been attached.  ', EMAIL_SENDER,
             [mail])
@@ -97,29 +84,22 @@ def send_mail(action, result):
 #    reactor.callInThread(email.send)
     email.send()
     logger.debug("[SendMail.end] component %s" % component.ID)
-    return 'done'
 
 
 #
 #  Adapt
 # 
-def adapt_resource(action, result):
+def adapt_resource(job, result):
     from scripts.models import Script
 
-    def save_and_extract_features(result, component, machine):
-        if result:
-            dir, name = os.path.split(result)
-            component._id = name
-            component.save()
-#            extract_features(component)
-            machine_to_next_state(machine)
+    component = job.component
 
     logger.debug("[Adaptation.execute] component %s" % component.ID)
 
     adapter_proxy = Proxy('Adapter') 
 
     item = component.item
-    workspace = component.workspace.all()[0] 
+#    workspace = component.workspace.all()[0] 
 
 #    variant = component.variant
     
@@ -134,7 +114,6 @@ def adapt_resource(action, result):
     watermark_filename = vp.get('watermark_filename', False)
     
     if item.type.name == 'image':
-        
         args ={}
         argv = [] #for calling imagemagick
         height = int(vp.get('max_height', -1))        
@@ -229,7 +208,7 @@ def adapt_resource(action, result):
         
         
         
-        d = adapter_proxy.adapt_image_magick(orig.ID, dest_res_id, argv)
+        adapter_proxy.adapt_image_magick(orig.ID, dest_res_id, argv)
 #        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
 
     elif item.type.name == 'video':
@@ -282,7 +261,7 @@ def adapt_resource(action, result):
              #param_dict['watermark_left'] = 10
 #             yield utils.wait_for_resource(vp.watermark_uri, 5)
                 
-            d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
+            adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
             
 
     elif item.type.name == 'audio':
@@ -294,7 +273,7 @@ def adapt_resource(action, result):
         dest_res_id = dest_res_id + '.' + ext
         
         
-        d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
+        adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
     
     if item.type.name == 'doc':
  
@@ -304,21 +283,22 @@ def adapt_resource(action, result):
         
         dest_res_id = dest_res_id + '.' + transcoding_format
         
-        d = adapter_proxy.adapt_doc(orig.ID, dest_res_id, max_size)
+        adapter_proxy.adapt_doc(orig.ID, dest_res_id, max_size)
 
-    d.addCallbacks(save_and_extract_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
+###    d.addCallbacks(save_and_extract_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
 
     logger.debug("[Adaptation.end] component %s" % component.ID)
 
 #    defer.returnValue( (task, job_id) )
 
-
-
-
-
-
-
-
+def save_and_extract_features(job, result):
+    component = job.component
+    if result:
+        dir, name = os.path.split(result)
+        component._id = name
+        component.save()
+#            extract_features(component)
+#            machine_to_next_state(machine)
 
 
 #
