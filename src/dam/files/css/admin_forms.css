@@ -1,0 +1,394 @@
+/*
+*
+* NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+* Email: labcontdigit@sardegnaricerche.it
+* Web: www.notre-dam.org
+*
+* This program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*/
+
+.selector {
+    margin-top: -30px;
+    width: 590px;
+    float: left;
+    margin-left: 115px;
+    
+}
+
+.selector select {
+    width: 270px;
+    height: 17.2em;
+}
+
+.selector-available, .selector-chosen {
+    float: left;
+    width: 270px;
+    text-align: center;
+}
+
+.selector-available h2, .selector-chosen h2 {
+    height: 15px;
+    padding-top: 15px;
+    border: 1px solid #ccc;
+}
+
+.selector .selector-available h2, .selector-chosen h2 {
+    background: white url(/media/img/admin/nav-bg.gif) bottom left repeat-x;
+    color: #666;
+}
+
+.selector .selector-filter {
+    display: block;
+    height: 40px;
+    background: white;
+    border: 1px solid #ccc;
+    border-width: 0 1px;
+    padding: 3px;
+    color: #999;
+    font-size: 10px;
+    margin: 0;
+    text-align: left;
+}
+
+.selector .selector-chosen .selector-filter {
+    padding: 4px 5px;
+}
+
+.selector .selector-available input {
+    width: 228px;
+}
+
+.selector ul.selector-chooser {
+    float: left;
+    width: 22px;
+    height: 50px;
+    background: url(/media/img/admin/chooser-bg.gif) top center no-repeat;
+    margin: 8em 3px 0 3px;
+    padding: 0;
+}
+
+.selector-chooser li {
+    margin: 0;
+    padding: 3px;
+    list-style-type: none;
+}
+
+.selector select {
+    margin-bottom: 5px;
+    margin-top: 0;
+}
+
+.selector-add, .selector-remove {
+    width: 16px;
+    height: 16px;
+    display: block;
+    text-indent: -3000px;
+}
+
+.selector-add {
+    background: url(/media/img/admin/selector-add.gif) top center no-repeat;
+    margin-bottom: 2px;
+}
+
+.selector-remove {
+    background: url(/media/img/admin/selector-remove.gif) top center no-repeat;
+}
+
+a.selector-chooseall, a.selector-clearall {
+    display: block;
+    width: 6em;
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: bold;
+    color: #666;
+    padding: 3px 0 3px 18px;
+}
+
+a.selector-chooseall:hover, a.selector-clearall:hover {
+    color: #036;
+}
+
+a.selector-chooseall {
+    width: 7em;
+    background: url(/media/img/admin/selector-addall.gif) left center no-repeat;
+}
+
+a.selector-clearall {
+    background: url(/media/img/admin/selector-removeall.gif) left center no-repeat;
+}
+/* TABLES */
+table {
+    border-collapse: collapse;
+    border-color: #ccc;
+}
+
+td, th {
+    font-size: 11px;
+    line-height: 13px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+    padding: 5px;
+    font-family: "Lucida Grande", Verdana, Arial, sans-serif;
+}
+
+th {
+#    text-align: left;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+thead th, tfoot td {
+    color: #666;
+    padding: 2px 5px;
+    font-size: 11px;
+    background: #e1e1e1 url(../img/admin/nav-bg.gif) top left repeat-x;
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+tfoot td {
+    border-bottom: none;
+    border-top: 1px solid #ddd;
+}
+
+thead th:first-child, tfoot td:first-child {
+#    border-left: none !important;
+}
+
+thead th.optional {
+    font-weight: normal !important;
+}
+
+fieldset table {
+    border-right: 1px solid #eee;
+    border-left: 1px solid #eee;
+}
+
+tr.row-label td {
+    font-size: 9px;
+    padding-top: 2px;
+    padding-bottom: 0;
+    border-bottom: none;
+    color: #666;
+    margin-top: -1px;
+}
+
+tr.alt {
+    background: #f6f6f6;
+}
+
+.row1 {
+    background: #EDF3FE;
+}
+
+.row2 {
+    background: white;
+}
+/* FORM ROWS */
+.form-row {
+    overflow: hidden;
+    padding: 8px 12px;
+    font-size: 11px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-row img, .form-row input {
+    vertical-align: middle;
+}
+
+form .form-row p {
+    padding-left: 0;
+    font-size: 11px;
+}
+/* FORM LABELS */
+form h4 {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+label {
+ /*   font-weight: normal !important;
+    color: #666;
+    font-size: 12px; */
+}
+
+label.inline {
+    margin-left: 20px;
+}
+
+.required label, label.required {
+    font-weight: bold !important;
+    color: #333 !important;
+}
+/* RADIO BUTTONS */
+form ul.radiolist li {
+    list-style-type: none;
+}
+
+form ul.radiolist label {
+    float: none;
+    display: inline;
+}
+
+form ul.inline {
+    margin-left: 0;
+    padding: 0;
+}
+
+form ul.inline li {
+    float: left;
+    padding-right: 7px;
+}
+/* ALIGNED FIELDSETS */
+.aligned label {
+    display: block;
+    padding: 0 1em 3px 0;
+    float: left;
+    width: 8em;
+}
+
+.aligned label.inline {
+    display: inline;
+    float: none;
+}
+
+.colMS .aligned .vLargeTextField, .colMS .aligned .vXMLLargeTextField {
+    width: 350px;
+}
+
+form .aligned p, form .aligned ul {
+    margin-left: 7em;
+    padding-left: 30px;
+}
+
+form .aligned table p {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+form .aligned p.help {
+    padding-left: 38px;
+}
+
+.aligned .vCheckboxLabel {
+    float: none !important;
+    display: inline;
+    padding-left: 4px;
+}
+
+.colM .aligned .vLargeTextField, .colM .aligned .vXMLLargeTextField {
+    width: 610px;
+}
+
+.checkbox-row p.help {
+    margin-left: 0;
+    padding-left: 0 !important;
+}
+/* WIDE FIELDSETS */
+.wide label {
+    width: 15em !important;
+}
+
+form .wide p {
+    margin-left: 15em;
+}
+
+form .wide p.help {
+    padding-left: 38px;
+}
+
+.colM fieldset.wide .vLargeTextField, .colM fieldset.wide .vXMLLargeTextField {
+    width: 450px;
+}
+/* COLLAPSED FIELDSETS */
+fieldset.collapsed * {
+    display: none;
+}
+
+fieldset.collapsed h2, fieldset.collapsed {
+    display: block !important;
+}
+
+fieldset.collapsed h2 {
+    background-image: url(/media/img/admin/nav-bg.gif);
+    background-position: bottom left;
+    color: #999;
+}
+
+fieldset.collapsed .collapse-toggle {
+    padding: 3px 5px !important;
+    background: transparent;
+    display: inline !important;
+}
+/* MONOSPACE TEXTAREAS */
+fieldset.monospace textarea {
+    font-family: "Bitstream Vera Sans Mono", Monaco, "Courier New", Courier, monospace;
+}
+/* SUBMIT ROW */
+.submit-row {
+    padding: 5px 7px;
+    text-align: right;
+    background: white url(/media/img/admin/nav-bg.gif) 0 100% repeat-x;
+    border: 1px solid #ccc;
+    margin: 5px 0;
+}
+
+.submit-row input {
+    margin: 0 0 0 5px;
+}
+
+.submit-row p {
+    margin-top: 0.3em;
+}
+
+.submit-row .deletelink {
+    background: url(/media/img/admin/icon_deletelink.gif) 0 50% no-repeat;
+    padding-left: 14px;
+}
+/* CUSTOM FORM FIELDS */
+.vSelectMultipleField {
+    vertical-align: top !important;
+}
+
+.vCheckboxField {
+    border: none;
+}
+
+.vDateField, .vTimeField {
+    margin-right: 2px;
+}
+
+.vURLField {
+    width: 30em;
+}
+
+.vLargeTextField, .vXMLLargeTextField {
+    width: 48em;
+}
+
+.flatpages-flatpage #id_content {
+    height: 40.2em;
+}
+
+.module table .vPositiveSmallIntegerField {
+    width: 2.2em;
+}
+
+
+.active_th{
+   background: #F8F8F8;
+    
+    }
+
+  
