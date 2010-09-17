@@ -124,7 +124,7 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
 
     try:
-        generate_tasks(comp)
+        generate_tasks(comp, workspace)
         
         if not variant.auto_generated:
             for ws in item.workspaces.all():
@@ -294,14 +294,17 @@ def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp
 #    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
     
     if variant and not variant.auto_generated:
+        job = Job()
+        job.add_component(component)
+        job.add_func('extract_features')
+        job.add_func('start_upload_event_handlers')
+        job.execute('')
      
-                
-        end = MachineState.objects.create(name='finished')     
-            
-        feat_extr_action = Action.objects.create(component=component, function='extract_features')
-        feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
-        
-        source_machine = Machine.objects.create(current_state=feat_extr_orig, initial_state=feat_extr_orig)
+ #               
+ #       end = MachineState.objects.create(name='finished')     
+ #       feat_extr_action = Action.objects.create(component=component, function='extract_features')
+ #       feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
+ #       source_machine = Machine.objects.create(current_state=feat_extr_orig, initial_state=feat_extr_orig)
     else:
         source = component.source
         if not source:            
@@ -385,7 +388,7 @@ def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp
         
 #        ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
 
-def generate_tasks(component, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
+def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
     
     """
     Generate MediaDART Tasks for the given variant, item and workspace
@@ -399,4 +402,4 @@ def generate_tasks(component, upload_job_id = None, force_generation = False,  c
     
     Action.objects.filter(component=component).delete()
 
-    _generate_tasks(component, force_generation,  check_for_existing, embed_xmp)
+    _generate_tasks(component, workspace, force_generation,  check_for_existing, embed_xmp)
