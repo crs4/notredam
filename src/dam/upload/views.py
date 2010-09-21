@@ -126,9 +126,9 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
     try:
         generate_tasks(comp, workspace)
         
-        if not variant.auto_generated:
-            for ws in item.workspaces.all():
-                EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+#-        if not variant.auto_generated:
+#-            for ws in item.workspaces.all():
+#-                EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
         
     except Exception, ex:
         print traceback.print_exc(ex)
@@ -282,7 +282,7 @@ def guess_media_type (file):
 
     return media_type
 
-def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp):
+def _generate_tasks( component, workspace, force_generation,  check_for_existing, embed_xmp):
     
     """
     Generates MediaDART tasks
@@ -297,7 +297,7 @@ def _generate_tasks( component, force_generation,  check_for_existing, embed_xmp
         job = Job()
         job.add_component(component)
         job.add_func('extract_features')
-        job.add_func('start_upload_event_handlers')
+        job.add_func('start_upload_event_handlers', str(workspace.pk))
         job.execute('')
      
  #               
