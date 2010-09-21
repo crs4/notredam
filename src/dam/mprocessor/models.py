@@ -19,19 +19,21 @@ class Job(models.Model):
     def __init__(self, *args, **kwargs):
         models.Model.__init__(self, *args, **kwargs)
         self.decoded_params = loads(self.params)
+        self.dirty = false
             
     job_id = models.CharField(max_length=32, primary_key=True, default=processors.new_id)
-    #workspace = models.ForeignKey('workspace.DAMWorkspace')   
     component = models.ForeignKey(Component)
     params = models.TextField(default='["__dummy__"]')
     last_active = models.IntegerField(default=0)     # holds int(time.time())
 
     def add_func(self, function_name, *function_params):
         self.decoded_params.append([function_name, function_params])
+        self.dirty = true
         return self
 
     def add_component(self, component):
         self.component = component
+        self.dirty = true
         return self
     
 #    def add_workspace(self, workspace):
@@ -50,7 +52,10 @@ class Job(models.Model):
         fname, fparams = self.decoded_params[0]
         func = getattr(processors, fname)
         print('------------------------------------------------------------Action.executing: %s' % fname)
-        return func(self, data, *fparams)
+        func(self, data, *fparams)
+        if self.dirty:
+            self.save()
+            self.dirty = false
 
     def next(self):
         if not self.decoded_params:
