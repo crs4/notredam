@@ -1,8 +1,11 @@
 import time
 from json import dumps, loads
 from django.db import models
-from dam.mprocessor import processors  # to be changed
+#from dam.mprocessor import processors  # to be changed
 from dam.repository.models import Component
+
+class DUMMY: new_id = ''
+processors = DUMMY()
 
 
 #
@@ -15,11 +18,12 @@ from dam.repository.models import Component
 # or
 # job = Job.object.get(id=job_id)
 #
+
 class Job(models.Model):
     def __init__(self, *args, **kwargs):
         models.Model.__init__(self, *args, **kwargs)
         self.decoded_params = loads(self.params)
-        self.dirty = false
+        self.dirty = False
             
     job_id = models.CharField(max_length=32, primary_key=True, default=processors.new_id)
     component = models.ForeignKey(Component)
@@ -28,12 +32,12 @@ class Job(models.Model):
 
     def add_func(self, function_name, *function_params):
         self.decoded_params.append([function_name, function_params])
-        self.dirty = true
+        self.dirty = True
         return self
 
     def add_component(self, component):
         self.component = component
-        self.dirty = true
+        self.dirty = True
         return self
     
 #    def add_workspace(self, workspace):
@@ -54,17 +58,21 @@ class Job(models.Model):
         print('------------------------------------------------------------Action.executing: %s' % fname)
         func(self, data, *fparams)
         if self.dirty:
-            self.save()
-            self.dirty = false
+            self.serialize()
 
     def next(self):
         if not self.decoded_params:
             raise('Error: next on empty action')
         self.decoded_params.remove(self.decoded_params[0])
         if self.decoded_params:
-            self.params = dumps(self.decoded_params)
-            self.save()
+            self.serialize()
             return 1
         else:
             self.delete()
             return 0
+
+    def serialize(self):
+        self.params = dumps(self.decoded_params)
+        self.save()
+        self.dirty = false
+
