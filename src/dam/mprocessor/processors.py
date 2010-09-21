@@ -1,3 +1,4 @@
+import os
 import mimetypes
 from uuid import uuid4
 from django.core.mail import EmailMessage
@@ -20,7 +21,8 @@ logger.setLevel(logging.DEBUG)
 # Run scripts for after upload actions
 #
 
-def start_upload_event_handlers(job, result):
+def start_upload_event_handlers(job, result, workspace_id):
+    workspace = Workspace.objects.get(pk=workspace_id)
     item = job.component.item
     for ws in item.workspaces.all():
         EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
