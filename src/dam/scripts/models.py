@@ -353,7 +353,7 @@ class SaveAction(BaseAction):
             component.copy_metadata(same_resource) 
         else:
             logger.debug('generate task')        
-            generate_tasks(component, embed_xmp = embed_xmp)
+            generate_tasks(component, self.workspace, embed_xmp = embed_xmp)
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)
