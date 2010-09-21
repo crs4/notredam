@@ -39,6 +39,7 @@ from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
+from dam.mprocessor.models import Job
 
 from mediadart.storage import Storage
 
@@ -296,6 +297,7 @@ def _generate_tasks( component, workspace, force_generation,  check_for_existing
     if variant and not variant.auto_generated:
         job = Job()
         job.add_component(component)
+        #job.add_workspace(workspace)
         job.add_func('extract_features')
         job.add_func('start_upload_event_handlers', str(workspace.pk))
         job.execute('')
@@ -314,51 +316,63 @@ def _generate_tasks( component, workspace, force_generation,  check_for_existing
                 logger.debug('impossible to generate variant, no source found')
                 return 
         
-
-        end = MachineState.objects.create(name='finished')
+        job = Job()
+        job.add_component(component)
+       # end = MachineState.objects.create(name='finished')
         
         
         if  variant.name == 'mail':
             
-            send_mail_action = Action.objects.create(component=component, function='send_mail')
-            send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
+            job.add_func('send_mail')
+          
+            
+#            send_mail_action = Action.objects.create(component=component, function='send_mail')
+#            send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
             if embed_xmp:
-                embed_action = Action.objects.create(component=component, function='embed_xmp')
-                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = send_mail_state)
-                end_state = embed_state
-            else:
-                end_state = send_mail_state
+                job.add_func('embed_xmp')
+#                embed_action = Action.objects.create(component=component, function='embed_xmp')
+#                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = send_mail_state)
+#                end_state = embed_state
+#            else:
+#                end_state = send_mail_state
+            job.add_func('start_upload_event_handlers')
+            job.execute('')            
+
                 
         elif embed_xmp: 
-                embed_action = Action.objects.create(component=component, function='embed_xmp')
-                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = end)
-                end_state = embed_state
-        else:    
-            end_state = end
+            job.add_func('embed_xmp')
+#                embed_action = Action.objects.create(component=component, function='embed_xmp')
+#                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = end)
+#                end_state = embed_state
+#        else:    
+#            end_state = end
+            job.add_func('start_upload_event_handlers')
+            job.execute('')        
         
-        
-        
-        if embed_xmp:
-            logger.debug('----------------------creating embed xmp state-----------------------')
-            
-            if  variant.name == 'mail':
-                embed_state.next_state = send_mail_state
-            else:
-                embed_state.next_state = end
-            embed_state.save()
+# non dovrebbe servire        
+#        if embed_xmp:
+#            logger.debug('----------------------creating embed xmp state-----------------------')
+#            
+#            if  variant.name == 'mail':
+#                embed_state.next_state = send_mail_state
+#            else:
+#                embed_state.next_state = end
+#            embed_state.save()
 
         
 #        if source.metadata.all().count() == 0: #features not extracted yet        
-        feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
-        logger.debug('feat_extract_orig %s'%feat_extract_orig)
-        
-        if feat_extract_orig.count(): 
-            try:
-                source_machine = feat_extract_orig[0].machine_set.all()[0]
-            except:
-                source_machine = None  
-        else:
-            source_machine = None
+# non dovrebbe servire
+#        feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
+#        logger.debug('feat_extract_orig %s'%feat_extract_orig)
+# non dovrebbe servire        
+#        if feat_extract_orig.count(): 
+#            try:
+#                source_machine = feat_extract_orig[0].machine_set.all()[0]
+#            except:
+#                source_machine = None  
+#        else:
+#            source_machine = None
+
 #        else:
 #            source_machine = None
             

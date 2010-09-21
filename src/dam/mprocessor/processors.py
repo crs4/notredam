@@ -1,5 +1,5 @@
-import os
 import mimetypes
+import os
 from uuid import uuid4
 from django.core.mail import EmailMessage
 from mediadart.mqueue.mqclient_async import Proxy
@@ -7,6 +7,13 @@ from mediadart.storage import Storage
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
+from dam.eventmanager.models import EventRegistration
+from dam.workspace.models import DAMWorkspace as Workspace
+from settings import INSTALLATIONPATH
+
+#TODO
+host = '127.0.0.1'
+port = '8200'
 
 # Create your models here.
 def new_id():
@@ -14,7 +21,7 @@ def new_id():
 
 import logging
 logger = logging.getLogger('batch_processor')
-logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/batch_processor.log')))
+logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/processor.log')))
 logger.setLevel(logging.DEBUG)
 
 #
@@ -22,10 +29,13 @@ logger.setLevel(logging.DEBUG)
 #
 
 def start_upload_event_handlers(job, result, workspace_id):
-    workspace = Workspace.objects.get(pk=workspace_id)
-    item = job.component.item
-    for ws in item.workspaces.all():
-        EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+    try:
+        workspace = Workspace.objects.get(pk=workspace_id)
+        item = job.component.item
+        for ws in item.workspaces.all():
+            EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+    except Exception, ex:
+        logger.debug("-------------ERROR %s" %ex)
     
 
 #
@@ -50,22 +60,23 @@ def embed_xmb_2(job, result):
 #
 def extract_features(job, result):
     extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
-    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job_id))
+    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id))
 
     my_media_type = job.component.media_type.name
     my_extractor = extractors[my_media_type]
 
-    if component.variant.auto_generated:
+    if job.component.variant.auto_generated:
         job.add_func('save_features', my_extractor)
     else:
         job.add_func('extract_xmp', my_extractor)
+    logger.debug('before extractor_proxy.extract(job.component.ID, my_extractor)')
     extractor_proxy.extract(job.component.ID, my_extractor)
 
 def extract_xmp(job, result, extractor):
-    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job_id))
+    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id))
     _save_component_features(job.component, result, extractor)
     job.add_func('save_features', 'xmp_extractor')
-    extractor_proxy.extract(component.ID, 'xmp_extractor')
+    extractor_proxy.extract(job.component.ID, 'xmp_extractor')
 
 def save_features(job, result, extractor):
     _save_component_features(job.component, result, extractor)
@@ -75,17 +86,17 @@ def save_features(job, result, extractor):
 # Send Mail
 #
 def send_mail(job, result):
-    logger.debug("[SendMail.execute] component %s" % component.ID)
-    logger.debug('component.get_parameters() %s'%component.get_parameters())
+    logger.debug("[SendMail.execute] component %s" % job.component.ID)
+    logger.debug('component.get_parameters() %s'%job.component.get_parameters())
     mail = job.component.get_parameters()['mail']
     
     email = EmailMessage('OpenDam Rendition', 'Hi, an OpenDam rendition has been attached.  ', EMAIL_SENDER,
             [mail])
     storage = Storage()
-    email.attach_file(storage.abspath(component.ID))
+    email.attach_file(storage.abspath(job.component.ID))
 #    reactor.callInThread(email.send)
     email.send()
-    logger.debug("[SendMail.end] component %s" % component.ID)
+    logger.debug("[SendMail.end] component %s" % job.component.ID)
 
 
 #

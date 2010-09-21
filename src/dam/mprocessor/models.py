@@ -21,6 +21,7 @@ class Job(models.Model):
         self.decoded_params = loads(self.params)
             
     job_id = models.CharField(max_length=32, primary_key=True, default=processors.new_id)
+    #workspace = models.ForeignKey('workspace.DAMWorkspace')   
     component = models.ForeignKey(Component)
     params = models.TextField(default='["__dummy__"]')
     last_active = models.IntegerField(default=0)     # holds int(time.time())
@@ -32,6 +33,10 @@ class Job(models.Model):
     def add_component(self, component):
         self.component = component
         return self
+    
+#    def add_workspace(self, workspace):
+#        self.workspace = workspace
+#        return self
 
     def execute(self, data):
         "This changes the state of the job and it is not undoable"
@@ -44,7 +49,7 @@ class Job(models.Model):
         self.last_active = int(time.time())
         fname, fparams = self.decoded_params[0]
         func = getattr(processors, fname)
-        log.debug('Action.executing: %s' % fname)
+        print('------------------------------------------------------------Action.executing: %s' % fname)
         return func(self, data, *fparams)
 
     def next(self):
