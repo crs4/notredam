@@ -1,12 +1,8 @@
 import time
 from json import dumps, loads
 from django.db import models
-#from dam.mprocessor import processors  # to be changed
+from dam.mprocessor import processors  # to be changed
 from dam.repository.models import Component
-
-class DUMMY: new_id = ''
-processors = DUMMY()
-
 
 #
 # example of use
