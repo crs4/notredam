@@ -1,6 +1,7 @@
 import mimetypes
 import os
 from uuid import uuid4
+import settings
 from django.core.mail import EmailMessage
 from mediadart.mqueue.mqclient_async import Proxy
 from mediadart.storage import Storage
@@ -9,6 +10,7 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
 from dam.eventmanager.models import EventRegistration
 from dam.workspace.models import DAMWorkspace as Workspace
+from django.contrib.contenttypes.models import ContentType
 from settings import INSTALLATIONPATH, LOG_LEVEL
 
 #TODO
@@ -69,14 +71,17 @@ def extract_features(job, result):
         job.add_func('save_features', my_extractor)
     else:
         job.add_func('extract_xmp', my_extractor)
-    logger.debug('before extractor_proxy.extract(job.component.ID, my_extractor)')
     extractor_proxy.extract(job.component.ID, my_extractor)
 
 def extract_xmp(job, result, extractor):
-    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id))
-    _save_component_features(job.component, result, extractor)
-    job.add_func('save_features', 'xmp_extractor')
-    extractor_proxy.extract(job.component.ID, 'xmp_extractor')
+    try:
+        logger.debug("-#################################################################################### extract_xmp")
+        extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id))
+        _save_component_features(job.component, result, extractor)
+        job.add_func('save_features', 'xmp_extractor')
+        extractor_proxy.extract(job.component.ID, 'xmp_extractor')
+    except Exception, ex:
+        logger.debug("-#################################ERROR %s" % ex)
 
 def save_features(job, result, extractor):
     _save_component_features(job.component, result, extractor)

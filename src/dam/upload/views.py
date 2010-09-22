@@ -299,7 +299,7 @@ def _generate_tasks( component, workspace, force_generation,  check_for_existing
         job.add_component(component)
         #job.add_workspace(workspace)
         job.add_func('extract_features')
-        job.add_func('start_upload_event_handlers', str(workspace.pk))
+#        job.add_func('start_upload_event_handlers', str(workspace.pk))
         job.execute('')
      
  #               
