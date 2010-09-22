@@ -22,6 +22,13 @@ def job_dispatch(request, job_id):
     except Exception, e:
         logger.debug('-----------------------------------------------Invalid body in post: %s' % str(e))
         return HttpResponseServerError('invalid data');
+    try:
+        logger.debug("job.next-----------post_data %s------------------------------------------------" %type(post_data))
+        logger.debug("job.next-----------post_data %s------------------------------------------------" %post_data['result'])
+
+    except Exception, ex:
+        logger.debug("ex %s" %ex)
+        
     if 'result' in post_data:
         result = post_data['result']
     elif 'error' in post_data:
@@ -29,5 +36,14 @@ def job_dispatch(request, job_id):
         result = {} 
     else:
         logger.error('Invalid jsonrpc response')
+<<<<<<< local
+    
+    if job.next():
+        logger.debug("job.next-----------------------------------------------------------")
+        job.execute(result)
+    else:
+        logger.debug("job_dispatch-----------finished, else!!!----------------------")
+=======
     job.execute(result)
+>>>>>>> other
     return HttpResponse('ok')

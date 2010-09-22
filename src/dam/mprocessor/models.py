@@ -34,8 +34,10 @@ class Job(models.Model):
     last_active = models.IntegerField(default=0)     # holds int(time.time())
 
     def add_func(self, function_name, *function_params):
+        print ("#-#-#-#-#- add_func %s" %function_name)
         self.decoded_params.append([function_name, function_params])
         self.dirty = True
+        print ('self.decoded_params: %s, job_id %s' %(self.decoded_params, self.job_id))
         return self
 
     def add_component(self, component):
@@ -43,9 +45,8 @@ class Job(models.Model):
         self.dirty = True
         return self
     
-#    def add_workspace(self, workspace):
-#        self.workspace = workspace
-#        return self
+    def str(self):
+        return 'job_id %s, self.decoded_params %s' %(self.job_id,self.decoded_params)
 
     def execute(self, data):
         "This changes the state of the job and it is not undoable"
