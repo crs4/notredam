@@ -3,6 +3,7 @@ import os
 from uuid import uuid4
 import settings
 from django.core.mail import EmailMessage
+from django.contrib.contenttypes.models import ContentType
 from mediadart.mqueue.mqclient_async import Proxy
 from mediadart.storage import Storage
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
@@ -10,12 +11,7 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
 from dam.eventmanager.models import EventRegistration
 from dam.workspace.models import DAMWorkspace as Workspace
-from django.contrib.contenttypes.models import ContentType
-from settings import INSTALLATIONPATH, LOG_LEVEL
-
-#TODO
-host = '127.0.0.1'
-port = '8200'
+from dam.settings import INSTALLATIONPATH, LOG_LEVEL, SERVER_PUBLIC_ADDRESS
 
 # Create your models here.
 def new_id():
@@ -46,7 +42,7 @@ def start_upload_event_handlers(job, result, workspace_id):
 def embed_xmp(job, result):
     logger.debug('STARTING embed_xmp')
     component = job.component
-    xmp_embedder_proxy = Proxy('XMPEmbedder', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id)) 
+    xmp_embedder_proxy = Proxy('XMPEmbedder', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, job.job_id)) 
     metadata_dict = synchronize_metadata(component)
     job.add_func('embed_xmp_2')
     xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
@@ -62,7 +58,7 @@ def embed_xmb_2(job, result):
 #
 def extract_features(job, result):
     extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
-    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id))
+    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, job.job_id))
 
     my_media_type = job.component.media_type.name
     my_extractor = extractors[my_media_type]
@@ -76,7 +72,7 @@ def extract_features(job, result):
 def extract_xmp(job, result, extractor):
     try:
         logger.debug("-#################################################################################### extract_xmp")
-        extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job.job_id))
+        extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, job.job_id))
         _save_component_features(job.component, result, extractor)
         job.add_func('save_features', 'xmp_extractor')
         extractor_proxy.extract(job.component.ID, 'xmp_extractor')

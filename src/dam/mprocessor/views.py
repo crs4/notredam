@@ -36,14 +36,5 @@ def job_dispatch(request, job_id):
         result = {} 
     else:
         logger.error('Invalid jsonrpc response')
-<<<<<<< local
-    
-    if job.next():
-        logger.debug("job.next-----------------------------------------------------------")
-        job.execute(result)
-    else:
-        logger.debug("job_dispatch-----------finished, else!!!----------------------")
-=======
     job.execute(result)
->>>>>>> other
     return HttpResponse('ok')
