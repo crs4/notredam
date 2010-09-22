@@ -9,7 +9,7 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
 from dam.eventmanager.models import EventRegistration
 from dam.workspace.models import DAMWorkspace as Workspace
-from settings import INSTALLATIONPATH
+from settings import INSTALLATIONPATH, LOG_LEVEL
 
 #TODO
 host = '127.0.0.1'
@@ -22,7 +22,7 @@ def new_id():
 import logging
 logger = logging.getLogger('batch_processor')
 logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/processor.log')))
-logger.setLevel(logging.DEBUG)
+logger.setLevel(LOG_LEVEL)
 
 #
 # Run scripts for after upload actions

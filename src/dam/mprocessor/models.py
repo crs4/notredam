@@ -1,8 +1,15 @@
+import os
 import time
 from json import dumps, loads
 from django.db import models
 from dam.mprocessor import processors  # to be changed
 from dam.repository.models import Component
+from dam.settings import INSTALLATIONPATH, LOG_LEVEL
+
+import logging
+logger = logging.getLogger('mprocessor')
+logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/mprocessor.log')))
+logger.setLevel(LOG_LEVEL)
 
 #
 # example of use
@@ -46,19 +53,20 @@ class Job(models.Model):
             raise('Error: executing action with no component')
         if not self.decoded_params:
             raise('Error: executing empty action')
-        if self.decoded_params[0] == '__dummy__':
-            self.next()
         self.last_active = int(time.time())
+        if not self.next_func():
+            return
         fname, fparams = self.decoded_params[0]
         func = getattr(processors, fname)
-        print('------------------------------------------------------------Action.executing: %s' % fname)
+        logger.debug('mprocessor: executing %s' % fname)
         func(self, data, *fparams)
+        logger.debug('mprocessor: %s returned' % fname)
         if self.dirty:
             self.serialize()
 
-    def next(self):
+    def next_func(self):
         if not self.decoded_params:
-            raise('Error: next on empty action')
+            return 0
         self.decoded_params.remove(self.decoded_params[0])
         if self.decoded_params:
             self.serialize()
@@ -70,5 +78,5 @@ class Job(models.Model):
     def serialize(self):
         self.params = dumps(self.decoded_params)
         self.save()
-        self.dirty = false
+        self.dirty = False
 
