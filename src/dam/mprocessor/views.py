@@ -20,6 +20,7 @@ def task_dispatch(request, task_id):
         task = Task.objects.get(task_id=task_id)
         logger.debug('task_dispatch: executing %s' % task.params)
     except Exception, e:
+        task.failed()
         logger.debug('-----------------------------------------------Invalid body in post: %s' % str(e))
         return HttpResponseServerError('invalid data');
 
@@ -34,6 +35,7 @@ def task_dispatch(request, task_id):
         result = post_data['result']
     elif 'error' in post_data:
         logger.error('%s returned and error: %s:' % task.decoded_params[0], post_data['error'])
+        task.failed()
         result = {} 
     else:
         logger.error('Invalid jsonrpc response')

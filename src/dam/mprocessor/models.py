@@ -32,6 +32,7 @@ class Task(models.Model):
     component = models.ForeignKey(Component)
     params = models.TextField(default='["__dummy__"]')
     last_active = models.IntegerField(default=0)     # holds int(time.time())
+    state = models.CharField(max_length=7, default='pending')
 
     def append_func(self, function_name, *function_params):
         print ("#-#-#-#-#- add_func %s" %function_name)
@@ -69,7 +70,11 @@ class Task(models.Model):
         fname, fparams = self.decoded_params[0]
         func = getattr(processors, fname)
         logger.debug('\n%s\nmprocessor: executing %s\n' % ('-'*80, fname))
-        func(self, data, *fparams)
+        try:
+            func(self, data, *fparams)
+        except Exception, ex:
+            self.failed()
+            logger.error('Task: error executing %s: %s' % (fname, ex))
         logger.debug('\n%s\nmprocessor: %s returned' % ('-'*80, fname))
         if self.dirty:
             self.serialize()
@@ -89,4 +94,8 @@ class Task(models.Model):
         self.params = dumps(self.decoded_params)
         self.save()
         self.dirty = False
+
+    def failed(self):
+        self.state = 'failed'
+        self.dirty = 1
 
