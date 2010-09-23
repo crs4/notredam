@@ -39,7 +39,7 @@ from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
-from dam.mprocessor.models import Job
+from dam.mprocessor.models import Task
 
 from mediadart.storage import Storage
 
@@ -96,6 +96,7 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
     Create component for the given item and generate mediadart tasks. 
     Used only when user uploaded an item's variant
     """
+    logger.debug('############### _save_uploaded_component: %s' % variant.pk)
     comp = item.create_variant(variant, workspace)
     
     if variant.auto_generated:
@@ -151,8 +152,6 @@ def _save_uploaded_item(request, upload_file, user, workspace):
 
     item.workspaces.add(workspace)
 
-
-    variant = Variant.objects.get(name = 'original')
     _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
 #    EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
     
@@ -284,124 +283,38 @@ def guess_media_type (file):
     return media_type
 
 def _generate_tasks( component, workspace, force_generation,  check_for_existing, embed_xmp):
-    
     """
     Generates MediaDART tasks
     """
-
-    logger.debug('_generate_tasks')
+    logger.debug('_generate_tasks: pk=%s, ID=%s, workspace = %s' % (component.pk, component.ID, workspace.pk))
     from dam.core.dam_repository.models import Type
     variant = component.variant
-#    variant_source = workspace.get_source(media_type = Type.objects.get(name = item.type),  item = item)
+
+    task = Task()
+    task.add_component(component)
     
-    if variant and not variant.auto_generated:
-        job = Job()
-        job.add_component(component)
-        #job.add_workspace(workspace)
-        job.add_func('extract_features')
-#        job.add_func('start_upload_event_handlers', str(workspace.pk))
-        job.execute('')
-     
- #               
- #       end = MachineState.objects.create(name='finished')     
- #       feat_extr_action = Action.objects.create(component=component, function='extract_features')
- #       feat_extr_orig = MachineState.objects.create(name='source_fe', action=feat_extr_action, next_state=end)
- #       source_machine = Machine.objects.create(current_state=feat_extr_orig, initial_state=feat_extr_orig)
-    else:
-        source = component.source
-        if not source:            
-            if component.imported:
-                source = None
-            else:
-                logger.debug('impossible to generate variant, no source found')
-                return 
+    if variant and not variant.auto_generated:    # The component is a source component
+        task.append_func('extract_features')
+        task.append_func('extract_xmp', component.get_extractor())
+        task.append_func('save_features', 'xmp_extractor')
+        task.append_func('start_upload_event_handlers', str(workspace.pk))
+    else:                                         # The component is derived from a source component
+        if not component.imported:
+            task.append_func('adapt_resource')
+
+        task.append_func('save_component')
+        task.append_func('extract_features')
+        task.append_func('save_features', task.component.get_extractor())
         
-        job = Job()
-        job.add_component(component)
-       # end = MachineState.objects.create(name='finished')
-        
-        
+        if embed_xmp:
+            task.append_func('embed_xmp')
+            task.append_func('embed_reset_xmp')
+                
         if  variant.name == 'mail':
-            
-            job.add_func('send_mail')
-          
-            
-#            send_mail_action = Action.objects.create(component=component, function='send_mail')
-#            send_mail_state = MachineState.objects.create(name='send_mail', action=send_mail_action, next_state=end) 
-            if embed_xmp:
-                job.add_func('embed_xmp')
-#                embed_action = Action.objects.create(component=component, function='embed_xmp')
-#                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = send_mail_state)
-#                end_state = embed_state
-#            else:
-#                end_state = send_mail_state
-            job.add_func('start_upload_event_handlers')
-            job.execute('')            
+            task.append_func('send_mail')
+    task.execute('')
 
-                
-        elif embed_xmp: 
-            job.add_func('embed_xmp')
-#                embed_action = Action.objects.create(component=component, function='embed_xmp')
-#                embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action, next_state = end)
-#                end_state = embed_state
-#        else:    
-#            end_state = end
-            job.add_func('start_upload_event_handlers')
-            job.execute('')        
-        
-# non dovrebbe servire        
-#        if embed_xmp:
-#            logger.debug('----------------------creating embed xmp state-----------------------')
-#            
-#            if  variant.name == 'mail':
-#                embed_state.next_state = send_mail_state
-#            else:
-#                embed_state.next_state = end
-#            embed_state.save()
-
-        
-#        if source.metadata.all().count() == 0: #features not extracted yet        
-# non dovrebbe servire
-#        feat_extract_orig = MachineState.objects.filter(action__component = source, action__function = 'extract_features')
-#        logger.debug('feat_extract_orig %s'%feat_extract_orig)
-# non dovrebbe servire        
-#        if feat_extract_orig.count(): 
-#            try:
-#                source_machine = feat_extract_orig[0].machine_set.all()[0]
-#            except:
-#                source_machine = None  
-#        else:
-#            source_machine = None
-
-#        else:
-#            source_machine = None
-            
-#        source_machine = None
-        logger.debug('******************************************************source_machine %s'%source_machine)
-               
-#        end = MachineState.objects.create(name='finished')
-        logger.debug('----------------- VARIANT %s'%variant)
-#        if not variant:
-        
-        
-        fe_action = Action.objects.create(component=component, function='extract_features')
-        fe_state = MachineState.objects.create(name='comp_fe', action=fe_action, next_state=end_state)
-        
-        if component.imported:
-            logger.debug('----------source_machine %s'%source_machine)             
-            Machine.objects.create(current_state=fe_state, initial_state=fe_state, wait_for=source_machine)  
-        
-        else:
-            logger.debug('adaptation task')
-            adapt_action = Action.objects.create(component=component, function='adapt_resource')
-            adapt_state = MachineState.objects.create(name='comp_adapt', action=adapt_action, next_state=fe_state)
-            
-            Machine.objects.create(current_state=adapt_state, initial_state=adapt_state, wait_for=source_machine)        
-                
-  
-        
-#        ms_mimetype=MetadataProperty.objects.get(namespace__prefix='dc',field_name="format")
-
+    
 def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
     
     """

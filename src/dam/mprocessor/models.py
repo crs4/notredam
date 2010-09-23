@@ -13,31 +13,40 @@ logger.setLevel(LOG_LEVEL)
 
 #
 # example of use
-# job = Job().add_component(component)\
+# task = Task().add_component(component)\
 #                .add_func('xmp_embed')\
 #                .add_func('altro')\
 #                .execute()
 #
 # or
-# job = Job.object.get(id=job_id)
+# task = Task.object.get(id=task_id)
 #
 
-class Job(models.Model):
+class Task(models.Model):
     def __init__(self, *args, **kwargs):
         models.Model.__init__(self, *args, **kwargs)
         self.decoded_params = loads(self.params)
         self.dirty = False
             
-    job_id = models.CharField(max_length=32, primary_key=True, default=processors.new_id)
+    task_id = models.CharField(max_length=32, primary_key=True, default=processors.new_id)
     component = models.ForeignKey(Component)
     params = models.TextField(default='["__dummy__"]')
     last_active = models.IntegerField(default=0)     # holds int(time.time())
 
-    def add_func(self, function_name, *function_params):
+    def append_func(self, function_name, *function_params):
         print ("#-#-#-#-#- add_func %s" %function_name)
         self.decoded_params.append([function_name, function_params])
         self.dirty = True
-        print ('self.decoded_params: %s, job_id %s' %(self.decoded_params, self.job_id))
+        print ('self.decoded_params: %s, task_id %s' %(self.decoded_params, self.task_id))
+        return self
+
+    def leftappend_func(self, function_name, *function_params):
+        index = 0
+        if self.decoded_params and self.decoded_params[0] == '__dummy__':
+            index = 1
+        self.decoded_params.insert(index, [function_name, function_params])
+        self.dirty = True
+        print ('self.decoded_params: %s, task_id %s' %(self.decoded_params, self.task_id))
         return self
 
     def add_component(self, component):
@@ -46,10 +55,10 @@ class Job(models.Model):
         return self
     
     def str(self):
-        return 'job_id %s, self.decoded_params %s' %(self.job_id,self.decoded_params)
+        return 'task_id %s, self.decoded_params %s' %(self.task_id,self.decoded_params)
 
     def execute(self, data):
-        "This changes the state of the job and it is not undoable"
+        "This changes the state of the task and it is not undoable"
         if not self.component:
             raise('Error: executing action with no component')
         if not self.decoded_params:
@@ -59,9 +68,9 @@ class Job(models.Model):
             return
         fname, fparams = self.decoded_params[0]
         func = getattr(processors, fname)
-        logger.debug('mprocessor: executing %s' % fname)
+        logger.debug('\n%s\nmprocessor: executing %s\n' % ('-'*80, fname))
         func(self, data, *fparams)
-        logger.debug('mprocessor: %s returned' % fname)
+        logger.debug('\n%s\nmprocessor: %s returned' % ('-'*80, fname))
         if self.dirty:
             self.serialize()
 

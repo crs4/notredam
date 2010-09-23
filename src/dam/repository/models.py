@@ -355,6 +355,10 @@ class Component(AbstractComponent):
     def _get_media_type(self):
         return self.type            
 
+    def get_extractor(self):
+        extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
+        return extractors[self.media_type.name]
+
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
     
