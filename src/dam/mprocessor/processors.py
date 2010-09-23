@@ -35,6 +35,7 @@ def start_upload_event_handlers(task, result, workspace_id):
             EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
     except Exception, ex:
         logger.debug("-------------ERROR %s" %ex)
+        task.failed()
     task.execute('')
     
 
@@ -59,10 +60,6 @@ def embed_reset_xmp(task, result):
 #
 def extract_features(task, result):
     extractor_proxy = Proxy('FeatureExtractor', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, task.task_id))
-#    if task.component.variant.auto_generated:
-#        task.append_func('save_features', my_extractor)
-#    else:
-#        pass
     logger.debug("-########## calling extract_features(%s, (%s), %s)" % (task.component.ID, task.component.pk, task.component.get_extractor()))
     extractor_proxy.extract(task.component.ID, task.component.get_extractor())
 
@@ -73,6 +70,7 @@ def extract_xmp(task, result, extractor):
         _save_component_features(task.component, result, extractor)
         extractor_proxy.extract(task.component.ID, 'xmp_extractor')
     except Exception, ex:
+        task.failed()
         logger.debug("-#################################ERROR %s" % ex)
 
 
