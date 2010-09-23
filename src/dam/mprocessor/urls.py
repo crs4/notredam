@@ -19,5 +19,5 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
-    (r'^mprocessor/(?P<job_id>[a-z0-9]+)/?', 'dam.mprocessor.views.job_dispatch'),
+    (r'^mprocessor/(?P<task_id>[a-z0-9]+)/?', 'dam.mprocessor.views.task_dispatch'),
 )

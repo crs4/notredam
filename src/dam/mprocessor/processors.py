@@ -1,5 +1,6 @@
 import mimetypes
 import os
+import simplejson
 from uuid import uuid4
 import settings
 from django.core.mail import EmailMessage
@@ -26,100 +27,86 @@ logger.setLevel(LOG_LEVEL)
 # Run scripts for after upload actions
 #
 
-def start_upload_event_handlers(job, result, workspace_id):
+def start_upload_event_handlers(task, result, workspace_id):
     try:
         workspace = Workspace.objects.get(pk=workspace_id)
-        item = job.component.item
+        item = task.component.item
         for ws in item.workspaces.all():
             EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
     except Exception, ex:
         logger.debug("-------------ERROR %s" %ex)
+    task.execute('')
     
 
 #
 # Embed XMP chain
 #
-def embed_xmp(job, result):
+def embed_xmp(task, result):
     logger.debug('STARTING embed_xmp')
-    component = job.component
-    xmp_embedder_proxy = Proxy('XMPEmbedder', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, job.job_id)) 
+    component = task.component
+    xmp_embedder_proxy = Proxy('XMPEmbedder', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, task.task_id)) 
     metadata_dict = synchronize_metadata(component)
-    job.add_func('embed_xmp_2')
+    task.append_func('embed_xmp_2')
     xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
 
-def embed_xmb_2(job, result):
+def embed_reset_xmp(task, result):
     if result:
-        reset_modified_flag(job.component)
-    else:
-        pass  # NOTHING HERE?
+        reset_modified_flag(task.component)
+    task.execute('')
 
 #
 # Extract features chain
 #
-def extract_features(job, result):
-    extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
-    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, job.job_id))
+def extract_features(task, result):
+    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, task.task_id))
+#    if task.component.variant.auto_generated:
+#        task.append_func('save_features', my_extractor)
+#    else:
+#        pass
+    logger.debug("-########## calling extract_features(%s, (%s), %s)" % (task.component.ID, task.component.pk, task.component.get_extractor()))
+    extractor_proxy.extract(task.component.ID, task.component.get_extractor())
 
-    my_media_type = job.component.media_type.name
-    my_extractor = extractors[my_media_type]
-
-    if job.component.variant.auto_generated:
-        job.add_func('save_features', my_extractor)
-    else:
-        job.add_func('extract_xmp', my_extractor)
-    extractor_proxy.extract(job.component.ID, my_extractor)
-
-def extract_xmp(job, result, extractor):
+def extract_xmp(task, result, extractor):
     try:
         logger.debug("-#################################################################################### extract_xmp")
-        extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, job.job_id))
-        _save_component_features(job.component, result, extractor)
-        job.add_func('save_features', 'xmp_extractor')
-        extractor_proxy.extract(job.component.ID, 'xmp_extractor')
+        extractor_proxy = Proxy('FeatureExtractor', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, task.task_id))
+        _save_component_features(task.component, result, extractor)
+        extractor_proxy.extract(task.component.ID, 'xmp_extractor')
     except Exception, ex:
         logger.debug("-#################################ERROR %s" % ex)
 
-def save_features(job, result, extractor):
-    _save_component_features(job.component, result, extractor)
+
+def save_features(task, result, extractor):
+    _save_component_features(task.component, result, extractor)
+    task.execute('')
         
 
 #
 # Send Mail
 #
-def send_mail(job, result):
-    logger.debug("[SendMail.execute] component %s" % job.component.ID)
-    logger.debug('component.get_parameters() %s'%job.component.get_parameters())
-    mail = job.component.get_parameters()['mail']
-    
+def send_mail(task, result):
+    logger.debug("[SendMail.execute] component %s" % task.component.ID)
+    logger.debug('component.get_parameters() %s'%task.component.get_parameters())
+    mail = task.component.get_parameters()['mail']
     email = EmailMessage('OpenDam Rendition', 'Hi, an OpenDam rendition has been attached.  ', EMAIL_SENDER,
             [mail])
     storage = Storage()
-    email.attach_file(storage.abspath(job.component.ID))
-#    reactor.callInThread(email.send)
+    email.attach_file(storage.abspath(task.component.ID))
     email.send()
-    logger.debug("[SendMail.end] component %s" % job.component.ID)
+    logger.debug("[SendMail.end] component %s" % task.component.ID)
+    task.execute('')
 
 
 #
 #  Adapt
 # 
-def adapt_resource(job, result):
+def adapt_resource(task, result):
     from scripts.models import Script
 
-    component = job.component
-
+    component = task.component
     logger.debug("[Adaptation.execute] component %s" % component.ID)
-
-    adapter_proxy = Proxy('Adapter') 
-
+    adapter_proxy = Proxy('Adapter', callback='http://%s/mprocessor/%s' % (SERVER_PUBLIC_ADDRESS, task.task_id))
     item = component.item
-#    workspace = component.workspace.all()[0] 
-
-#    variant = component.variant
-    
-#    source_variant = variant.get_source(workspace,  item)
-
-#    vp = variant.get_preferences(workspace)
     vp = component.get_parameters()
     logger.debug('vp %s'%vp)
     orig = component.source 
@@ -132,8 +119,6 @@ def adapt_resource(job, result):
         argv = [] #for calling imagemagick
         height = int(vp.get('max_height', -1))        
         width = int(vp.get('max_width', -1))
-        
-        
         script = Script.objects.get(component = component)
         logger.debug('script %s'%script)
         acts = script.actionlist_set.get(media_type__name  = 'image')
@@ -145,7 +130,6 @@ def adapt_resource(job, result):
         logger.debug('orig_height %s'%orig_height)
         for action in actions:
             if action['type'] == 'resize':
-                
                 action['parameters']['max_width'] = min(action['parameters']['max_width'],  orig_width)
                 action['parameters']['max_height'] = min(action['parameters']['max_height'],  orig_height)
                 argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
@@ -156,22 +140,7 @@ def adapt_resource(job, result):
                 orig_width = alfa*orig_width
                 orig_height = alfa*orig_height
                 
-                        
-                
-#                if orig_width > orig_height:
-#                    
-#                    
-#                    orig_width = action['parameters']['max_width']
-#                    orig_height = aspect_ratio*orig_width 
-#                else:
-#                    
-#                    orig_height = action['parameters']['max_height']
-#                    orig_width = orig_height/aspect_ratio 
-#                    logger.debug('elsesssssss orig_height %s'%orig_height)
-                
             elif action['type'] == 'crop':
-#                action['parameters']['ratio'] = '2:3'
-                
                 if action['parameters'].get('ratio'):
                     x_ratio, y_ratio = action['parameters']['ratio'].split(':')
                     y_ratio = int(y_ratio)
@@ -180,8 +149,6 @@ def adapt_resource(job, result):
                     logger.debug('y_ratio %s'%y_ratio)
                     final_width = min(orig_width, orig_height*x_ratio/y_ratio)
                     final_height = final_width*y_ratio/x_ratio
-   
-                        
                     logger.debug('final_height %s'%final_height)
                     logger.debug('final_width %s'%final_width)
                     logger.debug('orig_height %s'%orig_height)
@@ -192,11 +159,7 @@ def adapt_resource(job, result):
                     
                     lr_y = ul_y + final_height
                     lr_x = final_width 
-                
-                     
-                    
                 else:
-                    
                     lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
                     ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
                     lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
@@ -204,13 +167,9 @@ def adapt_resource(job, result):
                 
                 orig_width = lr_x -ul_x 
                 orig_height = lr_y - ul_y
-                
                 logger.debug('orig_height %s'%orig_height)
                 logger.debug('orig_width %s'%orig_width)
-                
-                
                 argv +=  ['-crop', '%dx%d+%d+%d' % (orig_width, orig_height,  ul_x, ul_y)]
-                
                 logger.debug('argv %s'%argv)
             elif action['type'] == 'watermark':
                 pos_x = int(int(action['parameters']['pos_x_percent'])*orig_width/100)
@@ -227,30 +186,20 @@ def adapt_resource(job, result):
 
     elif item.type.name == 'video':
         logger.debug('---------vp %s'%vp)
-        
         logger.debug('component.media_type.name %s'%component.media_type.name)
         if component.media_type.name == "image":
-            
             dim_x = vp['max_width']
             dim_y = vp['max_height']
             
             transcoding_format = vp.get('codec', orig.format) #change to original format
             dest_res_id = dest_res_id + '.' + transcoding_format
             d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
-
         else:
-            
             preset_name = PRESETS['video'][vp['preset_name']]['preset']
             logger.debug('preset_name %s'%preset_name)
-
             param_dict = vp
-
             dest_res_id = dest_res_id + '.' + PRESETS['video'][vp['preset_name']]['extension']
-            
             for key, val in vp.items():
-#                if key == 'preset_name':
-#                    param_dict[key] = preset_name
-#                
                 if key == 'max_size' or key == 'watermark_top_percent' or key == 'watermark_left_percent':
                     param_dict[key] = int(val)
                 else:
@@ -258,25 +207,7 @@ def adapt_resource(job, result):
             
             param_dict['preset_name'] = preset_name
             logger.debug('param_dict %s'%param_dict)
-#            if watermark_filename:
-#                tmp = vp.get('watermark_top')
-#                if tmp:
-#                    param_dictwatermark_top = tmp
-#                    watermark_left = vp.get('watermark_left')
-#                else:
-#                    watermark_top_percent = vp.get('watermark_top_percent')
-#                    watermark_left_percent = vp.get('watermark_left_percent')
-#                
-#            
-#            if  vp.watermarking:
-#             param_dict['watermark_uri'] = 'mediadart://' + vp.watermark_uri
-#             param_dict.update(vp.get_watermarking_params())
-             #param_dict['watermark_top'] = 10
-             #param_dict['watermark_left'] = 10
-#             yield utils.wait_for_resource(vp.watermark_uri, 5)
-                
             adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
-            
 
     elif item.type.name == 'audio':
         preset_name = PRESETS['audio'][vp['preset_name']]['preset']
@@ -285,34 +216,24 @@ def adapt_resource(job, result):
         param_dict = dict(vp)        
         logger.debug("[Adaptation] param_dict %s" % param_dict)
         dest_res_id = dest_res_id + '.' + ext
-        
-        
         adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
     
     if item.type.name == 'doc':
- 
         transcoding_format = vp['codec']
-#        TODO: add width, to mediadart, see adapt_doc
         max_size = vp['max_height']
-        
         dest_res_id = dest_res_id + '.' + transcoding_format
-        
         adapter_proxy.adapt_doc(orig.ID, dest_res_id, max_size)
-
-###    d.addCallbacks(save_and_extract_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
-
     logger.debug("[Adaptation.end] component %s" % component.ID)
 
-#    defer.returnValue( (task, job_id) )
-
-def save_and_extract_features(job, result):
-    component = job.component
+def save_component(task, result):   # era save_and_extract_features
+    component = task.component
     if result:
         dir, name = os.path.split(result)
         component._id = name
         component.save()
-#            extract_features(component)
-#            machine_to_next_state(machine)
+    else:
+        logger.error('Empty result passed to save_and_extract_features')
+    task.execute('')
 
 
 #

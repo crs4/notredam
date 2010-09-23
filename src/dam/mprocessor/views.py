@@ -1,6 +1,6 @@
 import os
 from json import loads
-from dam.mprocessor.models import Job
+from dam.mprocessor.models import Task
 from django.http import Http404, HttpResponse, HttpResponseServerError
 from settings import INSTALLATIONPATH, LOG_LEVEL
 
@@ -12,29 +12,30 @@ logger.setLevel(LOG_LEVEL)
 #
 # This is the view that receives responses and pushes on the chain of calls
 #
-def job_dispatch(request, job_id):
+def task_dispatch(request, task_id):
     """General dispatcher for incoming responses"""
     try:
         logger.debug("-------------------request.raw_post_data: %s" %request.raw_post_data)
         post_data = loads(request.raw_post_data)
-        job = Job.objects.get(job_id=job_id)
-        logger.debug('job_dispatch: executing %s' % job.params)
+        task = Task.objects.get(task_id=task_id)
+        logger.debug('task_dispatch: executing %s' % task.params)
     except Exception, e:
         logger.debug('-----------------------------------------------Invalid body in post: %s' % str(e))
         return HttpResponseServerError('invalid data');
-    try:
-        logger.debug("job.next-----------post_data %s------------------------------------------------" %type(post_data))
-        logger.debug("job.next-----------post_data %s------------------------------------------------" %post_data['result'])
 
+    try:
+        logger.debug('----------type: %s' % type(post_data))
+        logger.debug('----------post_data: %s' % post_data['result'])
     except Exception, ex:
-        logger.debug("ex %s" %ex)
+        logger.debug('----------error: %s' % ex)
+
         
     if 'result' in post_data:
         result = post_data['result']
     elif 'error' in post_data:
-        logger.error('%s returned and error: %s:' % job.decoded_params[0], post_data['error'])
+        logger.error('%s returned and error: %s:' % task.decoded_params[0], post_data['error'])
         result = {} 
     else:
         logger.error('Invalid jsonrpc response')
-    job.execute(result)
+    task.execute(result)
     return HttpResponse('ok')
