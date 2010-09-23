@@ -746,6 +746,18 @@ class ItemTest(MyTestCase):
         print '-------------------------',  resp_dict
         self.assertTrue(resp_dict == {'name': 'test'})
         
+    def test_get_keywords(self):
+        
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.all()[0]
+        
+        params = self.get_final_parameters({ 'workspace_id': workspace.pk,  }) 
+        response = self.client.get('/api/item/%s/get_keywords/'%item.pk, params, )            
+        resp_dict = json.loads(response.content)
+        print '-------------------------',  resp_dict
+        
+    
+        
     
     def test_set_state(self): 
         workspace = DAMWorkspace.objects.get(pk = 1)

@@ -1301,7 +1301,7 @@ class ItemResource(ModResource):
             if item.workspaces.filter(members = user).count() == 0:
                 raise  InsufficientPermissions            
         
-        keywords = item.keywords()
+        keywords = list(item.keywords())
         colls = item.node_set.filter(type = 'collection')
         collection_ids = [c.pk for c in colls]
             

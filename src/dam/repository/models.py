@@ -294,6 +294,7 @@ class Item(AbstractItem):
         """
         Retrieve all the keywords (taxonomy nodes)
         """
+        
         return self.node_set.filter(type = 'keyword').values('id','label')
 
     def uploaded_by(self):
