@@ -514,7 +514,7 @@ class ItemTest(MyTestCase):
         
     def test_get(self):
         item = Item.objects.all()[0]    
-        keywords = item.keywords()            
+        keywords = list(item.keywords())            
         ws_pk = 1
         params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
         response = self.client.get('/api/item/%s/get/'%item.pk, params, )                        

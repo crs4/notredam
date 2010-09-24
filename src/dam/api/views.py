@@ -1377,8 +1377,11 @@ class ItemResource(ModResource):
             logger.debug('v %s'%v)
             url  = c.get_component_url()        
 #            item.variants[va.pk] = url
-            item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
-    
+            if url:
+                item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
+            else:
+                item.variants[v.name] = ""
+                    
     @exception_handler
     @api_key_required
     def create(self,  request):
