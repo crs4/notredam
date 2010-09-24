@@ -12,16 +12,17 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
 from dam.eventmanager.models import EventRegistration
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.settings import INSTALLATIONPATH, LOG_LEVEL, SERVER_PUBLIC_ADDRESS
+from dam.settings import SERVER_PUBLIC_ADDRESS
+from dam import logger
 
 # Create your models here.
 def new_id():
     return uuid4().hex
 
-import logging
-logger = logging.getLogger('batch_processor')
-logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/processor.log')))
-logger.setLevel(LOG_LEVEL)
+#import logging
+#logger = logging.getLogger('batch_processor')
+#logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/processor.log')))
+#logger.setLevel(LOG_LEVEL)
 
 #
 # Run scripts for after upload actions
