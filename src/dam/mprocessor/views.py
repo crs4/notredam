@@ -2,12 +2,12 @@ import os
 from json import loads
 from dam.mprocessor.models import Task
 from django.http import Http404, HttpResponse, HttpResponseServerError
-from settings import INSTALLATIONPATH, LOG_LEVEL
+from dam import logger
 
-import logging
-logger = logging.getLogger('mprocessor')
-logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/mprocessor.log')))
-logger.setLevel(LOG_LEVEL)
+#import logging
+#logger = logging.getLogger('mprocessor')
+#logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/mprocessor.log')))
+#logger.setLevel(LOG_LEVEL)
 
 #
 # This is the view that receives responses and pushes on the chain of calls

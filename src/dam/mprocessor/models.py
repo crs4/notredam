@@ -4,12 +4,8 @@ from json import dumps, loads
 from django.db import models
 from dam.mprocessor import processors  # to be changed
 from dam.repository.models import Component
-from dam.settings import INSTALLATIONPATH, LOG_LEVEL
 
-import logging
-logger = logging.getLogger('mprocessor')
-logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/mprocessor.log')))
-logger.setLevel(LOG_LEVEL)
+from dam import logger
 
 #
 # example of use
