@@ -561,7 +561,7 @@ class WorkspaceResource(ModResource):
             if ws not in user.workspaces.all() :
                 raise InsufficientPermissions
         
-        resp = {'id': workspace_id}
+        resp = {'id': ws.pk}
         if ws.creator:
             resp['creator'] = ws.creator.username
         else:
@@ -2248,10 +2248,8 @@ class Auth(ModResource):
         
         s = request.session
         wss = user.workspaces.all()
-        resp_dict = {'user_id':user.pk,  'secret':secret.value,  'session_id': s.session_key}
-        if wss.count()>0:
-            workspace_id = wss[0].pk
-            resp_dict['workspace_id'] = workspace_id
+        resp_dict = {'user_id':user.pk,  'secret':secret.value,  'session_id': s.session_key, 'workspaces': [ws.id for ws in wss]}
+        
         
         resp = json.dumps(resp_dict)    
         logger.debug('resp %s' %resp)
