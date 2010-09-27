@@ -396,7 +396,7 @@ class WSTestCase(MyTestCase):
         resp_dict = json.loads(response.content)    
         print 'resp_dict ',  resp_dict 
         ws = DAMWorkspace.objects.get(pk = ws_pk)        
-        self.assertTrue(resp_dict['id'] == str(ws.pk))
+        self.assertTrue(resp_dict['id'] == ws.pk)
         self.assertTrue(resp_dict['name'] == ws.name)
         self.assertTrue(resp_dict['description'] == ws.description)
 
@@ -1165,7 +1165,7 @@ class TestLogin(MyTestCase):
         json_resp = json.loads(response.content)
         self.assertTrue(json_resp['user_id'] == user.pk)
         self.assertTrue(json_resp['secret'] == self.secret)
-        self.assertTrue(json_resp['workspace_id'] == 1)
+        self.assertTrue(json_resp['workspaces'] == [1])
         self.assertTrue(json_resp.has_key('session_id'))
         
     def test_login_wrong(self):
