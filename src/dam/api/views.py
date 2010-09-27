@@ -1319,7 +1319,7 @@ class ItemResource(ModResource):
             metadata = self._get_metadata(item)
             resp['metadata'] = metadata
         except:
-            resp['metadata'] = []
+            resp['metadata'] = {}
         
 #            request.POST.['get_variant_urls'] = workspace
         if request.GET.__contains__('renditions_workspace'):
