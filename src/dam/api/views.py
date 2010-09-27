@@ -1303,7 +1303,8 @@ class ItemResource(ModResource):
         
         keywords = list(item.keywords())
         colls = item.node_set.filter(type = 'collection')
-        collection_ids = [c.pk for c in colls]
+#        collection_ids = [c.pk for c in colls]
+        collection_ids = list(item.collections())
             
         wss = item.workspaces.all()
         logger.debug('wss %s'%wss)
@@ -1377,8 +1378,11 @@ class ItemResource(ModResource):
             logger.debug('v %s'%v)
             url  = c.get_component_url()        
 #            item.variants[va.pk] = url
-            item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
-    
+            if url:
+                item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
+            else: 
+                item.variants[v.name] = ''
+                 
     @exception_handler
     @api_key_required
     def create(self,  request):

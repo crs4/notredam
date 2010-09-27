@@ -514,7 +514,8 @@ class ItemTest(MyTestCase):
         
     def test_get(self):
         item = Item.objects.all()[0]    
-        keywords = item.keywords()            
+        keywords = list(item.keywords())            
+        collections = list(item.collections())            
         ws_pk = 1
         params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
         response = self.client.get('/api/item/%s/get/'%item.pk, params, )                        
@@ -531,7 +532,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(resp_dict['upload_workspace'] == 1)
         print "resp_dict %s"%resp_dict
         print "item.node_set.filter(type = 'collection')%s"%item.node_set.filter(type = 'collection')
-        self.assertTrue(resp_dict['collections'] == [c.pk for c in item.node_set.filter(type = 'collection')])
+        self.assertTrue(resp_dict['collections'] == collections)
     
         metadata = {"dc_title": {"en-US": "test"}, "dc_subject": ["test_remove_1"], "dc_description": {"en-US": "test prova"}}
 #        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
