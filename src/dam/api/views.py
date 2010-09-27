@@ -1315,8 +1315,11 @@ class ItemResource(ModResource):
         except Node.DoesNotExist:
             pass
        
-        metadata = self._get_metadata(item)
-        resp['metadata'] = metadata
+        try:
+            metadata = self._get_metadata(item)
+            resp['metadata'] = metadata
+        except:
+            resp['metadata'] = []
         
 #            request.POST.['get_variant_urls'] = workspace
         if request.GET.__contains__('renditions_workspace'):
