@@ -1314,9 +1314,7 @@ class ItemResource(ModResource):
             resp['upload_workspace']= upload_workspace.pk
         except Node.DoesNotExist:
             pass
-        
-        
-        logger.debug('item.component_set.all() %s'% item.component_set.get(variant__name = 'original').workspace.all())
+       
         metadata = self._get_metadata(item)
         resp['metadata'] = metadata
         
