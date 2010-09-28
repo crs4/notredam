@@ -1303,7 +1303,7 @@ class ItemResource(ModResource):
         
         keywords = list(item.keywords())
         colls = item.node_set.filter(type = 'collection')
-        collection_ids = [c.pk for c in colls]
+        collection_ids = list(item.collections())
             
         wss = item.workspaces.all()
         logger.debug('wss %s'%wss)
@@ -1315,9 +1315,14 @@ class ItemResource(ModResource):
             pass
         
         
-        logger.debug('item.component_set.all() %s'% item.component_set.get(variant__name = 'original').workspace.all())
-        metadata = self._get_metadata(item)
-        resp['metadata'] = metadata
+        
+        try:    
+            metadata = self._get_metadata(item)            
+            resp['metadata'] = metadata
+            
+        except:
+            resp['metadata'] = {}        
+        
         
 #            request.POST.['get_variant_urls'] = workspace
         if request.GET.__contains__('renditions_workspace'):
@@ -2280,10 +2285,8 @@ class Auth(ModResource):
         
         s = request.session
         wss = user.workspaces.all()
-        resp_dict = {'user_id':user.pk,  'secret':secret.value,  'session_id': s.session_key}
-        if wss.count()>0:
-            workspace_id = wss[0].pk
-            resp_dict['workspace_id'] = workspace_id
+        resp_dict = {'user_id':user.pk,  'secret':secret.value,  'session_id': s.session_key, 'workspaces': [ws.id for ws in wss]}
+       
         
         resp = json.dumps(resp_dict)    
         logger.debug('resp %s' %resp)
