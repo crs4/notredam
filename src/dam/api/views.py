@@ -1456,6 +1456,35 @@ class ItemResource(ModResource):
         return HttpResponse(json_resp)   
 
 
+    @exception_handler
+    @api_key_required   
+    def get_collections(self, request, item_id):
+        """
+        """
+                
+        if not request.GET.has_key('workspace_id'):
+            raise MissingArgs, "workspace id and item id are both mandatory parameters"
+        
+        workspace_id = request.GET['workspace_id']
+        
+        try:
+            ws = Workspace.objects.get(id=workspace_id)
+        except:
+            raise WorkspaceDoesNotExist
+        
+        item = Item.objects.get(pk = item_id)
+        parent = request.GET.get('parent')
+        if parent:
+            parent_node = Node.objects.get(pk = parent)
+            sub_tree = parent_node.get_branch()
+            collections = sub_tree.filter(items = item)
+        
+        else:        
+            collections = item.collections()
+        
+        collections = list(collections.values('id', 'label'))
+        return HttpResponse(simplejson.dumps({'collections': collections}))
+
     
     @exception_handler
     @api_key_required   

@@ -510,7 +510,28 @@ class ItemTest(MyTestCase):
         resp_dict = json.loads(response.content)        
         self.assertTrue(resp_dict['error code'] == InvalidMediaType.error_code) 
         
+    
+    def test_get_keywords(self):
+        item = Item.objects.all()[0]    
+        keywords = list(item.keywords())            
         
+        params = self.get_final_parameters({'workspace_id': 1})
+        response = self.client.get('/api/item/%s/get_keywords/'%item.pk, params)                        
+        resp_dict = json.loads(response.content)
+        print resp_dict 
+        self.assertTrue(resp_dict['keywords'] == keywords)
+         
+        
+    def test_get_collections(self):
+        item = Item.objects.all()[0]    
+        collections = list(item.collections())            
+        
+        params = self.get_final_parameters({'workspace_id': 1})
+        response = self.client.get('/api/item/%s/get_collections/'%item.pk, params)                        
+        resp_dict = json.loads(response.content)
+        print resp_dict 
+        self.assertTrue(resp_dict['collections'] == collections)
+    
         
     def test_get(self):
         item = Item.objects.all()[0]    

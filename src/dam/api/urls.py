@@ -50,6 +50,7 @@ urlpatterns = patterns('',
 
 #   url(r'^api/item/search/$', ItemResource(permitted_methods=('POST'),).search),
    url(r'^api/item/(.+)/get_keywords/$', ItemResource(permitted_methods=('GET'),).get_keywords),
+   url(r'^api/item/(.+)/get_collections/$', ItemResource(permitted_methods=('GET'),).get_collections),
 
 
 
