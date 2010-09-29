@@ -593,7 +593,7 @@ class ItemTest(MyTestCase):
         item_id = item.pk
         metadata_dict = {'dc_title': {'en-US': 'test'},  'dc_identifier': 'test',  'dc_subject': ['test', 'test2']}
 
-        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict),  'workspace_id':1})
+        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict)})
         response = self.client.post('/api/item/%s/set_metadata/'%item_id, params, )            
 
         self.assertTrue(response.content == '')
