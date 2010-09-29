@@ -841,7 +841,7 @@ class ItemResource(ModResource):
             raise ex
         
     def _set_metadata(self,  request,  item_id,):      
-        workspace = Workspace.objects.get(pk = request.POST['workspace_id'])
+#        workspace = Workspace.objects.get(pk = request.POST['workspace_id'])
         logger.debug('request.POST %s'%request.POST)
         if not request.POST.has_key('metadata'):
             raise MissingArgs
@@ -931,7 +931,7 @@ class ItemResource(ModResource):
                 new_metadata[str(property.pk)] = metadata[data]
                 
         logger.debug('new_metadata %s' %new_metadata)
-        MetadataValue.objects.save_metadata_value([item], new_metadata,  'original', workspace)
+        MetadataValue.objects.save_metadata_value([item], new_metadata,  'original', item.workspaces.all()[0]) #workspace for variant metadata, not supported yet
         
 #        for data in metadata:            
 #            logger.debug('metadata %s '%metadata )
