@@ -2793,11 +2793,18 @@ class ScriptResource(ModResource):
     def run(self,  request,  script_id):
         from scripts.views import _run_script
        
-        run_again = request.POST.get('run_again')
         items = request.POST.getlist('items')
         script = Script.objects.get(pk = script_id)
         items = Item.objects.filter(pk__in = items)
-        _run_script(script, items ,   run_again )
+        _run_script(script, items ,   False )
+        return HttpResponse('')
+    
+    @exception_handler
+    @api_key_required
+    def run_again(self,  request,  script_id):
+        from scripts.views import _run_script
+        script = Script.objects.get(pk = script_id)        
+        _run_script(script, [] ,   True )
         return HttpResponse('')
 
     @exception_handler
@@ -2807,7 +2814,7 @@ class ScriptResource(ModResource):
         if not script.is_global:
             script.delete()
         else:
-             raise GlobalScriptDeletion
+            raise GlobalScriptDeletion
         return HttpResponse('')
 
     @exception_handler
