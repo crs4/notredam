@@ -365,27 +365,19 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict.get('error code') == 30)
     
         
-    def test_set_name(self):
-             
-        ws_pk = 1        
-        params = self.get_final_parameters({'name':'test_', })
-        
-        response = self.client.post('/api/workspace/%s/set_name/'%ws_pk, params,)        
-        self.assertTrue(response.content == '')
-        
-        ws = DAMWorkspace.objects.get(pk = ws_pk)
-        self.assertTrue(ws.name == 'test_')
-        
-        
-    def test_set_description(self):
     
-        ws_pk = 1
-        params = self.get_final_parameters({'description':'test_'})
-        response = self.client.post('/api/workspace/%s/set_description/'%ws_pk, params)        
+    def test_edit(self):             
+        ws_pk = 1        
+        params = self.get_final_parameters({'name':'test_', 'description': 'test description' })
+        
+        response = self.client.post('/api/workspace/%s/edit/'%ws_pk, params,)        
         self.assertTrue(response.content == '')
         
         ws = DAMWorkspace.objects.get(pk = ws_pk)
-        self.assertTrue(ws.description == 'test_')
+        self.assertTrue(ws.name == params['name'])
+        self.assertTrue(ws.description == params['description'])
+        
+
         
     def test_get(self):
              

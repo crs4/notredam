@@ -57,9 +57,10 @@ urlpatterns = patterns('',
    
    url(r'^api/workspace/new/$', WorkspaceResource(permitted_methods=('POST',), ).create),   
    
-   url(r'^api/workspace/(\d+)/delete/$', WorkspaceResource(permitted_methods=('GET',), ).delete),   
-   url(r'^api/workspace/(\d+)/set_name/$', WorkspaceResource(permitted_methods=('POST')).set_name),  
-   url(r'^api/workspace/(\d+)/set_description/$', WorkspaceResource(permitted_methods=('POST')).set_description),  
+   url(r'^api/workspace/(\d+)/delete/$', WorkspaceResource(permitted_methods=('GET',), ).delete),  
+   url(r'^api/workspace/(\d+)/edit/$', WorkspaceResource(permitted_methods=('POST')).edit), 
+#   url(r'^api/workspace/(\d+)/set_name/$', WorkspaceResource(permitted_methods=('POST')).set_name),  
+#   url(r'^api/workspace/(\d+)/set_description/$', WorkspaceResource(permitted_methods=('POST')).set_description),  
    
    url(r'^api/workspace/(\d+)/get/$', WorkspaceResource(permitted_methods=('GET',), ).read),  
    url(r'^api/workspace/get/$', WorkspaceResource(permitted_methods=('GET',), ).get_list),  
