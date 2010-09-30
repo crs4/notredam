@@ -544,7 +544,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(resp_dict['upload_workspace'] == 1)
         print "resp_dict %s"%resp_dict
         print "item.node_set.filter(type = 'collection')%s"%item.node_set.filter(type = 'collection')
-        self.assertTrue(resp_dict['collections'] == [c.pk for c in item.node_set.filter(type = 'collection')])
+        self.assertTrue(resp_dict['collections'] == list(item.collections()))
     
         metadata = {"dc_title": {"en-US": "test"}, "dc_subject": ["test_remove_1"], "dc_description": {"en-US": "test prova"}}
 #        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
@@ -1178,7 +1178,7 @@ class TestLogin(MyTestCase):
         json_resp = json.loads(response.content)
         self.assertTrue(json_resp['user_id'] == user.pk)
         self.assertTrue(json_resp['secret'] == self.secret)
-        self.assertTrue(json_resp['workspace_id'] == 1)
+        self.assertTrue(json_resp['workspaces'] == [1])
         self.assertTrue(json_resp.has_key('session_id'))
         
     def test_login_wrong(self):
@@ -1386,7 +1386,9 @@ class SmartFolderTest(MyTestCase):
     
 
 class ScriptsTest(MyTestCase):
-    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'scripts/fixtures/test_data.json']   
+    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  
+#                'scripts/fixtures/test_data.json'
+                ]   
    
     def test_create(self):
         ws = DAMWorkspace.objects.get(pk = 1)
@@ -1485,16 +1487,24 @@ class ScriptsTest(MyTestCase):
         response = self.client.post('/api/script/%s/run/'%script.pk, params,  )  
         self.assertTrue(response.content == '')
         
-       
-    def test_delete(self):
-        script = Script.objects.get(name = 'test_run')
-        params = self.get_final_parameters({ })     
-        response = self.client.post('/api/script/%s/delete/'%script.pk, params,  )  
+        
+    def test_run_again(self):
+        script = Script.objects.get(name = 'preview_generation')
+        params = self.get_final_parameters({})    
+        
+        response = self.client.post('/api/script/%s/run_again/'%script.pk, params,  )  
         self.assertTrue(response.content == '')
-        self.assertTrue(Script.objects.filter(pk = script.pk).count() == 0)
+        
+#TODO: generate new fixtures for testing delete script
+#    def test_delete(self):
+#        script = Script.objects.get(name = 'thumb_generation')
+#        params = self.get_final_parameters({ })     
+#        response = self.client.post('/api/script/%s/delete/'%script.pk, params,  )  
+#        self.assertTrue(response.content == '')
+#        self.assertTrue(Script.objects.filter(pk = script.pk).count() == 0)
        
     def test_get(self):
-        script = Script.objects.get(name = 'test_run')
+        script = Script.objects.get(name = 'thumb_generation')
         params = self.get_final_parameters({ })     
         response = self.client.post('/api/script/%s/get/'%script.pk, params,  )  
         resp_dict = json.loads(response.content)        
