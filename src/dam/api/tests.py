@@ -1106,7 +1106,7 @@ class CollectionsTest(MyTestCase):
         node_id = Node.objects.get(label = 'test1',  depth = 1).pk
         new_label = 'new_label'
         params = self.get_final_parameters({'label':new_label})        
-        response = self.client.post('/api/collection/%s/rename/'%node_id , params,  )                
+        response = self.client.post('/api/collection/%s/edit/'%node_id , params,  )                
         node = Node.objects.get(pk = node_id )
         self.assertTrue(node.label == new_label)
         
