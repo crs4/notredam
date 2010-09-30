@@ -1383,6 +1383,10 @@ class SmartFolderTest(MyTestCase):
         self.assertTrue(sm.nodes.all().count() == 2)
         self.assertTrue(SmartFolderNodeAssociation.objects.get(node = node,  smart_folder = sm).negated ==  query['negated'])
         
+        response = self.client.get('/api/smartfolder/%s/get/'%sm_id, params,)
+        print 'response.content', response.content
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict == {"and_condition": True, "workspace_id": 1, "queries": [{"negated": False, "type": "keyword", "id": 19}, {"negated": False, "type": "keyword", "id": 22}], "id": 1, "label": "test_sm"})    
     
 
 class ScriptsTest(MyTestCase):

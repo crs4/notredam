@@ -2744,13 +2744,17 @@ class SmartFolderResource(ModResource):
             sm.label = label
         if queries:
             if not append_queries:
-                SmartFolderNodeAssociation.objects.create(smart_folder = sm).all().delete()
+                SmartFolderNodeAssociation.objects.all().delete()
             
             queries = simplejson.loads(queries)
             logger.debug('queries %s'%queries)
             
             for query in queries:            
-                sm_ass = SmartFolderNodeAssociation.objects.create(smart_folder = sm,  node = Node.objects.get(pk = query['id']),  negated= query['negated'])
+                sm_ass, created = SmartFolderNodeAssociation.objects.get_or_create(smart_folder = sm,  node = Node.objects.get(pk = query['id']))
+                sm_ass.negated = query['negated']
+                sm_ass.save()
+                
+                
         
         sm.save()
         
