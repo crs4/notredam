@@ -1724,7 +1724,7 @@ class CollectionResource(ModResource):
       
     @exception_handler
     @api_key_required
-    def rename(self,  request,  collection_id):
+    def edit(self,  request,  collection_id):
         """
         Allows to rename a given collection
         - method: POST
