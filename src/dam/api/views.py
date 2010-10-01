@@ -1767,16 +1767,16 @@ class CollectionResource(ModResource):
         
         """
       
-        user_id = request.GET.get('user_id')
+        user_id = request.POST.get('user_id')
         node_source = Node.objects.get(pk = collection_id)
         ws = node_source.workspace
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])
         
-        if not request.GET.has_key('parent_id'):
+        if not request.POST.has_key('parent_id'):
                     
             node_dest = Node.objects.get(type = 'collection',  depth = 0,  workspace = ws)
         else:
-            node_dest = Node.objects.get(pk = request.GET['parent_id'])  
+            node_dest = Node.objects.get(pk = request.POST['parent_id'])  
         
         logger.debug('moving...')        
         node_source.move_node(node_dest,  ws)
