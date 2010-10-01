@@ -25,7 +25,7 @@ from django.contrib.auth.models import User
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 
 import urlparse
-import logger
+from dam import logger
 from django.utils import simplejson
 import time
 

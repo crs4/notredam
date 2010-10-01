@@ -48,7 +48,7 @@ from dam.eventmanager.models import Event, EventRegistration
 
 from django.utils.datastructures import SortedDict
 
-import logger
+from dam import logger
 import time
 import operator
 import re

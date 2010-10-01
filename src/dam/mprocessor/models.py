@@ -2,9 +2,9 @@ import os
 import time
 from json import dumps, loads
 from django.db import models
-from dam.mprocessor import processors  # to be changed
+from mediadart.storage import new_id
+from mediadart.mqueue.mqclient_async import Proxy
 from dam.repository.models import Component
-
 from dam import logger
 
 #
@@ -18,80 +18,93 @@ from dam import logger
 # task = Task.object.get(id=task_id)
 #
 
-class Task(models.Model):
-    def __init__(self, *args, **kwargs):
-        models.Model.__init__(self, *args, **kwargs)
-        self.decoded_params = loads(self.params)
-        self.dirty = False
-            
-    task_id = models.CharField(max_length=32, primary_key=True, default=processors.new_id)
-    component = models.ForeignKey(Component)
-    params = models.TextField(default='["__dummy__"]')
-    last_active = models.IntegerField(default=0)     # holds int(time.time())
-    state = models.CharField(max_length=7, default='pending')
+class MAction:
+    """
+    This class can be initialized in three wasy:
+    1. with no data for initialization
+    2. with json data and a query_func
+
+    In case (1) the class is used to build a list of actions for the mprocessor.
+    In case (2) the json_data contains the list of actions and the parameter get_component.
+    is a function used to retreive a Component object from the db
+    """
+    def __init__(self, component=None, action_id=None, params=None, state='pending', last_active=0):
+        self.task = None
+        self.component = component
+        self.action_id = action_id or new_id()
+        self.params = params or [['__dummy__', []]]
+        self.state = state
+        self.last_active = last_active
 
     def append_func(self, function_name, *function_params):
-        print ("#-#-#-#-#- add_func %s" %function_name)
-        self.decoded_params.append([function_name, function_params])
-        self.dirty = True
-        print ('self.decoded_params: %s, task_id %s' %(self.decoded_params, self.task_id))
-        return self
-
-    def leftappend_func(self, function_name, *function_params):
-        index = 0
-        if self.decoded_params and self.decoded_params[0] == '__dummy__':
-            index = 1
-        self.decoded_params.insert(index, [function_name, function_params])
-        self.dirty = True
-        print ('self.decoded_params: %s, task_id %s' %(self.decoded_params, self.task_id))
+        self.params.append([function_name, function_params])
         return self
 
     def add_component(self, component):
         self.component = component
-        self.dirty = True
         return self
     
-    def str(self):
-        return 'task_id %s, self.decoded_params %s' %(self.task_id,self.decoded_params)
+    def to_json(self):
+        return dumps({'action_id':self.action_id, 'component_id':self.component.pk, 'params':self.params})
 
-    def execute(self, data):
+    def log_completion(self, status_ok, result, userarg):
+        logger.debug('Task completed' % self.action_id)
+
+    def activate(self, callback=None):
+        if not callback:
+            callback = self.log_completion
+        data = self.to_json()
+        logger.debug('MProcessor.activate %s' % data)
+        Proxy('MProcessor', callback=callback).activate(data)
+
+    def pop(self):
         "This changes the state of the task and it is not undoable"
         if not self.component:
             raise('Error: executing action with no component')
-        if not self.decoded_params:
+        if not self.params:
             raise('Error: executing empty action')
         self.last_active = int(time.time())
-        if not self.next_func():
-            return
-        fname, fparams = self.decoded_params[0]
-        func = getattr(processors, fname)
-        logger.debug('\n%s\nmprocessor: executing %s\n' % ('-'*80, fname))
-        try:
-            func(self, data, *fparams)
-        except Exception, ex:
-            self.failed()
-            logger.error('Task: error executing %s: %s' % (fname, ex))
-        logger.debug('\n%s\nmprocessor: %s returned' % ('-'*80, fname))
-        if self.dirty:
-            self.serialize()
+        fname, fparams = self._next_func()
+        return fname, fparams
 
-    def next_func(self):
-        if not self.decoded_params:
-            return 0
-        self.decoded_params.remove(self.decoded_params[0])
-        if self.decoded_params:
-            self.serialize()
-            return 1
+    def _next_func(self):
+        if not self.params:
+            return None, None
+        self.params.remove(self.params[0])
+        if self.params:
+            logger.debug('###################### SAVING TASK')
+            return self.params[0]
         else:
-            self.delete()
-            return 0
+            logger.debug('###################### CLOSING TASK')
+            if self.task: 
+                if self.state == 'failed':
+                    logger.debug('###################### SAVING FAILED TASK')
+                    self.task.save()
+                elif self.state == 'pending':
+                    logger.debug('###################### DELETING PENDING TASK')
+                    self.task.delete()
+                else:
+                    logger.debug('\n#################### UNEXPECTED STATE %s' % self.state)
+            return None, None
 
     def serialize(self):
-        self.params = dumps(self.decoded_params)
-        self.save()
-        self.dirty = False
+        if not self.task:
+            logger.debug('############# serialize: creating task')
+            self.task = Task.objects.create(component=self.component, 
+                                            params=dumps(self.params), 
+                                            last_active=int(time.time()),
+                                            state=self.state)
+        else:
+            logger.debug('############ serialize: saving task')
+            self.task.save()
 
     def failed(self):
+        logger.debug('################ ACTION FAILURE')
         self.state = 'failed'
-        self.dirty = 1
 
+class Task(models.Model):
+    task_id = models.CharField(max_length=32, primary_key=True, default=new_id)
+    component = models.ForeignKey(Component)
+    params = models.TextField(default='[["__dummy__", []]]')
+    last_active = models.IntegerField(default=0)     # holds int(time.time())
+    state = models.CharField(max_length=7, default='pending')

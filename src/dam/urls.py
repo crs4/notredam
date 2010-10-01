@@ -50,7 +50,5 @@ urlpatterns = patterns('',
     (r'^', include('dam.admin.urls')),
     (r'^', include('dam.scripts.urls')),
     (r'^', include('dam.eventmanager.urls')),
-    (r'^', include('dam.mprocessor.urls'))
-    
-
+#    (r'^', include('dam.mprocessor.urls'))
 )
