@@ -17,7 +17,7 @@ from dam.repository.models import Item, Component
 from dam.eventmanager.models import EventRegistration
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.mprocessor.models import MAction
-import dam.repository.models as MMMM
+from scripts.models import PRESETS, Script
 
 
 def new_id():
@@ -79,7 +79,7 @@ class Engine:
         self.maction.failed()
         return self.run('')
 
-    def cb_error(result):
+    def cb_error(self, result):
         log.debug('######### cb_error %s' % result)
         self.maction.failed()
         return result
@@ -171,7 +171,6 @@ class Engine:
 #  Adapt
 # 
     def adapt_resource(self, result):
-        from scripts.models import Script
 
         component = self.maction.component
         adapter_proxy = Proxy('Adapter')
