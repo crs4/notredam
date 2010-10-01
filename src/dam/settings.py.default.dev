@@ -140,12 +140,11 @@ INSTALLED_APPS = (
 	'dam.workspace',
 	'dam.application',
 	'dam.api',
-	'dam.batch_processor',
 	'dam.workflow',
 	'dam.eventmanager',
 	'dam.geo_features',
 	'dam.basket',
     'dam.scripts',
 	'dam.upload'
-
+    'dam.mprocessor',
 )
