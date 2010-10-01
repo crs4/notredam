@@ -986,6 +986,23 @@ class KeywordsTest(MyTestCase):
         parent_id = resp_dict['parent_id']        
         self.assertTrue(parent_id == new_parent_node_pk)        
         
+        
+    def test_move_on_top(self):
+        ws_pk = 1 
+        ws = DAMWorkspace.objects.get(pk = ws_pk)        
+        node_id = Node.objects.get(label = 'test').pk
+        
+        
+        params = self.get_final_parameters({ })        
+        self.client.post('/api/keyword/%s/move/'%node_id, params,  )      
+        
+        params = self.get_final_parameters({})
+        response = self.client.get('/api/keyword/%s/get/'%node_id, params)        
+        resp_dict = json.loads(response.content)
+        print resp_dict
+        parent_id = resp_dict['parent_id']        
+        self.assertTrue(parent_id == None)        
+        
     def test_delete(self):
         ws_pk = 1 
         ws = DAMWorkspace.objects.get(pk = ws_pk)
