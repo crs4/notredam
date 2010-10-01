@@ -2132,7 +2132,7 @@ class KeywordsResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_taxonomy']) 
         
         if not request.POST.has_key('parent_id'):                  
-            node_dest = Node.objects.get.get(type = 'keyword',  depth = 0,  workspace = ws)
+            node_dest = Node.objects.get(type = 'keyword',  depth = 0,  workspace = ws)
         else:
             node_dest = Node.objects.get(pk = request.POST['parent_id'])  
         
