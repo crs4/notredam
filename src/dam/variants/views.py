@@ -39,7 +39,7 @@ from dam.metadata.views import _get_ws_groups
 from dam.batch_processor.models import Machine
 
 import os
-import logger
+from dam import logger
 import os, time
 
 class MediaTypeNotFound(Exception):

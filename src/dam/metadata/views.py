@@ -36,7 +36,7 @@ from dam.batch_processor.models import MachineState, Action, Machine
 from dam.core.dam_metadata.models import XMPNamespace, XMPStructure
 
 from mx.DateTime.Parser import DateTimeFromString
-import logger
+from dam import logger
 import re
 
 @login_required

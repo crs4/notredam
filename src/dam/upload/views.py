@@ -32,19 +32,18 @@ from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
 from dam.treeview.models import Node
-from dam.batch_processor.models import MachineState, Machine, Action
+#from dam.batch_processor.models import MachineState, Machine, Action
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
-from dam.mprocessor.models import Task
+from dam.mprocessor.models import MAction
 
 from mediadart.storage import Storage
 
-import logger
-
+from dam import logger
 import mimetypes
 import os.path, traceback
 import time
@@ -282,38 +281,44 @@ def guess_media_type (file):
 
     return media_type
 
+
+
 def _generate_tasks( component, workspace, force_generation,  check_for_existing, embed_xmp):
     """
     Generates MediaDART tasks
     """
-    logger.debug('_generate_tasks: pk=%s, ID=%s, workspace = %s' % (component.pk, component.ID, workspace.pk))
+    def _cb_log_result(status_ok, result, userargs):
+        logger.debug('_generate_tasks on source component: %s' % result)
+
+    def _cb_start_upload_events(status_ok, result, userargs):
+        logger.debug('_generate_tasks: starting upload events: %s' % result)
+        item = component.item
+        for ws in item.workspaces.all():
+            EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+
+    logger.debug('############ _generate_tasks')
     from dam.core.dam_repository.models import Type
     variant = component.variant
 
-    task = Task()
-    task.add_component(component)
+    maction = MAction()
+    maction.add_component(component)
     
     if variant and not variant.auto_generated:    # The component is a source component
-        task.append_func('extract_features')
-        task.append_func('extract_xmp', component.get_extractor())
-        task.append_func('save_features', 'xmp_extractor')
-        task.append_func('start_upload_event_handlers', str(workspace.pk))
+        maction.append_func('extract_features')
+        maction.append_func('extract_xmp', component.get_extractor())
+        callback = _cb_start_upload_events
     else:                                         # The component is derived from a source component
         if not component.imported:
-            task.append_func('adapt_resource')
-
-        task.append_func('save_component')
-        task.append_func('extract_features')
-        task.append_func('save_features', task.component.get_extractor())
+            maction.append_func('adapt_resource')
+        maction.append_func('extract_features')
         
         if embed_xmp:
-            task.append_func('embed_xmp')
-            task.append_func('embed_reset_xmp')
+            maction.append_func('embed_xmp')
                 
         if  variant.name == 'mail':
-            task.append_func('send_mail')
-    task.execute('')
-
+            maction.append_func('send_mail')
+        callback = _cb_log_result
+    maction.activate(callback)
     
 def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
     
@@ -327,6 +332,6 @@ def generate_tasks(component, workspace, upload_job_id = None, force_generation 
         component.save()
         
     
-    Action.objects.filter(component=component).delete()
+    #Action.objects.filter(component=component).delete()
 
     _generate_tasks(component, workspace, force_generation,  check_for_existing, embed_xmp)

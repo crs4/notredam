@@ -20,7 +20,7 @@ from exceptions import *
 from django.db import models
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
-import logger
+from dam import logger
 
 class Event(models.Model):
     name = models.CharField(max_length=128, unique = True)
@@ -41,12 +41,14 @@ class EventManager(models.Manager):
         except Exception, ex:
             logger.debug(ex)
             return
-        logger.debug('event_registrations %s'%event_registrations)
+        logger.debug('event_registrations %s'% event_registrations)
         for event_reg in event_registrations:
             listener = event_reg.listener
+            logger.debug('listener=%s(%s)' % (listener, parameters))
             try:
                 listener.execute(**parameters)
             except Exception, ex:
+                logger.debug('listener launched an exception')
                 logger.exception(ex)
                 
         
