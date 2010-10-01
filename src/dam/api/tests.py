@@ -983,6 +983,7 @@ class KeywordsTest(MyTestCase):
         params = self.get_final_parameters({})
         response = self.client.get('/api/keyword/%s/get/'%node_id, params)        
         resp_dict = json.loads(response.content)
+        print resp_dict
         parent_id = resp_dict['parent_id']        
         self.assertTrue(parent_id == new_parent_node_pk)        
         
@@ -1126,7 +1127,7 @@ class CollectionsTest(MyTestCase):
         node_id = Node.objects.get(label = 'test1', depth = 1).pk
         dest_id= Node.objects.get(label = 'test2', depth = 1).pk
         params = self.get_final_parameters({ 'parent_id':dest_id,  })
-        resp = self.client.get('/api/collection/%s/move/'%node_id, params)      
+        resp = self.client.post('/api/collection/%s/move/'%node_id, params)      
         
         self.assertTrue(resp.content == '')
         self.assertTrue(resp.status_code == 200)
@@ -1140,7 +1141,7 @@ class CollectionsTest(MyTestCase):
         node_id = Node.objects.get(label = 'test1_child', ).pk
         root_pk = Node.objects.get(workspace = ws, type ="collection",depth = 0).id
         params = self.get_final_parameters({ })
-        resp = self.client.get('/api/collection/%s/move/'%node_id, params)      
+        resp = self.client.post('/api/collection/%s/move/'%node_id, params)      
         
         self.assertTrue(resp.content == '')
         self.assertTrue(resp.status_code == 200)
