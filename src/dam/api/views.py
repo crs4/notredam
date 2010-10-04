@@ -2456,7 +2456,14 @@ class VariantsResource(ModResource):
         name = request.POST.get('name')
         if name:
             variant.name = name
-            variant.save()
+            
+            
+        caption = request.POST.get('caption')
+        if caption:
+            variant.caption = caption
+        
+        variant.save()    
+        
         if media_type:
             variant.media_type = []
             variant.media_type.add(*media_type)

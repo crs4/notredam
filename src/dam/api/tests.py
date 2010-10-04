@@ -1261,19 +1261,23 @@ class VariantsTest(MyTestCase):
           
     def test_edit(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
-        variant = Variant.objects.create(name = 'test', auto_generated = True, workspace = workspace)
+        variant = Variant.objects.create(name = 'test', caption= 'test', auto_generated = True, workspace = workspace)
         variant.media_type.add(*Type.objects.all())
         
                 
         
-        params = {'name': 'test_rename', 'media_type': ['image']}
+        params = {'name': 'test_rename','caption':'test_rename', 'media_type': ['image']}
         params = self.get_final_parameters(params)
         
         
         response = self.client.post('/api/rendition/%s/edit/'%variant.pk,  params)                
-
+        
         variant = Variant.objects.get(pk = variant.pk)
+        print ' variant.caption ', variant.caption 
         self.assertTrue(variant.name == params['name'])
+        self.assertTrue(variant.caption == params['caption'])
+        
+        
         print 'variant.media_type.all() %s'%variant.media_type.all()
         self.assertTrue(len(variant.media_type.all()) == len(params['media_type']))
         self.assertTrue(variant.media_type.all()[0].name == params['media_type'][0])
@@ -1283,7 +1287,7 @@ class VariantsTest(MyTestCase):
     def test_create(self):
         
         workspace = DAMWorkspace.objects.get(pk = 1)
-        params = {'name': 'test_create', 'media_type': ['image'], 'workspace_id': 1, 'caption':'test create'}
+        params = {'name': 'test', 'media_type': ['image'], 'workspace_id': 1, 'caption':'test'}
         params = self.get_final_parameters(params)
         
         
