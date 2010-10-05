@@ -458,6 +458,18 @@ var showDetails = function(view){
             Ext.getCmp('remove_from_ws').disable();
         }
         
+        
+        if (admin | add_item){
+            Ext.getCmp('sync_xmp').enable();
+
+
+        }
+        else{
+            Ext.getCmp('sync_xmp').disable();
+
+        }
+
+        
         if (admin | set_state){
             if(ws_state_store.getCount()) {
                 Ext.getCmp('set_state_to').show();
@@ -504,6 +516,7 @@ var showDetails = function(view){
         Ext.getCmp('object_menu').menu.items.get('mvto').disable();
         Ext.getCmp('object_menu').menu.items.get('remove_from_ws').disable();
         Ext.getCmp('object_menu').menu.items.get('set_state_to').disable();
+        Ext.getCmp('sync_xmp').disable();
         
         
         Ext.getCmp('object_menu').menu.items.get('runscript').disable();
