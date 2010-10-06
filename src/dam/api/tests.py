@@ -1468,7 +1468,7 @@ class ScriptsTest(MyTestCase):
         description = 'test_edit'
         pipeline =  {
         'image':{
-            'source_variant': 'original',
+            'source_variant': 'edited',
             'actions': [
                 {
                  'type': 'resize',
@@ -1498,13 +1498,19 @@ class ScriptsTest(MyTestCase):
                  
         }}
         script = Script.objects.get(name = 'preview_generation')
-        params = self.get_final_parameters({ 'script_id':script.pk, 'workspace_id': ws.pk,   'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+        params = self.get_final_parameters({ 'workspace_id': ws.pk,   'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
                 
         response = self.client.post('/api/script/%s/edit/'%script.pk, params,  )  
         script = Script.objects.get(pk = script.pk)
         self.assertTrue(response.content == '')
         print script.name
+        print "script.actionlist_set.get(media_type__name = 'image').actions",  script.actionlist_set.get(media_type__name = 'image').actions
+        print "json.dumps(pipeline['image'])",  json.dumps(pipeline['image'])
+
         self.assertTrue(script.name == params['name'])
+        self.assertTrue(script.description == params['description'])
+        self.assertTrue(json.loads(script.actionlist_set.get(media_type__name = 'image').actions)['source_variant'] == pipeline['image']['source_variant'] )
+        
        
     def test_run(self):
         script = Script.objects.get(name = 'preview_generation')
