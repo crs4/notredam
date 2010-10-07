@@ -2793,8 +2793,7 @@ class ScriptResource(ModResource):
         description = request.POST['description']
         pipeline = request.POST['pipeline']
         events = request.POST.getlist('events')
-        workspace_id = request.POST.get('workspace_id')
-        workspace = DAMWorkspace.objects.get(pk = workspace_id)        
+        workspace = script.workspace        
         
         script  = _new_script(name = name, description = description, workspace =workspace, script = script,  pipeline = pipeline, events = events)
         return HttpResponse('')

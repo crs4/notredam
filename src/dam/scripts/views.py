@@ -34,7 +34,15 @@ def _get_scripts_info(script):
 #    for action in script.actionlist_set.all():                        
 #        actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
     
-    return {'id': script.pk, 'name': script.name, 'description': script.description, 'is_global': script.is_global,  'actions_media_type': actions, 'already_run': script.component_set.all().count() > 0}
+    return {'id': script.pk, 
+            'name': script.name, 
+            'description': script.description, 
+            'is_global': script.is_global,  
+            'actions_media_type': actions, 
+            'already_run': script.component_set.all().count() > 0,
+            'workspace_id': script.workspace.pk
+            
+            }
 
 @login_required
 def get_scripts(request):
