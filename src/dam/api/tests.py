@@ -1498,7 +1498,7 @@ class ScriptsTest(MyTestCase):
                  
         }}
         script = Script.objects.get(name = 'preview_generation')
-        params = self.get_final_parameters({ 'workspace_id': ws.pk,   'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+        params = self.get_final_parameters({ 'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
                 
         response = self.client.post('/api/script/%s/edit/'%script.pk, params,  )  
         script = Script.objects.get(pk = script.pk)
@@ -1544,6 +1544,7 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(resp_dict['id'] == script.pk)
         self.assertTrue(resp_dict['name'] == script.name)
         self.assertTrue(resp_dict['description'] == script.description)
+        self.assertTrue(resp_dict['workspace_id'] == script.workspace.pk)
         
     def test_get_scripts(self):
 
