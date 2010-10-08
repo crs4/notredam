@@ -2613,47 +2613,13 @@ class SmartFolderResource(ModResource):
     
     @exception_handler
     @api_key_required
-    def read(self,  request,  sm_id = None):
-        """
-            @param sm_id: smart folder id, optional. If passed, info about the given smart folder are returned, otherwise all smart folders for the workspace  are returned.
-            - Method: GET
-            - parameters:
-                - workspace_id (optional, required if no sm_id is passed)
-            - Returns:
-                {"and_condition": true, "queries": [{"negated": false, "type": "keyword", "id": 17}], "id": 1, "workspace": 1, "label": "test"}
-                    
-                {'smart_folders': [{'and_condition': True, 'id': 1, 'label': 'test', 'workspace_id': 1, 'queries': [{'negated': False, 'type': 'keyword', 'id': 17}]}]}
-            
+    def read(self,  request,  sm_id):
+        """ 
         """
     
-        if sm_id:
-            smart_folder = SmartFolder.objects.get(pk = sm_id)
-            resp = self.get_info(smart_folder)
-                
-        else:            
-            workspace_id = request.GET.get('workspace_id')
-            if not workspace_id:
-                raise MissingArgs({'args': ['no workspace id passed']})
-            workspace = Workspace.objects.get(pk = workspace_id)
-            
-            smart_folders = workspace.smartfolder_set.all()
-            
-            
-            resp = {'smart_folders':[]}
-            for smart_folder in smart_folders:
-                info = self.get_info(smart_folder)
-                resp['smart_folders'].append(info)
-#                try:
-#                    info = self.get_info(smart_folder)
-#                    sm_id = info.pop('id')
-#                    resp['smart_folders'][sm_id] = info
-#                except Exception,  ex:
-#                    logger.exception(ex)
-        
+        smart_folder = SmartFolder.objects.get(pk = sm_id)
+        resp = self.get_info(smart_folder)
         return HttpResponse(simplejson.dumps(resp))
-
-
-
 
     @exception_handler
     @api_key_required
