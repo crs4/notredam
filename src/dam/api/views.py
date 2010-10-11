@@ -1650,8 +1650,8 @@ class CollectionResource(ModResource):
             parent_node = Node.objects.get(pk = parent_id)
             workspace = parent_node.workspace        
             
-        _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])        
-        node = Node.objects.add_node(parent_node,label, workspace)
+        _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])     
+        node = Node.objects.add_node(parent_node,label, workspace)            
         json_response = json.dumps({'model': 'collection',  'id': node.pk, 'label': label, 'parent_id': parent_id, 'workspace_id': workspace.id,  })
         logger.debug('add: json_response %s'%json_response )
         return HttpResponse(json_response) 

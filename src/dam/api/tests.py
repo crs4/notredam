@@ -1110,6 +1110,29 @@ class CollectionsTest(MyTestCase):
         self.assertTrue(resp_dict['label'] == label)        
 
 
+    def test_create_except(self):             
+        
+        ws = DAMWorkspace.objects.get(pk = 1)
+        label = 'collection_test'
+        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
+        response = self.client.post('/api/collection/new/', params,  )  
+        resp_dict = json.loads(response.content)        
+        
+        self.assertTrue(resp_dict.has_key('id'))
+        
+        self.assertTrue(resp_dict['workspace_id'] == ws.pk)
+        self.assertTrue(resp_dict['parent_id'] == None)
+        self.assertTrue(resp_dict['label'] == label)        
+        
+        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
+        response = self.client.post('/api/collection/new/', params)  
+        print response
+        
+
+
+
+
+
     def test_rename(self):
         "changing label"
 
