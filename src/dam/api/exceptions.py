@@ -15,10 +15,21 @@
 #    GNU General Public License for more details.
 #
 #########################################################################
+from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,    NotEditableNode, SiblingsWithSameLabel
+from dam.treeview.models import Node
+from dam.workspace.models import Workspace
+from dam.repository.models import Item
+from dam.metadata.models import MetadataProperty,  MetadataValue
+from dam.variants.models import Variant
+from dam.workflow.models import State
+
 
 
 class CodeErrorException(Exception):
-    pass
+    
+    def error_class(self):
+        return self.__class__.__name__
+    
 
 class VerboseCodeErrorException(CodeErrorException):
     def __init__(self, error_dict = None,  *args,  **kwargs):
@@ -33,6 +44,7 @@ class MalformedJSON(CodeErrorException):
 class TooManyArgsPassed(CodeErrorException):
     error_code = 23
     error_message = 'too many arguments passed'
+    
 
 class MissingArgs(VerboseCodeErrorException):
     error_code = 15
@@ -65,7 +77,7 @@ class InvalidAPIKey(CodeErrorException):
     error_code = 11
     error_message = 'invalid api key'    
     
-class invalidAPIKeyOrUserId(CodeErrorException):
+class InvalidAPIKeyOrUserId(CodeErrorException):
     error_code = 29
     error_message = 'invalid api_key or user id'    
     
@@ -96,16 +108,6 @@ class SmartFolderDoesNotExist(CodeErrorException):
 class InvalidMediaType(CodeErrorException):
     error_code = 32
     error_message = 'invalid media type'
-    
-#errors_code = {    
-#    12: 'item with the given id does not exist', 
-#    16: 'missing metadataschema', 
-#    17: 'metadata not found', 
-#    18: 'workspace does not exist', 
-#    20: 'keyword does not exist', 
-#    21: 'keyword does not belong to the given workspace', 
-#    
-#    }
 
 class ImportedVariant(CodeErrorException):
     error_code = 33
@@ -136,3 +138,124 @@ class WorkspaceAdminDeletion(CodeErrorException):
 class GlobalScriptDeletion(CodeErrorException):
     error_code = 211
     error_message = 'global script cannot be deleted'
+    
+class InnerException(VerboseCodeErrorException):
+    
+    def error_class(self):
+        if self.__error_class:
+            return self.__error_class
+        else:
+            return self.ex.__class__.__name__
+    
+    def __init__(self, ex):
+        self.ex = ex
+        self.error_dict = {}
+        self.__error_class = '' 
+        if  isinstance(ex, SiblingsWithSameLabel):  
+            self.error_code = 90
+            self.error_message =  'a keyword or collection with the same name with the same parent already exists'
+            
+        
+        elif isinstance(ex, Node.DoesNotExist):     
+            self.error_code = 20
+            self.error_message =  'keyword does not exist'
+            
+        
+        elif isinstance(ex, State.DoesNotExist):   
+            
+            self.error_code = 65
+            self.error_message = 'state does not exist'
+            
+        
+        
+        elif isinstance(ex, Variant.DoesNotExist):
+            self.error_code = 26
+            self.error_message = 'variant does not exist'
+
+        elif isinstance(ex, InvalidNode):
+            
+            self.error_code = 19
+            self.error_message = 'invalid keywords'
+                    
+        elif  isinstance(ex, WrongWorkspace):
+            self.error_code = 21
+            self.error_message = 'keywords does not belong to the same workspace'
+                
+#        except NotEditableNode,  ex:
+#            logger.exception(ex)
+#            transaction.rollback()
+#            resp =  error_response(22)
+            
+        elif isinstance(ex, Workspace.DoesNotExist):
+            
+            self.error_code = 18
+            self.error_message = 'workspace does not exist'
+               
+           
+        elif isinstance(ex, Item.DoesNotExist):
+            self.error_code = 12
+            self.error_message = 'item does not exist'
+            
+        elif isinstance(ex, MetadataProperty.DoesNotExist):
+             
+            self.error_message = 'metadata schema does not exist'
+            if ex.__dict__.has_key('error_dict'):
+                self.error_code = 16
+                self.error_dict =   ex.error_dict
+            
+                
+        elif isinstance(ex,MetadataValue.DoesNotExist):             
+            self.error_message = 'metadata does not exist'
+            if ex.__dict__.has_key('error_dict'):
+                self.error_code = 17
+                self.error_dict = ex.error_dict 
+                
+        else:
+            self.error_code = 500
+            self.error_message = 'internal server error'
+            self.__error_class =  'InternalServerError'
+                    
+        
+        
+#        except MissingArgs,  ex:
+#            logger.exception(ex)
+#            transaction.rollback() 
+#            resp =  error_response(15)
+#            
+#        except ArgsValidationError,  ex:
+#            transaction.rollback()            
+#            resp =  error_response(14, ex.error_dict)
+#            
+#        except MalformedJSON,  ex:
+#            if ex.__dict__.has_key('error_dict'):
+#                resp =  error_response(13,  ex.error_dict )
+#            else:
+#                resp =  error_response(13,)
+#            
+#        except TooManyArgsPassed,  ex:
+#            logger.exception(ex)
+#            transaction.rollback() 
+#            resp =  error_response(23)
+#            
+#        except InsufficientPermissions,  ex:
+#            logger.exception(ex)
+#            transaction.rollback() 
+#            resp =  error_response(24)
+#            
+#        except MissingAPIKey,  ex:
+#            logger.exception(ex)
+#            transaction.rollback() 
+#            resp =  error_response(ex.error_code,  ex.error_message)
+#            
+#        except InvalidAPIKey,  ex:
+#            logger.exception(ex)
+#            transaction.rollback() 
+#            resp =  error_response(11)
+#   
+        
+        
+        
+        
+    
+    
+    
