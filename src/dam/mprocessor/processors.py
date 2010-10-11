@@ -44,6 +44,8 @@ class Engine:
         log.debug('######## _load_component %s: attempt %s/10' % (data['component_id'], attempts))
         try:
             component = Component.objects.get(pk=data['component_id'])
+            if component:
+                log.debug('############### COMPONENTE CARICATO AL PRIMO COLPO')
         except:
             if attempts < 10:
                 reactor.callLater(0.2+0.1*attempts, self._load_component, data, attempts+1)
@@ -66,9 +68,9 @@ class Engine:
                 if d:
                     d.addCallbacks(self.run, self.run_on_error)
                 else:
-                    reactor.callLater(0.1, self.run, '')
+                    reactor.callLater(0, self.run, '')
             else:
-                log.error('Unrecognized method name: %s' % fname)
+                self.run_on_error('Unrecognized method name: %s' % fname)
             return result
         else:
             log.debug('END OF RUN')
