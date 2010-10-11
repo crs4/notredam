@@ -1063,7 +1063,19 @@ class CollectionsTest(MyTestCase):
         items = node.items.all()
         self.assertTrue(resp_dict['items'] == [i.pk for i in items])
         self.assertTrue(len(resp_dict['children']) == node.children.all().count())
-    
+        
+    def test_get_except(self):        
+             
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        params = self.get_final_parameters()
+        label ='test1'
+        node_pk = 1000
+        response = self.client.get('/api/collection/%s/get/'%node_pk, params)                
+        
+        resp_dict = json.loads(response.content)
+        print resp_dict                
+            
 #    def test_get(self):
 #             
 #        ws_pk = 1

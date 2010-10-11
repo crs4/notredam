@@ -158,19 +158,20 @@ class InnerException(VerboseCodeErrorException):
         
         elif isinstance(ex, Node.DoesNotExist):     
             self.error_code = 20
-            self.error_message =  'keyword does not exist'
-            
+            self.error_message =  'keyword or collection does not exist'
+            self.__error_class = 'CatalogueElement' + ex.__class__.__name__
         
         elif isinstance(ex, State.DoesNotExist):   
             
             self.error_code = 65
             self.error_message = 'state does not exist'
-            
+            self.__error_class = 'State' + ex.__class__.__name__
         
         
         elif isinstance(ex, Variant.DoesNotExist):
             self.error_code = 26
-            self.error_message = 'variant does not exist'
+            self.error_message = 'rendition does not exist'
+            self.__error_class = 'Rendition' + ex.__class__.__name__
 
         elif isinstance(ex, InvalidNode):
             
@@ -190,11 +191,13 @@ class InnerException(VerboseCodeErrorException):
             
             self.error_code = 18
             self.error_message = 'workspace does not exist'
+            self.__error_class = 'Workspace' + ex.__class__.__name__
                
            
         elif isinstance(ex, Item.DoesNotExist):
             self.error_code = 12
             self.error_message = 'item does not exist'
+            self.__error_class = 'Item' + ex.__class__.__name__
             
         elif isinstance(ex, MetadataProperty.DoesNotExist):
              
@@ -202,10 +205,12 @@ class InnerException(VerboseCodeErrorException):
             if ex.__dict__.has_key('error_dict'):
                 self.error_code = 16
                 self.error_dict =   ex.error_dict
+            self.__error_class = 'MetadataSchema' + ex.__class__.__name__
             
                 
         elif isinstance(ex,MetadataValue.DoesNotExist):             
             self.error_message = 'metadata does not exist'
+            self.__error_class = 'Metadata' + ex.__class__.__name__
             if ex.__dict__.has_key('error_dict'):
                 self.error_code = 17
                 self.error_dict = ex.error_dict 
