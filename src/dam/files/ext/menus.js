@@ -642,7 +642,7 @@ Ext.onReady(function(){
                     up.openUpload();
                 }
             }, {
-                text: 'Copy to...',
+                text: 'Share with...',
                 id: 'addto',
                 disabled: true,
                 menu:  cp_ws_menu
@@ -981,7 +981,8 @@ Ext.onReady(function(){
                                     
                                     },
                                 success: function() {
-                                    Ext.MessageBox.alert('Success', 'Item(s) copied successfully.');
+                                	
+                                    Ext.MessageBox.alert('Success', 'Item(s) shared successfully.');
                                 }
                                 
                             });

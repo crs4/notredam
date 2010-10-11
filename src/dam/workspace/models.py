@@ -22,7 +22,7 @@ from django.db.models import Q
 from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
-
+import logger
 
 class WSManager(WorkspaceManager):
 
@@ -82,6 +82,8 @@ class DAMWorkspace(Workspace):
         Also deletes item's component bound to the current workspace
         @param item item to remove (an instance of repository.Item)
         """
+        from dam.treeview.models import Node
+        
         try:
             
             inbox_nodes = Node.objects.filter(type = 'inbox', workspace = self, items = item) #just to be sure, filter instead of get
@@ -90,8 +92,10 @@ class DAMWorkspace(Workspace):
                 if inbox_node.items.all().count() == 0:
                     inbox_node.delete()
             
+            logger.debug('item.workspaces %s'%item.workspaces.all())
             item.workspaces.remove(self)
-            item.component_set.all().filter(workspace = self).exclude(Q(variant__is_global= True,  variant__auto_generated = False)| Q(variant__shared = True)).delete()
+            logger.debug('item.workspaces %s'%item.workspaces.all())
+            item.component_set.all().filter(workspace = self).exclude(Q(variant__auto_generated = False)| Q(variant__shared = True)).delete()
             
         except Exception, ex:
             logger.exception(ex)
