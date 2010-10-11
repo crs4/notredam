@@ -30,7 +30,7 @@ import hashlib
 
 import traceback
 
-from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,    NotEditableNode
+from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,    NotEditableNode, SiblingsWithSameLabel
 from dam.treeview.models import Node
 from dam.workspace.models import Workspace
 from dam.repository.models import Item
@@ -71,7 +71,15 @@ def exception_handler(func):
             resp = func(self,  request, *args, **kwargs)           
             transaction.commit()
             
-                
+        
+        except SiblingsWithSameLabel,  ex:            
+            logger.exception(ex)
+            logger.exception(traceback.format_exc())
+            
+            transaction.rollback()
+            resp =  error_response(90,  'a keyword or collection with the same name with the same parent already exists')
+        
+        
         except Node.DoesNotExist,  ex:            
             logger.exception(ex)
             logger.exception(traceback.format_exc())
