@@ -16,12 +16,13 @@
 #
 #########################################################################
 from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,    NotEditableNode, SiblingsWithSameLabel
-from dam.treeview.models import Node
+from dam.treeview.models import Node, SmartFolder
 from dam.workspace.models import Workspace
 from dam.repository.models import Item
 from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.variants.models import Variant
 from dam.workflow.models import State
+from scripts.models import Script
 
 
 
@@ -96,13 +97,10 @@ class InvalidKeyword(CodeErrorException):
     error_code = 19
     error_message = 'invalid keyword'
 
-class WorkspaceDoesNotExist(CodeErrorException):
-	error_code = 1138
-	error_message = 'the workspace does not exist'
 
 class SmartFolderDoesNotExist(CodeErrorException):
 	error_code = 1139
-	error_message = 'the workspace does not exist'
+	error_message = 'the smarfolder does not exist'
 
 
 class InvalidMediaType(CodeErrorException):
@@ -172,6 +170,11 @@ class InnerException(VerboseCodeErrorException):
             self.error_code = 26
             self.error_message = 'rendition does not exist'
             self.__error_class = 'Rendition' + ex.__class__.__name__
+            
+        elif isinstance(ex, SmartFolder.DoesNotExist):
+            self.error_code = 26
+            self.error_message = 'smartfolder does not exist'
+            self.__error_class = 'SmartFolder' + ex.__class__.__name__
 
         elif isinstance(ex, InvalidNode):
             
@@ -198,6 +201,11 @@ class InnerException(VerboseCodeErrorException):
             self.error_code = 12
             self.error_message = 'item does not exist'
             self.__error_class = 'Item' + ex.__class__.__name__
+            
+        elif isinstance(ex, Script.DoesNotExist):
+            self.error_code = 12
+            self.error_message = 'script does not exist'
+            self.__error_class = 'Script' + ex.__class__.__name__
             
         elif isinstance(ex, MetadataProperty.DoesNotExist):
              

@@ -391,6 +391,17 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['id'] == str(ws.pk))
         self.assertTrue(resp_dict['name'] == ws.name)
         self.assertTrue(resp_dict['description'] == ws.description)
+        
+    def test_get_except(self):             
+        ws_pk = 1000
+        params = self.get_final_parameters({})
+        response = self.client.get('/api/workspace/%s/get/'%ws_pk, params)      
+        
+        resp_dict = json.loads(response.content)    
+        print 'resp_dict ',  resp_dict 
+                
+        self.assertTrue(resp_dict['error class'] == 'WorkspaceDoesNotExist')
+        
 
         
     def test_delete(self):
@@ -550,6 +561,16 @@ class ItemTest(MyTestCase):
 #        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
         self.assertTrue(resp_dict['metadata'] == metadata)
         
+        
+    def test_get_except(self):
+        item_pk = 1000    
+                    
+        ws_pk = 1
+        params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
+        response = self.client.get('/api/item/%s/get/'%item_pk, params) 
+        resp_dict = json.loads(response.content)
+        print resp_dict 
+        self.assertTrue(resp_dict['error class'] == 'ItemDoesNotExist')
         
     def test_move(self):
         workspace_id = 1
@@ -812,6 +833,16 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(len(resp_dict['children']) == node.children.all().count())
         
         
+    def test_get_except(self):        
+             
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        params = self.get_final_parameters({})        
+        node_pk = 1000
+        response = self.client.get('/api/keyword/%s/get/'%node_pk, params)        
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['error class'] == 'CatalogueElementDoesNotExist')
+        
     def test_get_single_category(self):        
              
         ws_pk = 1
@@ -1064,17 +1095,12 @@ class CollectionsTest(MyTestCase):
         self.assertTrue(resp_dict['items'] == [i.pk for i in items])
         self.assertTrue(len(resp_dict['children']) == node.children.all().count())
         
-    def test_get_except(self):        
-             
-        ws_pk = 1
-        ws = DAMWorkspace.objects.get(pk = ws_pk)
+    def test_get_except(self):                
         params = self.get_final_parameters()
-        label ='test1'
         node_pk = 1000
-        response = self.client.get('/api/collection/%s/get/'%node_pk, params)                
-        
+        response = self.client.get('/api/collection/%s/get/'%node_pk, params)
         resp_dict = json.loads(response.content)
-        print resp_dict                
+        self.assertTrue(resp_dict['error class'] == 'CatalogueElementDoesNotExist')         
             
 #    def test_get(self):
 #             
@@ -1292,7 +1318,15 @@ class VariantsTest(MyTestCase):
         self.assertTrue(resp_dict['caption'] == variant.caption)
         self.assertTrue(resp_dict['media_type'] == [media_type.name for media_type in variant.media_type.all()])
         self.assertTrue(resp_dict['auto_generated'] == variant.auto_generated)
-      
+        
+        
+    def test_get_except(self):
+        variant_pk = 1000
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        params = self.get_final_parameters({'workspace_id': workspace.pk})    
+        response = self.client.get('/api/rendition/%s/get/'%variant_pk, params)
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['error class'] == 'RenditionDoesNotExist')
           
     def test_edit(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
@@ -1366,7 +1400,17 @@ class SmartFolderTest(MyTestCase):
             })
         self.assertTrue(resp_dict['queries'] == queries)
         
+    def test_get_except(self):
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        params = self.get_final_parameters({})        
+        sm_pk = 1000
+        response = self.client.get('/api/smartfolder/%s/get/'%sm_pk, params)        
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['error class'] == 'SmartFolderDoesNotExist')
         
+    
+    
 #    def test_get(self):
 #        ws_pk = 1
 #        ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -1579,6 +1623,14 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(resp_dict['name'] == script.name)
         self.assertTrue(resp_dict['description'] == script.description)
         self.assertTrue(resp_dict['workspace_id'] == script.workspace.pk)
+        
+    def test_get_except(self):
+        script_pk = 1000
+        params = self.get_final_parameters({ })     
+        response = self.client.post('/api/script/%s/get/'%script_pk, params)  
+        resp_dict = json.loads(response.content)       
+   
+        self.assertTrue(resp_dict['error class'] == 'ScriptDoesNotExist')
         
     def test_get_scripts(self):
 
