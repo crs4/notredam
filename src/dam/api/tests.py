@@ -389,7 +389,7 @@ class WSTestCase(MyTestCase):
         resp_dict = json.loads(response.content)
         
         self.assertTrue(len(resp_dict) == 1)
-        self.assertTrue(resp_dict[0]['name'] == s.name)
+        self.assertTrue(resp_dict['states'][0]['name'] == s.name)
         
     
         
