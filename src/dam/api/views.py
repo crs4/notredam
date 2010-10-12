@@ -507,7 +507,17 @@ class WorkspaceResource(ModResource):
         ws.save()
         return HttpResponse('')            
         
-        
+    @exception_handler
+    @api_key_required   
+    def get_states(self,  request,  workspace_id):
+        workspace = Workspace.objects.get(pk = workspace_id)
+        states = State.objects.filter(workspace = workspace)
+        resp = []
+        for state in states:
+            resp.append({'pk:':state.pk, 'name':state.name}) 
+            
+        json_resp = json.dumps(resp)        
+        return HttpResponse(json_resp)
     
     @exception_handler
     @api_key_required   
@@ -2801,3 +2811,88 @@ class ScriptResource(ModResource):
         return HttpResponse(simplejson.dumps(info))
 
         
+class StateResource(ModResource):  
+    @exception_handler
+    @api_key_required   
+    def delete(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        
+        state.delete()
+        return HttpResponse('')
+    
+    
+    @exception_handler
+    @api_key_required   
+    def create(self,  request):
+        from django.db import IntegrityError
+        try:
+            workspace_id = request.POST['workspace_id']
+        except:
+            raise MissingArgs({'args': ['no workspace_id passed']})
+        workspace = DAMWorkspace.objects.get(pk = workspace_id)
+        try: 
+            name = request.POST['name']
+        except:
+            raise MissingArgs({'args': ['no state name passed']})
+        
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        try:
+            state = State.objects.create(workspace = workspace, name = name)
+        except IntegrityError:
+            raise IntegrityError('a state named %s already exist'%(name))
+            
+        resp = json.dumps({'pk': state.pk, 'name': state.name})
+        return HttpResponse(resp)
+    
+    @exception_handler
+    @api_key_required   
+    def edit(self,  request, state_id):
+        from django.db import IntegrityError
+        
+        try: 
+            name = request.POST['name']
+        except:
+            raise MissingArgs({'args': ['no state name passed']})
+        
+        state = State.objects.get(pk = state_id)
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        try:
+            state.name = name
+            state.save()
+        except IntegrityError:
+            raise IntegrityError('a state named %s already exist'%(name))
+            
+        return HttpResponse('')
+    
+    @exception_handler
+    @api_key_required   
+    def read(self,  request,  state_id):
+        
+        state = State.objects.get(pk = state_id)
+        
+        resp = {'pk:':state.pk, 'name':state.name, 'items':[sa.item.pk for sa in state.stateitemassociation_set.all()]}
+            
+        json_resp = json.dumps(resp)        
+        return HttpResponse(json_resp)
+    
+    @exception_handler
+    @api_key_required   
+    def add_items(self,  request,  state_id):
+        
+        state = State.objects.get(pk = state_id)
+        items = request.POST.getlist('items')
+        for i in items:
+                
+            item = Item.objects.get(pk = i)
+            StateItemAssociation.objects.get_or_create(item = item, state = state)
+                
+        return HttpResponse('')
+    
+    
+    

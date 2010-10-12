@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.conf.urls.defaults import *
-from views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource,  ScriptResource
+from views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource,  ScriptResource, StateResource
 
 
 
@@ -78,7 +78,10 @@ urlpatterns = patterns('',
    url(r'^api/workspace/(\d+)/get_scripts/$', WorkspaceResource(permitted_methods=('GET'), ).get_scripts),
    url(r'^api/workspace/(\d+)/set_creator/$', WorkspaceResource(permitted_methods=('POST',), ).set_creator),  
    url(r'^api/workspace/(\d+)/get_items_complete/$', WorkspaceResource(permitted_methods=('GET',), ).get_items_complete),  
-   url(r'^api/workspace/(\d+)/search/$', WorkspaceResource(permitted_methods=('POST',), ).search),  
+   url(r'^api/workspace/(\d+)/search/$', WorkspaceResource(permitted_methods=('POST',), ).search),
+   
+   url(r'^api/workspace/(\d+)/get_states/$', WorkspaceResource(permitted_methods=('GET',),).get_states),
+   
    
    url(r'^api/keyword/new/$', KeywordsResource(permitted_methods=('POST',  ), ).create),   
    url(r'^api/keyword/(\d+)/delete/$', KeywordsResource(permitted_methods=('GET',  ), ).delete),   
@@ -119,11 +122,14 @@ urlpatterns = patterns('',
    url(r'^api/script/(\d+)/delete/$', ScriptResource(permitted_methods=('POST'), ).delete),   
    url(r'^api/script/(\d+)/get/$', ScriptResource(permitted_methods=('GET'), ).read),   
    
+   url(r'^api/state/(\d+)/delete/$', StateResource(permitted_methods=('POST',),).delete),  
+   url(r'^api/state/new/$', StateResource(permitted_methods=('POST',),).create),
+   url(r'^api/state/(\d+)/edit/$', StateResource(permitted_methods=('POST',),).edit),
+   url(r'^api/state/(\d+)/get/$', StateResource(permitted_methods=('GET',),).read),
+   url(r'^api/state/(\d+)/add_items/$', StateResource(permitted_methods=('POST',),).add_items),
    
    url(r'^api/login/$', Auth(permitted_methods=('POST'), )._login),   
    url(r'^api/get_users/$', Auth(permitted_methods=('GET'), ).get_users),   
    url(r'^api/add_user/$', Auth(permitted_methods=('GET'), ).add_user),   
-   
-
-   
+      
 )

@@ -377,6 +377,22 @@ class WSTestCase(MyTestCase):
         self.assertTrue(ws.name == params['name'])
         self.assertTrue(ws.description == params['description'])
         
+    def test_get_states(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        params = self.get_final_parameters({})
+        
+        response = self.client.get('/api/workspace/%s/get_states/'%ws_pk, params)      
+        
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(len(resp_dict) == 1)
+        self.assertTrue(resp_dict[0]['name'] == s.name)
+        
+    
+        
 
         
     def test_get(self):
@@ -386,11 +402,11 @@ class WSTestCase(MyTestCase):
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params,  )      
         
         resp_dict = json.loads(response.content)    
-        print 'resp_dict ',  resp_dict 
+
         ws = DAMWorkspace.objects.get(pk = ws_pk)        
         self.assertTrue(resp_dict['id'] == str(ws.pk))
         self.assertTrue(resp_dict['name'] == ws.name)
-        self.assertTrue(resp_dict['description'] == ws.description)
+        self.assertTrue(resp_dict['description'] == ws.description)        
         
     def test_get_except(self):             
         ws_pk = 1000
@@ -1641,3 +1657,73 @@ class ScriptsTest(MyTestCase):
    
         self.assertTrue(len(resp_dict['scripts']) == ws.script_set.all().count())
         
+        
+        
+        
+        
+class StatesTest(MyTestCase):
+    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   
+        
+    def test_delete(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        params = self.get_final_parameters({})
+        
+        response = self.client.post('/api/state/%s/delete/'%s.pk, params)      
+        
+        
+        self.assertTrue(response.content == '')
+        self.assertTrue(State.objects.filter(workspace__pk = ws_pk).count() == 0)
+        
+        
+    def test_create(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        params = self.get_final_parameters({'name': 'test', 'workspace_id': ws_pk})
+        response = self.client.post('/api/state/new/', params)      
+        resp_dict = json.loads(response.content)    
+        self.assertTrue(resp_dict['name'] == 'test')
+        self.assertTrue(State.objects.filter(workspace__pk = ws_pk).count() == 1)
+        
+        
+    def test_edit(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        params = self.get_final_parameters({'name': 'test_edit'})
+        response = self.client.post('/api/state/%s/edit/'%s.pk, params)      
+            
+        self.assertTrue(response.content == '')        
+        self.assertTrue(State.objects.filter(workspace__pk = ws_pk, name = 'test_edit').count() == 1)
+        
+    def test_get(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        i = ws.items.all()[0]
+        StateItemAssociation.objects.create(item = i, state = s)
+        params = self.get_final_parameters({})
+        response = self.client.get('/api/state/%s/get/'%s.pk, params)      
+        
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['name'] == s.name)
+                
+        self.assertTrue(resp_dict['items'] == [i.pk])
+        
+    def test_add_items(self):
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        i = ws.items.all()[0]
+        
+        params = self.get_final_parameters({'items': [i.pk]})
+        response = self.client.post('/api/state/%s/add_items/'%s.pk, params)      
+        
+        self.assertTrue(response.content == '')
+        self.assertTrue(StateItemAssociation.objects.get(state = s).item == i)
+                

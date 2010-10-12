@@ -21,8 +21,9 @@ from dam.workspace.models import Workspace
 from dam.repository.models import Item
 from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.variants.models import Variant
-from dam.workflow.models import State
-from scripts.models import Script
+from dam.workflow.models import State, WrongItemWorkspace
+from dam.scripts.models import Script
+from django.db import IntegrityError
 
 
 
@@ -222,7 +223,12 @@ class InnerException(VerboseCodeErrorException):
             if ex.__dict__.has_key('error_dict'):
                 self.error_code = 17
                 self.error_dict = ex.error_dict 
-                
+        
+        elif isinstance(ex, IntegrityError) or isinstance(ex, WrongItemWorkspace): 
+            self.error_message = str(ex)
+            
+        
+            
         else:
             self.error_code = 500
             self.error_message = 'internal server error'
