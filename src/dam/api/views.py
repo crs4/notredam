@@ -512,9 +512,9 @@ class WorkspaceResource(ModResource):
     def get_states(self,  request,  workspace_id):
         workspace = Workspace.objects.get(pk = workspace_id)
         states = State.objects.filter(workspace = workspace)
-        resp = []
+        resp = {'states':[]}
         for state in states:
-            resp.append({'pk:':state.pk, 'name':state.name}) 
+            resp['states'].append({'id':state.pk, 'name':state.name}) 
             
         json_resp = json.dumps(resp)        
         return HttpResponse(json_resp)
