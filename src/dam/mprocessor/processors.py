@@ -41,13 +41,12 @@ class Engine:
         return self.d
 
     def _load_component(self, data, attempts=1):
-        log.debug('######## _load_component %s: attempt %s/10' % (data['component_id'], attempts))
+        log.debug('_load_component %s: attempt %s/10' % (data['component_id'], attempts))
         try:
             component = Component.objects.get(pk=data['component_id'])
-            if component:
-                log.debug('############### COMPONENTE CARICATO AL PRIMO COLPO')
         except:
             if attempts < 10:
+                log.debug('######## Failed %d attempt to load component:' % attempts)
                 reactor.callLater(0.2+0.1*attempts, self._load_component, data, attempts+1)
             else:
                 self.d.errback('timeout error: unable to read component from db')
