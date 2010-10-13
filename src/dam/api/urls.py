@@ -127,6 +127,7 @@ urlpatterns = patterns('',
    url(r'^api/state/(\d+)/edit/$', StateResource(permitted_methods=('POST',),).edit),
    url(r'^api/state/(\d+)/get/$', StateResource(permitted_methods=('GET',),).read),
    url(r'^api/state/(\d+)/add_items/$', StateResource(permitted_methods=('POST',),).add_items),
+   url(r'^api/state/(\d+)/remove_items/$', StateResource(permitted_methods=('POST',),).remove_items),
    
    url(r'^api/login/$', Auth(permitted_methods=('POST'), )._login),   
    url(r'^api/get_users/$', Auth(permitted_methods=('GET'), ).get_users),   
