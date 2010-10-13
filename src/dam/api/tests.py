@@ -25,19 +25,21 @@ from django.utils import simplejson as json
 from django.db.models import Q
 
 from exceptions import *
-from treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
+from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
 
-from variants.models import Variant
+from dam.variants.models import Variant
 #from variants.models import VariantAssociation,   SourceVariant,  PresetParameterValue
-from core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
+from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
 
-from workspace.models import DAMWorkspace
-from repository.models import Item,  Component
-from metadata.models import MetadataProperty,  MetadataValue
-from core.dam_repository.models import Type
-from workflow.models import State, StateItemAssociation
-from scripts.models import Script
+from dam.workspace.models import DAMWorkspace
+from dam.repository.models import Item,  Component
+from dam.metadata.models import MetadataProperty,  MetadataValue
+from dam.core.dam_repository.models import Type
+from dam.workflow.models import State, StateItemAssociation
+from dam.workflow.views import _set_state
+from dam.scripts.models import Script
 import hashlib
+
 
 class MyTestCase(TestCase):
 #    fixtures = ['test_data.json', ]   
@@ -1726,4 +1728,18 @@ class StatesTest(MyTestCase):
         
         self.assertTrue(response.content == '')
         self.assertTrue(StateItemAssociation.objects.get(state = s).item == i)
+        
+        
+    def test_remove_items(self):
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        items = ws.items.all()
+        _set_state(items, s)
+        self.assertTrue(StateItemAssociation.objects.filter(state = s).count() == items.count())
+        params = self.get_final_parameters({'items': [i.pk for i in items]})
+        response = self.client.post('/api/state/%s/remove_items/'%s.pk, params)      
+        
+        self.assertTrue(response.content == '')
+        self.assertTrue(StateItemAssociation.objects.filter(state = s).count() == 0)
                 

@@ -2876,7 +2876,7 @@ class StateResource(ModResource):
         
         state = State.objects.get(pk = state_id)
         
-        resp = {'pk:':state.pk, 'name':state.name, 'items':[sa.item.pk for sa in state.stateitemassociation_set.all()]}
+        resp = {'id':state.pk, 'name':state.name, 'items':[sa.item.pk for sa in state.stateitemassociation_set.all()]}
             
         json_resp = json.dumps(resp)        
         return HttpResponse(json_resp)
@@ -2884,15 +2884,22 @@ class StateResource(ModResource):
     @exception_handler
     @api_key_required   
     def add_items(self,  request,  state_id):
-        
         state = State.objects.get(pk = state_id)
         items = request.POST.getlist('items')
-        for i in items:
-                
-            item = Item.objects.get(pk = i)
-            StateItemAssociation.objects.get_or_create(item = item, state = state)
+        items = Item.objects.filter(pk__in = items)
+        _set_state(items, state)
                 
         return HttpResponse('')
     
-    
+    @exception_handler
+    @api_key_required   
+    def remove_items(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        items = request.POST.getlist('items')
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        StateItemAssociation.objects.filter(item__pk__in = items, state = state).delete()
+        return HttpResponse('')
+        
     
