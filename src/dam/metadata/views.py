@@ -38,6 +38,7 @@ from dam.core.dam_metadata.models import XMPNamespace, XMPStructure
 from mx.DateTime.Parser import DateTimeFromString
 import logger
 import re
+import time
 
 @login_required
 def get_cuepoint_keywords(request):
@@ -144,6 +145,21 @@ def sync_component(request):
 
     workspace = request.session['workspace']
     
+    # update xmp:MetadataDate
+    try:
+        variant_name = request.POST.get('obj', 'original')
+        user = User.objects.get(pk=request.session['_auth_user_id'])
+        default_language= get_metadata_default_language(user, workspace)
+        metadata_schema = MetadataProperty.objects.get(field_name = 'MetadataDate')
+        metadataschema_id = str(metadata_schema.pk)
+        metadatavalue = time.strftime("%d/%m/%yT%H:%M%S",time.gmtime()) + time.strftime('%z')
+        my_metadata = {metadataschema_id.decode('utf-8'):[metadatavalue.decode('utf-8')]}
+        items_objs = Item.objects.filter(pk__in=items)
+        MetadataValue.objects.save_metadata_value(items_objs, my_metadata, variant_name, workspace, default_language)
+    except Exception, err:
+        print 'Error while changing xmp MetadataDate: ', err
+    # end of xmp:MetadataDate updating
+
     for pk in items:
     
         item = Item.objects.get(pk=pk)
@@ -158,8 +174,8 @@ def sync_component(request):
         for component in sync_comp:
 
             _add_sync_machine(component)
-    
     return HttpResponse('')
+
 
 @login_required
 def get_basic_descriptors(request): 
@@ -199,7 +215,6 @@ def save_metadata(request):
     default_language = get_metadata_default_language(user, workspace)
 
     items = Item.objects.filter(pk__in=item_list)
-
     MetadataValue.objects.save_metadata_value(items, metadata, variant_name, workspace, default_language)
 
     return HttpResponse('OK')   
