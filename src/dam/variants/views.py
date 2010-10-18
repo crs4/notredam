@@ -177,11 +177,11 @@ def get_variants_list(request):
     workspace = request.session['workspace']
 #    workspace = Workspace.objects.get(pk = 1)
 #    media_type = request.POST['media_type']
-    type = request.POST.get('type',  'generated')
+    type = request.POST.get('type',  '')
     logger.debug('type %s'%type)
         
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
-#    vas = Variant.objects.filter(workspace = workspace, auto_generated =  (type == 'generated'),  hidden = False)
+    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), hidden = False)
+    #vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
     
     
     resp = {'variants':[]}
