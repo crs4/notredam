@@ -24,11 +24,11 @@ MEDIADART_STORAGE = ''
 GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
 
 DEMO_STRING="Development Demo" 
-PYTHONPATH="/opt/mediadart/" 
+#PYTHONPATH="/opt/mediadart/"    # olm commentato 
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
-sys.path.append(PYTHONPATH)
+#sys.path.append(PYTHONPATH)     # olm commentato
 sys.path.append(ROOT_PATH)
 
 INSTALLATIONPATH = ROOT_PATH
@@ -37,8 +37,7 @@ dir_log = os.path.join(INSTALLATIONPATH, 'log')
 
 EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
-#SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
-SERVER_PUBLIC_ADDRESS = '127.0.0.1:8100'
+SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
 
 METADATA_DEFAULT_LANGUAGE = 'en-US'
 DEMO_STRING="Development Demo" 

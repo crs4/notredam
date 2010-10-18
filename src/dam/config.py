@@ -3,14 +3,14 @@ import os
 MD_CERT_PATH = os.path.join(os.getenv('HOME'), 'node00', 'crypto')
 
 # MediaDART configuration (to be changed if you installed MediaDART on a remote node, default to local install configuration)
-MEDIADART_CONF = {
-        "node_ip" : "192.168.100.3",
-        "node_port" :"7000",
-        "client_key" : os.path.join(MD_CERT_PATH, "client.key"),
-        "client_certificate" : os.path.join(MD_CERT_PATH, "client.crt"),
-        "client_key_cert" : os.path.join(MD_CERT_PATH, "client-key-cert.pem"),
-        "ca_certificate" : os.path.join(MD_CERT_PATH, "myca.crt"), 
-}
+#MEDIADART_CONF = {
+#        "node_ip" : "192.168.100.3",
+#        "node_port" :"7000",
+#        "client_key" : os.path.join(MD_CERT_PATH, "client.key"),
+#        "client_certificate" : os.path.join(MD_CERT_PATH, "client.crt"),
+#        "client_key_cert" : os.path.join(MD_CERT_PATH, "client-key-cert.pem"),
+#        "ca_certificate" : os.path.join(MD_CERT_PATH, "myca.crt"), 
+#}
 
 GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
 
