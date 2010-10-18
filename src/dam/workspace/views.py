@@ -45,11 +45,14 @@ from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
 from dam.scripts.models import Script, ScriptDefault 
 from dam.eventmanager.models import Event, EventRegistration
+from dam.appearance.models import Theme
 
 from django.utils.datastructures import SortedDict
 
 import logger
 import time
+from mx.DateTime.Parser import DateTimeFromString
+
 import operator
 import re
 
@@ -685,12 +688,20 @@ def _switch_workspace(request,  workspace_id):
     workspace = Workspace.objects.get(pk = workspace_id)
     request.session['workspace'] = workspace
     return workspace
-    
+
+
 @login_required
 def workspace(request, workspace_id = None):
+
     """
     
     """
+    try:
+        theme = Theme.objects.get(SetAsCurrent = 'True')
+    except Exception, err:
+        theme = Theme.objects.get(IsDefault = 'True')
+    logger.debug('In workspace.views method workspace: current theme is %s' % theme)
+    logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
     user = User.objects.get(pk=request.session['_auth_user_id'])
     if not workspace_id:
         if request.session.__contains__('workspace'):
@@ -701,7 +712,10 @@ def workspace(request, workspace_id = None):
     else:
         workspace = _switch_workspace(request,  workspace_id)
     
-    return render_to_response('workspace_gui.html', RequestContext(request,{'ws':workspace, 'GOOGLE_KEY': GOOGLE_KEY}))
+    return render_to_response('workspace_gui.html', RequestContext(request,{'ws':workspace, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
+
+
+
 
 def _replace_groups(group, item, default_language):
     namespace = group.group('namespace')
