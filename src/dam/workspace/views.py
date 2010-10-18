@@ -164,7 +164,7 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     return False
         
 @permission_required('remove_item')
-def _remove_items(ws, items):
+def _remove_items(request, ws, items):
 
     for item in items:
         ws.remove_item(item)
@@ -190,7 +190,7 @@ def add_items_to_ws(request):
                 item_imported.append(item)
         
         if remove == 'true':
-            _remove_items(ws, items)
+            _remove_items(request, current_ws, items)
                 
         if len(item_imported) > 0:
             imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
@@ -203,7 +203,7 @@ def add_items_to_ws(request):
 
         return HttpResponse(resp)
     except Exception,  ex:
-        import traceback
+        logger.exception(ex)
         raise ex
 
 @login_required

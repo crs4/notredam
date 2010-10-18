@@ -450,7 +450,7 @@ function populate_menu(){
                                     
                                     },
                                     success: function() {
-                                        Ext.MessageBox.alert('Success', 'Item(s) copied successfully.');
+                                        Ext.MessageBox.alert('Success', 'Item(s) shared successfully.');
                                     }
                                 
                                 });

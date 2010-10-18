@@ -18,6 +18,9 @@
 
 from django.db import models
 
+class WrongItemWorkspace(Exception):
+	pass
+
 class State(models.Model):
 	name = models.CharField(max_length=256)
 	workspace = models.ForeignKey('workspace.DAMWorkspace')
@@ -26,13 +29,13 @@ class State(models.Model):
 		unique_together = (('name', 'workspace'),)
 	
 	def save(self, *args, **kwargs):
-		from eventmanager.models import Event
+		from dam.eventmanager.models import Event
 		super(State, self).save(*args, **kwargs)
 		Event.objects.create(name = 'state change to '+ self.name,description = 'event fired when a list of items is associated to state %s'%self.name, workspace = self.workspace)
 	
 	def __unicode__(self):
-		return self.name	
-
+		return self.name
+	
 class StateItemAssociation(models.Model):
 	state = models.ForeignKey(State)
 #	workspace = models.ForeignKey('workspace.DAMWorkspace')
@@ -40,6 +43,9 @@ class StateItemAssociation(models.Model):
 	
 	def save(self, *args, **kwargs):
 		from eventmanager.models import EventRegistration
+		if self.state.workspace not in self.item.workspaces.all():
+			raise WrongItemWorkspace('item %s is not in the workspace on which state %s is defined ' % (self.item.pk, self.state.name))
+		
 		super(StateItemAssociation, self).save(*args, **kwargs)
 		EventRegistration.objects.notify('state change to ' + self.state.name, self.state.workspace,  **{'items':[self.item]})
 		

@@ -507,7 +507,17 @@ class WorkspaceResource(ModResource):
         ws.save()
         return HttpResponse('')            
         
-        
+    @exception_handler
+    @api_key_required   
+    def get_states(self,  request,  workspace_id):
+        workspace = Workspace.objects.get(pk = workspace_id)
+        states = State.objects.filter(workspace = workspace)
+        resp = {'states':[]}
+        for state in states:
+            resp['states'].append({'id':state.pk, 'name':state.name}) 
+            
+        json_resp = json.dumps(resp)        
+        return HttpResponse(json_resp)
     
     @exception_handler
     @api_key_required   
@@ -1650,8 +1660,8 @@ class CollectionResource(ModResource):
             parent_node = Node.objects.get(pk = parent_id)
             workspace = parent_node.workspace        
             
-        _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])        
-        node = Node.objects.add_node(parent_node,label, workspace)
+        _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])     
+        node = Node.objects.add_node(parent_node,label, workspace)            
         json_response = json.dumps({'model': 'collection',  'id': node.pk, 'label': label, 'parent_id': parent_id, 'workspace_id': workspace.id,  })
         logger.debug('add: json_response %s'%json_response )
         return HttpResponse(json_response) 
@@ -2613,47 +2623,13 @@ class SmartFolderResource(ModResource):
     
     @exception_handler
     @api_key_required
-    def read(self,  request,  sm_id = None):
-        """
-            @param sm_id: smart folder id, optional. If passed, info about the given smart folder are returned, otherwise all smart folders for the workspace  are returned.
-            - Method: GET
-            - parameters:
-                - workspace_id (optional, required if no sm_id is passed)
-            - Returns:
-                {"and_condition": true, "queries": [{"negated": false, "type": "keyword", "id": 17}], "id": 1, "workspace": 1, "label": "test"}
-                    
-                {'smart_folders': [{'and_condition': True, 'id': 1, 'label': 'test', 'workspace_id': 1, 'queries': [{'negated': False, 'type': 'keyword', 'id': 17}]}]}
-            
+    def read(self,  request,  sm_id):
+        """ 
         """
     
-        if sm_id:
-            smart_folder = SmartFolder.objects.get(pk = sm_id)
-            resp = self.get_info(smart_folder)
-                
-        else:            
-            workspace_id = request.GET.get('workspace_id')
-            if not workspace_id:
-                raise MissingArgs({'args': ['no workspace id passed']})
-            workspace = Workspace.objects.get(pk = workspace_id)
-            
-            smart_folders = workspace.smartfolder_set.all()
-            
-            
-            resp = {'smart_folders':[]}
-            for smart_folder in smart_folders:
-                info = self.get_info(smart_folder)
-                resp['smart_folders'].append(info)
-#                try:
-#                    info = self.get_info(smart_folder)
-#                    sm_id = info.pop('id')
-#                    resp['smart_folders'][sm_id] = info
-#                except Exception,  ex:
-#                    logger.exception(ex)
-        
+        smart_folder = SmartFolder.objects.get(pk = sm_id)
+        resp = self.get_info(smart_folder)
         return HttpResponse(simplejson.dumps(resp))
-
-
-
 
     @exception_handler
     @api_key_required
@@ -2793,8 +2769,7 @@ class ScriptResource(ModResource):
         description = request.POST['description']
         pipeline = request.POST['pipeline']
         events = request.POST.getlist('events')
-        workspace_id = request.POST.get('workspace_id')
-        workspace = DAMWorkspace.objects.get(pk = workspace_id)        
+        workspace = script.workspace        
         
         script  = _new_script(name = name, description = description, workspace =workspace, script = script,  pipeline = pipeline, events = events)
         return HttpResponse('')
@@ -2836,3 +2811,95 @@ class ScriptResource(ModResource):
         return HttpResponse(simplejson.dumps(info))
 
         
+class StateResource(ModResource):  
+    @exception_handler
+    @api_key_required   
+    def delete(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        
+        state.delete()
+        return HttpResponse('')
+    
+    
+    @exception_handler
+    @api_key_required   
+    def create(self,  request):
+        from django.db import IntegrityError
+        try:
+            workspace_id = request.POST['workspace_id']
+        except:
+            raise MissingArgs({'args': ['no workspace_id passed']})
+        workspace = DAMWorkspace.objects.get(pk = workspace_id)
+        try: 
+            name = request.POST['name']
+        except:
+            raise MissingArgs({'args': ['no state name passed']})
+        
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        try:
+            state = State.objects.create(workspace = workspace, name = name)
+        except IntegrityError:
+            raise IntegrityError('a state named %s already exist'%(name))
+            
+        resp = json.dumps({'pk': state.pk, 'name': state.name})
+        return HttpResponse(resp)
+    
+    @exception_handler
+    @api_key_required   
+    def edit(self,  request, state_id):
+        from django.db import IntegrityError
+        
+        try: 
+            name = request.POST['name']
+        except:
+            raise MissingArgs({'args': ['no state name passed']})
+        
+        state = State.objects.get(pk = state_id)
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        try:
+            state.name = name
+            state.save()
+        except IntegrityError:
+            raise IntegrityError('a state named %s already exist'%(name))
+            
+        return HttpResponse('')
+    
+    @exception_handler
+    @api_key_required   
+    def read(self,  request,  state_id):
+        
+        state = State.objects.get(pk = state_id)
+        
+        resp = {'id':state.pk, 'name':state.name, 'items':[sa.item.pk for sa in state.stateitemassociation_set.all()]}
+            
+        json_resp = json.dumps(resp)        
+        return HttpResponse(json_resp)
+    
+    @exception_handler
+    @api_key_required   
+    def add_items(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        items = request.POST.getlist('items')
+        items = Item.objects.filter(pk__in = items)
+        _set_state(items, state)
+                
+        return HttpResponse('')
+    
+    @exception_handler
+    @api_key_required   
+    def remove_items(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        items = request.POST.getlist('items')
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        StateItemAssociation.objects.filter(item__pk__in = items, state = state).delete()
+        return HttpResponse('')
+        
+    
