@@ -1522,7 +1522,7 @@ class ItemResource(ModResource):
         try:
             ws = Workspace.objects.get(id=workspace_id)
         except:
-            raise WorkspaceDoesNotExist
+            raise Workspace.DoesNotExist
         
         item = Item.objects.get(pk = item_id)
         parent = request.GET.get('parent')
@@ -1562,7 +1562,7 @@ class ItemResource(ModResource):
         try:
             ws = Workspace.objects.get(id=workspace_id)
         except:
-            raise WorkspaceDoesNotExist
+            raise Workspace.DoesNotExist
         
         
         
@@ -1618,8 +1618,9 @@ class ItemResource(ModResource):
         
         state = State.objects.get(name = state_name)
         
-        
+        user_id = request.POST.get('user_id')
         workspace = Workspace.objects.get(pk = ws_id)
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
         _set_state(items, state) 
         return HttpResponse('')   
 
