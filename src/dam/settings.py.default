@@ -19,7 +19,6 @@
 import os.path, os
 import sys
 
-GOOGLE_KEY="ABQIAAAAo28WphcXpYaxZbMn79s0VRRETiP29whtXF2gCnIqeoPY9fJFzxSVzP1SJSa_NlficQA0MT5QgWobQw"
 
 
 DEMO_STRING="Development Demo" 
