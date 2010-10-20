@@ -1861,7 +1861,7 @@ var search_box = {
                                                     '</tpl>',
                                                 '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'/download_component/{item_id}/{variant_name}\')" class="variant_button"/>',
                                                 '</tpl>',
-                                                '<img ext:qtip="import" id="import_{pk}" src="/files/images/box_upload.png" onclick="variant_id=this.id.split(\'_\')[1];import_variant(variant_id)" class="variant_button"/>',
+                                                '<img ext:qtip="Replace" id="import_{pk}" src="/files/images/box_upload.png" onclick="variant_id=this.id.split(\'_\')[1];import_variant(variant_id)" class="variant_button"/>',
                                                 
                                                 //'<tpl if="auto_generated == 1"><img id="generate_{pk}" ext:qtip="Generate" src="/files/images/icons/fam/cog.png" class="variant_button" onclick="variant_id=this.id.split(\'_\')[1];generate_variant(variant_id, \'{item_id}\')"/></tpl>',
                                                 '</span>',
