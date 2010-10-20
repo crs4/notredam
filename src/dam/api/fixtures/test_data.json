@@ -1,0 +1,1 @@
+[{"pk": 1, "model": "api.application", "fields": {"api_key": "c3dfbc0331175f01f6464683c7ecce05c7bad60f", "name": ""}}, {"pk": 1, "model": "api.secret", "fields": {"application": 1, "user": 1, "value": "ffbae16973db789f74b3d84494f133d4dcb34267"}}]
