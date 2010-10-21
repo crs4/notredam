@@ -23,6 +23,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
+from dam.settings import SERVER_PUBLIC_ADDRESS
 
 import urlparse
 import logger
@@ -30,6 +31,7 @@ from django.utils import simplejson
 import time
 
 from mediadart.storage import Storage
+
 
 def _get_resource_url(id):
     """
@@ -367,25 +369,30 @@ class Component(AbstractComponent):
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
     
-    def get_component_url(self):
+    def get_component_url(self, full_address = False):
         """
         Returns the component url (something like /storage/res_id.ext)
         """
         from dam.application.views import NOTAVAILABLE
 
         url = NOTAVAILABLE    
-       
+        
         try:
             component = self
         
             if component.uri:
-                return component.uri
-    
-            url = _get_resource_url(component.ID)
-    
+                url =  component.uri
+            else:
+                url = _get_resource_url(component.ID)
+            logger.debug('full_address %s'% full_address)
+            logger.debug('SERVER_PUBLIC_ADDRESS %s'% SERVER_PUBLIC_ADDRESS)
+            if full_address:
+                url = SERVER_PUBLIC_ADDRESS + url
+        
         except Exception,ex:
             url = NOTAVAILABLE    
-            
+        
+        logger.debug('url %s'%url)
         return url
 
     def save_rights_value(self, license_value, workspace):

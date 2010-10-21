@@ -113,7 +113,8 @@ def redirect_to_component(request, item_id, variant_name,  ws_id = None):
     """
     Redirects to the component url
     """
-    return get_component(request, item_id, variant_name, True)
+    url = get_component(request, item_id, variant_name, True)    
+    return url
 
 def registration(request):
     """

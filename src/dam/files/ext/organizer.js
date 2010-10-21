@@ -1808,9 +1808,6 @@ var search_box = {
                                 autoScroll:true,
                                 id: 'preview_panel',
                                 hideBorders: true,
-                                
-
-//                                layout: 'border',
                                 items:[
                                     {
                                         id: 'summary_panel',
@@ -1818,7 +1815,7 @@ var search_box = {
                                         hideBorders: true,
                                         
                                         region: 'north'
-//                                        autoScroll:true,
+
                                     },
                                     {
                                         id: 'basic_panel',
@@ -1831,31 +1828,34 @@ var search_box = {
                                         title:'Variants',
                                         id:'variant_summary',
                                         autoScroll: false,
-//                                        region: 'south',
-//                                        layout:'fit',
-
+                                        selectedClass: 'x-list-selected list-variant',
+										singleSelect: true,
                                         store: new Ext.data.JsonStore({
-//                                            autoDestroy: true,
-                                            
                                                 root: 'variants',              
                                                 fields: ['pk','variant_name', 'data_basic','data_full', 'resource_url', 'imported', 'item_id', 'auto_generated', 'media_type', 'extension', 'work_in_progress', 'width', 'height'] ,
                                             url: '/get_variants/'
-                                            
-//                                            groupOnSort: true,
+
                                             
                                         }),
                                      
                                         columns:[
                                             
-                                            {id:'variant_name',header: 'variant_name', dataIndex: 'variant_name',
-                                                tpl: new Ext.XTemplate(                                               
+                                            {id:'variant_name',
+                                            header: 'variant_name',
+                                            dataIndex: 'variant_name',
+                                            cls: 'list-variant',
+                                            
+                                                tpl: new Ext.XTemplate(  
+                                                	'<div class="list-variant">',
                                                     '<b style="color:#3764A0;">{variant_name:capitalize()}</b>', 
                                                     '<tpl if="work_in_progress" >',                                                
                                                         '<img src="/files/images/warning.gif" style="width: 13px; padding-left: 5px; height: 13px;"/>',                                                                                                    
                                                     '</tpl>',
                                                
+                                                
                                                 '<span style="position:absolute; right:10px;">' ,
                                                 '<tpl if="resource_url">',
+                                                	
                                                     '<tpl if="extension">',
                                                         '<img ext:qtip="View" src="/files/images/search_blue.png" class="variant_button"  onclick="open_variant(\'{variant_name}\',\'{resource_url}\', \'{media_type}\', \'{width}\', \'{height}\')"/>',
                                                     '</tpl>',
@@ -1867,10 +1867,10 @@ var search_box = {
                                                 '</span>',
                                                 
                                                 '<tpl if="work_in_progress == 0" >',                                                
-                                                    
+                                                    	
                                                                 
                                                         '<div id="full_metadata_{pk}"  style="padding-left:20px;"  >',
-                                                            
+                                                        	    
                                                             '<tpl for="data_basic">',
                                                                 '<p><b>{caption}:</b>',
                                                                 '<tpl if="value.properties === undefined">',
@@ -1896,17 +1896,18 @@ var search_box = {
                                                                     '</tpl></p>',
                                                                 '</tpl>',
                                                             '</tpl>',
-                                                            
+                                                        '<p class="permalink"><b>Link: </b><input value="{resource_url}" readonly/></p>',
                                                         '</div>',
                                                         
-                                                    '</tpl>'
+                                                    '</tpl>',
+                                                    '</div>'
                                                 )}
                                             
                                             
                                             ],
-                                        trackOver: true,
                                         hideHeaders: true,
                                         autoShow: true,
+                                        trackOver: true,                                        
                                         listeners:{
                                             mouseenter: function(view, index, node, e){
                                                 var imgs =Ext.query('img',node);
