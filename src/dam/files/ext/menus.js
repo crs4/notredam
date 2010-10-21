@@ -652,7 +652,7 @@ Ext.onReady(function(){
                 id: 'mvto',
                 disabled: true,
                 menu: mv_ws_menu
-            },
+            },            
             {
                 text: 'Sync XMP...',
                 id: 'sync_xmp',
@@ -721,6 +721,96 @@ Ext.onReady(function(){
 
                 }
             },
+            {
+                text: 'Download',
+                id: 'download',
+//                disabled: true,
+                handler: function(){
+                    var sm =  new Ext.grid.CheckboxSelectionModel({
+                        checkOnly: true,
+                        singleSelect: false
+                    });
+                    
+                    var win = new Ext.Window({
+                        id:'download_win',
+                        height: 300,
+                        width: 400,
+                        layout: 'fit',
+                        frame: true,
+                        modal: true,
+                        title: 'Choose renditions to download',
+                        buttons: [{
+                            text: 'Download',
+                            handler: function(){
+                                var renditions_to_download = Ext.getCmp('renditions_to_download').getSelectionModel().getSelections();
+                                var post = {
+                                    items: [],
+                                    renditions: []
+                                };
+                                Ext.each(
+                                    renditions_to_download,
+                                    function(){
+                                        post.renditions.push(this.data.pk)
+                                    }
+                                );
+                                    
+                                var ac = Ext.getCmp('media_tabs').getActiveTab();
+                                var view = ac.getComponent(0);
+
+                                var selNodes= view.getSelectedNodes();
+                                Ext.each(
+                                    selNodes,
+                                    function(){
+                                        post.items.push(this.id);
+                                    }
+                                );
+                                
+                                if (post.items.length > 0 && post.renditions.length > 0)
+                                    Ext.Ajax.request({
+                                        url: '/download_renditions/',
+                                        params: post,
+                                        success: function(response){
+                                            var obj = Ext.decode(response.responseText);
+                                            window.open(obj.url);
+                                            
+                                        }
+                                        
+                                    });
+                                Ext.getCmp('download_win').close();
+                            }
+                        }],
+                        buttonAlign: 'center',
+                        autoScroll: true,
+                        items:[
+                            new Ext.grid.GridPanel({
+                                id:'renditions_to_download',
+                                viewConfig:{
+                                    forceFit: true,
+                                    headersDisabled: true
+                                },
+                                sm: sm,
+                                store:  new Ext.data.JsonStore({
+                                    url: '/get_variants_list',
+                                    root: 'variants',
+                                    fields: ['pk','name'],
+                                    autoLoad: true
+                                }),
+                                
+                                columns:[
+                                   sm,
+                                    {
+                                        dataIndex: 'name'
+                                    }
+                                ]
+
+                                
+                            })
+                        ]
+                    });
+                    win.show();
+                }
+            },
+            
             {
                 id:'remove_from_ws',
                 text: 'Delete',

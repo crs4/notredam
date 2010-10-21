@@ -969,3 +969,24 @@ def switch_ws(request):
     _switch_workspace(request,  workspace_id)
     return HttpResponse(simplejson.dumps({'success': True}))
     
+@login_required
+def download_renditions(request):
+    import zipfile,  os, settings
+    items = request.POST.getlist('items')
+    renditions = request.POST.getlist('renditions')
+    
+    if renditions and items:
+        zip = zipfile.ZipFile('/home/mauro/work/dam-backup/src/dam/files/tmp.zip',  'w')
+        os.chdir(settings.MEDIADART_STORAGE)
+        for item in items:
+            for rendition in renditions:
+                try:
+                    c = Component.objects.get(item__pk = item,  variant__pk = rendition)
+                    logger.debug(c._id)
+                    zip.write(c._id)
+#                    zip.write('settings.py')
+                except Component.DoesNotExist:
+                    continue
+        zip.close()
+    
+    return HttpResponse(simplejson.dumps({'success': True,  'url': '/files/tmp.zip'}))
