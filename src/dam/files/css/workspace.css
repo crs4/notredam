@@ -201,3 +201,19 @@
     background-image: url(/files/ext/resources/images/default/grid/col-move-bottom.gif)  !important;
 }
 
+
+.permalink{
+    padding-top:10px;
+}
+
+.permalink input{
+    height: 17px;
+    width: 250px; 
+    font-size: 10px;
+}
+
+.list-variant dt em{
+ 	-moz-user-select: text!important;
+  	-khtml-user-select: text!important;
+}
+ 
