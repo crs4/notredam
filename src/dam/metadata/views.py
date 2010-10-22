@@ -32,7 +32,8 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataProperty, MetadataDescriptorGroup, MetadataDescriptor, RightsValue
 from dam.variants.models import Variant
 from dam.core.dam_workspace import decorators
-from dam.batch_processor.models import MachineState, Action, Machine
+#from dam.batch_processor.models import MachineState, Action, Machine
+from dam.mprocessor.models import MAction
 from dam.core.dam_metadata.models import XMPNamespace, XMPStructure
 
 from mx.DateTime.Parser import DateTimeFromString
@@ -122,16 +123,14 @@ def get_item_cuepoint(request):
     return HttpResponse('')
 
 def _add_sync_machine(component):
+    def _cb_log_result(status_ok, result, userargs):
+        logger.debug('_generate_tasks on source component: %s' % result)
 
-    end = MachineState.objects.create(name='finished')
+    maction = MAction()
+    maction.add_component(component)
+    maction.append_func('embed_xmp')
+    maction.activate(_cb_log_result)
 
-    embed_action = Action.objects.create(component=component, function='embed_xmp')
-    embed_state = MachineState.objects.create(name='comp_xmp', action=embed_action)
-
-    embed_state.next_state = end
-    embed_state.save()
-
-    embed_task = Machine.objects.create(current_state=embed_state, initial_state=embed_state)
 
 @login_required
 def sync_component(request):
