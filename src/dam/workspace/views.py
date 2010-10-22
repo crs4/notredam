@@ -689,6 +689,12 @@ def _switch_workspace(request,  workspace_id):
     request.session['workspace'] = workspace
     return workspace
 
+def _get_theme():
+    try:
+        theme = Theme.objects.get(SetAsCurrent = 'True')
+    except Exception, err:
+        theme = Theme.objects.get(IsDefault = 'True')
+    return theme
 
 @login_required
 def workspace(request, workspace_id = None):
@@ -696,10 +702,8 @@ def workspace(request, workspace_id = None):
     """
     
     """
-    try:
-        theme = Theme.objects.get(SetAsCurrent = 'True')
-    except Exception, err:
-        theme = Theme.objects.get(IsDefault = 'True')
+    theme = _get_theme()
+    
     logger.debug('In workspace.views method workspace: current theme is %s' % theme)
     logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
     user = User.objects.get(pk=request.session['_auth_user_id'])
