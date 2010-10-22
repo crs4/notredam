@@ -1878,7 +1878,7 @@ var search_box = {
                                                                     '</tpl></p>',
                                                                 '</tpl>',
                                                             '</tpl>',
-//                                                        '<p class="permalink"><b>Link: </b><input value="{resource_url}" readonly/></p>',
+                                                        '<p class="permalink"><b>Link: </b><input value="{resource_url}" readonly/></p>',
                                                         '</div>',
                                                         
                                                     '</tpl>',
