@@ -28,7 +28,7 @@ from django.core.mail import send_mail
 from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
-from dam.repository.models import Item, _get_resource_url
+from dam.repository.models import Item, _get_resource_url, Component
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
@@ -89,24 +89,20 @@ def redirect_to_resource(request, id):
 
 
 @login_required
-def resources(request, item_id, variant_id, workspace_id):
-    from dam.variants.models import Variant
+def resources(request, component_id, workspace_id):
+    
     try:
-        workspace = Workspace.objects.get(pk = workspace_id)
-        if request.user not in workspace.members.all():
-            return HttpResponseForbidden()
-        variant = Variant.objects.get(pk = variant_id)
-        item = Item.objects.get(pk = item_id)
-         
-        url = item.get_variant(workspace, variant).get_component_url()
+        component = Component.objects.get(pk = component_id)
+        workspace = component.workspace.get(pk = workspace_id)
     except:
-        return HttpResponseNotFound()
+        return HttpResponseNotFound()    
     
+    
+    if request.user not in workspace.members.all():
+        return HttpResponseForbidden()
+         
+    url = component.get_component_url()    
     return redirect_to(request, url)
-    
-    
-    
-    
 
 @login_required
 def get_component(request, item_id, variant_name, redirect=False):
