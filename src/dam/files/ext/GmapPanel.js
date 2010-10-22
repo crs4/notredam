@@ -89,7 +89,7 @@ Ext.ux.GMapPanel = Ext.extend(Ext.Panel, {
         GEvent.bind(this.gmap,'click', this, function(overlay, point){
             if (overlay && overlay.gmap) {
                 item = overlay.gmap.lastMarkers[overlay.map_index].item;
-                var html = "<img src='/redirect_to_component/"+item+"/3/'/>";
+                var html = "<img src='/redirect_to_component/"+item+"/thumbnail/'/>";
                 overlay.openInfoWindowHtml(html);
             }
         }); 
