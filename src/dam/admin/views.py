@@ -16,13 +16,16 @@ from dam.core.dam_metadata.models import XMPNamespace
 from dam.metadata.models import MetadataDescriptor, MetadataDescriptorGroup, MetadataProperty, RightsValue, RightsXMPValue
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermissionsGroup, WorkspacePermission
+from dam.workspace.views import _get_theme
 
 @staff_member_required
 def dam_admin(request):
     """
     TODO: Dam Administration Interface is under development
     """
-    return render_to_response('dam_administration.html', RequestContext(request,{}))
+    theme = _get_theme()
+    
+    return render_to_response('dam_administration.html', RequestContext(request,{'theme_css':theme.css_file}))
 
 @staff_member_required
 def get_admin_settings(request):

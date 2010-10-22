@@ -188,7 +188,7 @@ function showFullscreen(view, index, node, e){
 
             try {
                 var decoded_resp = Ext.decode(resp);
-                var url = '/redirect_to_component/' + data.pk + '/original/?download=1';
+                var url = '/redirect_to_component/' + data.pk + '/1/?download=1';
                 window.open(url);
 
             }

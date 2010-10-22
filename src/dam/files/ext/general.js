@@ -230,7 +230,7 @@ function getCuePoint() {
 		var metadata_list = {
 		    item: items[0], 
             
-		    video_url: '/redirect_to_component/' + items[0] + '/original/', 
+		    video_url: '/redirect_to_component/' + items[0] + '/1/', 
 		    keywords: keywords,
 		    metadata: metadata
 		}
@@ -881,7 +881,7 @@ function createTemplate(panel_id, media_type){
 				audio_tpl_base += '<span>';	
 					audio_tpl_base += '<tpl if="inprogress == 0">';
 //						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer myPlayer_' + panel_id + '" href="/redirect_to_component/{pk}/preview/?t=134.4.mp3">';
-						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer ' + cls_audio  +'" href="/redirect_to_component/{pk}/preview/?t=134.4.mp3">';
+						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer ' + cls_audio  +'" href="/redirect_to_component/{pk}/4/?t=134.4.mp3">';
 					audio_tpl_base += '</tpl>'; 
 					audio_tpl_base += '<tpl if="inprogress == 1">';
 						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}">';
