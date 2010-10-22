@@ -23,17 +23,13 @@ import sys
 GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
 
 DEMO_STRING="Development Demo" 
-#PYTHONPATH= "/opt/mediadart/"
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
-#sys.path.append(PYTHONPATH)
-#sys.path.append(ROOT_PATH)
 
 from mediadart.config import Configurator
 c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
-#MEDIADART_STORAGE = '/home/mdtest/mediadart_files'
 
 
 INSTALLATIONPATH = os.path.join(os.getenv('HOME'), ".dam"  )
@@ -43,12 +39,9 @@ THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
 
 from config import *
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
-# MEDIADART_CONF['log_path'] = dir_log
 
 if DATABASE_ENGINE == 'sqlite3':
-#    DATABASE_NAME='/home/orlando/.dam/dam.db'
-#    DATABASE_NAME = os.path.join(INSTALLATIONPATH,  DATABASE_NAME)
-    DATABASE_NAME = './dam.db' #os.path.join(INSTALLATIONPATH,  DATABASE_NAME)
+    DATABASE_NAME = os.path.join(ROOT_PATH,  DATABASE_NAME)
 
 EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
