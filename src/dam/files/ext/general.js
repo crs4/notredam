@@ -863,9 +863,10 @@ function createTemplate(panel_id, media_type){
 	function get_audio_tpl(media_type){
 		
 		var audio_tpl_base = '<div class="thumb-wrap thumb-audio" id="{pk}"  >';
-		audio_tpl_base += '<tpl if="preview_available == 0">';
-			audio_tpl_base += '<div class="thumb  thumb-play" >';
-		audio_tpl_base += '</tpl>';
+		
+//		audio_tpl_base += '<tpl if="preview_available == 0">';
+//			audio_tpl_base += '<div class="thumb  thumb-play" >';
+//		audio_tpl_base += '</tpl>';
 		
 		audio_tpl_base += '<tpl if="preview_available == 1">';
 			audio_tpl_base += '<div class="thumb  " >';
@@ -877,23 +878,23 @@ function createTemplate(panel_id, media_type){
 			audio_tpl_base += '<tpl if="inprogress === 1"><span class="inprogress"></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>';
-			audio_tpl_base += '<tpl if="preview_available == 0">';
-				audio_tpl_base += '<span>';	
-					audio_tpl_base += '<tpl if="inprogress == 0">';
+//			audio_tpl_base += '<tpl if="preview_available == 0">';
+				
+//				audio_tpl_base += '<span>';				
+//					audio_tpl_base += '<tpl if="inprogress == 0">';
 //						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer myPlayer_' + panel_id + '" href="/redirect_to_component/{pk}/preview/?t=134.4.mp3">';
-						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer ' + cls_audio  +'" href="/redirect_to_component/{pk}/preview/?t=134.4.mp3">';
-					audio_tpl_base += '</tpl>'; 
-					audio_tpl_base += '<tpl if="inprogress == 1">';
-						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}">';
-					audio_tpl_base += '</tpl>'; 
-					
-					
-						audio_tpl_base += '<img class="play" style="display:none;" src="/files/images/play.png" />';
-					audio_tpl_base += '</a>';
-				audio_tpl_base += '</span>';
-			audio_tpl_base += '</tpl>';
+//						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer ' + cls_audio  +'" href="/redirect_to_component/{pk}/preview/?t=134.4.mp3">';
+//					audio_tpl_base += '</tpl>'; 
+//					audio_tpl_base += '<tpl if="inprogress == 1">';
+//						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}">';
+//					audio_tpl_base += '</tpl>';
+//						audio_tpl_base += '<img class="play" style="display:none;" src="/files/images/play.png" />';
+//					audio_tpl_base += '</a>';
+//				audio_tpl_base += '</span>';
+			
+//			audio_tpl_base += '</tpl>';
 			audio_tpl_base += '</div>';           
-		audio_tpl_base += '<span>{shortName}</span></div>';
+//		audio_tpl_base += '<span>{shortName}</span></div>';
 		
 		return audio_tpl_base;
 	};
