@@ -16,30 +16,44 @@
 #
 #########################################################################
 
+from mediadart.config import Configurator
 import os.path, os
 import sys
-
-MEDIADART_STORAGE = ''
 
 GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
 
 DEMO_STRING="Development Demo" 
-#PYTHONPATH="/opt/mediadart/"    # olm commentato 
+#PYTHONPATH= "/opt/mediadart/"
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
-#sys.path.append(PYTHONPATH)     # olm commentato
-sys.path.append(ROOT_PATH)
+#sys.path.append(PYTHONPATH)
+#sys.path.append(ROOT_PATH)
 
-INSTALLATIONPATH = ROOT_PATH
-THUMBS_DIR = os.path.join(INSTALLATIONPATH, 'files', 'thumbs')
+from mediadart.config import Configurator
+c = Configurator()
+MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
+#MEDIADART_STORAGE = '/home/mdtest/mediadart_files'
+
+
+INSTALLATIONPATH = os.path.join(os.getenv('HOME'), ".dam"  )
+sys.path.append(INSTALLATIONPATH)
+
+THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
+
+from config import *
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
+# MEDIADART_CONF['log_path'] = dir_log
+
+if DATABASE_ENGINE == 'sqlite3':
+#    DATABASE_NAME='/home/orlando/.dam/dam.db'
+#    DATABASE_NAME = os.path.join(INSTALLATIONPATH,  DATABASE_NAME)
+    DATABASE_NAME = './dam.db' #os.path.join(INSTALLATIONPATH,  DATABASE_NAME)
 
 EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
-SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
+#SERVER_PUBLIC_ADDRESS = '10.211.55.4:8000'
 
-METADATA_DEFAULT_LANGUAGE = 'en-US'
 DEMO_STRING="Development Demo" 
 
 DEBUG = True
@@ -51,10 +65,6 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'sqlite3'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'dam.db'	         # Or path to database file if using sqlite3.
-DATABASE_USER = ''	         # Not used with sqlite3.
-DATABASE_PASSWORD = ''	     # Not used with sqlite3.
 
 #DATABASE_HOST = ''	         # Set to empty string for localhost. Not used with sqlite3.
 #DATABASE_PORT = ''	         # Set to empty string for default. Not used with sqlite3.
@@ -129,6 +139,7 @@ INSTALLED_APPS = (
 	'django.contrib.sites',
 	'django.contrib.admin', 
 	'dam.core.dam_repository',
+    'dam.scripts',
 	'dam.repository',
 	'dam.treeview',
 	'dam.core.dam_metadata',
@@ -139,11 +150,11 @@ INSTALLED_APPS = (
 	'dam.workspace',
 	'dam.application',
 	'dam.api',
+	#'dam.batch_processor',
 	'dam.workflow',
 	'dam.eventmanager',
 	'dam.geo_features',
 	'dam.basket',
-    'dam.scripts',
 	'dam.upload',
     'dam.mprocessor',
 )
