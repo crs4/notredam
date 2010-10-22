@@ -110,6 +110,31 @@ def _install_scripts(destination, scripts, failures):
         if ret == 0:
             _run(['chmod', '555', target], 1, failures)
 
+def _adapt_cfg(cfgroot, as_root, source_cfg, target_cfg, failures):
+    """rewrite cache_dir in the file that configures mediadart for notredam.
+    
+    target_cfg must be writable
+    """
+    if not os.path.exists(cfgroot):
+        raise DistutilsModuleError('Missing mediadart configuration directory: %s' % self.cfgroot)
+    tmpfilename = os.path.join(os.sep, 'tmp', uuid4().get_hex())
+    tmpfile = open(tmpfilename, 'w')
+    with open(source_cfg, 'r') as f:
+        for line in f:
+            parsed = [x.strip() for x in line.split('=')]
+            if len(parsed) == 2 and parsed[0] == 'cache_dir':
+                if as_root:
+                    value = '/var/spool/notredam'
+                else:
+                    value = '/tmp/notredam'
+                _run(['mkdir', '-p', value], as_root, failures)
+                tmpfile.write('%s=%s\n' % (parsed[0], value))
+            else:
+                tmpfile.write(line)
+    tmpfile.close()
+    print('writing %s' % target_cfg)
+    _run(['mv', '-f', tmpfilename, target_cfg], 1, failures)
+
 def _print_errors(failures):
     if failures:
         print >>sys.stderr, '\n### Errors during installation:'
@@ -119,10 +144,13 @@ def _print_errors(failures):
 # Custom commands
 #
 class install(_install):
-    user_options = _install.user_options + [ ('settings=', None, 'can specify default-dev, default, or mqsql'),]
+    user_options = _install.user_options + [ 
+              ('settings=', None, 'can specify default-dev, default, or mqsql'),
+              ('cachedir=', None, 'path of the shared filesystem'),]
     
     def initialize_options(self):
         _install.initialize_options(self)
+        self.cachedir = None
         self.settings = None
         self.as_root = 1
         self.cfgroot = os.path.join(os.sep, 'etc', 'mediadart')
@@ -138,10 +166,33 @@ class install(_install):
         else:
             raise DistutilsOptionError('Invalid value for --settings: %s' % self.settings)
 
+    def _adapt_cfg(self, source_cfg, target_cfg, failures):
+        """rewrite cache_dir in the file that configures mediadart for notredam.
+        
+        target_cfg must be writable
+        """
+        if not os.path.exists(self.cfgroot):
+            raise DistutilsModuleError('Missing mediadart configuration directory: %s' % self.cfgroot)
+        tmpfilename = os.path.join(os.sep, 'tmp', uuid4().get_hex())
+        tmpfile = open(tmpfilename, 'w')
+        with open(source_cfg, 'r') as f:
+            for line in f:
+                parsed = [x.strip() for x in line.split('=')]
+                if len(parsed) == 2 and parsed[0] == 'cache_dir':
+                    value = self.cachedir
+                    _run(['mkdir', '-p', value], self.as_root, failures)
+                    tmpfile.write('%s=%s\n' % (parsed[0], value))
+                else:
+                    tmpfile.write(line)
+        tmpfile.close()
+        print('writing %s' % target_cfg)
+        _run(['mv', '-f', tmpfilename, target_cfg], 1, failures)
+
     def run(self):
         failures = []
         _install_debian(failures)
-        _install.run(self)
+        if self.as_root:
+            _install.run(self)
         if os.path.exists(os.path.join('dam', 'settings.py')):
             os.unlink(os.path.join('dam', 'settings.py'))
         self.copy_file(self.settings_module, os.path.join(self.install_purelib, 'dam', 'settings.py'))
@@ -149,9 +200,9 @@ class install(_install):
         if self.install_purelib != os.path.dirname(os.path.abspath(__file__)):
             self.copy_tree(os.path.join('dam', 'files'), os.path.join(self.install_purelib, 'dam', 'files'))
             self.copy_tree(os.path.join('dam', 'templates'), os.path.join(self.install_purelib, 'dam', 'templates'))
-        if not os.path.exists(self.cfgroot):
-            raise DistutilsModuleError('Missing mediadart configuration directory: %s' % self.cfgroot)
-        _run(['cp', '-f', os.path.join('dam', '001-notredam.cfg'), self.cfgroot], self.as_root, failures)
+        self._adapt_cfg(os.path.join('dam', '001-notredam.cfg'), 
+                        os.path.join(self.cfgroot, '001-notredam.cfg'),
+                        failures)
         from dam.settings import dir_log
         if not os.path.exists(dir_log):
             self.mkpath(dir_log)
@@ -163,12 +214,9 @@ class local_install(install):
     def finalize_options(self):
         install.finalize_options(self)
         self.install_purelib = os.path.dirname(os.path.abspath(__file__))
-        if 'HOME' in os.environ:
-            self.cfgroot = os.path.join(os.environ['HOME'], '.mediadart')
-            self.as_root = 0
-        else:
-            cfgroot = os.path.join(os.sep, 'etc', 'mediadart')
-            self.as_root = 1
+        if not self.cachedir:
+            self.cachedir = '/tmp/mediadart'
+        self.as_root = 0
 
 
 setup(name='notredam', 
