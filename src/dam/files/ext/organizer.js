@@ -1060,7 +1060,7 @@ function createMediaPanel(config, autoLoad) {
 };
 
 Ext.onReady(function(){
-    Ext.QuickTips.init();
+    
     // Album toolbar
 
     Ext.form.Field.prototype.msgTarget = 'side';
@@ -1254,24 +1254,6 @@ Ext.onReady(function(){
             }
         ]}
     );
-        
-   var header = new Ext.Panel({
-       layout: 'border', 
-       region:'north',
-       height:60,
-       items: [
-            new Ext.BoxComponent({ // raw
-                region:'north',
-                el: 'logo',
-                height:35
-            }),
-            new Ext.BoxComponent({ // raw
-                region:'center',
-                el: 'north',
-                height:20
-            })
-       ]
-   });
 
     var task = {
         run: function(){
