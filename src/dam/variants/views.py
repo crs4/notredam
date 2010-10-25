@@ -234,8 +234,8 @@ def get_variants(request):
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             
             work_in_progress = Machine.objects.filter(current_state__action__component = comp).count() > 0
-            resource_url = SERVER_PUBLIC_ADDRESS + "/items/%s/%s/"% (item_id,  v.name)
-#            resource_url = "/items/%s/%s/?t=%s"% (item_id,  v.name,  now)
+            resource_url = SERVER_PUBLIC_ADDRESS + "/resources/%s/%s/"% (comp.id, workspace.pk)
+#            resource_url = "/redirect_to_component/%s/%s/?t=%s"% (item_id,  v.name,  now)
 #            resource_url = comp.get_component_url(True)
             info_list = []
             if comp.media_type.name== 'image':

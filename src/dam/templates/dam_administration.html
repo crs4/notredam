@@ -1,10 +1,10 @@
-<html>
-<head>
-	<title>NotreDAM</title>
-	<link rel="stylesheet" type="text/css" href="/files/ext/resources/css/ext-all.css" />
-	<link rel="stylesheet" type="text/css" href="/files/css/GroupTab.css" />
-	<link rel="stylesheet" type="text/css" href="/files/css/tools_icons.css" />
+{%extends "workspace_gui.html"%}
 
+{%block css%}
+	<link rel="stylesheet" type="text/css" href="/files/css/GroupTab.css" />	
+{%endblock%}
+
+{%block js%}
 	<script type="text/javascript" src="/files/ext/adapter/ext/ext-base.js"></script>
 
 	<script type="text/javascript" src="/files/ext/ext-all-debug.js"></script>
@@ -19,10 +19,14 @@
     <script type="text/javascript" src="/files/ext/preferences.js"></script>
 
     <script type="text/javascript" src="/files/ext/admin.js"></script>
+{%endblock%}
 
-</head>
-<body>
+{%block prefs%}
+{%endblock%}
 
-</body>
-</html>
+{%block toolbar%}
+{%endblock%}
 
+{%block header_info%}
+ 	var HEADERHEIGHT = 40;
+ {%endblock%}
