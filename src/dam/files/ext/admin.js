@@ -139,9 +139,12 @@ Ext.onReady(function() {
     var ws_panel = get_ws_list();
             
     var viewport = new Ext.Viewport({
-        layout:'fit',
-        items:[{
+        layout:'border',
+        items:[
+        	header,
+        	{        	
             xtype: 'grouptabpanel',
+            region: 'center',
             tabWidth: 150,
             activeGroup: 0,
             id: 'admin_ui',

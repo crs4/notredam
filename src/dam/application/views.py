@@ -19,8 +19,7 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.generic.simple import redirect_to
-from django.http import HttpResponse, HttpResponseForbidden,\
-    HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseForbidden
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -29,7 +28,7 @@ from django.core.mail import send_mail
 from django.utils import simplejson
 from django.contrib.admin.views.decorators import staff_member_required
 
-from dam.repository.models import Item, _get_resource_url
+from dam.repository.models import Item, _get_resource_url, Component
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
@@ -87,6 +86,23 @@ def redirect_to_resource(request, id):
         url = NOTAVAILABLE
 
     return redirect_to(request,  url)
+
+
+@login_required
+def resources(request, component_id, workspace_id):
+    
+    try:
+        component = Component.objects.get(pk = component_id)
+        workspace = component.workspace.get(pk = workspace_id)
+    except:
+        return HttpResponseNotFound()    
+    
+    
+    if request.user not in workspace.members.all():
+        return HttpResponseForbidden()
+         
+    url = component.get_component_url()    
+    return redirect_to(request, url)
 
 @login_required
 def get_component(request, item_id, variant_name, redirect=False):
@@ -173,38 +189,6 @@ def confirm_user(request, url):
     ws = Workspace.objects.create_workspace(user.username, '', user)
 
     return render_to_response('registration_completed.html', RequestContext(request,{'usr':user}))
-
-
-@login_required
-def download_component_old(request,  item_id, variant_name):
-    
-    workspace = request.session.get('workspace', None)
-    try:
-        item = Item.objects.get(pk=item_id)
-        variant = workspace.get_variants().distinct().get(name = variant_name)
-        comp = item.get_variant(workspace, variant)
-        url = comp.get_component_url()
-    except Exception,  ex:
-        logger.exception(ex)
-        return HttpResponseNotFound()
-    
-    response = get_component(request, item_id, variant_name)
-    if variant_name == 'original':
-        file_name = comp.file_name
-    else:
-        
-        
-        orig = comp.source
-        try:
-            tmp = orig.file_name.split('.')
-            file_name = tmp[0] + '_' +  variant_name + '.' + comp.format
-        except:
-            file_name = 'resource_' + variant_name   
-        
-        
-    response['Content-Disposition'] = 'attachment; filename=%s'%file_name
-    return response
-    
     
 @login_required
 def download_component(request, item_id, variant_name):
