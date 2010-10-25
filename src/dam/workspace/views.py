@@ -993,40 +993,20 @@ def download_renditions(request):
             from tarfile import TarFileCompat as ArchiveFile
             import tarfile
             archive = tarfile.TarFileCompat(tmp, 'w', compression = tarfile.TAR_GZIPPED)
-        
-        
-        
-        for item in items:
-            
-            orig = Component.objects.get(variant__name = 'original', item__pk = item)
-            title = ''
-            try:
-                title = item.metadata.get(schema__field_name  = 'title' ).value
-               
                 
-            except:
-                if orig.file_name:
-                    title = orig.file_name
-                else:
-                    title = orig._id
-                try:
-                    title = title.split('.')[0]
-                except:
-                    pass
-                
+        for item in items:    
             
             for rendition in renditions:
                 try:
                     c = Component.objects.get(item__pk = item,  variant__pk = rendition)
                     file = os.path.join(settings.MEDIADART_STORAGE, c._id)
                     try:
-                        ext = c._id.split('.')[1]
-                       
-                        file_name =  title + '_' +  c.variant.name +  '.' + ext 
+                        ext = c._id.split('.')[1]                       
+                        file_name =  item + '_' +  c.variant.name +  '.' + ext 
                     except:
-                        file_name = title + '_' +  c.variant.name
+                        file_name = item + '_' +  c.variant.name
                      
-                    
+
                     
                     archive.write(file, file_name)
 
