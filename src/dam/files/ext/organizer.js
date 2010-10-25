@@ -435,6 +435,7 @@ var showDetails = function(view){
         });
         
         
+        Ext.getCmp('download').enable();
         
         var admin = ws_permissions_store.find('name', 'admin') > -1;        
         var add_item = ws_permissions_store.find('name', 'add_item') > -1;
@@ -511,6 +512,8 @@ var showDetails = function(view){
         for(i = 0; i < cbs.length;i ++){
             cbs[i].disabled = true;
         }
+        
+        Ext.getCmp('download').disable();
         
         Ext.getCmp('object_menu').menu.items.get('addto').disable();
         Ext.getCmp('object_menu').menu.items.get('mvto').disable();
