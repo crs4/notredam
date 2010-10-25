@@ -724,7 +724,7 @@ Ext.onReady(function(){
             {
                 text: 'Download',
                 id: 'download',
-//                disabled: true,
+                disabled: true,
                 handler: function(){
                     var sm =  new Ext.grid.CheckboxSelectionModel({
                         checkOnly: true,
