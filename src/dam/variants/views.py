@@ -234,7 +234,8 @@ def get_variants(request):
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             
             work_in_progress = Machine.objects.filter(current_state__action__component = comp).count() > 0
-            resource_url = SERVER_PUBLIC_ADDRESS + "/resources/%s/%s/"% (comp.id, workspace.pk)
+            resource_url = "/resources/%s/%s/"% (comp.id, workspace.pk)
+            abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
 #            resource_url = "/redirect_to_component/%s/%s/?t=%s"% (item_id,  v.name,  now)
 #            resource_url = comp.get_component_url(True)
             info_list = []
@@ -261,7 +262,12 @@ def get_variants(request):
             logger.exception(ex)
             work_in_progress =  True
           
-            resp['variants'].append({'pk': v.pk, 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
+            resp['variants'].append({'pk': v.pk, 
+                                     'variant_name': v.name, 
+                                     'item_id': item_id,  
+                                     'auto_generated':auto_generated,  
+                                     'media_type': media_type, 
+                                      'work_in_progress':work_in_progress})
             continue
             
             #logger.exception(ex)
@@ -279,7 +285,20 @@ def get_variants(request):
 #            auto_generated = v.auto_generated
 #            extension = None
             
-        resp['variants'].append({'data_basic': info_list, 'data_full':info_list_full,  'variant_name': v.name,  'resource_url': resource_url,  'pk': v.pk,  'imported':imported, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'extension':extension,  'work_in_progress':work_in_progress,  'width': str(comp.width),  'height': str(comp.height )})
+        resp['variants'].append({'data_basic': info_list, 
+                                 'data_full':info_list_full,
+                                 'variant_name': v.name,
+                                 'resource_url': resource_url,
+                                 'abs_resource_url': abs_resource_url,  
+                                 'pk': v.pk,  
+                                 'imported':imported, 
+                                 'item_id': item_id,  
+                                 'auto_generated':auto_generated,  
+                                 'media_type': media_type,  
+                                 'extension':extension,  
+                                 'work_in_progress':work_in_progress,  
+                                 'width': str(comp.width), 
+                                  'height': str(comp.height )})
     
     return HttpResponse(simplejson.dumps(resp))
 

@@ -1817,7 +1817,7 @@ var search_box = {
 										singleSelect: true,
                                         store: new Ext.data.JsonStore({
                                                 root: 'variants',              
-                                                fields: ['pk','variant_name', 'data_basic','data_full', 'resource_url', 'imported', 'item_id', 'auto_generated', 'media_type', 'extension', 'work_in_progress', 'width', 'height'] ,
+                                                fields: ['pk','variant_name', 'data_basic','data_full', 'resource_url', 'abs_resource_url', 'imported', 'item_id', 'auto_generated', 'media_type', 'extension', 'work_in_progress', 'width', 'height'] ,
                                             url: '/get_variants/'
 
                                             
@@ -1881,7 +1881,7 @@ var search_box = {
                                                                     '</tpl></p>',
                                                                 '</tpl>',
                                                             '</tpl>',
-                                                        '<p class="permalink"><b>Link: </b><input value="{resource_url}" readonly/></p>',
+                                                        '<p class="permalink"><b>Link: </b><input value="{abs_resource_url}" readonly/></p>',
                                                         '</div>',
                                                         
                                                     '</tpl>',
