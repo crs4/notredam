@@ -971,22 +971,51 @@ def switch_ws(request):
     
 @login_required
 def download_renditions(request):
-    import zipfile,  os, settings
+    import zipfile,  os, settings, tempfile
     items = request.POST.getlist('items')
     renditions = request.POST.getlist('renditions')
     
     if renditions and items:
-        zip = zipfile.ZipFile('/home/mauro/work/dam-backup/src/dam/files/tmp.zip',  'w')
-        os.chdir(settings.MEDIADART_STORAGE)
+        
+        tmp = tempfile.mkstemp(prefix='archive-', suffix='.zip', dir= settings.MEDIADART_STORAGE)[1]
+        zip = zipfile.ZipFile(tmp,  'w')
+        
         for item in items:
+            
+            orig = Component.objects.get(variant__name = 'original', item__pk = item)
+            title = ''
+            try:
+                title = item.metadata.get(schema__field_name  = 'title' ).value
+               
+                
+            except:
+                if orig.file_name:
+                    title = orig.file_name
+                else:
+                    title = orig._id
+                try:
+                    title = title.split('.')[0]
+                except:
+                    pass
+                
+            
             for rendition in renditions:
                 try:
                     c = Component.objects.get(item__pk = item,  variant__pk = rendition)
-                    logger.debug(c._id)
-                    zip.write(c._id)
+                    file = os.path.join(settings.MEDIADART_STORAGE, c._id)
+                    try:
+                        ext = c._id.split('.')[1]
+                       
+                        file_name = c.variant.name + '_' +  title + '.' + ext 
+                    except:
+                        file_name = title
+                     
+                    
+                    
+                    zip.write(file, file_name)
 #                    zip.write('settings.py')
                 except Component.DoesNotExist:
                     continue
         zip.close()
     
-    return HttpResponse(simplejson.dumps({'success': True,  'url': '/files/tmp.zip'}))
+    return HttpResponse(simplejson.dumps({'success': True,  'url':'/storage/' + os.path.basename(zip.filename) }))
