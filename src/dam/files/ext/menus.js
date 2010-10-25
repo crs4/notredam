@@ -728,7 +728,15 @@ Ext.onReady(function(){
                 handler: function(){
                     var sm =  new Ext.grid.CheckboxSelectionModel({
                         checkOnly: true,
-                        singleSelect: false
+                        singleSelect: false,
+                        listeners:{
+                        	selectionchange: function(){
+                        		if (this.getCount() >0)
+                        			Ext.getCmp('download_rendition_button').enable();
+                        		else
+                        			Ext.getCmp('download_rendition_button').disable();
+                        	}
+                        }
                     });
                     
                     var win = new Ext.Window({
@@ -740,7 +748,9 @@ Ext.onReady(function(){
                         modal: true,
                         title: 'Choose renditions to download',
                         buttons: [{
+                        	id: 'download_rendition_button',
                             text: 'Download',
+                            disabled: true,
                             handler: function(){
                                 var renditions_to_download = Ext.getCmp('renditions_to_download').getSelectionModel().getSelections();
                                 var post = {
@@ -786,10 +796,12 @@ Ext.onReady(function(){
                         	new Ext.Panel({
                         		layout: 'border',
                         		border: false,
+                        		autoScroll: true,
                         		items:[
                         			new Ext.grid.GridPanel({
 		                                id:'renditions_to_download',
 		                                region:'center',
+		                                border: false,
 		                                viewConfig:{
 		                                    forceFit: true,
 		                                    headersDisabled: true
@@ -806,7 +818,7 @@ Ext.onReady(function(){
 		                                    {
 		                                        dataIndex: 'name'
 		                                    }
-		                                ]                                
+		                                ]	
 		                            }),
 		                            
 		                            new Ext.form.ComboBox({
