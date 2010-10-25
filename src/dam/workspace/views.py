@@ -971,14 +971,26 @@ def switch_ws(request):
     
 @login_required
 def download_renditions(request):
-    import zipfile,  os, settings, tempfile
+    import  os, settings, tempfile
     items = request.POST.getlist('items')
     renditions = request.POST.getlist('renditions')
     
+    compression_type = request.POST.get('compression_type', 'zip')    
+    
     if renditions and items:
+        suffix = '.' + compression_type
+        tmp = tempfile.mkstemp(prefix='archive-', suffix= suffix, dir= settings.MEDIADART_STORAGE)[1]
         
-        tmp = tempfile.mkstemp(prefix='archive-', suffix='.zip', dir= settings.MEDIADART_STORAGE)[1]
-        zip = zipfile.ZipFile(tmp,  'w')
+        if compression_type == 'zip':            
+            import zipfile
+            archive = zipfile.ZipFile(tmp,  'w')
+            
+        else:
+            from tarfile import TarFileCompat as ArchiveFile
+            import tarfile
+            archive = tarfile.TarFileCompat(tmp, 'w', compression = tarfile.TAR_GZIPPED)
+        
+        
         
         for item in items:
             
@@ -1012,10 +1024,10 @@ def download_renditions(request):
                      
                     
                     
-                    zip.write(file, file_name)
-#                    zip.write('settings.py')
+                    archive.write(file, file_name)
+
                 except Component.DoesNotExist:
                     continue
-        zip.close()
+        archive.close()
     
-    return HttpResponse(simplejson.dumps({'success': True,  'url':'/storage/' + os.path.basename(zip.filename) }))
+    return HttpResponse(simplejson.dumps({'success': True,  'url':'/storage/' + os.path.basename(tmp) }))
