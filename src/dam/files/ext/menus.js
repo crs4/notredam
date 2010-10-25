@@ -745,7 +745,8 @@ Ext.onReady(function(){
                                 var renditions_to_download = Ext.getCmp('renditions_to_download').getSelectionModel().getSelections();
                                 var post = {
                                     items: [],
-                                    renditions: []
+                                    renditions: [],
+                                    compression_type: Ext.getCmp('compression_type').getValue()
                                 };
                                 Ext.each(
                                     renditions_to_download,
@@ -782,29 +783,57 @@ Ext.onReady(function(){
                         buttonAlign: 'center',
                         autoScroll: true,
                         items:[
-                            new Ext.grid.GridPanel({
-                                id:'renditions_to_download',
-                                viewConfig:{
-                                    forceFit: true,
-                                    headersDisabled: true
-                                },
-                                sm: sm,
-                                store:  new Ext.data.JsonStore({
-                                    url: '/get_variants_list',
-                                    root: 'variants',
-                                    fields: ['pk','name'],
-                                    autoLoad: true
-                                }),
-                                
-                                columns:[
-                                   sm,
-                                    {
-                                        dataIndex: 'name'
-                                    }
-                                ]
+                        	new Ext.Panel({
+                        		layout: 'border',
+                        		border: false,
+                        		items:[
+                        			new Ext.grid.GridPanel({
+		                                id:'renditions_to_download',
+		                                region:'center',
+		                                viewConfig:{
+		                                    forceFit: true,
+		                                    headersDisabled: true
+		                                },
+		                                sm: sm,
+		                                store:  new Ext.data.JsonStore({
+		                                    url: '/get_variants_list',
+		                                    root: 'variants',
+		                                    fields: ['pk','name'],
+		                                    autoLoad: true
+		                                }),		                                
+		                                columns:[
+		                                   sm,
+		                                    {
+		                                        dataIndex: 'name'
+		                                    }
+		                                ]                                
+		                            }),
+		                            
+		                            new Ext.form.ComboBox({
+		                            	id: 'compression_type',
+		                            	fieldLabel: 'Compression',
+							        	width: 245,
+							        	region: 'south',
+							        	 store: new Ext.data.ArrayStore({							        	        
+							        	        fields: ['name'],
+							        	        data: [['zip'], ['tar.gz']]
+							        	    }),				
+							        	allowBlank:false,
+							            forceSelection: true,
+							            displayField:'name',				                        
+							            triggerAction: 'all',
+							            editable: false,
+							            valueField: 'name',
+							            mode: 'local',          
+							            emptyText: 'start month',               
+							            hideTrigger:false,
+							            name: 'compression_type',
+							            value: 'zip'
+		                            })
+                        		]
+                        	})
+                        
 
-                                
-                            })
                         ]
                     });
                     win.show();
