@@ -1006,9 +1006,9 @@ def download_renditions(request):
                     try:
                         ext = c._id.split('.')[1]
                        
-                        file_name = c.variant.name + '_' +  title + '.' + ext 
+                        file_name =  title + '_' +  c.variant.name +  '.' + ext 
                     except:
-                        file_name = title
+                        file_name = title + '_' +  c.variant.name
                      
                     
                     
