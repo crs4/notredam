@@ -141,7 +141,7 @@ Ext.onReady(function() {
     var viewport = new Ext.Viewport({
         layout:'border',
         items:[
-        	header,
+//        	header,
         	{        	
             xtype: 'grouptabpanel',
             region: 'center',
