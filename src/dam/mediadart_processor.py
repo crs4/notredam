@@ -321,7 +321,7 @@ def extract_features(component, machine):
         
     logger.debug("[FeatureExtraction.execute] component %s" % component.ID)
 
-    extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
+    extractors = {'image': 'media_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
 
     extractor_proxy = Proxy('FeatureExtractor')
 
