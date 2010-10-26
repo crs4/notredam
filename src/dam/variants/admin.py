@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.contrib import admin
-from variants.models import Variant
+from dam.variants.models import Variant
 
 #admin.site.register(Type)
 admin.site.register(Variant)

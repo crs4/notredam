@@ -29,7 +29,7 @@ from django.utils.simplejson.encoder import JSONEncoder
 from hashlib import sha1 
 from optparse import OptionParser
 
-from ndutils import ImportExport, Exporter, Importer
+from dam.migration_scripts.ndutils import ImportExport, Exporter, Importer
 import logging
 
 logging.basicConfig(level=logging.DEBUG)

@@ -25,7 +25,7 @@ from django_restapi.responder import *
 from django.forms.util import ErrorDict
 from django.utils import simplejson as json
 from dam import logger
-from models import  Secret,  Application
+from dam.api.models import  Secret,  Application
 import hashlib
 
 from exceptions import *

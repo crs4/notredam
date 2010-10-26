@@ -18,7 +18,7 @@
 
 from django.contrib import admin
 
-from scripts.models import *
+from dam.scripts.models import *
 
 #class ActionScriptInline(admin.TabularInline):
 #    model = ActionScriptAssociation

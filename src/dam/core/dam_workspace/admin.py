@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.contrib import admin
-from models import WorkspacePermissionsGroup, WorkspacePermissionAssociation, WorkspacePermission
+from dam.core.dam_workspace.models import WorkspacePermissionsGroup, WorkspacePermissionAssociation, WorkspacePermission
 
 admin.site.register(WorkspacePermissionsGroup)
 admin.site.register(WorkspacePermission)

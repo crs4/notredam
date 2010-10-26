@@ -1,10 +1,10 @@
 from django.core.management import setup_environ
-import settings
+from dam import settings
 setup_environ(settings)
 
 
-from variants.models import *
-from workspace.models import *
+from dam.variants.models import *
+from dam.workspace.models import *
 
 ws = Workspace.objects.get(pk = 1)
 user = User.objects.get(pk = 1)

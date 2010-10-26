@@ -41,21 +41,21 @@ from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
-from scripts.models import Script 
+from dam.scripts.models import Script 
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type, _save_uploaded_variant
 from dam.workflow.views import _set_state 
-from scripts.views import _new_script,  _get_scripts_info
-from settings import SERVER_PUBLIC_ADDRESS
+from dam.scripts.views import _new_script,  _get_scripts_info
+from dam.settings import SERVER_PUBLIC_ADDRESS
 
-from decorators import *
-from exceptions import *
-from workspace.forms import AdminWorkspaceForm
+from dam.decorators import *
+from dam.exceptions import *
+from dam.workspace.forms import AdminWorkspaceForm
 from dam.variants.views import _edit_variant
+from dam.upload.uploadhandler import StorageHandler
 from django.contrib.auth import authenticate,  login
-from upload.uploadhandler import StorageHandler
 
 #from django.contrib.sessions.backends.db import SessionStore
 

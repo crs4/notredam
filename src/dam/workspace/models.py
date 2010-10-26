@@ -22,7 +22,7 @@ from django.db.models import Q
 from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
-import logger
+import dam.logger as logger
 
 class WSManager(WorkspaceManager):
 

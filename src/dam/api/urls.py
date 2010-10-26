@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.conf.urls.defaults import *
-from views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource,  ScriptResource, StateResource
+from dam.api.views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource,  ScriptResource, StateResource
 
 
 
