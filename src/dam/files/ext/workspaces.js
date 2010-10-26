@@ -189,6 +189,7 @@ function cell_click(grid, rowIndex, columnIndex, e){
     
 function switch_ws(current_record, ws_id){
 	clear_other_selections(); //to avoid selectionchange event later, that can change tab name
+	Ext.getCmp('detail_tabs').getActiveTab().hide();
 	media_tabs = Ext.getCmp('media_tabs');
 	if (!current_record || current_record == null){
     	//initial load
