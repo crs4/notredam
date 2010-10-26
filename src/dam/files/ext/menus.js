@@ -642,7 +642,7 @@ Ext.onReady(function(){
                     up.openUpload();
                 }
             }, {
-                text: 'Copy to...',
+                text: 'Share with...',
                 id: 'addto',
                 disabled: true,
                 menu:  cp_ws_menu
@@ -652,7 +652,7 @@ Ext.onReady(function(){
                 id: 'mvto',
                 disabled: true,
                 menu: mv_ws_menu
-            },
+            },            
             {
                 text: 'Sync XMP...',
                 id: 'sync_xmp',
@@ -721,6 +721,137 @@ Ext.onReady(function(){
 
                 }
             },
+            {
+                text: 'Download',
+                id: 'download',
+                disabled: true,
+                handler: function(){
+                    var sm =  new Ext.grid.CheckboxSelectionModel({
+                        checkOnly: true,
+                        singleSelect: false,
+                        listeners:{
+                        	selectionchange: function(){
+                        		if (this.getCount() >0)
+                        			Ext.getCmp('download_rendition_button').enable();
+                        		else
+                        			Ext.getCmp('download_rendition_button').disable();
+                        	}
+                        }
+                    });
+                    
+                    var win = new Ext.Window({
+                        id:'download_win',
+                        height: 300,
+                        width: 400,
+                        layout: 'fit',
+                        frame: true,
+                        modal: true,
+                        title: 'Choose renditions to download',
+                        buttons: [{
+                        	id: 'download_rendition_button',
+                            text: 'Download',
+                            disabled: true,
+                            handler: function(){
+                                var renditions_to_download = Ext.getCmp('renditions_to_download').getSelectionModel().getSelections();
+                                var post = {
+                                    items: [],
+                                    renditions: [],
+                                    compression_type: Ext.getCmp('compression_type').getValue()
+                                };
+                                Ext.each(
+                                    renditions_to_download,
+                                    function(){
+                                        post.renditions.push(this.data.pk)
+                                    }
+                                );
+                                    
+                                var ac = Ext.getCmp('media_tabs').getActiveTab();
+                                var view = ac.getComponent(0);
+
+                                var selNodes= view.getSelectedNodes();
+                                Ext.each(
+                                    selNodes,
+                                    function(){
+                                        post.items.push(this.id);
+                                    }
+                                );
+                                
+                                if (post.items.length > 0 && post.renditions.length > 0)
+                                    Ext.Ajax.request({
+                                        url: '/download_renditions/',
+                                        params: post,
+                                        success: function(response){
+                                            var obj = Ext.decode(response.responseText);
+                                            window.open(obj.url);
+                                            
+                                        }
+                                        
+                                    });
+                                Ext.getCmp('download_win').close();
+                            }
+                        }],
+                        buttonAlign: 'center',
+                        autoScroll: true,
+                        items:[
+                        	new Ext.Panel({
+                        		layout: 'border',
+                        		border: false,
+                        		autoScroll: true,
+                        		items:[
+                        			new Ext.grid.GridPanel({
+		                                id:'renditions_to_download',
+		                                region:'center',
+		                                border: false,
+		                                viewConfig:{
+		                                    forceFit: true,
+		                                    headersDisabled: true
+		                                },
+		                                sm: sm,
+		                                store:  new Ext.data.JsonStore({
+		                                    url: '/get_variants_list',
+		                                    root: 'variants',
+		                                    fields: ['pk','name'],
+		                                    autoLoad: true
+		                                }),		                                
+		                                columns:[
+		                                   sm,
+		                                    {
+		                                        dataIndex: 'name'
+		                                    }
+		                                ]	
+		                            }),
+		                            
+		                            new Ext.form.ComboBox({
+		                            	id: 'compression_type',
+		                            	fieldLabel: 'Compression',
+							        	width: 245,
+							        	region: 'south',
+							        	 store: new Ext.data.ArrayStore({							        	        
+							        	        fields: ['name'],
+							        	        data: [['zip'], ['tar.gz']]
+							        	    }),				
+							        	allowBlank:false,
+							            forceSelection: true,
+							            displayField:'name',				                        
+							            triggerAction: 'all',
+							            editable: false,
+							            valueField: 'name',
+							            mode: 'local',          
+							            emptyText: 'start month',               
+							            hideTrigger:false,
+							            name: 'compression_type',
+							            value: 'zip'
+		                            })
+                        		]
+                        	})
+                        
+
+                        ]
+                    });
+                    win.show();
+                }
+            },
+            
             {
                 id:'remove_from_ws',
                 text: 'Delete',
@@ -981,7 +1112,8 @@ Ext.onReady(function(){
                                     
                                     },
                                 success: function() {
-                                    Ext.MessageBox.alert('Success', 'Item(s) copied successfully.');
+                                	
+                                    Ext.MessageBox.alert('Success', 'Item(s) shared successfully.');
                                 }
                                 
                             });

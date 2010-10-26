@@ -28,7 +28,7 @@ from django.db.models import Q
 from django.db import IntegrityError
 from django.utils import simplejson
 
-from dam.settings import ROOT_PATH
+from dam.settings import ROOT_PATH, SERVER_PUBLIC_ADDRESS
 from dam.variants.models import Variant
 from dam.core.dam_repository.models import Type
 from dam.repository.models import Component
@@ -177,16 +177,18 @@ def get_variants_list(request):
     workspace = request.session['workspace']
 #    workspace = Workspace.objects.get(pk = 1)
 #    media_type = request.POST['media_type']
-    type = request.POST.get('type',  'generated')
+    type = request.POST.get('type',  '')
     logger.debug('type %s'%type)
-        
-    vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
-#    vas = Variant.objects.filter(workspace = workspace, auto_generated =  (type == 'generated'),  hidden = False)
+    if type == '':
+        vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), hidden = False)
+    else:
+        vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
+    else:
+        vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
     
     
     resp = {'variants':[]}
     for variant in vas:
-        
         resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.workspace is None })
     
     return HttpResponse(simplejson.dumps(resp))
@@ -231,9 +233,9 @@ def get_variants(request):
             logger.debug('variant  %s'%v)
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             
-            #work_in_progress = Machine.objects.filter(current_state__action__component = comp).count() > 0
             work_in_progress = Task.objects.filter(component = comp).count() > 0
-            resource_url = "/redirect_to_component/%s/%s/?t=%s"% (item_id,  v.name,  now)
+            resource_url = comp.get_component_url()
+            abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
             info_list = []
             if comp.media_type.name== 'image':
                 extension = comp.format
@@ -258,7 +260,12 @@ def get_variants(request):
             logger.exception(ex)
             work_in_progress =  True
           
-            resp['variants'].append({'pk': v.pk, 'variant_name': v.name, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'work_in_progress':work_in_progress})
+            resp['variants'].append({'pk': v.pk, 
+                                     'variant_name': v.name, 
+                                     'item_id': item_id,  
+                                     'auto_generated':auto_generated,  
+                                     'media_type': media_type, 
+                                      'work_in_progress':work_in_progress})
             continue
             
             #logger.exception(ex)
@@ -276,7 +283,20 @@ def get_variants(request):
 #            auto_generated = v.auto_generated
 #            extension = None
             
-        resp['variants'].append({'data_basic': info_list, 'data_full':info_list_full,  'variant_name': v.name,  'resource_url': resource_url,  'pk': v.pk,  'imported':imported, 'item_id': item_id,  'auto_generated':auto_generated,  'media_type': media_type,  'extension':extension,  'work_in_progress':work_in_progress,  'width': str(comp.width),  'height': str(comp.height )})
+        resp['variants'].append({'data_basic': info_list, 
+                                 'data_full':info_list_full,
+                                 'variant_name': v.name,
+                                 'resource_url': resource_url,
+                                 'abs_resource_url': abs_resource_url,  
+                                 'pk': v.pk,  
+                                 'imported':imported, 
+                                 'item_id': item_id,  
+                                 'auto_generated':auto_generated,  
+                                 'media_type': media_type,  
+                                 'extension':extension,  
+                                 'work_in_progress':work_in_progress,  
+                                 'width': str(comp.width), 
+                                  'height': str(comp.height )})
     
     return HttpResponse(simplejson.dumps(resp))
 

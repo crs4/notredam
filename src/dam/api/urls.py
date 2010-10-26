@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.conf.urls.defaults import *
-from views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource,  ScriptResource
+from views import WorkspaceResource,  ItemResource,  KeywordsResource,  CollectionResource, VariantsResource,   Auth,  SmartFolderResource,  ScriptResource, StateResource
 
 
 
@@ -50,15 +50,17 @@ urlpatterns = patterns('',
 
 #   url(r'^api/item/search/$', ItemResource(permitted_methods=('POST'),).search),
    url(r'^api/item/(.+)/get_keywords/$', ItemResource(permitted_methods=('GET'),).get_keywords),
+   url(r'^api/item/(.+)/get_collections/$', ItemResource(permitted_methods=('GET'),).get_collections),
 
 
 
    
    url(r'^api/workspace/new/$', WorkspaceResource(permitted_methods=('POST',), ).create),   
    
-   url(r'^api/workspace/(\d+)/delete/$', WorkspaceResource(permitted_methods=('GET',), ).delete),   
-   url(r'^api/workspace/(\d+)/set_name/$', WorkspaceResource(permitted_methods=('POST')).set_name),  
-   url(r'^api/workspace/(\d+)/set_description/$', WorkspaceResource(permitted_methods=('POST')).set_description),  
+   url(r'^api/workspace/(\d+)/delete/$', WorkspaceResource(permitted_methods=('GET',), ).delete),  
+   url(r'^api/workspace/(\d+)/edit/$', WorkspaceResource(permitted_methods=('POST')).edit), 
+#   url(r'^api/workspace/(\d+)/set_name/$', WorkspaceResource(permitted_methods=('POST')).set_name),  
+#   url(r'^api/workspace/(\d+)/set_description/$', WorkspaceResource(permitted_methods=('POST')).set_description),  
    
    url(r'^api/workspace/(\d+)/get/$', WorkspaceResource(permitted_methods=('GET',), ).read),  
    url(r'^api/workspace/get/$', WorkspaceResource(permitted_methods=('GET',), ).get_list),  
@@ -76,7 +78,10 @@ urlpatterns = patterns('',
    url(r'^api/workspace/(\d+)/get_scripts/$', WorkspaceResource(permitted_methods=('GET'), ).get_scripts),
    url(r'^api/workspace/(\d+)/set_creator/$', WorkspaceResource(permitted_methods=('POST',), ).set_creator),  
    url(r'^api/workspace/(\d+)/get_items_complete/$', WorkspaceResource(permitted_methods=('GET',), ).get_items_complete),  
-   url(r'^api/workspace/(\d+)/search/$', WorkspaceResource(permitted_methods=('POST',), ).search),  
+   url(r'^api/workspace/(\d+)/search/$', WorkspaceResource(permitted_methods=('POST',), ).search),
+   
+   url(r'^api/workspace/(\d+)/get_states/$', WorkspaceResource(permitted_methods=('GET',),).get_states),
+   
    
    url(r'^api/keyword/new/$', KeywordsResource(permitted_methods=('POST',  ), ).create),   
    url(r'^api/keyword/(\d+)/delete/$', KeywordsResource(permitted_methods=('GET',  ), ).delete),   
@@ -91,8 +96,8 @@ urlpatterns = patterns('',
    url(r'^api/collection/new/$', CollectionResource(permitted_methods=('POST'),  ).create),   
    url(r'^api/collection/new/$', CollectionResource(permitted_methods=('POST')).create),   
    url(r'^api/collection/(\d+)/delete/$', CollectionResource(permitted_methods=('GET',  ), ).delete),   
-   url(r'^api/collection/(\d+)/move/$', CollectionResource(permitted_methods=('GET',  ), ).move),   
-   url(r'^api/collection/(\d+)/rename/$', CollectionResource(permitted_methods=('POST')).rename),   
+   url(r'^api/collection/(\d+)/move/$', CollectionResource(permitted_methods=('POST',  ), ).move),   
+   url(r'^api/collection/(\d+)/edit/$', CollectionResource(permitted_methods=('POST')).edit),   
    url(r'^api/collection/(\d+)/get/$', CollectionResource(permitted_methods=('GET',), ).read),      
 #   url(r'^api/collection/get/$', CollectionResource(permitted_methods=('GET',), ).read),      
    url(r'^api/collection/(\d+)/add_items/$', CollectionResource(permitted_methods=('POST')).add_items),   
@@ -111,16 +116,21 @@ urlpatterns = patterns('',
    url(r'^api/smartfolder/(\d+)/delete/$', SmartFolderResource(permitted_methods=('GET'), ).delete),   
 #   
    url(r'^api/script/new/$', ScriptResource(permitted_methods=('POST'), ).create),   
-   url(r'^api/script/(\d+)/run/$', ScriptResource(permitted_methods=('POST'), ).run),   
+   url(r'^api/script/(\d+)/run/$', ScriptResource(permitted_methods=('POST'), ).run),
+   url(r'^api/script/(\d+)/run_again/$', ScriptResource(permitted_methods=('POST'), ).run_again),   
    url(r'^api/script/(\d+)/edit/$', ScriptResource(permitted_methods=('POST'), ).edit),   
    url(r'^api/script/(\d+)/delete/$', ScriptResource(permitted_methods=('POST'), ).delete),   
    url(r'^api/script/(\d+)/get/$', ScriptResource(permitted_methods=('GET'), ).read),   
    
+   url(r'^api/state/(\d+)/delete/$', StateResource(permitted_methods=('POST',),).delete),  
+   url(r'^api/state/new/$', StateResource(permitted_methods=('POST',),).create),
+   url(r'^api/state/(\d+)/edit/$', StateResource(permitted_methods=('POST',),).edit),
+   url(r'^api/state/(\d+)/get/$', StateResource(permitted_methods=('GET',),).read),
+   url(r'^api/state/(\d+)/add_items/$', StateResource(permitted_methods=('POST',),).add_items),
+   url(r'^api/state/(\d+)/remove_items/$', StateResource(permitted_methods=('POST',),).remove_items),
    
    url(r'^api/login/$', Auth(permitted_methods=('POST'), )._login),   
    url(r'^api/get_users/$', Auth(permitted_methods=('GET'), ).get_users),   
    url(r'^api/add_user/$', Auth(permitted_methods=('GET'), ).add_user),   
-   
-
-   
+      
 )

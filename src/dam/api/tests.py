@@ -25,19 +25,21 @@ from django.utils import simplejson as json
 from django.db.models import Q
 
 from exceptions import *
-from treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
+from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
 
-from variants.models import Variant
+from dam.variants.models import Variant
 #from variants.models import VariantAssociation,   SourceVariant,  PresetParameterValue
-from core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
+from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
 
-from workspace.models import DAMWorkspace
-from repository.models import Item,  Component
-from metadata.models import MetadataProperty,  MetadataValue
-from core.dam_repository.models import Type
-from workflow.models import State, StateItemAssociation
-from scripts.models import Script
+from dam.workspace.models import DAMWorkspace
+from dam.repository.models import Item,  Component
+from dam.metadata.models import MetadataProperty,  MetadataValue
+from dam.core.dam_repository.models import Type
+from dam.workflow.models import State, StateItemAssociation
+from dam.workflow.views import _set_state
+from dam.scripts.models import Script
 import hashlib
+
 
 class MyTestCase(TestCase):
 #    fixtures = ['test_data.json', ]   
@@ -365,27 +367,35 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict.get('error code') == 30)
     
         
-    def test_set_name(self):
-             
-        ws_pk = 1        
-        params = self.get_final_parameters({'name':'test_', })
-        
-        response = self.client.post('/api/workspace/%s/set_name/'%ws_pk, params,)        
-        self.assertTrue(response.content == '')
-        
-        ws = DAMWorkspace.objects.get(pk = ws_pk)
-        self.assertTrue(ws.name == 'test_')
-        
-        
-    def test_set_description(self):
     
-        ws_pk = 1
-        params = self.get_final_parameters({'description':'test_'})
-        response = self.client.post('/api/workspace/%s/set_description/'%ws_pk, params)        
+    def test_edit(self):             
+        ws_pk = 1        
+        params = self.get_final_parameters({'name':'test_', 'description': 'test description' })
+        
+        response = self.client.post('/api/workspace/%s/edit/'%ws_pk, params,)        
         self.assertTrue(response.content == '')
         
         ws = DAMWorkspace.objects.get(pk = ws_pk)
-        self.assertTrue(ws.description == 'test_')
+        self.assertTrue(ws.name == params['name'])
+        self.assertTrue(ws.description == params['description'])
+        
+    def test_get_states(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        params = self.get_final_parameters({})
+        
+        response = self.client.get('/api/workspace/%s/get_states/'%ws_pk, params)      
+        
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(len(resp_dict) == 1)
+        self.assertTrue(resp_dict['states'][0]['name'] == s.name)
+        
+    
+        
+
         
     def test_get(self):
              
@@ -394,11 +404,22 @@ class WSTestCase(MyTestCase):
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params,  )      
         
         resp_dict = json.loads(response.content)    
-        print 'resp_dict ',  resp_dict 
+
         ws = DAMWorkspace.objects.get(pk = ws_pk)        
         self.assertTrue(resp_dict['id'] == str(ws.pk))
         self.assertTrue(resp_dict['name'] == ws.name)
-        self.assertTrue(resp_dict['description'] == ws.description)
+        self.assertTrue(resp_dict['description'] == ws.description)        
+        
+    def test_get_except(self):             
+        ws_pk = 1000
+        params = self.get_final_parameters({})
+        response = self.client.get('/api/workspace/%s/get/'%ws_pk, params)      
+        
+        resp_dict = json.loads(response.content)    
+        print 'resp_dict ',  resp_dict 
+                
+        self.assertTrue(resp_dict['error class'] == 'WorkspaceDoesNotExist')
+        
 
         
     def test_delete(self):
@@ -510,11 +531,32 @@ class ItemTest(MyTestCase):
         resp_dict = json.loads(response.content)        
         self.assertTrue(resp_dict['error code'] == InvalidMediaType.error_code) 
         
+    
+    def test_get_keywords(self):
+        item = Item.objects.all()[0]    
+        keywords = list(item.keywords())            
         
+        params = self.get_final_parameters({'workspace_id': 1})
+        response = self.client.get('/api/item/%s/get_keywords/'%item.pk, params)                        
+        resp_dict = json.loads(response.content)
+        print resp_dict 
+        self.assertTrue(resp_dict['keywords'] == keywords)
+         
+        
+    def test_get_collections(self):
+        item = Item.objects.all()[0]    
+        collections = list(item.collections())            
+        
+        params = self.get_final_parameters({'workspace_id': 1})
+        response = self.client.get('/api/item/%s/get_collections/'%item.pk, params)                        
+        resp_dict = json.loads(response.content)
+        print resp_dict 
+        self.assertTrue(resp_dict['collections'] == collections)
+    
         
     def test_get(self):
         item = Item.objects.all()[0]    
-        keywords = item.keywords()            
+        keywords = list(item.keywords())            
         ws_pk = 1
         params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
         response = self.client.get('/api/item/%s/get/'%item.pk, params, )                        
@@ -531,12 +573,22 @@ class ItemTest(MyTestCase):
         self.assertTrue(resp_dict['upload_workspace'] == 1)
         print "resp_dict %s"%resp_dict
         print "item.node_set.filter(type = 'collection')%s"%item.node_set.filter(type = 'collection')
-        self.assertTrue(resp_dict['collections'] == [c.pk for c in item.node_set.filter(type = 'collection')])
+        self.assertTrue(resp_dict['collections'] == list(item.collections()))
     
         metadata = {"dc_title": {"en-US": "test"}, "dc_subject": ["test_remove_1"], "dc_description": {"en-US": "test prova"}}
 #        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
         self.assertTrue(resp_dict['metadata'] == metadata)
         
+        
+    def test_get_except(self):
+        item_pk = 1000    
+                    
+        ws_pk = 1
+        params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
+        response = self.client.get('/api/item/%s/get/'%item_pk, params) 
+        resp_dict = json.loads(response.content)
+        print resp_dict 
+        self.assertTrue(resp_dict['error class'] == 'ItemDoesNotExist')
         
     def test_move(self):
         workspace_id = 1
@@ -572,7 +624,7 @@ class ItemTest(MyTestCase):
         item_id = item.pk
         metadata_dict = {'dc_title': {'en-US': 'test'},  'dc_identifier': 'test',  'dc_subject': ['test', 'test2']}
 
-        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict),  'workspace_id':1})
+        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict)})
         response = self.client.post('/api/item/%s/set_metadata/'%item_id, params, )            
 
         self.assertTrue(response.content == '')
@@ -746,6 +798,18 @@ class ItemTest(MyTestCase):
         print '-------------------------',  resp_dict
         self.assertTrue(resp_dict == {'name': 'test'})
         
+    def test_get_keywords(self):
+        
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.all()[0]
+        
+        params = self.get_final_parameters({ 'workspace_id': workspace.pk,  }) 
+        response = self.client.get('/api/item/%s/get_keywords/'%item.pk, params, )            
+        resp_dict = json.loads(response.content)
+        print '-------------------------',  resp_dict
+        
+    
+        
     
     def test_set_state(self): 
         workspace = DAMWorkspace.objects.get(pk = 1)
@@ -786,6 +850,16 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(resp_dict['items'] == [Item.objects.all()[0].pk])
         self.assertTrue(len(resp_dict['children']) == node.children.all().count())
         
+        
+    def test_get_except(self):        
+             
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        params = self.get_final_parameters({})        
+        node_pk = 1000
+        response = self.client.get('/api/keyword/%s/get/'%node_pk, params)        
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['error class'] == 'CatalogueElementDoesNotExist')
         
     def test_get_single_category(self):        
              
@@ -958,8 +1032,26 @@ class KeywordsTest(MyTestCase):
         params = self.get_final_parameters({})
         response = self.client.get('/api/keyword/%s/get/'%node_id, params)        
         resp_dict = json.loads(response.content)
+        print resp_dict
         parent_id = resp_dict['parent_id']        
         self.assertTrue(parent_id == new_parent_node_pk)        
+        
+        
+    def test_move_on_top(self):
+        ws_pk = 1 
+        ws = DAMWorkspace.objects.get(pk = ws_pk)        
+        node_id = Node.objects.get(label = 'test').pk
+        
+        
+        params = self.get_final_parameters({ })        
+        self.client.post('/api/keyword/%s/move/'%node_id, params,  )      
+        
+        params = self.get_final_parameters({})
+        response = self.client.get('/api/keyword/%s/get/'%node_id, params)        
+        resp_dict = json.loads(response.content)
+        print resp_dict
+        parent_id = resp_dict['parent_id']        
+        self.assertTrue(parent_id == None)        
         
     def test_delete(self):
         ws_pk = 1 
@@ -1020,7 +1112,14 @@ class CollectionsTest(MyTestCase):
         items = node.items.all()
         self.assertTrue(resp_dict['items'] == [i.pk for i in items])
         self.assertTrue(len(resp_dict['children']) == node.children.all().count())
-    
+        
+    def test_get_except(self):                
+        params = self.get_final_parameters()
+        node_pk = 1000
+        response = self.client.get('/api/collection/%s/get/'%node_pk, params)
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['error class'] == 'CatalogueElementDoesNotExist')         
+            
 #    def test_get(self):
 #             
 #        ws_pk = 1
@@ -1067,13 +1166,36 @@ class CollectionsTest(MyTestCase):
         self.assertTrue(resp_dict['label'] == label)        
 
 
+    def test_create_except(self):             
+        
+        ws = DAMWorkspace.objects.get(pk = 1)
+        label = 'collection_test'
+        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
+        response = self.client.post('/api/collection/new/', params,  )  
+        resp_dict = json.loads(response.content)        
+        
+        self.assertTrue(resp_dict.has_key('id'))
+        
+        self.assertTrue(resp_dict['workspace_id'] == ws.pk)
+        self.assertTrue(resp_dict['parent_id'] == None)
+        self.assertTrue(resp_dict['label'] == label)        
+        
+        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
+        response = self.client.post('/api/collection/new/', params)  
+        print response
+        
+
+
+
+
+
     def test_rename(self):
         "changing label"
 
         node_id = Node.objects.get(label = 'test1',  depth = 1).pk
         new_label = 'new_label'
         params = self.get_final_parameters({'label':new_label})        
-        response = self.client.post('/api/collection/%s/rename/'%node_id , params,  )                
+        response = self.client.post('/api/collection/%s/edit/'%node_id , params,  )                
         node = Node.objects.get(pk = node_id )
         self.assertTrue(node.label == new_label)
         
@@ -1084,7 +1206,7 @@ class CollectionsTest(MyTestCase):
         node_id = Node.objects.get(label = 'test1', depth = 1).pk
         dest_id= Node.objects.get(label = 'test2', depth = 1).pk
         params = self.get_final_parameters({ 'parent_id':dest_id,  })
-        resp = self.client.get('/api/collection/%s/move/'%node_id, params)      
+        resp = self.client.post('/api/collection/%s/move/'%node_id, params)      
         
         self.assertTrue(resp.content == '')
         self.assertTrue(resp.status_code == 200)
@@ -1098,7 +1220,7 @@ class CollectionsTest(MyTestCase):
         node_id = Node.objects.get(label = 'test1_child', ).pk
         root_pk = Node.objects.get(workspace = ws, type ="collection",depth = 0).id
         params = self.get_final_parameters({ })
-        resp = self.client.get('/api/collection/%s/move/'%node_id, params)      
+        resp = self.client.post('/api/collection/%s/move/'%node_id, params)      
         
         self.assertTrue(resp.content == '')
         self.assertTrue(resp.status_code == 200)
@@ -1153,7 +1275,7 @@ class TestLogin(MyTestCase):
         json_resp = json.loads(response.content)
         self.assertTrue(json_resp['user_id'] == user.pk)
         self.assertTrue(json_resp['secret'] == self.secret)
-        self.assertTrue(json_resp['workspace_id'] == 1)
+        self.assertTrue(json_resp['workspaces'] == [1])
         self.assertTrue(json_resp.has_key('session_id'))
         
     def test_login_wrong(self):
@@ -1214,23 +1336,35 @@ class VariantsTest(MyTestCase):
         self.assertTrue(resp_dict['caption'] == variant.caption)
         self.assertTrue(resp_dict['media_type'] == [media_type.name for media_type in variant.media_type.all()])
         self.assertTrue(resp_dict['auto_generated'] == variant.auto_generated)
-      
+        
+        
+    def test_get_except(self):
+        variant_pk = 1000
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        params = self.get_final_parameters({'workspace_id': workspace.pk})    
+        response = self.client.get('/api/rendition/%s/get/'%variant_pk, params)
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['error class'] == 'RenditionDoesNotExist')
           
     def test_edit(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
-        variant = Variant.objects.create(name = 'test', auto_generated = True, workspace = workspace)
+        variant = Variant.objects.create(name = 'test', caption= 'test', auto_generated = True, workspace = workspace)
         variant.media_type.add(*Type.objects.all())
         
                 
         
-        params = {'name': 'test_rename', 'media_type': ['image']}
+        params = {'name': 'test_rename','caption':'test_rename', 'media_type': ['image']}
         params = self.get_final_parameters(params)
         
         
         response = self.client.post('/api/rendition/%s/edit/'%variant.pk,  params)                
-
+        
         variant = Variant.objects.get(pk = variant.pk)
+        print ' variant.caption ', variant.caption 
         self.assertTrue(variant.name == params['name'])
+        self.assertTrue(variant.caption == params['caption'])
+        
+        
         print 'variant.media_type.all() %s'%variant.media_type.all()
         self.assertTrue(len(variant.media_type.all()) == len(params['media_type']))
         self.assertTrue(variant.media_type.all()[0].name == params['media_type'][0])
@@ -1240,7 +1374,7 @@ class VariantsTest(MyTestCase):
     def test_create(self):
         
         workspace = DAMWorkspace.objects.get(pk = 1)
-        params = {'name': 'test_create', 'media_type': ['image'], 'workspace_id': 1, 'caption':'test create'}
+        params = {'name': 'test', 'media_type': ['image'], 'workspace_id': 1, 'caption':'test'}
         params = self.get_final_parameters(params)
         
         
@@ -1284,7 +1418,17 @@ class SmartFolderTest(MyTestCase):
             })
         self.assertTrue(resp_dict['queries'] == queries)
         
+    def test_get_except(self):
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        params = self.get_final_parameters({})        
+        sm_pk = 1000
+        response = self.client.get('/api/smartfolder/%s/get/'%sm_pk, params)        
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['error class'] == 'SmartFolderDoesNotExist')
         
+    
+    
 #    def test_get(self):
 #        ws_pk = 1
 #        ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -1358,10 +1502,16 @@ class SmartFolderTest(MyTestCase):
         self.assertTrue(sm.nodes.all().count() == 2)
         self.assertTrue(SmartFolderNodeAssociation.objects.get(node = node,  smart_folder = sm).negated ==  query['negated'])
         
+        response = self.client.get('/api/smartfolder/%s/get/'%sm_id, params,)
+        print 'response.content', response.content
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict == {"and_condition": True, "workspace_id": 1, "queries": [{"negated": False, "type": "keyword", "id": 19}, {"negated": False, "type": "keyword", "id": 22}], "id": 1, "label": "test_sm"})    
     
 
 class ScriptsTest(MyTestCase):
-    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'scripts/fixtures/test_data.json']   
+    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  
+#                'scripts/fixtures/test_data.json'
+                ]   
    
     def test_create(self):
         ws = DAMWorkspace.objects.get(pk = 1)
@@ -1415,7 +1565,7 @@ class ScriptsTest(MyTestCase):
         description = 'test_edit'
         pipeline =  {
         'image':{
-            'source_variant': 'original',
+            'source_variant': 'edited',
             'actions': [
                 {
                  'type': 'resize',
@@ -1445,31 +1595,44 @@ class ScriptsTest(MyTestCase):
                  
         }}
         script = Script.objects.get(name = 'preview_generation')
-        params = self.get_final_parameters({ 'script_id':script.pk, 'workspace_id': ws.pk,   'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+        params = self.get_final_parameters({ 'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
                 
         response = self.client.post('/api/script/%s/edit/'%script.pk, params,  )  
         script = Script.objects.get(pk = script.pk)
         self.assertTrue(response.content == '')
         print script.name
+        print "script.actionlist_set.get(media_type__name = 'image').actions",  script.actionlist_set.get(media_type__name = 'image').actions
+        print "json.dumps(pipeline['image'])",  json.dumps(pipeline['image'])
+
         self.assertTrue(script.name == params['name'])
+        self.assertTrue(script.description == params['description'])
+        self.assertTrue(json.loads(script.actionlist_set.get(media_type__name = 'image').actions)['source_variant'] == pipeline['image']['source_variant'] )
+        
        
     def test_run(self):
         script = Script.objects.get(name = 'preview_generation')
         params = self.get_final_parameters({ 'items': Item.objects.all()[0].pk})     
-        print '...................................Item.objects.all()[0].pk %s' %Item.objects.all()[0].type.__class__
         response = self.client.post('/api/script/%s/run/'%script.pk, params,  )  
         self.assertTrue(response.content == '')
         
-       
-    def test_delete(self):
-        script = Script.objects.get(name = 'test_run')
-        params = self.get_final_parameters({ })     
-        response = self.client.post('/api/script/%s/delete/'%script.pk, params,  )  
+        
+    def test_run_again(self):
+        script = Script.objects.get(name = 'preview_generation')
+        params = self.get_final_parameters({})    
+        
+        response = self.client.post('/api/script/%s/run_again/'%script.pk, params,  )  
         self.assertTrue(response.content == '')
-        self.assertTrue(Script.objects.filter(pk = script.pk).count() == 0)
+        
+#TODO: generate new fixtures for testing delete script
+#    def test_delete(self):
+#        script = Script.objects.get(name = 'thumb_generation')
+#        params = self.get_final_parameters({ })     
+#        response = self.client.post('/api/script/%s/delete/'%script.pk, params,  )  
+#        self.assertTrue(response.content == '')
+#        self.assertTrue(Script.objects.filter(pk = script.pk).count() == 0)
        
     def test_get(self):
-        script = Script.objects.get(name = 'test_run')
+        script = Script.objects.get(name = 'thumb_generation')
         params = self.get_final_parameters({ })     
         response = self.client.post('/api/script/%s/get/'%script.pk, params,  )  
         resp_dict = json.loads(response.content)        
@@ -1477,6 +1640,15 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(resp_dict['id'] == script.pk)
         self.assertTrue(resp_dict['name'] == script.name)
         self.assertTrue(resp_dict['description'] == script.description)
+        self.assertTrue(resp_dict['workspace_id'] == script.workspace.pk)
+        
+    def test_get_except(self):
+        script_pk = 1000
+        params = self.get_final_parameters({ })     
+        response = self.client.post('/api/script/%s/get/'%script_pk, params)  
+        resp_dict = json.loads(response.content)       
+   
+        self.assertTrue(resp_dict['error class'] == 'ScriptDoesNotExist')
         
     def test_get_scripts(self):
 
@@ -1487,3 +1659,87 @@ class ScriptsTest(MyTestCase):
    
         self.assertTrue(len(resp_dict['scripts']) == ws.script_set.all().count())
         
+        
+        
+        
+        
+class StatesTest(MyTestCase):
+    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   
+        
+    def test_delete(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        params = self.get_final_parameters({})
+        
+        response = self.client.post('/api/state/%s/delete/'%s.pk, params)      
+        
+        
+        self.assertTrue(response.content == '')
+        self.assertTrue(State.objects.filter(workspace__pk = ws_pk).count() == 0)
+        
+        
+    def test_create(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        params = self.get_final_parameters({'name': 'test', 'workspace_id': ws_pk})
+        response = self.client.post('/api/state/new/', params)      
+        resp_dict = json.loads(response.content)    
+        self.assertTrue(resp_dict['name'] == 'test')
+        self.assertTrue(State.objects.filter(workspace__pk = ws_pk).count() == 1)
+        
+        
+    def test_edit(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        params = self.get_final_parameters({'name': 'test_edit'})
+        response = self.client.post('/api/state/%s/edit/'%s.pk, params)      
+            
+        self.assertTrue(response.content == '')        
+        self.assertTrue(State.objects.filter(workspace__pk = ws_pk, name = 'test_edit').count() == 1)
+        
+    def test_get(self):
+        
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        i = ws.items.all()[0]
+        StateItemAssociation.objects.create(item = i, state = s)
+        params = self.get_final_parameters({})
+        response = self.client.get('/api/state/%s/get/'%s.pk, params)      
+        
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['name'] == s.name)
+                
+        self.assertTrue(resp_dict['items'] == [i.pk])
+        
+    def test_add_items(self):
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        i = ws.items.all()[0]
+        
+        params = self.get_final_parameters({'items': [i.pk]})
+        response = self.client.post('/api/state/%s/add_items/'%s.pk, params)      
+        
+        self.assertTrue(response.content == '')
+        self.assertTrue(StateItemAssociation.objects.get(state = s).item == i)
+        
+        
+    def test_remove_items(self):
+        ws_pk = 1
+        ws = DAMWorkspace.objects.get(pk = ws_pk)
+        s = State.objects.create(name = 'test', workspace = ws)
+        items = ws.items.all()
+        _set_state(items, s)
+        self.assertTrue(StateItemAssociation.objects.filter(state = s).count() == items.count())
+        params = self.get_final_parameters({'items': [i.pk for i in items]})
+        response = self.client.post('/api/state/%s/remove_items/'%s.pk, params)      
+        
+        self.assertTrue(response.content == '')
+        self.assertTrue(StateItemAssociation.objects.filter(state = s).count() == 0)
+                

@@ -12,7 +12,8 @@ MD_CERT_PATH = os.path.join(os.getenv('HOME'), 'node00', 'crypto')
 #        "ca_certificate" : os.path.join(MD_CERT_PATH, "myca.crt"), 
 #}
 
-GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
+#OLD GOOGLE_KEY="ABQIAAAASa-q3XL_xChhiMK0ZCLQDhTpH3CbXHjuCVmaTc5MkkU4wO1RRhSAW5M-xy41b6agXuGI_c_kjlFOKg"
+GOOGLE_KEY="ABQIAAAAo28WphcXpYaxZbMn79s0VRRETiP29whtXF2gCnIqeoPY9fJFzxSVzP1SJSa_NlficQA0MT5QgWobQw"
 
 
 

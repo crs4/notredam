@@ -45,11 +45,14 @@ from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
 from dam.scripts.models import Script, ScriptDefault 
 from dam.eventmanager.models import Event, EventRegistration
+from dam.appearance.models import Theme
 
 from django.utils.datastructures import SortedDict
 
 from dam import logger
 import time
+from mx.DateTime.Parser import DateTimeFromString
+
 import operator
 import re
 
@@ -161,7 +164,7 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     return False
         
 @permission_required('remove_item')
-def _remove_items(ws, items):
+def _remove_items(request, ws, items):
 
     for item in items:
         ws.remove_item(item)
@@ -187,7 +190,7 @@ def add_items_to_ws(request):
                 item_imported.append(item)
         
         if remove == 'true':
-            _remove_items(ws, items)
+            _remove_items(request, current_ws, items)
                 
         if len(item_imported) > 0:
             imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
@@ -200,7 +203,7 @@ def add_items_to_ws(request):
 
         return HttpResponse(resp)
     except Exception,  ex:
-        import traceback
+        logger.exception(ex)
         raise ex
 
 @login_required
@@ -685,12 +688,24 @@ def _switch_workspace(request,  workspace_id):
     workspace = Workspace.objects.get(pk = workspace_id)
     request.session['workspace'] = workspace
     return workspace
-    
+
+def _get_theme():
+    try:
+        theme = Theme.objects.get(SetAsCurrent = 'True')
+    except Exception, err:
+        theme = Theme.objects.get(IsDefault = 'True')
+    return theme
+
 @login_required
 def workspace(request, workspace_id = None):
+
     """
     
     """
+    theme = _get_theme()
+    
+    logger.debug('In workspace.views method workspace: current theme is %s' % theme)
+    logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
     user = User.objects.get(pk=request.session['_auth_user_id'])
     if not workspace_id:
         if request.session.__contains__('workspace'):
@@ -701,7 +716,10 @@ def workspace(request, workspace_id = None):
     else:
         workspace = _switch_workspace(request,  workspace_id)
     
-    return render_to_response('workspace_gui.html', RequestContext(request,{'ws':workspace, 'GOOGLE_KEY': GOOGLE_KEY}))
+    return render_to_response('workspace_gui.html', RequestContext(request,{'ws':workspace, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
+
+
+
 
 def _replace_groups(group, item, default_language):
     namespace = group.group('namespace')
@@ -957,3 +975,45 @@ def switch_ws(request):
     _switch_workspace(request,  workspace_id)
     return HttpResponse(simplejson.dumps({'success': True}))
     
+@login_required
+def download_renditions(request):
+    import  os, settings, tempfile
+    items = request.POST.getlist('items')
+    renditions = request.POST.getlist('renditions')
+    
+    compression_type = request.POST.get('compression_type', 'zip')    
+    
+    if renditions and items:
+        suffix = '.' + compression_type
+        tmp = tempfile.mkstemp(prefix='archive-', suffix= suffix, dir= settings.MEDIADART_STORAGE)[1]
+        
+        if compression_type == 'zip':            
+            import zipfile
+            archive = zipfile.ZipFile(tmp,  'w')
+            
+        else:
+            from tarfile import TarFileCompat as ArchiveFile
+            import tarfile
+            archive = tarfile.TarFileCompat(tmp, 'w', compression = tarfile.TAR_GZIPPED)
+                
+        for item in items:    
+            
+            for rendition in renditions:
+                try:
+                    c = Component.objects.get(item__pk = item,  variant__pk = rendition)
+                    file = os.path.join(settings.MEDIADART_STORAGE, c._id)
+                    try:
+                        ext = c._id.split('.')[1]                       
+                        file_name =  item + '_' +  c.variant.name +  '.' + ext 
+                    except:
+                        file_name = item + '_' +  c.variant.name
+                     
+
+                    
+                    archive.write(file, file_name)
+
+                except Component.DoesNotExist:
+                    continue
+        archive.close()
+    
+    return HttpResponse(simplejson.dumps({'success': True,  'url':'/storage/' + os.path.basename(tmp) }))

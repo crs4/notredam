@@ -16,7 +16,6 @@
 #
 #########################################################################
 
-from mediadart.config import Configurator
 import os.path, os
 import sys
 
@@ -26,27 +25,29 @@ DEMO_STRING="Development Demo"
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
+sys.path.append(ROOT_PATH)
 
 from mediadart.config import Configurator
 c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
 
 
-INSTALLATIONPATH = os.path.join(os.getenv('HOME'), ".dam"  )
-sys.path.append(INSTALLATIONPATH)
-
-THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
-
-from config import *
+INSTALLATIONPATH = ROOT_PATH
+THUMBS_DIR = os.path.join(INSTALLATIONPATH, 'files', 'thumbs')
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
 
+DATABASE_ENGINE = 'sqlite3'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'dam.db'	         # Or path to database file if using sqlite3.
+DATABASE_USER = ''	         # Not used with sqlite3.
+DATABASE_PASSWORD = ''	     # Not used with sqlite3.
 if DATABASE_ENGINE == 'sqlite3':
     DATABASE_NAME = os.path.join(ROOT_PATH,  DATABASE_NAME)
 
 EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
-#SERVER_PUBLIC_ADDRESS = '10.211.55.4:8000'
+SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
 
+METADATA_DEFAULT_LANGUAGE = 'en-US'
 DEMO_STRING="Development Demo" 
 
 DEBUG = True
@@ -67,7 +68,8 @@ MANAGERS = ADMINS
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Chicago'
+#TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'Europe/Rome'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -143,11 +145,11 @@ INSTALLED_APPS = (
 	'dam.workspace',
 	'dam.application',
 	'dam.api',
-	#'dam.batch_processor',
 	'dam.workflow',
 	'dam.eventmanager',
 	'dam.geo_features',
 	'dam.basket',
 	'dam.upload',
+	'dam.appearance',
     'dam.mprocessor',
 )

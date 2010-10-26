@@ -414,18 +414,19 @@ class WorkspaceResource(ModResource):
     
     @exception_handler
     @api_key_required
-    def set_name(self,  request,  workspace_id):
+    def edit(self,  request,  workspace_id):
         """
         Allows to edit the name of workspace
         - method POST
             - parameters:
-                - name: the new name for the given workspace        
+                - name: the new name for the given workspace  
+                - description      
         - returns: empty string
         """
       
         
-        if not request.POST.has_key('name') :
-            raise MissingArgs
+#        if not request.POST.has_key('name') :
+#            raise MissingArgs
         
         user_id = request.POST.get('user_id')
         ws = Workspace.objects.get(pk = workspace_id)
@@ -433,12 +434,18 @@ class WorkspaceResource(ModResource):
         user = User.objects.get(pk = user_id)        
         _check_app_permissions(ws,  user_id,  ['admin'])
         
-        name = request.POST['name']
-        form = _update_ws(ws,  {'name': name,})
-        if not form.is_valid():
-            logger.exception('invalid form:\n %s' %form.errors)            
-            raise ArgsValidationError(form.errors  )        
-        ws.name = name
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        
+        if name:
+            form = _update_ws(ws,  {'name': name,})
+            if not form.is_valid():
+                logger.exception('invalid form:\n %s' %form.errors)            
+                raise ArgsValidationError(form.errors  )        
+            ws.name = name
+        if description:
+            ws.description = description
+            
         ws.save()
         return HttpResponse('')        
         
@@ -500,7 +507,17 @@ class WorkspaceResource(ModResource):
         ws.save()
         return HttpResponse('')            
         
-        
+    @exception_handler
+    @api_key_required   
+    def get_states(self,  request,  workspace_id):
+        workspace = Workspace.objects.get(pk = workspace_id)
+        states = State.objects.filter(workspace = workspace)
+        resp = {'states':[]}
+        for state in states:
+            resp['states'].append({'id':state.pk, 'name':state.name}) 
+            
+        json_resp = json.dumps(resp)        
+        return HttpResponse(json_resp)
     
     @exception_handler
     @api_key_required   
@@ -841,7 +858,7 @@ class ItemResource(ModResource):
             raise ex
         
     def _set_metadata(self,  request,  item_id,):      
-        workspace = Workspace.objects.get(pk = request.POST['workspace_id'])
+#        workspace = Workspace.objects.get(pk = request.POST['workspace_id'])
         logger.debug('request.POST %s'%request.POST)
         if not request.POST.has_key('metadata'):
             raise MissingArgs
@@ -931,7 +948,7 @@ class ItemResource(ModResource):
                 new_metadata[str(property.pk)] = metadata[data]
                 
         logger.debug('new_metadata %s' %new_metadata)
-        MetadataValue.objects.save_metadata_value([item], new_metadata,  'original', workspace)
+        MetadataValue.objects.save_metadata_value([item], new_metadata,  'original', item.workspaces.all()[0]) #workspace for variant metadata, not supported yet
         
 #        for data in metadata:            
 #            logger.debug('metadata %s '%metadata )
@@ -1301,9 +1318,9 @@ class ItemResource(ModResource):
             if item.workspaces.filter(members = user).count() == 0:
                 raise  InsufficientPermissions            
         
-        keywords = item.keywords()
+        keywords = list(item.keywords())
         colls = item.node_set.filter(type = 'collection')
-        collection_ids = [c.pk for c in colls]
+        collection_ids = list(item.collections())
             
         wss = item.workspaces.all()
         logger.debug('wss %s'%wss)
@@ -1315,9 +1332,14 @@ class ItemResource(ModResource):
             pass
         
         
-        logger.debug('item.component_set.all() %s'% item.component_set.get(variant__name = 'original').workspace.all())
-        metadata = self._get_metadata(item)
-        resp['metadata'] = metadata
+        
+        try:    
+            metadata = self._get_metadata(item)            
+            resp['metadata'] = metadata
+            
+        except:
+            resp['metadata'] = {}        
+        
         
 #            request.POST.['get_variant_urls'] = workspace
         if request.GET.__contains__('renditions_workspace'):
@@ -1377,8 +1399,11 @@ class ItemResource(ModResource):
             logger.debug('v %s'%v)
             url  = c.get_component_url()        
 #            item.variants[va.pk] = url
-            item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
-    
+            if url:
+                item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
+            else:
+                item.variants[v.name] = ""
+                    
     @exception_handler
     @api_key_required
     def create(self,  request):
@@ -1453,6 +1478,35 @@ class ItemResource(ModResource):
         return HttpResponse(json_resp)   
 
 
+    @exception_handler
+    @api_key_required   
+    def get_collections(self, request, item_id):
+        """
+        """
+                
+        if not request.GET.has_key('workspace_id'):
+            raise MissingArgs, "workspace id and item id are both mandatory parameters"
+        
+        workspace_id = request.GET['workspace_id']
+        
+        try:
+            ws = Workspace.objects.get(id=workspace_id)
+        except:
+            raise WorkspaceDoesNotExist
+        
+        item = Item.objects.get(pk = item_id)
+        parent = request.GET.get('parent')
+        if parent:
+            parent_node = Node.objects.get(pk = parent)
+            sub_tree = parent_node.get_branch()
+            collections = sub_tree.filter(items = item)
+        
+        else:        
+            collections = item.collections()
+        
+        collections = list(collections.values('id', 'label'))
+        return HttpResponse(simplejson.dumps({'collections': collections}))
+
     
     @exception_handler
     @api_key_required   
@@ -1468,7 +1522,7 @@ class ItemResource(ModResource):
         try:
             ws = Workspace.objects.get(id=workspace_id)
         except:
-            raise WorkspaceDoesNotExist
+            raise Workspace.DoesNotExist
         
         item = Item.objects.get(pk = item_id)
         parent = request.GET.get('parent')
@@ -1508,7 +1562,7 @@ class ItemResource(ModResource):
         try:
             ws = Workspace.objects.get(id=workspace_id)
         except:
-            raise WorkspaceDoesNotExist
+            raise Workspace.DoesNotExist
         
         
         
@@ -1564,8 +1618,9 @@ class ItemResource(ModResource):
         
         state = State.objects.get(name = state_name)
         
-        
+        user_id = request.POST.get('user_id')
         workspace = Workspace.objects.get(pk = ws_id)
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
         _set_state(items, state) 
         return HttpResponse('')   
 
@@ -1606,8 +1661,8 @@ class CollectionResource(ModResource):
             parent_node = Node.objects.get(pk = parent_id)
             workspace = parent_node.workspace        
             
-        _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])        
-        node = Node.objects.add_node(parent_node,label, workspace)
+        _check_app_permissions(workspace,  user_id,  ['admin',  'add_collection'])     
+        node = Node.objects.add_node(parent_node,label, workspace)            
         json_response = json.dumps({'model': 'collection',  'id': node.pk, 'label': label, 'parent_id': parent_id, 'workspace_id': workspace.id,  })
         logger.debug('add: json_response %s'%json_response )
         return HttpResponse(json_response) 
@@ -1687,7 +1742,7 @@ class CollectionResource(ModResource):
       
     @exception_handler
     @api_key_required
-    def rename(self,  request,  collection_id):
+    def edit(self,  request,  collection_id):
         """
         Allows to rename a given collection
         - method: POST
@@ -1723,16 +1778,16 @@ class CollectionResource(ModResource):
         
         """
       
-        user_id = request.GET.get('user_id')
+        user_id = request.POST.get('user_id')
         node_source = Node.objects.get(pk = collection_id)
         ws = node_source.workspace
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_collection'])
         
-        if not request.GET.has_key('parent_id'):
+        if not request.POST.has_key('parent_id'):
                     
             node_dest = Node.objects.get(type = 'collection',  depth = 0,  workspace = ws)
         else:
-            node_dest = Node.objects.get(pk = request.GET['parent_id'])  
+            node_dest = Node.objects.get(pk = request.POST['parent_id'])  
         
         logger.debug('moving...')        
         node_source.move_node(node_dest,  ws)
@@ -2088,7 +2143,7 @@ class KeywordsResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_taxonomy']) 
         
         if not request.POST.has_key('parent_id'):                  
-            node_dest = Node.objects.get.get(type = 'keyword',  depth = 0,  workspace = ws)
+            node_dest = Node.objects.get(type = 'keyword',  depth = 0,  workspace = ws)
         else:
             node_dest = Node.objects.get(pk = request.POST['parent_id'])  
         
@@ -2248,10 +2303,8 @@ class Auth(ModResource):
         
         s = request.session
         wss = user.workspaces.all()
-        resp_dict = {'user_id':user.pk,  'secret':secret.value,  'session_id': s.session_key}
-        if wss.count()>0:
-            workspace_id = wss[0].pk
-            resp_dict['workspace_id'] = workspace_id
+        resp_dict = {'user_id':user.pk,  'secret':secret.value,  'session_id': s.session_key, 'workspaces': [ws.id for ws in wss]}
+       
         
         resp = json.dumps(resp_dict)    
         logger.debug('resp %s' %resp)
@@ -2414,7 +2467,14 @@ class VariantsResource(ModResource):
         name = request.POST.get('name')
         if name:
             variant.name = name
-            variant.save()
+            
+            
+        caption = request.POST.get('caption')
+        if caption:
+            variant.caption = caption
+        
+        variant.save()    
+        
         if media_type:
             variant.media_type = []
             variant.media_type.add(*media_type)
@@ -2564,47 +2624,13 @@ class SmartFolderResource(ModResource):
     
     @exception_handler
     @api_key_required
-    def read(self,  request,  sm_id = None):
-        """
-            @param sm_id: smart folder id, optional. If passed, info about the given smart folder are returned, otherwise all smart folders for the workspace  are returned.
-            - Method: GET
-            - parameters:
-                - workspace_id (optional, required if no sm_id is passed)
-            - Returns:
-                {"and_condition": true, "queries": [{"negated": false, "type": "keyword", "id": 17}], "id": 1, "workspace": 1, "label": "test"}
-                    
-                {'smart_folders': [{'and_condition': True, 'id': 1, 'label': 'test', 'workspace_id': 1, 'queries': [{'negated': False, 'type': 'keyword', 'id': 17}]}]}
-            
+    def read(self,  request,  sm_id):
+        """ 
         """
     
-        if sm_id:
-            smart_folder = SmartFolder.objects.get(pk = sm_id)
-            resp = self.get_info(smart_folder)
-                
-        else:            
-            workspace_id = request.GET.get('workspace_id')
-            if not workspace_id:
-                raise MissingArgs({'args': ['no workspace id passed']})
-            workspace = Workspace.objects.get(pk = workspace_id)
-            
-            smart_folders = workspace.smartfolder_set.all()
-            
-            
-            resp = {'smart_folders':[]}
-            for smart_folder in smart_folders:
-                info = self.get_info(smart_folder)
-                resp['smart_folders'].append(info)
-#                try:
-#                    info = self.get_info(smart_folder)
-#                    sm_id = info.pop('id')
-#                    resp['smart_folders'][sm_id] = info
-#                except Exception,  ex:
-#                    logger.exception(ex)
-        
+        smart_folder = SmartFolder.objects.get(pk = sm_id)
+        resp = self.get_info(smart_folder)
         return HttpResponse(simplejson.dumps(resp))
-
-
-
 
     @exception_handler
     @api_key_required
@@ -2702,13 +2728,17 @@ class SmartFolderResource(ModResource):
             sm.label = label
         if queries:
             if not append_queries:
-                SmartFolderNodeAssociation.objects.create(smart_folder = sm).all().delete()
+                SmartFolderNodeAssociation.objects.all().delete()
             
             queries = simplejson.loads(queries)
             logger.debug('queries %s'%queries)
             
             for query in queries:            
-                sm_ass = SmartFolderNodeAssociation.objects.create(smart_folder = sm,  node = Node.objects.get(pk = query['id']),  negated= query['negated'])
+                sm_ass, created = SmartFolderNodeAssociation.objects.get_or_create(smart_folder = sm,  node = Node.objects.get(pk = query['id']))
+                sm_ass.negated = query['negated']
+                sm_ass.save()
+                
+                
         
         sm.save()
         
@@ -2740,8 +2770,7 @@ class ScriptResource(ModResource):
         description = request.POST['description']
         pipeline = request.POST['pipeline']
         events = request.POST.getlist('events')
-        workspace_id = request.POST.get('workspace_id')
-        workspace = DAMWorkspace.objects.get(pk = workspace_id)        
+        workspace = script.workspace        
         
         script  = _new_script(name = name, description = description, workspace =workspace, script = script,  pipeline = pipeline, events = events)
         return HttpResponse('')
@@ -2751,11 +2780,18 @@ class ScriptResource(ModResource):
     def run(self,  request,  script_id):
         from scripts.views import _run_script
        
-        run_again = request.POST.get('run_again')
         items = request.POST.getlist('items')
         script = Script.objects.get(pk = script_id)
         items = Item.objects.filter(pk__in = items)
-        _run_script(script, items ,   run_again )
+        _run_script(script, items ,   False )
+        return HttpResponse('')
+    
+    @exception_handler
+    @api_key_required
+    def run_again(self,  request,  script_id):
+        from scripts.views import _run_script
+        script = Script.objects.get(pk = script_id)        
+        _run_script(script, [] ,   True )
         return HttpResponse('')
 
     @exception_handler
@@ -2765,7 +2801,7 @@ class ScriptResource(ModResource):
         if not script.is_global:
             script.delete()
         else:
-             raise GlobalScriptDeletion
+            raise GlobalScriptDeletion
         return HttpResponse('')
 
     @exception_handler
@@ -2776,3 +2812,95 @@ class ScriptResource(ModResource):
         return HttpResponse(simplejson.dumps(info))
 
         
+class StateResource(ModResource):  
+    @exception_handler
+    @api_key_required   
+    def delete(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        
+        state.delete()
+        return HttpResponse('')
+    
+    
+    @exception_handler
+    @api_key_required   
+    def create(self,  request):
+        from django.db import IntegrityError
+        try:
+            workspace_id = request.POST['workspace_id']
+        except:
+            raise MissingArgs({'args': ['no workspace_id passed']})
+        workspace = DAMWorkspace.objects.get(pk = workspace_id)
+        try: 
+            name = request.POST['name']
+        except:
+            raise MissingArgs({'args': ['no state name passed']})
+        
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        try:
+            state = State.objects.create(workspace = workspace, name = name)
+        except IntegrityError:
+            raise IntegrityError('a state named %s already exist'%(name))
+            
+        resp = json.dumps({'pk': state.pk, 'name': state.name})
+        return HttpResponse(resp)
+    
+    @exception_handler
+    @api_key_required   
+    def edit(self,  request, state_id):
+        from django.db import IntegrityError
+        
+        try: 
+            name = request.POST['name']
+        except:
+            raise MissingArgs({'args': ['no state name passed']})
+        
+        state = State.objects.get(pk = state_id)
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        try:
+            state.name = name
+            state.save()
+        except IntegrityError:
+            raise IntegrityError('a state named %s already exist'%(name))
+            
+        return HttpResponse('')
+    
+    @exception_handler
+    @api_key_required   
+    def read(self,  request,  state_id):
+        
+        state = State.objects.get(pk = state_id)
+        
+        resp = {'id':state.pk, 'name':state.name, 'items':[sa.item.pk for sa in state.stateitemassociation_set.all()]}
+            
+        json_resp = json.dumps(resp)        
+        return HttpResponse(json_resp)
+    
+    @exception_handler
+    @api_key_required   
+    def add_items(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        items = request.POST.getlist('items')
+        items = Item.objects.filter(pk__in = items)
+        _set_state(items, state)
+                
+        return HttpResponse('')
+    
+    @exception_handler
+    @api_key_required   
+    def remove_items(self,  request,  state_id):
+        state = State.objects.get(pk = state_id)
+        items = request.POST.getlist('items')
+        workspace = state.workspace
+        user_id = request.POST.get('user_id')
+        _check_app_permissions(workspace,  user_id,  ['admin', 'set_state'])
+        StateItemAssociation.objects.filter(item__pk__in = items, state = state).delete()
+        return HttpResponse('')
+        
+    

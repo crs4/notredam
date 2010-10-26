@@ -1005,7 +1005,7 @@ function variants_prefs(){
     	    root: 'variants',
     	    multiSelect: false,
     	    autoLoad: true,
-            baseParams: {type: 'generated'},
+            baseParams: {type: ''},
                 
     	    fields: ['pk','name', 'is_global']
 

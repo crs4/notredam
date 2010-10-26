@@ -435,6 +435,7 @@ var showDetails = function(view){
         });
         
         
+        Ext.getCmp('download').enable();
         
         var admin = ws_permissions_store.find('name', 'admin') > -1;        
         var add_item = ws_permissions_store.find('name', 'add_item') > -1;
@@ -457,6 +458,18 @@ var showDetails = function(view){
             Ext.getCmp('mvto').disable();
             Ext.getCmp('remove_from_ws').disable();
         }
+        
+        
+        if (admin | add_item){
+            Ext.getCmp('sync_xmp').enable();
+
+
+        }
+        else{
+            Ext.getCmp('sync_xmp').disable();
+
+        }
+
         
         if (admin | set_state){
             if(ws_state_store.getCount()) {
@@ -500,10 +513,13 @@ var showDetails = function(view){
             cbs[i].disabled = true;
         }
         
+        Ext.getCmp('download').disable();
+        
         Ext.getCmp('object_menu').menu.items.get('addto').disable();
         Ext.getCmp('object_menu').menu.items.get('mvto').disable();
         Ext.getCmp('object_menu').menu.items.get('remove_from_ws').disable();
         Ext.getCmp('object_menu').menu.items.get('set_state_to').disable();
+        Ext.getCmp('sync_xmp').disable();
         
         
         Ext.getCmp('object_menu').menu.items.get('runscript').disable();
@@ -1047,7 +1063,7 @@ function createMediaPanel(config, autoLoad) {
 };
 
 Ext.onReady(function(){
-    Ext.QuickTips.init();
+    
     // Album toolbar
 
     Ext.form.Field.prototype.msgTarget = 'side';
@@ -1241,24 +1257,6 @@ Ext.onReady(function(){
             }
         ]}
     );
-        
-   var header = new Ext.Panel({
-       layout: 'border', 
-       region:'north',
-       height:60,
-       items: [
-            new Ext.BoxComponent({ // raw
-                region:'north',
-                el: 'logo',
-                height:35
-            }),
-            new Ext.BoxComponent({ // raw
-                region:'center',
-                el: 'north',
-                height:20
-            })
-       ]
-   });
 
     var task = {
         run: function(){
@@ -1795,9 +1793,6 @@ var search_box = {
                                 autoScroll:true,
                                 id: 'preview_panel',
                                 hideBorders: true,
-                                
-
-//                                layout: 'border',
                                 items:[
                                     {
                                         id: 'summary_panel',
@@ -1805,7 +1800,7 @@ var search_box = {
                                         hideBorders: true,
                                         
                                         region: 'north'
-//                                        autoScroll:true,
+
                                     },
                                     {
                                         id: 'basic_panel',
@@ -1818,46 +1813,49 @@ var search_box = {
                                         title:'Variants',
                                         id:'variant_summary',
                                         autoScroll: false,
-//                                        region: 'south',
-//                                        layout:'fit',
-
+                                        selectedClass: 'x-list-selected list-variant',
+										singleSelect: true,
                                         store: new Ext.data.JsonStore({
-//                                            autoDestroy: true,
-                                            
                                                 root: 'variants',              
-                                                fields: ['pk','variant_name', 'data_basic','data_full', 'resource_url', 'imported', 'item_id', 'auto_generated', 'media_type', 'extension', 'work_in_progress', 'width', 'height'] ,
+                                                fields: ['pk','variant_name', 'data_basic','data_full', 'resource_url', 'abs_resource_url', 'imported', 'item_id', 'auto_generated', 'media_type', 'extension', 'work_in_progress', 'width', 'height'] ,
                                             url: '/get_variants/'
-                                            
-//                                            groupOnSort: true,
+
                                             
                                         }),
                                      
                                         columns:[
                                             
-                                            {id:'variant_name',header: 'variant_name', dataIndex: 'variant_name',
-                                                tpl: new Ext.XTemplate(                                               
+                                            {id:'variant_name',
+                                            header: 'variant_name',
+                                            dataIndex: 'variant_name',
+                                            cls: 'list-variant',
+                                            
+                                                tpl: new Ext.XTemplate(  
+                                                	'<div class="list-variant">',
                                                     '<b style="color:#3764A0;">{variant_name:capitalize()}</b>', 
                                                     '<tpl if="work_in_progress" >',                                                
                                                         '<img src="/files/images/warning.gif" style="width: 13px; padding-left: 5px; height: 13px;"/>',                                                                                                    
                                                     '</tpl>',
                                                
+                                                
                                                 '<span style="position:absolute; right:10px;">' ,
                                                 '<tpl if="resource_url">',
+                                                	
                                                     '<tpl if="extension">',
                                                         '<img ext:qtip="View" src="/files/images/search_blue.png" class="variant_button"  onclick="open_variant(\'{variant_name}\',\'{resource_url}\', \'{media_type}\', \'{width}\', \'{height}\')"/>',
                                                     '</tpl>',
                                                 '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'/download_component/{item_id}/{variant_name}\')" class="variant_button"/>',
                                                 '</tpl>',
-                                                '<img ext:qtip="import" id="import_{pk}" src="/files/images/box_upload.png" onclick="variant_id=this.id.split(\'_\')[1];import_variant(variant_id)" class="variant_button"/>',
+                                                '<img ext:qtip="Replace" id="import_{pk}" src="/files/images/box_upload.png" onclick="variant_id=this.id.split(\'_\')[1];import_variant(variant_id)" class="variant_button"/>',
                                                 
                                                 //'<tpl if="auto_generated == 1"><img id="generate_{pk}" ext:qtip="Generate" src="/files/images/icons/fam/cog.png" class="variant_button" onclick="variant_id=this.id.split(\'_\')[1];generate_variant(variant_id, \'{item_id}\')"/></tpl>',
                                                 '</span>',
                                                 
                                                 '<tpl if="work_in_progress == 0" >',                                                
-                                                    
+                                                    	
                                                                 
                                                         '<div id="full_metadata_{pk}"  style="padding-left:20px;"  >',
-                                                            
+                                                        	    
                                                             '<tpl for="data_basic">',
                                                                 '<p><b>{caption}:</b>',
                                                                 '<tpl if="value.properties === undefined">',
@@ -1883,17 +1881,18 @@ var search_box = {
                                                                     '</tpl></p>',
                                                                 '</tpl>',
                                                             '</tpl>',
-                                                            
+                                                        '<p class="permalink"><b>Link: </b><input value="{abs_resource_url}" readonly/></p>',
                                                         '</div>',
                                                         
-                                                    '</tpl>'
+                                                    '</tpl>',
+                                                    '</div>'
                                                 )}
                                             
                                             
                                             ],
-                                        trackOver: true,
                                         hideHeaders: true,
                                         autoShow: true,
+                                        trackOver: true,                                        
                                         listeners:{
                                             mouseenter: function(view, index, node, e){
                                                 var imgs =Ext.query('img',node);

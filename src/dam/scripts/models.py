@@ -128,8 +128,10 @@ class Script(models.Model):
 #        logger.debug('media_types %s'%media_types)
         
 #        for media_type, info in pipeline.items():
+        logger.debug('self.pk %s'%self.pk)
         logger.debug('self.actionlist_set.all() %s'%self.actionlist_set.all())
         for action in self.actionlist_set.all():
+            logger.debug("action.actions %s"%action.actions)
             info = simplejson.loads(str(action.actions))
             media_type = action.media_type.name
             logger.debug('info %s '%info)            
@@ -353,7 +355,10 @@ class SaveAction(BaseAction):
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)
-        variant = Variant.objects.get(pk = self.output_variant)                  
+        logger.debug('---------- self.output_variant %s'%self.output_variant)
+        logger.debug('---------- self.media_type %s'%self.media_type)
+        variant = Variant.objects.get(pk = self.output_variant) 
+                         
         component = variant.get_component(self.workspace,  item,  Type.objects.get(name = output_media_type))
         self._generate_resource(component, adapt_parameters)
     
@@ -390,6 +395,7 @@ class SaveAs(SaveAction):
         return params
     def __init__(self, media_type, source_variant, workspace, script, output,  output_format,   embed_xmp = False):  
         super(SaveAs, self).__init__(media_type, source_variant, workspace, script,output_format,   embed_xmp)
+        logger.debug('........... output%s'%output)
         self.output_variant = output
     
     

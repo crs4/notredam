@@ -28,25 +28,17 @@ from dam import logger
 from models import  Secret,  Application
 import hashlib
 
-import traceback
-
-from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,    NotEditableNode
-from dam.treeview.models import Node
-from dam.workspace.models import Workspace
-from dam.repository.models import Item
-from dam.metadata.models import MetadataProperty,  MetadataValue
-from variants.models import Variant
-from workflow.models import State
 from exceptions import *
 
 
-def error_response( error_code, error_message,  error_dict = None):
+def error_response( error_code, error_message, error_class,  error_dict = None):
     resp_dict = {}
 #    response = HttpResponse()
     response = HttpResponseServerError()
 
     resp_dict['error code'] = error_code
     resp_dict['error message'] = error_message
+    resp_dict['error class'] = error_class
 #    if error_code == 500:
 #        response.status_code = error_code
     
@@ -71,127 +63,23 @@ def exception_handler(func):
             resp = func(self,  request, *args, **kwargs)           
             transaction.commit()
             
-                
-        except Node.DoesNotExist,  ex:            
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            
-            transaction.rollback()
-            resp =  error_response(20,  'keyword does not exist')
-            
         
-        except State.DoesNotExist,ex:            
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            
-            transaction.rollback()
-            resp =  error_response(65,  'state does not exist')
-            
-        except Variant.DoesNotExist,  ex:            
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            
-            transaction.rollback()
-            resp =  error_response(26,  'variant does not exist')
-
-        except InvalidNode,  ex:
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            transaction.rollback()
-            resp = error_response(19,  'invalid keywords')
-                    
-        except WrongWorkspace, ex:
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            transaction.rollback()
-            resp =  error_response(21,'keywords does not belong to the same workspace')
-                
-#        except NotEditableNode,  ex:
-#            logger.exception(ex)
-#            transaction.rollback()
-#            resp =  error_response(22)
-            
-        except Workspace.DoesNotExist,  ex:
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            transaction.rollback()
-            resp =  error_response(18,  'workspace does not exist')   
-           
-        except Item.DoesNotExist,  ex:
-            logger.exception(ex)
-            transaction.rollback() 
-            resp =  error_response(12,  'item does not exist')
-            
-        except MetadataProperty.DoesNotExist,  ex:
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            transaction.rollback() 
-            message = 'metadata schema does not exist'
-            if ex.__dict__.has_key('error_dict'):
-                resp =  error_response(16, message,  ex.error_dict )
-            else:
-                resp =  error_response(16, message)
-                
-        except MetadataValue.DoesNotExist,  ex:
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
-            transaction.rollback() 
-            message = 'metadata does not exist'
-            if ex.__dict__.has_key('error_dict'):
-                resp =  error_response(17, message,  ex.error_dict )
-            else:
-                resp =  error_response(17, message)        
-        
-        
-        
-#        except MissingArgs,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(15)
-#            
-#        except ArgsValidationError,  ex:
-#            transaction.rollback()            
-#            resp =  error_response(14, ex.error_dict)
-#            
-#        except MalformedJSON,  ex:
-#            if ex.__dict__.has_key('error_dict'):
-#                resp =  error_response(13,  ex.error_dict )
-#            else:
-#                resp =  error_response(13,)
-#            
-#        except TooManyArgsPassed,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(23)
-#            
-#        except InsufficientPermissions,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(24)
-#            
-#        except MissingAPIKey,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(ex.error_code,  ex.error_message)
-#            
-#        except InvalidAPIKey,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(11)
-#        
+             
         except CodeErrorException,  ex:
             if ex.__dict__.has_key('error_dict'):            
-                resp =  error_response(ex.error_code,  ex.error_message, ex.error_dict )
+                resp =  error_response(ex.error_code,  ex.error_message, ex.error_class(), ex.error_dict )
             else:
-                resp =  error_response(ex.error_code,  ex.error_message)
+                resp =  error_response(ex.error_code,  ex.error_message, ex.error_class())
             logger.exception(ex)
-            logger.exception(traceback.format_exc())
+            
             transaction.rollback()
         except Exception,  ex:
-            logger.exception(ex)
-            logger.exception(traceback.format_exc())
+            logger.exception(ex)            
             transaction.rollback()
-            resp =  error_response(500,'internal server error')
+            
+            inner_ex = InnerException(ex)
+            resp =  error_response(inner_ex.error_code,  inner_ex.error_message, inner_ex.error_class())
+            
             
             
         logger.debug('resp %s' %resp.content)
@@ -204,7 +92,7 @@ def api_key_required(func):
     
     def check(self,  request, *args, **kwargs):	
         if self.private:
-           return func(self,  request, *args, **kwargs)        
+            return func(self,  request, *args, **kwargs)        
         raise_error = False        
 #        logger.debug('raw_post_data %s' %request.raw_post_data) 
         
