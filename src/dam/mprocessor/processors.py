@@ -17,7 +17,7 @@ from dam.repository.models import Item, Component
 from dam.eventmanager.models import EventRegistration
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.mprocessor.models import MAction
-from scripts.models import PRESETS, Script
+from dam.scripts.models import PRESETS, Script
 
 
 def new_id():

@@ -1,16 +1,16 @@
 from django.core.management import setup_environ
-import settings
+import dam.settings as settings
 setup_environ(settings)
 
 
 
 
-from scripts.models import *
-from scripts.views import _new_script
-from workspace.models import *
-from eventmanager.models import *
+from dam.scripts.models import *
+from dam.scripts.views import _new_script
+from dam.workspace.models import *
+from dam.eventmanager.models import *
+from dam.variants.models import Variant
 from django.utils import simplejson
-from variants.models import Variant
 
 
 

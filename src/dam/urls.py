@@ -18,14 +18,14 @@
 
 from django.conf.urls.defaults import *
 from django.views.generic.simple import direct_to_template
-from settings import ROOT_PATH, INSTALLATIONPATH, THUMBS_DIR
+from dam.settings import ROOT_PATH, INSTALLATIONPATH, THUMBS_DIR
 import os.path
 
 #for admin
 from django.contrib import admin
 admin.autodiscover()
 
-from settings import MEDIADART_STORAGE
+from dam.settings import MEDIADART_STORAGE
 
 urlpatterns = patterns('', 
     (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),

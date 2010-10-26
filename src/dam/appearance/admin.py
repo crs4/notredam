@@ -1,5 +1,5 @@
 from django.contrib import admin
-from appearance.models import Theme
+from dam.appearance.models import Theme
 #from settings import THEMES_PATH
 import os
 from django.http import HttpResponse

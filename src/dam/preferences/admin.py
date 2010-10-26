@@ -17,7 +17,7 @@
 #########################################################################
 
 from django.contrib import admin
-from preferences.models import DAMComponent, DAMComponentSetting, SettingValue
+from dam.preferences.models import DAMComponent, DAMComponentSetting, SettingValue
 
 admin.site.register(DAMComponent)
 admin.site.register(DAMComponentSetting)

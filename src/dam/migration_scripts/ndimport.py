@@ -29,7 +29,7 @@ from optparse import OptionParser
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
 from urllib_uploader import StandardUploader
-from ndutils import ImportExport, Exporter, Importer
+from dam.migration_scripts.ndutils import ImportExport, Exporter, Importer
 import logging
 
 logging.basicConfig(level=logging.DEBUG)

@@ -17,14 +17,14 @@
 #########################################################################
 
 from django.test.client import Client
-from models import *
+from dam.api.models import *
 from django.contrib.auth.models import User
 import urllib
 from django.test import TestCase
 from django.utils import simplejson as json
 from django.db.models import Q
 
-from exceptions import *
+from dam.api.exceptions import *
 from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
 
 from dam.variants.models import Variant

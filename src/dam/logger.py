@@ -19,7 +19,7 @@
 
 import logging
 #from web_application.config import dir_log, logging_level
-from settings import DEBUG,  dir_log
+from dam.settings import DEBUG,  dir_log
 import sys, os.path
 from django.utils.encoding import smart_unicode
 
