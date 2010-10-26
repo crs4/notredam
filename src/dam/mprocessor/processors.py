@@ -1,324 +1,299 @@
 import mimetypes
-from django.http import Http404, HttpResponse, HttpResponseServerError
+import os
+from json import loads
+from uuid import uuid4
+from twisted.internet import reactor, defer
 from django.core.mail import EmailMessage
-from mediadart.mqueue.mqclient_async import Proxy
-from mediadart.storage import Storage
+from django.contrib.contenttypes.models import ContentType
+from mediadart import log
+from mediadart.mqueue.mqserver import MQServer
+from mediadart.storage import Storage, new_id
+from mediadart.mqueue.mqclient_twisted import Proxy
+from mediadart.utils import default_start_mqueue
+from dam.config import METADATA_DEFAULT_LANGUAGE
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
+from dam.eventmanager.models import EventRegistration
+from dam.workspace.models import DAMWorkspace as Workspace
+from dam.mprocessor.models import MAction
+from scripts.models import PRESETS, Script
 
-import logging
-logger = logging.getLogger('batch_processor')
-logger.addHandler(logging.FileHandler(os.path.join(INSTALLATIONPATH,  'log/batch_processor.log')))
-logger.setLevel(logging.DEBUG)
 
-#
-# This is the views that receives responses and pushes on the chain of calls
-#
-def dispatch(request, job_id):
-    """General dispatcher for incoming responses"""
-    try:
-        result = loads(request.raw_post_data)
-        action = Action(job_id)
-    except Exception, e:
-        logger.ERROR('Invalid body in post: %s' % str(e))
-        return HttpResponseServerError('invalid data');
-    next_step = action.execute(result)
-    if next_step not in ('wait', 'done'):
-        logger.ERROR('Invalid return value from action')
-    if next_step == 'done':    # functions that don't invoke mediadart should be terminal
-        action.retire()        # and return done
-    elif next_step == 'wait':  # function that invoded mediadart should return wait
-        pass
-    else:
-        logger.ERROR('Invalid return value from action')
-    return HttpResponse('ok')
+def new_id():
+    "Create your models here."
+    return uuid4().hex
 
-#
-# Embed XMP chain
-#
-def embed_xmp(action, result):
-    logger.debug('STARTING embed_xmp')
-    component = action.component
-    xmp_embedder_proxy = Proxy('XMPEmbedder', callback='http://%s:%s/mprocessor/%s' % (host, port, action.job_id)) 
-    metadata_dict = synchronize_metadata(component)
-    xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
-    action.push('embed_xmp_2')
-    return 'wait'
+class MProcessor(MQServer):
+    def mq_activate(self, json_data):
+        d = Engine( ).init(json_data)
+        return d
 
-def embed_xmb_2(action, result):
-    if result:
-        reset_modified_flag(action.component)
-    else:
-        pass  # NOTHING HERE?
-    return 'done'
+class Engine:
+    "Executes a task"
+    def __init__(self):
+        self.maction = None
+        self.d = defer.Deferred()
+
+    def init(self, json_data):
+        data = loads(json_data)
+        reactor.callLater(0.2, self._load_component, data)
+        return self.d
+
+    def _load_component(self, data, attempts=1):
+        log.debug('_load_component %s: attempt %s/10' % (data['component_id'], attempts))
+        try:
+            component = Component.objects.get(pk=data['component_id'])
+        except:
+            if attempts < 10:
+                log.debug('######## Failed %d attempt to load component:' % attempts)
+                reactor.callLater(0.2+0.1*attempts, self._load_component, data, attempts+1)
+            else:
+                self.d.errback('timeout error: unable to read component from db')
+        else: 
+            log.debug('Initializing MAction %s, params=%s' % (data['action_id'], data['params']))
+            self.maction = MAction(component, data['action_id'], data['params'])
+            self.maction.serialize()
+            self.run('')
+
+    def run(self, result):
+        "run the next step in task or return silently"
+        fname, fparams = self.maction.pop()
+        if fname:
+            f = getattr(self, fname, None)
+            if f:
+                log.debug('######>>> executing %s(result, %s)' % (fname, fparams))
+                d = f(result, *fparams)
+                if d:
+                    d.addCallbacks(self.run, self.run_on_error)
+                else:
+                    reactor.callLater(0, self.run, '')
+            else:
+                self.run_on_error('Unrecognized method name: %s' % fname)
+            return result
+        else:
+            log.debug('END OF RUN')
+            self.d.callback('ok')   # we are done
+
+    def run_on_error(self, failure):
+        log.debug('######### run_on_error %s' % failure)
+        self.maction.failed()
+        return self.run('')
+
+    def cb_error(self, result):
+        log.debug('######### cb_error %s' % result)
+        self.maction.failed()
+        return result
+
+    def start_upload_event_handlers(self, result, workspace_id):
+        workspace = Workspace.objects.get(pk=workspace_id)
+        item = self.maction.component.item
+        for ws in item.workspaces.all():
+            EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
+        return result
+
+    def embed_xmp(self, result):
+        def cb_embed_reset_xmp(result):
+            if result:
+                reset_modified_flag(self.maction.component)
+            return result
+
+        log.debug('STARTING embed_xmp')
+        component = self.maction.component
+        xmp_embedder_proxy = Proxy('XMPEmbedder') 
+        metadata_dict = synchronize_metadata(component)
+        d = xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
+        d.addCallback(cb_embed_reset_xmp)
+        d.addErrback(self.cb_error)
+        return d
+
 
 #
 # Extract features chain
 #
-def extract_features(action, result):
-    extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
-    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job_id))
+    def extract_features(self, result):
+        component = self.maction.component
+        def cb_save_features(result, extractor):
+            log.debug('@@@@@@@@@@ extractor.cb_save_features')
+            _save_component_features(component, result, extractor)
+            log.debug('@@@@@@@@@@ extractor.cb_save_features: DONE')
+            return result
 
-    my_media_type = action.component.media_type.name
-    my_extractor = extractors[my_media_type]
+#        def log_error(*params, **kwargs):
+#            log.error('###@@@@@@@@@@ LOG_ERROR: %s --- %s' % (params, kwargs))
+#            if len(params) == 2:
+#                return cb_save_features(*params)
 
-    if component.variant.auto_generated:
-        action.push('save_features', my_extractor)
-    else:
-        action.push('extract_xmp', my_extractor)
-    extractor_proxy.extract(action.component.ID, my_extractor)
-    return 'wait'
+        log.debug("[extract_features] component %s" % component.ID)
+        extractor = component.get_extractor()
+        extractor_proxy = Proxy('FeatureExtractor')
+        log.debug("-########## calling extract_features(%s, (%s), %s)" % (component.ID, component.pk, component.get_extractor()))
+        d = extractor_proxy.extract(self.maction.component.ID, extractor)
+        #d.addCallbacks(cb_save_features, self.cb_error, [extractor])
+        d.addCallbacks(cb_save_features, self.cb_error, [extractor])
+        return d
 
-def extract_xmp(action, result, extractor):
-    extractor_proxy = Proxy('FeatureExtractor', callback='http://%s:%s/mprocessor/%s' % (host, port, job_id))
-    _save_component_features(action.component, result, extractor)
-    extractor_proxy.extract(component.ID, 'xmp_extractor')
-    action.push('save_features', 'xmp_extractor')
-    return 'wait'
 
-def save_features(action, result, extractor):
-    _save_component_features(action.component, result, extractor)
-    return 'done'
-        
+    def extract_xmp(self, result, extractor):
+        def cb_save_features(result, extractor):
+            _save_component_features(self.maction.component, result, extractor)
+
+        def log_error(*params, **kwargs):
+#            log.error('###@@@@@@@@@@ LOG_ERROR: %s --- %s' % (params, kwargs))
+            if len(params) == 2:
+                return cb_save_features(*params)
+
+        log.debug("[extract_xmp] component %s" % self.maction.component.ID)
+        d = None
+        extractor = 'xmp_extractor'
+        extractor_proxy = Proxy('FeatureExtractor')
+        d = extractor_proxy.extract(self.maction.component.ID,  extractor)
+        #d.addCallbacks(cb_save_features, self.cb_error, extractor)
+        d.addCallbacks(log_error, self.cb_error, [extractor])
+        return d
 
 #
 # Send Mail
 #
-def send_mail(action, result):
-    logger.debug("[SendMail.execute] component %s" % component.ID)
-    logger.debug('component.get_parameters() %s'%component.get_parameters())
-    mail = action.component.get_parameters()['mail']
-    
-    email = EmailMessage('OpenDam Rendition', 'Hi, an OpenDam rendition has been attached.  ', EMAIL_SENDER,
-            [mail])
-    storage = Storage()
-    email.attach_file(storage.abspath(component.ID))
-#    reactor.callInThread(email.send)
-    email.send()
-    logger.debug("[SendMail.end] component %s" % component.ID)
-    return 'done'
+    def send_mail(self, result):
+        log.debug("[SendMail.execute] component %s" % self.maction.component.ID)
+        log.debug('component.get_parameters() %s'%self.maction.component.get_parameters())
+        mail = self.maction.component.get_parameters()['mail']
+        email = EmailMessage('OpenDam Rendition', 'Hi, an OpenDam rendition has been attached.  ', EMAIL_SENDER,
+                [mail])
+        storage = Storage()
+        email.attach_file(storage.abspath(self.maction.component.ID))
+        email.send()
+        log.debug("[SendMail.end] component %s" % self.maction.component.ID)
+        return None
 
 
 #
 #  Adapt
 # 
-def adapt_resource(action, result):
-    from scripts.models import Script
+    def adapt_resource(self, result):
 
-    def save_and_extract_features(result, component, machine):
+        component = self.maction.component
+        adapter_proxy = Proxy('Adapter')
+        log.debug("[adapt_resource] component %s" % component.ID)
+        item = component.item
+        vp = component.get_parameters()
+        log.debug('vp %s'%vp)
+        orig = component.source 
+
+        dest_res_id = new_id()
+        watermark_filename = vp.get('watermark_filename', False)
+        
+        if item.type.name == 'image':
+            args ={}
+            argv = [] #for calling imagemagick
+            height = int(vp.get('max_height', -1))        
+            width = int(vp.get('max_width', -1))
+            script = Script.objects.get(component = component)
+            log.debug('script %s'%script)
+            acts = script.actionlist_set.get(media_type__name  = 'image')
+            actions = loads(acts.actions)['actions']
+            log.debug('actions %s'%actions)
+            orig_width = component.source.width
+            orig_height = component.source.height
+            #log.debug('orig_width %s'%orig_width)
+            #log.debug('orig_height %s'%orig_height)
+            for action in actions:
+                if action['type'] == 'resize':
+                    action['parameters']['max_width'] = min(action['parameters']['max_width'],  orig_width)
+                    action['parameters']['max_height'] = min(action['parameters']['max_height'],  orig_height)
+                    argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
+                    #log.debug('argv %s'%argv)
+                    aspect_ratio = orig_height/orig_width 
+                    alfa = min(action['parameters']['max_width']/orig_width, action['parameters']['max_height']/orig_height)
+                    orig_width = alfa*orig_width
+                    orig_height = alfa*orig_height
+                    
+                elif action['type'] == 'crop':
+                    if action['parameters'].get('ratio'):
+                        x_ratio, y_ratio = action['parameters']['ratio'].split(':')
+                        y_ratio = int(y_ratio)
+                        x_ratio = int(x_ratio)
+                        final_width = min(orig_width, orig_height*x_ratio/y_ratio)
+                        final_height = final_width*y_ratio/x_ratio
+                        log.debug('ratio=(%s,%s), final(h,w)=(%s, %s), original(h,w)=(%s, %s)'%(
+                               x_ratio, y_ratio, final_height, final_width, orig_height, orig_width))
+                        ul_y = (orig_height - final_height)/2
+                        ul_x = 0
+                        lr_y = ul_y + final_height
+                        lr_x = final_width 
+                    else:
+                        lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
+                        ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
+                        lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
+                        ul_y = int(int(action['parameters']['upperleft_y'])*component.source.height/100)
+                    
+                    orig_width = lr_x -ul_x 
+                    orig_height = lr_y - ul_y
+                    log.debug('orig(h,w)=(%s, %s)' % (orig_height, orig_width))
+                    argv +=  ['-crop', '%dx%d+%d+%d' % (orig_width, orig_height,  ul_x, ul_y)]
+                    log.debug('argv %s'%argv)
+                elif action['type'] == 'watermark':
+                    pos_x = int(int(action['parameters']['pos_x_percent'])*orig_width/100)
+                    pos_y = int(int(action['parameters']['pos_y_percent'])*orig_height/100)
+                    argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
+     
+            transcoding_format = vp.get('codec', orig.format) #change to original format
+            dest_res_id = dest_res_id + '.' + transcoding_format
+            d = adapter_proxy.adapt_image_magick(orig.ID, dest_res_id, argv)
+
+        elif item.type.name == 'video':
+            log.debug('component.media_type.name %s'%component.media_type.name)
+            if component.media_type.name == "image":
+                dim_x = vp['max_width']
+                dim_y = vp['max_height']
+                
+                transcoding_format = vp.get('codec', orig.format) #change to original format
+                dest_res_id = dest_res_id + '.' + transcoding_format
+                d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
+            else:
+                preset_name = PRESETS['video'][vp['preset_name']]['preset']
+                log.debug('preset_name %s'%preset_name)
+                param_dict = vp
+                dest_res_id = dest_res_id + '.' + PRESETS['video'][vp['preset_name']]['extension']
+                for key, val in vp.items():
+                    if key == 'max_size' or key == 'watermark_top_percent' or key == 'watermark_left_percent':
+                        param_dict[key] = int(val)
+                    else:
+                        param_dict[key] = val
+                
+                param_dict['preset_name'] = preset_name
+                log.debug('param_dict %s'%param_dict)
+                d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
+
+        elif item.type.name == 'audio':
+            preset_name = PRESETS['audio'][vp['preset_name']]['preset']
+            ext = PRESETS['audio'][vp['preset_name']]['extension']
+            vp['preset_name'] = preset_name        
+            param_dict = dict(vp)        
+            log.debug("[Adaptation] param_dict %s" % param_dict)
+            dest_res_id = dest_res_id + '.' + ext
+            d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
+        
+        if item.type.name == 'doc':
+            transcoding_format = vp['codec']
+            max_size = vp['max_height']
+            dest_res_id = dest_res_id + '.' + transcoding_format
+            d = adapter_proxy.adapt_doc(orig.ID, dest_res_id, max_size)
+        log.debug("[Adaptation.end] component %s" % component.ID)
+        d.addCallbacks(self.save_component, self.cb_error)
+        return d
+
+    def save_component(self, result):   # era save_and_extract_features
+        log.debug("[save_component] component %s" % self.maction.component.ID)
+        component = self.maction.component
         if result:
             dir, name = os.path.split(result)
             component._id = name
             component.save()
-#            extract_features(component)
-            machine_to_next_state(machine)
-
-    logger.debug("[Adaptation.execute] component %s" % component.ID)
-
-    adapter_proxy = Proxy('Adapter') 
-
-    item = component.item
-    workspace = component.workspace.all()[0] 
-
-#    variant = component.variant
-    
-#    source_variant = variant.get_source(workspace,  item)
-
-#    vp = variant.get_preferences(workspace)
-    vp = component.get_parameters()
-    logger.debug('vp %s'%vp)
-    orig = component.source 
-
-    dest_res_id = new_id()
-    watermark_filename = vp.get('watermark_filename', False)
-    
-    if item.type.name == 'image':
-        
-        args ={}
-        argv = [] #for calling imagemagick
-        height = int(vp.get('max_height', -1))        
-        width = int(vp.get('max_width', -1))
-        
-        
-        script = Script.objects.get(component = component)
-        logger.debug('script %s'%script)
-        acts = script.actionlist_set.get(media_type__name  = 'image')
-        actions = simplejson.loads(acts.actions)['actions']
-        logger.debug('actions %s'%actions)
-        orig_width = component.source.width
-        orig_height = component.source.height
-        logger.debug('orig_width %s'%orig_width)
-        logger.debug('orig_height %s'%orig_height)
-        for action in actions:
-            if action['type'] == 'resize':
-                
-                action['parameters']['max_width'] = min(action['parameters']['max_width'],  orig_width)
-                action['parameters']['max_height'] = min(action['parameters']['max_height'],  orig_height)
-                argv +=  ['-resize', '%dx%d' % (action['parameters']['max_width'], action['parameters']['max_height'])]
-                logger.debug('argv %s'%argv)
-                aspect_ratio = orig_height/orig_width 
-                
-                alfa = min(action['parameters']['max_width']/orig_width, action['parameters']['max_height']/orig_height)
-                orig_width = alfa*orig_width
-                orig_height = alfa*orig_height
-                
-                        
-                
-#                if orig_width > orig_height:
-#                    
-#                    
-#                    orig_width = action['parameters']['max_width']
-#                    orig_height = aspect_ratio*orig_width 
-#                else:
-#                    
-#                    orig_height = action['parameters']['max_height']
-#                    orig_width = orig_height/aspect_ratio 
-#                    logger.debug('elsesssssss orig_height %s'%orig_height)
-                
-            elif action['type'] == 'crop':
-#                action['parameters']['ratio'] = '2:3'
-                
-                if action['parameters'].get('ratio'):
-                    x_ratio, y_ratio = action['parameters']['ratio'].split(':')
-                    y_ratio = int(y_ratio)
-                    x_ratio = int(x_ratio)
-                    logger.debug('x_ratio %s'%x_ratio)
-                    logger.debug('y_ratio %s'%y_ratio)
-                    final_width = min(orig_width, orig_height*x_ratio/y_ratio)
-                    final_height = final_width*y_ratio/x_ratio
-   
-                        
-                    logger.debug('final_height %s'%final_height)
-                    logger.debug('final_width %s'%final_width)
-                    logger.debug('orig_height %s'%orig_height)
-                    logger.debug('orig_width %s'%orig_width)
-                    
-                    ul_y = (orig_height - final_height)/2
-                    ul_x = 0
-                    
-                    lr_y = ul_y + final_height
-                    lr_x = final_width 
-                
-                     
-                    
-                else:
-                    
-                    lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
-                    ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
-                    lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
-                    ul_y = int(int(action['parameters']['upperleft_y'])*component.source.height/100)
-                
-                orig_width = lr_x -ul_x 
-                orig_height = lr_y - ul_y
-                
-                logger.debug('orig_height %s'%orig_height)
-                logger.debug('orig_width %s'%orig_width)
-                
-                
-                argv +=  ['-crop', '%dx%d+%d+%d' % (orig_width, orig_height,  ul_x, ul_y)]
-                
-                logger.debug('argv %s'%argv)
-            elif action['type'] == 'watermark':
-                pos_x = int(int(action['parameters']['pos_x_percent'])*orig_width/100)
-                pos_y = int(int(action['parameters']['pos_y_percent'])*orig_height/100)
-                argv += ['cache://' + watermark_filename, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
- 
-        transcoding_format = vp.get('codec', orig.format) #change to original format
-        dest_res_id = dest_res_id + '.' + transcoding_format
-        
-        
-        
-        d = adapter_proxy.adapt_image_magick(orig.ID, dest_res_id, argv)
-#        d = adapter_proxy.adapt_image(orig.ID, dest_res_id, **args)
-
-    elif item.type.name == 'video':
-        logger.debug('---------vp %s'%vp)
-        
-        logger.debug('component.media_type.name %s'%component.media_type.name)
-        if component.media_type.name == "image":
-            
-            dim_x = vp['max_width']
-            dim_y = vp['max_height']
-            
-            transcoding_format = vp.get('codec', orig.format) #change to original format
-            dest_res_id = dest_res_id + '.' + transcoding_format
-            d = adapter_proxy.extract_video_thumbnail(orig.ID, dest_res_id, thumb_size=(dim_x, dim_y))
-
         else:
-            
-            preset_name = PRESETS['video'][vp['preset_name']]['preset']
-            logger.debug('preset_name %s'%preset_name)
-
-            param_dict = vp
-
-            dest_res_id = dest_res_id + '.' + PRESETS['video'][vp['preset_name']]['extension']
-            
-            for key, val in vp.items():
-#                if key == 'preset_name':
-#                    param_dict[key] = preset_name
-#                
-                if key == 'max_size' or key == 'watermark_top_percent' or key == 'watermark_left_percent':
-                    param_dict[key] = int(val)
-                else:
-                    param_dict[key] = val
-            
-            param_dict['preset_name'] = preset_name
-            logger.debug('param_dict %s'%param_dict)
-#            if watermark_filename:
-#                tmp = vp.get('watermark_top')
-#                if tmp:
-#                    param_dictwatermark_top = tmp
-#                    watermark_left = vp.get('watermark_left')
-#                else:
-#                    watermark_top_percent = vp.get('watermark_top_percent')
-#                    watermark_left_percent = vp.get('watermark_left_percent')
-#                
-#            
-#            if  vp.watermarking:
-#             param_dict['watermark_uri'] = 'mediadart://' + vp.watermark_uri
-#             param_dict.update(vp.get_watermarking_params())
-             #param_dict['watermark_top'] = 10
-             #param_dict['watermark_left'] = 10
-#             yield utils.wait_for_resource(vp.watermark_uri, 5)
-                
-            d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name,  param_dict)
-            
-
-    elif item.type.name == 'audio':
-        preset_name = PRESETS['audio'][vp['preset_name']]['preset']
-        ext = PRESETS['audio'][vp['preset_name']]['extension']
-        vp['preset_name'] = preset_name        
-        param_dict = dict(vp)        
-        logger.debug("[Adaptation] param_dict %s" % param_dict)
-        dest_res_id = dest_res_id + '.' + ext
-        
-        
-        d = adapter_proxy.adapt_audio(orig.ID, dest_res_id, preset_name, param_dict)
-    
-    if item.type.name == 'doc':
- 
-        transcoding_format = vp['codec']
-#        TODO: add width, to mediadart, see adapt_doc
-        max_size = vp['max_height']
-        
-        dest_res_id = dest_res_id + '.' + transcoding_format
-        
-        d = adapter_proxy.adapt_doc(orig.ID, dest_res_id, max_size)
-
-    d.addCallbacks(save_and_extract_features, cb_error, callbackArgs=[component, machine], errbackArgs=[component, machine])
-
-    logger.debug("[Adaptation.end] component %s" % component.ID)
-
-#    defer.returnValue( (task, job_id) )
-
-
-
-
-
-
-
-
+            log.error('Empty result passed to save_and_extract_features')
+        return result
 
 
 #
@@ -326,7 +301,7 @@ def adapt_resource(action, result):
 #
 def _save_component_features(component, features, extractor):
 
-    logger.debug("[ExtractMetadata.execute] component %s %s" % (component.ID, features))
+    log.debug("[_save_component_features] component %s" % component.ID)
 
     c = component
 
@@ -341,67 +316,111 @@ def _save_component_features(component, features, extractor):
     ctype = ContentType.objects.get_for_model(c)
 
     try:
-        logger.debug('*****************************c._id %s'%c._id)
+        log.debug('*****************************c._id %s'%c._id)
+        #log.debug('############## 1')
         mime_type = mimetypes.guess_type(c._id)[0]
+        #log.debug('############## 2')
         ext = mime_type.split('/')[1]
+        #log.debug('############## 3')
         c.format = ext
+        #log.debug('############## 4')
+        #log.debug('### type(c) = %s, _meta = %s' % (type(c), c.__class__._meta) )
         c.save()
+        #log.debug('############## 5')
         metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
+        #log.debug('############## 6')
         MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=c, value=mime_type)
+        #log.debug('############## 7')
     except Exception, ex:
-        logger.exception(ex)
-        pass
+        log.error(ex)
 
+    #log.debug('############## 8')
     if extractor == 'xmp_extractor':
+    #    log.debug('############## 9')
         item = Item.objects.get(component = c)
+    #    log.debug('############## 10')
         xmp_metadata_list, xmp_delete_list = _read_xmp_features(item, features, c)
+    #    log.debug('############## 11')
     elif extractor == 'media_basic':
+    #    log.debug('############## 12')
         
         for stream in features['streams']:
+    #        log.debug('############## 13')
             if isinstance(features['streams'][stream], dict):
+    #            log.debug('############## 14')
                 m_list, d_list = _save_features(c, features['streams'][stream])
+    #            log.debug('############## 15')
                 metadata_list.extend(m_list)
+    #            log.debug('############## 16')
                 delete_list.extend(d_list)
+    #            log.debug('############## 16')
     else: 
+    #    log.debug('############## 17')
         metadata_list, delete_list = _save_features(c, features)    
+    #    log.debug('############## 18')
 
+    #log.debug('############## 19')
     MetadataValue.objects.filter(schema__in=delete_list, object_id=c.pk, content_type=ctype).delete()
+    #log.debug('############## 20')
 
     for x in metadata_list:
+    #    log.debug('############## 21')
         x.save()
+    #    log.debug('############## 22')
 
+    #log.debug('############## 23')
     MetadataValue.objects.filter(schema__in=xmp_delete_list, object_id=c.pk, content_type=ctype).delete()
+    #log.debug('############## 24')
 
     for x in xmp_metadata_list:
+    #    log.debug('############## 24')
         x.save()
-    logger.debug("[ExtractMetadata.end] component %s" % component.ID)
+    #    log.debug('############## 25')
+    log.debug("[ExtractMetadata.end] component %s" % component.ID)
 
 def _save_features(c, features):
+    log.debug('######## _save_features %s %s' % (c, features))
 
+#    log.debug('@@@@@@@@@@@ 1')
     xmp_metadata_commons = {'size':[('notreDAM','FileSize')]}
+#    log.debug('@@@@@@@@@@@ 2')
     xmp_metadata_audio = {'channels':[('xmpDM', 'audioChannelType')], 'sample_rate':[('xmpDM', 'audioSampleRate')], 'duration':[('notreDAM', 'Duration')]}
+#    log.debug('@@@@@@@@@@@ 3')
 
     xmp_metadata_video = {'height':[('xmpDM', 'videoFrameSize','stDim','h')] , 'width':[('xmpDM', 'videoFrameSize','stDim','w')], 'r_frame_rate':[('xmpDM','videoFrameRate')], 'bit_rate':[('xmpDM','fileDataRate')], 'duration':[('notreDAM', 'Duration')]}
+#    log.debug('@@@@@@@@@@@ 4')
     xmp_metadata_image = {'height':[('tiff', 'ImageLength')] , 'width':[('tiff', 'ImageWidth')]}
+#    log.debug('@@@@@@@@@@@ 5')
     xmp_metadata_doc = {'pages': [('notreDAM', 'NPages')], 'Copyright': [('dc', 'rights')]}
+#    log.debug('@@@@@@@@@@@ 6')
 
     xmp_metadata_image.update(xmp_metadata_commons)
+#    log.debug('@@@@@@@@@@@ 7')
     xmp_metadata_audio.update(xmp_metadata_commons)
+#    log.debug('@@@@@@@@@@@ 8')
     xmp_metadata_doc.update(xmp_metadata_commons)
+#    log.debug('@@@@@@@@@@@ 9')
 
     xmp_metadata_video.update(xmp_metadata_audio)
+#    log.debug('@@@@@@@@@@@ 10')
 
     xmp_metadata = {'image': xmp_metadata_image, 'video': xmp_metadata_video, 'audio': xmp_metadata_audio, 'doc': xmp_metadata_doc}
+#    log.debug('@@@@@@@@@@@ 11')
 
     metadata_list = []
     delete_list = []
 
+#    log.debug('@@@@@@@@@@@ 12')
     media_type = c.media_type.name
+#    log.debug('@@@@@@@@@@@ 13')
 
     ctype = ContentType.objects.get_for_model(c)
+#    log.debug('@@@@@@@@@@@ 14')
 
-    lang = settings.METADATA_DEFAULT_LANGUAGE
+    lang = METADATA_DEFAULT_LANGUAGE
+#    log.debug('@@@@@@@@@@@ 15')
     for feature in features.keys():
+#        log.debug('@@@@@@@@@@@ 16')
         if features[feature]=='' or features[feature] == '0':
             continue 
         if feature == 'size':
@@ -412,16 +431,21 @@ def _save_features(c, features):
             c.width = features[feature]
 
         try:
+#            log.debug('@@@@@@@@@@@ 17')
             xmp_names = xmp_metadata[media_type][feature]
+#            log.debug('@@@@@@@@@@@ 18')
         except KeyError:
+#            log.debug('@@@@@@@@@@@ 19')
             continue
 
+#        log.debug('@@@@@@@@@@@ 20')
         for m in xmp_names:
-
             try:
+#                log.debug('@@@@@@@@@@@ 21')
                 ms = MetadataProperty.objects.get(namespace__prefix=m[0], field_name= m[1])
+#                log.debug('@@@@@@@@@@@ 22')
             except:
-                logger.debug( 'inside readfeatures, unknown metadata %s:%s ' %  (m[0],m[1]))
+                log.debug( 'inside readfeatures, unknown metadata %s:%s ' %  (m[0],m[1]))
                 continue
             if ms.is_variant or c.variant.name == 'original':
                 if len(m) == 4:
@@ -429,18 +453,28 @@ def _save_features(c, features):
                 else:
                     property_xpath = ''
                 try:
+#                    log.debug('@@@@@@@@@@@ 23')
                     if ms.type == 'lang':
+#                        log.debug('@@@@@@@@@@@ 24')
                         x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], language=lang, xpath=property_xpath)
+#                        log.debug('@@@@@@@@@@@ 25')
                     else:                            
+#                        log.debug('@@@@@@@@@@@ 26')
                         x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], xpath=property_xpath)
+#                        log.debug('@@@@@@@@@@@ 27')
+
+#                    log.debug('@@@@@@@@@@@ 28')
                     metadata_list.append(x) 
+#                    log.debug('@@@@@@@@@@@ 29')
                     delete_list.append(ms) 
+#                    log.debug('@@@@@@@@@@@ 29')
                 except:
-                    logger.debug('inside readfeatures, could not get %s' %  ms)
+                    log.debug('inside readfeatures, could not get %s' %  ms)
                     continue
 
+#    log.debug('@@@@@@@@@@@ 30')
     c.save()
-
+#    log.debug('@@@@@@@@@@@ 31')
     return (metadata_list, delete_list)
 
 def _read_xmp_features(item, features, component):
@@ -457,7 +491,7 @@ def _read_xmp_features(item, features, component):
     metadata_list = []
     delete_list = []
 
-    logger.debug('READ XMP FEATURES')
+    log.debug('READ XMP FEATURES')
 
     if not isinstance(features, dict):
         item.state = 1  
@@ -467,7 +501,7 @@ def _read_xmp_features(item, features, component):
         try:
             namespace_obj = XMPNamespace.objects.get(uri=feature)
         except:
-            logger.debug('unknown namespace %s' % feature)
+            log.debug('unknown namespace %s' % feature)
             continue
 
         metadata_dict[namespace_obj] = {}
@@ -488,10 +522,10 @@ def _read_xmp_features(item, features, component):
                     find_xpath = property_xpath.replace('/?xml:lang', '')
                     if metadata_dict[namespace_obj].has_key(find_xpath):
                         if property_value == 'x-default':
-                            property_value = settings.METADATA_DEFAULT_LANGUAGE
+                            property_value = METADATA_DEFAULT_LANGUAGE
                         metadata_dict[namespace_obj][find_xpath].language = property_value
                     else:
-                        logger.debug('metadata property not found: ' + find_xpath)
+                        log.debug('metadata property not found: ' + find_xpath)
                 else:
                     if found_property[0].is_variant:
                         x = MetadataValue(schema=found_property[0], object_id=component.pk, content_type=ctype_component, value=property_value, xpath=property_xpath)
@@ -503,3 +537,5 @@ def _read_xmp_features(item, features, component):
     return metadata_list, delete_list
 
 
+def start_server():
+    default_start_mqueue(MProcessor)

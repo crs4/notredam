@@ -36,10 +36,10 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.repository.models import Component,  Item
 from dam.metadata.views import _get_ws_groups
-from dam.batch_processor.models import Machine
+from dam.mprocessor.models import Task
 
 import os
-import logger
+from dam import logger
 import os, time
 
 class MediaTypeNotFound(Exception):
@@ -180,15 +180,15 @@ def get_variants_list(request):
     type = request.POST.get('type',  '')
     logger.debug('type %s'%type)
     if type == '':
-        
         vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), hidden = False)
+    else:
+        vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
     else:
         vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
     
     
     resp = {'variants':[]}
     for variant in vas:
-        
         resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.workspace is None })
     
     return HttpResponse(simplejson.dumps(resp))
@@ -233,12 +233,9 @@ def get_variants(request):
             logger.debug('variant  %s'%v)
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             
-            work_in_progress = Machine.objects.filter(current_state__action__component = comp).count() > 0
-#            resource_url = "/resources/%s/%s/"% (comp.id, workspace.pk)
+            work_in_progress = Task.objects.filter(component = comp).count() > 0
             resource_url = comp.get_component_url()
             abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
-#            resource_url = "/redirect_to_component/%s/%s/?t=%s"% (item_id,  v.name,  now)
-#            resource_url = comp.get_component_url(True)
             info_list = []
             if comp.media_type.name== 'image':
                 extension = comp.format

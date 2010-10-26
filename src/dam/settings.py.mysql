@@ -100,5 +100,6 @@ INSTALLED_APPS = (
     'dam.treeview',
     'dam.metadata',
     'dam.variants',
+    'dam.mprocessor',
 )
 

@@ -25,7 +25,7 @@ from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMC
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage
 
-import logger
+from dam import logger
 
 def get_metadata_default_language(user, workspace=None):
     """

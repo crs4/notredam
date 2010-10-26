@@ -36,7 +36,7 @@ logging.basicConfig(level=logging_level,
                     )
                     
 default_logger = logging.getLogger('dam')
-#default_logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))
+default_logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))
 
 #console = logging.StreamHandler()
 ## define a Handler which writes INFO messages or higher to the sys.stderr

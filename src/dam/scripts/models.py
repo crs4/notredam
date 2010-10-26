@@ -24,7 +24,7 @@ from dam.variants.models import Variant
 from dam.repository.models import Component
 from dam.core.dam_repository.models import Type
 from django.db.models import Q
-import logger
+from dam import logger
 
 PRESETS = {'video':{
             'flv': {'preset':'flv', 'extension': 'flv'},
@@ -85,7 +85,6 @@ class ActionList(models.Model):
     media_type = models.ForeignKey(Type)
     source_variant = models.ForeignKey(Variant, default = _get_orig)
 
-
 class Script(models.Model):
     name = models.CharField(max_length= 50)
     description = models.CharField(max_length= 200)
@@ -94,9 +93,6 @@ class Script(models.Model):
     state = models.ForeignKey('workflow.State',  null = True,  blank = True)
 
     is_global = models.BooleanField(default = False)
-    
-    
-    
     
     def get_actions(self, for_json = False):
         actions_available = {}       
@@ -355,7 +351,7 @@ class SaveAction(BaseAction):
             component.copy_metadata(same_resource) 
         else:
             logger.debug('generate task')        
-            generate_tasks(component, embed_xmp = embed_xmp)
+            generate_tasks(component, self.workspace, embed_xmp = embed_xmp)
         
     def execute(self, item, adapt_parameters):
         output_media_type = self._get_output_media_type(adapt_parameters)

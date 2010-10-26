@@ -60,7 +60,7 @@ from upload.uploadhandler import StorageHandler
 #from django.contrib.sessions.backends.db import SessionStore
 
 
-import logger
+from dam import logger
 import os.path
 from mimetypes import guess_type
 
