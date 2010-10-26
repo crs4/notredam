@@ -44,7 +44,7 @@ pipeline_thumb = {
                  
                  
         },
-#        'audio':{},
+        'audio':{},
         'video':{
             'source_variant': 'original',
             'actions':[{

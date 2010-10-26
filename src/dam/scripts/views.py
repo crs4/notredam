@@ -127,9 +127,14 @@ def _new_script(name = None, description = None, workspace = None, pipeline = No
         pipeline = simplejson.loads(pipeline)
     
         for media_type, actions in pipeline.items():
-            source_variant_name = actions.get('source_variant',  'original')
-            source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
-            ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
+            if actions.get('actions'):
+                source_variant_name = actions.get('source_variant',  'original')
+                logger.debug('media_type %s'%media_type)
+                logger.debug('actions %s'%actions)
+                
+                logger.debug('source_variant_name %s' %source_variant_name)
+                source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
+                ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
 
     
 #    EventRegistration.objects.filter( script = script, workspace = workspace).delete()
