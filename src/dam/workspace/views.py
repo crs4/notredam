@@ -767,6 +767,8 @@ def get_status(request):
     """
     try:
         items = simplejson.loads(request.POST.get('items'))
+        #logger.debug('######## items: %s' % items)
+        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
     
         user = User.objects.get(pk=request.session['_auth_user_id'])
     
@@ -775,42 +777,45 @@ def get_status(request):
         #ws_tasks = Machine.objects.filter(current_state__action__component__workspace=workspace)
         ws_tasks = Task.objects.filter(component__workspace=workspace)
         tasks_pending = ws_tasks.filter(state='pending')
+        tasks_done = ws_tasks.filter(state='done')
         tasks_failed = ws_tasks.filter(state='failed')
     
-        items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
+        items_done = tasks_done.values_list('component__item', flat=True).distinct()
         items_pending = tasks_pending.values_list('component__item', flat=True).distinct()
+        items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
+        #logger.debug('##### get_status: items pending: %s' % ' '.join(map(str, items_pending)))
     
-        total_pending = items_pending.count()
+        total_pending = items_pending.count() + items_done.count()
         total_failed = items_failed.count()
+        todo_items = set(list(items_pending)+list(items_done))
         
         update_items = {}
-     
-        now = time.time()
-    
-        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
-    
-        default_language = get_metadata_default_language(user, workspace)
-    
-        for i in items:
-            item = Item.objects.get(pk=i)
-    
-            thumb_url, thumb_ready = _get_thumb_url(item, workspace)
-    
-            my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-    
-            if tasks_pending.filter(component__item=item).count() > 0:
-                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
-                                  "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
-            else:
-                preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count()
-                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'inprogress': 0, 'thumb': thumb_ready, 
-                                  'preview_available': preview_available,"url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
-    
-    #    resp_dict = {'adapt': adapt_pending, 'feat': feat_pending, 'metadata': metadata_pending, 'items': update_items}
+        if todo_items:
+            now = time.time()
+            thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+            thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+            default_language = get_metadata_default_language(user, workspace)
+            for i in todo_items:
+                item = Item.objects.get(pk=i)
+                thumb_url, thumb_ready = _get_thumb_url(item, workspace)
+                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+                update_items[i] = {"name":my_caption,
+                      "size":item.get_file_size(), 
+                      "pk": smart_str(item.pk), 
+                      "thumb": thumb_ready,
+                      "url":smart_str(thumb_url), 
+                      "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
+                if i in items_pending:    # can be also in item_done
+                    preview_available = tasks_pending.filter(component__variant__name = 'preview', 
+                                                             component__item=item).count()
+                    update_items[i]['inprogress'] = 1
+                    update_items[i]['preview_available'] = (preview_available > 0)
+                else:
+                    for t in tasks_done.filter(component__item=i):
+                      logger.debug('DELETING TASK for item %s' % i)
+                      t.delete()
         resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-        logger.debug('get_status: %s' % resp_dict)
-    
+        logger.debug('\n ################### get_status: %s' % resp_dict)
         resp = simplejson.dumps(resp_dict)
         return HttpResponse(resp)
     except Exception,ex:

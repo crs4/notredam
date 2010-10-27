@@ -55,7 +55,7 @@ def error_response( error_code, error_message, error_class,  error_dict = None):
 
 @transaction.commit_manually
 def exception_handler(func):
-    logger.debug('---------------------')
+    #logger.debug('---------------------')
     
     def _exception_handler(self,  request, *args, **kwargs):
        

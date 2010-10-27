@@ -183,8 +183,6 @@ def get_variants_list(request):
         vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), hidden = False)
     else:
         vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
-    else:
-        vas = Variant.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True), auto_generated =  (type == 'generated'),  hidden = False)
     
     
     resp = {'variants':[]}

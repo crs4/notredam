@@ -71,31 +71,28 @@ class MAction:
         if not self.params:
             return None, None
         self.params.remove(self.params[0])
-        if self.params:
-            logger.debug('###################### SAVING TASK')
-            return self.params[0]
-        else:
+        if not self.params:
             logger.debug('###################### CLOSING TASK')
-            if self.task: 
-                if self.state == 'failed':
-                    logger.debug('###################### SAVING FAILED TASK')
-                    self.task.save()
-                elif self.state == 'pending':
-                    logger.debug('###################### DELETING PENDING TASK')
-                    self.task.delete()
-                else:
-                    logger.debug('\n#################### UNEXPECTED STATE %s' % self.state)
+            if self.state == 'pending':
+                logger.debug('###################### SETTING TASK TO DONE')
+                self.state = 'done'
+                self.serialize()
+                #self.task.delete()
             return None, None
+        else:
+            self.serialize()
+            return self.params[0]
 
     def serialize(self):
         if not self.task:
-            logger.debug('############# serialize: creating task')
+            logger.debug('############# CREATING TASK(%s)' % self.state)
             self.task = Task.objects.create(component=self.component, 
                                             params=dumps(self.params), 
                                             last_active=int(time.time()),
                                             state=self.state)
         else:
-            logger.debug('############ serialize: saving task')
+            logger.debug('############ SAVING TASK(%s)' % self.state)
+            self.task.state = self.state
             self.task.save()
 
     def failed(self):
