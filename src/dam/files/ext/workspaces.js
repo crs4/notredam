@@ -436,6 +436,7 @@ function _get_general_fields(close_win_on_submit){
         fieldLabel: 'Name',
         name: 'name',                       
         allowBlank:false,
+        msgTarget: 'side',
         enableKeyEvents: true,
         listeners: {render: function() {this.focus(true, 100);},
             keydown: function(field, e){
@@ -482,12 +483,12 @@ function _general_submit(close_win_on_submit, win_obj){
             }
         },
         
-        failure: function(form, action) {
-            console.log('failure :(');
-            console.log('form.isValid() ' + form.isValid());
-            
-        }
-        
+//        failure: function(form, action) {
+//            console.log('failure :(');
+//            console.log('form.isValid() ' + form.isValid());
+//            
+//        }
+//        
         
     });
                         

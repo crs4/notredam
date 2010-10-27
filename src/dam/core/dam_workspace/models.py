@@ -72,6 +72,16 @@ class Workspace(models.Model):
     objects = WorkspaceManager()
     permissions = PermissionManager()
 
+    class Meta:
+        unique_together  = (('name', 'creator' ), )
+    
+    def get_name(self,  user):
+        if self.creator != user:
+                name = self.name + ' (%s)'%self.creator
+        else:
+            name = self.name
+        return name
+    
     def __unicode__(self):
         return "%s" % (self.name)
 
