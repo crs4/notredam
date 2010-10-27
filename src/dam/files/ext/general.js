@@ -275,12 +275,15 @@ function play_audio(player_id){
 };
 
 
-function shortName(name, obj, len){
+function shortName(name, obj, len, left_truncate){
 	if (!len)
 		var len = 15;
 	
     if(name.length > len){
-        return name.substr(0, len - 3) + '...';
+        if (left_truncate)
+             return '...' + name.substr(name.length -15) ;
+        else
+            return name.substr(0, len - 3) + '...';
     }
     return name;
 }
@@ -807,7 +810,8 @@ function show_variants_menu (el){
 }
 
 function setTabTitle(value,panel_id){
-	var short_value = shortName(value, null, 20);
+	var short_value = shortName(value, null, 20, true);
+    
 	var media_tab = Ext.getCmp(panel_id);
 	
 	if(media_tab){

@@ -25,7 +25,7 @@ from django.http import HttpResponseForbidden
 from django.template import RequestContext, Context, loader
 from django.contrib.contenttypes.models import ContentType
 
-from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
+from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation,  SiblingsWithSameLabel
 from dam.core.dam_workspace.decorators import permission_required, membership_required
 from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.workspace.models import DAMWorkspace as Workspace
@@ -117,7 +117,8 @@ def add(request = None,  workspace = None,  name = None, parent_id = None):
         logger.exception(ex)
         resp = simplejson.dumps({'success':False,'errors': {'label': 'parent node has already a child with the given label'}})
         return HttpResponse(resp)
-    except:
+    except Exception, ex:
+        logger.exception(ex)
         raise
 
     resp = simplejson.dumps({'success':True,'node_id':new_node.id})
@@ -288,8 +289,8 @@ def get_metadataschema_keyword_target(request):
         if node_association.count() == 1:
             value = node_association[0].value
         else:
-                selected = False
-                value = ''
+            selected = False
+            value = ''
         resp['metadataschema'].append({'pk': schema.pk,  'name': '%s:%s'%(schema.namespace.prefix, schema.field_name), 'selected': selected,  'value':value})
         
     return HttpResponse(simplejson.dumps(resp))
