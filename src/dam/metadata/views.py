@@ -157,7 +157,8 @@ def sync_component(request):
         items_objs = Item.objects.filter(pk__in=items)
         MetadataValue.objects.save_metadata_value(items_objs, my_metadata, variant_name, workspace, default_language)
     except Exception, err:
-        print 'Error while changing xmp MetadataDate: ', err
+        logger.debug('Error while changing xmp MetadataDate: ')
+        logger.exception(err)
     # end of xmp:MetadataDate updating
 
     for pk in items:
