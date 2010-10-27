@@ -1387,7 +1387,7 @@ Ext.onReady(function(){
                             text: text,
                             iconCls: iconCls
                         });
-                    }).defer(2000);
+                    }).defer(1500);
                 }
             });
         },

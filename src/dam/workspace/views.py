@@ -803,6 +803,8 @@ def get_status(request):
                       "size":item.get_file_size(), 
                       "pk": smart_str(item.pk), 
                       "thumb": thumb_ready,
+                      "inprogress":0,
+                      "preview_available": 1,
                       "url":smart_str(thumb_url), 
                       "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
                 if i in items_pending:    # can be also in item_done
