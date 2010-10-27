@@ -50,8 +50,8 @@ from dam.workflow.views import _set_state
 from dam.scripts.views import _new_script,  _get_scripts_info
 from dam.settings import SERVER_PUBLIC_ADDRESS
 
-from dam.decorators import *
-from dam.exceptions import *
+from dam.api.decorators import *
+from dam.api.exceptions import *
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.variants.views import _edit_variant
 from dam.upload.uploadhandler import StorageHandler
@@ -79,7 +79,7 @@ class ModResource(Resource):
     
     def __init__(self, private = False,   *args,  **kwargs):
         super(ModResource,  self).__init__( *args,  **kwargs)
-        logger.debug('_private %s'%private)
+        #logger.debug('_private %s'%private)
         self.private = private
         
     def get_json_request(self,  request):

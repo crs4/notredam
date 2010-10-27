@@ -53,7 +53,6 @@ class Engine:
         else: 
             log.debug('Initializing MAction %s, params=%s' % (data['action_id'], data['params']))
             self.maction = MAction(component, data['action_id'], data['params'])
-            self.maction.serialize()
             self.run('')
 
     def run(self, result):
