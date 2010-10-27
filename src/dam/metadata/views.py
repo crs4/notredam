@@ -461,22 +461,22 @@ def _simple_metadata_view(item_list, workspace, default_language, metadata_objec
         for metadatadescriptor in metadatadescriptor_list:
   
             metadataschemas = metadatadescriptor.properties.all()
+            if metadataschemas.count():
+                metadataschema = metadataschemas[0]
 
-            metadataschema = metadataschemas[0]
-
-            if metadataschema.type in XMPStructure.objects.all().values_list('name', flat=True):
+                if metadataschema.type in XMPStructure.objects.all().values_list('name', flat=True):
+                    
+                    metadata_info = _generate_metadata_structure_item(group, metadatadescriptor, item_list, items_types, components_types, components_list, default_language)
+                    
+                    if metadata_info:
+                        form_list.extend(metadata_info)                    
+                    
+                else:
                 
-                metadata_info = _generate_metadata_structure_item(group, metadatadescriptor, item_list, items_types, components_types, components_list, default_language)
-                
-                if metadata_info:
-                    form_list.extend(metadata_info)                    
-                
-            else:
-            
-                metadata_info = _generate_metadata_item(group, metadatadescriptor, item_list, items_types, components_types, components_list, default_language)
-                
-                if metadata_info:
-                    form_list.append(metadata_info)                    
+                    metadata_info = _generate_metadata_item(group, metadatadescriptor, item_list, items_types, components_types, components_list, default_language)
+                    
+                    if metadata_info:
+                        form_list.append(metadata_info)                    
                     
     return form_list
 
@@ -518,7 +518,7 @@ def get_metadata(request):
             form_list = _simple_metadata_view(item_list, workspace, default_language, metadata_object, item_media_types)
         form_dict = {'rows': form_list}
     except Exception, ex:
-        print ex
+        logger.exception(ex)
         form_dict = {'rows': []}
 
     resp = simplejson.dumps(form_dict)

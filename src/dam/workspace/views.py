@@ -768,7 +768,7 @@ def get_status(request):
     try:
         items = simplejson.loads(request.POST.get('items'))
     
-        user = User.objects.get(pk=request.session['_auth_user_id'])
+        user = request.user
     
         workspace = request.session.get('workspace', None) 
     
