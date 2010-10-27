@@ -58,6 +58,14 @@ class WorkspaceManager(models.Manager):
             pass
             
         return ws
+        
+    def get_default_by_user(self,  user):
+        try:
+            workspace = self.filter(creator = user).order_by('creation_date').distinct()[0]                
+        except:
+            workspace = self.filter(members = user).order_by('name').distinct()[0]
+        return workspace
+                
 
 class Workspace(models.Model):
     """
@@ -81,7 +89,7 @@ class Workspace(models.Model):
         else:
             name = self.name
         return name
-    
+        
     def __unicode__(self):
         return "%s" % (self.name)
 
