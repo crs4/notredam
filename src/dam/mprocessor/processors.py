@@ -240,7 +240,7 @@ class Engine:
      
             transcoding_format = vp.get('codec', orig.format) #change to original format
             dest_res_id = dest_res_id + '.' + transcoding_format
-            d = adapter_proxy.adapt_image_magick(orig.ID, dest_res_id, argv)
+            d = adapter_proxy.adapt_image_magick('%s[0]' % orig.ID, dest_res_id, argv)
 
         elif item.type.name == 'video':
             log.debug('component.media_type.name %s'%component.media_type.name)
