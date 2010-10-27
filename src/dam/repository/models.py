@@ -384,8 +384,7 @@ class Component(AbstractComponent):
                 url =  component.uri
             else:
                 url = _get_resource_url(component.ID)
-            logger.debug('full_address %s'% full_address)
-            logger.debug('SERVER_PUBLIC_ADDRESS %s'% SERVER_PUBLIC_ADDRESS)
+            
             if full_address:
                 url = SERVER_PUBLIC_ADDRESS + url
         
