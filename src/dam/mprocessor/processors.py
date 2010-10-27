@@ -18,6 +18,7 @@ from dam.eventmanager.models import EventRegistration
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.mprocessor.models import MAction
 from dam.scripts.models import PRESETS, Script
+from dam.core.dam_metadata.models import XMPNamespace
 
 
 def new_id():
@@ -499,8 +500,8 @@ def _read_xmp_features(item, features, component):
     for feature in features.keys():
         try:
             namespace_obj = XMPNamespace.objects.get(uri=feature)
-        except:
-            log.debug('unknown namespace %s' % feature)
+        except Exception, e:
+            log.error('#######  Error: unknown namespace %s: %s' % (feature, str(e)))
             continue
 
         metadata_dict[namespace_obj] = {}
