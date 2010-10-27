@@ -717,11 +717,8 @@ def workspace(request, workspace_id = None):
         if request.session.__contains__('workspace'):
             workspace = Workspace.objects.get(pk = request.session.get('workspace', ).pk ) #ws in session could be outdated (old name)
         else:
-            try:
-                workspace = Workspace.objects.filter(creator = user).order_by('creation_date').distinct()[0]
-                
-            except:
-                workspace = Workspace.objects.filter(members = user).order_by('name').distinct()[0]
+            workspace = Workspace.objects.get_default_by_user(user)
+            
             request.session['workspace'] = workspace
     else:
         workspace = _switch_workspace(request,  workspace_id)
