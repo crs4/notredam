@@ -78,6 +78,8 @@ def create_workspace(request):
     	return _admin_workspace(request,  None)
 
 def _admin_workspace(request,  ws):
+    from django.db import IntegrityError
+    
     user = User.objects.get(pk=request.session['_auth_user_id'])
     if ws == None:
         ws = Workspace()
@@ -88,17 +90,20 @@ def _admin_workspace(request,  ws):
         description = form.cleaned_data['description']
         ws.name = name
         ws.description = description
+        try:
+            if ws.pk == None:
+    #                orig = Variant.objects.get(name = 'original',  is_global = True)
+    #                ws.default_source_variant = orig
+                ws = Workspace.objects.create_workspace(name, description, user)
+            else:
+                ws.save()
+            resp = simplejson.dumps({'success': True,  'ws_id':ws.pk})
+        except IntegrityError:
+            resp = simplejson.dumps({'success': False,  'errors': [{'name':'field_name', 'msg':'You have already created a workspace named %s'%name}]})
         
-        if ws.pk == None:
-#                orig = Variant.objects.get(name = 'original',  is_global = True)
-#                ws.default_source_variant = orig
-            ws = Workspace.objects.create_workspace(name, description, user)
-        else:
-            ws.save()
-        
-        resp = simplejson.dumps({'success': True,  'ws_id':ws.pk})
+       
     else:
-        resp = simplejson.dumps({'failure': True})
+        resp = simplejson.dumps({'success': False})
 
     return HttpResponse(resp)
 
@@ -217,7 +222,7 @@ def delete_ws(request,  ws_id):
 @login_required
 def get_workspaces(request):
     try:
-        user = User.objects.get(pk=request.session['_auth_user_id'])
+        user = request.user
         wss = user.workspaces.all().order_by('name').distinct()
         
         resp = {'workspaces': []}
@@ -226,10 +231,11 @@ def get_workspaces(request):
             root = Node.objects.get_root(ws = ws, type = 'keyword')
             collection_root = Node.objects.get_root(ws = ws, type = 'collection')
             inbox_root = Node.objects.get_root(ws = ws, type = 'inbox')
+            name = ws.get_name(user)
             
             tmp = {
                 'pk': ws.pk,
-                'name': ws.name,
+                'name': name,
                 'description': ws.description,
                 'root_id': root.pk,
                 'collections_root_id': collection_root.pk,
@@ -706,17 +712,21 @@ def workspace(request, workspace_id = None):
     
     logger.debug('In workspace.views method workspace: current theme is %s' % theme)
     logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
-    user = User.objects.get(pk=request.session['_auth_user_id'])
+    user = request.user
     if not workspace_id:
         if request.session.__contains__('workspace'):
             workspace = Workspace.objects.get(pk = request.session.get('workspace', ).pk ) #ws in session could be outdated (old name)
         else:
-            workspace = Workspace.objects.filter(members = user).order_by('name').distinct()[0]
+            try:
+                workspace = Workspace.objects.filter(creator = user).order_by('creation_date').distinct()[0]
+                
+            except:
+                workspace = Workspace.objects.filter(members = user).order_by('name').distinct()[0]
             request.session['workspace'] = workspace
     else:
         workspace = _switch_workspace(request,  workspace_id)
     
-    return render_to_response('workspace_gui.html', RequestContext(request,{'ws':workspace, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
+    return render_to_response('workspace_gui.html', RequestContext(request,{'ws_id':workspace.pk,  'ws_name': workspace.get_name(user),  'ws_description': workspace.description, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
 
 
 
