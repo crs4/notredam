@@ -787,34 +787,39 @@ def get_status(request):
         tasks_failed = ws_tasks.filter(state='failed')
     
         #items_done = tasks_done.values_list('component__item', flat=True).distinct()
-        items_pending = list(tasks_pending.values_list('component__item', flat=True).distinct())
-        items_failed = list(tasks_failed.values_list('component__item', flat=True).distinct())
-        #logger.debug('##### get_status: items pending: %s' % ' '.join(map(str, items_pending)))
+        items_pending = tasks_pending.values_list('component__item', flat=True).distinct()
+        items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
+        
+        items_done = list(set(items).difference(list(items_pending)))
+#        all_items = set(items_done + list(items_pending))
+        logger.debug('##### get_status: items done: %s' % ' '.join(map(str, items_done)))
     
         total_pending = items_pending.count()
         total_failed = items_failed.count()
         
         update_items = {}
-        if items_pending:
-            now = time.time()
-            thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-            thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
-            default_language = get_metadata_default_language(user, workspace)
-            for i in items_pending:
-                item = Item.objects.get(pk=i)
-                thumb_url, thumb_ready = _get_thumb_url(item, workspace)
-                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-                preview_available = tasks_pending.filter(component__variant__name = 'preview', 
-                update_items[i] = {
-                   'name':my_caption,
-                   'size':item.get_file_size(), 
-                   'pk': smart_str(item.pk), 
-                   'thumb': thumb_ready,
-                   'inprogress': 1,
-                   'preview_available': 1,
-                   'url':smart_str(thumb_url), 
-                   'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
-                   'preview_available': int(preview_available > 0)}
+        now = time.time()
+        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+        default_language = get_metadata_default_language(user, workspace)    
+
+        for i in items:
+            item = Item.objects.get(pk=i)            
+            thumb_url, thumb_ready = _get_thumb_url(item, workspace)
+            my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count() 
+            update_items[i] = {
+               'name':my_caption,
+               'size':item.get_file_size(), 
+               'pk': smart_str(item.pk), 
+               'thumb': thumb_ready,
+               'inprogress': int(not thumb_ready),
+               'url':smart_str(thumb_url), 
+               'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
+               'preview_available': int(preview_available > 0)}
+            if i in items_pending:
+                update_items[i]['inprogress'] = 1
+                
         resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
         logger.debug('\n ################### get_status: %s' % resp_dict)
         resp = simplejson.dumps(resp_dict)
