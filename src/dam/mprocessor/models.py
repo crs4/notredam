@@ -75,9 +75,9 @@ class MAction:
             logger.debug('###################### CLOSING TASK')
             if self.state == 'pending':
                 logger.debug('###################### SETTING TASK TO DONE')
-                self.state = 'done'
-                self.serialize()
-                #self.task.delete()
+                #self.state = 'done'
+                #self.serialize()
+                self.task.delete()
             return None, None
         else:
             self.serialize()

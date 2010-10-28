@@ -14,6 +14,7 @@ package_list = [
 'dam/admin',
 'dam/api',
 'dam/api/django_restapi',
+'dam/appearance',
 'dam/application',
 'dam/basket',
 'dam/core',
@@ -37,6 +38,7 @@ package_list = [
 
 package_data = {
 'dam/workspace': ['fixtures/initial_data.json'],
+'dam/appearance': ['fixtures/initial_data.json'],
 'dam/metadata': ['fixtures/initial_data.json'],
 'dam/scripts': ['fixtures/initial_data.json'],
 'dam/eventmanager': ['fixtures/initial_data.json'],
