@@ -58,6 +58,14 @@ class WorkspaceManager(models.Manager):
             pass
             
         return ws
+        
+    def get_default_by_user(self,  user):
+        try:
+            workspace = self.filter(creator = user).order_by('creation_date').distinct()[0]                
+        except:
+            workspace = self.filter(members = user).order_by('name').distinct()[0]
+        return workspace
+                
 
 class Workspace(models.Model):
     """
@@ -72,6 +80,16 @@ class Workspace(models.Model):
     objects = WorkspaceManager()
     permissions = PermissionManager()
 
+    class Meta:
+        unique_together  = (('name', 'creator' ), )
+    
+    def get_name(self,  user):
+        if self.creator != user:
+                name = self.name + ' (%s)'%self.creator
+        else:
+            name = self.name
+        return name
+        
     def __unicode__(self):
         return "%s" % (self.name)
 

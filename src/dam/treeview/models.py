@@ -211,8 +211,10 @@ class Node(AbstractNode):
                     metadata[0].delete()
                     
         node_associations_to_delete.delete()
+        logger.debug('metadata_schemas %s'%metadata_schemas)
         for ms in metadata_schemas:
             if not isinstance(ms,  dict):
+                logger.debug('ms %s'%ms)
                 ms = simplejson.loads(ms)
             NodeMetadataAssociation.objects.create(node = self,  value = ms['value'],  metadata_schema = MetadataProperty.objects.get(pk = ms['id']))
     #    node.metadata_schema.add(*MetadataProperty.objects.filter(pk__in = metadata_schemas))
