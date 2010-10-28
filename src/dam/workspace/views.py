@@ -814,8 +814,7 @@ def get_status(request):
                    'preview_available': 1,
                    'url':smart_str(thumb_url), 
                    'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
-                   'preview_available': int(preview_available > 0),
-                }
+                   'preview_available': int(preview_available > 0)}
         resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
         logger.debug('\n ################### get_status: %s' % resp_dict)
         resp = simplejson.dumps(resp_dict)
