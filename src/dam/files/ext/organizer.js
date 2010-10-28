@@ -1437,7 +1437,8 @@ Ext.onReady(function(){
     		
  		
             tabchange: function(tab_panel, tab){
-    			
+				if(!tab)
+					return;
     			var store = tab.getComponent(0).getStore();    			
     			if (!store.lastOptions && (tab.query == '' || tab.query)) //if tab not loaded yet, for example when you switch ws
     				set_query_on_store({query:tab.query, workspace_id: ws.id});

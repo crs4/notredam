@@ -595,17 +595,21 @@ var treeAction = function( tree_action){
     var sel_node = tree_action.scope;
     
     function submit_tree_form(cls){                        
-        var params = {cls: cls, metadata:[]};
+        var params = {cls: cls};
         
         var cbs = Ext.DomQuery.select('input[class=cb_metadata]');
         var checked = [];
         var store_metadata, cb, id, row;
         if (cbs.length) {
             store_metadata = Ext.getCmp('metadata_list').getStore();
+            
         }
         for (i = 0; i < cbs.length; i++){
             cb = cbs[i];
             if (cb.checked){
+                if (!params.metadata)
+                    params.metadata = [];
+                
                 id = cb.id.split('_')[1];
                 checked.push(id);
                 
@@ -674,6 +678,9 @@ var treeAction = function( tree_action){
     
     
     function create_metadata_list(node_id){
+        var params = {};
+        if (node_id)
+            params.node_id = node_id;
         return new Ext.grid.EditorGridPanel({
                 id: 'metadata_list',
                 viewConfig: {
@@ -681,7 +688,7 @@ var treeAction = function( tree_action){
                 },
                 store:  new Ext.data.JsonStore({         
                     url: '/get_metadataschema_keyword_target/',
-                    baseParams: {node_id: node_id},
+                    baseParams: params,
                     fields: ['pk','name', 'selected', 'value'],
                     root: 'metadataschema',
                     autoLoad: true

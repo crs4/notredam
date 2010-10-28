@@ -189,6 +189,7 @@ function cell_click(grid, rowIndex, columnIndex, e){
     
 function switch_ws(current_record, ws_id){
 	clear_other_selections(); //to avoid selectionchange event later, that can change tab name
+	Ext.getCmp('detail_tabs').getActiveTab().hide();
 	media_tabs = Ext.getCmp('media_tabs');
 	if (!current_record || current_record == null){
     	//initial load
@@ -435,6 +436,7 @@ function _get_general_fields(close_win_on_submit){
         fieldLabel: 'Name',
         name: 'name',                       
         allowBlank:false,
+        msgTarget: 'side',
         enableKeyEvents: true,
         listeners: {render: function() {this.focus(true, 100);},
             keydown: function(field, e){
@@ -481,12 +483,12 @@ function _general_submit(close_win_on_submit, win_obj){
             }
         },
         
-        failure: function(form, action) {
-            console.log('failure :(');
-            console.log('form.isValid() ' + form.isValid());
-            
-        }
-        
+//        failure: function(form, action) {
+//            console.log('failure :(');
+//            console.log('form.isValid() ' + form.isValid());
+//            
+//        }
+//        
         
     });
                         
