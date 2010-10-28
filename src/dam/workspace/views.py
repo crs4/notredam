@@ -783,45 +783,39 @@ def get_status(request):
         #ws_tasks = Machine.objects.filter(current_state__action__component__workspace=workspace)
         ws_tasks = Task.objects.filter(component__workspace=workspace)
         tasks_pending = ws_tasks.filter(state='pending')
-        tasks_done = ws_tasks.filter(state='done')
+        #tasks_done = ws_tasks.filter(state='done')
         tasks_failed = ws_tasks.filter(state='failed')
     
-        items_done = tasks_done.values_list('component__item', flat=True).distinct()
-        items_pending = tasks_pending.values_list('component__item', flat=True).distinct()
-        items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
+        #items_done = tasks_done.values_list('component__item', flat=True).distinct()
+        items_pending = list(tasks_pending.values_list('component__item', flat=True).distinct())
+        items_failed = list(tasks_failed.values_list('component__item', flat=True).distinct())
         #logger.debug('##### get_status: items pending: %s' % ' '.join(map(str, items_pending)))
     
-        total_pending = items_pending.count() + items_done.count()
+        total_pending = items_pending.count()
         total_failed = items_failed.count()
-        todo_items = set(list(items_pending)+list(items_done))
         
         update_items = {}
-        if todo_items:
+        if items_pending:
             now = time.time()
             thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
             thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
             default_language = get_metadata_default_language(user, workspace)
-            for i in todo_items:
+            for i in items_pending:
                 item = Item.objects.get(pk=i)
                 thumb_url, thumb_ready = _get_thumb_url(item, workspace)
                 my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-                update_items[i] = {"name":my_caption,
-                      "size":item.get_file_size(), 
-                      "pk": smart_str(item.pk), 
-                      "thumb": thumb_ready,
-                      "inprogress": int(not thumb_ready),
-                      "preview_available": 1,
-                      "url":smart_str(thumb_url), 
-                      "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
-                if i in items_pending:    # can be also in item_done
-                    preview_available = tasks_pending.filter(component__variant__name = 'preview', 
-                                                             component__item=item).count()
-                    update_items[i]['inprogress'] = 1
-                    update_items[i]['preview_available'] = (preview_available > 0)
-                else:
-                    for t in tasks_done.filter(component__item=i):
-                      logger.debug('DELETING TASK for item %s' % i)
-                      t.delete()
+                preview_available = tasks_pending.filter(component__variant__name = 'preview', 
+                update_items[i] = {
+                   'name':my_caption,
+                   'size':item.get_file_size(), 
+                   'pk': smart_str(item.pk), 
+                   'thumb': thumb_ready,
+                   'inprogress': 1,
+                   'preview_available': 1,
+                   'url':smart_str(thumb_url), 
+                   'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
+                   'preview_available': int(preview_available > 0),
+                }
         resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
         logger.debug('\n ################### get_status: %s' % resp_dict)
         resp = simplejson.dumps(resp_dict)
