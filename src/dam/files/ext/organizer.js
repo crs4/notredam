@@ -1276,8 +1276,8 @@ Ext.onReady(function(){
                         
 //                        if(item_data.inprogress == 0 && view.getSelectedIndexes().length == 1 && view.getSelectedIndexes()[0] == i)
 //                        	items.push(item_data.pk); //check if selected item changed,since some script has been run 
-                        	
-                        if (item_data.inprogress == 1) {
+                        
+                        if (item_data.inprogress) {
                             items.push(item_data.pk);                          
                             
                             if(i == 0 &&  view.getSelectionCount()  ==  1 && Ext.getCmp('detail_tabs').isVisible() && Ext.getCmp('detail_tabs').getActiveTab().id == 'preview_panel' && store_variant.lastOptions && store_variant.lastOptions.params.items == item_data.pk) {

@@ -628,11 +628,13 @@ def load_items(request, view_type=None, unlimited=False, ):
         basket_items = user_basket.items.all().values_list('pk', flat=True)
         
         for item in items:
-            geotagged = 0
-            inprogress = 0
+            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
+            logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
             
-            if item.pk in tasks_pending:
-                inprogress = 1
+            geotagged = 0
+            inprogress =  int( (not thumb_ready) or (item.pk in tasks_pending)) 
+            
+            
             if GeoInfo.objects.filter(item=item).count() > 0:
                 geotagged = 1
             
@@ -641,9 +643,6 @@ def load_items(request, view_type=None, unlimited=False, ):
             if item.pk in basket_items:
                 item_in_basket = 1
              
-            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
-            logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
-
             states = item.stateitemassociation_set.all()
             try:
                 my_caption = _get_thumb_caption(item, thumb_caption, default_language)
@@ -803,7 +802,7 @@ def get_status(request):
                       "size":item.get_file_size(), 
                       "pk": smart_str(item.pk), 
                       "thumb": thumb_ready,
-                      "inprogress":0,
+                      "inprogress": int(not thumb_ready),
                       "preview_available": 1,
                       "url":smart_str(thumb_url), 
                       "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
