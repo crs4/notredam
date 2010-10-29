@@ -6,6 +6,7 @@ from mediadart.storage import Storage
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
+from dam.preferences.views import get_metadata_default_language
 
 import logging
 logger = logging.getLogger('batch_processor')
