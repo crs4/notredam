@@ -27,30 +27,34 @@ def new_id():
 
 class MProcessor(MQServer):
     def mq_activate(self, json_data):
-        d = Engine( ).init(json_data)
-        return d
+        Engine( ).init(json_data)
+        return 'ok'
 
 class Engine:
     "Executes a task"
     def __init__(self):
         self.maction = None
-        self.d = defer.Deferred()
+#        self.d = defer.Deferred()
 
     def init(self, json_data):
         data = loads(json_data)
-        reactor.callLater(0.2, self._load_component, data)
-        return self.d
+#        self._load_component(data)
+#        reactor.callLater(0.2, self._load_component, data)
+#        return self.d
 
-    def _load_component(self, data, attempts=1):
-        log.debug('_load_component %s: attempt %s/10' % (data['component_id'], attempts))
+#    def _load_component(self, data, attempts=1):
+        #log.debug('_load_component %s: attempt %s/10' % (data['component_id'], attempts))
+        log.debug('MProcessor.Engine.init: reading component %s' % (data['component_id']))
         try:
             component = Component.objects.get(pk=data['component_id'])
-        except:
-            if attempts < 10:
-                log.debug('######## Failed %d attempt to load component:' % attempts)
-                reactor.callLater(0.2+0.1*attempts, self._load_component, data, attempts+1)
-            else:
-                self.d.errback('timeout error: unable to read component from db')
+        except Exception, e:
+            log.error('######## db error: unable to read component from db: %s' % str(e))
+            raise
+#            if attempts < 10:
+#                log.debug('######## Failed %d attempt to load component:' % attempts)
+#                reactor.callLater(0.2+0.1*attempts, self._load_component, data, attempts+1)
+#            else:
+#                log.error('######## timeout error: unable to read component from db')
         else: 
             log.debug('Initializing MAction %s, params=%s' % (data['action_id'], data['params']))
             self.maction = MAction(component, data['action_id'], data['params'])
@@ -73,7 +77,7 @@ class Engine:
             return result
         else:
             log.debug('END OF RUN')
-            self.d.callback('ok')   # we are done
+#            self.d.callback('ok')   # we are done
 
     def run_on_error(self, failure):
         log.debug('######### run_on_error %s' % failure)
@@ -311,116 +315,65 @@ def _save_component_features(component, features, extractor):
     xmp_delete_list = []
     workspace = c.workspace.all()[0]
 
-#    source_variant = c.variant.get_source(workspace,  c.item)
-
     ctype = ContentType.objects.get_for_model(c)
 
     try:
         log.debug('*****************************c._id %s'%c._id)
-        #log.debug('############## 1')
         mime_type = mimetypes.guess_type(c._id)[0]
-        #log.debug('############## 2')
         ext = mime_type.split('/')[1]
-        #log.debug('############## 3')
         c.format = ext
-        #log.debug('############## 4')
-        #log.debug('### type(c) = %s, _meta = %s' % (type(c), c.__class__._meta) )
         c.save()
-        #log.debug('############## 5')
         metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-        #log.debug('############## 6')
         MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=c, value=mime_type)
-        #log.debug('############## 7')
     except Exception, ex:
         log.error(ex)
 
-    #log.debug('############## 8')
     if extractor == 'xmp_extractor':
-    #    log.debug('############## 9')
         item = Item.objects.get(component = c)
-    #    log.debug('############## 10')
         xmp_metadata_list, xmp_delete_list = _read_xmp_features(item, features, c)
-    #    log.debug('############## 11')
     elif extractor == 'media_basic':
-    #    log.debug('############## 12')
         
         for stream in features['streams']:
-    #        log.debug('############## 13')
             if isinstance(features['streams'][stream], dict):
-    #            log.debug('############## 14')
                 m_list, d_list = _save_features(c, features['streams'][stream])
-    #            log.debug('############## 15')
                 metadata_list.extend(m_list)
-    #            log.debug('############## 16')
                 delete_list.extend(d_list)
-    #            log.debug('############## 16')
     else: 
-    #    log.debug('############## 17')
         metadata_list, delete_list = _save_features(c, features)    
-    #    log.debug('############## 18')
 
-    #log.debug('############## 19')
     MetadataValue.objects.filter(schema__in=delete_list, object_id=c.pk, content_type=ctype).delete()
-    #log.debug('############## 20')
 
     for x in metadata_list:
-    #    log.debug('############## 21')
         x.save()
-    #    log.debug('############## 22')
 
-    #log.debug('############## 23')
     MetadataValue.objects.filter(schema__in=xmp_delete_list, object_id=c.pk, content_type=ctype).delete()
-    #log.debug('############## 24')
 
     for x in xmp_metadata_list:
-    #    log.debug('############## 24')
         x.save()
-    #    log.debug('############## 25')
     log.debug("[ExtractMetadata.end] component %s" % component.ID)
 
 def _save_features(c, features):
     log.debug('######## _save_features %s %s' % (c, features))
 
-#    log.debug('@@@@@@@@@@@ 1')
     xmp_metadata_commons = {'size':[('notreDAM','FileSize')]}
-#    log.debug('@@@@@@@@@@@ 2')
     xmp_metadata_audio = {'channels':[('xmpDM', 'audioChannelType')], 'sample_rate':[('xmpDM', 'audioSampleRate')], 'duration':[('notreDAM', 'Duration')]}
-#    log.debug('@@@@@@@@@@@ 3')
-
     xmp_metadata_video = {'height':[('xmpDM', 'videoFrameSize','stDim','h')] , 'width':[('xmpDM', 'videoFrameSize','stDim','w')], 'r_frame_rate':[('xmpDM','videoFrameRate')], 'bit_rate':[('xmpDM','fileDataRate')], 'duration':[('notreDAM', 'Duration')]}
-#    log.debug('@@@@@@@@@@@ 4')
     xmp_metadata_image = {'height':[('tiff', 'ImageLength')] , 'width':[('tiff', 'ImageWidth')]}
-#    log.debug('@@@@@@@@@@@ 5')
     xmp_metadata_doc = {'pages': [('notreDAM', 'NPages')], 'Copyright': [('dc', 'rights')]}
-#    log.debug('@@@@@@@@@@@ 6')
-
     xmp_metadata_image.update(xmp_metadata_commons)
-#    log.debug('@@@@@@@@@@@ 7')
     xmp_metadata_audio.update(xmp_metadata_commons)
-#    log.debug('@@@@@@@@@@@ 8')
     xmp_metadata_doc.update(xmp_metadata_commons)
-#    log.debug('@@@@@@@@@@@ 9')
 
     xmp_metadata_video.update(xmp_metadata_audio)
-#    log.debug('@@@@@@@@@@@ 10')
-
     xmp_metadata = {'image': xmp_metadata_image, 'video': xmp_metadata_video, 'audio': xmp_metadata_audio, 'doc': xmp_metadata_doc}
-#    log.debug('@@@@@@@@@@@ 11')
 
     metadata_list = []
     delete_list = []
 
-#    log.debug('@@@@@@@@@@@ 12')
     media_type = c.media_type.name
-#    log.debug('@@@@@@@@@@@ 13')
-
     ctype = ContentType.objects.get_for_model(c)
-#    log.debug('@@@@@@@@@@@ 14')
-
     lang = METADATA_DEFAULT_LANGUAGE
-#    log.debug('@@@@@@@@@@@ 15')
     for feature in features.keys():
-#        log.debug('@@@@@@@@@@@ 16')
         if features[feature]=='' or features[feature] == '0':
             continue 
         if feature == 'size':
@@ -431,19 +384,13 @@ def _save_features(c, features):
             c.width = features[feature]
 
         try:
-#            log.debug('@@@@@@@@@@@ 17')
             xmp_names = xmp_metadata[media_type][feature]
-#            log.debug('@@@@@@@@@@@ 18')
         except KeyError:
-#            log.debug('@@@@@@@@@@@ 19')
             continue
 
-#        log.debug('@@@@@@@@@@@ 20')
         for m in xmp_names:
             try:
-#                log.debug('@@@@@@@@@@@ 21')
                 ms = MetadataProperty.objects.get(namespace__prefix=m[0], field_name= m[1])
-#                log.debug('@@@@@@@@@@@ 22')
             except:
                 log.debug( 'inside readfeatures, unknown metadata %s:%s ' %  (m[0],m[1]))
                 continue
@@ -453,28 +400,18 @@ def _save_features(c, features):
                 else:
                     property_xpath = ''
                 try:
-#                    log.debug('@@@@@@@@@@@ 23')
                     if ms.type == 'lang':
-#                        log.debug('@@@@@@@@@@@ 24')
                         x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], language=lang, xpath=property_xpath)
-#                        log.debug('@@@@@@@@@@@ 25')
                     else:                            
-#                        log.debug('@@@@@@@@@@@ 26')
                         x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], xpath=property_xpath)
-#                        log.debug('@@@@@@@@@@@ 27')
 
-#                    log.debug('@@@@@@@@@@@ 28')
                     metadata_list.append(x) 
-#                    log.debug('@@@@@@@@@@@ 29')
                     delete_list.append(ms) 
-#                    log.debug('@@@@@@@@@@@ 29')
                 except:
                     log.debug('inside readfeatures, could not get %s' %  ms)
                     continue
 
-#    log.debug('@@@@@@@@@@@ 30')
     c.save()
-#    log.debug('@@@@@@@@@@@ 31')
     return (metadata_list, delete_list)
 
 def _read_xmp_features(item, features, component):
