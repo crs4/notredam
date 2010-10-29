@@ -54,24 +54,24 @@ class Engine:
     def run(self, result):
         "run the next step in task or return silently"
         fname, fparams = self.maction.pop()
-            if fname:
-                f = getattr(self, fname, None)
-                if f:
-                    log.debug('######>>> executing %s(result, %s)' % (fname, fparams))
-                    try: 
-                        d = f(result, *fparams)
-                        if d:
-                            d.addCallbacks(self.run, self.run_on_error)
-                        else:
-                            reactor.callLater(0, self.run, '')
-                    except Exception, e:
-                        log.error('Exception executing task %s: %s' % (fname, str(e)))
-                        self.run_on_error('')
-                else:
-                    self.run_on_error('Unrecognized method name: %s' % fname)
+        if fname:
+            f = getattr(self, fname, None)
+            if f:
+                log.debug('######>>> executing %s(result, %s)' % (fname, fparams))
+                try: 
+                    d = f(result, *fparams)
+                    if d:
+                        d.addCallbacks(self.run, self.run_on_error)
+                    else:
+                        reactor.callLater(0, self.run, '')
+                except Exception, e:
+                    log.error('Exception executing task %s: %s' % (fname, str(e)))
+                    self.run_on_error('')
             else:
-                log.debug('END OF RUN')
-                self.d.callback('ok')   # we are done
+                self.run_on_error('Unrecognized method name: %s' % fname)
+        else:
+            log.debug('END OF RUN')
+            self.d.callback('ok')   # we are done
 
 
     def run_on_error(self, failure):
