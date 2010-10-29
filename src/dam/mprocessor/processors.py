@@ -27,29 +27,25 @@ def new_id():
 
 class MProcessor(MQServer):
     def mq_activate(self, json_data):
-        Engine( ).init(json_data)
-        return 'ok'
+        d = defer.Deferred()
+        engine = Engine(d)
+        reactor.callLater(0, engine.init, json_data)
+        return d
 
 class Engine:
     "Executes a task"
-    def __init__(self):
+    def __init__(self, d):
         self.maction = None
-#        self.d = defer.Deferred()
+        self.d = d
 
     def init(self, json_data):
         data = loads(json_data)
-#        self._load_component(data)
-#        reactor.callLater(0.2, self._load_component, data)
-#        return self.d
-
-#    def _load_component(self, data, attempts=1):
-        #log.debug('_load_component %s: attempt %s/10' % (data['component_id'], attempts))
         log.debug('MProcessor.Engine.init: reading component %s' % (data['component_id']))
         try:
             component = Component.objects.get(pk=data['component_id'])
         except Exception, e:
             log.error('######## db error: unable to read component from db: %s' % str(e))
-            raise
+            self.d.errback('######## unable to read component from db: %s' % str(e))
 #            if attempts < 10:
 #                log.debug('######## Failed %d attempt to load component:' % attempts)
 #                reactor.callLater(0.2+0.1*attempts, self._load_component, data, attempts+1)
@@ -77,7 +73,7 @@ class Engine:
             return result
         else:
             log.debug('END OF RUN')
-#            self.d.callback('ok')   # we are done
+            self.d.callback('ok')   # we are done
 
     def run_on_error(self, failure):
         log.debug('######### run_on_error %s' % failure)
