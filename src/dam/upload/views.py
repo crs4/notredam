@@ -314,7 +314,7 @@ def _generate_tasks( component, workspace, force_generation,  check_for_existing
                 
         if  variant.name == 'mail':
             maction.append_func('send_mail')
-        callback = None
+        callback = lambda a, b, c: None
     maction.activate(callback)
     
 def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
