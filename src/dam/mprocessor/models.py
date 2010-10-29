@@ -47,10 +47,10 @@ class MAction:
     def to_json(self):
         return dumps({'action_id':self.action_id, 'component_id':self.component.pk, 'params':self.params})
 
-    def activate(self):
+    def activate(self, callback):
         data = self.to_json()
         logger.debug('MProcessor.activate %s' % data)
-        Proxy('MProcessor').activate(data)
+        Proxy('MProcessor', callback=callback).activate(data)
 
     def pop(self):
         "This changes the state of the task and it is not undoable"
