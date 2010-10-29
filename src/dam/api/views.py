@@ -1568,7 +1568,7 @@ class ItemResource(ModResource):
         
         try:
             state = item.stateitemassociation_set.get(state__workspace = ws).state
-            resp = {'name': state.name}
+            resp = {'name': state.name, 'id': state.pk}
         except Exception, ex:
             logger.exception(ex)
             resp = ''

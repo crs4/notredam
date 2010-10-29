@@ -796,7 +796,7 @@ class ItemTest(MyTestCase):
         response = self.client.post('/api/item/%s/get_state/'%item.pk, params, )            
         resp_dict = json.loads(response.content)
         print '-------------------------',  resp_dict
-        self.assertTrue(resp_dict == {'name': 'test'})
+        self.assertTrue(resp_dict == {'name': 'test', 'id': state.pk})
         
     def test_get_keywords(self):
         
