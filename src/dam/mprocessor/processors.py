@@ -29,7 +29,8 @@ class MProcessor(MQServer):
     def mq_activate(self, json_data):
         d = defer.Deferred()
         engine = Engine(d)
-        reactor.callLater(0, engine.init, json_data)
+        data = loads(json_data)
+        reactor.callLater(0, engine.init, data)
         return d
 
 class Engine:
@@ -38,19 +39,13 @@ class Engine:
         self.maction = None
         self.d = d
 
-    def init(self, json_data):
-        data = loads(json_data)
+    def init(self, data):
         log.debug('MProcessor.Engine.init: reading component %s' % (data['component_id']))
         try:
             component = Component.objects.get(pk=data['component_id'])
         except Exception, e:
             log.error('######## db error: unable to read component from db: %s' % str(e))
             self.d.errback('######## unable to read component from db: %s' % str(e))
-#            if attempts < 10:
-#                log.debug('######## Failed %d attempt to load component:' % attempts)
-#                reactor.callLater(0.2+0.1*attempts, self._load_component, data, attempts+1)
-#            else:
-#                log.error('######## timeout error: unable to read component from db')
         else: 
             log.debug('Initializing MAction %s, params=%s' % (data['action_id'], data['params']))
             self.maction = MAction(component, data['action_id'], data['params'])
@@ -59,21 +54,25 @@ class Engine:
     def run(self, result):
         "run the next step in task or return silently"
         fname, fparams = self.maction.pop()
-        if fname:
-            f = getattr(self, fname, None)
-            if f:
-                log.debug('######>>> executing %s(result, %s)' % (fname, fparams))
-                d = f(result, *fparams)
-                if d:
-                    d.addCallbacks(self.run, self.run_on_error)
+            if fname:
+                f = getattr(self, fname, None)
+                if f:
+                    log.debug('######>>> executing %s(result, %s)' % (fname, fparams))
+                    try: 
+                        d = f(result, *fparams)
+                        if d:
+                            d.addCallbacks(self.run, self.run_on_error)
+                        else:
+                            reactor.callLater(0, self.run, '')
+                    except Exception, e:
+                        log.error('Exception executing task %s: %s' % (fname, str(e)))
+                        self.run_on_error('')
                 else:
-                    reactor.callLater(0, self.run, '')
+                    self.run_on_error('Unrecognized method name: %s' % fname)
             else:
-                self.run_on_error('Unrecognized method name: %s' % fname)
-            return result
-        else:
-            log.debug('END OF RUN')
-            self.d.callback('ok')   # we are done
+                log.debug('END OF RUN')
+                self.d.callback('ok')   # we are done
+
 
     def run_on_error(self, failure):
         log.debug('######### run_on_error %s' % failure)
