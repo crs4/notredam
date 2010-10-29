@@ -400,7 +400,10 @@ def _save_features(c, features):
 
     ctype = ContentType.objects.get_for_model(c)
 
-    lang = settings.METADATA_DEFAULT_LANGUAGE
+    i = c.item
+    user = i.uploaded_by()
+    metadata_default_language = get_metadata_default_language(user)
+
     for feature in features.keys():
         if features[feature]=='' or features[feature] == '0':
             continue 
@@ -430,7 +433,7 @@ def _save_features(c, features):
                     property_xpath = ''
                 try:
                     if ms.type == 'lang':
-                        x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], language=lang, xpath=property_xpath)
+                        x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], language=metadata_default_language, xpath=property_xpath)
                     else:                            
                         x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], xpath=property_xpath)
                     metadata_list.append(x) 
@@ -451,6 +454,9 @@ def _read_xmp_features(item, features, component):
 
     ctype = ContentType.objects.get_for_model(item)
     ctype_component = ContentType.objects.get_for_model(component)
+
+    user = item.uploaded_by()
+    metadata_default_language = get_metadata_default_language(user)
 
     metadata_dict = {}
 
@@ -488,7 +494,7 @@ def _read_xmp_features(item, features, component):
                     find_xpath = property_xpath.replace('/?xml:lang', '')
                     if metadata_dict[namespace_obj].has_key(find_xpath):
                         if property_value == 'x-default':
-                            property_value = settings.METADATA_DEFAULT_LANGUAGE
+                            property_value = metadata_default_language
                         metadata_dict[namespace_obj][find_xpath].language = property_value
                     else:
                         logger.debug('metadata property not found: ' + find_xpath)
