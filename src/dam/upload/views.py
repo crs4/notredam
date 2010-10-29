@@ -287,9 +287,6 @@ def _generate_tasks( component, workspace, force_generation,  check_for_existing
     """
     Generates MediaDART tasks
     """
-    def _cb_log_result(status_ok, result, userargs):
-        logger.debug('_generate_tasks on source component: %s' % result)
-
     def _cb_start_upload_events(status_ok, result, userargs):
         logger.debug('_generate_tasks: starting upload events: %s' % result)
         item = component.item
@@ -317,8 +314,8 @@ def _generate_tasks( component, workspace, force_generation,  check_for_existing
                 
         if  variant.name == 'mail':
             maction.append_func('send_mail')
-        callback = _cb_log_result
-    maction.activate()
+        callback = None
+    maction.activate(callback)
     
 def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
     
