@@ -773,6 +773,7 @@ def get_status(request):
     """
     try:
         items = simplejson.loads(request.POST.get('items'))
+        items = [int(i) for i in items]
         #logger.debug('######## items: %s' % items)
         #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
     
@@ -792,7 +793,7 @@ def get_status(request):
         
         items_done = list(set(items).difference(list(items_pending)))
 #        all_items = set(items_done + list(items_pending))
-        logger.debug('##### get_status: items done: %s' % ' '.join(map(str, items_done)))
+        logger.debug('--------##### get_status: items done: %s' % ' '.join(map(str, items_done)))
     
         total_pending = items_pending.count()
         total_failed = items_failed.count()
@@ -802,8 +803,11 @@ def get_status(request):
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
         default_language = get_metadata_default_language(user, workspace)    
-
-        for i in items:
+        logger.debug('items_done %s'%items_done)
+        logger.debug('items %s'%items)
+        logger.debug('items_pending %s'%items_pending)
+        
+        for i in items_done:
             item = Item.objects.get(pk=i)            
             thumb_url, thumb_ready = _get_thumb_url(item, workspace)
             my_caption = _get_thumb_caption(item, thumb_caption, default_language)
