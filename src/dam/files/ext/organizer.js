@@ -1307,24 +1307,28 @@ Ext.onReady(function(){
                         });
 
                     var update_items = data.items;
+                   
                     var tab = Ext.getCmp('media_tabs').getActiveTab();
                     if (tab) {
                         var view = tab.getComponent(0);
                         if (view) {
                             var store = view.getStore();
-                            for (var i in update_items) {
+                            Ext.each(update_items, function(){
+                            	info = this;
+                            	
+                            	var i = info.pk;
                                 if (store.findExact('pk', i) != -1) {
                                     var item_data = store.getAt(store.findExact('pk', i));
                                     var previous_thumb_ready = item_data.data.thumb;
-                                    var thumb_ready = update_items[i]['thumb'];
-                                    for (var key in update_items[i]) {
+                                    var thumb_ready = info['thumb'];
+                                    for (var key in info) {
                                         if (key == 'url') {
                                             if (previous_thumb_ready == 0 && thumb_ready == 1) {
-                                                item_data.set(key, update_items[i][key]);
+                                                item_data.set(key, info[key]);
                                             }
                                         }
                                         else {
-                                            item_data.set(key, update_items[i][key]);
+                                            item_data.set(key, info[key]);
                                         }
                                     }
                                     
@@ -1343,8 +1347,12 @@ Ext.onReady(function(){
                                         }
                                         
                                     }                                    
-                                }  
-                            }
+                                } 
+                            
+                            
+                            
+                            })
+                            
                         }
                     }
 
