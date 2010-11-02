@@ -16,6 +16,56 @@
 *
 */
 
+function set_status_bar_busy(){
+	var sb = Ext.getCmp('dam_statusbar');
+	sb.showBusy({
+	    iconCls: 'x-status-busy status_busy'
+	});
+};
+
+function update_task_status(data){
+	console.log('update_task_status');
+	console.log(data);
+	var sb = Ext.getCmp('dam_statusbar');
+	
+    var pending = data.pending + data.failed;
+    
+    
+    var text, iconCls;
+    if (pending == 0) {
+        text = 'No tasks pending';
+
+        iconCls = 'status-ok';
+        
+        if (Ext.query('.'+ cls_audio).length > 0)
+        	start_audio_player();
+        
+
+    }
+    else {
+
+        text = '';
+
+        if (data.pending > 0) {
+            text += data.pending + ' task(s) pending ';
+        }
+        if (data.failed > 0) {
+            text += data.failed + ' task(s) failed ';
+          
+        
+        }
+		iconCls = 'status-warning';
+    }
+    (function(){
+        sb.setStatus({
+            text: text,
+            iconCls: iconCls
+        });
+    }).defer(1500);
+
+	console.log(iconCls);
+	console.log('end update_task_status');
+};
 
 var basket_size_var =0;
 function basket_size(){
@@ -715,6 +765,18 @@ function createMediaPanel(config, autoLoad) {
         url: '/load_items/',
         autoLoad: autoLoad,
         panel_id: panel_id,
+        listeners:{
+        	load: function(){
+        		var inprogress = this.query('inprogress', 1);
+        		var data = {
+        			pending: inprogress.length,
+        			failed: 0
+        		};
+        		console.log(data);
+        		update_task_status(data);
+        		
+        	}
+        }
         
 	});
 	
@@ -1269,7 +1331,7 @@ Ext.onReady(function(){
                 if (view) {
                     var store = view.getStore();
                     store_variant = Ext.getCmp('variant_summary').getStore();
-                    
+                  
                     for (var i = 0; i < store.getCount(); i++) {
                         var current_item = store.getAt(i);
                         var item_data = current_item.data;
@@ -1298,14 +1360,9 @@ Ext.onReady(function(){
                 params: {items: Ext.encode(items)},
                 
                 success: function(data){                    
-                    data = Ext.decode(data.responseText);                    
-                     
-                    var sb = Ext.getCmp('dam_statusbar'); 
-					
-                    sb.showBusy({
-                        iconCls: 'x-status-busy status_busy'
-                        });
-
+                    set_status_bar_busy();
+                    data = Ext.decode(data.responseText);
+                    
                     var update_items = data.items;
                    
                     var tab = Ext.getCmp('media_tabs').getActiveTab();
@@ -1356,46 +1413,37 @@ Ext.onReady(function(){
                         }
                     }
 
-//                    var pending = data.adapt + data.feat + data.metadata;
-                    var pending = data.pending + data.failed;
-                    var text, iconCls;
-                    if (pending == 0) {
-                        text = 'No tasks pending';
-//                        text = 'No items pending';
-                        iconCls = 'status-ok';
-                        
-                        if (Ext.query('.'+ cls_audio).length > 0)
-                        	start_audio_player();
-                        
-//                        tip_text = text;
-                    }
-                    else {
-//                        text = pending + ' tasks pending';
-
-                        text = '';
-
-                        if (data.pending > 0) {
-                            text += data.pending + ' task(s) pending ';
-                        }
-                        if (data.failed > 0) {
-                            text += data.failed + ' task(s) failed ';
-                        }
-//                        tip_text = '';
-
-//                         if (data.adapt > 0)
-//                             tip_text += data.adapt + ' adaptations ';
-//                         if (data.feat > 0)
-//                             tip_text += data.feat + ' feature extractions ';
-//                         if (data.metadata > 0)
-//                             tip_text += data.metadata + ' metadata extractions';
-                        iconCls = 'status-warning';
-                    }
-                    (function(){
-                        sb.setStatus({
-                            text: text,
-                            iconCls: iconCls
-                        });
-                    }).defer(1500);
+					update_task_status(data);
+//                    var pending = data.pending + data.failed;
+//                    var text, iconCls;
+//                    if (pending == 0) {
+//                        text = 'No tasks pending';
+//
+//                        iconCls = 'status-ok';
+//                        
+//                        if (Ext.query('.'+ cls_audio).length > 0)
+//                        	start_audio_player();
+//                        
+//
+//                    }
+//                    else {
+//
+//                        text = '';
+//
+//                        if (data.pending > 0) {
+//                            text += data.pending + ' task(s) pending ';
+//                        }
+//                        if (data.failed > 0) {
+//                            text += data.failed + ' task(s) failed ';
+//                        }
+//
+//                    }
+//                    (function(){
+//                        sb.setStatus({
+//                            text: text,
+//                            iconCls: iconCls
+//                        });
+//                    }).defer(1500);
                 }
             });
         },

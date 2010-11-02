@@ -824,8 +824,10 @@ def _get_items_info(user, workspace, items):
                'item_in_basket': item_in_basket,
                'geotagged': geotagged,
                'url':smart_str(thumb_url), 
+               'type': smart_str(item.type.name),
                'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
-               'preview_available': int(preview_available > 0)}
+               'preview_available': int(preview_available ==  0)
+               }
             if item.pk in items_pending:
                 tmp['inprogress'] = 1
             
