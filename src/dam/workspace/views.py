@@ -867,13 +867,24 @@ def get_ws_members(request):
     available_permissions = WorkspacePermission.objects.all()    
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
     
+    
     data = {'elements':[]}
     for u in members:
         permissions = ws.get_permissions(u)
         perm_list = [p.pk for p in permissions]
         user_dict = {'id':u.id, 'name':u.username}
+        # the following 5 rows of code have been added by clem 
+        # to have all the permissions of admin set to true,
+        # as it actually is.
+        # start
+        all_true = False
         for p in available_permissions:
-            if p.pk in perm_list:
+            if admin_user == u:
+                all_true = True
+                break
+        # end
+        for p in available_permissions:
+            if p.pk in perm_list or all_true == True:
                 user_dict[p.codename] = 1
             else:
                 user_dict[p.codename] = 0
