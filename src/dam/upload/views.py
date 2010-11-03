@@ -26,6 +26,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.db import transaction
 
 from dam.repository.models import Item, Component, Watermark
 from dam.core.dam_repository.models import Type
@@ -89,7 +90,8 @@ def _get_uploaded_info(upload_file):
 
     return (file_name, type, res_id)
 
-    
+
+@transaction.commit_manually
 def _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace):
     """
     Create component for the given item and generate mediadart tasks. 
@@ -111,7 +113,7 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
     ext = mime_type.split('/')[1]
     comp.format = ext
     comp.save()
-
+    
     default_language = get_metadata_default_language(user)
     
     for key in request.POST.keys():
@@ -123,7 +125,7 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
 
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
     orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
-
+    transaction.commit()
     try:
         generate_tasks(comp, workspace)
         
@@ -133,7 +135,10 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
         
     except Exception, ex:
         print traceback.print_exc(ex)
+        transaction.rollback()
         raise    
+#    transaction.commit()
+    
     
 def _save_uploaded_item(request, upload_file, user, workspace):
 
@@ -166,6 +171,10 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
                 
     _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
     
+
+
+
+@transaction.commit_manually
 def upload_item(request):
 
     """
@@ -183,9 +192,11 @@ def upload_item(request):
         _save_uploaded_item(request, upload_file, user, workspace)
     
         resp = simplejson.dumps({})
+        transaction.commit()
         return HttpResponse(resp)
     except Exception, ex:
         logger.exception(ex)
+        transaction.rollback()
         raise ex
 
 def upload_variant(request):
