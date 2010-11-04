@@ -1307,6 +1307,7 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
             if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_metadata') < 0) {
                 return false;
             }
+            return true;
         }
 
     }
