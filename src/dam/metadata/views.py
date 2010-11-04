@@ -206,6 +206,12 @@ def save_metadata(request):
     """
 
     metadata = simplejson.loads(request.POST.get('metadata'))
+    for el in metadata.keys():
+        print 'el:', el,' metadata[el]:',metadata[el], ' metadata[el][0]:', metadata[el][0]
+        if metadata[el] == u'Above Sea Level':
+            metadata[el] = u'0'
+        elif metadata[el] == u'Below Sea Level':
+            metadata[el] = u'1'
 
     item_list = request.POST.getlist('items')
     variant_name = request.POST.get('obj', 'original')
@@ -253,6 +259,11 @@ def save_descriptors(request):
             comp.save_rights_value(license, workspace)
         else:
             descriptor = MetadataDescriptor.objects.get(pk=int(desc_id))
+            if descriptor.name == 'AltitudeRef' and metadata[m]== 'Above Sea Level':
+                metadata[m] = '0'
+            elif descriptor.name == 'AltitudeRef' and metadata[m]== 'Below Sea Level':
+                metadata[m] = '1'
+
             if len(ids) == 2:
                 MetadataValue.objects.save_descriptor_values(descriptor, items, metadata[m], workspace, variant_name, default_language)
             else:
@@ -517,6 +528,13 @@ def get_metadata(request):
             form_list = _advanced_metadata_view(item_list, workspace, default_language, metadata_object, item_media_types)
         else:
             form_list = _simple_metadata_view(item_list, workspace, default_language, metadata_object, item_media_types)
+        for el in form_list:
+            if el['name'] == 'AltitudeRef' or el['name'] == 'GPS Altitude Ref':
+                if el.has_key('value'):
+                    if el['value'] == '0':
+                        el['value'] = 'Above Sea Level'
+                    elif el['value'] == '1':
+                        el['value'] = 'Below Sea Level'
         form_dict = {'rows': form_list}
     except Exception, ex:
         logger.exception(ex)
