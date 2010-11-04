@@ -868,57 +868,43 @@ function createTemplate(panel_id, media_type){
 		
 		var audio_tpl_base = '<div class="thumb-wrap thumb-audio" id="{pk}"  >';
 		
-//		audio_tpl_base += '<tpl if="preview_available == 0">';
-//			audio_tpl_base += '<div class="thumb  thumb-play" >';
-//		audio_tpl_base += '</tpl>';
 		
-		audio_tpl_base += '<tpl if="preview_available == 1">';
-			audio_tpl_base += '<div class="thumb  " >';
-		audio_tpl_base += '</tpl>';	
-		
-		
-//			if (media_type.length > 1)
-//				audio_tpl_base += '<span class="{type}_icon media_icon"></span>';
+//			audio_tpl_base += '<tpl if="preview_available == 1">';
+				audio_tpl_base += '<div class="thumb  " >';
+//			audio_tpl_base += '</tpl>';	
 			audio_tpl_base += '<tpl if="inprogress === 1"><span class="inprogress"></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>';
-//			audio_tpl_base += '<tpl if="preview_available == 0">';
-				
-//				audio_tpl_base += '<span>';				
-//					audio_tpl_base += '<tpl if="inprogress == 0">';
-//						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer myPlayer_' + panel_id + '" href="/redirect_to_component/{pk}/preview/?t=134.4.mp3">';
-//						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}"  class="myPlayer ' + cls_audio  +'" href="/redirect_to_component/{pk}/preview/?t=134.4.mp3">';
-//					audio_tpl_base += '</tpl>'; 
-//					audio_tpl_base += '<tpl if="inprogress == 1">';
-//						audio_tpl_base += '<a id="' +Ext.id() + '_{pk}">';
-//					audio_tpl_base += '</tpl>';
-//						audio_tpl_base += '<img class="play" style="display:none;" src="/files/images/play.png" />';
-//					audio_tpl_base += '</a>';
-//				audio_tpl_base += '</span>';
+			audio_tpl_base += '</div>';
 			
-//			audio_tpl_base += '</tpl>';
-			audio_tpl_base += '</div>';           
-//		audio_tpl_base += '<span>{shortName}</span></div>';
+			audio_tpl_base += '<span>{shortName}</span>'
+		audio_tpl_base += '</div>';
+
 		
 		return audio_tpl_base;
 	};
 	
 	var tpl_str = '<tpl for=".">';
-	tpl_str += '<tpl if="type == \'audio\'">';
-	tpl_str += get_audio_tpl(media_type);
-	tpl_str += '</tpl>';
-	tpl_str += '<tpl if="type != \'audio\'">';    
-	tpl_str += '<div class="thumb-wrap" id="{pk}">';
-	tpl_str += '<div class="thumb">';
-	if (media_type.length > 1)
-		tpl_str += '<span class="{type}_icon media_icon"></span>'; 
 	
-	tpl_str += '<tpl if="inprogress"><span class="inprogress"></span></tpl>';
-	tpl_str += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
-	tpl_str += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>'; 
-	tpl_str += '<!--img src="{url}" class="thumb-img"--><div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div></div>';                
-	tpl_str += '<span>{shortName}</span></div>';
-	tpl_str += '</tpl>';
+		tpl_str += '<tpl if="type == \'audio\'">';
+			tpl_str += get_audio_tpl(media_type);
+		tpl_str += '</tpl>';
+		
+		tpl_str += '<tpl if="type != \'audio\'">';    
+			tpl_str += '<div class="thumb-wrap" id="{pk}">';
+				tpl_str += '<div class="thumb">';
+					if (media_type.length > 1)
+						tpl_str += '<span class="{type}_icon media_icon"></span>'; 
+			
+					tpl_str += '<tpl if="inprogress"><span class="inprogress"></span></tpl>';
+					tpl_str += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
+					tpl_str += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>'; 
+					tpl_str += '<div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div>';
+				tpl_str +='</div>';                
+				
+				tpl_str += '<span>{shortName}</span>' 
+			tpl_str += '</div>';
+		tpl_str += '</tpl>';
 	tpl_str += '</tpl>';
 
 	return new Ext.XTemplate(

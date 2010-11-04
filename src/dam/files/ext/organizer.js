@@ -1414,36 +1414,7 @@ Ext.onReady(function(){
                     }
 
 					update_task_status(data);
-//                    var pending = data.pending + data.failed;
-//                    var text, iconCls;
-//                    if (pending == 0) {
-//                        text = 'No tasks pending';
-//
-//                        iconCls = 'status-ok';
-//                        
-//                        if (Ext.query('.'+ cls_audio).length > 0)
-//                        	start_audio_player();
-//                        
-//
-//                    }
-//                    else {
-//
-//                        text = '';
-//
-//                        if (data.pending > 0) {
-//                            text += data.pending + ' task(s) pending ';
-//                        }
-//                        if (data.failed > 0) {
-//                            text += data.failed + ' task(s) failed ';
-//                        }
-//
-//                    }
-//                    (function(){
-//                        sb.setStatus({
-//                            text: text,
-//                            iconCls: iconCls
-//                        });
-//                    }).defer(1500);
+
                 }
             });
         },
