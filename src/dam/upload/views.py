@@ -137,7 +137,7 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
         print traceback.print_exc(ex)
         transaction.rollback()
         raise    
-#    transaction.commit()
+    transaction.commit()
     
     
 def _save_uploaded_item(request, upload_file, user, workspace):
