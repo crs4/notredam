@@ -331,9 +331,10 @@ function switch_ws(current_record, ws_id){
     populate_menu();
     
     var sb = Ext.getCmp('dam_statusbar');
-    sb.showBusy({
-        iconCls: 'x-status-busy status_busy'
-    });
+    if(sb)
+	    sb.showBusy({
+	        iconCls: 'x-status-busy status_busy'
+	    });
     
 //     if (sb.tip) {
 //         if (sb.tip.body) {

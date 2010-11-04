@@ -18,53 +18,47 @@
 
 function set_status_bar_busy(){
 	var sb = Ext.getCmp('dam_statusbar');
-	sb.showBusy({
-	    iconCls: 'x-status-busy status_busy'
-	});
+	if(sb)
+		sb.showBusy({
+		    iconCls: 'x-status-busy status_busy'
+		});
 };
 
 function update_task_status(data){
-	console.log('update_task_status');
-	console.log(data);
-	var sb = Ext.getCmp('dam_statusbar');
 	
-    var pending = data.pending + data.failed;
-    
-    
-    var text, iconCls;
-    if (pending == 0) {
-        text = 'No tasks pending';
+	var sb = Ext.getCmp('dam_statusbar');
+	if(sb){	
+	    var pending = data.pending + data.failed;
+	    var text, iconCls;
+	    if (pending == 0) {
+	        text = 'No tasks pending';
+	
+	        iconCls = 'status-ok';	        
+	        if (Ext.query('.'+ cls_audio).length > 0)
+	        	start_audio_player();
+	    }
+	    else {
+	
+	        text = '';
+	
+	        if (data.pending > 0) {
+	            text += data.pending + ' task(s) pending ';
+	        }
+	        if (data.failed > 0) {
+	            text += data.failed + ' task(s) failed ';
+	          
+	        
+	        }
+			iconCls = 'status-warning';
+	    }
+	    (function(){
+	        sb.setStatus({
+	            text: text,
+	            iconCls: iconCls
+	        });
+	    }).defer(1500);
 
-        iconCls = 'status-ok';
-        
-        if (Ext.query('.'+ cls_audio).length > 0)
-        	start_audio_player();
-        
-
-    }
-    else {
-
-        text = '';
-
-        if (data.pending > 0) {
-            text += data.pending + ' task(s) pending ';
-        }
-        if (data.failed > 0) {
-            text += data.failed + ' task(s) failed ';
-          
-        
-        }
-		iconCls = 'status-warning';
-    }
-    (function(){
-        sb.setStatus({
-            text: text,
-            iconCls: iconCls
-        });
-    }).defer(1500);
-
-	console.log(iconCls);
-	console.log('end update_task_status');
+	}
 };
 
 var basket_size_var =0;
@@ -1688,15 +1682,15 @@ var search_box = {
                         }
             },
             items:[
-            new Ext.ux.StatusBar({
-                region: 'south',
-                defaultText: 'Default status',
-                id: 'dam_statusbar',
-                height: 25,
-                statusAlign: 'right', // the magic config
-                bodyStyle: 'padding:5px;'
-//                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
-            }),
+//            new Ext.ux.StatusBar({
+//                region: 'south',
+//                defaultText: 'Default status',
+//                id: 'dam_statusbar',
+//                height: 25,
+//                statusAlign: 'right', // the magic config
+//                bodyStyle: 'padding:5px;'
+////                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
+//            }),
             
 //                new Ext.BoxComponent({ // raw
 //                    region:'north',
