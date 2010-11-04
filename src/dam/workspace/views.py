@@ -814,13 +814,17 @@ def _get_items_info(user, workspace, items):
             if GeoInfo.objects.filter(item=item).count() > 0:
                 geotagged = 1
                 
-            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count() 
+            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count()
+            if item.type.name == 'audio':
+                inprogress = int(not (preview_available == 0))
+            else:
+                inprogress = int(not thumb_ready)
             tmp = {
                'name':my_caption,
                'size':item.get_file_size(), 
                'pk': smart_str(item.pk), 
                'thumb': thumb_ready,
-               'inprogress': int(not thumb_ready),
+               'inprogress': inprogress,
                'item_in_basket': item_in_basket,
                'geotagged': geotagged,
                'url':smart_str(thumb_url), 
