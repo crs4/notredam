@@ -17,14 +17,14 @@
 #########################################################################
 
 from django.test.client import Client
-from models import *
+from dam.api.models import *
 from django.contrib.auth.models import User
 import urllib
 from django.test import TestCase
 from django.utils import simplejson as json
 from django.db.models import Q
 
-from exceptions import *
+from dam.api.exceptions import *
 from dam.treeview.models import Node,  NodeMetadataAssociation,  SmartFolder,  SmartFolderNodeAssociation
 
 from dam.variants.models import Variant
@@ -41,6 +41,31 @@ from dam.scripts.models import Script
 import hashlib
 
 
+def _get_final_parameters(api_key, secret, user_id, kwargs = None):
+    if  not kwargs:
+        kwargs = {}
+    kwargs['api_key'] = api_key
+    kwargs['user_id'] = user_id
+    to_hash = secret
+    parameters = []
+    
+    for key,  value in kwargs.items():
+        if isinstance(value,  list):
+            value.sort()
+            for el in value:
+                parameters.append(str(key)+str(el))
+        else:                    
+            parameters.append(str(key)+str(value))
+    
+    parameters.sort()
+    for el in parameters:
+        to_hash += el
+        
+    hashed_secret = hashlib.sha1(to_hash).hexdigest()
+    kwargs['checksum'] = hashed_secret 
+    return kwargs
+
+
 class MyTestCase(TestCase):
 #    fixtures = ['test_data.json', ]   
 
@@ -54,28 +79,7 @@ class MyTestCase(TestCase):
         
     def get_final_parameters(self, kwargs = None):
         "add api_key user_id and secret"
-        if  not kwargs:
-            kwargs = {}
-        kwargs['api_key'] = self.api_key
-        kwargs['user_id'] = self.user_id
-        to_hash = self.secret
-        parameters = []
-        
-        for key,  value in kwargs.items():
-            if isinstance(value,  list):
-                value.sort()
-                for el in value:
-                    parameters.append(str(key)+str(el))
-            else:                    
-                parameters.append(str(key)+str(value))
-        
-        parameters.sort()
-        for el in parameters:
-            to_hash += el
-            
-        hashed_secret = hashlib.sha1(to_hash).hexdigest()
-        kwargs['checksum'] = hashed_secret 
-        return kwargs
+        return _get_final_parameters(self.api_key, self.secret, self.user_id, kwargs)
         
         
 class WSTestCase(MyTestCase):
@@ -767,7 +771,7 @@ class ItemTest(MyTestCase):
         
     def test_upload(self):
         from django.test import client 
-        from batch_processor.models import Action
+        from mprocessor.models import Task
         workspace = DAMWorkspace.objects.all()[0]
         image = Type.objects.get(name = 'image')
         item = Item.objects.create(type = image)
@@ -783,7 +787,7 @@ class ItemTest(MyTestCase):
         print response.content 
         self.assertTrue(response.content == '')
         self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
-        self.assertTrue(Action.objects.filter(component__in = item.component_set.all()).count() == 7) #(adapt + extract feat)*3 + extract feat orig
+#        self.assertTrue(Task.objects.filter(component__in = item.component_set.all()).count()) #(adapt + extract feat)*3 + extract feat orig
                  
         
     def test_get_state(self):

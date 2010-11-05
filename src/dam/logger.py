@@ -19,7 +19,7 @@
 
 import logging
 #from web_application.config import dir_log, logging_level
-from settings import DEBUG,  dir_log
+from dam.settings import DEBUG,  dir_log
 import sys, os.path
 from django.utils.encoding import smart_unicode
 
@@ -36,7 +36,7 @@ logging.basicConfig(level=logging_level,
                     )
                     
 default_logger = logging.getLogger('dam')
-#default_logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))
+default_logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))
 
 #console = logging.StreamHandler()
 ## define a Handler which writes INFO messages or higher to the sys.stderr

@@ -35,7 +35,7 @@ from dam.core.dam_repository.models import Type
 from django.utils import simplejson
 
 import cPickle as pickle
-import logger
+from dam import logger
     
 @login_required
 @permission_required('edit_taxonomy')

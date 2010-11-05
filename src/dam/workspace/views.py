@@ -37,7 +37,7 @@ from dam.upload.views import generate_tasks
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.core.dam_repository.models import Type
 from dam.geo_features.models import GeoInfo
-from dam.batch_processor.models import MachineState, Machine
+from dam.mprocessor.models import Task
 from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
@@ -49,7 +49,7 @@ from dam.appearance.models import Theme
 
 from django.utils.datastructures import SortedDict
 
-import logger
+from dam import logger
 import time
 from mx.DateTime.Parser import DateTimeFromString
 
@@ -613,16 +613,16 @@ def load_items(request, view_type=None, unlimited=False, ):
 		
         if limit == 0:
             unlimited = True
-
-        items, total_count = _search_items(request, workspace, media_type, start, limit, unlimited)
-                    
+            
+        
+        items, total_count = _search_items(request, workspace, media_type, start, limit, unlimited)                    
         item_dict = []
         now = time.time()
 
         items_pks = [item.pk for item in items]
         
-        tasks_pending_obj = MachineState.objects.filter(action__component__workspace=workspace, action__component__item__pk__in=items_pks)     
-        tasks_pending = tasks_pending_obj.values_list('action__component__item',  flat=True)
+        tasks_pending_obj = Task.objects.filter(component__workspace=workspace, component__item__pk__in=items_pks)     
+        tasks_pending = tasks_pending_obj.values_list('component__item',  flat=True)
                 
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
@@ -632,53 +632,53 @@ def load_items(request, view_type=None, unlimited=False, ):
         user_basket = Basket.get_basket(user, workspace)
 
         basket_items = user_basket.items.all().values_list('pk', flat=True)
+        item_dict = _get_items_info(user,workspace, items)[0]
         
-        for item in items:
-            geotagged = 0
-            inprogress = 0
-            
-            if item.pk in tasks_pending:
-                inprogress = 1
-            if GeoInfo.objects.filter(item=item).count() > 0:
-                geotagged = 1
-            
-            item_in_basket = 0
-
-            if item.pk in basket_items:
-                item_in_basket = 1
-             
-            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
-            logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
-
-            states = item.stateitemassociation_set.all()
-            try:
-                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-            except:
-                # problems retrieving thumb, skip this items
-                continue
-#                my_caption = ''
-            if inprogress:
-                preview_available = tasks_pending_obj.filter(action__component__variant__name = 'preview', action__component__item = item, action__function = 'adapt_resource').count()
-            else:
-                preview_available = 0
-            item_info = {
-                "name":my_caption,
-                "pk": smart_str(item.pk),
-                "geotagged": geotagged, 
-                "inprogress": inprogress, 
-                'thumb': thumb_ready, 
-                'type': smart_str(item.type.name),
-                'inbasket': item_in_basket,
-                'preview_available': preview_available,
-                "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))
-            }
-            
-            if states.count():
-                state_association = states[0]
-                
-                item_info['state'] = state_association.state.pk
-                
-            item_dict.append(item_info)
+#        for item in items:
+#            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
+#            logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
+#            
+#            geotagged = 0
+#            inprogress =  int( (not thumb_ready) or (item.pk in tasks_pending)) 
+#            
+#            
+#            if GeoInfo.objects.filter(item=item).count() > 0:
+#                geotagged = 1
+#            
+#            item_in_basket = 0
+#
+#            if item.pk in basket_items:
+#                item_in_basket = 1
+#             
+#            states = item.stateitemassociation_set.all()
+#            try:
+#                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+#            except:
+#                # problems retrieving thumb, skip this items
+#                continue
+##                my_caption = ''
+#            if inprogress:
+#                preview_available = tasks_pending_obj.filter(component__variant__name = 'preview', component__item = item, params__contains = 'adapt_resource').count()
+#            else:
+#                preview_available = 0
+#            item_info = {
+#                "name":my_caption,
+#                "pk": smart_str(item.pk),
+#                "geotagged": geotagged, 
+#                "inprogress": inprogress, 
+#                'thumb': thumb_ready, 
+#                'type': smart_str(item.type.name),
+#                'inbasket': item_in_basket,
+#                'preview_available': preview_available,
+#                "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))
+#            }
+#            
+#            if states.count():
+#                state_association = states[0]
+#                
+#                item_info['state'] = state_association.state.pk
+#                
+#            item_dict.append(item_info)
         
         res_dict = {"items": item_dict, "totalCount": str(total_count)}
 
@@ -766,6 +766,85 @@ def _get_thumb_caption(item, template_string, language):
 
     return caption
     
+def _get_items_info(user, workspace, items):
+        
+        items_id = [i.pk for i in items]
+        
+        user_basket = Basket.get_basket(user, workspace)
+
+        basket_items = user_basket.items.all().values_list('pk', flat=True)
+        
+        ws_tasks = Task.objects.filter(component__workspace=workspace)        
+        tasks_pending = ws_tasks.filter(state='pending')
+        #tasks_done = ws_tasks.filter(state='done')
+        tasks_failed = ws_tasks.filter(state='failed')
+    
+        #items_done = tasks_done.values_list('component__item', flat=True).distinct()
+        items_pending = tasks_pending.values_list('component__item', flat=True).distinct()
+        items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
+        
+        items_done = list(set(items_id).difference(list(items_pending)))
+#        all_items = set(items_done + list(items_pending))
+        logger.debug('--------##### get_status: items done: %s' % ' '.join(map(str, items_done)))
+    
+        total_pending = items_pending.count()
+        total_failed = items_failed.count()
+        
+        update_items = []
+        now = time.time()
+        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+        default_language = get_metadata_default_language(user, workspace)    
+        logger.debug('items_done %s'%items_done)
+        logger.debug('items %s'%items)
+        logger.debug('items_pending %s'%items_pending)
+        
+        
+        for item in items:
+#            item = Item.objects.get(pk=i)            
+            thumb_url, thumb_ready = _get_thumb_url(item, workspace)
+            my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+            
+            item_in_basket = 0
+
+            if item.pk in basket_items:
+                item_in_basket = 1
+                
+            geotagged = 0
+            if GeoInfo.objects.filter(item=item).count() > 0:
+                geotagged = 1
+                
+            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count()
+            if item.type.name == 'audio':
+                inprogress = int(not (preview_available == 0))
+            else:
+                inprogress = int(not thumb_ready)
+            tmp = {
+               'name':my_caption,
+               'size':item.get_file_size(), 
+               'pk': smart_str(item.pk), 
+               'thumb': thumb_ready,
+               'inprogress': inprogress,
+               'item_in_basket': item_in_basket,
+               'geotagged': geotagged,
+               'url':smart_str(thumb_url), 
+               'type': smart_str(item.type.name),
+               'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
+               'preview_available': int(preview_available ==  0)
+               }
+            if item.pk in items_pending:
+                tmp['inprogress'] = 1
+            
+            states = item.stateitemassociation_set.all()
+            if states.count():
+                state_association = states[0]
+                
+                tmp['state'] = state_association.state.pk
+            
+            update_items.append(tmp)
+
+        return (update_items, total_pending, total_failed)
+    
 @login_required
 def get_status(request):
     """
@@ -774,48 +853,18 @@ def get_status(request):
     """
     try:
         items = simplejson.loads(request.POST.get('items'))
+        items = [int(i) for i in items]
+        items = Item.objects.filter(pk__in = items)
+        #logger.debug('######## items: %s' % items)
+        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
     
         user = request.user
     
-        workspace = request.session.get('workspace', None) 
-    
-        ws_tasks = Machine.objects.filter(current_state__action__component__workspace=workspace)
-        tasks_pending = ws_tasks.exclude(current_state__name='failed')
-        tasks_failed = ws_tasks.filter(current_state__name='failed')
-    
-        items_failed = tasks_failed.values_list('current_state__action__component__item', flat=True).distinct()
-        items_pending = tasks_pending.values_list('current_state__action__component__item', flat=True).distinct()
-    
-        total_pending = items_pending.count()
-        total_failed = items_failed.count()
-        
-        update_items = {}
-     
-        now = time.time()
-    
-        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
-    
-        default_language = get_metadata_default_language(user, workspace)
-    
-        for i in items:
-            item = Item.objects.get(pk=i)
-    
-            thumb_url, thumb_ready = _get_thumb_url(item, workspace)
-    
-            my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-    
-            if tasks_pending.filter(current_state__action__component__item=item).count() > 0:
-                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'thumb': thumb_ready,
-                                  "url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
-            else:
-                preview_available = tasks_pending.filter(current_state__action__component__variant__name = 'preview', current_state__action__component__item=item).count()
-                update_items[i] = {"name":my_caption,"size":item.get_file_size(), "pk": smart_str(item.pk), 'inprogress': 0, 'thumb': thumb_ready, 
-                                  'preview_available': preview_available,"url":smart_str(thumb_url), "url_preview":smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now))}
-    
-    #    resp_dict = {'adapt': adapt_pending, 'feat': feat_pending, 'metadata': metadata_pending, 'items': update_items}
+        workspace = request.session.get('workspace', None)
+        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
+           
         resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-    
+        logger.debug('\n ################### get_status: %s' % resp_dict)
         resp = simplejson.dumps(resp_dict)
         return HttpResponse(resp)
     except Exception,ex:

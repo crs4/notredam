@@ -41,26 +41,26 @@ from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
 from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
-from scripts.models import Script 
+from dam.scripts.models import Script 
 from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type, _save_uploaded_variant
 from dam.workflow.views import _set_state 
-from scripts.views import _new_script,  _get_scripts_info
-from settings import SERVER_PUBLIC_ADDRESS
+from dam.scripts.views import _new_script,  _get_scripts_info
+from dam.settings import SERVER_PUBLIC_ADDRESS
 
-from decorators import *
-from exceptions import *
-from workspace.forms import AdminWorkspaceForm
+from dam.api.decorators import *
+from dam.api.exceptions import *
+from dam.workspace.forms import AdminWorkspaceForm
 from dam.variants.views import _edit_variant
+from dam.upload.uploadhandler import StorageHandler
 from django.contrib.auth import authenticate,  login
-from upload.uploadhandler import StorageHandler
 
 #from django.contrib.sessions.backends.db import SessionStore
 
 
-import logger
+from dam import logger
 import os.path
 from mimetypes import guess_type
 
@@ -79,7 +79,7 @@ class ModResource(Resource):
     
     def __init__(self, private = False,   *args,  **kwargs):
         super(ModResource,  self).__init__( *args,  **kwargs)
-        logger.debug('_private %s'%private)
+        #logger.debug('_private %s'%private)
         self.private = private
         
     def get_json_request(self,  request):

@@ -26,7 +26,7 @@ from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS
 
 import urlparse
-import logger
+from dam import logger
 from django.utils import simplejson
 import time
 
@@ -365,6 +365,10 @@ class Component(AbstractComponent):
 
     def _get_media_type(self):
         return self.type            
+
+    def get_extractor(self):
+        extractors = {'image': 'media_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
+        return extractors[self.media_type.name]
 
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)

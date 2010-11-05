@@ -16,6 +16,50 @@
 *
 */
 
+function set_status_bar_busy(){
+	var sb = Ext.getCmp('dam_statusbar');
+	if(sb)
+		sb.showBusy({
+		    iconCls: 'x-status-busy status_busy'
+		});
+};
+
+function update_task_status(data){
+	
+	var sb = Ext.getCmp('dam_statusbar');
+	if(sb){	
+	    var pending = data.pending + data.failed;
+	    var text, iconCls;
+	    if (pending == 0) {
+	        text = 'No tasks pending';
+	
+	        iconCls = 'status-ok';	        
+	        if (Ext.query('.'+ cls_audio).length > 0)
+	        	start_audio_player();
+	    }
+	    else {
+	
+	        text = '';
+	
+	        if (data.pending > 0) {
+	            text += data.pending + ' task(s) pending ';
+	        }
+	        if (data.failed > 0) {
+	            text += data.failed + ' task(s) failed ';
+	          
+	        
+	        }
+			iconCls = 'status-warning';
+	    }
+	    (function(){
+	        sb.setStatus({
+	            text: text,
+	            iconCls: iconCls
+	        });
+	    }).defer(1500);
+
+	}
+};
 
 var basket_size_var =0;
 function basket_size(){
@@ -715,6 +759,18 @@ function createMediaPanel(config, autoLoad) {
         url: '/load_items/',
         autoLoad: autoLoad,
         panel_id: panel_id,
+        listeners:{
+        	load: function(){
+        		var inprogress = this.query('inprogress', 1);
+        		var data = {
+        			pending: inprogress.length,
+        			failed: 0
+        		};
+        		console.log(data);
+        		update_task_status(data);
+        		
+        	}
+        }
         
 	});
 	
@@ -1269,15 +1325,15 @@ Ext.onReady(function(){
                 if (view) {
                     var store = view.getStore();
                     store_variant = Ext.getCmp('variant_summary').getStore();
-                    
+                  
                     for (var i = 0; i < store.getCount(); i++) {
                         var current_item = store.getAt(i);
                         var item_data = current_item.data;
                         
 //                        if(item_data.inprogress == 0 && view.getSelectedIndexes().length == 1 && view.getSelectedIndexes()[0] == i)
 //                        	items.push(item_data.pk); //check if selected item changed,since some script has been run 
-                        	
-                        if (item_data.inprogress == 1) {
+                        
+                        if (item_data.inprogress) {
                             items.push(item_data.pk);                          
                             
                             if(i == 0 &&  view.getSelectionCount()  ==  1 && Ext.getCmp('detail_tabs').isVisible() && Ext.getCmp('detail_tabs').getActiveTab().id == 'preview_panel' && store_variant.lastOptions && store_variant.lastOptions.params.items == item_data.pk) {
@@ -1298,33 +1354,32 @@ Ext.onReady(function(){
                 params: {items: Ext.encode(items)},
                 
                 success: function(data){                    
-                    data = Ext.decode(data.responseText);                    
-                     
-                    var sb = Ext.getCmp('dam_statusbar'); 
-					
-                    sb.showBusy({
-                        iconCls: 'x-status-busy status_busy'
-                        });
-
+                    set_status_bar_busy();
+                    data = Ext.decode(data.responseText);
+                    
                     var update_items = data.items;
+                   
                     var tab = Ext.getCmp('media_tabs').getActiveTab();
                     if (tab) {
                         var view = tab.getComponent(0);
                         if (view) {
                             var store = view.getStore();
-                            for (var i in update_items) {
+                            Ext.each(update_items, function(){
+                            	info = this;
+                            	
+                            	var i = info.pk;
                                 if (store.findExact('pk', i) != -1) {
                                     var item_data = store.getAt(store.findExact('pk', i));
                                     var previous_thumb_ready = item_data.data.thumb;
-                                    var thumb_ready = update_items[i]['thumb'];
-                                    for (var key in update_items[i]) {
+                                    var thumb_ready = info['thumb'];
+                                    for (var key in info) {
                                         if (key == 'url') {
                                             if (previous_thumb_ready == 0 && thumb_ready == 1) {
-                                                item_data.set(key, update_items[i][key]);
+                                                item_data.set(key, info[key]);
                                             }
                                         }
                                         else {
-                                            item_data.set(key, update_items[i][key]);
+                                            item_data.set(key, info[key]);
                                         }
                                     }
                                     
@@ -1343,51 +1398,17 @@ Ext.onReady(function(){
                                         }
                                         
                                     }                                    
-                                }  
-                            }
+                                } 
+                            
+                            
+                            
+                            })
+                            
                         }
                     }
 
-//                    var pending = data.adapt + data.feat + data.metadata;
-                    var pending = data.pending + data.failed;
-                    var text, iconCls;
-                    if (pending == 0) {
-                        text = 'No tasks pending';
-//                        text = 'No items pending';
-                        iconCls = 'status-ok';
-                        
-                        if (Ext.query('.'+ cls_audio).length > 0)
-                        	start_audio_player();
-                        
-//                        tip_text = text;
-                    }
-                    else {
-//                        text = pending + ' tasks pending';
+					update_task_status(data);
 
-                        text = '';
-
-                        if (data.pending > 0) {
-                            text += data.pending + ' task(s) pending ';
-                        }
-                        if (data.failed > 0) {
-                            text += data.failed + ' task(s) failed ';
-                        }
-//                        tip_text = '';
-
-//                         if (data.adapt > 0)
-//                             tip_text += data.adapt + ' adaptations ';
-//                         if (data.feat > 0)
-//                             tip_text += data.feat + ' feature extractions ';
-//                         if (data.metadata > 0)
-//                             tip_text += data.metadata + ' metadata extractions';
-                        iconCls = 'status-warning';
-                    }
-                    (function(){
-                        sb.setStatus({
-                            text: text,
-                            iconCls: iconCls
-                        });
-                    }).defer(2000);
                 }
             });
         },
@@ -1661,15 +1682,15 @@ var search_box = {
                         }
             },
             items:[
-            new Ext.ux.StatusBar({
-                region: 'south',
-                defaultText: 'Default status',
-                id: 'dam_statusbar',
-                height: 25,
-                statusAlign: 'right', // the magic config
-                bodyStyle: 'padding:5px;'
-//                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
-            }),
+//            new Ext.ux.StatusBar({
+//                region: 'south',
+//                defaultText: 'Default status',
+//                id: 'dam_statusbar',
+//                height: 25,
+//                statusAlign: 'right', // the magic config
+//                bodyStyle: 'padding:5px;'
+////                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
+//            }),
             
 //                new Ext.BoxComponent({ // raw
 //                    region:'north',

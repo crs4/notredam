@@ -24,8 +24,8 @@ from django_restapi.responder import *
 #from django_restapi.util import ErrorDict
 from django.forms.util import ErrorDict
 from django.utils import simplejson as json
-import logger
-from models import  Secret,  Application
+from dam import logger
+from dam.api.models import  Secret,  Application
 import hashlib
 
 from exceptions import *
@@ -55,7 +55,7 @@ def error_response( error_code, error_message, error_class,  error_dict = None):
 
 @transaction.commit_manually
 def exception_handler(func):
-    logger.debug('---------------------')
+    #logger.debug('---------------------')
     
     def _exception_handler(self,  request, *args, **kwargs):
        

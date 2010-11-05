@@ -18,11 +18,12 @@
 
 import os.path, os
 import sys
+import logging
 
 
 
 DEMO_STRING="Development Demo" 
-PYTHONPATH= "/opt/mediadart/"
+#PYTHONPATH= "/opt/mediadart/"
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,7 +43,8 @@ THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
 
 from config import *
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
-MEDIADART_CONF['log_path'] = dir_log
+#MEDIADART_CONF['log_path'] = dir_log
+LOG_LEVEL=logging.DEBUG
 
 if DATABASE_ENGINE == 'sqlite3':
     DATABASE_NAME = os.path.join(INSTALLATIONPATH,  DATABASE_NAME)
@@ -152,7 +154,6 @@ INSTALLED_APPS = (
 	'dam.workspace',
 	'dam.application',
 	'dam.api',
-	'dam.batch_processor',
 	'dam.workflow',
 	'dam.eventmanager',
 	'dam.geo_features',
