@@ -19,19 +19,26 @@
 Ext.form.LanguageField = Ext.extend(Ext.form.TextArea, {
     store: {},
     setValue: function(v) {
+    	
+    		
         if (!this.store) {
 		    this.store = {};
         }
         var metadata_grid = this.grid;
         var lang = metadata_grid.language;
         this.store[lang] = v;
-        var record_choices = metadata_grid.getStore().getAt(this.row).get('choices');
-        record_choices[lang] = v;
-        metadata_grid.getStore().getAt(this.row).set('choices', record_choices);
-        metadata_grid.getStore().getAt(this.row).set('value', v);
-        Ext.form.TextArea.superclass.setValue.call(this, v);
+               
+        if (v != ''){
+        	var record_choices = metadata_grid.getStore().getAt(this.row).get('choices');
+        	record_choices[lang] = v;
+        	
+        	metadata_grid.getStore().getAt(this.row).set('choices', record_choices);
+    		metadata_grid.getStore().getAt(this.row).set('value', v);
+	        Ext.form.TextArea.superclass.setValue.call(this, v);
+        }
     }
 });
+
 
 Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
     store: {},

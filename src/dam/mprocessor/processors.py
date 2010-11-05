@@ -10,7 +10,7 @@ from mediadart.mqueue.mqserver import MQServer
 from mediadart.storage import Storage, new_id
 from mediadart.mqueue.mqclient_twisted import Proxy
 from mediadart.utils import default_start_mqueue
-from dam.config import METADATA_DEFAULT_LANGUAGE
+
 from dam.xmp_embedding import synchronize_metadata, reset_modified_flag
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
@@ -19,6 +19,8 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.mprocessor.models import MAction
 from dam.scripts.models import PRESETS, Script
 from dam.core.dam_metadata.models import XMPNamespace
+from dam.preferences.views import get_metadata_default_language
+
 
 
 def new_id():
@@ -367,7 +369,11 @@ def _save_features(c, features):
 
     media_type = c.media_type.name
     ctype = ContentType.objects.get_for_model(c)
-    lang = METADATA_DEFAULT_LANGUAGE
+
+    i = c.item
+    user = i.uploaded_by()
+    metadata_default_language = get_metadata_default_language(user)
+
     for feature in features.keys():
         if features[feature]=='' or features[feature] == '0':
             continue 
@@ -396,7 +402,7 @@ def _save_features(c, features):
                     property_xpath = ''
                 try:
                     if ms.type == 'lang':
-                        x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], language=lang, xpath=property_xpath)
+                        x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], language=metadata_default_language, xpath=property_xpath)
                     else:                            
                         x = MetadataValue(schema=ms, object_id=c.pk, content_type=ctype, value=features[feature], xpath=property_xpath)
 
@@ -417,6 +423,9 @@ def _read_xmp_features(item, features, component):
 
     ctype = ContentType.objects.get_for_model(item)
     ctype_component = ContentType.objects.get_for_model(component)
+
+    user = item.uploaded_by()
+    metadata_default_language = get_metadata_default_language(user)
 
     metadata_dict = {}
 
@@ -454,7 +463,7 @@ def _read_xmp_features(item, features, component):
                     find_xpath = property_xpath.replace('/?xml:lang', '')
                     if metadata_dict[namespace_obj].has_key(find_xpath):
                         if property_value == 'x-default':
-                            property_value = METADATA_DEFAULT_LANGUAGE
+                            property_value = metadata_default_language
                         metadata_dict[namespace_obj][find_xpath].language = property_value
                     else:
                         log.debug('metadata property not found: ' + find_xpath)
