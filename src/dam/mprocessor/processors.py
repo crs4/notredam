@@ -329,7 +329,6 @@ def _save_component_features(component, features, extractor):
         item = Item.objects.get(component = c)
         xmp_metadata_list, xmp_delete_list = _read_xmp_features(item, features, c)
     elif extractor == 'media_basic':
-        
         for stream in features['streams']:
             if isinstance(features['streams'][stream], dict):
                 m_list, d_list = _save_features(c, features['streams'][stream])
