@@ -36,10 +36,10 @@ INSTALLATIONPATH = ROOT_PATH
 THUMBS_DIR = os.path.join(INSTALLATIONPATH, 'files', 'thumbs')
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
 
-DATABASE_ENGINE = 'mysql'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'dam_db'	         # Or path to database file if using sqlite3.
-DATABASE_USER = 'dam'	         # Not used with sqlite3.
-DATABASE_PASSWORD = 'dam'	     # Not used with sqlite3.
+DATABASE_ENGINE = 'sqlite3'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'dam.db'	         # Or path to database file if using sqlite3.
+DATABASE_USER = ''	         # Not used with sqlite3.
+DATABASE_PASSWORD = ''	     # Not used with sqlite3.
 if DATABASE_ENGINE == 'sqlite3':
     DATABASE_NAME = os.path.join(ROOT_PATH,  DATABASE_NAME)
 

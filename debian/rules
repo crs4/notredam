@@ -62,10 +62,11 @@ install: build
 	chmod 777 $(CURDIR)/debian/notredam/opt/notredam/notredam.py
 
 	mkdir $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ -p
-	cp -R $(CURDIR)/src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
+	#cp -R $(CURDIR)/src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
 
 	mkdir -p $(CURDIR)/debian/notredam/etc/mediadart
 	cp $(CURDIR)/src/dam/001-notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
+
  
 
 # Build architecture-independent files here.
