@@ -927,7 +927,8 @@ function createMediaPanel(config, autoLoad) {
             var store = Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore();
             store.baseParams.order_by = this.query;
             store.baseParams.order_mode = this.order_mode;
-            store.reload();
+            console.log('store.baseParams.order_mode ' + store.baseParams.order_mode);
+            store.load();
                         
             
         },
