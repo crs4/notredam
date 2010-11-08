@@ -38,7 +38,7 @@ def _run(cmdline,  file_name,  stdout = None):
     if stdout is None:
         stdout = open(os.devnull, "w")
     
-    p = subprocess.Popen(cmdline,  stdout=stdout, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmdline,  stdout=stdout, stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/mediadart/:/opt/notredam/'})
 #    p = subprocess.Popen(cmdline,  stdout=stdout, )
     path = os.path.join(INSTALLATIONPATH,  file_name  + '.pid',  )
     kill_proc(file_name)
@@ -69,7 +69,7 @@ def run(runserver,  address):
             _run(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'runserver', '--noreload'],  'server', stdout )        
             
         print 'running server'
-    _run(['/usr/bin/python',  '/opt/notredam/dam/mediadart_processor.py'],  'mediadart_processor')  
+    _run(['/usr/bin/python',  '/opt/notredam/dam/start_mediadart.py'],  'mediadart_processor')  
     print 'running batch processor'
     
     
