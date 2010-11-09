@@ -8,6 +8,6 @@ Homepage: www.notre-dam.org
 
 Package: notredam
 Architecture: any
-Depends: python-django,mediadart-mq, python-egenix-mxdatetime 
+Depends: python-django,mediadart-mq, python-egenix-mxdatetime
 Description: A collaborative, web based Digital Asset Management platform 
  NotreDAM is a collaborative, web based Digital Asset Management platform that allows to classify, organize, archive and adapt digital objects. The target users are people involved in content production, archiving and publishing, that collaborate remotely sharing content and methodologies. NotreDAM can manage several types of objects, such as images, audio, video and textual documents, and supports the most common encoding formats. It adopts XMP for content description and supports other metadata standards (EXIF, IPTC, etc.) as well. Custom metadata schemes can be easily added as XMP extensions.
