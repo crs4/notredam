@@ -35,7 +35,7 @@ from dam.core.dam_workspace import decorators
 #from dam.batch_processor.models import MachineState, Action, Machine
 from dam.mprocessor.models import MAction
 from dam.core.dam_metadata.models import XMPNamespace, XMPStructure
-
+from dam.geo_features.models import GeoInfo
 from mx.DateTime.Parser import DateTimeFromString
 from dam import logger
 import re
@@ -196,6 +196,26 @@ def get_basic_descriptors(request):
     resp = simplejson.dumps(resp_dict)
     return HttpResponse(resp)
 
+def _save_coords(items, metadata):
+    # coordinates do not depend on variant
+    for item in items:
+        lat = None
+        lng = None
+        for m in metadata:
+            meta = MetadataProperty.objects.get(pk = int(m))
+            value = metadata[m]	
+            if meta.field_name == 'GPSLatitude':
+                lat = value
+            elif meta.field_name == 'GPSLongitude':
+                lng = value
+            if lat != None and lng != None:
+                try:
+                    GeoInfo.objects.save_geo_coords(item, lat, lng)
+                except Exception, ex:
+                    logger.debug('error while saving geo coords %s' % ex )
+                            
+
+
 @login_required
 @decorators.permission_required('edit_metadata')
 def save_metadata(request):
@@ -216,6 +236,7 @@ def save_metadata(request):
 
     items = Item.objects.filter(pk__in=item_list)
     MetadataValue.objects.save_metadata_value(items, metadata, variant_name, workspace, default_language)
+    _save_coords(items, metadata)
 
     return HttpResponse('OK')   
 
@@ -241,7 +262,8 @@ def save_descriptors(request):
     default_language = get_metadata_default_language(user, workspace)
 
     items = Item.objects.filter(pk__in=item_list)            
-            
+    Latitude = None
+    Longitude = None
     for m in metadata:
         ids = m.split('_')
         desc_id = ids[1]
@@ -252,11 +274,22 @@ def save_descriptors(request):
             comp.save_rights_value(license, workspace)
         else:
             descriptor = MetadataDescriptor.objects.get(pk=int(desc_id))
+            if descriptor.name == 'Latitude':
+                Latitude = metadata[m]
+            elif descriptor.name == 'Longitude':
+                Longitude = metadata[m]
+            
 
             if len(ids) == 2:
                 MetadataValue.objects.save_descriptor_values(descriptor, items, metadata[m], workspace, variant_name, default_language)
             else:
                 MetadataValue.objects.save_descriptor_structure_values(descriptor, ids[2], items, metadata[m], workspace, variant_name)
+    for item in items: 
+        if Latitude != None and Longitude != None:
+            try:
+                GeoInfo.objects.save_geo_coords(item, Latitude, Longitude)
+            except Exception, ex:
+                logger.debug('error while saving geo coords %s' % ex )
                         
     return HttpResponse('OK')
 
