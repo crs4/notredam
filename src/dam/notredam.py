@@ -38,7 +38,7 @@ def _run(cmdline,  file_name,  stdout = None):
     if stdout is None:
         stdout = open(os.devnull, "w")
     
-    p = subprocess.Popen(cmdline,  stdout=stdout, stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/mediadart/:/opt/notredam/'})
+    p = subprocess.Popen(cmdline, stdout = stdout,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/mediadart/:/opt/notredam/', 'HOME':os.getenv('HOME')})
 #    p = subprocess.Popen(cmdline,  stdout=stdout, )
     path = os.path.join(INSTALLATIONPATH,  file_name  + '.pid',  )
     kill_proc(file_name)

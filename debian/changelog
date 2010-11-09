@@ -1,3 +1,9 @@
+notredam (1.0.4) stable; urgency=low
+
+  *  mprocessor refactoring; new extjs version; some changes on metadata; changed workspace names management, now unique for user; other minor bug fixing;
+
+ -- Mauro Del Rio <mauro@crs4.it>  Wed, 09 Nov 2010 12:00:20 +0100
+
 notredam (1.0.4-rc1) stable; urgency=low
 
   *  mprocessor refactoring; new extjs version; some changes on metadata; changed workspace names management, now unique for user; other minor bug fixing;
