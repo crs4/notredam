@@ -20,7 +20,7 @@ from dam.mprocessor.models import MAction
 from dam.scripts.models import PRESETS, Script
 from dam.core.dam_metadata.models import XMPNamespace
 from dam.preferences.views import get_metadata_default_language
-
+from dam.geo_features.models import GeoInfo
 
 
 def new_id():
@@ -343,10 +343,21 @@ def _save_component_features(component, features, extractor):
         x.save()
 
     MetadataValue.objects.filter(schema__in=xmp_delete_list, object_id=c.pk, content_type=ctype).delete()
-
+    latitude = None
+    longitude = None
     for x in xmp_metadata_list:
+        if x.xpath == 'exif:GPSLatitude':
+            latitude = x.value
+        elif x.xpath == 'exif:GPSLongitude':
+            longitude = x.value
         x.save()
+    if latitude != None and longitude != None:
+        try:
+            GeoInfo.objects.save_geo_coords(component.item,latitude,longitude)
+        except Exception, ex:
+            logger.debug( 'ex while saving latitude and longitude in dam db: %s'% ex)
     log.debug("[ExtractMetadata.end] component %s" % component.ID)
+
 
 def _save_features(c, features):
     log.debug('######## _save_features %s %s' % (c, features))
