@@ -17,6 +17,7 @@
 #########################################################################
 import re
 from django.db import models
+from dam import logger
 from dam.repository.models import Item
 from dam.metadata.models import MetadataProperty
 from django.db.models import Q
@@ -30,28 +31,31 @@ class GeoManager(models.Manager):
         coord = re.compile(r"(\d*),(\d*.\d*)(\w)")
         lat_coord = coord.match(lat)
         lng_coord = coord.match(lng)
-        decimal_lat = float(lat_coord.group(2)) / 60
-        decimal_lng = float(lng_coord.group(2)) / 60
-        if lat_coord.group(3) == 'N':
-            latitude = str(float(lat_coord.group(1)) + decimal_lat)
-        else:
-            latitude = '-' + str(float(lat_coord.group(1)) + decimal_lat)
-        if lng_coord.group(3) == 'E':
-            longitude  = str(float(lng_coord.group(1)) + decimal_lng)
-        else:
-            longitude  = '-' + str(float(lng_coord.group(1)) + decimal_lng)
-        metadata_lat = MetadataProperty.objects.filter(latitude_target=True)
-        metadata_lng = MetadataProperty.objects.filter(longitude_target=True)
+        if lat_coord != None and lng_coord != None:
+            decimal_lat = float(lat_coord.group(2)) / 60
+            decimal_lng = float(lng_coord.group(2)) / 60
+            if lat_coord.group(3) == 'N':
+                latitude = str(float(lat_coord.group(1)) + decimal_lat)
+            else:
+                latitude = '-' + str(float(lat_coord.group(1)) + decimal_lat)
+            if lng_coord.group(3) == 'E':
+                longitude  = str(float(lng_coord.group(1)) + decimal_lng)
+            else:
+                longitude  = '-' + str(float(lng_coord.group(1)) + decimal_lng)
+            metadata_lat = MetadataProperty.objects.filter(latitude_target=True)
+            metadata_lng = MetadataProperty.objects.filter(longitude_target=True)
     
-        self.filter(item=item).delete()
-        geo = self.create(latitude=latitude, longitude=longitude, item=item)
-        item.metadata.filter(schema__in=metadata_lat).delete()
-        item.metadata.filter(schema__in=metadata_lng).delete()
-        for m in metadata_lat:
-            item.metadata.create(schema=m, value=latitude)
-        for m in metadata_lng:
-            item.metadata.create(schema=m, value=longitude)
-        
+            self.filter(item=item).delete()
+            geo = self.create(latitude=latitude, longitude=longitude, item=item)
+            item.metadata.filter(schema__in=metadata_lat).delete()
+            item.metadata.filter(schema__in=metadata_lng).delete()
+            for m in metadata_lat:
+                item.metadata.create(schema=m, value=latitude)
+            for m in metadata_lng:
+                item.metadata.create(schema=m, value=longitude)
+        else:
+            logger.debug('Unsupported coordinates format. Latitude: %s, longitude: %s' % (lat, lng))
+
 
     def search_geotagged(self, ne_lat, ne_lng, sw_lat, sw_lng, items=None):
         """
