@@ -51,6 +51,13 @@ def _run(cmdline,  file_name,  stdout = None):
 def check_db_created():
     installed = os.path.join(INSTALLATIONPATH,  'installed')
     if not os.path.exists(installed):
+        sys.path.append(INSTALLATIONPATH)
+        import config
+        if config.DATABASE_ENGINE== 'mysql':
+            print 'INSERT MYSQL ROOT PASSWORD'
+            subprocess.call(['mysql',  '-uroot',  '-p', '-e', "create user %s identified by '%s'; GRANT ALL on *.* to '%s'"%(config.DATABASE_USER, config.DATABASE_PASSWORD, config.DATABASE_USER)])
+            subprocess.call(['mysqladmin',  '-u%s'%config.DATABASE_USER,  'create', config.DATABASE_NAME , '-p%s'%config.DATABASE_PASSWORD])
+            
         subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'syncdb',  '--noinput'])
         subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'loaddata',  '/opt/notredam/dam/initial_data.json'])
         f = open(installed,  'w')
