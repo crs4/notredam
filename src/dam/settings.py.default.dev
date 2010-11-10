@@ -47,7 +47,6 @@ EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
 SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
 
-METADATA_DEFAULT_LANGUAGE = 'en-US'
 DEMO_STRING="Development Demo" 
 
 DEBUG = True
