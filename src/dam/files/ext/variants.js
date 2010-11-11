@@ -1121,7 +1121,7 @@ function variants_prefs(){
         height      : 300,
         modal: true,
         items:[
-        create_tab()],
+        create_tab()]
 
                 
     });

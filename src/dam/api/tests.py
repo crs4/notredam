@@ -769,25 +769,25 @@ class ItemTest(MyTestCase):
 
         
         
-    def test_upload(self):
-        from django.test import client 
-        from mprocessor.models import Task
-        workspace = DAMWorkspace.objects.all()[0]
-        image = Type.objects.get(name = 'image')
-        item = Item.objects.create(type = image)
-        item.workspaces.add(workspace)
-        
-        file = open('files/images/logo_blue.jpg')
-        params = self.get_final_parameters({ 'workspace_id': 1,  'rendition_id':1})                
-        params['Filedata'] = file
-        
-        response = self.client.post('/api/item/%s/upload/'%item.pk, params, )            
-        file.close()
-        
-        print response.content 
-        self.assertTrue(response.content == '')
-        self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
-#        self.assertTrue(Task.objects.filter(component__in = item.component_set.all()).count()) #(adapt + extract feat)*3 + extract feat orig
+#    def test_upload(self):
+#        from django.test import client 
+#        from mprocessor.models import Task
+#        workspace = DAMWorkspace.objects.all()[0]
+#        image = Type.objects.get(name = 'image')
+#        item = Item.objects.create(type = image)
+#        item.workspaces.add(workspace)
+#        
+#        file = open('files/images/logo_blue.jpg')
+#        params = self.get_final_parameters({ 'workspace_id': 1,  'rendition_id':1})                
+#        params['Filedata'] = file
+#        
+#        response = self.client.post('/api/item/%s/upload/'%item.pk, params, )            
+#        file.close()
+#        
+#        print response.content 
+#        self.assertTrue(response.content == '')
+#        self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
+##        self.assertTrue(Task.objects.filter(component__in = item.component_set.all()).count()) #(adapt + extract feat)*3 + extract feat orig
                  
         
     def test_get_state(self):
@@ -1511,6 +1511,17 @@ class SmartFolderTest(MyTestCase):
         resp_dict = json.loads(response.content)
         self.assertTrue(resp_dict == {"and_condition": True, "workspace_id": 1, "queries": [{"negated": False, "type": "keyword", "id": 19}, {"negated": False, "type": "keyword", "id": 22}], "id": 1, "label": "test_sm"})    
     
+    
+    
+    def test_get_items(self):
+       
+        sm_id = 1
+        params = self.get_final_parameters({})                
+        
+        response = self.client.post('/api/smartfolder/%s/get_items/'%sm_id, params,)                
+        
+        print 'response.content', response.content
+        
 
 class ScriptsTest(MyTestCase):
     fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  

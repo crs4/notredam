@@ -2744,6 +2744,23 @@ class SmartFolderResource(ModResource):
         
         return HttpResponse('')
 
+    @exception_handler
+    @api_key_required
+    def get_items(self,  request, sm_id):
+        try:
+            sm = SmartFolder.objects.get(pk = sm_id)  
+        except SmartFolder.DoesNotExist:
+            raise SmartFolderDoesNotExist
+        
+        workspace = sm.workspace
+        items = Item.objects.filter(workspaces = workspace)
+        new_post = request.POST.copy()
+        new_post['query']= 'SmartFolders:"%s"'%sm.label
+        request.POST = new_post
+        items = _search(request,  items, workspace).distinct()
+        resp = {}
+        resp['items'] = [i.pk for i in items.all()] 
+        return HttpResponse(simplejson.dumps(resp))        
 
 class ScriptResource(ModResource):  
     

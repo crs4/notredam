@@ -114,6 +114,7 @@ urlpatterns = patterns('',
 #   url(r'^api/smartfolder/get/$', SmartFolderResource(permitted_methods=('GET'), ).read),   
    url(r'^api/smartfolder/(\d+)/edit/$', SmartFolderResource(permitted_methods=('POST'), ).edit),   
    url(r'^api/smartfolder/(\d+)/delete/$', SmartFolderResource(permitted_methods=('GET'), ).delete),   
+   url(r'^api/smartfolder/(\d+)/get_items/$', SmartFolderResource(permitted_methods=('POST'), ).get_items),   
 #   
    url(r'^api/script/new/$', ScriptResource(permitted_methods=('POST'), ).create),   
    url(r'^api/script/(\d+)/run/$', ScriptResource(permitted_methods=('POST'), ).run),

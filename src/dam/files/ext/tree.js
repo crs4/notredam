@@ -1265,7 +1265,7 @@ var smart_folders = new Ext.Panel({
                 root: 'smart_folders',                     
                 idProperty: 'pk',
                 fields: [ 'pk','label', 'condition'],
-                url :'/get_smart_folders/',
+                url :'/get_smart_folders/'
                 
             }),
              columns: [

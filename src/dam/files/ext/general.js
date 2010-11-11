@@ -25,7 +25,7 @@ Ext.form.CheckboxGroup.prototype.initComponent = function(){
     var panelCfg = {
         cls: this.groupCls,
         layout: 'column',
-        border: false,
+        border: false
     };
     var colCfg = {
         defaultType: this.defaultType,
@@ -326,7 +326,7 @@ function set_query_on_store(params, skip_load){
         	
                 start:0,
                 limit:per_page
-                },
+                }
             });
             
             }
@@ -827,7 +827,7 @@ function setTabTitle(value,panel_id){
 
 store_tabs = new Ext.data.JsonStore({
 	root: 'tabs',        
-    fields: ['name','workspace', 'active', 'query', 'loaded', 'new_tab', 'media_type'],
+    fields: ['name','workspace', 'active', 'query', 'loaded', 'new_tab', 'media_type']
 });
 
 
