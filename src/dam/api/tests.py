@@ -1521,6 +1521,8 @@ class SmartFolderTest(MyTestCase):
         response = self.client.post('/api/smartfolder/%s/get_items/'%sm_id, params,)                
         
         print 'response.content', response.content
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['items'] == [2])
         
 
 class ScriptsTest(MyTestCase):
