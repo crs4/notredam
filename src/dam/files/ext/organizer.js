@@ -839,7 +839,14 @@ function createMediaPanel(config, autoLoad) {
 	});
 	
 	function capitalize(str){
-		return str[0].toUpperCase() + str.substring(1);
+		try{
+			return (str[0].toUpperCase() + str.substring(1));
+		}
+		catch(e){
+			return str;
+			
+		}
+		
 		
 	};
 	
