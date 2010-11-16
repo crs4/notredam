@@ -23,7 +23,7 @@ from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format= "%(levelname)s - %(filename)s:%(lineno)d - %(message)s")
 
 DEBUG = False
 

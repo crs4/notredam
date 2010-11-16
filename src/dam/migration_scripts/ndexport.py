@@ -29,13 +29,12 @@ from django.utils.simplejson.encoder import JSONEncoder
 from hashlib import sha1 
 from optparse import OptionParser
 
-from dam.migration_scripts.ndutils import ImportExport, Exporter, Importer
+from ndutils import ImportExport, Exporter, Importer
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
-
 #CONFIGURATION GOES HERE
-DEBUG = False
+logger = logging.getLogger('export_logger')
+logger.setLevel(logging.INFO)
 
 def usage():
     return '\n'.join((
@@ -91,31 +90,31 @@ if __name__ == '__main__':
         
         for w in e._workspace_get_list():
             #Backup workspace
-            logging.debug("Export workspace %s" % w['id'])
+            logger.info("Export workspace %s" % w['id'])
             workspacedir = os.path.join(basedir,'w_' + str(w['id']))
             os.mkdir(workspacedir)
             items = e._workspace_get_items(w['id'])
     
     
-            logging.debug("workspace.json")
+            logger.info("workspace.json")
             f = file(os.path.join(workspacedir, 'workspace.json'), 'w')
             f.write(json_enc.encode(e._workspace_get(w['id'])))
             f.close()
     
             #Backup collections
-            logging.debug("collections.json")
+            logger.info("collections.json")
             f = file(os.path.join(workspacedir, 'collections.json'),'w')
             f.write(json_enc.encode(e._collection_get_list(w['id'])))    
             f.close()
     
             #Backup keywords
-            logging.debug("keywords.json")
+            logger.info("keywords.json")
             f = file(os.path.join(workspacedir, 'keywords.json'),'w')
             f.write(json_enc.encode(e._keyword_get_list(w['id'])))
             f.close()
             
             #Backup renditions configuration
-            logging.debug( "renditions.json")
+            logger.info( "renditions.json")
             f = file(os.path.join(workspacedir, 'renditions.json'),'w')
             rendition = e._workspace_get_renditions(w['id'])
             f.write(json_enc.encode(rendition))
@@ -128,30 +127,30 @@ if __name__ == '__main__':
 #                for v_type in rendition[v].keys():
 #                    if rendition[v][v_type].get('preferences') and rendition[v][v_type]['preferences'].get('watermarking_url') != None: 
 #                        filename = os.path.join(waterdir,rendition[v][v_type]['preferences']['watermark_uri'] + os.path.splitext(rendition[v][v_type]['preferences'].get('watermarking_url'))[-1])
-##                        logging.debug( 'file_name: %s , url water: %s' %(rendition[v][v_type]['preferences']['watermark_uri'],rendition[v][v_type]['preferences'].get('watermarking_url'))
+##                        logger.debug( 'file_name: %s , url water: %s' %(rendition[v][v_type]['preferences']['watermark_uri'],rendition[v][v_type]['preferences'].get('watermarking_url'))
 #                        urllib.urlretrieve(rendition[v][v_type]['preferences'].get('watermarking_url'), filename)
 
             #Backup smartfolder configuration
-            logging.debug("smartfolders.json")
+            logger.info("smartfolders.json")
             f = file(os.path.join(workspacedir, 'smartfolders.json'),'w')
             f.write(json_enc.encode(e._workspace_get_smartfolders({'workspace_id': w['id']})))
             f.close()
     
             #_workspace_get_members
-            logging.debug("members.json")
+            logger.info("members.json")
             f = file(os.path.join(workspacedir, 'members.json'),'w')
             f.write(json_enc.encode(e._workspace_get_members(w['id'])))
             f.close()
     
             
             #Backup items
-            logging.debug("items %s" %items)
+            logger.info("items %s" %items)
             for i in items:
                 #Backup item's metadata
                 item = e._item_get(i, workspace_id=w['id'])
-                if DEBUG:
-                    logging.debug("===========")
-                    logging.debug("%s" %item['id'])
+               
+                logger.debug("===========")
+                logger.debug("%s" %item['id'])
     
 
                 itemdir = os.path.join(workspacedir, 'i_' + str(item['id']))
@@ -169,26 +168,26 @@ if __name__ == '__main__':
                 f.close()
                
                 #Backup item's resources/renditions
-                if DEBUG:
-                    logging.debug("%s" %item['renditions'])
+               
+                logger.info("%s" %item['renditions'])
                 for v_id, data in item['renditions'].items():
-                    if DEBUG:
-                        logging.debug("v_id %s" %v_id)
-                        logging.debug("data %s" %data)
+                   
+                    logger.debug("v_id %s" %v_id)
+                    logger.debug("data %s" %data)
                     try:
                         filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
                     except AttributeError: #Some resource is None
-                        logging.debug("%s WAS None" % str(v_id))                    
+                        logger.debug("%s WAS None" % str(v_id))                    
                         continue
                    
                     urllib.urlretrieve(data['url'], filename)
         
-
+        logger.debug('backup_file %s'%backup_file)
         t = tarfile.open(backup_file, 'w')
         t.add(basedir,arcname='backup')
         t.close()
     
     
-        logging.debug("DONE")
+        logger.info("DONE")
     except Exception, ex:
-        logging.debug('%s' %ex)
+        logger.exception(ex)

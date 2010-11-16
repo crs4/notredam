@@ -191,7 +191,61 @@ class WorkspaceResource(ModResource):
         ws.save()
         
         return HttpResponse('')         
+    
+    @exception_handler
+    @api_key_required
+    def set_name(self,  request,  workspace_id):
+        """
+        Allows to edit the name of workspace
+        - method POST
+            - parameters:
+                - name: the new name for the given workspace        
+        - returns: empty string
+        """
+      
         
+        if not request.POST.has_key('name') :
+            raise MissingArgs
+        
+        user_id = request.POST.get('user_id')
+        ws = Workspace.objects.get(pk = workspace_id)
+        
+        user = User.objects.get(pk = user_id)        
+        _check_app_permissions(ws,  user_id,  ['admin'])
+        
+        name = request.POST['name']
+        form = _update_ws(ws,  {'name': name,})
+        if not form.is_valid():
+            logger.exception('invalid form:\n %s' %form.errors)            
+            raise ArgsValidationError(form.errors  )        
+        ws.name = name
+        ws.save()
+        return HttpResponse('')        
+    
+    @exception_handler
+    @api_key_required
+    def set_description(self,  request,  workspace_id):
+        """
+        Allows to edit the description of the workspace
+        - method POST
+            - parameters:
+                - description: the new description for the given workspace        
+        - returns: empty string
+        """
+        
+        
+        if not request.POST.has_key('description') :
+            raise MissingArgs
+            
+        user_id = request.POST['user_id']
+        user = User.objects.get(pk = user_id)        
+        
+        ws = Workspace.objects.get(pk = workspace_id)
+        
+        _check_app_permissions(ws,  user_id,  ['admin'])
+        ws.description = request.POST['description']
+        ws.save()
+        return HttpResponse('')            
             
     @exception_handler
     @api_key_required

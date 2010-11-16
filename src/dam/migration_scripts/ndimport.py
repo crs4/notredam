@@ -29,10 +29,11 @@ from optparse import OptionParser
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
 from urllib_uploader import StandardUploader
-from dam.migration_scripts.ndutils import ImportExport, Exporter, Importer
+from ndutils import ImportExport, Exporter, Importer
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('import_logger')
+logger.setLevel(logging.DEBUG)
 
 #CONFIGURATION GOES HERE
 ERROR_STR= """Error removing %(path)s, %(error)s """
@@ -64,7 +65,7 @@ def custom_open_file(filepath, name):
         param = json_dec.decode(f.read())
         f.close()
     except Exception, ex:
-        logging.exception(ex)
+        logger.exception(ex)
         raise
                 
     return param
@@ -81,8 +82,8 @@ def add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_orig
         returnkeywords: None if keyword haven't parent, else data of father 
     return:
     """
-    if DEBUG:
-        logging.debug("-----ADD KEYWORD")
+   
+    logger.debug("-----ADD KEYWORD")
 
     data['workspace_id'] = ws_origTows_new[str(data['workspace'])]
     items_flag = True
@@ -108,28 +109,28 @@ def add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_orig
             json_enc = JSONEncoder()
             data["metadata_schema"] = json_enc.encode(data["metadata_schema"])
     except Exception, ex:
-        logging.exception(ex)
+        logger.exception(ex)
                 
     returnkeywords = i._keyword_new(data)
     #salvataggio del corrispettivo utile per le smartfolder
     keyColl_origTokeyColl_new[data['id']] = returnkeywords['id']
-    if DEBUG:
-        logging.debug( "keyColl_origTokeyColl_new:%s, returnkeywords:%s" %(keyColl_origTokeyColl_new,returnkeywords['id']))
+   
+    logger.debug( "keyColl_origTokeyColl_new:%s, returnkeywords:%s" %(keyColl_origTokeyColl_new,returnkeywords['id']))
     if (items_flag):
         #fare l'add degli item a questa keywords
         param = []
         for item in data_app['items']:
-            if DEBUG:
-                logging.debug( "id_orig_itemToid_new_item[item] %s" %id_orig_itemToid_new_item[item])
+           
+            logger.debug( "id_orig_itemToid_new_item[item] %s" %id_orig_itemToid_new_item[item])
             param.append(('items',id_orig_itemToid_new_item[item]))
-#        logging.debug( "param %s, returnkeywords['id'] %s" %(param,returnkeywords['id']))
+#        logger.debug( "param %s, returnkeywords['id'] %s" %(param,returnkeywords['id']))
         i._keyword_add(returnkeywords['id'], param)
 
     try:
         for data_children in data['children']:
             add_keywords(i,data_children, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new, returnkeywords)
     except Exception, ex:
-        logging.exception(ex)    
+        logger.exception(ex)    
     
 
 def add_collections(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new, returncollections = None):
@@ -154,13 +155,13 @@ def add_collections(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_o
     returncollections = i._collections_new(data)
     #salvataggio del corrispettivo utile per le smartfolder
     keyColl_origTokeyColl_new[data['id']] = returncollections['id']
-    #logging.debug( "keyColl_origTokeyColl_new:%s, returncollections:%s" %(keyColl_origTokeyColl_new,returncollections['id']))
+    #logger.debug( "keyColl_origTokeyColl_new:%s, returncollections:%s" %(keyColl_origTokeyColl_new,returncollections['id']))
     if len(data['items']) > 0:
         #fare l'add degli item a questa keywords
         param = []
         for item in data['items']:
             param.append(('items',id_orig_itemToid_new_item[item]))
-#        logging.debug( "param %s, returncollections['id'] %s" %(param,returncollections['id']))
+#        logger.debug( "param %s, returncollections['id'] %s" %(param,returncollections['id']))
         i._collections_add(returncollections['id'], param)
     for data_children in data['children']:
         add_collections(i,data_children, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new,returncollections)
@@ -249,9 +250,9 @@ def add_renditions(e,i,current_workspace, workspace_id):
     """
     #prendere i vecchi dati delle renditioni
     oldrenditions = custom_open_file(current_workspace, 'renditions.json')
-#    logging.debug('----------------oldrendition %s'%oldrenditions)
+#    logger.debug('----------------oldrendition %s'%oldrenditions)
     newrenditions = e._workspace_get_renditions(workspace_id)
- #   logging.debug('----------------newrenditions %s'%newrenditions)              
+ #   logger.debug('----------------newrenditions %s'%newrenditions)              
     #creare source se non presenti --> auto_generated == False
     for dict_rendition in oldrenditions['renditions']:
 
@@ -309,7 +310,7 @@ def add_workspaces(i,e,users,path_extract,ws_origTows_new):
     """
     try:
         for workspacedir in custom_listdirs(path_extract):
-            logging.debug( 'Add %s' % workspacedir)
+            logger.debug( 'Add %s' % workspacedir)
             current_workspace = path_extract + '/' + workspacedir
             paramworkspace = custom_open_file(current_workspace, 'workspace.json')
             
@@ -329,15 +330,15 @@ def add_workspaces(i,e,users,path_extract,ws_origTows_new):
             
             ws_origTows_new[paramworkspace['id']] = returnworkspace['id']
             
-            #logging.debug( 'renditions.json for %s' %workspacedir)
+            #logger.debug( 'renditions.json for %s' %workspacedir)
             #add_renditions(e,i,current_workspace,returnworkspace['id'])
     
-            logging.debug('members.json for %s' %workspacedir)
+            logger.debug('members.json for %s' %workspacedir)
             add_members(e,i,current_workspace,returnworkspace['id'])
     
         return ''
     except:
-        logging.exception('Error in add_workspaces')
+        logger.exception('Error in add_workspaces')
         raise Exception, 'Error in add_workspaces'     
 
 def search_id_rendition(filepath,shortname, rendition_ws):
@@ -354,8 +355,8 @@ def search_id_rendition(filepath,shortname, rendition_ws):
     try:
         paramrendition = custom_open_file(filepath, 'rendition.json')
         for p in paramrendition['renditions']:
-            if DEBUG:
-                logging.debug('%s' %shortname)
+            
+            logger.debug('%s' %shortname)
             if p['name'] == shortname:
                 return p['id']
     except:
@@ -370,8 +371,8 @@ def search_original_shortname(current_item):
     return:
         string with shortname
     """
-    if DEBUG:
-        logging.debug("#########################inizio search original shortname") 
+   
+    logger.debug("#########################inizio search original shortname") 
     try:
         for rendition in custom_listfiles(current_item):
             current_rendition = current_item + '/' + rendition
@@ -380,12 +381,11 @@ def search_original_shortname(current_item):
             if extension[1:] != 'json':
                 paramrendition = custom_open_file(filepath, 'rendition.json')
                 for p in paramrendition['renditions']:
-                    if p['name'].lower() == 'original':
-                        if DEBUG:
-                            logging.debug("shortname ORIGINALLLLL------ %s" %shortname)
+                    if p['name'].lower() == 'original':                        
+                        logger.debug("shortname ORIGINALLLLL------ %s" %shortname)
                         return shortname
     except:
-        logging.exception('Error in search_original_shortname')
+        logger.exception('Error in search_original_shortname')
         raise Exception, 'Error in search_original_shortname'
                         
 def get_data_for_upload(current_rendition,id_workspace,file_name,filepath,shortname,rendition_ws):
@@ -411,8 +411,8 @@ def get_data_for_upload(current_rendition,id_workspace,file_name,filepath,shortn
     param['fsize'] = int(size)
     param['file_name'] = file_name
     param['rendition_id'] = search_id_rendition(filepath,shortname,rendition_ws)
-    if DEBUG:
-        logging.debug("get data for upload finished")
+    
+    logger.info("get data for upload finished")
     return param
 
 import itertools
@@ -492,15 +492,15 @@ def _send_file(current_rendition, param, shortname, extension, id_item):
     form.add_field('rendition_id', str(param['rendition_id']))
     form.add_field('user_id', str(i.userid))
     # Add a fake file
-    if DEBUG:
-        logging.debug("open %s " %current_rendition)
+   
+    logger.debug("open %s " %current_rendition)
     file = open(current_rendition)
     form.add_file('Filedata', shortname +'.'+ extension[1:], 
                   fileHandle=file)
     file.close() 
     # Build the request
-    if DEBUG:
-        logging.debug("urlib2.Request : http://%s:%s/api/item/%s/upload/" %(i.host,i.port, id_item))
+   
+    logger.debug("urlib2.Request : http://%s:%s/api/item/%s/upload/" %(i.host,i.port, id_item))
     request = urllib2.Request('http://%s:%s/api/item/%s/upload/' %(i.host,i.port, id_item))
     request.add_header('User-agent', 'PyMOTW (http://www.doughellmann.com/PyMOTW/)')
     body = str(form)
@@ -526,54 +526,54 @@ def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,s
     """
     
     #upload delle renditioni
-    if DEBUG:
-        logging.debug("----------------------------------------------upload rendition")
+   
+    logger.debug("----------------------------------------------upload rendition")
     try:
         for rendition in custom_listfiles(current_item):
-            if DEBUG:
-                logging.debug("dentro FORRRRR")
+         
+            logger.debug("dentro FORRRRR")
             current_rendition = current_item + '/' + rendition
             (filepath, filename) = os.path.split(current_rendition)
             (shortname, extension) = os.path.splitext(filename)
             #upload prima le renditioni per ultima l'original. 
-            if DEBUG:
-                logging.debug('current rendition')
-                logging.debug(current_rendition)
+           
+            logger.debug('current rendition')
+            logger.debug(current_rendition)
             if extension[1:] != 'json' and shortname != shortname_original:
                 
                 param = get_data_for_upload(current_rendition,id_workspace,file_name,filepath,shortname,rendition_ws)
-                if DEBUG:
-                    logging.debug( 'param')
-                    logging.debug("%s" %param)
+              
+                logger.debug( 'param')
+                logger.debug("%s" %param)
                 
-                    logging.debug('SERVER RESPONSE:')
+                logger.debug('SERVER RESPONSE:')
                 resp_upload_rendition = _send_file(current_rendition, param, shortname, extension, id_item)
     
-                if DEBUG:
-                    logging.debug('id_item = %s, resp = %s' %(id_item,resp_upload_rendition.read()))
-                    logging.debug('upload not original rendition finished')
+               
+                logger.debug('id_item = %s, resp = %s' %(id_item,resp_upload_rendition.read()))
+                logger.debug('upload not original rendition finished')
             else:
-                #logging.debug( "ELSEEEEEEEEEEEEEEEEEEEEEE %s" %extension[1:])
+                #logger.debug( "ELSEEEEEEEEEEEEEEEEEEEEEE %s" %extension[1:])
                 if extension[1:] != 'json':
-                    #logging.debug( "dentro extension")
+                    #logger.debug( "dentro extension")
                     param_orig = get_data_for_upload(current_rendition,id_workspace,file_name,filepath,shortname,rendition_ws)
                     param_orig['shortname'] = shortname
                     param_orig['extension'] = extension
-                    #logging.debug( "PARAM ORIGINALL %s" %param_orig)
+                    #logger.debug( "PARAM ORIGINALL %s" %param_orig)
                     current_rendition_orig = current_rendition
         
         #upload original solo se sono nell'ultimo ws della lista workspaces
         if upload_orig:
-            if DEBUG:
-                logging.debug("Original rendition")
-                logging.debug(current_rendition_orig)
-                logging.debug('SERVER RESPONSE ORIGINAL: %s' %param_orig)
+          
+            logger.debug("Original rendition")
+            logger.debug(current_rendition_orig)
+            logger.debug('SERVER RESPONSE ORIGINAL: %s' %param_orig)
             resp_upload_rendition = _send_file(current_rendition_orig, param_orig, param_orig['shortname'], param_orig['extension'], id_item)
-            if DEBUG:
-                logging.debug('id_item = %s, resp = %s' %(id_item,resp_upload_rendition.read()))
-                logging.debug('upload original rendition finished')
+
+            logger.debug('id_item = %s, resp = %s' %(id_item,resp_upload_rendition.read()))
+            logger.debug('upload original rendition finished')
     except Exception, ex:
-        logging.debug('%s' %ex)    
+        logger.exception(ex)    
         
     return ''
     
@@ -625,9 +625,9 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
     try:
         for itemdir in custom_listdirs(current_workspace):
             current_item = current_workspace + '/' +  itemdir
-            if DEBUG:
-                logging.debug('current_item')
-                logging.debug('%s' %current_item)
+           
+            logger.debug('current_item')
+            logger.debug('%s' %current_item)
             if os.path.isdir(current_item) and itemdir != 'watermarking':#exclude folder watermarking
                 paramitem = custom_open_file(current_item, 'item.json')
                 paramitem['workspace_id'] = ws_origTows_new[paramworkspace['id']]
@@ -636,9 +636,9 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                 #shortname original
                 #shortname_original = search_original_shortname(current_item)
                 shortname_original = 'original'
-                if DEBUG:
-                    logging.debug("param item")
-                    logging.debug(paramitem)
+           
+                logger.debug("param item")
+                logger.debug(paramitem)
                 if len(paramitem['workspaces']) == 1:#NOT shared object
     
                     #create item
@@ -646,26 +646,26 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                     
                     #update equivalent id_item_old con id_item_new
                     id_orig_itemToid_new_item[paramitem['id']] = resp_new_item['id']
-                    if DEBUG:
-                        logging.debug("id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
+           
+                    logger.debug("id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
     
                     #rendition's upload
-                        logging.debug("upload renditioni")
+                    logger.debug("upload renditioni")
                     upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],shortname_original,shortname_original,True)
     
                     #set metadata
                     set_metadata(resp_new_item['id'],paramitem)
                 else:#shared object
-                    if DEBUG:
-                        logging.debug("prima %s " %paramitem['workspaces'])
+                  
+                    logger.debug("prima %s " %paramitem['workspaces'])
                     paramitem['workspaces'].sort()
-                    if DEBUG:
-                        logging.debug("dopo %s" %paramitem['workspaces'])
+
+                    logger.debug("dopo %s" %paramitem['workspaces'])
                     if (paramitem['workspaces'].index(int(paramworkspace['id'])) == 0):
                         #sono nel primo ws della lista quindi devo creare l'item nel upload_workspace.
                         #creo item nel upload_workspace
-                        if DEBUG:
-                            logging.debug("sono nel primo ws della lista quindi devo creare l'item nel upload_workspace. ---- paramworkspace[id] %s" %paramworkspace['id'])
+
+                        logger.debug("sono nel primo ws della lista quindi devo creare l'item nel upload_workspace. ---- paramworkspace[id] %s" %paramworkspace['id'])
                         paramitem['workspace_id'] = ws_origTows_new[str(paramitem['upload_workspace'])] # aggiorno id ws in cui creare l'item
                         resp_new_item = i._item_new(paramitem)
         
@@ -685,8 +685,8 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         #set_metadata
                         set_metadata(resp_new_item['id'],paramitem)
                     else:
-                        if DEBUG:
-                            logging.debug('---condiviso nessuna NEW itemid %s---- paramworkspace[id] %s' %(paramitem['id'],paramworkspace['id']))
+
+                        logger.debug('---condiviso nessuna NEW itemid %s---- paramworkspace[id] %s' %(paramitem['id'],paramworkspace['id']))
                         if int(paramitem['upload_workspace']) != int(paramworkspace['id']):
                             add_to_ws(ws_origTows_new,paramworkspace['id'],id_orig_itemToid_new_item[paramitem['id']])
     
@@ -705,11 +705,11 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
                         
     except Exception, ex:
-        logging.debug('%s' %ex)
-        logging.debug('%s' %id_orig_itemToid_new_item)
+        logger.exception(ex)
+        logger.debug('%s' %id_orig_itemToid_new_item)
         raise     
-    if DEBUG:
-        logging.debug( "FINISHHHHHHHHHHHHHHHH add_items")
+
+    logger.debug( "FINISHHHHHHHHHHHHHHHH add_items")
     return ''
 
 
@@ -739,8 +739,8 @@ def rmgeneric(path, __func__):
 
     try:
         __func__(path)
-        if DEBUG:
-            logging.debug( 'Removed %s' %path)
+      
+        logger.debug( 'Removed %s' %path)
     except OSError, (errno, strerror):
         print ERROR_STR % {'path' : path, 'error': strerror }
             
@@ -824,7 +824,7 @@ if __name__ == '__main__':
             i.login() 
             e = Exporter(options.host, options.port, options.api_key, options.user, options.password)
             e.login()
-            logging.debug( "add users")
+            logger.info( "add users")
             users = add_users(i,path_extract)
             
             #ws_origTows_new {'id_ws_orig': id_ws_new}
@@ -853,25 +853,25 @@ if __name__ == '__main__':
                 for data in param['keywords']:
                     i._keyword_delete(data['id'])
                 
-                logging.debug('keywords.json for %s' % workspacedir)
+                logger.info('keywords.json for %s' % workspacedir)
                 for data in paramkeywords['keywords']:
                     add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
     
-                logging.debug('collections.json for %s' % workspacedir)
+                logger.info('collections.json for %s' % workspacedir)
                 paramcollection = custom_open_file(current_workspace, 'collections.json')
                 for data in paramcollection['collections']:
                     add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
     
-                logging.debug('smartfolders.json for %s' % workspacedir)
+                logger.info('smartfolders.json for %s' % workspacedir)
                 paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
 
                 for data in paramsmartfolders['smartfolders']:
                         add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
  
-            logging.debug("DONE")
+            logger.info("DONE")
         except Exception, ex:
-            logging.debug('%s' %ex)
+            logger.debug('%s' %ex)
     
     else:
-        logging.debug( "insert path of ndar file, or not tarfile.")
+        logger.debug( "insert path of ndar file, or not tarfile.")
             #backup_file = sys.argv[-1]

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     user_id = secret_obj.user.pk
     
     workspace_id = 1
-    metadata_dict = {'namespace':'dc',  'name':'title',  'value': 'test',  'lang': 'en', }
+    metadata_dict = {'namespace':'dc',  'name':'title',  'value': 'test',  'lang': 'en'}
     params = {'workspace_id':workspace_id, 'media_type': 'image' }
 
     params = _get_final_parameters(api_key = api_key, secret = secret, user_id = user_id, kwargs = params)                
