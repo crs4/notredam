@@ -31,13 +31,17 @@ from django.utils.simplejson.encoder import JSONEncoder
 from urllib_uploader import StandardUploader
 from ndutils import ImportExport, Exporter, Importer
 import logging
+import time
 
 logger = logging.getLogger('import_logger')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
+fh = logging.FileHandler("import.log")
+logger.addHandler(fh)
 
 #CONFIGURATION GOES HERE
 ERROR_STR= """Error removing %(path)s, %(error)s """
-DEBUG = False
+
 
 def custom_listfiles(path):
     """
@@ -120,7 +124,9 @@ def add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_orig
         #fare l'add degli item a questa keywords
         param = []
         for item in data_app['items']:
-           
+            
+            logger.debug( "id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
+            
             logger.debug( "id_orig_itemToid_new_item[item] %s" %id_orig_itemToid_new_item[item])
             param.append(('items',id_orig_itemToid_new_item[item]))
 #        logger.debug( "param %s, returnkeywords['id'] %s" %(param,returnkeywords['id']))
@@ -319,7 +325,11 @@ def add_workspaces(i,e,users,path_extract,ws_origTows_new):
                 #creo il nuovo workspace
                 returnworkspace = i._workspace_new(paramworkspace)
                 #set creator
-                i._api_workspace_set_creator(returnworkspace['id'],{'creator_id' : users[paramworkspace['creator']]['id']})
+                try:
+                    i._api_workspace_set_creator(returnworkspace['id'],{'creator_id' : users[paramworkspace['creator']]['id']})
+                except Exception, ex:
+                    logger.error('error set creator for %s'%workspacedir)
+                    logger.error(ex)
             else:
                 #set di tutti i parametri necessari per ws_id =1
                 i._workspace_set_name(paramworkspace['id'],paramworkspace)
@@ -412,7 +422,7 @@ def get_data_for_upload(current_rendition,id_workspace,file_name,filepath,shortn
     param['file_name'] = file_name
     param['rendition_id'] = search_id_rendition(filepath,shortname,rendition_ws)
     
-    logger.info("get data for upload finished")
+    logger.debug("get data for upload finished")
     return param
 
 import itertools
@@ -623,7 +633,16 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
         empty string
     """
     try:
+        logger.debug('ITEMS %s'% custom_listdirs(current_workspace))
+        len_items = len(custom_listdirs(current_workspace))
+        
+        
         for itemdir in custom_listdirs(current_workspace):
+            if options.item:
+                if custom_listdirs(current_workspace).index(itemdir) < options.item:
+                    continue
+                
+            logger.info('items %s/%s'%(custom_listdirs(current_workspace).index(itemdir), len_items))
             current_item = current_workspace + '/' +  itemdir
            
             logger.debug('current_item')
@@ -704,6 +723,9 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         #set_metadata
                         set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
                         
+            time.sleep(1.5)
+            
+                        
     except Exception, ex:
         logger.exception(ex)
         logger.debug('%s' %id_orig_itemToid_new_item)
@@ -723,7 +745,7 @@ def add_users(i,path_extract):
         dict with key 'user' and value 'id'
     """
     fusers = custom_open_file(path_extract, 'users.json')
-
+    logger.debug('fusers %s'%fusers)
     users = {}
     for u in fusers['users']:
         if u['username'] != 'demo':
@@ -793,7 +815,18 @@ def main():
     op.add_option("-p", "--password", 
                       action="store",dest="password",type="string",default='demo',
                       help="Password for DAM")
+    op.add_option("-w", "--workspace", 
+                      action="store",dest="workspace",type="string",default='',
+                      help="workspace")
     
+    op.add_option("-I", "--item", 
+                      action="store",dest="item",type="int",default=0,
+                      help="item")
+    
+    
+    op.add_option("-f", "--force", 
+                      action="store_false",dest="force", default=False,
+                      help="force")
     (options, args) = op.parse_args()
 
     return options
@@ -801,6 +834,7 @@ def main():
 if __name__ == '__main__':
 
     options = main()
+    logger.debug('options %s'%options)
     
     if (tarfile.is_tarfile(options.path_tar) and os.path.exists(options.path_extract) 
         and os.access(options.path_extract,os.W_OK)):
@@ -809,24 +843,38 @@ if __name__ == '__main__':
             path_extract = options.path_extract
     
             tar = tarfile.open(path_tar)
+            logger.debug('tar opened')
             
             if os.path.exists(path_extract + tar.getmembers()[0].name):
+                logger.info('removing all')
                 removeall(path_extract + tar.getmembers()[0].name)
             
+            logger.info('extracting tar...')
             for tarinfo in tar:
                 tar.extract(tarinfo, path=path_extract)
             tar.close()
+            logger.info('tar extracted!')
             #scompattato il file tar. scorrere la cartella path_extract/backup
             path_extract += 'backup'
         
         
             i = Importer(options.host, options.port, options.api_key, options.user, options.password)
             i.login() 
+            logger.debug('login ok')
             e = Exporter(options.host, options.port, options.api_key, options.user, options.password)
             e.login()
             logger.info( "add users")
-            users = add_users(i,path_extract)
+            try:
+                users = add_users(i,path_extract)
+                logger.info('added user')
+            except:
+                if not options.force:
+                    raise
+                else:
+                    logger.info('error in adding users... passing by')
             
+                        
+
             #ws_origTows_new {'id_ws_orig': id_ws_new}
             ws_origTows_new = {}
             add_workspaces(i,e,users,path_extract,ws_origTows_new)
@@ -836,42 +884,55 @@ if __name__ == '__main__':
             
             #creazione item e risorse relative agli item.
             for workspacedir in custom_listdirs(path_extract):
-                current_workspace = path_extract + '/' + workspacedir
-                paramworkspace = custom_open_file(current_workspace, 'workspace.json')
-                add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemToid_new_item)
+                if options.workspace:
+                    if workspacedir != options.workspace:
+                        continue
+                try:
+                    current_workspace = path_extract + '/' + workspacedir
+                    paramworkspace = custom_open_file(current_workspace, 'workspace.json')
+                    add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemToid_new_item)
+                    
+                except Exception, ex:
+                    logger.error(ex)
                 
     
     
             keyColl_origTokeyColl_new = {}
             for workspacedir in custom_listdirs(path_extract):
-                current_workspace = path_extract + '/' + workspacedir
-                #creazione e associazione delle keywords agli item
-                paramkeywords = custom_open_file(current_workspace, 'keywords.json')
-                
-                #FIXME: read e poi delete all forse si puo' evitare
-                param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
-                for data in param['keywords']:
-                    i._keyword_delete(data['id'])
-                
-                logger.info('keywords.json for %s' % workspacedir)
-                for data in paramkeywords['keywords']:
-                    add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+                try:
+                    current_workspace = path_extract + '/' + workspacedir
+                    #creazione e associazione delle keywords agli item
+                    paramkeywords = custom_open_file(current_workspace, 'keywords.json')
+                    
+                    #FIXME: read e poi delete all forse si puo' evitare
+                    param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
+                    for data in param['keywords']:
+                        i._keyword_delete(data['id'])
+                    
+                    logger.info('keywords.json for %s' % workspacedir)
+                    for data in paramkeywords['keywords']:
+                        add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+        
+                    logger.info('collections.json for %s' % workspacedir)
+                    paramcollection = custom_open_file(current_workspace, 'collections.json')
+                    for data in paramcollection['collections']:
+                        add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+        
+                    logger.info('smartfolders.json for %s' % workspacedir)
+                    paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
     
-                logger.info('collections.json for %s' % workspacedir)
-                paramcollection = custom_open_file(current_workspace, 'collections.json')
-                for data in paramcollection['collections']:
-                    add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
-    
-                logger.info('smartfolders.json for %s' % workspacedir)
-                paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
+                    for data in paramsmartfolders['smartfolders']:
+                            add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
 
-                for data in paramsmartfolders['smartfolders']:
-                        add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
- 
+                except Exception, ex:
+                    logger.error(ex)
+             
             logger.info("DONE")
+
         except Exception, ex:
-            logger.debug('%s' %ex)
+            logger.exception(ex)
     
     else:
         logger.debug( "insert path of ndar file, or not tarfile.")
             #backup_file = sys.argv[-1]
+    logger.info('DONE!')
