@@ -188,12 +188,15 @@ function cell_click(grid, rowIndex, columnIndex, e){
 }
     
 function switch_ws(current_record, ws_id){
+	console.log('switch_ws');
+	console.log('ws_id ' + ws_id);
+	console.log('current_record ' + current_record);
 	clear_other_selections(); //to avoid selectionchange event later, that can change tab name
 	Ext.getCmp('detail_tabs').getActiveTab().hide();
 	var media_tabs = Ext.getCmp('media_tabs');
 	if (!current_record || current_record == null){
     	//initial load
-        current_record = ws_store.query('pk', ws_id).items[0];    
+        current_record = ws_store.getAt(ws_store.findExact('pk', ws_id));    
     }
     else{
         Ext.Ajax.request({
@@ -253,14 +256,15 @@ function switch_ws(current_record, ws_id){
         
         
     }
-    
+    console.log( current_record);
     ws.id = current_record.data.pk;
     ws.name = current_record.data.name;
     ws.description= current_record.data.description;
     
 //    var current_ws_div = Ext.get('current_ws');
 //    current_ws_div.update(ws.name);
-    
+    console.log('ws.id ' + ws.id);
+    console.log(store_tabs);
     store_tabs.filter('workspace', ws.id);
    
     var query = {workspace_id:current_record.data.pk}; 
@@ -270,6 +274,7 @@ function switch_ws(current_record, ws_id){
     var tab_to_activate;
     var media_type;
     var count = 0;
+    
     store_tabs.each(function(){
     	
     		
