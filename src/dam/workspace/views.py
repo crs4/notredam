@@ -801,48 +801,51 @@ def _get_items_info(user, workspace, items):
         
         
         for item in items:
-#            item = Item.objects.get(pk=i)            
-            thumb_url, thumb_ready = _get_thumb_url(item, workspace)
-            my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+            try:
+                #           item = Item.objects.get(pk=i)            
+                thumb_url, thumb_ready = _get_thumb_url(item, workspace)
+                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
             
-            item_in_basket = 0
+                item_in_basket = 0
 
-            if item.pk in basket_items:
-                item_in_basket = 1
+                if item.pk in basket_items:
+                    item_in_basket = 1
                 
-            geotagged = 0
-            if GeoInfo.objects.filter(item=item).count() > 0:
-                geotagged = 1
+                geotagged = 0
+                if GeoInfo.objects.filter(item=item).count() > 0:
+                    geotagged = 1
                 
-            preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count()
-            if item.type.name == 'audio':
-                inprogress = int(not (preview_available == 0))
-            else:
-                inprogress = int(not thumb_ready)
-            tmp = {
-               'name':my_caption,
-               'size':item.get_file_size(), 
-               'pk': smart_str(item.pk), 
-               'thumb': thumb_ready,
-               'inprogress': inprogress,
-               'item_in_basket': item_in_basket,
-               'geotagged': geotagged,
-               'url':smart_str(thumb_url), 
-               'type': smart_str(item.type.name),
-               'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
-               'preview_available': int(preview_available ==  0)
-               }
-            if item.pk in items_pending:
-                tmp['inprogress'] = 1
+                preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count()
+                if item.type.name == 'audio':
+                    inprogress = int(not (preview_available == 0))
+                else:
+                    inprogress = int(not thumb_ready)
+                tmp = {
+                    'name':my_caption,
+                    'size':item.get_file_size(), 
+                    'pk': smart_str(item.pk), 
+                    'thumb': thumb_ready,
+                    'inprogress': inprogress,
+                    'item_in_basket': item_in_basket,
+                    'geotagged': geotagged,
+                    'url':smart_str(thumb_url), 
+                    'type': smart_str(item.type.name),
+                    'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
+                    'preview_available': int(preview_available ==  0)
+                    }
+                if item.pk in items_pending:
+                    tmp['inprogress'] = 1
             
-            states = item.stateitemassociation_set.all()
-            if states.count():
-                state_association = states[0]
+                states = item.stateitemassociation_set.all()
+                if states.count():
+                    state_association = states[0]
                 
-                tmp['state'] = state_association.state.pk
+                    tmp['state'] = state_association.state.pk
             
-            update_items.append(tmp)
-
+                update_items.append(tmp)
+            except Exception, ex:
+                logger.debug('ERROR while getting file info: %s ' % ex)
+                continue
         return (update_items, total_pending, total_failed)
     
 @login_required
