@@ -592,10 +592,10 @@ def load_items(request, view_type=None, unlimited=False, ):
         user = User.objects.get(pk=request.session['_auth_user_id'])
         workspace_id = request.POST.get('workspace_id')
 
-        if  workspace_id:
-            workspace = Workspace.objects.get(pk = workspace_id)
-        else:
-            workspace = request.session['workspace']        
+#        if  workspace_id:
+#            workspace = Workspace.objects.get(pk = workspace_id)
+#        else:
+        workspace = request.session['workspace']        
 
         media_type = request.POST.getlist('media_type')
         
@@ -713,16 +713,21 @@ def workspace(request, workspace_id = None):
     logger.debug('In workspace.views method workspace: current theme is %s' % theme)
     logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
     user = request.user
+    logger.info('workspace_id %s'%workspace_id)
     if not workspace_id:
         if request.session.__contains__('workspace'):
+            logger.debug('workspace in session')
             workspace = Workspace.objects.get(pk = request.session.get('workspace', ).pk ) #ws in session could be outdated (old name)
         else:
+            logger.debug('get default workspace')
             workspace = Workspace.objects.get_default_by_user(user)
             
             request.session['workspace'] = workspace
     else:
+        
         workspace = _switch_workspace(request,  workspace_id)
     
+    logger.info('workspace %s'%workspace)
     return render_to_response('workspace_gui.html', RequestContext(request,{'ws_id':workspace.pk,  'ws_name': workspace.get_name(user),  'ws_description': workspace.description, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
 
 
