@@ -188,9 +188,7 @@ function cell_click(grid, rowIndex, columnIndex, e){
 }
     
 function switch_ws(current_record, ws_id){
-	console.log('switch_ws');
-	console.log('ws_id ' + ws_id);
-	console.log('current_record ' + current_record);
+	
 	clear_other_selections(); //to avoid selectionchange event later, that can change tab name
 	Ext.getCmp('detail_tabs').getActiveTab().hide();
 	var media_tabs = Ext.getCmp('media_tabs');
@@ -210,7 +208,7 @@ function switch_ws(current_record, ws_id){
         	store_tabs.clearFilter();        
         //reseting store_tabs for the current ws
     	
-    	store_tabs.filter('workspace', ws.id);    
+    	store_tabs.filter('workspace', ws.id, false, true, true);    
     	
         //deleting all previous tabs for the old ws
     	store_tabs.each(function(){
@@ -263,9 +261,8 @@ function switch_ws(current_record, ws_id){
     
 //    var current_ws_div = Ext.get('current_ws');
 //    current_ws_div.update(ws.name);
-    console.log('ws.id ' + ws.id);
-    console.log(store_tabs);
-    store_tabs.filter('workspace', ws.id);
+    
+    store_tabs.filter('workspace', ws.id, false, true, true);  
    
     var query = {workspace_id:current_record.data.pk}; 
     
