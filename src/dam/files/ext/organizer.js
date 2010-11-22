@@ -548,7 +548,7 @@ var showDetails = function(view){
         
         _show_details(data, active_tab, view, selNode);
         
-        Ext.getCmp('sync_xmp').enable();
+        //Ext.getCmp('sync_xmp').enable();
         
     } 
     else{

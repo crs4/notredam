@@ -49,11 +49,11 @@ var ws_permissions_store = new Ext.data.JsonStore({
                 var admin = ws_permissions_store.find('name', 'admin') > - 1;
                 var new_ws = ws_permissions_store.find('name', 'add_ws') > -1;        
 
-                Ext.getCmp('new_ws_menu').disable();
-
-                if (new_ws) {
-                    Ext.getCmp('new_ws_menu').enable();                
-                }
+//                Ext.getCmp('new_ws_menu').disable();
+//
+//                if (new_ws) {
+//                    Ext.getCmp('new_ws_menu').enable();                
+//                }
 
                 if (admin ){
                     Ext.getCmp('new_item_menu').enable();
