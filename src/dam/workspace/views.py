@@ -754,20 +754,24 @@ def _replace_groups(group, item, default_language):
         return ''
 
 def _get_thumb_caption(item, template_string, language):
+    caption = 'no_valid_caption_available'
+    try:
+        pattern = re.compile('%(?P<namespace>\w+):(?P<field>\w+)%')
+        groups = re.finditer(pattern, template_string)
+        values_dict = {}
+        for g in groups:
+            values_dict[g.group(0)] = _replace_groups(g, item, language)
 
-    pattern = re.compile('%(?P<namespace>\w+):(?P<field>\w+)%')
-    groups = re.finditer(pattern, template_string)
-    values_dict = {}
-    for g in groups:
-        values_dict[g.group(0)] = _replace_groups(g, item, language)
+        caption = template_string
 
-    caption = template_string
+        for schema in values_dict.keys():
+            caption = caption.replace(schema, values_dict[schema])
 
-    for schema in values_dict.keys():
-        caption = caption.replace(schema, values_dict[schema])
-
-    if not len(caption):
-        caption = str(item.get_file_name())
+        if not len(caption):
+            #caption = str(item.get_file_name())
+            caption = unicode(item.get_file_name())
+    except Exception, ex:
+        logger.debug('ERROR while getting thumb caption: %s ' % ex)
 
     return caption
     
@@ -809,7 +813,9 @@ def _get_items_info(user, workspace, items):
             try:
                 #           item = Item.objects.get(pk=i)            
                 thumb_url, thumb_ready = _get_thumb_url(item, workspace)
+                logger.debug('\n\n==>thumb_url %s, thumb_ready %s' % (thumb_url, thumb_ready))
                 my_caption = _get_thumb_caption(item, thumb_caption, default_language)
+                logger.debug('==>my_caption: %s' % my_caption)
             
                 item_in_basket = 0
 
