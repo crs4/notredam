@@ -412,6 +412,7 @@ class Component(AbstractComponent):
 
         try:    
             logger.debug('try')
+            logger.debug('license_value %s' % license_value)
             if isinstance(license_value, RightsValue):
                 license = license_value
             else:
@@ -425,7 +426,11 @@ class Component(AbstractComponent):
         
             xmp_values = {}
             for m in license.xmp_values.all():
-                xmp_values[m.xmp_property.id] = m.value
+                logger.debug('m is %s while m.value is %s' % (m,m.value))
+                if not isinstance(m.value, unicode):
+                    xmp_values[m.xmp_property.id] = m.value.decode('utf-8')
+                else:
+                    xmp_values[m.xmp_property.id] = m.value
             logger.debug('xmp_values %s'%xmp_values)
             MetadataValue.objects.save_metadata_value(item_list, xmp_values, self.variant.name, workspace)
 
