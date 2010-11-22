@@ -79,8 +79,10 @@ def get_upload_url(request):
     return HttpResponse(resp)
     
 def _get_uploaded_info(upload_file):
-
-    file_name = upload_file.name
+    if not isinstance(upload_file.name, unicode):
+        file_name = unicode(upload_file.name, 'utf-8')
+    else:
+        file_name = upload_file.name
 
     type = guess_media_type(file_name)
     
