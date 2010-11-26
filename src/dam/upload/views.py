@@ -99,36 +99,37 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
     Create component for the given item and generate mediadart tasks. 
     Used only when user uploaded an item's variant
     """
-    logger.debug('############### _save_uploaded_component: %s' % variant.pk)
-    comp = item.create_variant(variant, workspace)
-    
-    if variant.auto_generated:
-        comp.imported = True
-
-    logger.debug('comp._id %s'%comp._id)
-    logger.debug('res_id %s'%res_id)
-    comp.file_name = file_name
-    comp._id = res_id
-    
-    mime_type = mimetypes.guess_type(file_name)[0]
-        
-    ext = mime_type.split('/')[1]
-    comp.format = ext
-    comp.save()
-    
-    default_language = get_metadata_default_language(user)
-    
-    for key in request.POST.keys():
-        if key.startswith('metadata'):
-            value = request.POST[key]
-            metadata_id = key.split('_')[-1]
-            descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
-            MetadataValue.objects.save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
-
-    metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-    orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
-    transaction.commit()
     try:
+        logger.debug('############### _save_uploaded_component: %s' % variant.pk)
+        comp = item.create_variant(variant, workspace)
+        
+        if variant.auto_generated:
+            comp.imported = True
+    
+        logger.debug('comp._id %s'%comp._id)
+        logger.debug('res_id %s'%res_id)
+        comp.file_name = file_name
+        comp._id = res_id
+        
+        mime_type = mimetypes.guess_type(file_name)[0]
+            
+        ext = mime_type.split('/')[1]
+        comp.format = ext
+        comp.save()
+        
+        default_language = get_metadata_default_language(user)
+        
+        for key in request.POST.keys():
+            if key.startswith('metadata'):
+                value = request.POST[key]
+                metadata_id = key.split('_')[-1]
+                descriptor = MetadataDescriptor.objects.get(pk = metadata_id)
+                MetadataValue.objects.save_descriptor_values(descriptor, item, value, workspace, 'original', default_language)
+    
+        metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
+        orig=MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=comp,  value=mime_type)
+        transaction.commit()
+       
         generate_tasks(comp, workspace)
         
 #-        if not variant.auto_generated:
@@ -329,6 +330,8 @@ def _generate_tasks( component, workspace, force_generation,  check_for_existing
             maction.append_func('send_mail')
         callback = lambda a, b, c: None
     maction.activate(callback)
+#    maction.activate(None)
+#    callback(None, None,None)
     
 def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
     

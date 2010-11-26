@@ -435,8 +435,8 @@ class Component(AbstractComponent):
             MetadataValue.objects.save_metadata_value(item_list, xmp_values, self.variant.name, workspace)
 
         except Exception,  ex:
-            logger.error(ex)
-            logger.debug('ex')
+            logger.debug(ex)
+            
             logger.debug(self.variant.name)
             self.metadata.filter(schema__rights_target=True).delete()
 

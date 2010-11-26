@@ -56,7 +56,7 @@ class Variant(models.Model):
 #                dest_media_type = self.media_type
                 
             component = item.create_variant(self, workspace,  media_type)
-            logger.error('component for ws %s and item %s and variant %s not found. Created.'%(workspace, item.pk, self.name))
+            logger.debug('component for ws %s and item %s and variant %s not found. Created.'%(workspace, item.pk, self.name))
             return component
     
     def __str__(self):
