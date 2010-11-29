@@ -26,8 +26,99 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
             load: function() {
     			
     			
-                var items = generate_pref_forms(this, save_url, undefined, on_success );
-            
+                var generated_prefs = generate_pref_forms(this, save_url, undefined, on_success );
+              	var account_prefs = new Ext.FormPanel({
+              		id: 'account_form',
+		            frame: true,
+		            title: 'Account',
+		            monitorValid: true,
+		            labelWidth: 200, // label settings here cascade unless overridden		            
+		            url: '/account_prefs/',
+		            
+		            buttons: [{
+		                text: 'Save',
+		                type: 'submit',
+		                handler: function(){
+		                	Ext.getCmp('account_form').getForm().submit({
+		                		success: function(){
+		                			user = Ext.getCmp('username').getValue();
+		                			Ext.get('user_logged').dom.innerHTML = user;
+		                		}
+		                	}
+		                );
+		                
+		                
+		                }
+		            },{
+		                text: 'Cancel',
+		                handler: function() {
+		                	
+		                   
+		                }
+		            }],
+		            items:[
+		            	new Ext.form.TextField({
+		            		id: 'username',
+		            		fieldLabel: 'username',
+		            		name:'username',
+		            		value: user, //get in workspace_gui.html
+		            		allowBlank: false
+		            	}),
+		            	new Ext.form.FieldSet({
+		            		id: 'password_fieldset',
+		            		title: 'Change Password',
+		            		checkboxToggle : {tag: 'input', type: 'checkbox', id: 'change_password_cb'},
+		            		items: [
+		            			new Ext.form.TextField({
+		            				fieldLabel: 'current password',
+		            				id: 'current_password',
+		            				name: 'current_password',
+		            				inputType: 'password',
+		            				validator: function(value){
+		            					if (Ext.get('change_password_cb').dom.checked && !value)
+		            						return 'new password cannot be empty';
+		            					else
+		            						return true;
+		            				}
+		            			}),
+		            			new Ext.form.TextField({
+		            				id: 'new_password',
+		            				fieldLabel: 'new password',
+		            				name: 'new_password',
+		            				inputType: 'password',
+		            				validator: function(value){
+		            				if (Ext.getCmp('current_password').getValue() && !value)
+		            					return 'new password cannot be empty';
+		            				else
+		            					return true;
+		            				}
+		            			}),
+		            			new Ext.form.TextField({
+		            				fieldLabel: 'confirm password',
+		            				name: 'confirm_password',
+		            				inputType: 'password',
+		            				validator: function(value){
+		            					var new_password = Ext.getCmp('new_password').getValue();
+		            					if (Ext.getCmp('current_password').getValue() && new_password && value != new_password)
+		            						return 'confirmation password does not match';
+		            					else
+		            						return true;
+		            				}
+		            			})
+		            			
+		            			
+		            		],
+		            		listeners:{
+		            			render:function(){
+		            				this.toggleCollapse();
+		            			}
+		            		}
+		            	})
+		            ]
+		        });
+                
+		        var items = [account_prefs].concat(generated_prefs);
+		        
                 if (additional_item_func) {
                     var gen_item = additional_item_func();
                     items.splice(0, 0, gen_item);

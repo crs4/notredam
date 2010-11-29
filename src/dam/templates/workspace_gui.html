@@ -35,7 +35,8 @@
 	{%block js%}
 		<script type="text/javascript">
 	
-		ws = {id:{{ws_id}}, name:'{{ws_name}}', description: '{{ws_description}}'};
+		var ws = {id:{{ws_id}}, name:'{{ws_name}}', description: '{{ws_description}}'};
+		var user = "{{user.username}}";
 		
 		</script>
 			    
@@ -93,7 +94,7 @@
 		<div id="switch_ws_bar" style="width:300; position:absolute; left:42%; float:left; margin-top:3px; margin-left:26px; font-size:12 !important;" ></div>
 		
 		
-		<div style="float:right; margin-top:11px; font-size:11px; padding-right:10px;">logged as {{user}} 
+		<div style="float:right; margin-top:11px; font-size:11px; padding-right:10px;">logged as <span id="user_logged">{{user}}</span> 
 		{%block prefs%}
 			| <a href='javascript:open_pref()' >preferences</a> 
 		{%endblock%}
