@@ -133,3 +133,31 @@ def get_ws_settings(request):
         data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': s.component.name,  'type': s.type,  'value': value,  'choices':choices})
     return HttpResponse(simplejson.dumps(data))    
 
+@login_required
+def account_prefs(request):
+    from django.db import IntegrityError
+    username = request.POST['username']
+    current_password = request.POST.get('current_password')
+    new_password = request.POST.get('new_password')
+    
+    if current_password:
+        if request.user.check_password(current_password):
+            if new_password:
+                logger.debug('valid new password')
+                request.user.set_password(new_password)
+            else:
+                logger.error('INvalid new password')
+                return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'new_password', 'msg':'new password is invalid'}]}))
+            
+        else:
+            logger.error('wrong current password')
+            return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'current_password', 'msg':'password does not match'}]})) 
+            
+    try:
+        request.user.username = username
+        request.user.save()
+    except IntegrityError:
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'username', 'msg':'username already used'}]}))
+        
+    return HttpResponse(simplejson.dumps({'success': True}))
+    
