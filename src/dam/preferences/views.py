@@ -137,6 +137,10 @@ def get_ws_settings(request):
 def account_prefs(request):
     from django.db import IntegrityError
     username = request.POST['username']
+    first_name = request.POST['first_name']
+    last_name = request.POST['last_name']
+    email = request.POST['email']
+    
     current_password = request.POST.get('current_password')
     new_password = request.POST.get('new_password')
     
@@ -155,9 +159,24 @@ def account_prefs(request):
             
     try:
         request.user.username = username
+        request.user.first_name = first_name
+        request.user.last_name = last_name
+        request.user.email = email
+                
         request.user.save()
     except IntegrityError:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'username', 'msg':'username already used'}]}))
         
     return HttpResponse(simplejson.dumps({'success': True}))
+    
+@login_required
+def get_account_info(request):
+    account_info = {
+        'username': request.user.username,
+        'first_name': request.user.first_name,
+        'last_name': request.user.last_name,
+        'email': request.user.email
+                    
+    }
+    return HttpResponse(simplejson.dumps({'success': True, 'data': account_info}))
     
