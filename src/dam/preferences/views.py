@@ -136,7 +136,7 @@ def get_ws_settings(request):
 @login_required
 def account_prefs(request):
     from django.db import IntegrityError
-    username = request.POST['username']
+#    username = request.POST['username']
     first_name = request.POST['first_name']
     last_name = request.POST['last_name']
     email = request.POST['email']
@@ -158,7 +158,7 @@ def account_prefs(request):
             return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'current_password', 'msg':'password does not match'}]})) 
             
     try:
-        request.user.username = username
+#        request.user.username = username
         request.user.first_name = first_name
         request.user.last_name = last_name
         request.user.email = email
@@ -172,7 +172,7 @@ def account_prefs(request):
 @login_required
 def get_account_info(request):
     account_info = {
-        'username': request.user.username,
+#        'username': request.user.username,
         'first_name': request.user.first_name,
         'last_name': request.user.last_name,
         'email': request.user.email
