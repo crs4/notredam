@@ -176,7 +176,7 @@ class Engine:
 
         component = self.maction.component
         adapter_proxy = Proxy('Adapter')
-        log.debug("[adapt_resource] component %s" % component.ID)
+        log.debug("[adapt_resource] from original component %s" % component.source.ID)
         item = component.item
         vp = component.get_parameters()
         log.debug('vp %s'%vp)
