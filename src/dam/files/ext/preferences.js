@@ -43,6 +43,7 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		                		success: function(){
 		                			user = Ext.getCmp('username').getValue();
 		                			Ext.get('user_logged').dom.innerHTML = user;
+		                			 Ext.MessageBox.alert('Save', 'Preferences saved successfully.');
 		                		}
 		                	}
 		                );
@@ -52,6 +53,7 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		            },{
 		                text: 'Cancel',
 		                handler: function() {
+		                	win.close();
 		                	
 		                   
 		                }
@@ -60,10 +62,29 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		            	new Ext.form.TextField({
 		            		id: 'username',
 		            		fieldLabel: 'username',
-		            		name:'username',
-		            		value: user, //get in workspace_gui.html
+		            		name:'username',		            		
 		            		allowBlank: false
 		            	}),
+		            	new Ext.form.TextField({
+		            		id: 'firstname',
+		            		fieldLabel: 'first name',
+		            		name:'first_name'		            		
+		            		
+		            	}),
+		            	new Ext.form.TextField({
+		            		id: 'last_name',
+		            		fieldLabel: 'last name',
+		            		name:'last_name'		            		
+		            		
+		            	}),
+		            	new Ext.form.TextField({
+		            		id: 'email',
+		            		fieldLabel: 'email',
+		            		name:'email',
+		            		vtype:'email',
+		            		allowBlank: false
+		            	}),
+		            	
 		            	new Ext.form.FieldSet({
 		            		id: 'password_fieldset',
 		            		title: 'Change Password',
@@ -110,11 +131,28 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		            		],
 		            		listeners:{
 		            			render:function(){
-		            				this.toggleCollapse();
+		            				this.toggleCollapse();		            				
 		            			}
 		            		}
 		            	})
-		            ]
+		            ],
+		            listeners:{
+		            	render:function(){
+		            		var el = this.getEl();
+		            		el.mask('Loading...');
+		            		this.getForm().load({
+            					url: '/get_account_info/',
+            					success: function(){
+            						el.unmask();            						
+            					},
+            					failure: function(){
+            						el.unmask();
+            						el.mask('Failed loading account data.');
+            					}
+            				});
+		            	}
+		            	
+		            }
 		        });
                 
 		        var items = [account_prefs].concat(generated_prefs);
@@ -128,7 +166,7 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
                     layout      : 'fit',
                     constrain: true,
                     width       : 500,
-                    height      : 300,
+                    height      : 350,
                     plain       : true,
                     title: obj + ' Preferences',
                     modal: true,
