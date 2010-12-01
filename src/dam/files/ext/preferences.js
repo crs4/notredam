@@ -41,8 +41,8 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		                handler: function(){
 		                	Ext.getCmp('account_form').getForm().submit({
 		                		success: function(){
-		                			user = Ext.getCmp('username').getValue();
-		                			Ext.get('user_logged').dom.innerHTML = user;
+//		                			user = Ext.getCmp('username').getValue();
+//		                			Ext.get('user_logged').dom.innerHTML = user;
 		                			 Ext.MessageBox.alert('Save', 'Preferences saved successfully.');
 		                		}
 		                	}
@@ -59,12 +59,12 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		                }
 		            }],
 		            items:[
-		            	new Ext.form.TextField({
-		            		id: 'username',
-		            		fieldLabel: 'username',
-		            		name:'username',		            		
-		            		allowBlank: false
-		            	}),
+//		            	new Ext.form.TextField({
+//		            		id: 'username',
+//		            		fieldLabel: 'username',
+//		            		name:'username',		            		
+//		            		allowBlank: false
+//		            	}),
 		            	new Ext.form.TextField({
 		            		id: 'firstname',
 		            		fieldLabel: 'first name',
