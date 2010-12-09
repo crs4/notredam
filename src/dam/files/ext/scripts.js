@@ -1263,31 +1263,31 @@ function new_script(create, name, description, id_script, is_global, run){
 		        			},
 		                    success: function(response) {
 		                        if (Ext.decode(response.responseText)['success']){
-		                        	if (is_global){
-		    		        			Ext.Msg.show({
-		    		        				   title:'Option.',
-		    		        				   msg: 'This global script is saved, do you want to run on all objects in the workspace?',
-		    		        				   width: 300,
-		    		        				   buttons: Ext.Msg.YESNO,
-		    		        				   fn: function(btn){
-				    		        			    if (btn == 'yes'){
-				    		        			    	//run script
-				    		        			    	Ext.Ajax.request({
-				                					        url: '/run_script/',
-				                			                params: {
-				    		        			    			script_id : id_script,
-				                								run_again : true
-				                							},
-				                					        success: function(data){
-				                								reload_main_data_view();
-				                					        }
-				                						});
-				    		        			    }
-		    		        					},
-		    		        				   animEl: 'elId',
-		    		        				   icon: Ext.MessageBox.QUESTION
-		    		        				});	
-		    		        		}else
+//		                        	if (is_global){
+//		    		        			Ext.Msg.show({
+//		    		        				   title:'Option.',
+//		    		        				   msg: 'This global script is saved, do you want to run on all objects in the workspace?',
+//		    		        				   width: 300,
+//		    		        				   buttons: Ext.Msg.YESNO,
+//		    		        				   fn: function(btn){
+//				    		        			    if (btn == 'yes'){
+//				    		        			    	//run script
+//				    		        			    	Ext.Ajax.request({
+//				                					        url: '/run_script/',
+//				                			                params: {
+//				    		        			    			script_id : id_script,
+//				                								run_again : true
+//				                							},
+//				                					        success: function(data){
+//				                								reload_main_data_view();
+//				                					        }
+//				                						});
+//				    		        			    }
+//		    		        					},
+//		    		        				   animEl: 'elId',
+//		    		        				   icon: Ext.MessageBox.QUESTION
+//		    		        				});	
+//		    		        		}else
         	                        	Ext.Msg.show({title:'Success', msg: 'Script saved.', width: 300,
 					        				   buttons: Ext.Msg.OK, icon: Ext.MessageBox.INFO });
 		                        		my_win.close();
