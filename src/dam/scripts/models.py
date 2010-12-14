@@ -685,6 +685,12 @@ class ExtractVideoThumbnail(SaveAction):
         adapt_parameters['max_width'] = self.max_width
         return super(ExtractVideoThumbnail, self).execute(item, adapt_parameters)
         
-        
+class ScriptNew(models.Model):
+    name = models.CharField(max_length= 50)
+    description = models.CharField(max_length= 200)
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
+    actions = models.TextField()
+    
+    
         
 
