@@ -1,27 +1,22 @@
-from scripts.actions import BaseAction, new_id
+from scripts.actions import BaseAction, new_id, Resource
 from mediadart.mqueue.mqclient_twisted import Proxy
 from mediadart import log
 
 from repository.models import Component
 
-class Crop(BaseAction):
-    def execute(self, save_as = None, codec = None):
+class AdaptImageResource(Resource):
+    pass
+    
+class Crop(AdaptImage):    
+    
+    def _execute(self):
         log.debug('executing crop')
         
-        log.debug('input %s' %self.input)
-        if isinstance(self.input, Component):      
-                  
-            argv = []
-            input_width = self.input.width
-            input_height = self.input.height
-            input = self.input
-        else:
-            tmp = self.input.get_output()
-            log.debug('tmp %s'%tmp)
-            argv = tmp['argv']
-            input_width = tmp['input_width']
-            input_height = tmp['input_height']
-            input = tmp['input']
+        log.debug('input %s' %self.resource)
+        input = self.resource.component
+        argv = input.params.get('argv', [])
+        input_width = input.width
+        input_height = input.height
             
         
         if self.params.get('ratio'):
@@ -65,49 +60,57 @@ class Crop(BaseAction):
             log.debug('crop started')
 #            d.addCallbacks()
                 
-class Resize(BaseAction):
-    def execute(self, save_as = None, codec = None):
-        log.debug('executing resize')
-        
-        if isinstance(self.input, Component):            
-            argv = []
-            input_width = self.input.width
-            input_height = self.input.height
-            input = self.input
-            
-        else:
-            tmp = self.input.get_output()
-            argv = tmp['argv']
-            input_width = tmp['input_width']
-            input_height = tmp['input_height']
-            input = tmp['input']            
-        
+class Resize(AdaptImage):
+    def _execute(self, input_id, argv, codec = None):
+        transcoding_format = codec   #change to original format
+        dest_res_id = new_id()
+        dest_res_id = dest_res_id + '.' + transcoding_format
+        adapter_proxy = Proxy('Adapter')
+        input_id = self.resource.component.ID        
+        d = adapter_proxy.adapt_image_magick('%s[0]' % input_id, dest_res_id, argv)       
+        self
+     
+    
+    def execute(self):
+                
+        input = self.resource.component
+        codec = input.format
+        input_id = self.resource.component.ID
+        argv = self.resource.get('argv', [])
+        input_width = self.resource.get('width')
+        input_height = self.resource.get('height')
         if input.item.type.name == 'image':
             max_width = min(self.params['max_width'],  input_width)
             max_height = min(self.params['max_height'],  input_height)
             argv +=  ['-resize', '%dx%d' % (max_width, max_height)]
-        log.debug('save_as %s'%save_as)    
-        if not save_as: 
-            
-            #computing some data for other actions like crop
+        
+        
+        
             aspect_ratio = input_height/input_width 
             alfa = min(self.params['max_width']/input_width, self.params['max_height']/input_height)
-            input_width = alfa*input_width
-            input_height = alfa*input_height
-            self._output = {
-                'argv': argv,
-                'input_width': input_width,
-                'input_height': input_height,
-                'input': input
-            }
-            return self
-        else:
-            transcoding_format = codec or input.format  #change to original format
-            dest_res_id = new_id()
-            dest_res_id = dest_res_id + '.' + transcoding_format
-            adapter_proxy = Proxy('Adapter')
-            d = adapter_proxy.adapt_image_magick('%s[0]' % input.ID, dest_res_id, argv)
-            log.debug('resize started')
-                
+            
+            self.resource.params['width'] = alfa*input_width
+            self.resource.params['height'] = alfa*input_height
+            self.resource.params['argv'] = argv
+                    
+            self.resource.do_action(self._execute, input_id, argv)
+      
+   
+        
+        
+       
+        return AdaptImageResource(self.resource.component)
+            
+       
+            
+    
+   
+
+    
+            
+         
+resource = Resize(**params).execute(Crop(**params).execute(Resource(orig)))
+resource.save(extension = 'jpg')
+
 #Crop(Resize(orig, **params).execute(), **params).execute(save_as = '', format = '')
 #Pipeline(input = orig, output = ooo, actions = [Resize(**params),]   )
