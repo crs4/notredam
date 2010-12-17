@@ -109,8 +109,7 @@ class Resize(AdaptImage):
     
             
          
-resource = Resize(**params).execute(Crop(**params).execute(Resource(orig)))
-resource.save(extension = 'jpg')
 
-#Crop(Resize(orig, **params).execute(), **params).execute(save_as = '', format = '')
+resource = Crop(Resize(Resource(orig), **params).execute(), **params).execute()
+resource.save(variant=  '')
 #Pipeline(input = orig, output = ooo, actions = [Resize(**params),]   )

@@ -40,20 +40,8 @@ class Engine:
     def __init__(self, d):
         self.maction = None
         self.d = d
-
+        
     def init(self, data):
-        from scripts.actions.adapt import Resize, Crop
-        from repository.models import Item
-        from workspace.models import Workspace
-        from variants.models import Variant
-        
-        item = Item.objects.get(pk = 1)
-        workspace = Workspace.objects.get(pk = 1)
-        log.debug('starting test')
-        Crop(Resize(item.get_variant(variant = Variant.objects.get(name = 'original'), workspace = workspace), max_height = 200, max_width = 200).execute(), lowerright_x = 10, upperleft_x = 10, lowerright_y = 10, upperleft_y = 10 ).execute(save_as = 'test', codec = 'jpg')
-        log.debug('test finished')
-        
-    def init_old(self, data):
         log.debug('MProcessor.Engine.init: reading component %s' % (data['component_id']))
         try:
             component = Component.objects.get(pk=data['component_id'])
