@@ -100,12 +100,16 @@ class Item(AbstractItem):
                 comp.workspace.add(*self.workspaces.all())
             else:
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
+#                comp = Component.objects.get(pk = 1)
+                logger.debug('comp %s'%comp)
+                comp.save()
 #                comp.metadata.all().delete()
             
             
         except Component.DoesNotExist:
             logger.debug('variant does not exist yet')
-          
+            logger.debug('variant %s'%variant)
+            logger.debug('type %s'%media_type)
                     
             comp = Component.objects.create(variant = variant, item = self, type = media_type)
             comp.workspace.add(ws)
@@ -283,7 +287,10 @@ class Item(AbstractItem):
         @param variant an instance of variants.Variant
         """
         from dam.variants.models import Variant
-        return self.component_set.get(variant = variant, workspace = workspace)
+        try:
+            return self.component_set.get(variant = variant, workspace = workspace)
+        except Component.DoesNotExist:
+            return self.create_variant(variant, workspace)
 
     def get_variants(self, workspace):
         """
