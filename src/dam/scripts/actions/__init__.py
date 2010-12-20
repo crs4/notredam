@@ -1,4 +1,4 @@
-from repository.models import Component
+#from repository.models import Component
 from uuid import uuid4
 from twisted.internet import defer
 
