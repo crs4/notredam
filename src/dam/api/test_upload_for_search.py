@@ -12,7 +12,7 @@ from dam.repository.models import Item,  Component
 
 from dam.core.dam_repository.models import Type
 INPUT_FILE = 'muffin_small.jpeg'
-TOTAL = 10000
+TOTAL = 2000
 
 if __name__ == "__main__":
     client = Client()

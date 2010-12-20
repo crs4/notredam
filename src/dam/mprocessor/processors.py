@@ -356,7 +356,8 @@ def _save_component_features(component, features, extractor):
             GeoInfo.objects.save_geo_coords(component.item,latitude,longitude)
         except Exception, ex:
             logger.debug( 'ex while saving latitude and longitude in dam db: %s'% ex)
-    log.debug("[ExtractMetadata.end] component %s" % component.ID)
+#    log.debug("[ExtractMetadata.end] component %s" % component.ID)
+    log.debug("[ExtractMetadata.end]" )
 
 
 def _save_features(c, features):

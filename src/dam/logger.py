@@ -24,8 +24,8 @@ import sys, os.path
 from django.utils.encoding import smart_unicode
 
 
-logging_level = logging.DEBUG
-#logging_level = logging.ERROR
+#logging_level = logging.DEBUG
+logging_level = logging.ERROR
 logging.basicConfig(level=logging_level,
                     format='[%(asctime)s] %(levelname)-8s %(message)s',
                     datefmt = '%d/%b/%Y %H:%M:%S',

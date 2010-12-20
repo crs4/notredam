@@ -17,7 +17,12 @@
 */
 
 Ext.onReady(function() {
-
+	
+	var get_new_password(){
+		
+		
+	};
+	
     var submitClick = function() {
         var f = Ext.getCmp('login_form').form;
             if (f.isValid()) {
@@ -56,7 +61,8 @@ Ext.onReady(function() {
             name: 'password',
             allowBlank: false
         }, new Ext.Panel({
-	    html: '<a href="/registration/">New user? register now!</a>'
+	    html: '<div><a href="/registration/">New user? register now!</a></div>' +
+	    		'<div><a href="javascript:get_new_password()">Have you forgotten your password?</a></div>'
 	   }) 
         ],
 

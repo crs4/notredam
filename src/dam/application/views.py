@@ -225,4 +225,22 @@ def download_component(request, item_id, variant_name):
     response['Content-Disposition'] = 'attachment; filename=%s'%file_name
     return response
     
+#def get_new_password(request):
+    
+    
+def activate_user(username):
+    from django.core.mail import send_mail
+    
+    user = User.objects.get(username = username)
+    user.active = True
+    user.save()
+    
+    send_mail('NotreDam account activation', 
+        "Hi %s,\nyour account has been activated.\nWe hope you will enjoy NotreDam.\n\nNotreDam staff"%username, 
+        'labcontdigit@sardegnaricerche.it',
+        [user.email], fail_silently=False)
+    
+    
+    
+    
     
