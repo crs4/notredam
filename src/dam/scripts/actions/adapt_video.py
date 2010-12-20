@@ -15,11 +15,6 @@ from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
 
-
-
-c = Component.objects.get(pk = 10)
-c.save()
-
 from uuid import uuid4
 
 def new_id():
@@ -101,17 +96,54 @@ def inspect():
          
         } 
 
-def run(item, workspace, source_variant, output_variant, output_format, actions, height = None, width = None, ratio = None, pos_x_percent = None, pos_y_percent = None, wm_id = None):
-    return Adapter().execute(item, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id)
+def run(item, 
+        workspace,
+        source_variant,
+        output_variant, 
+      
+        preset_name, 
+        watermark_left, 
+        audio_rate,
+        video_height,
+        watermark_top,
+        video_width,
+        watermark_filename,
+        video_framerate,
+        audio_bitrate,
+        video_bitrate
+        ):
+    
+    return Adapter().execute(item, workspace, source_variant, output_variant, preset_name, 
+        watermark_left = watermark_left, 
+        audio_rate = audio_rate,
+        video_height = video_height,
+        video_width = video_width,        
+        watermark_filename = watermark_filename,
+        video_framerate = video_framerate,
+        audio_bitrate = audio_bitrate,
+        video_bitrate = video_bitrate                              
+    )
+
+def save_component(self, result):   # era save_and_extract_features
+    log.debug("[save_component] component %s" % component.ID)
+    component = self.maction.component
+    if result:
+        dir, name = os.path.split(result)
+        component._id = name
+        component.save()
+    else:
+        log.error('Empty result passed to save_and_extract_features')
+    return result    
 
 class Adapter:
-
+    
     def __init__(self):    
         self.deferred = defer.Deferred()
     
     def handle_result(self, result, component):
         log.debug('result %s'%result)
-        log.debug("[save_component] component %s" % component.pk)        
+        log.debug("[save_component] component %s" % component.pk)
+        
         
         if result:
             dir, name = os.path.split(result)
@@ -125,8 +157,9 @@ class Adapter:
     def handle_error(self, result, component):
         self.deferred.callback('error')
     
-    def execute(self,item, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id):
-        log.info('executing adaptation')
+    def execute(self,item, workspace, source_variant, output_variant, preset_name, **params):
+        
+        log.info('executing video adaptation')
              
         source_variant = Variant.objects.get(name = source_variant)
         source = item.get_variant(workspace, source_variant)
@@ -144,63 +177,14 @@ class Adapter:
         orig = output_component.source
         dest_res_id = new_id()
         
-        args ={}
-        argv = [] #for calling imagemagick
-    
-    
-       
-        source_width = source.width
-        source_height = source.height
-        for action in actions:
-            if action == 'resize':
-                log.debug('source.width %s'%source.width)
-                log.debug('source.height %s'%source.height)
-                width = min(width,  source.width)
-                height = min(height,  source.height)
-                
-                
-                
-                argv +=  ['-resize', '%dx%d' % (width, height)]
-                
-                aspect_ratio = source.height/source.width 
-                alfa = min(width/source.width, height/source.height)
-                source_width = alfa*source.width
-                source_height = alfa*source.height
-                
-            elif action == 'crop':
-                
-                x_ratio, y_ratio = ratio.split(':')
-                y_ratio = int(y_ratio)
-                x_ratio = int(x_ratio)
-                final_width = min(source_width, source_height*x_ratio/y_ratio)
-                final_height = final_width*y_ratio/x_ratio
-                log.debug('ratio=(%s,%s), final(h,w)=(%s, %s), original(h,w)=(%s, %s)'%(
-                       x_ratio, y_ratio, final_height, final_width, source_height, source_width))
-                ul_y = (source_height - final_height)/2
-                ul_x = 0
-                lr_y = ul_y + final_height
-                lr_x = final_width 
-    #            else:
-    #                lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
-    #                ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
-    #                lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
-    #                ul_y = int(int(action['parameters']['upperleft_y'])*component.source.height/100)
-                
-                source_width = lr_x -ul_x 
-                source_height = lr_y - ul_y
-                log.debug('orig(h,w)=(%s, %s)' % (source.height, source.width))
-                argv +=  ['-crop', '%dx%d+%d+%d' % (source_width, source_height,  ul_x, ul_y)]
-                log.debug('argv %s'%argv)
-            
-            elif action == 'watermark':
-                pos_x = int(pos_x_percent)*source_width/100
-                pos_y = int(int(pos_y_percent)*source_height/100)
-                argv += ['cache://' + watermark_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
+      
+        log.debug('preset_name %s'%preset_name)
         
+        params['preset_name'] = preset_name
+        log.debug('params %s'%params)
         adapter_proxy = Proxy('Adapter')
+        d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name, params)
         
-        dest_res_id = dest_res_id + '.' + output_format
-        d = adapter_proxy.adapt_image_magick('%s[0]' % orig.ID, dest_res_id, argv)
         d.addCallbacks(self.handle_result, self.handle_error, [output_component])
         
         return self.deferred
@@ -209,19 +193,31 @@ class Adapter:
 def test():
     print 'test'
     
-    item = Item.objects.all()[0]
+    item = Item.objects.all()[2]
     workspace = DAMWorkspace.objects.get(pk = 1)
     source_variant = 'original'
     
     actions = ['resize'] 
     height = width = 100
-    output_variant = 'fullscreen'
-    output_format = 'jpg'
-    d = run(item, workspace, source_variant, output_variant,output_format, actions, height, width)
+    output_variant = 'preview'
+   
+    d = run(item, workspace, source_variant, output_variant,
+        preset_name = 'FLV_H264_AAC', 
+        watermark_left = 0, 
+        audio_rate = 44100,
+        video_height = 240,
+        watermark_top = 0,
+        video_width = 320,
+        watermark_filename = '',
+        video_framerate = '30/1',
+        audio_bitrate = 128,
+        video_bitrate = 180000
+            
+    )
     d.addBoth(print_result)
     
 def print_result(result):
-    print 'aaaaaaaaaa'
+   
     print result
     reactor.stop()
 

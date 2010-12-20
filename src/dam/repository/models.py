@@ -99,10 +99,15 @@ class Item(AbstractItem):
                 comp.workspace.add(ws)
                 comp.workspace.add(*self.workspaces.all())
             else:
+                logger.debug('item %s'%self)
+                logger.debug('variant %s'%variant)
+                logger.debug('worskapce %s'%ws)
+                logger.debug('media_type %s'%media_type)
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
+                
 #                comp = Component.objects.get(pk = 1)
                 logger.debug('comp %s'%comp)
-                comp.save()
+                
 #                comp.metadata.all().delete()
             
             
@@ -116,6 +121,10 @@ class Item(AbstractItem):
             
             if variant.shared:
                 comp.workspace.add(*self.workspaces.all())
+        
+        logger.debug('comp %s'%comp)
+        logger.debug('comp.pk %s'%comp.pk)
+        
         
         logger.debug('============== COMPONENT_VARIANT =========== %s' % comp.variant)
         
@@ -336,7 +345,7 @@ class Component(AbstractComponent):
     variant = models.ForeignKey('variants.Variant')
     workspace = models.ManyToManyField('workspace.DAMWorkspace')    
 #    media_type = models.ForeignKey('application.Type')
-    item = models.ForeignKey('repository.Item')
+    item = models.ForeignKey(Item)
     _previous_source_id = models.CharField(max_length=40,  null = True,  blank = True)
         
     uri = models.URLField(max_length=512, verify_exists = False,  blank = True,  null = True)
