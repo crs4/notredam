@@ -21,80 +21,40 @@ def new_id():
     return uuid4().hex
 
 def inspect():
-    return {
-        'parameter_groups':{
-        'resize':['width', 'height'],
-        'crop':['ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'component_id']
-            
-            
-            },
-            'width': {
-            'type': 'int',
-            'description': 'width',
-            'default': 100,
-            'help': ''
-            
-            
-        },     
-        'actions':{
-            'type': 'list',
-            'available_values':['resize', 'crop', 'watermark']
-                 
+    return [
+        
+         {
+        'name': 'dim_x',
+        'type': 'int',
+        'description': 'dim_x',
+        'default': 100,
+        'help': ''
+                       
         },
-        'height': {
+        {
+            'name':'dim_y',
             'type': 'int',
-            'description': 'height',
+            'description': 'dim_y',
             'default': 100,
             'help': ''
                        
-        }, 
-         'ratio':{
-            'type': 'string',
-            'description': 'ratio',
-            'default': '1:1',
-            'help': ''
-                       
-        },
-        
-        'wm_id':{
-            'type': 'component_id',
-            'description': 'component',
-            'default': '',
-            'help': ''
-                       
-        },
-         'pos_x_percent':{
-            'type': 'string',
-            'description': 'pos_x_percent',
-            'default': 0,
-            'help': ''
-                       
-        },
-        
-         'pos_y_percent':{
-            'type': 'string',
-            'description': 'pos_y_percent',
-            'default': 0,
-            'help': ''
-                       
-        },
-    
-        'output_variant': {
-            'type': 'output-variant',
-            'description': 'output-variant',
-            'default': 0,
-            'help': ''
-        },
-        'source_variant': {
-            'type': 'input-variant',
-            'description': 'input-variant',
-            'default': 0,
-            'help': ''
-        }      
-        
-         
         } 
+        ]
+#        'output_variant': {
+#            'type': 'output-variant',
+#            'description': 'output-variant',
+#            'default': 0,
+#            'help': ''
+#        },
+#        'source_variant': {
+#            'type': 'input-variant',
+#            'description': 'input-variant',
+#            'default': 0,
+#            'help': ''
+#        }
+#                 
+         
+        
 
 def run(item, workspace, source_variant, output_variant, output_format, dim_x, dim_y):
     

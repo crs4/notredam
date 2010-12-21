@@ -15,11 +15,6 @@ from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
 
-
-
-c = Component.objects.get(pk = 10)
-c.save()
-
 from uuid import uuid4
 
 def new_id():
@@ -27,6 +22,7 @@ def new_id():
 
 def inspect():
     return {
+        'name': __name__,
         'parameter_groups':{
         'resize':['width', 'height'],
         'crop':['ratio'],
@@ -91,12 +87,12 @@ def inspect():
             'default': 0,
             'help': ''
         },
-        'source_variant': {
-            'type': 'input-variant',
-            'description': 'input-variant',
-            'default': 0,
-            'help': ''
-        }      
+#        'source_variant': {
+#            'type': 'input-variant',
+#            'description': 'input-variant',
+#            'default': 0,
+#            'help': ''
+#        }      
         
          
         } 
@@ -221,7 +217,7 @@ def test():
     d.addBoth(print_result)
     
 def print_result(result):
-    print 'aaaaaaaaaa'
+    
     print result
     reactor.stop()
 
