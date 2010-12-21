@@ -27,18 +27,12 @@ from httplib import HTTP
 from django.db import IntegrityError
 
 def _get_scripts_info(script):
-    actions_media_type = {}
-    actions = script.get_actions(True)
-    
-#    
-#    for action in script.actionlist_set.all():                        
-#        actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
-    
+        
     return {'id': script.pk, 
             'name': script.name, 
             'description': script.description, 
-            'is_global': script.is_global,  
-            'actions_media_type': actions, 
+#            'is_global': script.is_global,  
+             
             'already_run': script.component_set.all().count() > 0,
             'workspace_id': script.workspace.pk
             
@@ -47,10 +41,8 @@ def _get_scripts_info(script):
 @login_required
 def get_scripts(request):
     workspace = request.session.get('workspace')
-    media_type = request.POST.getlist('media_type')
-    if not media_type:
-        media_type =  Type.objects.all().values_list('name', flat = True)
-    scripts = Script.objects.filter(workspace = workspace, actionlist__media_type__name__in = media_type).distinct()
+    
+    scripts = Script.objects.filter(workspace = workspace).distinct()
     resp = {'scripts': []}
             
     for script in scripts:
@@ -78,31 +70,9 @@ def get_script_actions(request):
 def get_actions(request):  
     media_type = request.POST.get('media_type') # if no media_type all actions will be returned
     workspace = request.session.get('workspace')
-    logger.debug('media_type %s'%media_type)  
-    actions = {'actions':[]}    
-    classes = get_all_actions()
-    logger.debug('classes %s'%classes)
-    try:
-        for action in classes:
-                if action == SaveAction:
-                    continue
-                    
-                if media_type:
-                    if media_type in action.media_type_supported:
-                        add_action = True
-                    else:
-                        add_action = False
-                else:
-                    add_action = True
-                
-                if add_action:
-                   
-                    tmp = {                                 
-                            'name':action.verbose_name.lower(),
-                            'media_type': action.media_type_supported,
-                            'parameters': action.required_parameters(workspace)                    
-                    }
-                    actions['actions'].append(tmp)
+    
+    try:  
+        actions = {'actions':inspect_actions()}       
         logger.debug('actions %s'%actions)
     except Exception, ex:
         logger.exception(ex)
