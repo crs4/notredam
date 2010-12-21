@@ -96,33 +96,9 @@ def inspect():
          
         } 
 
-def run(item, 
-        workspace,
-        source_variant,
-        output_variant, 
-      
-        preset_name, 
-        watermark_left, 
-        audio_rate,
-        video_height,
-        watermark_top,
-        video_width,
-        watermark_filename,
-        video_framerate,
-        audio_bitrate,
-        video_bitrate
-        ):
+def run(item, workspace, source_variant, output_variant, output_format, dim_x, dim_y):
     
-    return Adapter().execute(item, workspace, source_variant, output_variant, preset_name, 
-        watermark_left = watermark_left, 
-        audio_rate = audio_rate,
-        video_height = video_height,
-        video_width = video_width,        
-        watermark_filename = watermark_filename,
-        video_framerate = video_framerate,
-        audio_bitrate = audio_bitrate,
-        video_bitrate = video_bitrate                              
-    )
+    return Adapter().execute(item, workspace, source_variant, output_variant, output_format, dim_x, dim_y)
 
 def save_component(self, result):   # era save_and_extract_features
     log.debug("[save_component] component %s" % component.ID)
@@ -136,18 +112,7 @@ def save_component(self, result):   # era save_and_extract_features
     return result    
 
 class Adapter:
-    preset_extension = {
-        'FLV': 'flv',
-        'AVI': 'avi',
-        'MP4_H264_AACLOW': 'mp4',
-        'MATROSKA_MPEG4_AAC': 'mkv',
-        'MPEGTS': 'ts',
-        'FLV_H264_AAC': 'flv',
-        'THEORA':'ogg'
-    
-        
-    }
-    
+   
     def __init__(self):    
         self.deferred = defer.Deferred()
     
@@ -170,34 +135,18 @@ class Adapter:
         self.deferred.callback('error')
         reactor.stop()
     
-    def execute(self,item, workspace, source_variant, output_variant, preset_name, **params):
+    def execute(self,item, workspace, source_variant, output_variant, output_format, dim_x, dim_y):
+        dest_res_id = new_id()
+        dest_res_id = dest_res_id + '.' + output_format
         
-        log.info('executing video adaptation')
-             
         source_variant = Variant.objects.get(name = source_variant)
         source = item.get_variant(workspace, source_variant)
         
-        log.debug('item %s'%item)
-        log.debug('workspace %s'%workspace)
-        log.debug('source_variant %s'%source_variant)
-
-        
         output_variant = Variant.objects.get(name = output_variant)
         output_component = item.create_variant(output_variant, workspace)
-                
-        log.debug("[adapt_resource] from original component %s" % output_component.source.ID)
         
-        orig = output_component.source
-        dest_res_id = new_id() + '.' +  self.preset_extension[preset_name]
-        
-      
-        log.debug('preset_name %s'%preset_name)
-        
-        params['preset_name'] = preset_name
-        log.debug('params %s'%params)
         adapter_proxy = Proxy('Adapter')
-        d = adapter_proxy.adapt_video(orig.ID, dest_res_id, preset_name, params)
-        
+        d = adapter_proxy.extract_video_thumbnail(source.ID, dest_res_id, thumb_size=(dim_x, dim_y))
         d.addCallbacks(self.handle_result, self.handle_error, [output_component])
         
         return self.deferred
@@ -211,22 +160,11 @@ def test():
     source_variant = 'original'
     
     actions = ['resize'] 
-    height = width = 100
-    output_variant = 'preview'
-   
-    d = run(item, workspace, source_variant, output_variant,
-        preset_name = 'AVI', 
-        watermark_left = 0, 
-        audio_rate = 44100,
-        video_height = 240,
-        watermark_top = 0,
-        video_width = 320,
-        watermark_filename = '',
-        video_framerate = '30/1',
-        audio_bitrate = 128,
-        video_bitrate = 180000
-            
-    )
+    dim_x = dim_y = 100
+    output_variant = 'thumbnail'
+    output_format = 'jpg'
+    
+    d = run(item, workspace, source_variant, output_variant, output_format, dim_x, dim_y)
     d.addBoth(print_result)
     
 def print_result(result):
