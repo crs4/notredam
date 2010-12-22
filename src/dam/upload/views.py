@@ -176,37 +176,65 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
     
 
 
+def add_resource(upload_file, user, workspace, variant, item):
 
-@transaction.commit_manually
-def upload_item(request):
+    (file_name, type, res_id) = _get_uploaded_info(upload_file)
+    
+    if not item:
+        media_type = Type.objects.get(name=type)    
+        item = Item.objects.create(owner = user, uploader = user,  type = media_type)
+        item_id = item.pk
+        item.add_to_uploaded_inbox(workspace)
+        item.workspaces.add(workspace)
+    
+    comp = item.create_variant(variant, workspace)
+    
+    if variant.auto_generated:
+        comp.imported = True
+
+    logger.debug('comp._id %s'%comp._id)
+    logger.debug('res_id %s'%res_id)
+    comp.file_name = file_name
+    comp._id = res_id
+    
+    mime_type = mimetypes.guess_type(file_name)[0]
+        
+    ext = mime_type.split('/')[1]
+    comp.format = ext
+    comp.save()
+    
+@login_required
+def upload_resource(request):
 
     """
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-
+    
     try:
+        workspace = request.session['workspace']
+        variant_name = request.POST['variant']
+        item = request.POST.get('item')
+        user = request.user
+        
         request.upload_handlers = [StorageHandler()]
+        upload_file = request.FILES['Filedata']   
         
-        url = request.POST['unique_url']
-        upload_file = request.FILES['Filedata']
+        variant = Variant.objects.get(name = variant_name)
+        add_resource(upload_file, user, workspace, variant, item)
         
-        user, workspace = UploadURL.objects.get_user_ws_from_url(url)
-    
-        _save_uploaded_item(request, upload_file, user, workspace)
-    
         resp = simplejson.dumps({})
-        transaction.commit()
-        return HttpResponse(resp)
     except Exception, ex:
         logger.exception(ex)
-        transaction.rollback()
         raise ex
+        
+    
+    return HttpResponse(resp)
 
 def upload_variant(request):
     """
     Used for uploading/replacing an item's variant. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-
+        
     request.upload_handlers = [StorageHandler()]
 
     url = request.POST['unique_url']    
@@ -223,9 +251,8 @@ def upload_watermark(request):
     """
     Used for uploading/replacing the watermark for the given workspace. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-
+       
     request.upload_handlers = [StorageHandler()]
-
     url = request.POST['unique_url']    
     upload_file = request.FILES['Filedata']
 
