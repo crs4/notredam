@@ -809,7 +809,7 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
  * @return
  */
 
-function newRecord(data, media_type){
+function newRecord(data){
 	//why copy() not work
 	var cloned_parameters = [];
 	var tmp = {};
@@ -834,60 +834,60 @@ function newRecord(data, media_type){
  * @param media_type type of media ('image', 'movie'...)
  * @return
  */
-function _pull_data(sm,media_type, actionsStore){
+function _pull_data(sm, actionsStore){
 
-	var i,j;
-	if (DEBUG_SCRIPT){
-		console.log('pull_data init');
-		console.log(sm.getSelected());
-	}
-	
-	if 	(sm.getSelected()){
-		var newParams = [];
-		var appParams = {};
-		var r = sm.getSelected();
-		
-		var params = r.get('parameters');		
-		
-		for (i=0;i<params.length;i++){
-    		appParams = params[i];
-    		if (DEBUG_SCRIPT)
-    			console.log(appParams.name);
-    		if (appParams.name == 'ratio'){
-    			appParams = {};
-    			appParams['name']  = 'ratio';
-    			appParams['type']  = 'string';
-    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
-    			if (appParams['value'] == 'custom'){
-    				var w = Ext.getCmp('crop_width_custom').getValue();
-    				var h = Ext.getCmp('crop_height_custom').getValue();
-    				appParams['value'] = w+':'+h;
-    			}
-    		}else if (appParams.name == 'output'){
-    			//recuperare dizionario
-    			
-    			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
-    			for (key in dict['data']['parameters'][2]['values'][media_type]) {
-    				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
-    					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
-    						appParams['value'] = key;
-    					}
-    				}
-    			}
-    		}else{
-    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
-    		}
-    		newParams.push(appParams);
-    	}
-		if (DEBUG_SCRIPT){
-			console.log("_pull_data finished");
-			console.log(newParams);
-		}
-	    r.set('parameters',newParams);
-	    r.commit();
-	}else{
-//		console.log('else sm.getSelected()');
-	}
+//	var i,j;
+//	if (DEBUG_SCRIPT){
+//		console.log('pull_data init');
+//		console.log(sm.getSelected());
+//	}
+//	
+//	if 	(sm.getSelected()){
+//		var newParams = [];
+//		var appParams = {};
+//		var r = sm.getSelected();
+//		
+//		var params = r.get('parameters');		
+//		
+//		for (i=0;i<params.length;i++){
+//    		appParams = params[i];
+//    		if (DEBUG_SCRIPT)
+//    			console.log(appParams.name);
+//    		if (appParams.name == 'ratio'){
+//    			appParams = {};
+//    			appParams['name']  = 'ratio';
+//    			appParams['type']  = 'string';
+//    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
+//    			if (appParams['value'] == 'custom'){
+//    				var w = Ext.getCmp('crop_width_custom').getValue();
+//    				var h = Ext.getCmp('crop_height_custom').getValue();
+//    				appParams['value'] = w+':'+h;
+//    			}
+//    		}else if (appParams.name == 'output'){
+//    			//recuperare dizionario
+//    			
+//    			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
+//    			for (key in dict['data']['parameters'][2]['values'][media_type]) {
+//    				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
+//    					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
+//    						appParams['value'] = key;
+//    					}
+//    				}
+//    			}
+//    		}else{
+//    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
+//    		}
+//    		newParams.push(appParams);
+//    	}
+//		if (DEBUG_SCRIPT){
+//			console.log("_pull_data finished");
+//			console.log(newParams);
+//		}
+//	    r.set('parameters',newParams);
+//	    r.commit();
+//	}else{
+////		console.log('else sm.getSelected()');
+//	}
 }
 
 /**
@@ -943,7 +943,7 @@ function _get_layout_tab(obj, media_type){
 								listeners    :{
 									beforerowselect : function(sm,rowIndex, keepExisting, record){
 								        //pull data
-								        _pull_data(sm,media_type,Ext.getCmp('action_list_'+media_type).getStore());
+								        _pull_data(sm,Ext.getCmp('action_list').getStore());
 							        	return true;
 									}, 
 									selectionchange : function(){
@@ -1350,6 +1350,8 @@ function newRecordLoad(data,type){
 
 		cloned_parameters.push(tmp);
 	}
+	
+
 
 	return new ActionRecord({name: data.type, parameters: cloned_parameters});
 
@@ -1780,3 +1782,201 @@ function manage_events(){
 	manage_events_win.show();
 }
 
+
+
+function edit_script(is_new){
+	var cols = [
+		{ id : 'name',  header: "Action", dataIndex: 'name'}
+	];
+	var my_action = new Ext.grid.GridPanel({
+	    region           : 'west',
+        title            : 'Your script action',
+        id               : 'my_action' ,
+		width            : 300,
+		border		     : false,
+	    store            : new Ext.data.JsonStore({
+	    					fields:['name', 'parameters'],
+	    					root: 'actions'
+	    					}),
+	    columns          :cols,
+	    stripeRows       : true,
+	    autoExpandColumn : 'name',
+		frame            : true,
+        hideHeaders      : true,
+		sm               : new Ext.grid.RowSelectionModel({
+								singleSelect : true,
+								listeners    :{
+									 
+									selectionchange : function(){
+										var record = this.getSelected();
+										var details_form = Ext.getCmp('detailAction');
+										details_form.removeAll();
+										
+										Ext.each(record.data.parameters, function(param){
+											//console.log(param);
+											if (param.type == 'int')
+												details_form.add(new Ext.form.NumberField({
+												fieldLabel: param.name
+													
+													
+												}))
+											
+										});
+										details_form.doLayout();
+								        
+									}			
+								}
+							})
+
+	});
+
+	var action_list = new Ext.grid.GridPanel({
+	    region           : 'east',
+        title            : 'Available action',
+        id               : 'action_list',
+		width            : 300,	
+		border		     : false,
+	    store            : new Ext.data.JsonStore({
+	    					fields:['name', 'parameters'],
+	    					url: '/get_actions/',
+	    					autoLoad: true,
+	    					root: 'actions'
+	    					}),
+	    columns          : cols,
+	    stripeRows       : true,
+	    autoExpandColumn : 'name',
+		frame            : true,
+        hideHeaders      : true,
+		sm               : new Ext.grid.RowSelectionModel({singleSelect : true})
+    });
+
+	var detail_action = new Ext.FormPanel({
+        title       : 'Details',
+        id          : 'detailAction',
+	    region      : 'south',
+	    height      : 180,
+	    frame       : true,
+	    border		: false
+	});
+
+	var button_panel =new Ext.Panel({
+        region  : 'center',
+        border: false,
+        id      : 'buttons_panel', 
+        html    : '<div style="text-align:center; padding-top:80;"><img style="margin:2px" src="/files/images/up2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_up()" /><br/><img style="margin:2px" src="/files/images/down2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_down()"/><img style="margin:2px" src="/files/images/left2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_left()" /><br/><img style="margin:2px" src="/files/images/right2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_right()"/> </div>',
+        
+	    move_to_up:function(){
+	        var grid = Ext.getCmp('my_action');
+	        var record_selected = grid.getSelectionModel().getSelected();
+	        if(record_selected){
+	            var rank = grid.getStore().indexOf(record_selected);
+	            if (rank > 0){
+	                grid.getStore().remove(record_selected);
+	                grid.getStore().insert(rank - 1, record_selected);
+	                grid.getSelectionModel().selectRecords([record_selected]);
+	            }
+	        }
+	            
+	    },   
+
+	    move_to_down: function(){
+	        var grid = Ext.getCmp('my_action');
+	        var record_selected = grid.getSelectionModel().getSelected();
+	        if(record_selected ){
+	            var rank = grid.getStore().indexOf(record_selected);
+	            if (rank < grid.getStore().getCount() - 1){
+	                grid.getStore().remove(record_selected);
+	                grid.getStore().insert(rank +1, record_selected);
+	                grid.getSelectionModel().selectRecords([record_selected]);
+	            }
+	        }
+	        
+	    },
+
+        move_to_left: function (){
+	        var selected_grid = Ext.getCmp('action_list');
+	        var available_grid = Ext.getCmp('my_action');
+	        if (selected_grid.getSelectionModel().hasSelection()){
+	        	//define parameters through form
+	        	var selected  = selected_grid.getSelectionModel().getSelected();
+	        	//why copy() not work
+	        	
+	        	available_grid.getStore().loadData({actions:[{name: selected.data.name, parameters: selected.data.parameters}]}, true);
+	        	available_grid.getSelectionModel().selectLastRow();
+	        }else{
+				// Show a dialog using config options:
+				Ext.Msg.show({
+				   title:'Warning',
+				   msg: 'You must select one row!',
+				   width: 300,
+				   buttons: Ext.Msg.OK,
+				   icon: Ext.MessageBox.WARNING
+				});	        				
+			}
+	     },  
+
+	    move_to_right: function(){
+	        var selected_grid = Ext.getCmp('my_action');
+	        var available_grid = Ext.getCmp('action_list');
+	        if (selected_grid.getSelectionModel().hasSelection()){
+	        	var selected  = selected_grid.getSelectionModel().getSelected();
+	        	selected_grid.getStore().remove(selected);
+	        	Ext.getCmp('detailAction_'+media_type).removeAll();
+	        }
+	     }
+        
+    }); 	
+
+	var script_form = new Ext.form.FormPanel({
+		frame:true,		
+		region: 'north',
+		border: false,
+		height:40,
+		items:[
+			new Ext.form.TextField({
+				id:'script_name',
+				name: 'name',
+				fieldLabel: 'Name',
+				allowBlank: false,
+				width: 200
+			})
+		]
+	});
+	
+	var win = new Ext.Window({
+        id:'edit_script',        
+        title       : 'Edit Script',
+        layout      : 'border',
+	    width       : 650,
+	    height      : 570,
+        modal: true,
+        resizable : false,
+        border: false,
+        items:[
+        	script_form,
+        	new Ext.Panel({
+        		region: 'center',
+        		layout: 'border',
+        		items:[
+        			my_action,
+        			action_list, 
+        			detail_action,
+        			button_panel
+        		]
+        	
+        	})
+        ],
+        buttons:[
+        	{
+        		text: 'Save'
+        	},
+        	{
+        		text: 'Cancel'
+        	}
+        ]
+        
+	});
+	
+	win.show();
+	
+}

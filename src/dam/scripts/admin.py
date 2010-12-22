@@ -20,16 +20,5 @@ from django.contrib import admin
 
 from dam.scripts.models import *
 
-#class ActionScriptInline(admin.TabularInline):
-#    model = ActionScriptAssociation
-#    extra = 1
-#    
-#class ScriptAdmin(admin.ModelAdmin):
-#    inlines = [ActionScriptInline]
-#
-#admin.site.register(Script,  ScriptAdmin)
-admin.site.register(ActionList)
 admin.site.register(Script)
-##admin.site.register(ActionScriptAssociation)
-#admin.site.register(Parameter)
-##admin.site.register(ParameterToAction)
+
