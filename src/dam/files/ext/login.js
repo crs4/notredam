@@ -18,7 +18,7 @@
 
 Ext.onReady(function() {
 	
-	var get_new_password(){
+	function get_new_password(){
 		
 		
 	};
@@ -61,8 +61,8 @@ Ext.onReady(function() {
             name: 'password',
             allowBlank: false
         }, new Ext.Panel({
-	    html: '<div><a href="/registration/">New user? register now!</a></div>' +
-	    		'<div><a href="javascript:get_new_password()">Have you forgotten your password?</a></div>'
+	    html: '<div><a href="/registration/">New user? register now!</a></div>' 
+//	    		+'<div><a href="javascript:get_new_password()">Have you forgotten your password?</a></div>'
 	   }) 
         ],
 
