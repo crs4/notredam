@@ -40,7 +40,7 @@ class Engine:
     def __init__(self, d):
         self.maction = None
         self.d = d
-
+        
     def init(self, data):
         log.debug('MProcessor.Engine.init: reading component %s' % (data['component_id']))
         try:
