@@ -75,10 +75,10 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
         var upload_grid = Ext.getCmp('upload_grid');
 
         if (upload_grid) {
-            var p = new this.customSettings.uploader.UploadFile({
-                queue_id: file.index,
+            var p = new Ext.data.Record({
+                queue_id: 0,
                 filename: file.name,
-                size: this.customSettings.uploader.getFileSize(file),
+                size: file.size,
                 progress: 0.0
             });
             upload_grid.getStore().add(p);
@@ -287,71 +287,111 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
         var cm = new Ext.grid.ColumnModel(columns);
 
         var tbar_grid = [
-            {
-                text: 'Add Files',
-                iconCls: 'add_icon',
-                listeners: {
-                    render: function() {
-                        var element = this.getEl();
-                        element.child('em').insertFirst({tag: 'span', id: 'btnUploadHolder'});                    
-    
-                        var settings_object = {
-                            upload_url : upload_url ? upload_url : "/upload_item/",
-                            flash_url : "/files/javascript/swfupload/swfupload.swf",
-                            file_upload_limit : single_file ? 1 : 0, 
-                            button_placeholder_id: "btnUploadHolder",
-                            button_window_mode: SWFUpload.WINDOW_MODE.TRANSPARENT,
-                            button_action : single_file ? SWFUpload.BUTTON_ACTION.SELECT_FILE : SWFUpload.BUTTON_ACTION.SELECT_FILES,
-                            button_width: element.getWidth(),
-                            button_height: element.getHeight(),
-                            file_queued_handler : obj.fileQueuedHandler,
-                            upload_progress_handler: obj.uploadProgressHandler,
-                            upload_error_handler: obj.uploadErrorHandler,
-                            upload_success_handler: obj.uploadSuccessHandler,
-                            queue_complete_handler: obj.queueCompleteHandler,
-                            upload_start_handler: obj.uploadStartHandler,
-                            post_params: post_params ? post_params : {},
-                            custom_settings: {
-                                uploader: obj
-                            }
-                        };
-                        
-                        obj.swfu = new SWFUpload(settings_object);
-                        
-                    }
-                }
-            },
+        	new Ext.ux.form.FileUploadField({
+		        id: 'add_files',
+		        buttonText: 'Add Files',
+		        iconCls: 'add_icon',
+		        buttonOnly: true,
+		        name:'Filedata',
+		        
+		        listeners: {
+		            fileselected: function(fb, v){
+		            	console.log(fb);
+		            	console.log(v);
+		            	obj.fileQueuedHandler(fb.fileInput.dom.files[0])
+//		                var el = Ext.fly('fi-button-msg');
+//		                el.update('<b>Selected:</b> '+v);
+//		                if(!el.isVisible()){
+//		                    el.slideIn('t', {
+//		                        duration: .2,
+//		                        easing: 'easeIn',
+//		                        callback: function(){
+//		                            el.highlight();
+//		                        }
+//		                    });
+//		                }else{
+//		                    el.highlight();
+//		                }
+		            }
+		        }
+		    }),
+        
+//            {
+//                text: 'Add Files',
+//                iconCls: 'add_icon',
+//                listeners: {
+//                    render: function() {
+//                        var element = this.getEl();
+//                        element.child('em').insertFirst({tag: 'span', id: 'btnUploadHolder'});                    
+//    
+//                        var settings_object = {
+//                            upload_url : upload_url ? upload_url : "/upload_item/",
+//                            flash_url : "/files/javascript/swfupload/swfupload.swf",
+//                            file_upload_limit : single_file ? 1 : 0, 
+//                            button_placeholder_id: "btnUploadHolder",
+//                            button_window_mode: SWFUpload.WINDOW_MODE.TRANSPARENT,
+//                            button_action : single_file ? SWFUpload.BUTTON_ACTION.SELECT_FILE : SWFUpload.BUTTON_ACTION.SELECT_FILES,
+//                            button_width: element.getWidth(),
+//                            button_height: element.getHeight(),
+//                            file_queued_handler : obj.fileQueuedHandler,
+//                            upload_progress_handler: obj.uploadProgressHandler,
+//                            upload_error_handler: obj.uploadErrorHandler,
+//                            upload_success_handler: obj.uploadSuccessHandler,
+//                            queue_complete_handler: obj.queueCompleteHandler,
+//                            upload_start_handler: obj.uploadStartHandler,
+//                            post_params: post_params ? post_params : {},
+//                            custom_settings: {
+//                                uploader: obj
+//                            }
+//                        };
+//                        
+//                        obj.swfu = new SWFUpload(settings_object);
+//                        
+//                    }
+//                }
+//            },
             new Ext.Button({
                 text: 'Upload',
                 iconCls: 'upload',
                 handler: function() {
-                    
-                    var swfu = obj.swfu;
+                    Ext.getCmp("upload_form").getForm().submit()
+//					var input =Ext.getCmp('add_files').fileInput.dom;
+//					input.setAttribute('disabled', 'true');
+//					 sendMultipleFiles({
+//                		url: '/upload_item/',
+//                    // list of files to upload
+//                    	files:input.files});
 
-            		var stats = swfu.getStats();
-                    var queued = stats.files_queued;
-                    
-                    var start = stats.successful_uploads + stats.upload_errors
-                    
-                    Ext.Ajax.request({
-                        url:'/get_upload_url/',
-                        params: {n: queued},
-                        success: function(resp){
-                            var resp_json = Ext.util.JSON.decode(resp.responseText)
-                            var urls = resp_json.urls;
-                            var file;
-                            var x=0;
-                            for (var i=start; i < queued + start; i++) {
-                                file = obj.swfu.getFile(i);
-                                obj.swfu.addFileParam(file.id, 'unique_url', urls[x++]);
-                            }
-                            
-                            obj.swfu.startUpload();
-                        },
-                        failure: function() {
-                            console.log('error retrieving urls');
-                        }
-                    });
+					
+					
+					
+                	
+//                    var swfu = obj.swfu;
+//
+//            		var stats = swfu.getStats();
+//                    var queued = stats.files_queued;
+//                    
+//                    var start = stats.successful_uploads + stats.upload_errors
+//                    
+//                    Ext.Ajax.request({
+//                        url:'/get_upload_url/',
+//                        params: {n: queued},
+//                        success: function(resp){
+//                            var resp_json = Ext.util.JSON.decode(resp.responseText)
+//                            var urls = resp_json.urls;
+//                            var file;
+//                            var x=0;
+//                            for (var i=start; i < queued + start; i++) {
+//                                file = obj.swfu.getFile(i);
+//                                obj.swfu.addFileParam(file.id, 'unique_url', urls[x++]);
+//                            }
+//                            
+//                            obj.swfu.startUpload();
+//                        },
+//                        failure: function() {
+//                            console.log('error retrieving urls');
+//                        }
+//                    });
                 }   
             }),
             {
@@ -396,7 +436,22 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
             height   : 350,
             plain    : true,
             layout   : 'fit',
-            items    : [this.grid],
+            items    : [
+//            	new Ext.ux.UploadPanel()
+
+            new Ext.form.FormPanel({
+            	id: 'upload_form',
+            	 fileUpload: true,
+            	items:[this.grid,
+            		new Ext.form.Hidden({
+            			name: 'session',
+            			value: document.cookie.split('=')[1] + '_' +  new Date().getTime()
+            		})
+            	
+            	],
+            	url: '/upload_item/'
+            	})
+            ],
             modal:true
         });
     
@@ -428,4 +483,31 @@ var Upload = function(upload_url, single_file, post_params, done_callback) {
     };
     
 
+};
+
+function upload_dialog(){
+	var win = new Ext.Window({
+            title    : 'Upload',
+            closable : true,
+            width    : 800,
+            height   : 350,
+            plain    : true,
+            layout   : 'fit',
+            items    : [
+            	new Ext.ux.UploadPanel({
+            				 buttonsAt:'tbar'
+							 ,id:'uppanel'
+							 ,url:'/upload_resource/'
+							 ,path:'root'
+							 ,maxFileSize:1048576
+//			 ,enableProgress:false
+//			 ,singleUpload:true
+
+            	
+            	})
+            ],
+            modal:true
+        });
+    
+	win.show();
 };

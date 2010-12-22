@@ -583,23 +583,6 @@ Ext.onReady(function(){
                             }
                         ]
                     }
-                },{
-                    id: 'preferences_scripts',
-                    text: 'Scripts',
-                    menu:{
-                        items:[{
-                                text    : 'New',
-                                handler : function(){edit_script(true);}
-                            
-                            },{ 
-                            	text    : 'Manage Scripts',                                                      
-	                            handler : function(){manage_script();}                   
-                            },{ 
-                            	text    : 'Manage Events',
-                            	handler : function(){manage_events();}
-                            }
-                        ]
-                    }
                 }
             ]
         });
@@ -638,8 +621,9 @@ Ext.onReady(function(){
                 text: 'New',
                 handler: function() {
                     calculatePageSize();
-                    var up = new Upload();
-                    up.openUpload();
+//                    var up = new Upload();
+//                    up.openUpload();
+                    upload_dialog();
                 }
             }, {
                 text: 'Share with...',
@@ -1024,6 +1008,129 @@ Ext.onReady(function(){
                 text:'<span style="' + style_tb + '">Workspace</span>',
                 menu: ws_menu()
             }, '-',
+            
+            {
+                text:'<span style="' + style_tb + '">Script</span>',
+                menu:  new Ext.menu.Menu({
+                	    id: 'preferences_scripts',
+                        items:[
+                        	{
+                                text    : 'New',
+                                handler : function(){new_script(true,'New Script');}
+                            
+                            },{ 
+                            	text    : 'Edit',                                                      
+	                            handler : function(){manage_script();}                   
+                            },{ 
+                            	text    : 'Events',
+                            	handler : function(){manage_events();}
+                            },
+                            { 
+                            	text    : 'Monitor',
+                            	handler : function(){
+                            		var win = new Ext.Window({
+                            			title: 'Script Monitor',
+                            			height: 500,
+                            			width: 800,
+                            			layout: 'fit',
+										collapsible: true,
+                            			items:[
+                            				new Ext.Panel({
+                            					items: new Ext.list.ListView({
+	                            					id:'script_monitor',
+												    store: new Ext.data.JsonStore({
+												    	url: '/script_monitor/',
+												    	autoLoad: true,
+												    	fields:[
+												    		'name',
+												    		'time_elapsed',
+												    		'status',
+												    		'event',
+												    		'total_items',
+												    		'items_completed',
+												    		'items_failed',
+												    		'start_date',
+												    		'end_date',
+												    		'launched_by'
+												    	],
+												    	root: 'scripts'
+												    }),											    
+												    emptyText: 'No script to display',
+	//											    frame: true,
+												    columns: [{
+												        header: 'Name',											       
+												        dataIndex: 'name'
+												    },
+												    
+												    {
+												        header: 'Start Date',											        
+												        dataIndex: 'start_date',
+												        type: 'date'
+												        
+												    },
+												    {
+												        header: 'End Date',											        
+												        dataIndex: 'end_date',
+												        type: 'date'
+												        
+												    },
+												    
+
+												    {
+												        header: 'Event',											        
+												        dataIndex: 'event'
+												        
+												    },
+												    {
+												        header: 'Launched By',											        
+												        dataIndex: 'launched_by'												        
+												    },
+												    
+												    {
+												        header: 'Items Completed',											        
+												        dataIndex: 'items_completed',
+												        tpl: '<a href="javascript:void();">{items_completed}</a>'
+												        
+												    },
+												    {
+												        header: 'Items Failed',											        
+												        dataIndex: 'items_failed',
+												        tpl: '<a href="javascript:void();">{items_failed}</a>'
+												    },
+												    {
+												        header: 'Total Items',											        
+												        dataIndex: 'total_items',
+												        tpl: '<a href="javascript:void();">{total_items}</a>'
+												    },
+												    {
+												        header: 'Time Elapsed',											        
+												        dataIndex: 'time_elapsed'
+												        
+												    },
+												    
+												    {
+												        header: 'Status',
+												        dataIndex: 'status'											        
+												    }]
+												})
+											})
+                            			]
+                            			
+                            		
+                            		});
+                            		win.show();
+                            	
+                            	}
+                            }
+                            
+                        ]
+                    
+                	})
+            	
+            }, '-',
+            
+            
+            
             {
                 text:'<span style="' + style_tb + '">Help</span>',
                 menu: help 
