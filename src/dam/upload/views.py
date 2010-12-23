@@ -27,7 +27,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.db import transaction
+import shutil, os
+from mediadart.storage import new_id
+from django.conf import settings
 
+from dam.scripts.models import Script, ScriptExecution, ScriptItemExecution
 from dam.repository.models import Item, Component, Watermark
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
@@ -173,12 +177,17 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
     file_name, type, res_id = _get_uploaded_info(upload_file)
                 
     _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
+
+def add_resource(file_path, user, workspace, variant, item, script_session):
+    path, file_name = os.path.split(file_path)    
+    mime_type = mimetypes.guess_type(file_name)[0]        
+    ext = mime_type.split('/')[1]
     
-
-
-def add_resource(upload_file, user, workspace, variant, item):
-
-    (file_name, type, res_id) = _get_uploaded_info(upload_file)
+    type = guess_media_type(file_name)    
+    res_id = new_id()
+    new_name = res_id + '.' + ext
+    new_file_path = os.path.join(settings.MEDIADART_STORAGE, new_name)  
+    shutil.copy(file_path, new_file_path)    
     
     if not item:
         media_type = Type.objects.get(name=type)    
@@ -197,12 +206,19 @@ def add_resource(upload_file, user, workspace, variant, item):
     comp.file_name = file_name
     comp._id = res_id
     
-    mime_type = mimetypes.guess_type(file_name)[0]
-        
-    ext = mime_type.split('/')[1]
     comp.format = ext
     comp.save()
-    
+    launch_upload_script(user, item, script_session)
+
+def launch_upload_script(user, item, script_session):
+    try:
+        script = Script.objects.get(pk = 1)
+        script_execution, created = ScriptExecution.objects.get_or_create(script = script, session = script_session, launched_by = user)
+        ScriptItemExecution.objects.create(script = script_execution, item = item)
+    except Exception, ex:
+        logger.exception(ex)
+        
+
 @login_required
 def upload_resource(request):
 
@@ -213,14 +229,20 @@ def upload_resource(request):
     try:
         workspace = request.session['workspace']
         variant_name = request.POST['variant']
-        item = request.POST.get('item')
-        user = request.user
+        session = request.POST['session']
+        item_id = request.POST.get('item')
+        if item_id:
+            item = Item.objects.get(pk = item_id)
+        else:
+            item = Item.objects.none()
+        
+        user = request.user        
         
         request.upload_handlers = [StorageHandler()]
         upload_file = request.FILES['Filedata']   
         
         variant = Variant.objects.get(name = variant_name)
-        add_resource(upload_file, user, workspace, variant, item)
+        add_resource(upload_file.name, user, workspace, variant, item, script_session)
         
         resp = simplejson.dumps({})
     except Exception, ex:

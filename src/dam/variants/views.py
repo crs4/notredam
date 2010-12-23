@@ -262,7 +262,7 @@ def get_variants(request):
                                      'variant_name': v.name, 
                                      'item_id': item_id,  
                                      'auto_generated':auto_generated,  
-                                     'media_type': media_type, 
+#                                     'media_type': '', 
                                       'work_in_progress':work_in_progress})
             continue
             
