@@ -621,9 +621,9 @@ Ext.onReady(function(){
                 text: 'New',
                 handler: function() {
                     calculatePageSize();
-//                    var up = new Upload();
-//                    up.openUpload();
-                    upload_dialog();
+                    var up = new Upload();
+                    up.openUpload();
+//                    upload_dialog();
                 }
             }, {
                 text: 'Share with...',

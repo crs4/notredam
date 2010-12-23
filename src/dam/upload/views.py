@@ -227,6 +227,9 @@ def upload_resource(request):
     """
     
     try:
+#        request.upload_handlers = [StorageHandler()]
+      
+    
         workspace = request.session['workspace']
         variant_name = request.POST['variant']
         session = request.POST['session']
@@ -237,12 +240,12 @@ def upload_resource(request):
             item = Item.objects.none()
         
         user = request.user        
-        
-        request.upload_handlers = [StorageHandler()]
-        upload_file = request.FILES['Filedata']   
-        
-        variant = Variant.objects.get(name = variant_name)
-        add_resource(upload_file.name, user, workspace, variant, item, script_session)
+    
+
+##        upload_file = request.FILES['Filedata']   
+#        
+#        variant = Variant.objects.get(name = variant_name)
+#        add_resource(upload_file.name, user, workspace, variant, item, script_session)
         
         resp = simplejson.dumps({})
     except Exception, ex:
