@@ -19,12 +19,12 @@
 from django.db import models
 from django.utils import simplejson
 from django.contrib.contenttypes import generic
-from dam.upload.views import generate_tasks
 from dam.variants.models import Variant
 from dam.repository.models import Component
 from dam.core.dam_repository.models import Type
 from django.db.models import Q
 from dam import logger
+from django.contrib.auth.models import User
 
 INPROGRESS= 'in_progress'
 FAILED = 'failed'
