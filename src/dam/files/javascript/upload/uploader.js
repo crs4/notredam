@@ -449,20 +449,82 @@ function upload_dialog(){
             plain    : true,
             layout   : 'fit',
             items    : [
-            	new Ext.ux.UploadPanel({
-            				 buttonsAt:'tbar'
-							 ,id:'uppanel'
-							 ,url:'/upload_resource/'
-							 ,path:'root'
-							 ,maxFileSize:1048576
-//			 ,enableProgress:false
-//			 ,singleUpload:true
+//            		new Ext.BoxComponent({
+//					    autoEl: {
+//					        tag: 'div',
+//					        id: 'upload'
+//					    }
+//					}),
+//            	
+            new Ext.form.FormPanel({
+            	id: 'upload_form',
+            	items:[
 
-            	
-            	})
+            		new Ext.ux.form.FileUploadField({				        
+				        width: 400,
+				        name: 'FileData'
+				    }),
+				    new Ext.form.Hidden({
+				    	name:'variant',
+				    	value: 'original'
+				    
+				    	
+				    }),
+				    
+				    new Ext.form.Hidden({
+				    	name:'session',
+				    	value: 'test'
+				    
+				    	
+				    })
+				    
+            	],
+            	buttons:[{
+            		text: 'Upload',
+            		handler: function(){
+            			var up = new Uploader(Ext.get('upload_form').dom);
+            			up.send();
+            		}
+            		
+            		
+            		}
+            	]
+            
+            })
+            
+            
+//            	new Ext.ux.UploadPanel({
+//            				 buttonsAt:'tbar'
+//							 ,id:'uppanel'
+//							 ,url:'/upload_resource/'
+//							 ,path:'root'
+//							 ,maxFileSize:1048576
+////			 ,enableProgress:false
+////			 ,singleUpload:true
+//
+//            	
+//            	})
             ],
             modal:true
+//            listeners:{
+//            	afterrender: function(){
+//	            	var uploader = new qq.FileUploader({
+//					    action: '/upload_resource/',
+//					    element: Ext.get('upload').dom,
+//					    params:{
+//					    	variant:'original',
+//					    	session: 'ffffu'
+//					    }
+//					    
+//					});
+//            	
+//            	
+//            	}
+//            }
         });
-    
 	win.show();
+	
+		
+
+	
 };
