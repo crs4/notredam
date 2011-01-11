@@ -227,9 +227,11 @@ def upload_resource(request):
     """
     
     try:
-#        request.upload_handlers = [StorageHandler()]
+        request.upload_handlers = [StorageHandler()]
       
-    
+       
+        
+       
         workspace = request.session['workspace']
         variant_name = request.POST['variant']
         session = request.POST['session']
