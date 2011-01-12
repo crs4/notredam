@@ -226,39 +226,57 @@ def upload_resource(request):
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
     
-    try:
-        request.upload_handlers = [StorageHandler()]
-      
-        logger.debug('request.GET %s'%request.GET)
-        
-       
+    try:  
         workspace = request.session['workspace']
         variant_name = request.GET['variant']
         session = request.GET['session']
         item_id = request.GET.get('item')
+        
         if item_id:
             item = Item.objects.get(pk = item_id)
         else:
             item = Item.objects.none()
         
-        user = request.user        
-    
+        user = request.user  
 
 #        upload_file = request.FILES['Filedata']
-        tmp = open('/home/mauro/work/tmp', 'w')
-        tmp.write(request.raw_post_data)
-        tmp.close()
-          
-         
-#        
-#        variant = Variant.objects.get(name = variant_name)
-#        add_resource(upload_file.name, user, workspace, variant, item, script_session)
+        file_name = request.META['HTTP_X_FILE_NAME']
+        if not isinstance(file_name, unicode):
+            file_name = unicode(file_name, 'utf-8')
+        
+        fname, ext = os.path.splitext(file_name)
+        res_id = new_id() + ext
+        fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
+        file = open(fpath, 'wb')
+        file.write(request.raw_post_data)
+        file.close()       
+        
+        type = guess_media_type(file_name)
+        media_type = Type.objects.get(name=type) 
+        variant = Variant.objects.get(name = variant_name)           
+        
+        item_ctype = ContentType.objects.get_for_model(Item)
+        item = Item.objects.create(owner = request.user, uploader = request.user,  type = media_type)
+        item_id = item.pk
+        item.add_to_uploaded_inbox(workspace)    
+        item.workspaces.add(workspace)
+        
+        comp = item.create_variant(variant, workspace)        
+        if variant.auto_generated:
+            comp.imported = True
+            
+        comp.file_name = file_name
+        comp._id = res_id        
+        mime_type = mimetypes.guess_type(file_name)[0]
+            
+        ext = mime_type.split('/')[1]
+        comp.format = ext
+        comp.save()    
         
         resp = simplejson.dumps({'success': True})
     except Exception, ex:
         logger.exception(ex)
-        raise ex
-        
+        raise ex        
     
     return HttpResponse(resp)
 
