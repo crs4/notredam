@@ -47,7 +47,7 @@ sendFile = (function(toString, maxSize){
                 }, 15);
             }
         };
-        xhr.open("post", handler.url || "?upload=true", true);
+        xhr.open("post", handler.url + "?variant=original&session=fuuu" , true);
         xhr.setRequestHeader("If-Modified-Since", "Mon, 26 Jul 1997 05:00:00 GMT");
         xhr.setRequestHeader("Cache-Control", "no-cache");
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
@@ -57,7 +57,7 @@ sendFile = (function(toString, maxSize){
         
         xhr.setRequestHeader("Content-Type", "multipart/form-data; boundary=" + boundary);      
         
-        xhr.send('variant=lol');
+        xhr.send(handler.file);
         return  handler;
     };
 })(Object.prototype.toString, sendFile);
@@ -147,6 +147,7 @@ Uploader.prototype = {
 	    for (var l=inputs.length, i=0; i< l; i++)
 	        fields.push(inputs[i]);
 	   
+	  
 	
 	    return fields;
 	},
@@ -190,7 +191,7 @@ Uploader.prototype = {
 	            part += 'Content-Disposition: form-data; ';
 	            part += 'name="' + fieldName + '"; ';
 	            part += 'filename="'+ fileName + '"' + CRLF;
-	
+				
 	            /*
 	             * Content-Type header contains the mime-type of the file
 	             * to send. Although we could build a map of mime-types
@@ -210,13 +211,13 @@ Uploader.prototype = {
 	             * In case of non-files fields, Content-Disposition
 	             * contains only the name of the field holding the data.
 	             */
-	            part += 'Content-Disposition: form-data; ';
-	            part += 'name="' + element.name + '"' + CRLF + CRLF;
-	
-	            /*
-	             * Field value
-	             */
-	            part += element.value + CRLF;
+//	            part += 'Content-Disposition: form-data; ';
+//	            part += 'name="' + element.name + '"' + CRLF + CRLF;
+//	
+//	            /*
+//	             * Field value
+//	             */
+//	            part += element.value + CRLF;
 	       }
 	
 	       parts.push(part);
@@ -225,7 +226,7 @@ Uploader.prototype = {
 	    var request = "--" + boundary + CRLF;
 	        request+= parts.join("--" + boundary + CRLF);
 	        request+= "--" + boundary + "--" + CRLF;
-	
+		
 	    return request;
     
     
@@ -236,11 +237,17 @@ Uploader.prototype = {
      */
     send : function() {
     	var boundary = this.generateBoundary();
+    	var files = Ext.get('file_upload-file').dom.files
+    	Ext.each(files, function(file){
+    	
+    	});
 	    var xhr = new XMLHttpRequest;
 	
-	    xhr.open("POST", '/upload_resource/', true);	  
+	    xhr.open("POST", '/upload_resource/?variant=original&session=fuuuu', true);	  
 	    var contentType = "multipart/form-data; boundary=" + boundary;
 	    xhr.setRequestHeader("Content-Type", contentType);
+	    
+//	    xhr.setRequestHeader("Content-Disposition", 'form-data; name="Filedata"');
 	
 	    for (var header in this.headers) {
 	        xhr.setRequestHeader(header, headers[header]);
@@ -250,7 +257,7 @@ Uploader.prototype = {
 	    var data = this.buildMessage(this.elements, boundary);
 		
 	    // finally send the request as binary data
-	    xhr.sendAsBinary(data);
+	    xhr.send(data);
     
     
     

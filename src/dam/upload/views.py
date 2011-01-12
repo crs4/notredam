@@ -229,13 +229,13 @@ def upload_resource(request):
     try:
         request.upload_handlers = [StorageHandler()]
       
-       
+        logger.debug('request.GET %s'%request.GET)
         
        
         workspace = request.session['workspace']
-        variant_name = request.POST['variant']
-        session = request.POST['session']
-        item_id = request.POST.get('item')
+        variant_name = request.GET['variant']
+        session = request.GET['session']
+        item_id = request.GET.get('item')
         if item_id:
             item = Item.objects.get(pk = item_id)
         else:
@@ -244,12 +244,17 @@ def upload_resource(request):
         user = request.user        
     
 
-##        upload_file = request.FILES['Filedata']   
+#        upload_file = request.FILES['Filedata']
+        tmp = open('/home/mauro/work/tmp', 'w')
+        tmp.write(request.raw_post_data)
+        tmp.close()
+          
+         
 #        
 #        variant = Variant.objects.get(name = variant_name)
 #        add_resource(upload_file.name, user, workspace, variant, item, script_session)
         
-        resp = simplejson.dumps({})
+        resp = simplejson.dumps({'success': True})
     except Exception, ex:
         logger.exception(ex)
         raise ex
