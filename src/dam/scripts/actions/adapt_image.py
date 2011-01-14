@@ -115,11 +115,10 @@ class Adapter:
             component.save()
         else:
             log.error('Empty result passed to save_and_extract_features')
-        return result
+        self.deferred.callback(result)
         
-    
     def handle_error(self, result, component):
-        self.deferred.callback('error')
+        self.deferred.errcallback('error')
     
     def execute(self,item, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id):
         log.info('executing adaptation')
