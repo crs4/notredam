@@ -219,6 +219,39 @@ def launch_upload_script(user, item, script_session):
         logger.exception(ex)
         
 
+
+def _create_item(user, workspace, media_type):
+    item = Item.objects.create(owner = user, uploader = user,  type = media_type)
+    item.add_to_uploaded_inbox(workspace)    
+    item.workspaces.add(workspace)
+    return item
+
+def _get_media_type(file_name):
+    type = guess_media_type(file_name)
+    media_type = Type.objects.get(name=type)
+    return media_type
+
+def _create_variant(file_name, res_id, item, workspace, variant):
+    
+    comp = item.create_variant(variant, workspace)        
+    if variant.auto_generated:
+        comp.imported = True
+        
+    comp.file_name = file_name
+    comp._id = res_id        
+    mime_type = mimetypes.guess_type(file_name)[0]
+        
+    ext = mime_type.split('/')[1]
+    comp.format = ext
+    comp.save()    
+
+def _get_filepath(file_name):
+    fname, ext = os.path.splitext(file_name)
+    res_id = new_id() + ext
+    fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
+    
+    return fpath, res_id
+    
 @login_required
 def upload_resource(request):
 
@@ -229,49 +262,29 @@ def upload_resource(request):
     try:  
         workspace = request.session['workspace']
         variant_name = request.GET['variant']
+        variant = Variant.objects.get(name = variant_name)
         session = request.GET['session']
-        item_id = request.GET.get('item')
-        
-        if item_id:
-            item = Item.objects.get(pk = item_id)
-        else:
-            item = Item.objects.none()
-        
+        item_id = request.GET.get('item')        
         user = request.user  
 
-#        upload_file = request.FILES['Filedata']
         file_name = request.META['HTTP_X_FILE_NAME']
         if not isinstance(file_name, unicode):
             file_name = unicode(file_name, 'utf-8')
         
-        fname, ext = os.path.splitext(file_name)
-        res_id = new_id() + ext
-        fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
+        fpath, res_id = _get_filepath(file_name)    
         file = open(fpath, 'wb')
         file.write(request.raw_post_data)
-        file.close()       
+        file.close()           
         
-        type = guess_media_type(file_name)
-        media_type = Type.objects.get(name=type) 
-        variant = Variant.objects.get(name = variant_name)           
+        media_type = _get_media_type(file_name) 
+        if not item_id:            
+            item = _create_item(user, workspace, media_type)
+        else:
+            pass
         
-        item_ctype = ContentType.objects.get_for_model(Item)
-        item = Item.objects.create(owner = request.user, uploader = request.user,  type = media_type)
-        item_id = item.pk
-        item.add_to_uploaded_inbox(workspace)    
-        item.workspaces.add(workspace)
-        
-        comp = item.create_variant(variant, workspace)        
-        if variant.auto_generated:
-            comp.imported = True
-            
-        comp.file_name = file_name
-        comp._id = res_id        
-        mime_type = mimetypes.guess_type(file_name)[0]
-            
-        ext = mime_type.split('/')[1]
-        comp.format = ext
-        comp.save()    
+        _create_variant(file_name, res_id, item, workspace, variant)
+        script = Script.objects.get(pk = 1)
+        script.run(user,[item], session)
         
         resp = simplejson.dumps({'success': True})
     except Exception, ex:
