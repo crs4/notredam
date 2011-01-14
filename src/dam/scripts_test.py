@@ -1,5 +1,5 @@
 from django.core.management import setup_environ
-import dam.settings as settings
+import settings
 setup_environ(settings)
 
 
@@ -13,16 +13,19 @@ from dam.variants.models import Variant
 from django.utils import simplejson
 
 
-actions = [{
-    'action': 'adapt_image',
+actions = {'adapt_image':{ 
     'params':{
         'actions':['resize'],
         'height':300,
-        'width': 300
+        'width': 300,
+        'source_variant': 'original',
+        'output_variant': 'thumbnail',
+        'output_format' : 'jpeg'        
+        } 
     }
-}]
+}
 ws = DAMWorkspace.objects.get(pk = 1)
-preview = Script.objects.create(name = 'preview generation', description='', actions = simplejson.dumps(actions), workspace = ws)
+preview = Script.objects.create(name = 'thumbnail generation', description='', actions = simplejson.dumps(actions), workspace = ws)
 
 #pipeline_thumb = {
 #    

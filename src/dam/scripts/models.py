@@ -36,6 +36,11 @@ class Script(models.Model):
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     actions = models.TextField()
   
+    def run(self, user,items, session = None):
+        script_execution, created = ScriptExecution.objects.get_or_create(script = self, session = session, launched_by = user)
+        for item in items:
+            script_item_execution, created = ScriptItemExecution.objects.get_or_create(script_execution = script_execution, item = item)
+            
 def inspect_actions():
     from settings import INSTALLED_ACTIONS
     import sys
@@ -51,7 +56,7 @@ def inspect_actions():
     return actions
         
 class ScriptItemExecution(models.Model):
-    script = models.ForeignKey('ScriptExecution')
+    script_execution = models.ForeignKey('ScriptExecution')
     item = models.ForeignKey('repository.Item')
     status = models.TextField(default = INPROGRESS)
 
