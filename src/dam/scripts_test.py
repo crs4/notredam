@@ -25,7 +25,7 @@ actions = {'adapt_image':{
     }
 }
 ws = DAMWorkspace.objects.get(pk = 1)
-preview = Script.objects.create(name = 'thumbnail generation', description='', actions = simplejson.dumps(actions), workspace = ws)
+preview = Script.objects.create(name = 'thumbnail generation', description='', params = simplejson.dumps(actions), workspace = ws)
 
 #pipeline_thumb = {
 #    

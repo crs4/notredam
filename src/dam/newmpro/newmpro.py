@@ -40,7 +40,7 @@ from pipeline import DAG
 from mediadart.mqueue.mqserver import MQServer
 from mediadart.config import Configurator
 from mediadart import log
-from mprocessor.models import Process, ItemSet
+from mprocessor.models import Process, ProcessTarget
 
 class BatchError(Exception):
     pass
@@ -91,13 +91,13 @@ class Batch:
 
     def _init_totals(self):
         self.totals = {'update':0, 'passed':0, 'failed':0}
-        self.totals['all'] = ItemSet.objects.filter(process=self.process.process_id).count() * self.schedule_length
+        self.totals['all'] = ProcessTarget.objects.filter(process=self.process.process_id).count() * self.schedule_length
         self.process.total = self.totals['all']
         self.process.save()
 
     def _new_batch(self):
         "Loads from db the next batch of items and associate a schedule to each item"
-        itemset = ItemSet.objects.filter(process=self.process.process_id)[self.cur_batch:self.cur_batch + self.batch_size]
+        itemset = ProcessTarget.objects.filter(process=self.process.process_id)[self.cur_batch:self.cur_batch + self.batch_size]
         self.cur_batch += self.batch_size
         self.i_index = 0                  # index of the current item in item_list
         self.a_index = 0                  # index of the current action in schedule
@@ -209,7 +209,6 @@ def test():
     d.addBoth(end_test)
 
 
-from mprocessor.models import ItemSet, Process
 if __name__=='__main__':
     reactor.callWhenRunning(test)
     reactor.run()

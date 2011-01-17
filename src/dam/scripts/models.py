@@ -32,14 +32,16 @@ FINISHED = 'finished'
 
 class Script(models.Model):
     name = models.CharField(max_length= 50)
-    description = models.CharField(max_length= 200)
+    description = models.TextField(blank=True)
+    # upload etc, used to group pipelines that must be run in succession at certain points
+    type = models.CharField(max_length=32, blank=True, default="") 
+    params = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
-    actions = models.TextField()
-  
-    def run(self, user,items, session = None):
-        script_execution, created = ScriptExecution.objects.get_or_create(script = self, session = session, launched_by = user)
-        for item in items:
-            script_item_execution, created = ScriptItemExecution.objects.get_or_create(script_execution = script_execution, item = item)
+#    
+#    def run(self, user,items, session = None):
+#        process = Process.objects.create(script = self, session = session, launched_by = user)
+#        for item in items:
+#            target = ProcessTarget.objects.create(process = process, target_id = item.pk)
             
 def inspect_actions():
     from settings import INSTALLED_ACTIONS
@@ -55,33 +57,36 @@ def inspect_actions():
 
     return actions
         
-class ScriptItemExecution(models.Model):
-    script_execution = models.ForeignKey('ScriptExecution')
-    item = models.ForeignKey('repository.Item')
-    status = models.TextField(default = INPROGRESS)
 
-class ScriptExecution(models.Model):
-    script = models.ForeignKey('Script')
-    session = models.CharField(max_length=256,null = True, blank = True)
-    start_date = models.DateTimeField(auto_now_add = True)
-    end_date = models.DateTimeField(null = True, blank = True)
-#    event =  models.ForeignKey('eventmanager.Event', null = True, blank = True)    
-    launched_by = models.ForeignKey(User)
-    items = models.ManyToManyField('repository.Item', through = ScriptItemExecution)  
-    
-    def get_status(self):
-        if self.items.filter(status = INPROGRESS).count() > 0:
-            return INPROGRESS
-        return FINISHED
-         
-    def get_items_in_progress(self):
-        return self.items.filter(status = INPROGRESS)
-    
-    def get_items_finished(self):
-        return self.items.filter(status = FINISHED)
-    
-    def get_items_failed(self):
-        return self.items.filter(status = FAILED)
-    
-    def get_time_elapsed(self):
-        pass
+
+
+#class ScriptItemExecution(models.Model):
+#    script_execution = models.ForeignKey('ScriptExecution')
+#    item = models.ForeignKey('repository.Item')
+#    status = models.TextField(default = INPROGRESS)
+#
+#class ScriptExecution(models.Model):
+#    script = models.ForeignKey('Script')
+#    session = models.CharField(max_length=256,null = True, blank = True)
+#    start_date = models.DateTimeField(auto_now_add = True)
+#    end_date = models.DateTimeField(null = True, blank = True)
+##    event =  models.ForeignKey('eventmanager.Event', null = True, blank = True)    
+#    launched_by = models.ForeignKey(User)
+#    items = models.ManyToManyField('repository.Item', through = ScriptItemExecution)  
+#    
+#    def get_status(self):
+#        if self.items.filter(status = INPROGRESS).count() > 0:
+#            return INPROGRESS
+#        return FINISHED
+#         
+#    def get_items_in_progress(self):
+#        return self.items.filter(status = INPROGRESS)
+#    
+#    def get_items_finished(self):
+#        return self.items.filter(status = FINISHED)
+#    
+#    def get_items_failed(self):
+#        return self.items.filter(status = FAILED)
+#    
+#    def get_time_elapsed(self):
+#        pass

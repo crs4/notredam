@@ -31,7 +31,7 @@ import shutil, os
 from mediadart.storage import new_id
 from django.conf import settings
 
-from dam.scripts.models import Script, ScriptExecution, ScriptItemExecution
+from dam.scripts.models import Script, Process, ProcessTarget
 from dam.repository.models import Item, Component, Watermark
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
@@ -252,6 +252,27 @@ def _get_filepath(file_name):
     
     return fpath, res_id
     
+
+def import_dir(dir_name, user, workspace, session):
+    variant = Variant.objects.get(name = 'original')
+    files =os.listdir(dir_name)
+    logger.debug('files %s'%files)
+    items = []
+    for file_name in files:
+        file_path = os.path.join(dir_name, file_name)
+        
+        fpath, res_id = _get_filepath(file_name)
+        shutil.move(file_path, fpath)
+        media_type = _get_media_type(file_name) 
+               
+        item = _create_item(user, workspace, media_type)
+        _create_variant(file_name, res_id, item, workspace, variant)
+        items.append(item)
+        
+    script = Script.objects.get(pk = 1)
+    script.run(user, items, session)
+    
+
 @login_required
 def upload_resource(request):
 
@@ -264,6 +285,8 @@ def upload_resource(request):
         variant_name = request.GET['variant']
         variant = Variant.objects.get(name = variant_name)
         session = request.GET['session']
+        file_counter = int(request.GET['counter'])
+        total = int(request.GET['total'])
         item_id = request.GET.get('item')        
         user = request.user  
 
@@ -271,22 +294,25 @@ def upload_resource(request):
         if not isinstance(file_name, unicode):
             file_name = unicode(file_name, 'utf-8')
         
-        fpath, res_id = _get_filepath(file_name)    
-        file = open(fpath, 'wb')
+        tmp_dir = '/tmp/'+ session
+        if file_counter == 1:
+            if os.path.exists(tmp_dir):
+                os.rmdir(tmp_dir)
+            
+            os.mkdir(tmp_dir)
+            
+        logger.debug('tmp_dir %s'%tmp_dir)
+        logger.debug('os.path.exists(%s) %s'%(tmp_dir, os.path.exists(tmp_dir)))
+        file = open(os.path.join(tmp_dir, file_name), 'wb')
         file.write(request.raw_post_data)
         file.close()           
         
-        media_type = _get_media_type(file_name) 
-        if not item_id:            
-            item = _create_item(user, workspace, media_type)
-        else:
-            pass
-        
-        _create_variant(file_name, res_id, item, workspace, variant)
-        script = Script.objects.get(pk = 1)
-        script.run(user,[item], session)
+        if file_counter == total:
+            import_dir(tmp_dir, user, workspace, session)
+            os.rmdir(tmp_dir)
         
         resp = simplejson.dumps({'success': True})
+        
     except Exception, ex:
         logger.exception(ex)
         raise ex        
