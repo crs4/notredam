@@ -509,7 +509,7 @@ def _search(request,  items, workspace = None):
             else:
                 
                 items = reduce(operator.and_,  queries)
-    logger.debug('items %s'%items)
+    
     items.distinct()       
     property = None
     
@@ -794,8 +794,7 @@ def _get_items_info(user, workspace, items):
         
         items_done = list(set(items_id).difference(list(items_pending)))
 #        all_items = set(items_done + list(items_pending))
-        logger.debug('--------##### get_status: items done: %s' % ' '.join(map(str, items_done)))
-    
+        
         total_pending = items_pending.count()
         total_failed = items_failed.count()
         
@@ -804,19 +803,15 @@ def _get_items_info(user, workspace, items):
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
         default_language = get_metadata_default_language(user, workspace)    
-        logger.debug('items_done %s'%items_done)
-        logger.debug('items %s'%items)
-        logger.debug('items_pending %s'%items_pending)
+       
         
         
         for item in items:
             try:
                 #           item = Item.objects.get(pk=i)            
-                thumb_url, thumb_ready = _get_thumb_url(item, workspace)
-                logger.debug('\n\n==>thumb_url %s, thumb_ready %s' % (thumb_url, thumb_ready))
+                thumb_url, thumb_ready = _get_thumb_url(item, workspace)                
                 my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-                logger.debug('==>my_caption: %s' % my_caption)
-            
+                
                 item_in_basket = 0
 
                 if item.pk in basket_items:
@@ -878,7 +873,7 @@ def get_status(request):
         update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
            
         resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-        logger.debug('\n ################### get_status: %s' % resp_dict)
+       
         resp = simplejson.dumps(resp_dict)
         return HttpResponse(resp)
     except Exception,ex:
