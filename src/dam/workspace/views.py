@@ -37,7 +37,7 @@ from dam.upload.views import generate_tasks
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.core.dam_repository.models import Type
 from dam.geo_features.models import GeoInfo
-from dam.mprocessor.models import Task
+#from dam.mprocessor.models import Task
 from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
@@ -621,8 +621,8 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         items_pks = [item.pk for item in items]
         
-        tasks_pending_obj = Task.objects.filter(component__workspace=workspace, component__item__pk__in=items_pks)     
-        tasks_pending = tasks_pending_obj.values_list('component__item',  flat=True)
+        tasks_pending_obj = []
+        tasks_pending = []
                 
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
@@ -783,7 +783,7 @@ def _get_items_info(user, workspace, items):
 
         basket_items = user_basket.items.all().values_list('pk', flat=True)
         
-        ws_tasks = Task.objects.filter(component__workspace=workspace)        
+        ws_tasks = []
         tasks_pending = ws_tasks.filter(state='pending')
         #tasks_done = ws_tasks.filter(state='done')
         tasks_failed = ws_tasks.filter(state='failed')

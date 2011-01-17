@@ -25,6 +25,8 @@ from dam.core.dam_repository.models import Type
 from django.db.models import Q
 from dam import logger
 from django.contrib.auth.models import User
+from dam.mprocessor.models import Process, ProcessTarget
+from mediadart.mqueue.mqclient_twisted import Proxy
 
 INPROGRESS= 'in_progress'
 FAILED = 'failed'
@@ -37,7 +39,13 @@ class Script(models.Model):
     type = models.CharField(max_length=32, blank=True, default="") 
     params = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
-#    
+    
+    def run(self,user,items, session):
+        process = Process.objects.create(script = self, session = session, launched_by = user)
+        for item in items:
+            ProcessTarget.objects.create(process = process, target_id = item.pk)
+        
+        Proxy('MProcessor').run(process.id)
 #    def run(self, user,items, session = None):
 #        process = Process.objects.create(script = self, session = session, launched_by = user)
 #        for item in items:

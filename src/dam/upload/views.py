@@ -31,7 +31,7 @@ import shutil, os
 from mediadart.storage import new_id
 from django.conf import settings
 
-from dam.scripts.models import Script, Process, ProcessTarget
+from dam.scripts.models import Script
 from dam.repository.models import Item, Component, Watermark
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
@@ -44,7 +44,7 @@ from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
-from dam.mprocessor.models import MAction
+#from dam.mprocessor.models import MAction
 
 from mediadart.storage import Storage
 
@@ -178,45 +178,7 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
                 
     _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
 
-def add_resource(file_path, user, workspace, variant, item, script_session):
-    path, file_name = os.path.split(file_path)    
-    mime_type = mimetypes.guess_type(file_name)[0]        
-    ext = mime_type.split('/')[1]
-    
-    type = guess_media_type(file_name)    
-    res_id = new_id()
-    new_name = res_id + '.' + ext
-    new_file_path = os.path.join(settings.MEDIADART_STORAGE, new_name)  
-    shutil.copy(file_path, new_file_path)    
-    
-    if not item:
-        media_type = Type.objects.get(name=type)    
-        item = Item.objects.create(owner = user, uploader = user,  type = media_type)
-        item_id = item.pk
-        item.add_to_uploaded_inbox(workspace)
-        item.workspaces.add(workspace)
-    
-    comp = item.create_variant(variant, workspace)
-    
-    if variant.auto_generated:
-        comp.imported = True
 
-    logger.debug('comp._id %s'%comp._id)
-    logger.debug('res_id %s'%res_id)
-    comp.file_name = file_name
-    comp._id = res_id
-    
-    comp.format = ext
-    comp.save()
-    launch_upload_script(user, item, script_session)
-
-def launch_upload_script(user, item, script_session):
-    try:
-        script = Script.objects.get(pk = 1)
-        script_execution, created = ScriptExecution.objects.get_or_create(script = script, session = script_session, launched_by = user)
-        ScriptItemExecution.objects.create(script = script_execution, item = item)
-    except Exception, ex:
-        logger.exception(ex)
         
 
 

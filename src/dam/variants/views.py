@@ -36,7 +36,7 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.repository.models import Component,  Item
 from dam.metadata.views import _get_ws_groups
-from dam.mprocessor.models import Task
+#from dam.mprocessor.models import Task
 
 import os
 from dam import logger
@@ -231,7 +231,7 @@ def get_variants(request):
             logger.debug('variant  %s'%v)
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             
-            work_in_progress = Task.objects.filter(component = comp).count() > 0
+            work_in_progress = False #TODO
             resource_url = comp.get_component_url()
             abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
             info_list = []
