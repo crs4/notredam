@@ -47,8 +47,10 @@ class BatchError(Exception):
 
 class MProcessor(MQServer):
     def mq_run(self, process_id):
+        log.debug('launching process %s'%process_id)
         process = Process.objects.get(pk=process_id)
         batch = Batch(process)
+        
         return batch.run()
 
 class Batch:

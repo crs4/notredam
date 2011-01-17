@@ -51,7 +51,4 @@ msg = '\n## Notredam settings:\n * settings module: %s\n * database: %s' % (sett
 # models from installed apps.
 loaded_models = get_models()
 check_notredam_config()
-
 main(msg)
-
- 

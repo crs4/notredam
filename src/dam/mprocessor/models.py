@@ -1,9 +1,9 @@
 from django.db import models
 from mediadart.storage import new_id
-
+from django.contrib.auth.models import User
 
 class Process(models.Model):    
-    script = models.ForeignKey('script.Script')
+    script = models.ForeignKey('scripts.Script')
     session = models.CharField(max_length=128,null = True, blank = True, unique = True)
     
     passed = models.IntegerField(default=0)     # number of actions passed

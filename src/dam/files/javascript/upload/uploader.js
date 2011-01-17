@@ -10,7 +10,43 @@ function upload_dialog(){
             layout   : 'fit',
             buttonAlign: 'left',
             
-            tbar:[{
+            tbar:[
+        		new Ext.BoxComponent({
+				    autoEl: {
+				        tag: 'div',
+				        id: 'upload'
+				    },
+				    listeners:{
+				    	afterrender: function(){
+				    		new Ext.ux.form.FileUploadField({			        
+				        	id: 'files_to_upload',
+				        	buttonOnly: true,
+				        	renderTo: 'upload',
+				        	text: 'Browse',
+				        	listeners:{
+				        		fileselected: function(fb, v){
+				        			
+				        			var files = [];
+				        			Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
+				        				files.push({
+				        					file: file,
+				        					filename: file.name,
+				        					size: file.size
+				        				});
+				        				
+				        			});
+				        			
+				        			Ext.getCmp('files_list').getStore().loadData({
+				        				files: files
+				        			}, true);
+				        		}
+				        	}
+	            			});    
+				    			
+				    	}				    
+				    }
+				}),
+            {
             	text: 'Upload',
             	handler: function(){
             		files = Ext.get('files_to_upload-file').dom.files;
@@ -40,37 +76,28 @@ function upload_dialog(){
             	}
             	
             }],
-            items: new Ext.ux.form.FileUploadField({			        
-			        id: 'files_to_upload',
-			        buttonOnly: true,
+            
+            items: new Ext.list.ListView({
+            	id: 'files_list',
+            	store: new Ext.data.JsonStore({
+            		root: 'files',
+            		fields:['file', 'filename', 'size', 'status']            		
+            	}),
+            	 columns: [{
+			        header: 'File',			        
+			        dataIndex: 'filename'
+			    	},
+			    	{
+			        header: 'Size',			        
+			        dataIndex: 'size'			        
+				    },
+			    	{
+			        header: 'Status',			        
+			        dataIndex: 'status'			        
+			    }]
             })
 
-//            items    : [
-//            		new Ext.BoxComponent({
-//					    autoEl: {
-//					        tag: 'div',
-//					        id: 'upload'
-//					    }
-//					})
-//
-//            ],
-//            modal:true,
-//            listeners:{
-//            	afterrender: function(){
-//            		var session_id = user + '_' + new Date().getTime();
-//	            	var uploader = new qq.FileUploader({
-//					    action: '/upload_resource/',
-//					    element: Ext.get('upload').dom,
-//					    params:{
-//					    	variant:'original',
-//					    	session: session_id
-//					    }
-//					    
-//					});
-//            	
-//            	
-//            	}
-//            }
+
         });
 	win.show();
 	
