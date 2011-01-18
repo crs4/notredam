@@ -11,6 +11,8 @@ function upload_dialog(){
             plain    : true,
             layout   : 'fit',
             buttonAlign: 'left',
+            frame: true,
+            modal: true,
             
             tbar:[
         		new Ext.BoxComponent({
@@ -36,7 +38,8 @@ function upload_dialog(){
 				        					id: file_counter,
 				        					file: file,
 				        					filename: file.name,
-				        					size: size
+				        					size: size,
+				        					status: 'to_upload'
 				        				});
 				        				file_counter += 1;				        				
 				        			});
@@ -54,10 +57,15 @@ function upload_dialog(){
             {
             	text: 'Upload',
             	handler: function(){
-            		files = Ext.get('files_to_upload-file').dom.files;
-            		var session_id = user + '_' + new Date().getTime();
-            		var files_length = files.length;
             		
+            		var session_id = user + '_' + new Date().getTime();
+            		
+            		
+            		
+            		
+            		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
+            		var files_length = files.length;
+            		var file;
             		var params = {
             			variant:'original',
             			session: session_id,
@@ -65,31 +73,43 @@ function upload_dialog(){
             		};
             		
             		for(var i = 0; i < files_length; i++){
+            			file = files[i].data.file;
             			
             			params.counter = i + 1;
             			var final_params = Ext.urlEncode(params);
             			var xhr = new XMLHttpRequest();
-            			xhr.file_id = i;
-            			xhr.onreadystatechange = function(){            
+            			xhr.file_id = files[i].data.id;
+            			xhr.onreadystatechange = function(){
+            				console.log('----------------finished upload of ' + this.file_id);
+            				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
+            				
 				            if (xhr.readyState == 4)
 					        	if (xhr.status == 200){
-					        		console.log(this.file_id);
-					        		console.log(Ext.getCmp('files_list').getStore().getAt(this.file_id));
-					        		Ext.getCmp('files_list').getStore().getAt(this.file_id).data.status = 'ok';
+					        		file_record.set('status', 'ok');
+					        		file_record.commit();
 					        	}
-					        	else{
+					        	else if(xhr.status == 500){
+					        		file_record.set('status', 'failed');
+				        		file_record.commit();
+					        }
+					        console.log(file_record);
 					        	
-					        	}
-					        		
 					    	
 				        };
             			
             			
             			xhr.open("POST", '/upload_resource/?'+ final_params, true);
 				        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-				        xhr.setRequestHeader("X-File-Name", encodeURIComponent(files[i].name));
+				        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
 				        xhr.setRequestHeader("Content-Type", "application/octet-stream");
-				        xhr.send(files[i]);
+				        
+				        var file_record = Ext.getCmp('files_list').getStore().getAt(i);
+				        file_record.set('status', 'inprogress');
+				        file_record.commit();
+				        
+				        xhr.send(file);
+				        console.log('file ' + i + ' sended');
+				        
             		
             		}
             	
@@ -99,6 +119,7 @@ function upload_dialog(){
             
             items: new Ext.list.ListView({
             	id: 'files_list',
+            	
             	store: new Ext.data.JsonStore({
             		root: 'files',
             		fields:['id', 'file', 'filename', 'size', 'status']            		
@@ -109,11 +130,14 @@ function upload_dialog(){
 			    	},
 			    	{
 			        header: 'Size',			        
-			        dataIndex: 'size'			        
+			        dataIndex: 'size',
+			        width: .3
 				    },
 			    	{
 			        header: 'Status',			        
-			        dataIndex: 'status'			        
+			        dataIndex: 'status'	,
+			        width: .07,
+			        tpl: '<tpl if="status != \'to_upload\'"><p class="upload_{status}"/></tpl>'
 			    }]
             })
 
