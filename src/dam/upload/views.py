@@ -31,7 +31,7 @@ import shutil, os
 from mediadart.storage import new_id
 from django.conf import settings
 
-from dam.scripts.models import Script
+from dam.scripts.models import Pipeline
 from dam.repository.models import Item, Component, Watermark
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
@@ -231,8 +231,8 @@ def import_dir(dir_name, user, workspace, session):
         _create_variant(file_name, res_id, item, workspace, variant)
         items.append(item)
         
-    script = Script.objects.get(pk = 1)
-    script.run(user, items, session)
+    pipeline = Pipeline.objects.get(pk = 1)
+    pipeline.run(user, items, session)
     
 
 @login_required
