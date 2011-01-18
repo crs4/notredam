@@ -26,13 +26,13 @@ from django.db.models import Q
 from dam import logger
 from django.contrib.auth.models import User
 from dam.mprocessor.models import Process, ProcessTarget
-from mediadart.mqueue.mqclient_twisted import Proxy
+from mediadart.mqueue.mqclient_async import Proxy
 
 INPROGRESS= 'in_progress'
 FAILED = 'failed'
 FINISHED = 'finished'
 
-class Script(models.Model):
+class Pipeline(models.Model):
     name = models.CharField(max_length= 50)
     description = models.TextField(blank=True)
     # upload etc, used to group pipelines that must be run in succession at certain points
@@ -41,11 +41,12 @@ class Script(models.Model):
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     
     def run(self,user,items, session):
-        process = Process.objects.create(script = self, session = session, launched_by = user)
+        process = Process.objects.create(pipeline = self, session = session, launched_by = user)
         for item in items:
             ProcessTarget.objects.create(process = process, target_id = item.pk)
         
-        Proxy('MProcessor').run(process.id)
+        logger.debug('PING!!!!')
+        Proxy('MProcessor').run(process.pk)
 #    def run(self, user,items, session = None):
 #        process = Process.objects.create(script = self, session = session, launched_by = user)
 #        for item in items:

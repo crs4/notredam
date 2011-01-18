@@ -43,7 +43,7 @@ from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
-from dam.scripts.models import Script 
+from dam.scripts.models import Pipeline 
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
 
@@ -632,6 +632,7 @@ def load_items(request, view_type=None, unlimited=False, ):
         user_basket = Basket.get_basket(user, workspace)
 
         basket_items = user_basket.items.all().values_list('pk', flat=True)
+        
         item_dict = _get_items_info(user,workspace, items)[0]
         
 #        for item in items:
@@ -783,20 +784,20 @@ def _get_items_info(user, workspace, items):
 
         basket_items = user_basket.items.all().values_list('pk', flat=True)
         
-        ws_tasks = []
-        tasks_pending = ws_tasks.filter(state='pending')
+         
+        tasks_pending = None
         #tasks_done = ws_tasks.filter(state='done')
-        tasks_failed = ws_tasks.filter(state='failed')
+        tasks_failed = None
     
         #items_done = tasks_done.values_list('component__item', flat=True).distinct()
-        items_pending = tasks_pending.values_list('component__item', flat=True).distinct()
-        items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
+        items_pending = []
+        items_failed = []
         
-        items_done = list(set(items_id).difference(list(items_pending)))
+        items_done = []
 #        all_items = set(items_done + list(items_pending))
         
-        total_pending = items_pending.count()
-        total_failed = items_failed.count()
+        total_pending = 0
+        total_failed = 0
         
         update_items = []
         now = time.time()
@@ -821,7 +822,7 @@ def _get_items_info(user, workspace, items):
                 if GeoInfo.objects.filter(item=item).count() > 0:
                     geotagged = 1
                 
-                preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count()
+                preview_available = True
                 if item.type.name == 'audio':
                     inprogress = int(not (preview_available == 0))
                 else:
@@ -851,6 +852,7 @@ def _get_items_info(user, workspace, items):
                 update_items.append(tmp)
             except Exception, ex:
                 logger.debug('ERROR while getting file info: %s ' % ex)
+                logger.exception(ex)
                 continue
         return (update_items, total_pending, total_failed)
     

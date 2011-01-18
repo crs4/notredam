@@ -93,13 +93,13 @@ class Batch:
 
     def _init_totals(self):
         self.totals = {'update':0, 'passed':0, 'failed':0}
-        self.totals['all'] = ProcessTarget.objects.filter(process=self.process.process_id).count() * self.schedule_length
+        self.totals['all'] = ProcessTarget.objects.filter(process=self.process.pk).count() * self.schedule_length
         self.process.total = self.totals['all']
         self.process.save()
 
     def _new_batch(self):
         "Loads from db the next batch of items and associate a schedule to each item"
-        itemset = ProcessTarget.objects.filter(process=self.process.process_id)[self.cur_batch:self.cur_batch + self.batch_size]
+        itemset = ProcessTarget.objects.filter(process=self.process.pk)[self.cur_batch:self.cur_batch + self.batch_size]
         self.cur_batch += self.batch_size
         self.i_index = 0                  # index of the current item in item_list
         self.a_index = 0                  # index of the current action in schedule
@@ -123,7 +123,7 @@ class Batch:
 
     def run(self):
         "Start the iteration initializing state so that the iteration starts correctly"
-        log.debug('running process %s' % str(self.process.process_id))
+        log.debug('running process %s' % str(self.process.pk))
         self.deferred = defer.Deferred()
         self.tasks = []
         self.i_index = len(self.tasks)
@@ -152,20 +152,21 @@ class Batch:
                     return    # we are done
         item, schedule = self.tasks[self.i_index]
         action = schedule[self.a_index]
-        log.debug('iterating over %s, action=%s, schedule=%s' % (item.item_id, action, schedule))
+        log.debug('iterating over %s, action=%s, schedule=%s' % (item.target_id, action, schedule))
         if action is not None:
             method, params = self.scripts[schedule[self.a_index]]
             delay = 0.1
             try:
-                d = method(item.item_id, **params)
+                log.debug('calling run with params %s'%params)
+                d = method(item.target_id,self.process.pipeline.workspace, **params)
             except Exception, e:
-                log.error('Error %s: launching action %s on item %s' % (str(e), action , item.item_id))
+                log.error('Error %s: launching action %s on item %s' % (str(e), action , item.target_id))
             else:
                 self.outstanding += 1
                 d.addCallbacks(self.handle_ok, self.handle_err, 
                     callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
         else:
-            log.debug("item %s: cancelled action %s" % (item.item_id, action))
+            log.debug("item %s: cancelled action %s" % (item.target_id, action))
             delay = 0
         if self.outstanding < self.max_outstanding:
             reactor.callLater(delay, self.iterate)

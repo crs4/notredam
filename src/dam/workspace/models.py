@@ -37,7 +37,7 @@ class WSManager(WorkspaceManager):
         @param description description of the new workspace (optional string)
         @param creator an instance of auth.User
         """
-        from dam.scripts.models import ScriptDefault, Script
+        from dam.scripts.models import Pipeline
         from dam.scripts.views import _new_script
         from dam.treeview.models import Node, Category
         from dam.eventmanager.models import Event, EventRegistration

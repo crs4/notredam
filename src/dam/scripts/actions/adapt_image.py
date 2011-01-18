@@ -97,8 +97,8 @@ def inspect():
          
         } 
 
-def run(item, workspace, source_variant, output_variant, output_format, actions, height = None, width = None, ratio = None, pos_x_percent = None, pos_y_percent = None, wm_id = None):
-    return Adapter().execute(item, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id)
+def run(item_id, workspace, source_variant, output_variant, output_format, actions, height = None, width = None, ratio = None, pos_x_percent = None, pos_y_percent = None, wm_id = None):
+    return Adapter().execute(item_id, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id)
 
 class Adapter:
 
@@ -120,9 +120,9 @@ class Adapter:
     def handle_error(self, result, component):
         self.deferred.errcallback('error')
     
-    def execute(self,item, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id):
+    def execute(self,item_id, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id):
         log.info('executing adaptation')
-             
+        item = Item.objects.get(pk = item_id)
         source_variant = Variant.objects.get(name = source_variant)
         source = item.get_variant(workspace, source_variant)
         

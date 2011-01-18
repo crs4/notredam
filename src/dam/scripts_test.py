@@ -21,11 +21,14 @@ actions = {'adapt_image':{
         'source_variant': 'original',
         'output_variant': 'thumbnail',
         'output_format' : 'jpeg'        
-        } 
+        },
+     'in': ['fake'],
+     'out':['fakeout']    
     }
+    
 }
 ws = DAMWorkspace.objects.get(pk = 1)
-preview = Script.objects.create(name = 'thumbnail generation', description='', params = simplejson.dumps(actions), workspace = ws)
+preview = Pipeline.objects.create(name = 'thumbnail generation', description='', params = simplejson.dumps(actions), workspace = ws)
 
 #pipeline_thumb = {
 #    

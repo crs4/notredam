@@ -20,5 +20,5 @@ from django.contrib import admin
 
 from dam.scripts.models import *
 
-admin.site.register(Script)
+admin.site.register(Pipeline)
 
