@@ -31,3 +31,24 @@
     z-index: 3;
     color: #777;
 }
+
+
+p.upload_ok, p.upload_inprogress, p.upload_failed{
+    margin: 0px; 
+    height: 16px;
+}
+.upload_ok {
+    background: transparent url(/files/images/ok.gif) no-repeat;
+
+}
+
+
+.upload_inprogress {
+    background:transparent url(/files/ext/resources/images/default/tree/loading.gif) no-repeat;
+}
+
+
+.upload_failed {
+    background: transparent url(/files/images/icons/fam/cross.png) no-repeat;
+}
+
