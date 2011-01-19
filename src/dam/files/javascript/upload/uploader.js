@@ -33,7 +33,7 @@ function upload_dialog(){
 				        			var files = [];
 				        			var size;
 				        			Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
-				        				size = file.size/1024;
+				        				size = parseInt(file.size/1024) + ' KB';
 				        				files.push({
 				        					id: file_counter,
 				        					file: file,
@@ -80,11 +80,12 @@ function upload_dialog(){
             			var xhr = new XMLHttpRequest();
             			xhr.file_id = files[i].data.id;
             			xhr.onreadystatechange = function(){
-            				console.log('----------------finished upload of ' + this.file_id);
-            				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
             				
+            				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
+            				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
 				            if (xhr.readyState == 4)
 					        	if (xhr.status == 200){
+					        		console.log('----------------finished upload of ' + this.file_id);
 					        		file_record.set('status', 'ok');
 					        		file_record.commit();
 					        	}
@@ -92,13 +93,13 @@ function upload_dialog(){
 					        		file_record.set('status', 'failed');
 				        		file_record.commit();
 					        }
-					        console.log(file_record);
+					      
 					        	
 					    	
 				        };
             			
             			
-            			xhr.open("POST", '/upload_resource/?'+ final_params, true);
+            			xhr.open("POST", '/upload_resource/?'+ final_params, false);
 				        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 				        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
 				        xhr.setRequestHeader("Content-Type", "application/octet-stream");
@@ -108,7 +109,18 @@ function upload_dialog(){
 				        file_record.commit();
 				        
 				        xhr.send(file);
-				        console.log('file ' + i + ' sended');
+				        if (xhr.status == 200){
+			        		console.log('----------------finished upload of ' + this.file_id);
+			        		file_record.set('status', 'ok');
+			        		file_record.commit();
+			        	}
+			        	else if(xhr.status == 500){
+			        		file_record.set('status', 'failed');
+		        		file_record.commit();
+				        }
+				        
+				        
+				        
 				        
             		
             		}

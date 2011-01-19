@@ -40,13 +40,17 @@ class Pipeline(models.Model):
     params = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     
-    def run(self,user,items, session):
-        process = Process.objects.create(pipeline = self, session = session, launched_by = user)
-        for item in items:
-            ProcessTarget.objects.create(process = process, target_id = item.pk)
+    def num_actions(self):
+        return len(self.params)
         
-        logger.debug('PING!!!!')
-        Proxy('MProcessor').run(process.pk)
+        
+    
+#    def run(self,user,items, session):
+#        process = Process.objects.create(pipeline = self, session = session, launched_by = user)
+#        for item in items:
+#            ProcessTarget.objects.create(process = process, target_id = item.pk)
+#       
+#        Proxy('MProcessor').run(process.pk)
 #    def run(self, user,items, session = None):
 #        process = Process.objects.create(script = self, session = session, launched_by = user)
 #        for item in items:

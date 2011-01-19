@@ -33,7 +33,7 @@ from dam.metadata.models import MetadataLanguage, MetadataValue, MetadataPropert
 from dam.variants.models import Variant
 from dam.core.dam_workspace import decorators
 #from dam.batch_processor.models import MachineState, Action, Machine
-from dam.mprocessor.models import MAction
+#from dam.mprocessor.models import MAction
 from dam.core.dam_metadata.models import XMPNamespace, XMPStructure
 from dam.geo_features.models import GeoInfo
 from mx.DateTime.Parser import DateTimeFromString

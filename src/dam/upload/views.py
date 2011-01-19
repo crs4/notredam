@@ -219,7 +219,11 @@ def import_dir(dir_name, user, workspace, session):
     variant = Variant.objects.get(name = 'original')
     files =os.listdir(dir_name)
     logger.debug('files %s'%files)
-    items = []
+    
+    pipeline = Pipeline.objects.get(type = 'upload')
+    
+    upload_process = Process.objects.create(pipeline = pipeline, workspace =  workspace, user = user)
+    
     for file_name in files:
         file_path = os.path.join(dir_name, file_name)
         
@@ -229,10 +233,18 @@ def import_dir(dir_name, user, workspace, session):
                
         item = _create_item(user, workspace, media_type)
         _create_variant(file_name, res_id, item, workspace, variant)
-        items.append(item)
+        upload_process.add_params(item.pk)
         
-    pipeline = Pipeline.objects.get(pk = 1)
-    pipeline.run(user, items, session)
+    upload_process.run()
+    
+        
+        
+#    pipeline = Pipeline.objects.get(pk = 1)
+#    pipeline.run(user, items, session)
+    
+    
+
+    
     
 
 @login_required

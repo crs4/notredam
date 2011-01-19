@@ -43,7 +43,7 @@ from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
-from dam.scripts.models import Pipeline 
+from dam.scripts.models import Pipeline
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
 
@@ -711,8 +711,8 @@ def workspace(request, workspace_id = None):
     """
     theme = _get_theme()
     
-    logger.debug('In workspace.views method workspace: current theme is %s' % theme)
-    logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
+#    logger.debug('In workspace.views method workspace: current theme is %s' % theme)
+#    logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
     user = request.user
     logger.info('workspace_id %s'%workspace_id)
     if not workspace_id:
@@ -872,9 +872,10 @@ def get_status(request):
         user = request.user
     
         workspace = request.session.get('workspace', None)
-        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
+#        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
            
-        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
+#        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
+        resp_dict = {}
        
         resp = simplejson.dumps(resp_dict)
         return HttpResponse(resp)
@@ -1093,3 +1094,34 @@ def download_renditions(request):
         archive.close()
     
     return HttpResponse(simplejson.dumps({'success': True,  'url':'/storage/' + os.path.basename(tmp) }))
+
+
+@login_required
+def script_monitor(request):
+    try:
+        workspace = request.session['workspace']
+        processes = workspace.get_active_processes()
+        
+        processes_info = []
+        for process in processes:
+            processes_info.append({
+                 'name':process.pipeline.name,
+                 
+                 
+                 'total_items':process.processtarget_set.all().count(),
+                 'items_completed': 5,
+                 'type': process.pipeline.type,
+                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
+#                 'end_date': process.end_date.time(),
+                 'launched_by': process.launched_by.username,
+                 'items_failed': 5
+                 })
+             
+        return HttpResponse(simplejson.dumps({
+            'success': True,
+            'scripts':processes_info
+        }))
+    except Exception, ex:
+        logger.exception(ex)
+        return HttpResponse(simplejson.dumps({'success': False}))
+
