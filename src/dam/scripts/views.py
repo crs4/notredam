@@ -210,5 +210,3 @@ def run_script(request):
     _run_script(script,  items,  run_again)
    
     return HttpResponse(simplejson.dumps({'success': True}))
-    
-  

@@ -411,7 +411,6 @@ class Component(AbstractComponent):
         except Exception,ex:
             url = NOTAVAILABLE    
         
-        logger.debug('url %s'%url)
         return url
 
     def save_rights_value(self, license_value, workspace):

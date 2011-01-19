@@ -23,6 +23,7 @@ from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 import dam.logger as logger
+from dam.mprocessor.models import Process
 
 class WSManager(WorkspaceManager):
 
@@ -106,5 +107,9 @@ class DAMWorkspace(Workspace):
         Returns the list of variants for the current workspace
         """
         from dam.variants.models import Variant
-        return Variant.objects.filter(Q(workspace = self) | Q(workspace__isnull = True,  )).distinct()    
+        return Variant.objects.filter(Q(workspace = self) | Q(workspace__isnull = True,  )).distinct()  
+    
+    def get_active_processes(self, ):
+        return Process.objects.filter(pipeline__workspace = self)
+        
     

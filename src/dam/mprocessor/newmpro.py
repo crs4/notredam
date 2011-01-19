@@ -158,11 +158,12 @@ class Batch:
             delay = 0.1
             try:
                 log.debug('calling run with params %s'%params)
+                self.outstanding += 1
                 d = method(item.target_id,self.process.pipeline.workspace, **params)
             except Exception, e:
-                log.error('Error %s: launching action %s on item %s' % (str(e), action , item.target_id))
+                #log.error('Error %s: launching action %s on item %s' % (str(e), action , item.target_id))
+                self.handle_err('Error %s: launching action %s on item %s' % (str(e), action , item.target_id), item, schedule, action, params)
             else:
-                self.outstanding += 1
                 d.addCallbacks(self.handle_ok, self.handle_err, 
                     callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
         else:
