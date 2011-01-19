@@ -159,7 +159,7 @@ class Batch:
             try:
                 log.debug('calling run with params %s'%params)
                 self.outstanding += 1
-                d = method(item.target_id,self.process.pipeline.workspace, **params)
+                d = method(item.target_id, self.process.workspace, **params)
             except Exception, e:
                 #log.error('Error %s: launching action %s on item %s' % (str(e), action , item.target_id))
                 self.handle_err('Error %s: launching action %s on item %s' % (str(e), action , item.target_id), item, schedule, action, params)
