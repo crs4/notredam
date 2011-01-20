@@ -157,18 +157,21 @@ function upload_dialog(){
             	}),
             	 columns: [{
 			        header: 'File',			        
-			        dataIndex: 'filename'
+			        dataIndex: 'filename',
+			        cls: 'upload-row',
 			    	},
 			    	{
 			        header: 'Size',			        
 			        dataIndex: 'size',
-			        width: .3
+			        width: .3,
+			        cls: 'upload-row',
 				    },
 			    	{
 			        header: 'Status',			        
 			        dataIndex: 'status'	,
 			        width: .07,
-			        tpl: '<tpl if="status != \'to_upload\'"><p class="upload_{status}"/></tpl>'
+			        //cls: 'upload-row',
+			        tpl: '<p class="upload_{status}"/>'
 			    }]
             })
 
