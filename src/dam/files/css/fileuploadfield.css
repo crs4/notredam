@@ -32,10 +32,15 @@
     color: #777;
 }
 
+.upload-row{
+    padding-bottom:10px
+}
 
-p.upload_ok, p.upload_inprogress, p.upload_failed{
-    margin: 0px; 
-    height: 16px;
+
+p.upload_to_upload, p.upload_ok, p.upload_inprogress, p.upload_failed, p.upload_aborted {
+    margin:0px;
+    padding-bottom:10px
+    
 }
 .upload_ok {
     background: transparent url(/files/images/ok.gif) no-repeat;
@@ -49,6 +54,10 @@ p.upload_ok, p.upload_inprogress, p.upload_failed{
 
 
 .upload_failed {
-    background: transparent url(/files/images/icons/fam/cross.png) no-repeat;
+    background: transparent url(/files/images/icons/fam/delete.gif) no-repeat;
+}
+
+.upload_aborted {
+    background: transparent url(/files/images/icons/fam/delete.gif) no-repeat;
 }
 
