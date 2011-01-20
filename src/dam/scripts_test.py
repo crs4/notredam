@@ -16,8 +16,8 @@ from django.utils import simplejson
 actions = {'adapt_image':{ 
     'params':{
         'actions':['resize'],
-        'height':300,
-        'width': 300,
+        'height':100,
+        'width': 100,
         'source_variant': 'original',
         'output_variant': 'thumbnail',
         'output_format' : 'jpeg'        
@@ -28,7 +28,7 @@ actions = {'adapt_image':{
     
 }
 ws = DAMWorkspace.objects.get(pk = 1)
-preview = Pipeline.objects.create(name = 'thumbnail generation', description='', params = simplejson.dumps(actions), workspace = ws)
+preview = Pipeline.objects.create(name = 'thumbnail generation', type = 'upload', description='', params = simplejson.dumps(actions), workspace = ws)
 
 #pipeline_thumb = {
 #    

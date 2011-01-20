@@ -13,17 +13,16 @@ class Process(models.Model):
     start_date = models.DateTimeField(auto_now_add = True)
     end_date = models.DateTimeField(null = True, blank = True)
     launched_by = models.ForeignKey(User)
-    
-#def create_process(process_type, workspace, user):
-#    pipeline = Pipeline.objects.get(type = process_type)
-#    process = pipeline.create_process(workspace, user)
-#    return process
 
-    
-    
     def add_params(self, target_id):
         ProcessTarget.objects.create(process = self, target_id = target_id)
+        
+    def get_num_target_completed(self):
+        return ProcessTarget.objects.filter(process = self, passed = self.pipeline.num_actions()).count()
     
+    def get_num_target_failed(self):
+        return ProcessTarget.objects.filter(process = self, failed__gt = 0).count()
+
     def run(self):
         Proxy('MProcessor').run(self.pk)        
     

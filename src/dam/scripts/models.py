@@ -27,6 +27,7 @@ from dam import logger
 from django.contrib.auth.models import User
 from dam.mprocessor.models import Process, ProcessTarget
 from mediadart.mqueue.mqclient_async import Proxy
+from django.utils import simplejson
 
 INPROGRESS= 'in_progress'
 FAILED = 'failed'
@@ -41,9 +42,12 @@ class Pipeline(models.Model):
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     
     def num_actions(self):
-        return len(self.params)
+        return len(simplejson.loads(self.params))
         
         
+    
+    def create_process(self, user):
+        return Process.objects.create(pipeline = self, workspace =  self.workspace, launched_by = user)
     
 #    def run(self,user,items, session):
 #        process = Process.objects.create(pipeline = self, session = session, launched_by = user)

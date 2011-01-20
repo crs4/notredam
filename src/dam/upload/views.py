@@ -220,9 +220,9 @@ def import_dir(dir_name, user, workspace, session):
     files =os.listdir(dir_name)
     logger.debug('files %s'%files)
     
-    pipeline = Pipeline.objects.get(type = 'upload')
+    pipeline = Pipeline.objects.get(type = 'upload', workspace = workspace)
+    upload_process = pipeline.create_process(user)
     
-    upload_process = Process.objects.create(pipeline = pipeline, workspace =  workspace, user = user)
     
     for file_name in files:
         file_path = os.path.join(dir_name, file_name)

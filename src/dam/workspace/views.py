@@ -1109,12 +1109,12 @@ def script_monitor(request):
                  
                  
                  'total_items':process.processtarget_set.all().count(),
-                 'items_completed': 5,
+                 'items_completed': process.get_num_target_completed(),
                  'type': process.pipeline.type,
                  'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
 #                 'end_date': process.end_date.time(),
                  'launched_by': process.launched_by.username,
-                 'items_failed': 5
+                 'items_failed': process.get_num_target_failed()
                  })
              
         return HttpResponse(simplejson.dumps({

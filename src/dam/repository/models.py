@@ -94,6 +94,7 @@ class Item(AbstractItem):
     #    variant = Variant.objects.get(name = variant_name)
         
         try:
+            logger.debug('variant %s'%variant)
             if variant.shared:
                 comp = Component.objects.get(item = self, variant= variant)
                 comp.workspace.add(ws)
