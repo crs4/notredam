@@ -8,10 +8,10 @@ function upload_dialog(){
             closable : true,
             width    : 800,
             height   : 350,
-            plain    : true,
+            //plain    : true,
             layout   : 'fit',
             buttonAlign: 'left',
-            frame: true,
+            //frame: true,
             modal: true,
             
             tbar:[
@@ -127,11 +127,30 @@ function upload_dialog(){
             	
             	}
             	
-            }],
+            },
+            {
+            	text: 'Abort',
+            	handler: function(){
+            		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
+            		
+            		Ext.each(files, function(file){
+            			file.set('status', 'aborted');	
+            			file.commit();
+            		
+            		});
+            		
+            			
+            	
+            		
+            	
+            	}
+            
+            }
+            ],
             
             items: new Ext.list.ListView({
             	id: 'files_list',
-            	
+            	frame: true,
             	store: new Ext.data.JsonStore({
             		root: 'files',
             		fields:['id', 'file', 'filename', 'size', 'status']            		

@@ -136,16 +136,16 @@ class Adapter:
                 
         log.debug("[adapt_resource] from original component %s" % output_component.source)
         
-        orig = output_component.source
+        source = output_component.source = source
         dest_res_id = new_id()
         
         args ={}
         argv = [] #for calling imagemagick
     
     
-       
-        source_width = source.width
-        source_height = source.height
+#       TODO: remove values
+        source_width = source.width = 800
+        source_height = source.height = 600
         for action in actions:
             if action == 'resize':
                 log.debug('source.width %s'%source.width)
@@ -193,9 +193,10 @@ class Adapter:
                 argv += ['cache://' + watermark_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
         
         adapter_proxy = Proxy('Adapter')
-        
+        log.debug("calling adapter")
+        log.debug('orig %s'%source)
         dest_res_id = dest_res_id + '.' + output_format
-        d = adapter_proxy.adapt_image_magick('%s[0]' % orig.ID, dest_res_id, argv)
+        d = adapter_proxy.adapt_image_magick('%s[0]' % source.ID, dest_res_id, argv)
         d.addCallbacks(self.handle_result, self.handle_error, [output_component])
         
         return self.deferred

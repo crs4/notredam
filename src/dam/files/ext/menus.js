@@ -1045,7 +1045,7 @@ Ext.onReady(function(){
 												    		'name',
 												    		'time_elapsed',
 												    		'status',
-												    		'event',
+												    		'type',
 												    		'total_items',
 												    		'items_completed',
 												    		'items_failed',
@@ -1063,6 +1063,15 @@ Ext.onReady(function(){
 												    },
 												    
 												    {
+												        header: 'Type',											        
+												        dataIndex: 'type'
+												        
+												    },
+												    {
+												        header: 'Launched By',											        
+												        dataIndex: 'launched_by'												        
+												    },
+												    {
 												        header: 'Start Date',											        
 												        dataIndex: 'start_date',
 												        type: 'date'
@@ -1074,18 +1083,12 @@ Ext.onReady(function(){
 												        type: 'date'
 												        
 												    },
-												    
-
+												   
 												    {
-												        header: 'Event',											        
-												        dataIndex: 'event'
-												        
+												        header: 'Items Failed',											        
+												        dataIndex: 'items_failed',
+												        tpl: '<a href="javascript:void();">{items_failed}</a>'
 												    },
-												    {
-												        header: 'Launched By',											        
-												        dataIndex: 'launched_by'												        
-												    },
-												    
 												    {
 												        header: 'Items Completed',											        
 												        dataIndex: 'items_completed',
@@ -1093,15 +1096,11 @@ Ext.onReady(function(){
 												        
 												    },
 												    {
-												        header: 'Items Failed',											        
-												        dataIndex: 'items_failed',
-												        tpl: '<a href="javascript:void();">{items_failed}</a>'
-												    },
-												    {
 												        header: 'Total Items',											        
 												        dataIndex: 'total_items',
 												        tpl: '<a href="javascript:void();">{total_items}</a>'
-												    },
+												    }
+												    /*,
 												    {
 												        header: 'Time Elapsed',											        
 												        dataIndex: 'time_elapsed'
@@ -1111,7 +1110,8 @@ Ext.onReady(function(){
 												    {
 												        header: 'Status',
 												        dataIndex: 'status'											        
-												    }]
+												    }*/
+												    ]
 												})
 											})
                             			]
