@@ -1997,8 +1997,9 @@ function edit_script(is_new){
 		        		new Ext.Panel({
 			        		region: 'center',
 			        		height: 400,
+			        		title: 'Actions',
 	//		        		border: false,
-			        		bbar:[{
+			        		tbar:[{
 			        				text: 'Add',
 			        				menu: menu_actions
 			        			},
@@ -2007,7 +2008,9 @@ function edit_script(is_new){
 			        				text: 'Remove'
 			        			}
 			        		],
-			        		items:	new Ext.list.ListView({	        			
+			        		items:	new Ext.list.ListView({
+			        			
+			        			hideHeaders: true,
 			        			store: new Ext.data.JsonStore({
 			        				root: 'actions',
 			        				fields: ['name'],
