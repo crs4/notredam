@@ -1016,7 +1016,7 @@ Ext.onReady(function(){
                         items:[
                         	{
                                 text    : 'New',
-                                handler : function(){new_script(true,'New Script');}
+                                handler : function(){edit_script(true);}
                             
                             },{ 
                             	text    : 'Edit',                                                      

@@ -9,5 +9,7 @@ urlpatterns = patterns('',
     (r'^get_actions/', 'dam.scripts.views.get_actions'),
     (r'^run_script/', 'dam.scripts.views.run_script'),
     (r'^rename_script/', 'dam.scripts.views.rename_script'),
+    (r'^get_available_actions/', 'dam.scripts.views.get_available_actions'),
+ 
     
 )

@@ -13,22 +13,55 @@ from dam.variants.models import Variant
 from django.utils import simplejson
 
 
-actions = {'adapt_image':{ 
-    'params':{
-        'actions':['resize'],
-        'height':100,
-        'width': 100,
-        'source_variant': 'original',
-        'output_variant': 'thumbnail',
-        'output_format' : 'jpeg'        
-        },
-     'in': ['fake'],
-     'out':['fakeout']    
-    }
+actions = {'thumbnail_image':
+    {'adapt_image':{ 
+        'params':{
+            'actions':['resize'],
+            'height':100,
+            'width': 100,
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format' : 'jpeg'        
+            },
+         'in': ['fakethumb'],
+         'out':['fakethumbout']    
+        }
+        
+    },
+    'preview_image': {'adapt_image':{ 
+        'params':{
+            'actions':['resize'],
+            'height':300,
+            'width': 300,
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format' : 'jpeg'        
+            },
+         'in': ['fakepreview'],
+         'out':['fakepreviewout']    
+        }
+        
+    },
+    'fullscreen_image': {'adapt_image':{ 
+        'params':{
+            'actions':['resize'],
+            'height':800,
+            'width': 600,
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format' : 'jpeg'        
+            },
+         'in': ['fakefull'],
+         'out':['fakefullout']    
+        }
+        
+    },
     
 }
+
+
 ws = DAMWorkspace.objects.get(pk = 1)
-preview = Pipeline.objects.create(name = 'thumbnail generation', type = 'upload', description='', params = simplejson.dumps(actions), workspace = ws)
+preview = Pipeline.objects.create(name = 'upload rendition generation', type = 'upload', description='', params = simplejson.dumps(actions), workspace = ws)
 
 #pipeline_thumb = {
 #    

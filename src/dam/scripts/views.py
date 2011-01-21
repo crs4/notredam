@@ -210,3 +210,16 @@ def run_script(request):
     _run_script(script,  items,  run_again)
    
     return HttpResponse(simplejson.dumps({'success': True}))
+
+
+@login_required
+def get_available_actions(request):
+    resp =  {'actions': [{
+                'name': 'adapt_image',
+                'params': {}
+            }
+                         
+                         
+            ]}
+    return HttpResponse(simplejson.dumps(resp))
+    

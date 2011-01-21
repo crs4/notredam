@@ -32,6 +32,7 @@
     color: #777;
 }
 
+
 .upload-row{
     padding-bottom:10px
 }
@@ -43,7 +44,7 @@ p.upload_to_upload, p.upload_ok, p.upload_inprogress, p.upload_failed, p.upload_
     
 }
 .upload_ok {
-    background: transparent url(/files/images/ok.gif) no-repeat;
+    background: transparent url(/files/images/ok.gif) no-repeat !important;
 
 }
 

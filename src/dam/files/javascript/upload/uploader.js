@@ -26,7 +26,11 @@ function upload_dialog(){
 				        	id: 'files_to_upload',
 				        	buttonOnly: true,
 				        	renderTo: 'upload',
-				        	buttonText: 'Browse',
+				        	
+				        	buttonCfg: {
+				        		icon: '/files/images/icons/fam/add.gif',
+				        		text: 'Browse'
+				        	},
 				        	listeners:{
 				        		fileselected: function(fb, v){
 				        			
@@ -56,6 +60,7 @@ function upload_dialog(){
 				}),
             {
             	text: 'Upload',
+            	icon:'/files/images/icons/arrow-up.gif',
             	handler: function(){
             		
             		var session_id = user + '_' + new Date().getTime();
@@ -130,6 +135,7 @@ function upload_dialog(){
             },
             {
             	text: 'Abort',
+            	icon: '/files/images/icons/fam/delete.gif',
             	handler: function(){
             		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
             		
@@ -148,7 +154,9 @@ function upload_dialog(){
             }
             ],
             
-            items: new Ext.list.ListView({
+            items: new Ext.Panel({
+            	border: false,
+            	items:new Ext.list.ListView({
             	id: 'files_list',
             	frame: true,
             	store: new Ext.data.JsonStore({
@@ -158,13 +166,13 @@ function upload_dialog(){
             	 columns: [{
 			        header: 'File',			        
 			        dataIndex: 'filename',
-			        cls: 'upload-row',
+			        cls: 'upload-row'
 			    	},
 			    	{
 			        header: 'Size',			        
 			        dataIndex: 'size',
 			        width: .3,
-			        cls: 'upload-row',
+			        cls: 'upload-row'
 				    },
 			    	{
 			        header: 'Status',			        
@@ -173,7 +181,11 @@ function upload_dialog(){
 			        //cls: 'upload-row',
 			        tpl: '<p class="upload_{status}"/>'
 			    }]
-            })
+            }) 
+            
+            }) 
+            
+            
 
 
         });
