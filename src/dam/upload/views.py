@@ -31,7 +31,8 @@ import shutil, os
 from mediadart.storage import new_id
 from django.conf import settings
 
-from dam.scripts.models import Pipeline
+#from dam.scripts.models import Pipeline
+from dam.mprocessor.models import new_processor
 from dam.repository.models import Item, Component, Watermark
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
@@ -220,9 +221,7 @@ def import_dir(dir_name, user, workspace, session):
     files =os.listdir(dir_name)
     logger.debug('files %s'%files)
     
-    pipeline = Pipeline.objects.get(type = 'upload', workspace = workspace)
-    upload_process = pipeline.create_process(user)
-    
+    upload_process = new_processor('upload', user, workspace)
     
     for file_name in files:
         file_path = os.path.join(dir_name, file_name)

@@ -1,5 +1,6 @@
 import random
 import os
+#from mediadart import log
 
 class DAGError(Exception):
     pass
@@ -10,6 +11,7 @@ class Node:
         self.childs = []
         self.index = None
         self.lowlink = None
+        self.depth = None   #
         self.visited = 0
 
     def add_child(self, node):
@@ -30,7 +32,7 @@ class DAG:
         for name, data in self.pipeline.items():
             #print 'processing outputs', a
             node = Node(name)
-            data['n'] = node
+            data['__node__'] = node
             for v in data['out']:
                 #print 'adding %s<-%s to output outputs' % (v, node.name) 
                 if v in outputs:
@@ -39,7 +41,7 @@ class DAG:
                     outputs[v] = node
 
         for data in self.pipeline.values():
-            node = data['n']
+            node = data['__node__']
             attached = 0
             for v in data['in']:
                 if v in outputs:  
@@ -59,7 +61,7 @@ class DAG:
 
     def _tarjan(self, node, index, lowlink, stack, msg):
         """ detect if there are cycles """
-        node.index = index
+        node.index = node.depth = index
         node.lowlink = index 
         index += 1
         stack.append(node)
@@ -69,6 +71,7 @@ class DAG:
                 node.lowlink = min(node.lowlink, n.lowlink)
             elif n in stack:
                 node.lowlink = min(node.lowlink, n.index)
+            n.depth = max(n.depth, index)
         if node.lowlink == node.index:
             top = stack.pop()
             if top != node:
@@ -78,6 +81,10 @@ class DAG:
                     n = stack.pop()
                 msg += '%s <- %s;' % (node.name, top.name)
         return msg
+
+    def _new_tag(self):
+        self.root.visited += 1
+        return self.root.visited
 
     def _visit(self, node, callback, shuffled, tag):
         """ visit the DAG depth first, call the callback at each node """
@@ -94,23 +101,41 @@ class DAG:
         """returns a topological sorting of the DAG. If shuffled is True, return
            a (possibly) different ordering each time it is called
         """
-        tag = self.root.visited + 1
-        self.sorted = []
+        tag = self._new_tag()
+        sorted = []
         def cb(node):
-            self.sorted.insert(0, node.name)
+            sorted.insert(0, node.name)
         self._visit(self.root, cb, shuffled, tag)
-        return self.sorted[1:]
+        return sorted[1:]
 
-    def delete(self, name, schedule):
-        """ delete from schedule all nodes dependent from the node whose name is <name>
-            including the given node
+    def dependencies(self, name):
+        """ returns all the dependency of "name" in the pipeline
         """
-        node = self.pipeline[name]['n']
-        tag = self.root.visited + 1
+        tag = self._new_tag()
+        deps = []
         def cb(n):
-            index = schedule.index(n.name)
-            schedule[index] = None
-        self._visit(node, cb, 0, tag)
+            deps.append(n.name)
+        self._visit(self.pipeline[name]['__node__'], cb, 0, tag)
+        return deps
+
+    def show(self):
+        """Print node: childs ordering nodes per depth in DAG (distance from root)"""
+        depths = {}
+        for name in self.sort():
+            node = self.pipeline[name]['__node__']
+            childs = node.childs[:]
+            childs.sort()
+            s = '%s: %s\n' % (node.name, ' '.join(['%s' % (x.name) for x in childs]))
+            if node.depth in depths:
+                depths[node.depth].append(s)
+            else:
+                depths[node.depth] = [s]
+        keys = depths.keys()
+        keys.sort()
+        for k in keys:
+            nodes = depths[k][:]
+            nodes.sort()
+            print 'depth %s:\n %s' % (k, ' '.join(nodes))
 
 def test():
     pipeline = {
