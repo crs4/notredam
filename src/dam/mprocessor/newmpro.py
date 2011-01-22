@@ -50,7 +50,6 @@ class MProcessor(MQServer):
         log.debug('launching process %s'%process_id)
         process = Process.objects.get(pk=process_id)
         batch = Batch(process)
-        
         return batch.run()
 
 class Batch:
@@ -79,7 +78,8 @@ class Batch:
         """
         plugins_module = self.cfg.get("MPROCESSOR", "plugins")
         scripts = {}
-        for script_name in pipeline:
+        for script_key, script_dict in pipeline.items():
+            script_name = script_dict['script_name']
             full_name = plugins_module + '.' + script_name + '.run'
             p = full_name.split('.')
             log.info('<$> loading script: %s' % '.'.join(p))
@@ -88,7 +88,7 @@ class Batch:
             if not f or not callable(f):
                 raise BatchError('Plugin %s has no callable run method' % script_name)
             else:
-                scripts[script_name] = (f, pipeline[script_name].get('params', {}))
+                scripts[script_key] = (f, script_dict.get('params', {}))
         return scripts
 
     def _init_totals(self):
@@ -99,12 +99,27 @@ class Batch:
 
     def _new_batch(self):
         "Loads from db the next batch of items and associate a schedule to each item"
-        itemset = ProcessTarget.objects.filter(process=self.process.pk)[self.cur_batch:self.cur_batch + self.batch_size]
-        self.cur_batch += self.batch_size
-        self.i_index = 0                  # index of the current item in item_list
-        self.a_index = 0                  # index of the current action in schedule
-        ret = [(x, self.dag.sort(True)) for x in itemset]
-        log.debug('_new_batch: loaded %d items' % len(ret))
+        log.debug('_new_batch: entering')
+        targetset = ProcessTarget.objects.filter(process=self.process.pk)[self.cur_batch:self.cur_batch + self.batch_size]
+        log.debug('_new_batch: after filter loaded %s items' % len(targetset))
+        if targetset:
+            log.debug('_new_batch: inside if')
+            self.cur_batch += self.batch_size
+            ret = [{'item':x, 'schedule':self.dag.sort(True)} for x in targetset]   # item, index of current action, schedule
+            for d in ret:
+                log.error('1')
+                if len(d['schedule']) != self.schedule_length:
+                    log.error('### item %s: WRONG LENGTH: %s' % (d['item'].target_id, len(d['schedule'])))
+                log.error('3')
+            log.debug('_new_batch: end of if')
+        else:
+            log.debug('_new_batch: None')
+            self.deferred.callback('done')
+            ret = None
+        if ret is not None:
+            log.debug('_new_batch: returning %d items' % len(ret))
+        else:
+            log.debug('_new_batch: returning None')
         return ret
 
     def update_totals(self, success):
@@ -115,66 +130,65 @@ class Batch:
         else:
             self.totals['failed'] += 1
         if (self.totals['update'] % self.update_interval) == 0:
-            log.debug('Writing update data')
             self.process.passed = self.totals['passed']
             self.process.failures = self.totals['failed']
             self.process.save()
-
 
     def run(self):
         "Start the iteration initializing state so that the iteration starts correctly"
         log.debug('running process %s' % str(self.process.pk))
         self.deferred = defer.Deferred()
         self.tasks = []
-        self.i_index = len(self.tasks)
-        self.a_index = self.schedule_length
-        self.iterate()
+        reactor.callLater(0, self.iterate)
         return self.deferred
 
+    def _get_action(self):
+        """returns the first action found or None. Retire tasks with no actions left"""
+        schedule = None
+        while not schedule and self.tasks:
+            task = self.tasks.pop(0)
+            schedule = task['schedule']
+        if schedule:
+            action = schedule.pop(0)
+            if schedule:
+                self.tasks.append(task)   # still work to do
+            else:
+                log.debug('%s: DONE' % task['item'].target_id)
+            method, params = self.scripts[action]
+            log.debug('_get_action: return %s' % action)
+            return action, task['item'], schedule, method, params
+        else:
+            log.debug('_get_action: return None')
+            return None, None, None, None, None
 
     def iterate(self):
         """ Run the actions listed in schedule on the items returned by _new_batch """
+        log.debug('iterate')
         if self.tasks is None:
             return
-            #log.debug('iterating over empy task list')
-        log.debug('entering iterate: i_index = %d, a_index=%d, outs=%s' % (self.i_index, self.a_index, self.outstanding))
-        self.i_index += 1
-        if self.i_index >= len(self.tasks):
-            self.i_index = 0
-            self.a_index += 1
-            if self.a_index >= self.schedule_length or not self.tasks:
-                log.debug('loading new items')
-                self.tasks = self._new_batch()  # sets i_index and a_index = 0
-                log.debug('WWWWWW loaded %d items' % len(self.tasks))
-                if not self.tasks:
-                    self.deferred.callback('done')
-                    self.tasks = None
-                    return    # we are done
-        item, schedule = self.tasks[self.i_index]
-        action = schedule[self.a_index]
-        log.debug('iterating over %s, action=%s, schedule=%s' % (item.target_id, action, schedule))
-        if action is not None:
-            method, params = self.scripts[schedule[self.a_index]]
-            delay = 0.1
+        if not self.tasks:
+            self.tasks = self._new_batch()
+            log.debug('iterate: loaded task')
+        action, item, schedule, method, params = self._get_action()
+        if action:
+            log.debug('target %s: executing action=%s (%d: %s)' % (item.target_id, action, id(schedule), schedule))
             try:
                 log.debug('calling run with params %s'%params)
                 self.outstanding += 1
                 d = method(item.target_id, self.process.workspace, **params)
             except Exception, e:
-                #log.error('Error %s: launching action %s on item %s' % (str(e), action , item.target_id))
                 self.handle_err('Error %s: launching action %s on item %s' % (str(e), action , item.target_id), item, schedule, action, params)
             else:
                 d.addCallbacks(self.handle_ok, self.handle_err, 
                     callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
+            if self.outstanding < self.max_outstanding:
+                reactor.callLater(0.1, self.iterate)
         else:
-            log.debug("item %s: cancelled action %s" % (item.target_id, action))
-            delay = 0
-        if self.outstanding < self.max_outstanding:
-            reactor.callLater(delay, self.iterate)
-
+            log.debug('EMPTY ACTION')
+            reactor.callLater(0, self.iterate)
 
     def handle_ok(self, result, item, schedule, action, params):
-        log.info(result)
+        log.info("target %s: action %s: %s" % (item.target_id, action, result))
         self.outstanding -= 1
         self.update_totals(success=True)
         if self.outstanding < self.max_outstanding:
@@ -184,10 +198,14 @@ class Batch:
 
 
     def handle_err(self, result, item, schedule, action, params):
-        log.error('handler_err %s %s %s %s' % (result, item, schedule, action))
+        log.error('handler_err %s %s %s' % (result, item.target_id, action))
         self.outstanding -= 1
         self.update_totals(success=False)
-        self.dag.delete(action, schedule)
+        dependencies = self.dag.dependencies(action)
+        for a in dependencies:
+            if a in schedule:
+                log.info('target %s: removing action %s, dependent from failed %s' % (item.target_id, a, action))
+                schedule.remove(a)
         if self.outstanding < self.max_outstanding:
             reactor.callLater(0, self.iterate)
         item.failed += 1
@@ -211,7 +229,6 @@ def test():
         log.error("Fatal initialization error: %s" % str(e))
         reactor.stop()
     d.addBoth(end_test)
-
 
 if __name__=='__main__':
     reactor.callWhenRunning(test)
