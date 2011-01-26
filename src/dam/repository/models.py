@@ -356,7 +356,7 @@ class Component(AbstractComponent):
     parameters = models.TextField(null = True,  blank = True)
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False) 
-    pipeline = models.ForeignKey('scripts.Pipeline', null = True, blank  = True, default = None)   
+    pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
     
     class Meta:
         db_table = 'component'
