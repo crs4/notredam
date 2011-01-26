@@ -2,6 +2,7 @@ from django.db import models
 from mediadart.storage import new_id
 from django.contrib.auth.models import User
 from mediadart.mqueue.mqclient_async import Proxy
+from django.utils import simplejson
     
 class Pipeline(models.Model):
     name = models.CharField(max_length= 50)
@@ -12,9 +13,10 @@ class Pipeline(models.Model):
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     
     def num_actions(self):
-        if not hasattr(self.length):
+        if not hasattr(self,'length'):
             self.length = len(simplejson.loads(self.params))
         return self.length
+
     
 #    def create_process(self, user):
 #        return Process.objects.create(pipeline = self, workspace =  self.workspace, launched_by = user)
@@ -48,8 +50,8 @@ class Process(models.Model):
 
 def new_processor(pipeline_name, user, workspace):
     "utility function to create a process associated to a given pipeline"
-    pipeline = Pipeline.objects.get(name=pipeline)
-    return Process.objects.create(pipeline = pipeline_name, workspace =  self.workspace, launched_by = user)
+    pipeline = Pipeline.objects.get(type=pipeline_name)
+    return Process.objects.create(pipeline = pipeline, workspace =  workspace, launched_by = user)
     
 
 class ProcessTarget(models.Model):

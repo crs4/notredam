@@ -235,8 +235,6 @@ def import_dir(dir_name, user, workspace, session):
         upload_process.add_params(item.pk)
         
     upload_process.run()
-    
-        
         
 #    pipeline = Pipeline.objects.get(pk = 1)
 #    pipeline.run(user, items, session)

@@ -43,7 +43,7 @@ from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
-from dam.scripts.models import Pipeline
+from dam.mprocessor.models import Pipeline
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
 
@@ -1124,4 +1124,3 @@ def script_monitor(request):
     except Exception, ex:
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'success': False}))
-
