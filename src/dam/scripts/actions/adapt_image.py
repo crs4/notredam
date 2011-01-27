@@ -82,17 +82,17 @@ def inspect():
         },
     
         'output_variant': {
-            'type': 'output-variant',
+            'type': 'variant',
             'description': 'output-variant',
             'default': 0,
             'help': ''
         },
-#        'source_variant': {
-#            'type': 'input-variant',
-#            'description': 'input-variant',
-#            'default': 0,
-#            'help': ''
-#        }      
+        'source_variant': {
+            'type': 'variant',
+            'description': 'input-variant',
+            'default': 0,
+            'help': ''
+        }      
         
          
         } 
