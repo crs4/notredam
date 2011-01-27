@@ -2076,3 +2076,106 @@ function edit_script(is_new){
 	
 	
 }
+
+function show_monitor(){
+		var win_id = 'script_monitor';
+		if (Ext.WindowMgr.get(win_id))
+			return;
+			
+		var win = new Ext.Window({
+			id: win_id,
+			title: 'Script Monitor',
+			height: 500,
+			width: 800,
+			layout: 'fit',
+			collapsible: true,
+			items:[
+				new Ext.Panel({
+					items: new Ext.list.ListView({    					
+					    store: new Ext.data.JsonStore({
+					    	url: '/script_monitor/',
+					    	autoLoad: true,
+					    	fields:[
+					    		'name',
+					    		'time_elapsed',
+					    		'status',
+					    		'type',
+					    		'total_items',
+					    		'items_completed',
+					    		'items_failed',
+					    		'start_date',
+					    		'end_date',
+					    		'launched_by'
+					    	],
+					    	root: 'scripts'
+					    }),											    
+					    emptyText: 'No script to display',
+//											    frame: true,
+					    columns: [{
+					        header: 'Name',											       
+					        dataIndex: 'name'
+					    },
+					    
+					    {
+					        header: 'Type',											        
+					        dataIndex: 'type'
+					        
+					    },
+					    
+					    {
+					        header: 'Status',
+					        dataIndex: 'status'											        
+					    },
+					    
+					    {
+					        header: 'Launched By',											        
+					        dataIndex: 'launched_by'												        
+					    },
+					    {
+					        header: 'Start Date',											        
+					        dataIndex: 'start_date',
+					        type: 'date'
+					        
+					    },
+					    {
+					        header: 'End Date',											        
+					        dataIndex: 'end_date',
+					        type: 'date'
+					        
+					    },
+					   
+					    {
+					        header: 'Items Failed',											        
+					        dataIndex: 'items_failed',
+					        tpl: '<a href="javascript:void();">{items_failed}</a>'
+					    },
+					    {
+					        header: 'Items Completed',											        
+					        dataIndex: 'items_completed',
+					        tpl: '<a href="javascript:void();">{items_completed}</a>'
+					        
+					    },
+					    {
+					        header: 'Total Items',											        
+					        dataIndex: 'total_items',
+					        tpl: '<a href="javascript:void();">{total_items}</a>'
+					    }
+					    /*,
+					    {
+					        header: 'Time Elapsed',											        
+					        dataIndex: 'time_elapsed'
+					        
+					    },
+					    
+					    
+					    */
+					    ]
+					})
+				})
+			]
+			
+		
+		});
+		win.show();
+		
+};

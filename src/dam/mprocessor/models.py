@@ -3,6 +3,8 @@ from mediadart.storage import new_id
 from django.contrib.auth.models import User
 from mediadart.mqueue.mqclient_async import Proxy
 from django.utils import simplejson
+import logger
+import datetime
     
 class Pipeline(models.Model):
     name = models.CharField(max_length= 50)
@@ -15,6 +17,7 @@ class Pipeline(models.Model):
     def num_actions(self):
         if not hasattr(self,'length'):
             self.length = len(simplejson.loads(self.params))
+        logger.debug('pipeline.length %s'%self.length)
         return self.length
 
     
@@ -32,6 +35,13 @@ class Process(models.Model):
     end_date = models.DateTimeField(null = True, blank = True)
     launched_by = models.ForeignKey(User)
 
+    def save(self, *args, **kwargs):
+        if self.is_completed() and not self.end_date:
+            self.end_date =  datetime.datetime.now()            
+        
+        super(Process, self).save(*args, **kwargs)
+        
+    
     def create_process(self, user, pipeline):
         pipeline = Pipeline.objects.get(name=pipeline)
         return Process.objects.create(pipeline = pipeline, workspace =  self.workspace, launched_by = user)
@@ -40,10 +50,17 @@ class Process(models.Model):
         ProcessTarget.objects.create(process = self, target_id = target_id)
         
     def get_num_target_completed(self):
+        
         return ProcessTarget.objects.filter(process = self, passed = self.pipeline.num_actions()).count()
     
     def get_num_target_failed(self):
         return ProcessTarget.objects.filter(process = self, failed__gt = 0).count()
+    
+    def is_completed(self):
+        logger.debug('self.total %s'%self.total)
+        logger.debug('self.fail %s'%self.failures)
+        logger.debug('self.passed %s'%self.passed)
+        return self.total == (self.passed + self.failures)
 
     def run(self):
         Proxy('MProcessor').run(self.pk)        

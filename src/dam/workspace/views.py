@@ -1104,10 +1104,15 @@ def script_monitor(request):
         
         processes_info = []
         for process in processes:
+            
+            if process.is_completed():
+                status = 'completed'
+                process.delete()
+            else:
+                status = 'in progress'
             processes_info.append({
                  'name':process.pipeline.name,
-                 
-                 
+                 'status': status,                 
                  'total_items':process.processtarget_set.all().count(),
                  'items_completed': process.get_num_target_completed(),
                  'type': process.pipeline.type,
