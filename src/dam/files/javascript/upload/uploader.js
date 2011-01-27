@@ -64,10 +64,6 @@ function upload_dialog(){
             	handler: function(){
             		
             		var session_id = user + '_' + new Date().getTime();
-            		
-            		
-            		
-            		
             		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
             		var files_length = files.length;
             		var file;
@@ -75,20 +71,22 @@ function upload_dialog(){
             			variant:'original',
             			session: session_id,
             			total: files_length 
-            		};
+            		};            		
             		
-            		for(var i = 0; i < files_length; i++){
-            			file = files[i].data.file;
-            			
-            			params.counter = i + 1;
-            			var final_params = Ext.urlEncode(params);
-            			var xhr = new XMLHttpRequest();
-            			xhr.file_id = files[i].data.id;
-            			xhr.onreadystatechange = function(){
-            				
-            				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
-            				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
-				            if (xhr.readyState == 4)
+            		function upload_file(i, files, session_id, params){
+	            		if (i >= files.length)
+	            			return;
+	            		file = files[i].data.file;
+	        			
+	        			params.counter = i + 1;
+	        			var final_params = Ext.urlEncode(params);
+	        			var xhr = new XMLHttpRequest();
+	        			xhr.file_id = files[i].data.id;
+	        			xhr.onreadystatechange = function(){
+	        				
+	        				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
+	        				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
+				            if (xhr.readyState == 4){
 					        	if (xhr.status == 200){
 					        		console.log('----------------finished upload of ' + this.file_id);
 					        		file_record.set('status', 'ok');
@@ -96,15 +94,17 @@ function upload_dialog(){
 					        	}
 					        	else if(xhr.status == 500){
 					        		file_record.set('status', 'failed');
-				        		file_record.commit();
+				        			file_record.commit();
+					        	}
+					        	upload_file(i+1, files, session_id, params);
 					        }
 					      
 					        	
 					    	
 				        };
-            			
-            			
-            			xhr.open("POST", '/upload_resource/?'+ final_params, false);
+	        			
+	        			
+	        			xhr.open("POST", '/upload_resource/?'+ final_params, true);
 				        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 				        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
 				        xhr.setRequestHeader("Content-Type", "application/octet-stream");
@@ -114,22 +114,11 @@ function upload_dialog(){
 				        file_record.commit();
 				        
 				        xhr.send(file);
-				        if (xhr.status == 200){
-			        		console.log('----------------finished upload of ' + this.file_id);
-			        		file_record.set('status', 'ok');
-			        		file_record.commit();
-			        	}
-			        	else if(xhr.status == 500){
-			        		file_record.set('status', 'failed');
-		        		file_record.commit();
-				        }
-				        
-				        
-				        
-				        
-            		
-            		}
             	
+            		};
+            		
+					upload_file(0, files, session_id, params);
+				    	
             	}
             	
             },
