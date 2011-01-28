@@ -43,7 +43,7 @@ from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
-from dam.mprocessor.models import Pipeline
+from dam.mprocessor.models import Pipeline, Process, ProcessTarget
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
 
@@ -569,21 +569,21 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     return (items, total_count)
 
 
-def _get_thumb_url(item, workspace):
-
-    thumb_url = NOTAVAILABLE
-    thumb_ready = 0
-
-    try:
-        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = 'thumbnail')
-        url = item.get_variant(workspace, variant).get_component_url()
-        if url:
-            thumb_ready = 1
-            thumb_url = url
-    except:
-        pass
-        
-    return thumb_url, thumb_ready
+#def _get_thumb_url(item, workspace):
+#
+#    thumb_url = NOTAVAILABLE
+#    thumb_ready = 0
+#
+#    try:
+#        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = 'thumbnail')
+#        url = item.get_variant(workspace, variant).get_component_url()
+#        if url:
+#            thumb_ready = 1
+#            thumb_url = url
+#    except:
+#        pass
+#        
+#    return thumb_url, thumb_ready
 
 @login_required
 def load_items(request, view_type=None, unlimited=False, ):
@@ -633,7 +633,10 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         basket_items = user_basket.items.all().values_list('pk', flat=True)
         
-        item_dict = _get_items_info(user,workspace, items)[0]
+        items_info = []
+        for item in items:
+            items_info.append(item.get_info(workspace))
+        
         
 #        for item in items:
 #            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
@@ -681,8 +684,8 @@ def load_items(request, view_type=None, unlimited=False, ):
 #                
 #            item_dict.append(item_info)
         
-        res_dict = {"items": item_dict, "totalCount": str(total_count)}
-
+        res_dict = {"items": items_info, "totalCount": str(total_count)}
+        logger.debug('------------------------res_dict %s'%res_dict)
         resp = simplejson.dumps(res_dict)
 
         return HttpResponse(resp)
@@ -863,21 +866,45 @@ def get_status(request):
     Called every 10 seconds by the GUI for refreshing information on pending items
     """
     try:
-        items = simplejson.loads(request.POST.get('items'))
-        items = [int(i) for i in items]
-        items = Item.objects.filter(pk__in = items)
-        #logger.debug('######## items: %s' % items)
-        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
-    
-        user = request.user
-    
-        workspace = request.session.get('workspace', None)
-#        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
-           
-#        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-        resp_dict = {}
+        workspace = request.session.get('workspace')
+        
+        items_in_progress = request.POST.getlist('items')
+        resp = {'items':[]}
+        for item in items_in_progress:
+            try:
+                process_target = ProcessTarget.objects.get(target_id = item, process__workspace = workspace)
+                if process_target.completed:
+                    status = 'completed'
+                elif process_target.failed > 0:
+                    status = 'failed'
+                else:
+                    status = 'in_progress'
+                    
+            except ProcessTarget.DoesNotExist:
+                logger.debug('process target not found for item %s'%item)
+                status = 'failed'
+            
+            resp['items'].append({
+              'pk': item,
+              'completed': True                    
+              }) 
+                
+                
        
-        resp = simplejson.dumps(resp_dict)
+       
+#        items = Item.objects.filter(pk__in = items)
+#        #logger.debug('######## items: %s' % items)
+#        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
+#    
+#        user = request.user
+#    
+#        
+##        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
+#           
+##        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
+#        resp_dict = {}
+       
+        resp = simplejson.dumps(resp)
         return HttpResponse(resp)
     except Exception,ex:
         logger.exception(ex)
