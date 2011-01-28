@@ -62,9 +62,18 @@ function upload_dialog(){
             	text: 'Upload',
             	icon:'/files/images/icons/arrow-up.gif',
             	handler: function(){
+            		var files_store = Ext.getCmp('files_list').getStore();
+            		var files = files_store.query('status', 'to_upload').items;
+            		if (files.length == 0)
+            			return;
+            		files_store.filterBy(function(r){
+            			return (r.data.status == 'to_upload')
+            		});
             		
             		var session_id = user + '_' + new Date().getTime();
-            		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
+            		
+            		
+            		
             		var files_length = files.length;
             		var file;
             		var params = {
@@ -74,8 +83,24 @@ function upload_dialog(){
             		};            		
             		
             		function upload_file(i, files, session_id, params){
-	            		if (i >= files.length)
+	            		if (i >= files.length){
+	            			var tab = Ext.getCmp('media_tabs').getActiveTab();
+			                var view = tab.getComponent(0);
+			                var selecteds = view.getSelectedRecords();
+			                var store = view.getStore();
+			                store.reload({
+			                    scope: view,
+			                    callback:function(){
+			                        var ids = [];
+			                        for(i = 0; i<selecteds.length; i++){
+			                            ids.push(selecteds[i].data.pk);
+			                            }
+			                        this.select(ids);
+			                        
+			                        }
+			                    });
 	            			return;
+	            		}
 	            		file = files[i].data.file;
 	        			
 	        			params.counter = i + 1;
