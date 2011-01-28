@@ -76,6 +76,13 @@ class ProcessTarget(models.Model):
     target_id = models.CharField(max_length=512, null=False)           # foreign key to Item
     passed = models.IntegerField(default=0)
     failed = models.IntegerField(default=0)
+    completed = models.BooleanField(default = False)
+    
+    def save(self, *args, **kwargs):
+        if self.pk:
+            if self._completed():
+                self.completed = True
+        super(ProcessTarget, self).save(*args, **kwargs)
 
-    def completed(self):
+    def _completed(self):
         return self.passed == self.process.pipeline.num_actions()
