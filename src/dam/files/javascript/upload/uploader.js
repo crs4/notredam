@@ -4,6 +4,7 @@ function upload_dialog(){
 	var file_counter = 0;
 	
 	var win = new Ext.Window({
+			id: 'upload_win',
             title    : 'Upload',
             closable : true,
             width    : 800,
@@ -11,7 +12,14 @@ function upload_dialog(){
             //plain    : true,
             layout   : 'fit',
             buttonAlign: 'left',
-            //frame: true,
+//			bbar:[{
+//				text: 'Upload More files'
+//				
+//			},
+//			{
+//				text: 'progress monitor'
+//			}
+//			],
             modal: true,
             
             tbar:[
@@ -84,21 +92,35 @@ function upload_dialog(){
             		
             		function upload_file(i, files, session_id, params){
 	            		if (i >= files.length){
-	            			var tab = Ext.getCmp('media_tabs').getActiveTab();
-			                var view = tab.getComponent(0);
-			                var selecteds = view.getSelectedRecords();
-			                var store = view.getStore();
-			                store.reload({
-			                    scope: view,
-			                    callback:function(){
-			                        var ids = [];
-			                        for(i = 0; i<selecteds.length; i++){
-			                            ids.push(selecteds[i].data.pk);
-			                            }
-			                        this.select(ids);
-			                        
-			                        }
-			                    });
+	            			Ext.Ajax.request({
+			                	url: '/upload_session_finished/',
+			                	params: {session: session_id},
+			                	success: function(){
+			                		var tab = Ext.getCmp('media_tabs').getActiveTab();
+					                var view = tab.getComponent(0);
+					                var selecteds = view.getSelectedRecords();
+					                var store = view.getStore();
+					                Ext.getCmp('upload_win').getEl().mask('<p style="font-size:15px; margin-bottom: 50px;">Upload Finished</p><button>Upload more files</button><button>Show monitor</button><button>Close</button>')
+					                store.reload({
+					                    scope: view,
+					                    callback:function(){
+					                        var ids = [];
+					                        for(i = 0; i<selecteds.length; i++){
+					                            ids.push(selecteds[i].data.pk);
+					                            }
+					                        this.select(ids);
+					                        
+					                        }
+					                    });		
+			                	
+			                	}
+			                });
+	            			
+	            			
+	            			
+	            			
+			                    
+			                
 	            			return;
 	            		}
 	            		file = files[i].data.file;
@@ -169,6 +191,7 @@ function upload_dialog(){
             ],
             
             items: new Ext.Panel({
+            	id: 'files_list_container',
             	border: false,
             	items:new Ext.list.ListView({
             	id: 'files_list',

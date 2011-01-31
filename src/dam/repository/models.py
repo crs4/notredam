@@ -24,13 +24,14 @@ from django.contrib.auth.models import User
 from dam.mprocessor.models import ProcessTarget
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS
+from dam.metadata.models import MetadataProperty
 
 import urlparse
 from dam import logger
 from django.utils import simplejson
 import time
 from django.utils.encoding import smart_str
-
+import re
 
 from mediadart.storage import Storage
 
@@ -350,15 +351,64 @@ class Item(AbstractItem):
             
         return url, url_ready
 
+    def _replace_groups(self, group, default_language):
+        namespace = group.group('namespace')
+        field = group.group('field')
+        try:
+            schema = MetadataProperty.objects.get(namespace__prefix=namespace, field_name=field)
+            values = self.get_metadata_values(schema)
+            if isinstance(values, list):
+                value = values[0]
+            elif isinstance(values, dict):
+                value = values.get(default_language, '')
+            else:
+                value = values
+            if not value:
+                value = ''
+    
+            return value
+        except:
+            raise
+            return ''
+    
+
+    def _get_caption(self, template_string, language):
+        caption = ''
+        try:
+            pattern = re.compile('%(?P<namespace>\w+):(?P<field>\w+)%')
+            groups = re.finditer(pattern, template_string)
+            values_dict = {}
+            for g in groups:
+                values_dict[g.group(0)] = self._replace_groups(g, language)
+    
+            caption = template_string
+    
+            for schema in values_dict.keys():
+                caption = caption.replace(schema, values_dict[schema])
+    
+            if not len(caption):
+                #caption = str(self.get_file_name())
+                caption = unicode(self.get_file_name())
+        except Exception, ex:
+            logger.exception(ex)
+    
+        return caption
+
         
-    def get_info(self, workspace):        
+    def get_info(self, workspace, caption = None, default_language = None):        
+         
+        if caption and default_language: 
+           caption = self._get_caption(caption, default_language)
+        else:
+            caption = ''
+
                     #           item = Item.objects.get(pk=i)            
         thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)                
-        my_caption = 'test'
+       
         process_target = ProcessTarget.objects.get(target_id = str(self.pk), process__workspace = workspace)
         status = process_target.get_status()
         info = {
-            'name':my_caption,
+            'name': caption,
             'size':self.get_file_size(), 
             'pk': smart_str(self.pk), 
             'thumb': thumb_ready,

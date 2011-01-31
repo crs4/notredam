@@ -586,7 +586,7 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
 #    return thumb_url, thumb_ready
 
 @login_required
-def load_items(request, view_type=None, unlimited=False, ):
+def load_items(request, view_type=None, unlimited=False):
     from datetime import datetime
     try:
         user = User.objects.get(pk=request.session['_auth_user_id'])
@@ -634,8 +634,12 @@ def load_items(request, view_type=None, unlimited=False, ):
         basket_items = user_basket.items.all().values_list('pk', flat=True)
         
         items_info = []
+        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+        default_language = get_metadata_default_language(user, workspace)    
+        
         for item in items:
-            items_info.append(item.get_info(workspace))
+            items_info.append(item.get_info(workspace, thumb_caption, default_language))
         
         
 #        for item in items:
@@ -684,8 +688,7 @@ def load_items(request, view_type=None, unlimited=False, ):
 #                
 #            item_dict.append(item_info)
         
-        res_dict = {"items": items_info, "totalCount": str(total_count)}
-        logger.debug('------------------------res_dict %s'%res_dict)
+        res_dict = {"items": items_info, "totalCount": str(total_count)}       
         resp = simplejson.dumps(res_dict)
 
         return HttpResponse(resp)
@@ -734,131 +737,6 @@ def workspace(request, workspace_id = None):
     logger.info('workspace %s'%workspace)
     return render_to_response('workspace_gui.html', RequestContext(request,{'ws_id':workspace.pk,  'ws_name': workspace.get_name(user),  'ws_description': workspace.description, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
 
-
-
-
-def _replace_groups(group, item, default_language):
-    namespace = group.group('namespace')
-    field = group.group('field')
-    try:
-        schema = MetadataProperty.objects.get(namespace__prefix=namespace, field_name=field)
-        values = item.get_metadata_values(schema)
-        if isinstance(values, list):
-            value = values[0]
-        elif isinstance(values, dict):
-            value = values.get(default_language, '')
-        else:
-            value = values
-        if not value:
-            value = ''
-
-        return value
-    except:
-        raise
-        return ''
-
-def _get_thumb_caption(item, template_string, language):
-    caption = 'no_valid_caption_available'
-    try:
-        pattern = re.compile('%(?P<namespace>\w+):(?P<field>\w+)%')
-        groups = re.finditer(pattern, template_string)
-        values_dict = {}
-        for g in groups:
-            values_dict[g.group(0)] = _replace_groups(g, item, language)
-
-        caption = template_string
-
-        for schema in values_dict.keys():
-            caption = caption.replace(schema, values_dict[schema])
-
-        if not len(caption):
-            #caption = str(item.get_file_name())
-            caption = unicode(item.get_file_name())
-    except Exception, ex:
-        logger.debug('ERROR while getting thumb caption: %s ' % ex)
-
-    return caption
-    
-def _get_items_info(user, workspace, items):
-        
-        items_id = [i.pk for i in items]
-        
-        user_basket = Basket.get_basket(user, workspace)
-
-        basket_items = user_basket.items.all().values_list('pk', flat=True)
-        
-         
-        tasks_pending = None
-        #tasks_done = ws_tasks.filter(state='done')
-        tasks_failed = None
-    
-        #items_done = tasks_done.values_list('component__item', flat=True).distinct()
-        items_pending = []
-        items_failed = []
-        
-        items_done = []
-#        all_items = set(items_done + list(items_pending))
-        
-        total_pending = 0
-        total_failed = 0
-        
-        update_items = []
-        now = time.time()
-        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
-        default_language = get_metadata_default_language(user, workspace)    
-       
-        
-        
-        for item in items:
-            try:
-                #           item = Item.objects.get(pk=i)            
-                thumb_url, thumb_ready = _get_thumb_url(item, workspace)                
-                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-                
-                item_in_basket = 0
-
-                if item.pk in basket_items:
-                    item_in_basket = 1
-                
-                geotagged = 0
-                if GeoInfo.objects.filter(item=item).count() > 0:
-                    geotagged = 1
-                
-                preview_available = True
-                if item.type.name == 'audio':
-                    inprogress = int(not (preview_available == 0))
-                else:
-                    inprogress = int(not thumb_ready)
-                tmp = {
-                    'name':my_caption,
-                    'size':item.get_file_size(), 
-                    'pk': smart_str(item.pk), 
-                    'thumb': thumb_ready,
-                    'inprogress': inprogress,
-                    'item_in_basket': item_in_basket,
-                    'geotagged': geotagged,
-                    'url':smart_str(thumb_url), 
-                    'type': smart_str(item.type.name),
-                    'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
-                    'preview_available': int(preview_available ==  0)
-                    }
-                if item.pk in items_pending:
-                    tmp['inprogress'] = 1
-            
-                states = item.stateitemassociation_set.all()
-                if states.count():
-                    state_association = states[0]
-                
-                    tmp['state'] = state_association.state.pk
-            
-                update_items.append(tmp)
-            except Exception, ex:
-                logger.debug('ERROR while getting file info: %s ' % ex)
-                logger.exception(ex)
-                continue
-        return (update_items, total_pending, total_failed)
-    
 @login_required
 def get_status(request):
     """
