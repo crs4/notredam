@@ -12,6 +12,24 @@ function upload_dialog(){
             //plain    : true,
             layout   : 'fit',
             buttonAlign: 'left',
+            _upload_more: function(){
+    			Ext.getCmp('files_list').getStore().removeAll();
+    			
+    			
+    		},
+    		_show_monitor: function (){
+    			this._close_upload();
+    			show_monitor();
+    			
+    			
+    		}, 
+            		
+    		_close_upload: function (){    			
+    			this.close();
+    			
+    		},
+            
+            
 //			bbar:[{
 //				text: 'Upload More files'
 //				
@@ -90,6 +108,8 @@ function upload_dialog(){
             			total: files_length 
             		};            		
             		
+            		
+            		
             		function upload_file(i, files, session_id, params){
 	            		if (i >= files.length){
 	            			Ext.Ajax.request({
@@ -100,7 +120,54 @@ function upload_dialog(){
 					                var view = tab.getComponent(0);
 					                var selecteds = view.getSelectedRecords();
 					                var store = view.getStore();
-					                Ext.getCmp('upload_win').getEl().mask('<p style="font-size:15px; margin-bottom: 50px;">Upload Finished</p><button>Upload more files</button><button>Show monitor</button><button>Close</button>')
+//					                win.getEl().mask('<p style="font-size:15px; margin-bottom: 50px;">Upload Finished</p><button type="button" onclick="function(){console.log(\'aaaaaaaa\')};">Upload more files</button><button>Show monitor</button><button>Close</button>')
+					                var uploads_failed = Ext.getCmp('files_list').getStore().query('status', 'failed').items.length;
+					                var uploads_success = Ext.getCmp('files_list').getStore().query('status', 'ok').items.length;
+					                var buttons = []
+					                
+					                if (uploads_failed > 0) 
+					                	buttons.push({
+							            	text: 'Retry failed upload',							            	
+							            	handler: function(){							            		
+							            	}							            
+							            });
+							        buttons.push({
+							            	text: 'Upload more files',
+							            	handler: function(){
+							            		Ext.getCmp('files_list').getStore().removeAll();
+							            		Ext.getCmp('upload_finished').close();
+							            	}							            
+							            });
+							      	buttons.push({
+								            text: 'Show monitor',
+								            handler: function(){
+								            	Ext.getCmp('upload_finished').close();
+								            	win.close();
+								            	show_monitor();
+								            }
+								          });
+							        buttons.push({
+							            text: 'Close',
+							            handler: function(){
+							            	Ext.getCmp('upload_finished').close();
+							            	win.close();
+							            }
+						            });
+								          
+					                var upload_finished = new Ext.Window({
+										id: 'upload_finished',
+							            title    : 'Upload Finished',
+							            closable : true,
+							            width    : 400,
+							            height   : 200,
+							            buttonAlign: 'center',
+							            modal: true,
+							            html: '<p>successfull uploads: ' + uploads_success + '</p><p>failed uploads: ' + uploads_failed +'</p>',
+							            buttons: buttons
+							       	});
+							        upload_finished.show();
+							       
+							        
 					                store.reload({
 					                    scope: view,
 					                    callback:function(){
