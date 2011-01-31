@@ -869,29 +869,27 @@ def get_status(request):
         workspace = request.session.get('workspace')
         
         items_in_progress = request.POST.getlist('items')
+        logger.debug('items_in_progress %s'%items_in_progress)
         resp = {'items':[]}
-        for item in items_in_progress:
+        for item_id in items_in_progress:
             try:
-                process_target = ProcessTarget.objects.get(target_id = item, process__workspace = workspace)
-                if process_target.completed:
-                    status = 'completed'
-                elif process_target.failed > 0:
-                    status = 'failed'
-                else:
-                    status = 'in_progress'
-                    
+#                process_target = ProcessTarget.objects.get(target_id = item, process__workspace = workspace)
+                
+#                
+#                if process_target.completed:
+#                    status = 'completed'
+#                elif process_target.failed > 0:
+#                    status = 'failed'
+#                else:
+#                    status = 'in_progress'
+        
+                item = Item.objects.get(pk = int(item_id)) 
+                resp['items'].append(item.get_info(workspace))
+                
             except ProcessTarget.DoesNotExist:
                 logger.debug('process target not found for item %s'%item)
-                status = 'failed'
-            
-            resp['items'].append({
-              'pk': item,
-              'completed': True                    
-              }) 
-                
-                
-       
-       
+                continue
+
 #        items = Item.objects.filter(pk__in = items)
 #        #logger.debug('######## items: %s' % items)
 #        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))

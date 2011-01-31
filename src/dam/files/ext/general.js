@@ -872,7 +872,7 @@ function createTemplate(panel_id, media_type){
 //			audio_tpl_base += '<tpl if="preview_available == 1">';
 				audio_tpl_base += '<div class="thumb  " >';
 //			audio_tpl_base += '</tpl>';	
-			audio_tpl_base += '<tpl if="inprogress === 1"><span class="inprogress"></span></tpl>';
+			audio_tpl_base += '<tpl if="status == \'in_progress\'"><span class="inprogress"></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>';
 			audio_tpl_base += '</div>';
@@ -896,7 +896,7 @@ function createTemplate(panel_id, media_type){
 					if (media_type.length > 1)
 						tpl_str += '<span class="{type}_icon media_icon"></span>'; 
 			
-					tpl_str += '<tpl if="inprogress"><span class="inprogress"></span></tpl>';
+					tpl_str += '<tpl if="status == \'in_progress\'"><span class="inprogress"></span></tpl>';
 					tpl_str += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 					tpl_str += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>'; 
 					tpl_str += '<div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div>';

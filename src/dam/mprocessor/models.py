@@ -86,3 +86,14 @@ class ProcessTarget(models.Model):
 
     def _completed(self):
         return self.passed == self.process.pipeline.num_actions()
+    
+    def get_status(self):
+        if self.completed:
+            return 'completed'
+        elif self.failed >0:
+            return 'failed'
+        else:
+            return 'in_progress'
+            
+        
+    
