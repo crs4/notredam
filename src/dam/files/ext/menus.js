@@ -1175,8 +1175,9 @@ Ext.onReady(function(){
         });
         
     });
-
-    ws_state_store.on('load', function(){
+	
+    ws_store.on('load', function(){
+    	
         ws_permissions_store.load();
     
         states_menu.removeAll();

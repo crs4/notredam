@@ -485,9 +485,9 @@ var showDetails = function(view){
         var add_item = ws_permissions_store.find('name', 'add_item') > -1;
         var edit_collection = ws_permissions_store.find('name', 'edit_collection') > -1;            
         var remove_item = ws_permissions_store.find('name', 'remove_item') > -1;
-        var set_state = ws_permissions_store.find('name', 'set_state') > -1;
+        var set_state = ws_permissions_store.find('name', 'set_state') > -1;        
+        var run_scripts = ws_permissions_store.find('name', 'run_scripts') > -1;
         
-        run_scripts = ws_permissions_store.find('name', 'run_scripts') > -1;
         if(admin | run_scripts){
             Ext.getCmp('object_menu').menu.items.get('addto').enable();
             Ext.getCmp('object_menu').menu.items.get('runscript').enable();
@@ -1377,7 +1377,9 @@ Ext.onReady(function(){
 //                    }
                 }
             }
-            Ext.Ajax.request({
+            
+            if (items.length > 0)            	
+            	Ext.Ajax.request({
                 url: '/get_status/',
                 params: {items: items},
                 

@@ -21,7 +21,7 @@ from django.db.models import Q
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
-
+from dam.mprocessor.models import ProcessTarget
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS
 
@@ -355,13 +355,14 @@ class Item(AbstractItem):
                     #           item = Item.objects.get(pk=i)            
         thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)                
         my_caption = 'test'
-        inprogress = True
+        process_target = ProcessTarget.objects.get(target_id = str(self.pk), process__workspace = workspace)
+        status = process_target.get_status()
         info = {
             'name':my_caption,
             'size':self.get_file_size(), 
             'pk': smart_str(self.pk), 
             'thumb': thumb_ready,
-            'status': 'in_progress',
+            'status': status,
             'url':smart_str(thumb_url), 
             'type': smart_str(self.type.name),
             'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (self.pk, 'test')),
