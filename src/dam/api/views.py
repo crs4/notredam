@@ -42,7 +42,7 @@ from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, Sma
 from dam.treeview.models import InvalidNode,  WrongWorkspace,  NotMovableNode,  NotEditableNode
 #from dam.variants.models import VariantAssociation,  Variant,  PresetPreferences,  Preset,  SourceVariant, ImagePreferences,  AudioPreferences,  VideoPreferences
 from dam.mprocessor.models import Pipeline 
-from dam.workspace.views import _add_items_to_ws, _search, _get_thumb_url
+from dam.workspace.views import _add_items_to_ws, _search
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type, _save_uploaded_variant
@@ -1106,7 +1106,8 @@ class ItemResource(ModResource):
 #        component_list = Component.objects.filter(item = item, workspace = workspace)
         for variant in variants:
             if variant== 'thumbnail':
-                    url = _get_thumb_url(item, workspace, absolute_url = True)[0]
+                pass
+#                    url = _get_thumb_url(item, workspace, absolute_url = True)[0]
             else:
                 component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)
                 v = component.variant

@@ -40,11 +40,10 @@ class Process(models.Model):
             self.end_date =  datetime.datetime.now()            
         
         super(Process, self).save(*args, **kwargs)
-        
     
-    def create_process(self, user, pipeline):
-        pipeline = Pipeline.objects.get(name=pipeline)
-        return Process.objects.create(pipeline = pipeline, workspace =  self.workspace, launched_by = user)
+#    def create_process(self, user, pipeline):
+#        pipeline = Pipeline.objects.get(name=pipeline)
+#        return Process.objects.create(pipeline = pipeline, workspace =  self.workspace, launched_by = user)
 
     def add_params(self, target_id):
         ProcessTarget.objects.create(process = self, target_id = target_id)

@@ -278,9 +278,9 @@ def upload_resource(request):
         file.write(request.raw_post_data)
         file.close()           
         
-        if file_counter == total:
-            import_dir(tmp_dir, user, workspace, session)
-            os.rmdir(tmp_dir)
+#        if file_counter == total:
+#            import_dir(tmp_dir, user, workspace, session)
+#            os.rmdir(tmp_dir)
         
         resp = simplejson.dumps({'success': True})
         
@@ -435,3 +435,21 @@ def generate_tasks(component, workspace, upload_job_id = None, force_generation 
     #Action.objects.filter(component=component).delete()
 
     _generate_tasks(component, workspace, force_generation,  check_for_existing, embed_xmp)
+
+
+def upload_session_finished(request):
+    session = request.POST['session']
+    workspace = request.session.get('workspace')
+    user = User.objects.get(pk = request.session['_auth_user_id'])
+    
+    tmp_dir = '/tmp/'+ session
+    logger.debug('tmp_dir %s'%tmp_dir)
+    
+    if os.path.exists(tmp_dir):
+        import_dir(tmp_dir, user, workspace, session)
+        os.rmdir(tmp_dir)
+        return HttpResponse(simplejson.dumps({'success': True}))
+    else:
+        return HttpResponse(simplejson.dumps({'success': False}))
+    
+        
