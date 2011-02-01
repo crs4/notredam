@@ -98,11 +98,13 @@ def inspect():
         } 
 
 def run(item_id, workspace, source_variant, output_variant, output_format, actions, height = None, width = None, ratio = None, pos_x_percent = None, pos_y_percent = None, wm_id = None):
-    return Adapter().execute(item_id, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id)
+    deferred = defer.Deferred()
+    adapter = Adapter(deferred)
+    reactor.callLater(0, adapter.execute, item_id, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id)
+    return deferred
 
 class Adapter:
-
-    def __init__(self):    
+    def __init__(self, deferred):    
         self.deferred = defer.Deferred()
     
     def handle_result(self, result, component):
