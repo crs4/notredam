@@ -1003,26 +1003,37 @@ def download_renditions(request):
 def script_monitor(request):
     try:
         workspace = request.session['workspace']
+        do_not_delete = request.POST.get('do_not__delete_old_scripts')
+        
+        
         processes = workspace.get_active_processes()
         
         processes_info = []
         for process in processes:
             
-            if process.is_completed():
+            if do_not_delete and process.is_completed():
                 status = 'completed'
                 process.delete()
             else:
                 status = 'in progress'
+            
+            items_completed =  process.get_num_target_completed()
+            items_failed =  process.get_num_target_failed()
+            total_items = process.processtarget_set.all().count()
+            progress =  (items_failed + items_completed)/float(total_items)*100
+              
             processes_info.append({
+                'id': process.pk,
                  'name':process.pipeline.name,
                  'status': status,                 
-                 'total_items':process.processtarget_set.all().count(),
-                 'items_completed': process.get_num_target_completed(),
+                 'total_items':total_items,
+                 'items_completed': items_completed,
+                 'progress':progress,
                  'type': process.pipeline.type,
                  'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
 #                 'end_date': process.end_date.time(),
                  'launched_by': process.launched_by.username,
-                 'items_failed': process.get_num_target_failed()
+                 'items_failed': items_failed
                  })
              
         return HttpResponse(simplejson.dumps({
