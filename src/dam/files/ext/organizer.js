@@ -1339,6 +1339,15 @@ Ext.onReady(function(){
 
     var task = {
         run: function(){
+        	
+        	
+        	var win_monitor = Ext.WindowMgr.get('script_monitor'); 
+        	if (win_monitor){
+        		win_monitor.update_progress();	
+        	
+        	}
+        	
+//        	
             var tab = Ext.getCmp('media_tabs').getActiveTab();
             var items = [];
             var reload_details = false;

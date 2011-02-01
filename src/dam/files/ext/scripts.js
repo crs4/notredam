@@ -2089,16 +2089,54 @@ function show_monitor(){
 			width: 800,
 			layout: 'fit',
 			collapsible: true,
+			update_progress: function(){
+				var store = Ext.getCmp('script_monitor_list').getStore();
+				if (store.query('status', 'in_progress').items.length > 0)
+					Ext.Ajax.request({
+	        			url: store.url,
+	        			params:{
+	        				do_not__delete_old_scripts: true
+	        			},
+	        			success: function(response){
+	        				 var resp = Ext.decode(response.responseText);
+	        				 var record;
+	        				 Ext.each(resp.scripts, function(script){
+	        				 	record = store.getById(script.id);
+	        				 	record.set('status', script.status);
+	        				 	record.set('items_completed', script.items_completed);
+	        				 	record.set('items_failed', script.items_failed);
+	        				 	record.commit();
+	        				 	
+	        				 
+	        				 });
+	        				 
+	        				
+	        			}
+	        		});
+			
+			},
+			
 			items:[
-				new Ext.Panel({
-					items: new Ext.list.ListView({    					
-					    store: new Ext.data.JsonStore({
-					    	url: '/script_monitor/',
-					    	autoLoad: true,
+				
+			
+				new Ext.grid.GridPanel({
+					autoScroll: true,
+					id: 'script_monitor_list',
+					store: new Ext.data.JsonStore({
+					    	url: '/script_monitor/',					    	
+					    	listeners: {
+					    		load: function(store, records){
+					    			
+					    			
+					    		
+					    		}
+					    	},
 					    	fields:[
+					    		'id',
 					    		'name',
 					    		'time_elapsed',
 					    		'status',
+					    		'progress',
 					    		'type',
 					    		'total_items',
 					    		'items_completed',
@@ -2108,12 +2146,14 @@ function show_monitor(){
 					    		'launched_by'
 					    	],
 					    	root: 'scripts'
-					    }),											    
-					    emptyText: 'No script to display',
-//											    frame: true,
+					    }),		
+					    viewConfig: {
+    						forceFit: true
+    					},
 					    columns: [{
 					        header: 'Name',											       
-					        dataIndex: 'name'
+					        dataIndex: 'name',
+					        width: 250
 					    },
 					    
 					    {
@@ -2122,60 +2162,109 @@ function show_monitor(){
 					        
 					    },
 					    
-					    {
-					        header: 'Status',
-					        dataIndex: 'status'											        
-					    },
-					    
-					    {
-					        header: 'Launched By',											        
-					        dataIndex: 'launched_by'												        
-					    },
+//					    {
+//					        header: 'Launched By',											        
+//					        dataIndex: 'launched_by'												        
+//					    },
 					    {
 					        header: 'Start Date',											        
 					        dataIndex: 'start_date',
 					        type: 'date'
 					        
 					    },
-					    {
-					        header: 'End Date',											        
-					        dataIndex: 'end_date',
-					        type: 'date'
+					    
+					    
+					    new Ext.ux.grid.ProgressColumn({
+						    header : "Progress",
+						    dataIndex : 'progress',
+						    width : 120,
+						    renderer : function(v, p, record) {
+							    var style = '';
+							    var textClass = (v < 55) ? 'x-progress-text-back' : 'x-progress-text-front' + (Ext.isIE6 ? '-ie6' : '');
+							
+							    //ugly hack to deal with IE6 issue
+							    var failures;
+							    if (record.data.items_failed > 0)
+							    	failures = String.format('({0} items failed)', record.data.items_failed);
+							    else
+							    	failures = '';
+							    var text = String.format('</div><div class="x-progress-text {0}" style="width:100%;" id="{1}">{2}</div></div>',
+							      textClass, Ext.id(), v + this.textPst + failures
+							    );
+							    text = (v<96) ? text.substring(0, text.length - 6) : text.substr(6);
+							
+							    if (this.colored == true) {
+							      if (v <= 100 && v > 66)
+							        style = '-green';
+							      if (v < 67 && v > 33)
+							        style = '-orange';
+							      if (v < 34)
+							        style = '-red';
+							    }
+							
+							    p.css += ' x-grid3-progresscol';
+							    return String.format(
+							      '<div class="x-progress-wrap"><div class="x-progress-inner"><div class="x-progress-bar{0}" style="width:{1}%;">{2}</div>' +
+							      '</div>', style, v, text
+							    );
+							  }
+//						    textPst : '%', // string added to the end of the cell value (defaults to '%')
+//						    actionEvent: 'click', // click event (defaults to 'dblclick')
+//						    colored : true, // True for pretty colors, false for just blue (defaults to false)
+//						    editor : new Ext.form.TextField() // Define an editor if you want to edit
+						  })
+//					    {
+//					        header: 'Status',
+//					        dataIndex: 'progress',
+//					        width: 250,
+//					        renderer: function(value, metadata, r){
+//					        	( function(){var pr, pr_id = 'progress_' + r.id;
+//					        	if (!Ext.getCmp(pr_id)){
+//									pr = new Ext.ProgressBar({
+//								        text: r.data.items_completed + '/' + r.data.total_items + ' items',
+//								        id: pr_id,
+//								        renderTo:'process_' + r.id
+//								    });					        	}
+//					        	else
+//					        		pr = Ext.getCmp(pr_id);
+//					        
+//					        	pr.updateProgress(r.data.items_completed/r.data.total_items);}).defer(50);
+//					        	return '<div id="process_' + r.id + '"  class="script_progress"></div>';
+//					        }
 					        
-					    },
+					        
+//					        tpl: '<div id="process_{id}" class="script_progress"></div>' +
+//					        		'<script>' + 'alert("looooool")' + 
+//					        		'</script>'
+//					    }
+
 					   
-					    {
-					        header: 'Items Failed',											        
-					        dataIndex: 'items_failed',
-					        tpl: '<a href="javascript:void();">{items_failed}</a>'
-					    },
-					    {
-					        header: 'Items Completed',											        
-					        dataIndex: 'items_completed',
-					        tpl: '<a href="javascript:void();">{items_completed}</a>'
-					        
-					    },
-					    {
-					        header: 'Total Items',											        
-					        dataIndex: 'total_items',
-					        tpl: '<a href="javascript:void();">{total_items}</a>'
-					    }
-					    /*,
-					    {
-					        header: 'Time Elapsed',											        
-					        dataIndex: 'time_elapsed'
-					        
-					    },
-					    
-					    
-					    */
 					    ]
-					})
+				
 				})
 			]
 			
+			
 		
 		});
+		
 		win.show();
+		Ext.getCmp('script_monitor_list').getStore().load({
+//			callback: function(records){
+//				var pr;
+//				Ext.each(records, function(r){
+//					
+//					pr = new Ext.ProgressBar({
+//				        text: r.data.items_completed + '/' + r.data.total_items + ' items',
+//				        id:'progress_' + r.id,
+//				        renderTo:'process_' + r.id
+//				    });
+//				    pr.updateProgress(r.data.items_completed/r.data.total_items);
+//				
+//				});	
+//			}
+			
+		});
+		
 		
 };
