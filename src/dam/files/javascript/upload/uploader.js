@@ -4,6 +4,7 @@ function upload_dialog(){
 	var file_counter = 0;
 	
 	var win = new Ext.Window({
+			id: 'upload_win',
             title    : 'Upload',
             closable : true,
             width    : 800,
@@ -11,7 +12,32 @@ function upload_dialog(){
             //plain    : true,
             layout   : 'fit',
             buttonAlign: 'left',
-            //frame: true,
+            _upload_more: function(){
+    			Ext.getCmp('files_list').getStore().removeAll();
+    			
+    			
+    		},
+    		_show_monitor: function (){
+    			this._close_upload();
+    			show_monitor();
+    			
+    			
+    		}, 
+            		
+    		_close_upload: function (){    			
+    			this.close();
+    			
+    		},
+            
+            
+//			bbar:[{
+//				text: 'Upload More files'
+//				
+//			},
+//			{
+//				text: 'progress monitor'
+//			}
+//			],
             modal: true,
             
             tbar:[
@@ -62,33 +88,119 @@ function upload_dialog(){
             	text: 'Upload',
             	icon:'/files/images/icons/arrow-up.gif',
             	handler: function(){
+            		var files_store = Ext.getCmp('files_list').getStore();
+            		var files = files_store.query('status', 'to_upload').items;
+            		if (files.length == 0)
+            			return;
+            		files_store.filterBy(function(r){
+            			return (r.data.status == 'to_upload')
+            		});
             		
             		var session_id = user + '_' + new Date().getTime();
             		
             		
             		
-            		
-            		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
             		var files_length = files.length;
             		var file;
             		var params = {
             			variant:'original',
             			session: session_id,
             			total: files_length 
-            		};
+            		};            		
             		
-            		for(var i = 0; i < files_length; i++){
-            			file = files[i].data.file;
-            			
-            			params.counter = i + 1;
-            			var final_params = Ext.urlEncode(params);
-            			var xhr = new XMLHttpRequest();
-            			xhr.file_id = files[i].data.id;
-            			xhr.onreadystatechange = function(){
-            				
-            				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
-            				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
-				            if (xhr.readyState == 4)
+            		
+            		
+            		function upload_file(i, files, session_id, params){
+	            		if (i >= files.length){
+	            			Ext.Ajax.request({
+			                	url: '/upload_session_finished/',
+			                	params: {session: session_id},
+			                	success: function(){
+			                		var tab = Ext.getCmp('media_tabs').getActiveTab();
+					                var view = tab.getComponent(0);
+					                var selecteds = view.getSelectedRecords();
+					                var store = view.getStore();
+//					                win.getEl().mask('<p style="font-size:15px; margin-bottom: 50px;">Upload Finished</p><button type="button" onclick="function(){console.log(\'aaaaaaaa\')};">Upload more files</button><button>Show monitor</button><button>Close</button>')
+					                var uploads_failed = Ext.getCmp('files_list').getStore().query('status', 'failed').items.length;
+					                var uploads_success = Ext.getCmp('files_list').getStore().query('status', 'ok').items.length;
+					                var buttons = []
+					                
+					                if (uploads_failed > 0) 
+					                	buttons.push({
+							            	text: 'Retry failed upload',							            	
+							            	handler: function(){							            		
+							            	}							            
+							            });
+							        buttons.push({
+							            	text: 'Upload more files',
+							            	handler: function(){
+							            		Ext.getCmp('files_list').getStore().removeAll();
+							            		Ext.getCmp('upload_finished').close();
+							            	}							            
+							            });
+							      	buttons.push({
+								            text: 'Show monitor',
+								            handler: function(){
+								            	Ext.getCmp('upload_finished').close();
+								            	win.close();
+								            	show_monitor();
+								            }
+								          });
+							        buttons.push({
+							            text: 'Close',
+							            handler: function(){
+							            	Ext.getCmp('upload_finished').close();
+							            	win.close();
+							            }
+						            });
+								          
+					                var upload_finished = new Ext.Window({
+										id: 'upload_finished',
+							            title    : 'Upload Finished',
+							            closable : true,
+							            width    : 400,
+							            height   : 200,
+							            buttonAlign: 'center',
+							            modal: true,
+							            html: '<p>successfull uploads: ' + uploads_success + '</p><p>failed uploads: ' + uploads_failed +'</p>',
+							            buttons: buttons
+							       	});
+							        upload_finished.show();
+							       
+							        
+					                store.reload({
+					                    scope: view,
+					                    callback:function(){
+					                        var ids = [];
+					                        for(i = 0; i<selecteds.length; i++){
+					                            ids.push(selecteds[i].data.pk);
+					                            }
+					                        this.select(ids);
+					                        
+					                        }
+					                    });		
+			                	
+			                	}
+			                });
+	            			
+	            			
+	            			
+	            			
+			                    
+			                
+	            			return;
+	            		}
+	            		file = files[i].data.file;
+	        			
+	        			params.counter = i + 1;
+	        			var final_params = Ext.urlEncode(params);
+	        			var xhr = new XMLHttpRequest();
+	        			xhr.file_id = files[i].data.id;
+	        			xhr.onreadystatechange = function(){
+	        				
+	        				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
+	        				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
+				            if (xhr.readyState == 4){
 					        	if (xhr.status == 200){
 					        		console.log('----------------finished upload of ' + this.file_id);
 					        		file_record.set('status', 'ok');
@@ -96,15 +208,17 @@ function upload_dialog(){
 					        	}
 					        	else if(xhr.status == 500){
 					        		file_record.set('status', 'failed');
-				        		file_record.commit();
+				        			file_record.commit();
+					        	}
+					        	upload_file(i+1, files, session_id, params);
 					        }
 					      
 					        	
 					    	
 				        };
-            			
-            			
-            			xhr.open("POST", '/upload_resource/?'+ final_params, false);
+	        			
+	        			
+	        			xhr.open("POST", '/upload_resource/?'+ final_params, true);
 				        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 				        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
 				        xhr.setRequestHeader("Content-Type", "application/octet-stream");
@@ -114,22 +228,11 @@ function upload_dialog(){
 				        file_record.commit();
 				        
 				        xhr.send(file);
-				        if (xhr.status == 200){
-			        		console.log('----------------finished upload of ' + this.file_id);
-			        		file_record.set('status', 'ok');
-			        		file_record.commit();
-			        	}
-			        	else if(xhr.status == 500){
-			        		file_record.set('status', 'failed');
-		        		file_record.commit();
-				        }
-				        
-				        
-				        
-				        
-            		
-            		}
             	
+            		};
+            		
+					upload_file(0, files, session_id, params);
+				    	
             	}
             	
             },
@@ -155,6 +258,7 @@ function upload_dialog(){
             ],
             
             items: new Ext.Panel({
+            	id: 'files_list_container',
             	border: false,
             	items:new Ext.list.ListView({
             	id: 'files_list',

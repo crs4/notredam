@@ -485,9 +485,9 @@ var showDetails = function(view){
         var add_item = ws_permissions_store.find('name', 'add_item') > -1;
         var edit_collection = ws_permissions_store.find('name', 'edit_collection') > -1;            
         var remove_item = ws_permissions_store.find('name', 'remove_item') > -1;
-        var set_state = ws_permissions_store.find('name', 'set_state') > -1;
+        var set_state = ws_permissions_store.find('name', 'set_state') > -1;        
+        var run_scripts = ws_permissions_store.find('name', 'run_scripts') > -1;
         
-        run_scripts = ws_permissions_store.find('name', 'run_scripts') > -1;
         if(admin | run_scripts){
             Ext.getCmp('object_menu').menu.items.get('addto').enable();
             Ext.getCmp('object_menu').menu.items.get('runscript').enable();
@@ -596,8 +596,23 @@ var createStore = function(config) {
         idProperty: 'pk',
 //            autoLoad: true, 
 		fields:[
-                'name', 'url', 'url_preview', 'size', 'pk', 'geotagged', 'inprogress', 'thumb', 'type','inbasket', 'preview_available',
-                {name: 'shortName', mapping: 'name', convert: shortName}, 'state'
+		        'pk', 
+                'name', 
+                'url', 
+                'url_preview', 
+                'size', 
+
+                'geotagged', 
+                'status', 
+                'thumb', 
+                'type',
+                'inbasket', 
+                'preview_available',
+                {name: 'shortName', mapping: 'name', convert: shortName}, 
+                {name: 'inprogress', mapping: 'status', convert: function(status){
+                	return status == 'in_progress'
+                }},
+                'state'
             ],
         listeners:{
     		load: function(){start_audio_player(this.panel_id);}
@@ -1324,6 +1339,15 @@ Ext.onReady(function(){
 
     var task = {
         run: function(){
+        	
+        	
+        	var win_monitor = Ext.WindowMgr.get('script_monitor'); 
+        	if (win_monitor){
+        		win_monitor.update_progress();	
+        	
+        	}
+        	
+//        	
             var tab = Ext.getCmp('media_tabs').getActiveTab();
             var items = [];
             var reload_details = false;
@@ -1332,37 +1356,44 @@ Ext.onReady(function(){
                 var view = tab.getComponent(0);
                 if (view) {
                     var store = view.getStore();
-                    store_variant = Ext.getCmp('variant_summary').getStore();
+                    items_in_progress = store.query('status','in_progress').items;
+                    Ext.each(items_in_progress, function(i){
+                    	items.push(i.data.pk);
+                    });
                   
-                    for (var i = 0; i < store.getCount(); i++) {
-                        var current_item = store.getAt(i);
-                        var item_data = current_item.data;
-                        
-//                        if(item_data.inprogress == 0 && view.getSelectedIndexes().length == 1 && view.getSelectedIndexes()[0] == i)
-//                        	items.push(item_data.pk); //check if selected item changed,since some script has been run 
-                        
-                        if (item_data.inprogress) {
-                            items.push(item_data.pk);                          
-                            
-                            if(i == 0 &&  view.getSelectionCount()  ==  1 && Ext.getCmp('detail_tabs').isVisible() && Ext.getCmp('detail_tabs').getActiveTab().id == 'preview_panel' && store_variant.lastOptions && store_variant.lastOptions.params.items == item_data.pk) {
-                                reload_details = true;
-                            }
-                        }
-                    }
-                    
-                    if(reload_details){
-                        current_item_selected = null;
-                        showDetails(view);
-                        
-                    }
+//                    store_variant = Ext.getCmp('variant_summary').getStore();
+//                  
+//                    for (var i = 0; i < store.getCount(); i++) {
+//                        var current_item = store.getAt(i);
+//                        var item_data = current_item.data;
+//                        
+////                        if(item_data.inprogress == 0 && view.getSelectedIndexes().length == 1 && view.getSelectedIndexes()[0] == i)
+////                        	items.push(item_data.pk); //check if selected item changed,since some script has been run 
+//                        
+//                        if (item_data.inprogress) {
+//                            items.push(item_data.pk);                          
+//                            
+//                            if(i == 0 &&  view.getSelectionCount()  ==  1 && Ext.getCmp('detail_tabs').isVisible() && Ext.getCmp('detail_tabs').getActiveTab().id == 'preview_panel' && store_variant.lastOptions && store_variant.lastOptions.params.items == item_data.pk) {
+//                                reload_details = true;
+//                            }
+//                        }
+//                    }
+//                    
+//                    if(reload_details){
+//                        current_item_selected = null;
+//                        showDetails(view);
+//                        
+//                    }
                 }
             }
-            Ext.Ajax.request({
+            
+            if (items.length > 0)            	
+            	Ext.Ajax.request({
                 url: '/get_status/',
-                params: {items: Ext.encode(items)},
+                params: {items: items},
                 
                 success: function(data){                    
-                    set_status_bar_busy();
+//                    set_status_bar_busy();
                     data = Ext.decode(data.responseText);
                     
                     var update_items = data.items;
@@ -1420,7 +1451,7 @@ Ext.onReady(function(){
                 }
             });
         },
-        interval: 10000 //10 second
+        interval: 3000 //3 second
     };
     var runner = new Ext.util.TaskRunner();
     runner.start(task);

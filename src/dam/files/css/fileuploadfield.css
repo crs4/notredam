@@ -40,7 +40,7 @@
 
 p.upload_to_upload, p.upload_ok, p.upload_inprogress, p.upload_failed, p.upload_aborted {
     margin:0px;
-    padding-bottom:10px
+    padding-bottom:16px
     
 }
 .upload_ok {

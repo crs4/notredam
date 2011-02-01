@@ -5,7 +5,7 @@ setup_environ(settings)
 
 
 
-from dam.scripts.models import *
+from dam.mprocessor.models import *
 from dam.scripts.views import _new_script
 from dam.workspace.models import *
 from dam.eventmanager.models import *
@@ -13,8 +13,8 @@ from dam.variants.models import Variant
 from django.utils import simplejson
 
 
-actions = {'thumbnail_image':
-    {'adapt_image':{ 
+actions = {'thumbnail_image':{
+        'script_name': 'adapt_image', 
         'params':{
             'actions':['resize'],
             'height':100,
@@ -25,10 +25,11 @@ actions = {'thumbnail_image':
             },
          'in': ['fakethumb'],
          'out':['fakethumbout']    
-        }
+        
         
     },
-    'preview_image': {'adapt_image':{ 
+    'preview_image': {
+        'script_name': 'adapt_image', 
         'params':{
             'actions':['resize'],
             'height':300,
@@ -39,21 +40,22 @@ actions = {'thumbnail_image':
             },
          'in': ['fakepreview'],
          'out':['fakepreviewout']    
-        }
+        },
         
-    },
-    'fullscreen_image': {'adapt_image':{ 
+    
+    'fullscreen_image': {
+        'script_name': 'adapt_image', 
         'params':{
             'actions':['resize'],
             'height':800,
             'width': 600,
             'source_variant': 'original',
-            'output_variant': 'preview',
+            'output_variant': 'fullscreen',
             'output_format' : 'jpeg'        
             },
          'in': ['fakefull'],
          'out':['fakefullout']    
-        }
+        
         
     },
     
