@@ -2082,6 +2082,14 @@ function show_monitor(){
 		if (Ext.WindowMgr.get(win_id))
 			return;
 			
+		 var expander = new Ext.ux.grid.RowExpander({
+	        tpl : new Ext.Template(
+	            '<p>Launched By: <b>{launched_by}</b></p>',
+	            '<p>Total Items: <b>{total_items}</b></p>',
+	            '<p>Items Completed: <b>{items_completed}</b></p>',
+	            '<p>Items Failed: <b>{items_failed}</b></p>'
+	        )
+	    });
 		var win = new Ext.Window({
 			id: win_id,
 			title: 'Script Monitor',
@@ -2122,15 +2130,9 @@ function show_monitor(){
 				new Ext.grid.GridPanel({
 					autoScroll: true,
 					id: 'script_monitor_list',
+					plugins: expander,
 					store: new Ext.data.JsonStore({
-					    	url: '/script_monitor/',					    	
-					    	listeners: {
-					    		load: function(store, records){
-					    			
-					    			
-					    		
-					    		}
-					    	},
+					    	url: '/script_monitor/',				    	
 					    	fields:[
 					    		'id',
 					    		'name',
@@ -2150,7 +2152,10 @@ function show_monitor(){
 					    viewConfig: {
     						forceFit: true
     					},
-					    columns: [{
+    					
+					    columns: [
+					    	expander,
+					    {
 					        header: 'Name',											       
 					        dataIndex: 'name',
 					        width: 250
@@ -2213,30 +2218,6 @@ function show_monitor(){
 //						    colored : true, // True for pretty colors, false for just blue (defaults to false)
 //						    editor : new Ext.form.TextField() // Define an editor if you want to edit
 						  })
-//					    {
-//					        header: 'Status',
-//					        dataIndex: 'progress',
-//					        width: 250,
-//					        renderer: function(value, metadata, r){
-//					        	( function(){var pr, pr_id = 'progress_' + r.id;
-//					        	if (!Ext.getCmp(pr_id)){
-//									pr = new Ext.ProgressBar({
-//								        text: r.data.items_completed + '/' + r.data.total_items + ' items',
-//								        id: pr_id,
-//								        renderTo:'process_' + r.id
-//								    });					        	}
-//					        	else
-//					        		pr = Ext.getCmp(pr_id);
-//					        
-//					        	pr.updateProgress(r.data.items_completed/r.data.total_items);}).defer(50);
-//					        	return '<div id="process_' + r.id + '"  class="script_progress"></div>';
-//					        }
-					        
-					        
-//					        tpl: '<div id="process_{id}" class="script_progress"></div>' +
-//					        		'<script>' + 'alert("looooool")' + 
-//					        		'</script>'
-//					    }
 
 					   
 					    ]

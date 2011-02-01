@@ -1,10 +1,9 @@
 /*!
- * Ext JS Library 3.0.0
- * Copyright(c) 2006-2009 Ext JS, LLC
- * licensing@extjs.com
- * http://www.extjs.com/license
+ * Ext JS Library 3.3.1
+ * Copyright(c) 2006-2010 Sencha Inc.
+ * licensing@sencha.com
+ * http://www.sencha.com/license
  */
- 
 Ext.ns('Ext.ux.grid');
 
 /**
@@ -22,23 +21,24 @@ Ext.ux.grid.RowExpander = Ext.extend(Ext.util.Observable, {
      * <tt>true</tt> to toggle selected row(s) between expanded/collapsed when the enter
      * key is pressed (defaults to <tt>true</tt>).
      */
-    expandOnEnter : false,
+    expandOnEnter : true,
     /**
      * @cfg {Boolean} expandOnDblClick
      * <tt>true</tt> to toggle a row between expanded/collapsed when double clicked
      * (defaults to <tt>true</tt>).
      */
-    expandOnDblClick : false,
+    expandOnDblClick : true,
 
     header : '',
     width : 20,
     sortable : false,
     fixed : true,
+    hideable: false,
     menuDisabled : true,
     dataIndex : '',
     id : 'expander',
     lazyRender : true,
-    enableCaching : false,
+    enableCaching : true,
 
     constructor: function(config){
         Ext.apply(this, config);
@@ -97,7 +97,10 @@ Ext.ux.grid.RowExpander = Ext.extend(Ext.util.Observable, {
 
     getRowClass : function(record, rowIndex, p, ds){
         p.cols = p.cols-1;
-        content = this.getBodyContent(record, rowIndex);
+        var content = this.bodyContent[record.id];
+        if(!content && !this.lazyRender){
+            content = this.getBodyContent(record, rowIndex);
+        }
         if(content){
             p.body = content;
         }
@@ -135,10 +138,19 @@ Ext.ux.grid.RowExpander = Ext.extend(Ext.util.Observable, {
     
     // @private    
     onDestroy: function() {
-        this.keyNav.disable();
-        delete this.keyNav;
+        if(this.keyNav){
+            this.keyNav.disable();
+            delete this.keyNav;
+        }
+        /*
+         * A majority of the time, the plugin will be destroyed along with the grid,
+         * which means the mainBody won't be available. On the off chance that the plugin
+         * isn't destroyed with the grid, take care of removing the listener.
+         */
         var mainBody = this.grid.getView().mainBody;
-        mainBody.un('mousedown', this.onMouseDown, this);
+        if(mainBody){
+            mainBody.un('mousedown', this.onMouseDown, this);
+        }
     },
     // @private
     onRowDblClick: function(grid, rowIdx, e) {
@@ -156,62 +168,14 @@ Ext.ux.grid.RowExpander = Ext.extend(Ext.util.Observable, {
     },
 
     getBodyContent : function(record, index){
-		var metadata_def = metadata_structures[record.get('type')];
-		var tmp = [];
-		var captions = {};
-		var content = undefined;
-		if (metadata_def) {
-			for (var x=0; x < metadata_def.length; x++) {
-				captions[metadata_def[x].id] = metadata_def[x].name;
-			}
-
-			if (this.grid.customEditors[record.get('id')]) {
-		        var cell_store = this.grid.customEditors[record.get('id')].field.field_value;			
-		        for (var x = 0; x < cell_store.getCount(); x++) {
-		        	var r = cell_store.getAt(x);
-
-					var tmp_struct = [];
-
-					for (var f=0; f < r.fields.keys.length; f++) {
-						var caption = captions[r.fields.keys[f]];
-						var value = r.get(r.fields.keys[f]);
-                        if (Ext.isDate(value)) {
-                            value = value.dateFormat('m/d/Y');
-                        }
-						tmp_struct.push({caption: caption, value: value});	
-					}
-
-					tmp.push(tmp_struct);
-				}
-			}
-			else {
-				var cell_store = record.get('value');
-		        for (var x = 0; x < cell_store.length; x++) {
-		        	var r = cell_store[x];
-
-					var tmp_struct = [];
-
-					for (var f in r) {
-						var caption = captions[f];
-						var value = r[f];
-                        if (Ext.isDate(value)) {
-                            value = value.dateFormat('m/d/Y');
-                        }
-
-						tmp_struct.push({caption: caption, value: value});	
-					}
-
-					tmp.push(tmp_struct);
-				}
-
-			}
-
-	        content = this.tpl.apply(tmp);
-
-	//        content = this.tpl.apply([{'caption': 'boh', 'value': 'gne'}, {'caption': 'proviamo', 'value': 'boh'}]);
-			
-		}
-
+        if(!this.enableCaching){
+            return this.tpl.apply(record.data);
+        }
+        var content = this.bodyContent[record.id];
+        if(!content){
+            content = this.tpl.apply(record.data);
+            this.bodyContent[record.id] = content;
+        }
         return content;
     },
 
@@ -222,18 +186,8 @@ Ext.ux.grid.RowExpander = Ext.extend(Ext.util.Observable, {
     },
 
     renderer : function(v, p, record){
-		if (record.get('type') in metadata_structures) {
-			if (record.get('value') == '') {
-				return '';
-			}
-			else {
-		        p.cellAttr = 'rowspan="2"';
-		        return '<div class="x-grid3-row-expander">&#160;</div>';
-			}
-		}
-		else {
-			return '';
-		}
+        p.cellAttr = 'rowspan="2"';
+        return '<div class="x-grid3-row-expander">&#160;</div>';
     },
 
     beforeExpand : function(record, body, rowIndex){
