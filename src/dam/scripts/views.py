@@ -26,6 +26,7 @@ from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
 
+
 def _get_scripts_info(script):
         
     return {'id': script.pk, 
@@ -58,8 +59,7 @@ def get_scripts(request):
 def get_script_actions(request):
     script_id = request.POST['script']
     media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
-    script = Script.objects.get(pk = script_id)
-    tmp = simplejson.loads(script.pipeline)
+    
     
     resp = {'actions': tmp['media_type'], 'already_run': script.component_set.all().count() > 0}
     return HttpResponse(simplejson.dumps(resp))
@@ -68,16 +68,41 @@ def get_script_actions(request):
 
 @login_required
 def get_actions(request):  
-    media_type = request.POST.get('media_type') # if no media_type all actions will be returned
-    workspace = request.session.get('workspace')
+    import os, settings
+    from mediadart.config import Configurator
     
-    try:  
-        actions = {'actions':inspect_actions()}       
-        logger.debug('actions %s'%actions)
+    
+    c = Configurator()
+    actions_modules =  c.get("MPROCESSOR", "plugins")
+    src_dir = '/'.join(settings.ROOT_PATH.split('/')[:-1]) #removing dam dir, it ends with src dir
+    actions_dir = actions_modules.replace('.', '/')
+    all_files = os.listdir(os.path.join(src_dir, actions_dir))
+    
+    resp = {}
+    modules_to_load = []
+    try:
+        for file in all_files:
+            if file.endswith('.py'):
+                modules_to_load.append(file.split('.py')[0])
+                
+        top_module = __import__(actions_modules, fromlist=modules_to_load)
+        logger.debug('modules_to_load %s'%modules_to_load)
+        for module in modules_to_load:
+            logger.debug(module)
+            
+            module_loaded = getattr(top_module, module, None)
+            if module_loaded:
+                logger.debug(module_loaded)
+                logger.debug('aaaa %s'%hasattr(module_loaded, 'inspect'))
+                
+                if hasattr(module_loaded, 'inspect'):
+                    resp[module] = module_loaded.inspect()
+                    media_type = request.POST.get('media_type') # if no media_type all actions will be returned
+        
     except Exception, ex:
         logger.exception(ex)
         raise ex        
-    return HttpResponse(simplejson.dumps(actions))
+    return HttpResponse(simplejson.dumps(resp))
 
 def _new_script(name = None, description = None, workspace = None, pipeline = None, events = [], script = None,  is_global = False):
     

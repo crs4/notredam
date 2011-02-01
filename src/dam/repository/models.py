@@ -21,14 +21,17 @@ from django.db.models import Q
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
-
+from dam.mprocessor.models import ProcessTarget
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS
+from dam.metadata.models import MetadataProperty
 
 import urlparse
 from dam import logger
 from django.utils import simplejson
 import time
+from django.utils.encoding import smart_str
+import re
 
 from mediadart.storage import Storage
 
@@ -332,6 +335,97 @@ class Item(AbstractItem):
             return self.uploader.username
         except:
             return 'unknown'
+        
+    def get_variant_url(self, variant_name, workspace):
+        url = None
+        url_ready = 0
+    
+        try:
+            variant = workspace.get_variants().distinct().get(media_type =  self.type, name = variant_name)
+            url = self.get_variant(workspace, variant).get_component_url()
+            if url:
+                url_ready = 1
+                
+        except Exception, ex:
+            logger.exception(ex)
+            
+        return url, url_ready
+
+    def _replace_groups(self, group, default_language):
+        namespace = group.group('namespace')
+        field = group.group('field')
+        try:
+            schema = MetadataProperty.objects.get(namespace__prefix=namespace, field_name=field)
+            values = self.get_metadata_values(schema)
+            if isinstance(values, list):
+                value = values[0]
+            elif isinstance(values, dict):
+                value = values.get(default_language, '')
+            else:
+                value = values
+            if not value:
+                value = ''
+    
+            return value
+        except:
+            raise
+            return ''
+    
+
+    def _get_caption(self, template_string, language):
+        caption = ''
+        try:
+            pattern = re.compile('%(?P<namespace>\w+):(?P<field>\w+)%')
+            groups = re.finditer(pattern, template_string)
+            values_dict = {}
+            for g in groups:
+                values_dict[g.group(0)] = self._replace_groups(g, language)
+    
+            caption = template_string
+    
+            for schema in values_dict.keys():
+                caption = caption.replace(schema, values_dict[schema])
+    
+            if not len(caption):
+                #caption = str(self.get_file_name())
+                caption = unicode(self.get_file_name())
+        except Exception, ex:
+            logger.exception(ex)
+    
+        return caption
+
+        
+    def get_info(self, workspace, caption = None, default_language = None):        
+         
+        if caption and default_language: 
+           caption = self._get_caption(caption, default_language)
+        else:
+            caption = ''
+
+                    #           item = Item.objects.get(pk=i)            
+        thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)                
+       
+        process_target = ProcessTarget.objects.get(target_id = str(self.pk), process__workspace = workspace)
+        status = process_target.get_status()
+        info = {
+            'name': caption,
+            'size':self.get_file_size(), 
+            'pk': smart_str(self.pk), 
+            'thumb': thumb_ready,
+            'status': status,
+            'url':smart_str(thumb_url), 
+            'type': smart_str(self.type.name),
+            'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (self.pk, 'test')),
+            'preview_available': False
+            }
+            
+        states = self.stateitemassociation_set.all()
+        if states.count():
+            state_association = states[0]
+        
+            info['state'] = state_association.state.pk
+    
+        return info
                                 
 class Component(AbstractComponent):
 
@@ -356,7 +450,7 @@ class Component(AbstractComponent):
     parameters = models.TextField(null = True,  blank = True)
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False) 
-    #pipeline = models.ForeignKey('scripts.Pipeline', null = True, blank  = True, default = None)   
+    pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
     
     class Meta:
         db_table = 'component'

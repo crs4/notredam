@@ -33,21 +33,21 @@ INPROGRESS= 'in_progress'
 FAILED = 'failed'
 FINISHED = 'finished'
 
-class Pipeline(models.Model):
-    name = models.CharField(max_length= 50)
-    description = models.TextField(blank=True)
-    # upload etc, used to group pipelines that must be run in succession at certain points
-    type = models.CharField(max_length=32, blank=True, default="") 
-    params = models.TextField()
-    workspace = models.ForeignKey('workspace.DAMWorkspace')
-    
-    def num_actions(self):
-        return len(simplejson.loads(self.params))
-        
-        
-    
-    def create_process(self, user):
-        return Process.objects.create(pipeline = self, workspace =  self.workspace, launched_by = user)
+#class Pipeline(models.Model):
+#    name = models.CharField(max_length= 50)
+#    description = models.TextField(blank=True)
+#    # upload etc, used to group pipelines that must be run in succession at certain points
+#    type = models.CharField(max_length=32, blank=True, default="") 
+#    params = models.TextField()
+#    workspace = models.ForeignKey('workspace.DAMWorkspace')
+#    
+#    def num_actions(self):
+#        return len(simplejson.loads(self.params))
+#        
+#        
+#    
+#    def create_process(self, user):
+#        return Process.objects.create(pipeline = self, workspace =  self.workspace, launched_by = user)
     
 #    def run(self,user,items, session):
 #        process = Process.objects.create(pipeline = self, session = session, launched_by = user)

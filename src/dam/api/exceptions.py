@@ -22,7 +22,7 @@ from dam.repository.models import Item
 from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.variants.models import Variant
 from dam.workflow.models import State, WrongItemWorkspace
-from dam.scripts.models import Pipeline
+from dam.mprocessor.models import Pipeline
 from django.db import IntegrityError
 
 
