@@ -60,7 +60,12 @@ function import_variant(variant_id){
 //        {rendition_id:variant.pk, item_id:variant.item_id}
 //    );
 //    up.openUpload();    
-     upload_dialog();
+     upload_dialog({
+     	singleSelect: true,
+     	item: variant.item_id,
+     	variant: variant.pk
+     	
+     });
     
 }
 //
