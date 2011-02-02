@@ -110,6 +110,6 @@ class DAMWorkspace(Workspace):
         return Variant.objects.filter(Q(workspace = self) | Q(workspace__isnull = True,  )).distinct()  
     
     def get_active_processes(self, ):
-        return Process.objects.filter(pipeline__workspace = self)
+        return Process.objects.filter(pipeline__workspace = self).order_by('-start_date')
         
     

@@ -34,6 +34,7 @@ class Process(models.Model):
     start_date = models.DateTimeField(auto_now_add = True)
     end_date = models.DateTimeField(null = True, blank = True)
     launched_by = models.ForeignKey(User)
+    last_show_date = models.DateTimeField(null = True, blank = True)
 
     def save(self, *args, **kwargs):
         if self.is_completed() and not self.end_date:
