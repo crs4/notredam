@@ -560,18 +560,22 @@ def _search(request,  items, workspace = None):
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
 
     user = User.objects.get(pk=request.session['_auth_user_id'])
+    logger.debug('************** searching items for user %s' % user.pk)
 
     only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
+    logger.debug('************** searching only_basket %s' % only_basket)
     
     items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
+    logger.debug('******************8 found %d items' % len(items))
 
     user_basket = Basket.get_basket(user, workspace)
     basket_items = user_basket.items.all().values_list('pk', flat=True)
+    logger.debug('******************8 found %d basket items' % len(basket_items))
 
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-    items = _search(request,  items)
+    #items = _search(request,  items)
 
     total_count = items.count()
 
@@ -599,6 +603,7 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
 
 @login_required
 def load_items(request, view_type=None, unlimited=False):
+    logger.debug('********************88 load_items')
     from datetime import datetime
     try:
         user = request.user

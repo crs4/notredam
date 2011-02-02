@@ -46,11 +46,15 @@ class BatchError(Exception):
     pass
 
 class MProcessor(MQServer):
-    def mq_run(self, process_id):
+    def mq_run(self, process_id, call_mode='non-blocking'):
         log.debug('launching process %s'%process_id)
         process = Process.objects.get(pk=process_id)
         batch = Batch(process)
-        return batch.run()
+        d = batch.run()
+        if call_mode != 'non-blocking':
+            return d
+        else:
+            return 'request in progress'
 
 class Batch:
     def __init__(self, process):
