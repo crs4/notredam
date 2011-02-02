@@ -870,7 +870,7 @@ function createTemplate(panel_id, media_type){
 		
 		
 //			audio_tpl_base += '<tpl if="preview_available == 1">';
-				audio_tpl_base += '<div class="thumb  " >';
+				audio_tpl_base += '<div class="thumb  ">';
 //			audio_tpl_base += '</tpl>';	
 			audio_tpl_base += '<tpl if="status == \'in_progress\'"><span class="inprogress"></span></tpl>';
 			audio_tpl_base += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
@@ -892,7 +892,7 @@ function createTemplate(panel_id, media_type){
 		
 		tpl_str += '<tpl if="type != \'audio\'">';    
 			tpl_str += '<div class="thumb-wrap" id="{pk}">';
-				tpl_str += '<div class="thumb">';
+				tpl_str += '<div class="thumb" ondbclick="javascript:function(){console.log(\'aaaaaa\')}">';
 					if (media_type.length > 1)
 						tpl_str += '<span class="{type}_icon media_icon"></span>'; 
 			
