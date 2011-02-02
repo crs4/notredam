@@ -355,6 +355,7 @@ def _search(request,  items, workspace = None):
             
 #Text query                
         if query:
+            processes =  re.findall('\s*process:(\w+):(\w+)\s*', query,  re.U)
             
             metadata_query = re.findall('\s*(\w+:\w+=\w+[.\w]*)\s*', query,  re.U)
             
@@ -380,7 +381,8 @@ def _search(request,  items, workspace = None):
             
             
             simple_query = re.sub('\s*SmartFolders:"(.+)"\s*', '', simple_query)
-            simple_query = re.sub('\s*inbox:/(\w+[/\w\-]*)/\s*', '', simple_query)
+            simple_query = re.sub('\s*Inbox:/(\w+[/\w\-]*)/\s*', '', simple_query)
+            simple_query = re.sub('\s*process:(\w+):(\w+)\s*', '', simple_query)
             
 #            removing metadata query
             simple_query = re.sub('\s*(\w+:\w+=\w+[.\w]*)\s*', '', simple_query)
@@ -424,7 +426,17 @@ def _search(request,  items, workspace = None):
                     logger.debug(' MetadataProperty.DoesNotExist %s'%metadata_q)
                     queries.append(Item.objects.none())
                 
-                
+            for process in processes:
+                process_id = process[0]
+                type = process[1]
+                logger.debug('process_id %s, type %s'%(process_id, type))
+                if type == 'total':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id))
+                elif type == 'failed':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, failed__gt = 0))
+                elif type == 'completed':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, completed = True))
+                queries.append(q)
                 
             
             for inbox_el in inbox:

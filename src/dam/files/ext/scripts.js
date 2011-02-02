@@ -2077,6 +2077,14 @@ function edit_script(is_new){
 	
 }
 
+function show_items (process_id, type){
+	var query = String.format('process:{0}:{1}',process_id, type)
+	var media_tab = Ext.getCmp('media_tabs').getActiveTab();
+	 media_tab.getSearch().setValue(query);
+	set_query_on_store({query: query});
+
+};
+
 function show_monitor(){
 		var win_id = 'script_monitor';
 		if (Ext.WindowMgr.get(win_id))
@@ -2085,9 +2093,9 @@ function show_monitor(){
 		 var expander = new Ext.ux.grid.RowExpander({
 	        tpl : new Ext.Template(
 	            '<p>Launched By: <b>{launched_by}</b></p>',
-	            '<p>Total Items: <b>{total_items}</b></p>',
-	            '<p>Items Completed: <b>{items_completed}</b></p>',
-	            '<p>Items Failed: <b>{items_failed}</b></p>'
+	            '<p>Total Items: <a href="javascript:show_items(\'{id}\', \'total\')"><b>{total_items}</b></a></p>',
+	            '<p>Items Completed: <a href="javascript:show_items(\'{id}\', \'completed\')"><b>{items_completed}</b></a></p>',
+	            '<p>Items Failed: <a href="javascript:show_items(\'{id}\', \'failed\')"><b>{items_failed}</b></a></p>'
 	        )
 	    });
 		var win = new Ext.Window({
