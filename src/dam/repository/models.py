@@ -404,9 +404,13 @@ class Item(AbstractItem):
         else:
             caption = ''
                         
-        thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)        
-        process_target = ProcessTarget.objects.get(target_id = str(self.pk), process__workspace = workspace)
-        status = process_target.get_status()
+        thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)  
+        try:      
+            process_target = ProcessTarget.objects.get(target_id = str(self.pk), process__workspace = workspace)
+        except ProcessTarget.DoesNotExist:
+            status = 'completed' 'old process, removed'
+        else:
+            status = process_target.get_status()
         
         if GeoInfo.objects.filter(item=self).count() > 0:
             geotagged = 1

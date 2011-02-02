@@ -2166,12 +2166,15 @@ function show_monitor(){
 					    {
 					        header: 'Name',											       
 					        dataIndex: 'name',
-					        width: 250
+					        width: 250,
+					        sortable: true,
+					        menuDisabled: true
 					    },
 					    
 					    {
 					        header: 'Type',											        
-					        dataIndex: 'type'
+					        dataIndex: 'type',
+					        menuDisabled: true
 					        
 					    },
 					    
@@ -2182,7 +2185,9 @@ function show_monitor(){
 					    {
 					        header: 'Start Date',											        
 					        dataIndex: 'start_date',
-					        type: 'date'
+					        type: 'date',
+					        sortable: true,
+					        menuDisabled: true
 					        
 					    },
 					    
@@ -2191,6 +2196,7 @@ function show_monitor(){
 						    header : "Progress",
 						    dataIndex : 'progress',
 						    width : 120,
+					        menuDisabled: true,
 						    renderer : function(v, p, record) {
 							    var style = '';
 							    var textClass = (v < 55) ? 'x-progress-text-back' : 'x-progress-text-front' + (Ext.isIE6 ? '-ie6' : '');

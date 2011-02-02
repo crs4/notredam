@@ -1018,21 +1018,33 @@ def download_renditions(request):
 
 @login_required
 def script_monitor(request):
+    import datetime
+    
     try:
         workspace = request.session['workspace']
         do_not_delete = request.POST.get('do_not__delete_old_scripts')
         
         
         processes = workspace.get_active_processes()
+         
         
         processes_info = []
         for process in processes:
             
-            if do_not_delete and process.is_completed():
-                status = 'completed'
+#            if do_not_delete and process.is_completed():
+#                status = 'completed'
+#                process.delete()
+            if not process.last_show_date:
+                process.last_show_date = datetime.datetime.now()
+                process.save()
+#                status = 'in progress'
+                
+            elif  (datetime.datetime.now() - process.last_show_date).days > 0:
+                logger.debug('(datetime.datetime.now() - process.last_show_date).days %s'%(datetime.datetime.now() - process.last_show_date).days)
                 process.delete()
-            else:
-                status = 'in progress'
+                continue
+#            else:
+#                status = 'in progress'
             
             items_completed =  process.get_num_target_completed()
             items_failed =  process.get_num_target_failed()
@@ -1042,7 +1054,7 @@ def script_monitor(request):
             processes_info.append({
                 'id': process.pk,
                  'name':process.pipeline.name,
-                 'status': status,                 
+#                 'status': status,                 
                  'total_items':total_items,
                  'items_completed': items_completed,
                  'progress':progress,
