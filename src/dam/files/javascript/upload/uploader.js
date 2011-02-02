@@ -1,5 +1,6 @@
 
-function upload_dialog(){
+function upload_dialog(cfg){
+	config = cfg || {singleSelect: false};
 	var uploader;
 	var file_counter = 0;
 	
@@ -52,6 +53,7 @@ function upload_dialog(){
 				        	id: 'files_to_upload',
 				        	buttonOnly: true,
 				        	renderTo: 'upload',
+				        	singleSelect: config.singleSelect,
 				        	
 				        	buttonCfg: {
 				        		icon: '/files/images/icons/fam/add.gif',
