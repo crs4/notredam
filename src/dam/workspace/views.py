@@ -1039,7 +1039,7 @@ def script_monitor(request):
                 process.save()
 #                status = 'in progress'
                 
-            elif  (datetime.datetime.now() - process.last_show_date).days > 0:
+            elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
                 logger.debug('(datetime.datetime.now() - process.last_show_date).days %s'%(datetime.datetime.now() - process.last_show_date).days)
                 process.delete()
                 continue

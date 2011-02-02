@@ -222,6 +222,7 @@ var store_nodes_checked = new Ext.data.JsonStore({
 var current_item_selected;
 
 function showFullscreen(view, index, node, e){
+	console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaa');
     var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
         
     Ext.Ajax.request({
@@ -636,7 +637,11 @@ var createView = function(config) {
         tpl: tpl,
         listeners: {
             selectionchange: {fn:showDetails, buffer:100},
-            dblclick: {fn:showFullscreen, buffer:100},
+//            dblclick: {fn:showFullscreen, buffer:100},
+//            dblclick: function(){
+//            	console.log('sdsfd');
+//            	
+//            },
             render: function(){
     	    	var drag_zone = new ImageDragZone(this, {containerScroll:true,
     	            ddGroup: 'organizerDD'});
@@ -1902,7 +1907,7 @@ var search_box = {
                                                 '<span style="position:absolute; right:10px;">' ,
                                                 '<tpl if="resource_url">',
                                                 	
-                                                    '<tpl if="extension">',
+                                                    '<tpl if="work_in_progress == 0">',
                                                         '<img ext:qtip="View" src="/files/images/search_blue.png" class="variant_button"  onclick="open_variant(\'{variant_name}\',\'{resource_url}\', \'{media_type}\', \'{width}\', \'{height}\')"/>',
                                                     '</tpl>',
                                                 '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'/download_component/{item_id}/{variant_name}\')" class="variant_button"/>',
