@@ -35,6 +35,9 @@ Ext.ux.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
 
     // private
     readOnly: true,
+    
+    singleSelect: false,
+    
 
     /**
      * @hide
@@ -117,7 +120,8 @@ Ext.ux.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
             type: 'file',
             size: 1
         });
-        this.fileInput.set({multiple: ''});
+        if (!this.singleSelect)
+        	this.fileInput.set({multiple: ''});
     },
     
     reset : function(){
