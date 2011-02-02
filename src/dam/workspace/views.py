@@ -36,7 +36,7 @@ from dam.variants.models import Variant
 from dam.upload.views import generate_tasks
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.core.dam_repository.models import Type
-from dam.geo_features.models import GeoInfo
+#from dam.geo_features.models import GeoInfo
 #from dam.mprocessor.models import Task
 from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
@@ -355,6 +355,7 @@ def _search(request,  items, workspace = None):
             
 #Text query                
         if query:
+            processes =  re.findall('\s*process:(\w+):(\w+)\s*', query,  re.U)
             
             metadata_query = re.findall('\s*(\w+:\w+=\w+[.\w]*)\s*', query,  re.U)
             
@@ -380,7 +381,8 @@ def _search(request,  items, workspace = None):
             
             
             simple_query = re.sub('\s*SmartFolders:"(.+)"\s*', '', simple_query)
-            simple_query = re.sub('\s*inbox:/(\w+[/\w\-]*)/\s*', '', simple_query)
+            simple_query = re.sub('\s*Inbox:/(\w+[/\w\-]*)/\s*', '', simple_query)
+            simple_query = re.sub('\s*process:(\w+):(\w+)\s*', '', simple_query)
             
 #            removing metadata query
             simple_query = re.sub('\s*(\w+:\w+=\w+[.\w]*)\s*', '', simple_query)
@@ -424,7 +426,17 @@ def _search(request,  items, workspace = None):
                     logger.debug(' MetadataProperty.DoesNotExist %s'%metadata_q)
                     queries.append(Item.objects.none())
                 
-                
+            for process in processes:
+                process_id = process[0]
+                type = process[1]
+                logger.debug('process_id %s, type %s'%(process_id, type))
+                if type == 'total':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id))
+                elif type == 'failed':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, failed__gt = 0))
+                elif type == 'completed':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, completed = True))
+                queries.append(q)
                 
             
             for inbox_el in inbox:
@@ -594,7 +606,7 @@ def load_items(request, view_type=None, unlimited=False):
     logger.debug('********************88 load_items')
     from datetime import datetime
     try:
-        user = User.objects.get(pk=request.session['_auth_user_id'])
+        user = request.user
         workspace_id = request.POST.get('workspace_id')
 
 #        if  workspace_id:
@@ -635,7 +647,6 @@ def load_items(request, view_type=None, unlimited=False):
         default_language = get_metadata_default_language(user, workspace)
 
         user_basket = Basket.get_basket(user, workspace)
-
         basket_items = user_basket.items.all().values_list('pk', flat=True)
         
         items_info = []
@@ -644,7 +655,13 @@ def load_items(request, view_type=None, unlimited=False):
         default_language = get_metadata_default_language(user, workspace)    
         
         for item in items:
-            items_info.append(item.get_info(workspace, thumb_caption, default_language))
+            tmp = item.get_info(workspace, thumb_caption, default_language)
+            if item.pk in basket_items:
+                tmp['item_in_basket'] = 1
+            else:
+                tmp['item_in_basket'] = 0
+                
+            items_info.append(tmp)
         
         
 #        for item in items:
@@ -750,7 +767,7 @@ def get_status(request):
     """
     try:
         workspace = request.session.get('workspace')
-        
+        user = request.user
         items_in_progress = request.POST.getlist('items')
         logger.debug('items_in_progress %s'%items_in_progress)
         resp = {'items':[]}
@@ -767,7 +784,7 @@ def get_status(request):
 #                    status = 'in_progress'
         
                 item = Item.objects.get(pk = int(item_id)) 
-                resp['items'].append(item.get_info(workspace))
+                resp['items'].append(item.get_info(workspace, user))
                 
             except ProcessTarget.DoesNotExist:
                 logger.debug('process target not found for item %s'%item)
@@ -1006,21 +1023,33 @@ def download_renditions(request):
 
 @login_required
 def script_monitor(request):
+    import datetime
+    
     try:
         workspace = request.session['workspace']
         do_not_delete = request.POST.get('do_not__delete_old_scripts')
         
         
         processes = workspace.get_active_processes()
+         
         
         processes_info = []
         for process in processes:
             
-            if do_not_delete and process.is_completed():
-                status = 'completed'
+#            if do_not_delete and process.is_completed():
+#                status = 'completed'
+#                process.delete()
+            if not process.last_show_date:
+                process.last_show_date = datetime.datetime.now()
+                process.save()
+#                status = 'in progress'
+                
+            elif  (datetime.datetime.now() - process.last_show_date).days > 0:
+                logger.debug('(datetime.datetime.now() - process.last_show_date).days %s'%(datetime.datetime.now() - process.last_show_date).days)
                 process.delete()
-            else:
-                status = 'in progress'
+                continue
+#            else:
+#                status = 'in progress'
             
             items_completed =  process.get_num_target_completed()
             items_failed =  process.get_num_target_failed()
@@ -1030,7 +1059,7 @@ def script_monitor(request):
             processes_info.append({
                 'id': process.pk,
                  'name':process.pipeline.name,
-                 'status': status,                 
+#                 'status': status,                 
                  'total_items':total_items,
                  'items_completed': items_completed,
                  'progress':progress,

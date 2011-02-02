@@ -136,6 +136,7 @@ function upload_dialog(){
 							            	handler: function(){
 							            		Ext.getCmp('files_list').getStore().removeAll();
 							            		Ext.getCmp('upload_finished').close();
+							            		session_id = user + '_' + new Date().getTime();
 							            	}							            
 							            });
 							      	buttons.push({
@@ -201,8 +202,7 @@ function upload_dialog(){
 	        				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
 	        				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
 				            if (xhr.readyState == 4){
-					        	if (xhr.status == 200){
-					        		console.log('----------------finished upload of ' + this.file_id);
+					        	if (xhr.status == 200){					        		
 					        		file_record.set('status', 'ok');
 					        		file_record.commit();
 					        	}
