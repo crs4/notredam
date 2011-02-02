@@ -45,6 +45,29 @@ pipeline = {
            'out':['v7'] },
 }
 
+pipeline2 = {
+    'a1': {'params': {'l':22, 'm': 23}, 
+           'script_name': 'pya1',
+           'in':[],             
+           'out':[] },
+
+    'a2': {'params': {'x':22, 'm': 23}, 
+           'script_name': 'pya2',
+           'in':[],             
+           'out':[] },
+
+    'a3': {'params': {'ubi':22, 'm': 23}, 
+           'script_name': 'pya3',
+           'in':[],             
+           'out':[] },
+
+    'a4': {'params': {'cart':[1, 2, 3], 'm': 23}, 
+           'script_name': 'pya4',
+           'in':[],             
+           'out':[] },
+}
+
+
 
 header = """
 import random

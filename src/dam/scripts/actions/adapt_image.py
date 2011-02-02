@@ -1,4 +1,4 @@
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 from mediadart import log
 from mediadart.mqueue.mqclient_twisted import Proxy
 import os

@@ -1,16 +1,21 @@
+import os
+import sys
+import mimetypes
+import shutil
+
 from django.core.management import setup_environ
 import settings
 setup_environ(settings)
 
-
-
-
-from dam.mprocessor.models import *
-from dam.scripts.views import _new_script
-from dam.workspace.models import *
-from dam.eventmanager.models import *
-from dam.variants.models import Variant
 from django.utils import simplejson
+from django.contrib.auth.models import User
+from dam.mprocessor.models import new_processor, Pipeline
+from dam.workspace.models import DAMWorkspace
+from dam.core.dam_repository.models import Type
+from dam.repository.models import Item
+from dam.variants.models import Variant
+from mediadart.storage import new_id
+from dam.upload.views import guess_media_type
 
 
 actions = {'thumbnail_image':{
@@ -55,15 +60,82 @@ actions = {'thumbnail_image':{
             },
          'in': ['fakefull'],
          'out':['fakefullout']    
-        
-        
     },
     
 }
 
+class DoTest:
+    def __init__(self):
+        self.ws = DAMWorkspace.objects.get(pk = 1)
+        self.user = User.objects.get(username='admin')
 
-ws = DAMWorkspace.objects.get(pk = 1)
-preview = Pipeline.objects.create(name = 'upload rendition generation', type = 'upload', description='', params = simplejson.dumps(actions), workspace = ws)
+    def create_item(self, filepath):
+        guess = guess_media_type(filepath)
+        media_type = Type.objects.get(name=guess)
+        item = Item.objects.create(owner = self.user, uploader = self.user, type=media_type)
+        item.add_to_uploaded_inbox(self.ws)
+        item.workspaces.add(self.ws)
+        return item
+
+    def create_variant(self, item, variant, filepath):
+        fname, ext = os.path.splitext(filepath)
+        res_id = new_id() + ext
+        comp = item.create_variant(variant, self.ws)
+        if variant.auto_generated:
+            comp.imported = True
+        comp.file_name = filepath
+        comp._id = res_id
+        mime_type = mimetypes.guess_type(filepath)[0]
+        comp.format = mime_type.split('/')[1]
+        comp.save()
+        return comp
+
+    def register(self, name, type, description, pipeline_definition):
+        preview = Pipeline.objects.create(name = name, type = type, description='', params = simplejson.dumps(pipeline_definition), workspace = self.ws)
+        print 'registered pipeline %s, pk = %s' % (name, preview.pk)
+
+    def upload(self, filepath):
+        item = self.create_item(filepath)
+        print ('created item %s' % item.pk)
+        variant = Variant.objects.get(name = 'original')
+        comp = self.create_variant(item, variant, filepath)
+        imported_filepath = os.path.join(settings.MEDIADART_STORAGE, comp._id)
+        shutil.copyfile(filepath, imported_filepath)
+        print('file moved to %s' % imported_filepath)
+        uploader = new_processor('upload', self.user, self.ws)
+        uploader.add_params(item.pk)
+        uploader.run()
+
+
+
+usage="""
+Usage: script_test.py <action> <arguments>
+ where action is
+ 
+  register [pipeline_definition]  (default register actions)
+
+  upload <filename>
+"""
+
+
+def main(argv):
+    test = DoTest()
+    if len(argv) < 2: 
+        argv.append('register')
+    task = argv[1]
+
+    if task == 'register':
+        if len(argv) < 3:
+            argv.append('actions')
+        pipeline_def = globals()[argv[2]]
+        test.register('upload rendition generation', 'upload', '', pipeline_def)
+    elif task == 'upload':
+        test.upload(argv[2])
+    else:
+        print usage
+    
+if __name__=='__main__':
+    main(sys.argv)
 
 #pipeline_thumb = {
 #    
