@@ -36,7 +36,7 @@ from dam.variants.models import Variant
 from dam.upload.views import generate_tasks
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.core.dam_repository.models import Type
-from dam.geo_features.models import GeoInfo
+#from dam.geo_features.models import GeoInfo
 #from dam.mprocessor.models import Task
 from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
@@ -601,7 +601,7 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
 def load_items(request, view_type=None, unlimited=False):
     from datetime import datetime
     try:
-        user = User.objects.get(pk=request.session['_auth_user_id'])
+        user = request.user
         workspace_id = request.POST.get('workspace_id')
 
 #        if  workspace_id:
@@ -642,7 +642,6 @@ def load_items(request, view_type=None, unlimited=False):
         default_language = get_metadata_default_language(user, workspace)
 
         user_basket = Basket.get_basket(user, workspace)
-
         basket_items = user_basket.items.all().values_list('pk', flat=True)
         
         items_info = []
@@ -651,7 +650,13 @@ def load_items(request, view_type=None, unlimited=False):
         default_language = get_metadata_default_language(user, workspace)    
         
         for item in items:
-            items_info.append(item.get_info(workspace, thumb_caption, default_language))
+            tmp = item.get_info(workspace, thumb_caption, default_language)
+            if item.pk in basket_items:
+                tmp['item_in_basket'] = 1
+            else:
+                tmp['item_in_basket'] = 0
+                
+            items_info.append(tmp)
         
         
 #        for item in items:
@@ -757,7 +762,7 @@ def get_status(request):
     """
     try:
         workspace = request.session.get('workspace')
-        
+        user = request.user
         items_in_progress = request.POST.getlist('items')
         logger.debug('items_in_progress %s'%items_in_progress)
         resp = {'items':[]}
@@ -774,7 +779,7 @@ def get_status(request):
 #                    status = 'in_progress'
         
                 item = Item.objects.get(pk = int(item_id)) 
-                resp['items'].append(item.get_info(workspace))
+                resp['items'].append(item.get_info(workspace, user))
                 
             except ProcessTarget.DoesNotExist:
                 logger.debug('process target not found for item %s'%item)

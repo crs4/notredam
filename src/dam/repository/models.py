@@ -26,6 +26,8 @@ from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS
 from dam.metadata.models import MetadataProperty
 
+
+
 import urlparse
 from dam import logger
 from django.utils import simplejson
@@ -395,18 +397,22 @@ class Item(AbstractItem):
         return caption
 
         
-    def get_info(self, workspace, caption = None, default_language = None):        
-         
+    def get_info(self, workspace,  caption = None, default_language = None):        
+        from dam.geo_features.models import GeoInfo
         if caption and default_language: 
            caption = self._get_caption(caption, default_language)
         else:
             caption = ''
-
-                    #           item = Item.objects.get(pk=i)            
-        thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)                
-       
+                        
+        thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)        
         process_target = ProcessTarget.objects.get(target_id = str(self.pk), process__workspace = workspace)
         status = process_target.get_status()
+        
+        if GeoInfo.objects.filter(item=self).count() > 0:
+            geotagged = 1
+        else:
+            geotagged = 0
+        
         info = {
             'name': caption,
             'size':self.get_file_size(), 
@@ -416,7 +422,8 @@ class Item(AbstractItem):
             'url':smart_str(thumb_url), 
             'type': smart_str(self.type.name),
             'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (self.pk, 'test')),
-            'preview_available': False
+            'preview_available': False,
+            'geotagged': geotagged
             }
             
         states = self.stateitemassociation_set.all()
