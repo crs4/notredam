@@ -425,8 +425,8 @@ class Item(AbstractItem):
             'status': status,
             'url':smart_str(thumb_url), 
             'type': smart_str(self.type.name),
-            'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (self.pk, 'test')),
-            'preview_available': False,
+            'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (self.pk, time.time())),
+#            'preview_available': False,
             'geotagged': geotagged
             }
             

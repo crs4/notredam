@@ -623,7 +623,86 @@ Ext.onReady(function(){
                     calculatePageSize();
 //                    var up = new Upload();
 //                    up.openUpload();
-                    upload_dialog();
+                    upload_dialog({
+                    	url: '/upload_resource/',
+                    	after_upload: function(session_id){
+                    		Ext.Ajax.request({
+				            	url: '/upload_session_finished/',
+				            	params: {session: session_id},
+				            	success: function(){
+				            		var tab = Ext.getCmp('media_tabs').getActiveTab();
+					                var view = tab.getComponent(0);
+					                var selecteds = view.getSelectedRecords();
+					                var store = view.getStore();
+					                var uploads_failed = Ext.getCmp('files_list').getStore().query('status', 'failed').items.length;
+					                var uploads_success = Ext.getCmp('files_list').getStore().query('status', 'ok').items.length;
+					                var buttons = []
+					                
+					                if (uploads_failed > 0) 
+					                	buttons.push({
+							            	text: 'Retry failed upload',							            	
+							            	handler: function(){							            		
+							            	}							            
+							            });
+							        buttons.push({
+							            	text: 'Upload more files',
+							            	handler: function(){
+							            		Ext.getCmp('files_list').getStore().removeAll();
+							            		Ext.getCmp('upload_finished').close();
+							            		session_id = user + '_' + new Date().getTime();
+							            	}							            
+							            });
+							      	buttons.push({
+								            text: 'Show monitor',
+								            handler: function(){
+								            	Ext.getCmp('upload_finished').close();
+								            	win.close();
+								            	show_monitor();
+								            }
+								          });
+							        buttons.push({
+							            text: 'Close',
+							            handler: function(){
+							            	Ext.getCmp('upload_finished').close();
+							            	win.close();
+							            }
+						            });
+								          
+					                var upload_finished = new Ext.Window({
+										id: 'upload_finished',
+							            title    : 'Upload Finished',
+							            closable : true,
+							            width    : 400,
+							            height   : 200,
+							            buttonAlign: 'center',
+							            modal: true,
+							            html: '<p>successfull uploads: ' + uploads_success + '</p><p>failed uploads: ' + uploads_failed +'</p>',
+							            buttons: buttons
+							       	});
+							        upload_finished.show();
+							       
+							        
+					                store.reload({
+					                    scope: view,
+					                    callback:function(){
+					                        var ids = [];
+					                        for(i = 0; i<selecteds.length; i++){
+					                            ids.push(selecteds[i].data.pk);
+					                            }
+					                        this.select(ids);
+					                        
+					                        }
+					                    });		
+				            	
+				            	}
+				            });
+                    		
+                    	
+                    	}
+                    	
+                    	
+                    	
+                    });
                 }
             }, {
                 text: 'Share with...',

@@ -62,8 +62,14 @@ function import_variant(variant_id){
 //    up.openUpload();    
      upload_dialog({
      	singleSelect: true,
+     	url: '/upload_variant/',
+     	variant: variant.variant_name,
      	item: variant.item_id,
-     	variant: variant.pk
+     	after_upload: function(){
+     		console.log('asd');
+     		this.close();	
+     	}
+     	
      	
      });
     

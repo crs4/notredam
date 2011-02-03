@@ -1899,7 +1899,7 @@ var search_box = {
                                                 tpl: new Ext.XTemplate(  
                                                 	'<div class="list-variant">',
                                                     '<b style="color:#3764A0;">{variant_name:capitalize()}</b>', 
-                                                    '<tpl if="work_in_progress" >',                                                
+                                                    '<tpl if="work_in_progress">',                                                
                                                         '<img src="/files/images/warning.gif" style="width: 13px; padding-left: 5px; height: 13px;"/>',                                                                                                    
                                                     '</tpl>',
                                                
