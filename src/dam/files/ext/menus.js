@@ -946,7 +946,7 @@ Ext.onReady(function(){
                 id: 'set_state_to',
                 menu: states_menu,
                 disabled: true
-            },
+            }
 //            	{
 //                text     :'Run scripts',
 //                id       : 'runscript',
@@ -1117,6 +1117,8 @@ Ext.onReady(function(){
                             	}
                             },
                             {
+                            	id: 'runscript',
+                            	disabled: true,
                             	text: 'Run...',
                             	menu: new Ext.menu.Menu({
 								    id: 'scripts_menu',
