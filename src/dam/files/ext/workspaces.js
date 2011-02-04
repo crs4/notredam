@@ -259,6 +259,8 @@ function switch_ws(current_record, ws_id){
     ws.name = current_record.data.name;
     ws.description= current_record.data.description;
     
+    scripts_jsonstore.load();
+    
 //    var current_ws_div = Ext.get('current_ws');
 //    current_ws_div.update(ws.name);
     
