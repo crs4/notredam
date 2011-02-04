@@ -491,7 +491,7 @@ var showDetails = function(view){
         
         if(admin | run_scripts){
             Ext.getCmp('object_menu').menu.items.get('addto').enable();
-            Ext.getCmp('object_menu').menu.items.get('runscript').enable();
+            Ext.getCmp('runscript').enable();
         }
         
         if (admin | remove_item){
@@ -567,7 +567,7 @@ var showDetails = function(view){
         Ext.getCmp('sync_xmp').disable();
         
         
-        Ext.getCmp('object_menu').menu.items.get('runscript').disable();
+        Ext.getCmp('runscript').disable();
 //            preview = Ext.getCmp('preview_panel').body;
 //            preview.update('');
         if(active_tab) {
