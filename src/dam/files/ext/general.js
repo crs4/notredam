@@ -912,3 +912,51 @@ function createTemplate(panel_id, media_type){
         );
 	
 };
+
+var scripts_jsonstore = new Ext.data.JsonStore({
+	url: '/get_scripts/',
+	root: 'scripts',
+	fields: ['id', 'name'],
+	listeners:{
+		load: function(store, records){			
+			var scripts_menu = Ext.getCmp('scripts_menu'); 
+			scripts_menu.removeAll();
+			Ext.each(records, function(record){
+				scripts_menu.add({
+					
+					text: record.data.name,
+					handler: function(){
+						var items = []
+						var tab = Ext.getCmp('media_tabs').getActiveTab();                    
+                        var view = tab.getComponent(0);
+                        var items_selected = view.getSelectedRecords();
+                        
+                        if (items_selected.length){
+                        	Ext.each(items_selected, function(i){
+                        		items.push(i.data.pk);
+                        	});
+                        Ext.Ajax.request({
+                        	url: '/run_script/',
+                        	params:{
+                        		items: items,
+                        		script_id: record.data.id
+                        	},
+                        	success: function(){
+                        		
+                        	
+                        	}
+                        
+                        });	
+                        
+                        }
+                       
+                       
+						
+					}
+				})
+			});
+			
+		
+		}
+	}
+});

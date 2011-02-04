@@ -19,7 +19,7 @@
 from django.http import HttpResponse, HttpResponseServerError
 from django.utils import simplejson
 from django.contrib.auth.decorators import login_required
-from dam.scripts.models import *
+from dam.mprocessor.models import *
 from dam.eventmanager.models import Event, EventRegistration
 from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
@@ -41,19 +41,16 @@ def _get_scripts_info(script):
 
 @login_required
 def get_scripts(request):
-    workspace = request.session.get('workspace')
+    workspace = request.session['workspace']
     
-    scripts = Script.objects.filter(workspace = workspace).distinct()
+    scripts = Pipeline.objects.filter(workspace = workspace).distinct()
     resp = {'scripts': []}
             
     for script in scripts:
         info =  _get_scripts_info(script)
         resp['scripts'].append(info)
-        
-    resp['scripts'].append(info)
     
     return HttpResponse(simplejson.dumps(resp))
-
 
 @login_required
 def get_script_actions(request):
@@ -222,18 +219,26 @@ def _run_script(script, items = None,   run_again = False):
 def run_script(request):
     from dam.repository.models import Item
     script_id = request.POST['script_id']
-    script = Script.objects.get(pk = script_id)
-    
-    run_again = request.POST.get('run_again')
-   
-    if not run_again:
-        items = request.POST.getlist('items')
-        items = Item.objects.filter(pk__in = items)
-    else:
-        items = []
+    workspace = request.session['workspace']
+    user = request.user
+    items = request.POST.getlist('items')
+    pipeline = Pipeline.objects.get(pk = script_id)
+    process =  Process.objects.create(pipeline = pipeline, workspace =  workspace, launched_by = user)
+    for item in items:
+        process.add_params(item)
         
-    _run_script(script,  items,  run_again)
-   
+    process.run()
+    
+#    run_again = request.POST.get('run_again')
+#   
+#    if not run_again:
+#        items = request.POST.getlist('items')
+#        items = Item.objects.filter(pk__in = items)
+#    else:
+#        items = []
+#        
+#    _run_script(script,  items,  run_again)
+#   
     return HttpResponse(simplejson.dumps({'success': True}))
 
 
