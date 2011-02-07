@@ -75,7 +75,7 @@ def get_actions(request):
     actions_dir = actions_modules.replace('.', '/')
     all_files = os.listdir(os.path.join(src_dir, actions_dir))
     
-    resp = {}
+    resp = {'scripts':[]}
     modules_to_load = []
     try:
         for file in all_files:
@@ -85,16 +85,22 @@ def get_actions(request):
         top_module = __import__(actions_modules, fromlist=modules_to_load)
         logger.debug('modules_to_load %s'%modules_to_load)
         for module in modules_to_load:
-            logger.debug(module)
-            
-            module_loaded = getattr(top_module, module, None)
-            if module_loaded:
-                logger.debug(module_loaded)
-                logger.debug('aaaa %s'%hasattr(module_loaded, 'inspect'))
+            try:
+                logger.debug(module)
                 
-                if hasattr(module_loaded, 'inspect'):
-                    resp[module] = module_loaded.inspect()
-                    media_type = request.POST.get('media_type') # if no media_type all actions will be returned
+                module_loaded = getattr(top_module, module, None)
+                if module_loaded:
+                    logger.debug(module_loaded)
+                    logger.debug('aaaa %s'%hasattr(module_loaded, 'inspect'))
+                    
+                    if hasattr(module_loaded, 'inspect'):
+                        tmp = module_loaded.inspect()
+                        tmp.update({'name': module})
+                        resp['scripts'].append(tmp)
+                        media_type = request.POST.get('media_type') # if no media_type all actions will be returned
+            except Exception, ex:
+                logger.error(ex)
+                continue
         
     except Exception, ex:
         logger.exception(ex)

@@ -23,79 +23,105 @@ def new_id():
 def inspect():
     return {
         'name': __name__,
-        'parameter_groups':{
-        'resize':['width', 'height'],
-        'crop':['ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'component_id']
+        'params':[{
+                   'name': 'source_variant',
+                    'type': 'select',
+                    'values': ['original'],
+                    'description': 'input-variant',
+                    'default': 'original',
+                    'help': ''
+                },
+                {
+                    'name':'output_variant', 
+                    'type': 'select',
+                    'values': ['thumbnail', 'preview', 'fullscreen'],
+                    'description': 'output-variant',
+                    'default': '',
+                    'help': ''
+                },
+                
+            
+          {
+            'name': 'height',
+            'type': 'int',
+            'description': 'height',
+            'default': 100,
+            'help': ''
             
             
-            },
-            'width': {
+        },  
+        {
+            'name': 'width',
             'type': 'int',
             'description': 'width',
             'default': 100,
             'help': ''
             
             
-        },     
-        'actions':{
-            'type': 'list',
-            'available_values':['resize', 'crop', 'watermark']
-                 
-        },
-        'height': {
-            'type': 'int',
-            'description': 'height',
-            'default': 100,
-            'help': ''
-                       
-        }, 
-         'ratio':{
-            'type': 'string',
-            'description': 'ratio',
-            'default': '1:1',
-            'help': ''
-                       
         },
         
-        'wm_id':{
-            'type': 'component_id',
-            'description': 'component',
-            'default': '',
-            'help': ''
-                       
-        },
-         'pos_x_percent':{
-            'type': 'string',
-            'description': 'pos_x_percent',
-            'default': 0,
-            'help': ''
-                       
-        },
+                
+                  
+        ]
+#        'parameter_groups':{
+#        'resize':['width', 'height'],
+#        'crop':['ratio'],
+#            'watermark': ['pos_x_percent','pos_y_percent', 'component_id']
+#            
+#            
+#            },
+#            'width': {
+#            'type': 'int',
+#            'description': 'width',
+#            'default': 100,
+#            'help': ''
+#            
+#            
+#        },     
+#        'actions':{
+#            'type': 'list',
+#            'available_values':['resize', 'crop', 'watermark']
+#                 
+#        },
         
-         'pos_y_percent':{
-            'type': 'string',
-            'description': 'pos_y_percent',
-            'default': 0,
-            'help': ''
-                       
-        },
-    
-        'output_variant': {
-            'type': 'variant',
-            'description': 'output-variant',
-            'default': 0,
-            'help': ''
-        },
-        'source_variant': {
-            'type': 'variant',
-            'description': 'input-variant',
-            'default': 0,
-            'help': ''
-        }      
-        
-         
-        } 
+#        'height': {
+#            'type': 'int',
+#            'description': 'height',
+#            'default': 100,
+#            'help': ''
+#                       
+#        }, 
+#         'ratio':{
+#            'type': 'string',
+#            'description': 'ratio',
+#            'default': '1:1',
+#            'help': ''
+#                       
+#        },
+#        
+#        'wm_id':{
+#            'type': 'component_id',
+#            'description': 'component',
+#            'default': '',
+#            'help': ''
+#                       
+#        },
+#         'pos_x_percent':{
+#            'type': 'string',
+#            'description': 'pos_x_percent',
+#            'default': 0,
+#            'help': ''
+#                       
+#        },
+#        
+#         'pos_y_percent':{
+#            'type': 'string',
+#            'description': 'pos_y_percent',
+#            'default': 0,
+#            'help': ''
+#                       
+#        }     
+    } 
 
 def run(item_id, workspace, source_variant, output_variant, output_format, actions, height = None, width = None, ratio = None, pos_x_percent = None, pos_y_percent = None, wm_id = None):
     return Adapter().execute(item_id, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id)
