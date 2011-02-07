@@ -131,7 +131,7 @@ Ext.onReady(function(){
 		
 		
 			store: new Ext.data.JsonStore({
-				url:'/get_scripts/',
+				url:'/get_actions/',
 				fields:['name', 'params'],
 				autoLoad: true,
 				root: 'scripts'	
@@ -232,16 +232,31 @@ Ext.onReady(function(){
           	onContainerDrop: function( source, e, data ){
           		console.log(source);
           		console.log(data.selections[0].data);
+          		var params = data.selections[0].data.params;
+          		var script_name = data.selections[0].data.name;
+          		var fields = [];
+          		Ext.each(params, function(param){
+          			if (param.type == 'select')
+	          			fields.push(
+	          				 {type: param.type, inputParams: {label: param.name, name: param.name, selectValues: param.values } }
+	          			
+	          			);
+	          		else
+	          			fields.push(
+	          				{inputParams: {label: param.name, name: param.name, required: false, value: param.value } } 
+	          			);
+          		});
           		
           		var drop_x = e.xy[0];
           		var drop_y = e.xy[1];
           		
-          		new AdaptImage({
+          		new MDAction({
+			            title: script_name,
 			            position:[drop_x,drop_y],
-			            legend:'thumbnail',
-			            height_value : 100,
-			            width_value : 100,
-			            output_variant: 'thumbnail'
+//			            legend:'thumbnail',
+		            	inputs: ['in'],
+		            	outputs: ['out'],
+			            fields: fields
 			            
 			    }, demoLayer); 
           		
