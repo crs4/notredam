@@ -766,6 +766,14 @@ def get_status(request):
         items_in_progress = request.POST.getlist('items')
         logger.debug('items_in_progress %s'%items_in_progress)
         resp = {'items':[]}
+#### Added by orlando
+        process_id = request.POST.get('process_id')
+# get completed targets
+        targets = ProcessTarget.objects.filter(process=process_id, target_id__in=items_in_progress, actions_todo=0)
+        info = {}
+        for t in targets:
+            pass
+####
         for item_id in items_in_progress:
             try:
 #                process_target = ProcessTarget.objects.get(target_id = item, process__workspace = workspace)

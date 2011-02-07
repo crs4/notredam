@@ -31,30 +31,38 @@
 
 
 import os
+import datetime
 from twisted.internet import reactor, defer
 from mediadart.utils import default_start_mqueue
 
 
 from json import loads
-from pipeline import DAG
 from mediadart.mqueue.mqserver import MQServer
 from mediadart.config import Configurator
 from mediadart import log
-from mprocessor.models import Process, ProcessTarget
+from dam.mprocessor.models import Process, ProcessTarget
+from dam.mprocessor.pipeline import DAG
 
 class BatchError(Exception):
     pass
 
 class MProcessor(MQServer):
-    def mq_run(self, process_id):
+    def mq_run(self, process_id, call_mode='non-blocking'):
         log.debug('launching process %s'%process_id)
         process = Process.objects.get(pk=process_id)
         batch = Batch(process)
-        return batch.run()
+        d = batch.run()
+        if call_mode != 'non-blocking':
+            return d
+        else:
+            return 'request in progress'
 
 class Batch:
     def __init__(self, process):
         self.cfg = Configurator()
+        self.max_outstanding = self.cfg.getint('MPROCESSOR', 'max_outstanding')
+        self.update_interval = self.cfg.getint('MPROCESSOR', 'update_interval')
+        self.batch_size = self.cfg.getint('MPROCESSOR', 'batch_size') # how many items to load
         self.pipeline = loads(process.pipeline.params)
         self.dag = DAG(self.pipeline)
         self.schedule_length = len(self.pipeline)
@@ -62,13 +70,33 @@ class Batch:
         self.scripts = self._get_scripts(self.pipeline)
         self.deferred = None               # used to signal end of batch job
         self.outstanding = 0               # number of not yet answered requests
-        self.max_outstanding = self.cfg.getint('MPROCESSOR', 'max_outstanding')
-        self.update_interval = self.cfg.getint('MPROCESSOR', 'update_interval')
-        self.batch_size = self.cfg.getint('MPROCESSOR', 'batch_size') # how many items to load
         self.cur_batch = 0                 # index in batch
-        self.totals = {}
-        self._init_totals()
+        self.totals = {'update':0, 'passed':0, 'failed':0, 'targets': 0, None: 0} 
+        self.results = {}
 
+    def run(self):
+        "Start the iteration initializing state so that the iteration starts correctly"
+        log.debug('running process %s' % str(self.process.pk))
+        self.deferred = defer.Deferred()
+        self.process.targets = ProcessTarget.objects.filter(process=self.process).count()
+        self.tasks = []
+        reactor.callLater(0, self._iterate)
+        return self.deferred
+
+    def _update_item_stats(self, item, action, result, success, failure, cancelled):
+        log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled))
+        item.actions_passed += success
+        item.actions_failed += failure
+        item.actions_cancelled += cancelled
+        item.actions_todo -= (success + failure + cancelled)
+        if item.target_id not in self.results:
+            self.results[item.target_id] = {}
+        self.results[item.target_id][action] = (success, result)
+        if item.actions_todo <= 0:
+            log.debug('_update_item_stats: finalizing item %s' % item.target_id)
+            item.result = dumps(self.results[item.target_id])
+            del self.results[item.target_id]
+        
     def _get_scripts(self, pipeline):
         """Load scripts from plugin directory. 
         
@@ -91,56 +119,18 @@ class Batch:
                 scripts[script_key] = (f, script_dict.get('params', {}))
         return scripts
 
-    def _init_totals(self):
-        self.totals = {'update':0, 'passed':0, 'failed':0}
-        self.totals['all'] = ProcessTarget.objects.filter(process=self.process.pk).count() * self.schedule_length
-        self.process.total = self.totals['all']
-        self.process.save()
-
     def _new_batch(self):
         "Loads from db the next batch of items and associate a schedule to each item"
-        log.debug('_new_batch: entering')
         targetset = ProcessTarget.objects.filter(process=self.process.pk)[self.cur_batch:self.cur_batch + self.batch_size]
-        log.debug('_new_batch: after filter loaded %s items' % len(targetset))
         if targetset:
-            log.debug('_new_batch: inside if')
             self.cur_batch += self.batch_size
             ret = [{'item':x, 'schedule':self.dag.sort(True)} for x in targetset]   # item, index of current action, schedule
-            for d in ret:
-                log.error('1')
-                if len(d['schedule']) != self.schedule_length:
-                    log.error('### item %s: WRONG LENGTH: %s' % (d['item'].target_id, len(d['schedule'])))
-                log.error('3')
-            log.debug('_new_batch: end of if')
         else:
-            log.debug('_new_batch: None')
             self.deferred.callback('done')
-            ret = None
-        if ret is not None:
-            log.debug('_new_batch: returning %d items' % len(ret))
-        else:
-            log.debug('_new_batch: returning None')
-        return ret
-
-    def update_totals(self, success):
-        "update total number of successes/failures"
-        self.totals['update'] += 1.
-        if success:
-            self.totals['passed'] += 1
-        else:
-            self.totals['failed'] += 1
-        if (self.totals['update'] % self.update_interval) == 0:
-            self.process.passed = self.totals['passed']
-            self.process.failures = self.totals['failed']
+            self.process.end_date = datetime.datetime.now()
             self.process.save()
-
-    def run(self):
-        "Start the iteration initializing state so that the iteration starts correctly"
-        log.debug('running process %s' % str(self.process.pk))
-        self.deferred = defer.Deferred()
-        self.tasks = []
-        reactor.callLater(0, self.iterate)
-        return self.deferred
+            ret = None
+        return ret
 
     def _get_action(self):
         """returns the first action found or None. Retire tasks with no actions left"""
@@ -155,80 +145,131 @@ class Batch:
             else:
                 log.debug('%s: DONE' % task['item'].target_id)
             method, params = self.scripts[action]
-            log.debug('_get_action: return %s' % action)
+            log.debug('_get_action: %s' % action)
             return action, task['item'], schedule, method, params
         else:
-            log.debug('_get_action: return None')
+            log.debug('_get_action: None')
             return None, None, None, None, None
 
-    def iterate(self):
+    def _iterate(self):
         """ Run the actions listed in schedule on the items returned by _new_batch """
-        log.debug('iterate')
+        #log.debug('_iterate')
         if self.tasks is None:
+            #log.debug('ALREADY DONE')
             return
         if not self.tasks:
             self.tasks = self._new_batch()
-            log.debug('iterate: loaded task')
         action, item, schedule, method, params = self._get_action()
         if action:
-            log.debug('target %s: executing action=%s (%d: %s)' % (item.target_id, action, id(schedule), schedule))
+            log.debug('target %s: executing action %s: remaining %s' % (item.target_id, action, schedule))
             try:
                 log.debug('calling run with params %s'%params)
                 self.outstanding += 1
                 d = method(item.target_id, self.process.workspace, **params)
             except Exception, e:
-                self.handle_err('Error %s: launching action %s on item %s' % (str(e), action , item.target_id), item, schedule, action, params)
+                self._handle_err(str(e), item, schedule, action, params)
             else:
-                d.addCallbacks(self.handle_ok, self.handle_err, 
+                d.addCallbacks(self._handle_ok, self._handle_err, 
                     callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
             if self.outstanding < self.max_outstanding:
-                reactor.callLater(0.1, self.iterate)
+                reactor.callLater(0.1, self._iterate)
         else:
             log.debug('EMPTY ACTION')
-            reactor.callLater(0, self.iterate)
+            reactor.callLater(0, self._iterate)
 
-    def handle_ok(self, result, item, schedule, action, params):
-        log.info("target %s: action %s: %s" % (item.target_id, action, result))
+    def _handle_ok(self, result, item, schedule, action, params):
+        log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result))
         self.outstanding -= 1
-        self.update_totals(success=True)
         if self.outstanding < self.max_outstanding:
-            reactor.callLater(0, self.iterate)
-        item.passed += 1
+            reactor.callLater(0, self._iterate)
+        self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
 
-
-    def handle_err(self, result, item, schedule, action, params):
-        log.error('handler_err %s %s %s' % (result, item.target_id, action))
+    def _handle_err(self, result, item, schedule, action, params):
+        log.error('_handle_err %s %s %s' % (str(result), item.target_id, action))
         self.outstanding -= 1
-        self.update_totals(success=False)
         dependencies = self.dag.dependencies(action)
+        cancelled = 0
         for a in dependencies:
             if a in schedule:
-                log.info('target %s: removing action %s, dependent from failed %s' % (item.target_id, a, action))
+                log.info('target %s: removing action %s, dependent on failed %s' % (item.target_id, a, action))
+                cancelled += 1
                 schedule.remove(a)
         if self.outstanding < self.max_outstanding:
-            reactor.callLater(0, self.iterate)
-        item.failed += 1
+            reactor.callLater(0, self._iterate)
+        self._update_item_stats(item, action, str(result), 0, 1, cancelled)
         item.save()
 
 
 def start_server():
     default_start_mqueue(MProcessor, [])
 
+##############################################################################################
+# 
+# Test
 
-def end_test(result):
+import sys
+from django.contrib.auth.models import User
+from dam.mprocessor.make_plugins import pipeline as test_pipe
+from dam.mprocessor.models import Pipeline
+from dam.workspace.models import DAMWorkspace
+from json import dumps
+
+class fake_config:
+    dictionary = {
+        'MPROCESSOR': {
+            'plugins': 'dam.mprocessor.plugins',
+            'max_outstanding': '17',
+            'update_interval': '1',
+            'batch_size': '5',
+        },
+    }
+    def get(self, section, option):
+        return self.dictionary[section][option]
+
+    def getint(self, section, option):
+        return int(self.dictionary[section][option])
+
+def end_test(result, process):
+    print_stats(process, [], False)
     print 'end of test %s' % result
-    reactor.stop()
+    reactor.callLater(3, reactor.stop)
+
+def print_stats(process, items, redo=True):
+    if process.targets == 0:
+        print >>sys.stderr, 'Process stats: not initialized'
+    else:
+        print >>sys.stderr, 'Process stats: completed=%d/%d failed=%d/%d' % (process.get_num_target_completed(), process.targets,
+                                   process.get_num_target_failed(), process.targets)
+
+    pt = ProcessTarget.objects.filter(process=process, target_id__in=items, actions_todo=0, actions_failed=0)
+    print >>sys.stderr, 'Process stats: completed successfully: %s' % ' '.join([x.target_id for x in pt])
+    if redo:
+        reactor.callLater(1, print_stats, process, items)
 
 def test():
-    process = Process.objects.all()[0]
+    global Configurator
+    Configurator = fake_config
+    ws = DAMWorkspace.objects.get(pk=1)
+    user = User.objects.get(username='admin')
+    try: 
+        pipeline = Pipeline.objects.get(name='test', workspace=ws)
+    except:
+        pipeline = Pipeline.objects.create(name="test", type="test", description='', params=dumps(test_pipe), workspace=ws)
+    process = Process.objects.create(pipeline=pipeline, workspace=ws, launched_by=user)
+    for n in xrange(250):
+        print 'adding target %d' % n
+        process.add_params('item%d' % n)
     try:
         batch = Batch(process)
         d = batch.run()
+        d.addBoth(end_test, process)
     except Exception, e:
         log.error("Fatal initialization error: %s" % str(e))
         reactor.stop()
-    d.addBoth(end_test)
+    print_stats(process, [
+        'item0', 'item9', 'item18', 'item27', 'item36', 'item45', 'item54', 'item63', 'item72', 'item81', 'item90', 'item99', 'item108', 'item117', 'item126', 'item135', 'item144', 'item153', 'item162', 'item171', 'item180', 'item189', 'item198', 'item207', 'item216', 'item225', 'item234', 'item243',
+    ])
 
 if __name__=='__main__':
     reactor.callWhenRunning(test)

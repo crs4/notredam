@@ -1,3 +1,6 @@
+import sys
+from random import random
+
 pipeline = {
     'a1': {'params': {'l':22, 'm': 23}, 
            'script_name': 'pya1',
@@ -45,19 +48,50 @@ pipeline = {
            'out':['v7'] },
 }
 
+pipeline2 = {
+    'a1': {'params': {'l':22, 'm': 23}, 
+           'script_name': 'pya1',
+           'in':[],             
+           'out':[] },
+
+    'a2': {'params': {'x':22, 'm': 23}, 
+           'script_name': 'pya2',
+           'in':[],             
+           'out':[] },
+
+    'a3': {'params': {'ubi':22, 'm': 23}, 
+           'script_name': 'pya3',
+           'in':[],             
+           'out':[] },
+
+    'a4': {'params': {'cart':[1, 2, 3], 'm': 23}, 
+           'script_name': 'pya4',
+           'in':[],             
+           'out':[] },
+}
+
+
 
 header = """
-import random
+from random import random
 from mediadart import log
 from twisted.internet import defer, reactor
+from twisted.python.failure import Failure
 
 """
 
-def main():
+def main(failures):
     keys = pipeline.keys()
     keys.sort()
 
-    for p in keys[0:]:
+    if failures == 'all':
+        failures = keys
+
+    for p in keys:
+        if p in failures:
+            level = '0.9'
+        else:
+            level = '2.0'   # infinity
         script_name = pipeline[p]['script_name']
         f=open('plugins/%s.py' % script_name, 'w')
         f.write(header)
@@ -73,9 +107,15 @@ def main():
             f.write('%s, ' % param)
         f.write('))\n')
         f.write('    d = defer.Deferred()\n')
-        f.write('    reactor.callLater(0*random.random(), d.callback, "ok")\n')
+        f.write('    if random() > %s:\n' % level)
+        if random() > 0.5:
+            f.write('        d.errback(Failure(Exception("FAILURE error: %s" % __file__)))\n')
+        else:
+            f.write('        raise Exception("EXCEPTION error: %s" % __file__)\n')
+        f.write('    else:\n')
+        f.write('        reactor.callLater(0*random(), d.callback, "ok")\n')
         f.write('    return d\n')
         f.close()
 
 if __name__=="__main__":
-    main()
+    main(sys.argv[1:])
