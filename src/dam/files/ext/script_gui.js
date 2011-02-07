@@ -121,6 +121,32 @@ var extract_features, adapt_1, adapt_2, adapt_3, test_form;
 
 Ext.onReady(function(){
 	
+	new Ext.grid.GridPanel({
+		renderTo:'actions-container',
+		title: 'Scripts',
+		layout: 'fit',
+		autoHeight: true,
+		enableDragDrop: true,
+		ddGroup: 'wireit',
+		
+		
+			store: new Ext.data.JsonStore({
+				url:'/get_scripts/',
+				fields:['name', 'params'],
+				autoLoad: true,
+				root: 'scripts'	
+			}),
+			columns:[{
+				name: 'Script',
+				dataIndex: 'name'
+			}],
+		hideHeaders: true,
+		viewConfig: {
+        forceFit: true}
+
+		
+	});
+	
 	var layer_el = Ext.get('wire-layer');
 	
 	var demoLayer = new WireIt.Layer({
@@ -197,7 +223,32 @@ Ext.onReady(function(){
 //            w2.drawBezierCurve();
 //            w3.drawBezierCurve();
             
-            
+    
+          new Ext.dd.DropZone(Ext.get('wire-layer'),{
+          	ddGroup: 'wireit',
+          	onContainerOver: function(){
+          		return this.dropAllowed;
+          	},
+          	onContainerDrop: function( source, e, data ){
+          		console.log(source);
+          		console.log(data.selections[0].data);
+          		
+          		var drop_x = e.xy[0];
+          		var drop_y = e.xy[1];
+          		
+          		new AdaptImage({
+			            position:[drop_x,drop_y],
+			            legend:'thumbnail',
+			            height_value : 100,
+			            width_value : 100,
+			            output_variant: 'thumbnail'
+			            
+			    }, demoLayer); 
+          		
+          		
+          	} 
+          	
+          });
             	   
 
 	
