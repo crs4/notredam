@@ -21,25 +21,26 @@ def new_id():
     return uuid4().hex
 
 def inspect():
-    return [
+    return {}
         
-         {
-        'name': 'dim_x',
-        'type': 'int',
-        'description': 'dim_x',
-        'default': 100,
-        'help': ''
-                       
-        },
-        {
-            'name':'dim_y',
-            'type': 'int',
-            'description': 'dim_y',
-            'default': 100,
-            'help': ''
-                       
-        } 
-        ]
+#         {
+#        'name': 'dim_x',
+#        'type': 'int',
+#        'description': 'dim_x',
+#        'default': 100,
+#        'help': ''
+#                       
+#        }
+#         ,
+#        {
+#            'name':'dim_y',
+#            'type': 'int',
+#            'description': 'dim_y',
+#            'default': 100,
+#            'help': ''
+#                       
+#        } 
+        
 #        'output_variant': {
 #            'type': 'output-variant',
 #            'description': 'output-variant',
