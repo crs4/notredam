@@ -1101,7 +1101,10 @@ Ext.onReady(function(){
                             
                             },{ 
                             	text    : 'Edit',                                                      
-	                            handler : function(){manage_script();}                   
+	                            handler : function(){
+	                            window.open('/wireit/','Edit script')
+//	                            manage_script();
+	                            }                   
                             },
                             	
                             
