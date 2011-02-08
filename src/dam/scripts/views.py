@@ -19,7 +19,7 @@
 from django.http import HttpResponse, HttpResponseServerError
 from django.utils import simplejson
 from django.contrib.auth.decorators import login_required
-from dam.scripts.models import *
+from dam.mprocessor.models import *
 from dam.eventmanager.models import Event, EventRegistration
 from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
@@ -43,7 +43,7 @@ def _get_scripts_info(script):
 def get_scripts(request):
     workspace = request.session.get('workspace')
     
-    scripts = Script.objects.filter(workspace = workspace).distinct()
+    scripts = Pipeline.objects.filter(workspace = workspace).distinct()
     resp = {'scripts': []}
             
     for script in scripts:

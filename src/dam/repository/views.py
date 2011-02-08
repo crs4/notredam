@@ -28,6 +28,7 @@ from dam.core.dam_workspace.decorators import permission_required
 from dam.treeview.models import Node
 
 from dam import logger
+import settings
 from operator import and_, or_
 
 @login_required
@@ -112,8 +113,30 @@ def delete_watermark(request):
     except Watermark.DoesNotExist:
         pass
         
-    return HttpResponse(simplejson.dumps({'success': True}))
+    return HttpResponse(simplejson.dumps({'success': True}))  
+
+def get_variant_url(request, item_ID, variant_name):
+    from mediadart.storage import Storage
+    from django.views.generic.simple import redirect_to
+    
+    workspace = request.session['workspace']
+    storage = Storage()
+    try:
+        component = Component.objects.get(item___id = item_ID, workspace = workspace, variant__name = variant_name)
+        url =  component.get_url()
+    except Component.DoesNotExist, ex:
+        url = settings.INPROGESS
+    
+    logger.debug('url %s'%url)
+    return redirect_to(request, url) 
+    
+    
+    
         
         
+    
+    
+    
+
         
     
