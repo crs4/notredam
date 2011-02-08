@@ -10,9 +10,8 @@ from django.db.models.loading import get_models
 
 get_models()
 
-from dam.repository.models import Component
-from dam.variants.models import Variant
-from dam.repository.models import Item    
+from dam.repository.models import *
+from dam.variants.models import Variant    
 from dam.workspace.models import DAMWorkspace
 
 from uuid import uuid4
@@ -199,7 +198,10 @@ class Adapter:
         
         adapter_proxy = Proxy('Adapter')
         log.debug("calling adapter")
-        dest_res_id = new_id() + '.' + output_format
+        dest_res_id = get_storage_file_name(item_id, workspace.pk, output_variant.name, output_format)
+        output_component.uri = dest_res_id
+        output_component.save() 
+        
         d = adapter_proxy.adapt_image_magick('%s[0]' % source.ID, dest_res_id, argv)
         d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
         return self.deferred

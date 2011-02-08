@@ -372,3 +372,4 @@ def get_variants_menu_list(request):
     for va in vas:
         resp['variants'].append({'variant_name': va})
     return HttpResponse(simplejson.dumps(resp))
+
