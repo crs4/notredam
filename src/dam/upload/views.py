@@ -221,7 +221,7 @@ def import_dir(dir_name, user, workspace, session):
     files =os.listdir(dir_name)
     logger.debug('files %s'%files)
     
-    upload_process = new_processor('upload', user, workspace)
+    upload_process = new_processor('uploader', user, workspace)
     
     for file_name in files:
         file_path = os.path.join(dir_name, file_name)
