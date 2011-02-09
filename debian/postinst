@@ -1,0 +1,7 @@
+#!/bin/sh
+mkdir -p /var/spool/notredam
+chgrp -R admin /var/spool/notredam
+chmod -R g+w  /var/spool/notredam
+
+
+
