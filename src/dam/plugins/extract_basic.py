@@ -17,6 +17,7 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
+from dam.plugins.common.utils import save_type
 
 from uuid import uuid4
 
@@ -59,11 +60,8 @@ class ExtractError(Exception):
 # Entry point
 def run(item_id, workspace, source_variant, extractor='basic'):
     deferred = defer.Deferred()
-    worker = ExtractFeatures(deferred, itme_id, workspace, source_variant, extractors)
-    method = getattr(worker, 'extract_%s' % extractor, None)
-    if method is None:
-        raise ExtractError('invalid extractor specification; %s' % extractor)
-    reactor.callLater(0, method, item_id, workspace, source_variant)
+    worker = ExtractBasicFeatures(deferred, itme_id, workspace, source_variant)
+    reactor.callLater(0, worker.extract_basic, item_id, workspace, source_variant)
     return deferred
 
 
@@ -72,8 +70,8 @@ def run(item_id, workspace, source_variant, extractor='basic'):
 ## In case of the partial failure of a single extractor, # the results from successful operations 
 ## are saved, and an error is returned.
 ##
-class ExtractFeatures:
-    def __init__(self, deferred, item_id, workspace, variant_name, extractor):
+class ExtractBasicFeatures:
+    def __init__(self, deferred, item_id, workspace, variant_name):
         self.deferred = deferred
         self.proxy = Proxy('FeatureExtractor')
         self.workspace = workspace
@@ -81,8 +79,7 @@ class ExtractFeatures:
         self.variant_name = variant_name
         self.source_variant = Variant.objects.get(name = variant_name)
         self.component = self.item.get_variant(workspace, source_variant)
-        self.extractor = extractor
-        self.extract_method = getattr(self, 'extract_%s' % extractor, None)
+        self.extractor = 'basic'
         self.ctype = None
         self.result = []
 
@@ -92,21 +89,13 @@ class ExtractFeatures:
         d = self.proxy.extract(self.component.ID, self.extractor_type)
         d.addCallbacks(self._cb_basic_ok, self._cb_error, callbackArgs=[extractor_type], errbackArgs=[extractor_type])
 
-    def _save_type(self, ctype):
-        try:
-            mime_type = mimetypes.guess_type(self.component._id)[0]
-            ext = mime_type.split('/')[1]
-            self.component.format = ext
-            self.component.save()
-            metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
-            MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=self.component, value=mime_type)
-        except Exception, ex:
-            log.error(ex)
-
     def _cb_basic_ok(self, features, extractor_type):
         "save results of basic extractions"
         ctype = ContentType.objects.get_for_model(self.component)
-        self._save_type(ctype)
+        try:
+            save_type(ctype, self.component)
+        except Exception, e:
+            log.error("Failed to save component format as DC:Format xmp entry")
         if extractor_type == 'media_basic':
             for stream in features['streams']:
                 if isinstance(features['streams'][stream], dict):  # e se no?
@@ -114,9 +103,9 @@ class ExtractFeatures:
                     metadata_list.extend(m_list)
                     delete_list.extend(d_list)
         else: 
-            metadata_list, delete_list = _save_features(c, features)    
+            metadata_list, delete_list = self._save_features(features, ctype)    
 
-        MetadataValue.objects.filter(schema__in=delete_list, object_id=c.pk, content_type=ctype).delete()
+        MetadataValue.objects.filter(schema__in=delete_list, object_id=self.component.pk, content_type=ctype).delete()
         for x in metadata_list:
             x.save()
         self.deferred.callback('ok')
@@ -187,81 +176,3 @@ class ExtractFeatures:
 
     def _cb_error(self, failure, extractor):
         self.deferred.errback(failure)
-
-    def _cb_xmp_ok(self, result, extractor_type):
-        ctype_component = ContentType.objects.get_for_model(self.component)
-        ctype = ContentType.objects.get_for_model(self.item)
-        self._save_type(ctype_component)
-
-        xpath = re.compile(r'(?P<prefix>\w+):(?P<property>\w+)(?P<array_index>\[\d+\]){,1}')
-
-        user = self.item.uploaded_by()
-        metadata_default_language = get_metadata_default_language(user)
-
-        metadata_dict = {}
-        metadata_list = []
-        delete_list = []
-
-        if not isinstance(features, dict):
-            self.item.state = 1  
-            self.item.save()
-            return metadata_list, delete_list
-
-        for feature in features.keys():
-            try:
-                namespace_obj = XMPNamespace.objects.get(uri=feature)
-            except Exception, e:
-                log.error('#######  Error: unknown namespace %s: %s' % (feature, str(e)))
-                continue
-
-            metadata_dict[namespace_obj] = {}
-            namespace_properties = MetadataProperty.objects.filter(namespace=namespace_obj)
-            for property_values in features[feature]:
-                property_xpath = property_values[0]
-                property_value = property_values[1]
-                property_options = property_values[2]
-                xpath_splitted = xpath.findall(property_xpath)
-                metadata_property = xpath_splitted[0][1].strip()
-                metadata_index = xpath_splitted[0][2].strip()
-                found_property = namespace_properties.filter(field_name__iexact=metadata_property)
-                if found_property.count() > 0 and len(property_value.strip()) > 0:
-                    if found_property[0].is_array == 'not_array':
-                        delete_list.append(found_property[0])
-                    if property_options['IS_QUALIFIER'] and xpath_splitted[-1][1] == 'lang':
-                        find_xpath = property_xpath.replace('/?xml:lang', '')
-                        if metadata_dict[namespace_obj].has_key(find_xpath):
-                            if property_value == 'x-default':
-                                property_value = metadata_default_language
-                            metadata_dict[namespace_obj][find_xpath].language = property_value
-                        else:
-                            log.debug('metadata property not found: ' + find_xpath)
-                    else:
-                        if found_property[0].is_variant:
-                            x = MetadataValue(schema=found_property[0], object_id=self.component.pk, content_type=ctype_component, value=property_value, xpath=property_xpath)
-                        else:
-                            x = MetadataValue(schema=found_property[0], object_id=self.item.pk, content_type=ctype, value=property_value, xpath=property_xpath)
-                        metadata_dict[namespace_obj][property_xpath] = x
-                        metadata_list.append(x)
-
-        latitude = None
-        longitude = None
-        for x in xmp_metadata_list:
-            if x.xpath == 'exif:GPSLatitude':
-                latitude = x.value
-            elif x.xpath == 'exif:GPSLongitude':
-                longitude = x.value
-            x.save()
-        if latitude != None and longitude != None:
-            try:
-                GeoInfo.objects.save_geo_coords(self.component.item, latitude,longitude)
-            except Exception, ex:
-                logger.debug( 'ex while saving latitude and longitude in dam db: %s'% ex)
-        self.deferred.callback('ok')
-
-    def extract_xmp(self):
-        extractor_type = 'xmp_extractor'
-        extractor_proxy = Proxy('FeatureExtractor')
-        d = extractor_proxy.extract(self.component.ID,  extractor_type)
-        d.addCallbacks(self._cb_xmp_ok, self._cb_error, callbackArgs=[extractor_type], errbackArgs=[extractor_type])
-        return d
-        
