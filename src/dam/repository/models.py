@@ -33,6 +33,7 @@ from django.utils import simplejson
 import time
 from django.utils.encoding import smart_str
 import re
+import settings
 
 from mediadart.storage import Storage
 
@@ -75,10 +76,10 @@ class Item(AbstractItem):
     def _get_id(self):
         return self._id
     
-    ID = property(fget=_get_id)     
+    ID = property(fget=_get_id)   
     
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if not self.pk and not self._id:
             self._id = new_id()
         super(Item, self).save(*args, **kwargs)
 
@@ -354,19 +355,15 @@ class Item(AbstractItem):
             return 'unknown'
         
     def get_variant_url(self, variant_name, workspace):
-        url = None
-        url_ready = 0
-    
+        url = None       
         try:
             variant = workspace.get_variants().distinct().get(media_type =  self.type, name = variant_name)
-            url = self.get_variant(workspace, variant).get_component_url()
-            if url:
-                url_ready = 1
+            url = self.get_variant(workspace, variant).get_url()
                 
         except Exception, ex:
-            logger.exception(ex)
+            logger.error(ex)
             
-        return url, url_ready
+        return url
 
     def _replace_groups(self, group, default_language):
         namespace = group.group('namespace')
@@ -410,20 +407,6 @@ class Item(AbstractItem):
             logger.exception(ex)
     
         return caption
-
-    def _get_variant_file_name(self, variant_name, workspace):
-        return self.ID + '_' + str(workspace.pk) + '_' + variant_name
-    
-    def set_variant_in_progress(self, variant_name, workspace):
-        file_name = os.path.join(MEDIADART_STORAGE, self._get_variant_file_name(variant_name, workspace))
-        os.symlink(settings.INPROGRESS, file_name)
-    
-    def get_variant_path(self, variant_name, workspace):
-        return os.path.join(MEDIADART_STORAGE, self._get_variant_file_name(variant_name, workspace))
-    
-    def get_variant_url(self, variant_name, workspace):
-        return os.path.join(STORAGE_SERVER_URL, self._get_variant_file_name(variant_name, workspace))
-    
         
     def get_info(self, workspace,  caption = None, default_language = None):        
         from dam.geo_features.models import GeoInfo
@@ -432,7 +415,16 @@ class Item(AbstractItem):
         else:
             caption = ''
                         
-        thumb_url = '/item/%s/thumbnail/'%(self.ID)
+        thumb_url = self.get_variant_url('thumbnail', workspace)
+        preview_url = self.get_variant_url('preview', workspace)
+        fullscreen_url = self.get_variant_url('fullscreen', workspace)
+        
+        variant_ready = (thumb_url) and (preview_url) and (fullscreen_url)  
+        if variant_ready:
+            status = 'completed'
+        else:
+            status = 'in_progress'
+        
         
         
         if GeoInfo.objects.filter(item=self).count() > 0:
@@ -445,10 +437,11 @@ class Item(AbstractItem):
             'size':self.get_file_size(), 
             'pk': smart_str(self.pk), 
            
-#            'status': status,
+            'status': status,
+            'thumb': thumb_url is not None,
             'url':smart_str(thumb_url), 
             'type': smart_str(self.type.name),
-            'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (self.pk, time.time())),
+            'url_preview':preview_url,
 #            'preview_available': False,
             'geotagged': geotagged
             }
@@ -530,20 +523,21 @@ class Component(AbstractComponent):
         """
         Returns the component url (something like /storage/res_id.ext)
         """
-        from dam.application.views import NOTAVAILABLE
-
-        url = NOTAVAILABLE    
         
         storage = Storage()
+        url = None
         try:        
             file_name = self.uri
             if  storage.exists(file_name):
                 url = os.path.join(STORAGE_SERVER_URL, file_name)
+        
+                if full_address:
+                    url = SERVER_PUBLIC_ADDRESS + url
+                
         except Exception, ex:
             logger.exception(ex)
         
-        if full_address:
-            url = SERVER_PUBLIC_ADDRESS + url
+        logger.debug('url %s'%url)
         return url
 
     def save_rights_value(self, license_value, workspace):

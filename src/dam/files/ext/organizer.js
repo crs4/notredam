@@ -222,7 +222,7 @@ var store_nodes_checked = new Ext.data.JsonStore({
 var current_item_selected;
 
 function showFullscreen(view, index, node, e){
-	console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaa');
+	
     var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
         
     Ext.Ajax.request({
