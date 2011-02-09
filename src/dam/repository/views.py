@@ -118,17 +118,22 @@ def delete_watermark(request):
 def get_variant_url(request, item_ID, variant_name):
     from mediadart.storage import Storage
     from django.views.generic.simple import redirect_to
-    
-    workspace = request.session['workspace']
-    storage = Storage()
     try:
-        component = Component.objects.get(item___id = item_ID, workspace = workspace, variant__name = variant_name)
-        url =  component.get_url()
-    except Component.DoesNotExist, ex:
-        url = settings.INPROGESS
-    
-    logger.debug('url %s'%url)
-    return redirect_to(request, url) 
+        workspace = request.session['workspace']
+        storage = Storage()
+        url = settings.INPROGRESS
+        try:
+            component = Component.objects.get(item___id = item_ID, workspace = workspace, variant__name = variant_name)
+            url =  component.get_url()
+                        
+        except Component.DoesNotExist, ex:
+            pass
+            
+        logger.debug('url %s'%url)
+        return redirect_to(request, url)
+    except Exception, ex:
+        logger.exception(ex)
+        raise ex 
     
     
     
