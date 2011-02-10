@@ -2105,30 +2105,30 @@ function show_monitor(){
 			width: 800,
 			layout: 'fit',
 			collapsible: true,
+			
+			runner:new Ext.util.TaskRunner(),			
+			update_task:{
+				run: function(){
+					 console.log('aaaaaaaaaaaaaaaaaaaaa');
+					var updated = win.update_progress();
+					if (!updated)
+						win.runner.stop(win.update_task);					
+					
+				},
+				interval: 3000			
+			
+			},
 			update_progress: function(){
 				var store = Ext.getCmp('script_monitor_list').getStore();
-				if (store.query('status', 'in_progress').items.length > 0)
-					Ext.Ajax.request({
-	        			url: store.url,
-	        			params:{
-	        				do_not__delete_old_scripts: true
-	        			},
-	        			success: function(response){
-	        				 var resp = Ext.decode(response.responseText);
-	        				 var record;
-	        				 Ext.each(resp.scripts, function(script){
-	        				 	record = store.getById(script.id);
-	        				 	record.set('status', script.status);
-	        				 	record.set('items_completed', script.items_completed);
-	        				 	record.set('items_failed', script.items_failed);
-	        				 	record.commit();
-	        				 	
-	        				 
-	        				 });
-	        				 
-	        				
-	        			}
-	        		});
+				var script_in_progress = store.queryBy(function(r){
+					return (r.data.progress < 100)
+				}).items;
+				if (script_in_progress.length > 0){				
+					store.reload();
+					return true;
+				}
+				else
+					return false;
 			
 			},
 			
@@ -2145,7 +2145,7 @@ function show_monitor(){
 					    		'id',
 					    		'name',
 					    		'time_elapsed',
-					    		'status',
+					    	
 					    		'progress',
 					    		'type',
 					    		'total_items',
@@ -2245,6 +2245,9 @@ function show_monitor(){
 		
 		win.show();
 		Ext.getCmp('script_monitor_list').getStore().load({
+			callback: function(){
+				win.runner.start(win.update_task);
+			}
 //			callback: function(records){
 //				var pr;
 //				Ext.each(records, function(r){

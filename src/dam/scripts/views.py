@@ -254,3 +254,61 @@ def get_available_actions(request):
             ]}
     return HttpResponse(simplejson.dumps(resp))
     
+@login_required
+def script_monitor(request):
+    import datetime
+    
+    try:
+        workspace = request.session['workspace']
+        do_not_delete = request.POST.get('do_not__delete_old_scripts')
+        
+        
+        processes = workspace.get_active_processes()
+         
+        
+        processes_info = []
+        for process in processes:
+            
+#            if do_not_delete and process.is_completed():
+#                status = 'completed'
+#                process.delete()
+            if not process.last_show_date:
+                process.last_show_date = datetime.datetime.now()
+                process.save()
+#                status = 'in progress'
+                
+            elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
+                
+                process.delete()
+                continue
+#            else:
+#                status = 'in progress'
+            
+            items_completed =  process.get_num_target_completed()
+            items_failed =  process.get_num_target_failed()
+            total_items = process.processtarget_set.all().count()
+            progress =  round(float(items_failed + items_completed)/float(total_items)*100)
+              
+            processes_info.append({
+                'id': process.pk,
+                 'name':process.pipeline.name,
+#                 'status': status,                 
+                 'total_items':total_items,
+                 'items_completed': items_completed,
+                 'progress':progress,
+                 'type': process.pipeline.type,
+                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
+#                 'end_date': process.end_date.time(),
+                 'launched_by': process.launched_by.username,
+                 'items_failed': items_failed
+                 })
+             
+        return HttpResponse(simplejson.dumps({
+            'success': True,
+            'scripts':processes_info
+        }))
+    except Exception, ex:
+        logger.exception(ex)
+        return HttpResponse(simplejson.dumps({'success': False}))
+    
+    

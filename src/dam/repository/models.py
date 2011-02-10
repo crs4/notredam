@@ -537,7 +537,6 @@ class Component(AbstractComponent):
         except Exception, ex:
             logger.exception(ex)
         
-        logger.debug('url %s'%url)
         return url
 
     def save_rights_value(self, license_value, workspace):
