@@ -78,10 +78,10 @@ class Item(AbstractItem):
     
     ID = property(fget=_get_id)   
     
-    def save(self, *args, **kwargs):
-        if not self.pk and not self._id:
-            self._id = new_id()
-        super(Item, self).save(*args, **kwargs)
+#    def save(self, *args, **kwargs):
+#        if not self.pk and not self._id:
+#            self._id = new_id()
+#        super(Item, self).save(*args, **kwargs)
 
     class Meta:
         db_table = 'item'

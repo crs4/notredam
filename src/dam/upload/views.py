@@ -33,7 +33,7 @@ from django.conf import settings
 
 #from dam.scripts.models import Pipeline
 from dam.mprocessor.models import new_processor
-from dam.repository.models import Item, Component, Watermark
+from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
@@ -183,8 +183,8 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
         
 
 
-def _create_item(user, workspace, media_type):
-    item = Item.objects.create(owner = user, uploader = user,  type = media_type)
+def _create_item(user, workspace, media_type, res_id):
+    item = Item.objects.create(owner = user, uploader = user,  type = media_type, _id = res_id)    
     item.add_to_uploaded_inbox(workspace)    
     item.workspaces.add(workspace)
     return item
@@ -194,14 +194,14 @@ def _get_media_type(file_name):
     media_type = Type.objects.get(name=type)
     return media_type
 
-def _create_variant(file_name, res_id, item, workspace, variant):
+def _create_variant(file_name, uri, item, workspace, variant):
     
     comp = item.create_variant(variant, workspace)        
     if variant.auto_generated:
         comp.imported = True
         
     comp.file_name = file_name
-    comp._id = res_id        
+    comp.uri = uri        
     mime_type = mimetypes.guess_type(file_name)[0]
         
     ext = mime_type.split('/')[1]
@@ -224,14 +224,21 @@ def import_dir(dir_name, user, workspace, session):
     upload_process = new_processor('uploader', user, workspace)
     
     for file_name in files:
-        file_path = os.path.join(dir_name, file_name)
+        tmp = file_name.split('_')
+        res_id = tmp[0]        
+        original_file_name = '_'.join(tmp[1:])
         
-        fpath, res_id = _get_filepath(file_name)
-        shutil.move(file_path, fpath)
-        media_type = _get_media_type(file_name) 
+        ext = file_name.split('.')[-1]
+        final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+        
+        file_path = os.path.join(dir_name, file_name)
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+        
+        shutil.move(file_path, final_path)
+        media_type = _get_media_type(file_name)
                
-        item = _create_item(user, workspace, media_type)
-        _create_variant(file_name, res_id, item, workspace, variant)
+        item = _create_item(user, workspace, media_type, res_id)
+        _create_variant(original_file_name, final_file_name, item, workspace, variant)
         upload_process.add_params(item.pk)
         
     upload_process.run()
@@ -265,6 +272,7 @@ def upload_resource(request):
             
         logger.debug('tmp_dir %s'%tmp_dir)
         logger.debug('os.path.exists(%s) %s'%(tmp_dir, os.path.exists(tmp_dir)))
+        file_name = new_id() + '_' + file_name
         file = open(os.path.join(tmp_dir, file_name), 'wb')
         file.write(request.raw_post_data)
         file.close()           
