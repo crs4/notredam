@@ -306,12 +306,19 @@ def upload_variant(request):
     if not isinstance(file_name, unicode):
         file_name = unicode(file_name, 'utf-8')
     
-    fpath, res_id = _get_filepath(file_name)    
-    file = open(fpath, 'wb')
+    
+    ext = os.path.splitext(file_name)[1]
+    res_id = item.ID
+    
+    final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+    final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+     
+        
+    file = open(final_path, 'wb')
     file.write(request.raw_post_data)
     file.close()
      
-    _create_variant(file_name, res_id, item, workspace, variant)
+    _create_variant(file_name, final_file_name, item, workspace, variant)
     
 #    upload_process = new_processor('upload', user, workspace)
 #    upload_process.add_params(item.pk)
