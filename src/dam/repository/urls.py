@@ -25,7 +25,6 @@ urlpatterns = patterns('',
     (r'^get_watermarks/', 'dam.repository.views.get_watermarks'),
     (r'^delete_watermark/', 'dam.repository.views.delete_watermark'),
     (r'^item/(.+)/(.+)/', 'dam.repository.views.get_variant_url'),
-    
-    
-
+    (r'^storage/(?P<resource_name>.*)$', 'dam.repository.views.get_resource'),
+     
 )
