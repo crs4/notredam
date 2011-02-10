@@ -1905,12 +1905,11 @@ var search_box = {
                                                
                                                 
                                                 '<span style="position:absolute; right:10px;">' ,
-                                                '<tpl if="resource_url">',
-                                                	
+                                                '<tpl if="resource_url">',                                                
                                                     '<tpl if="work_in_progress == 0">',
                                                         '<img ext:qtip="View" src="/files/images/search_blue.png" class="variant_button"  onclick="open_variant(\'{variant_name}\',\'{resource_url}\', \'{media_type}\', \'{width}\', \'{height}\')"/>',
                                                     '</tpl>',
-                                                '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'/download_component/{item_id}/{variant_name}\')" class="variant_button"/>',
+                                                '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'{resource_url}?download=true\')" class="variant_button"/>',
                                                 '</tpl>',
                                                 '<img ext:qtip="Replace" id="import_{pk}" src="/files/images/box_upload.png" onclick="variant_id=this.id.split(\'_\')[1];import_variant(variant_id)" class="variant_button"/>',
                                                 

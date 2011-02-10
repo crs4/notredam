@@ -233,6 +233,7 @@ def get_variants(request):
             
             work_in_progress = False #TODO
             resource_url = comp.get_url()
+            
             if resource_url:
                 abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
             else:
