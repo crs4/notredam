@@ -2109,7 +2109,7 @@ function show_monitor(){
 			runner:new Ext.util.TaskRunner(),			
 			update_task:{
 				run: function(){
-					 console.log('aaaaaaaaaaaaaaaaaaaaa');
+					
 					var updated = win.update_progress();
 					if (!updated)
 						win.runner.stop(win.update_task);					

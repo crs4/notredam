@@ -415,15 +415,26 @@ class Item(AbstractItem):
         else:
             caption = ''
                         
-        thumb_url = self.get_variant_url('thumbnail', workspace)
-        preview_url = self.get_variant_url('preview', workspace)
-        fullscreen_url = self.get_variant_url('fullscreen', workspace)
-        
-        variant_ready = (thumb_url) and (preview_url) and (fullscreen_url)  
-        if variant_ready:
-            status = 'completed'
-        else:
+#        thumb_url = self.get_variant_url('thumbnail', workspace)
+#        preview_url = self.get_variant_url('preview', workspace)
+#        fullscreen_url = self.get_variant_url('fullscreen', workspace)
+
+        now = '?t=' + str(time.time())
+        thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail') + now
+        preview_url = '/item/%s/%s/'%(self.ID, 'preview') + now
+#        fullscreen_url = '/item/%s/%s/'%(self.ID, 'fullscreen')
+        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0).count() > 0
+        logger.debug('in_progress %s'%in_progress)
+        if in_progress:
             status = 'in_progress'
+#            now = '?t=' + str(time.time())
+#            thumb_url += now
+#            preview_url += now
+#            fullscreen_url += now
+        else:
+            status = 'completed'
+            
+#        thumb_url = preview_url = fullscreen_url = None
         
         
         

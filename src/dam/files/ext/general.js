@@ -900,6 +900,7 @@ function createTemplate(panel_id, media_type){
 					tpl_str += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 					tpl_str += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>'; 
 					tpl_str += '<div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div>';
+//					tpl_str += '<img src="{url}"></img>';
 				tpl_str +='</div>';                
 				
 				tpl_str += '<span>{shortName}</span>' 

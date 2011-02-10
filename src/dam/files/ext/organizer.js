@@ -1417,14 +1417,20 @@ Ext.onReady(function(){
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = info['thumb'];
                                     for (var key in info) {
-                                        if (key == 'url') {
-                                            if (previous_thumb_ready == 0 && thumb_ready == 1) {
-                                                item_data.set(key, info[key]);
-                                            }
-                                        }
-                                        else {
-                                            item_data.set(key, info[key]);
-                                        }
+                                    	if (key == 'url') 
+                                    		info[key] = info[key] + '?t=' + (new Date()).getTime();
+                                    	item_data.set(key, info[key]);
+//                                        if (key == 'url') {
+//                                        	info[key] = info[key] + '?t=' + (new Date()).getTime();
+//                                        	
+//                                            if (previous_thumb_ready == 0 && thumb_ready == 1) {
+//                                                item_data.set(key, info[key]);
+//                                            }
+//                                        }
+//                                        else {
+//                                            item_data.set(key, info[key]);
+//                                            
+//                                        }
                                     }
                                     
                                     var detail_tabs_panel = Ext.getCmp('detail_tabs');
