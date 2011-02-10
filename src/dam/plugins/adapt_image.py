@@ -139,7 +139,8 @@ class Adapter:
         
         if result:
             directory, name = os.path.split(result)
-            component._id = name
+            
+            component.uri = name
             component.save()
         else:
             log.error('Empty result passed to save_and_extract_features')
@@ -198,11 +199,11 @@ class Adapter:
         
         adapter_proxy = Proxy('Adapter')
         log.debug("calling adapter")
-        dest_res_id = get_storage_file_name(item_id, workspace.pk, output_variant.name, output_format)
+        dest_res_id = get_storage_file_name(item.ID, workspace.pk, output_variant.name, output_format)
         output_component.uri = dest_res_id
         output_component.save() 
         
-        d = adapter_proxy.adapt_image_magick('%s[0]' % source.ID, dest_res_id, argv)
+        d = adapter_proxy.adapt_image_magick('%s[0]' % source.uri, dest_res_id, argv)
         d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
         return self.deferred
     
