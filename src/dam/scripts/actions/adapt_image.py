@@ -24,17 +24,16 @@ def inspect():
     return {
         'name': __name__,
         'parameter_groups':{
-        'resize':['width', 'height'],
-        'crop':['ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'component_id']
-            
-            
-            },
-            'width': {
-            'type': 'int',
-            'description': 'width',
-            'default': 100,
-            'help': ''
+            'resize':['resize_w', 'resize_h'],
+            'crop':['crop_x', 'crop_y', 'crop_w', 'crop_h', 'crop_ratio'],
+            'watermark': ['pos_x_percent','pos_y_percent', 'wm_id']
+        },
+
+        'width': {
+        'type': 'int',
+        'description': 'width',
+        'default': 100,
+        'help': ''
             
             
         },     
@@ -43,19 +42,47 @@ def inspect():
             'available_values':['resize', 'crop', 'watermark']
                  
         },
-        'height': {
+        'resize_h': {
             'type': 'int',
             'description': 'height',
             'default': 100,
-            'help': ''
-                       
+            'help': 'height of resized image in pixels',
         }, 
-         'ratio':{
+        'resize_w': {
+            'type': 'int',
+            'description': 'width',
+            'default': 100,
+            'help': 'width of resized image in pixels',
+        }, 
+        'crop_w': {
+            'type': 'int',
+            'description': 'width',
+            'default': 100,
+            'help': 'width of crop area, default till right edge of image',
+        }, 
+        'crop_h': {
+            'type': 'int',
+            'description': 'width',
+            'default': 100,
+            'help': 'heigth of crop area, default till bottom edge of image',
+        }, 
+        'crop_x': {
+            'type': 'int',
+            'description': 'upper left corner',
+            'default': 0,
+            'help': 'x-coordinate of upper left pixel of crop area',
+        }, 
+        'crop_y': {
+            'type': 'int',
+            'description': 'upper left corner',
+            'default': 0,
+            'help': 'y-coordinate of upper left pixel of crop area',
+        }, 
+        'crop_ratio':{
             'type': 'string',
-            'description': 'ratio',
+            'description': 'ratio x:y',
             'default': '1:1',
-            'help': ''
-                       
+            'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
         },
         
         'wm_id':{
@@ -97,10 +124,10 @@ def inspect():
          
         } 
 
-def run(item_id, workspace, source_variant, output_variant, output_format, actions, height = None, width = None, ratio = None, pos_x_percent = None, pos_y_percent = None, wm_id = None):
+def run(*args, **kw_args):
     deferred = defer.Deferred()
     adapter = Adapter(deferred)
-    reactor.callLater(0, adapter.execute, item_id, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id)
+    reactor.callLater(0, adapter.execute, *args, **kw_args)
     return deferred
 
 class Adapter:
@@ -108,119 +135,98 @@ class Adapter:
         self.deferred = defer.Deferred()
     
     def handle_result(self, result, component):
-        log.debug('result %s'%result)
+        log.debug('handle_result %s' % str(result))
         log.debug("[save_component] component %s" % component.pk)        
         
         if result:
-            dir, name = os.path.split(result)
+            print 'handle_result: saving component %s' % component._id
+            directory, name = os.path.split(result)
             component._id = name
             component.save()
         else:
             log.error('Empty result passed to save_and_extract_features')
         self.deferred.callback(result)
         
-    def handle_error(self, result, component):
-        self.deferred.errcallback('error')
+    def handle_error(self, result):
+        self.deferred.errback('error %s' % str(result))
     
-    def execute(self,item_id, workspace, source_variant, output_variant, output_format, actions, height, width, ratio, pos_x_percent, pos_y_percent, wm_id):
+    def execute(self,
+                item_id, 
+                workspace, 
+                source_variant,
+                output_variant,
+                output_format,
+                actions,
+                resize_h = None,
+                resize_w = None,
+                crop_w = None,
+                crop_h = None,
+                crop_x = None,
+                crop_y = None,
+                crop_ratio = None,
+                pos_x_percent = None,
+                pos_y_percent = None,
+                wm_id = None):
+
         log.info('executing adaptation')
         item = Item.objects.get(pk = item_id)
-        source_variant = Variant.objects.get(name = source_variant)
-        source = item.get_variant(workspace, source_variant)
-        
-        log.debug('item %s'%item)
-        log.debug('workspace %s'%workspace)
-        log.debug('source_variant %s'%source_variant)
-
+        source = Component.objects.get(workspace=workspace, variant__name=source_variant, item=item)
         
         output_variant = Variant.objects.get(name = output_variant)
         output_component = item.create_variant(output_variant, workspace)
                 
         log.debug("[adapt_resource] from original component %s" % output_component.source)
         
-        source = output_component.source = source
-        dest_res_id = new_id()
-        
-        args ={}
+        output_component.source = source
         argv = [] #for calling imagemagick
     
-    
-#       TODO: remove values
-        source_width = source.width = 800
-        source_height = source.height = 600
         for action in actions:
             if action == 'resize':
-                log.debug('source.width %s'%source.width)
-                log.debug('source.height %s'%source.height)
-                width = min(width,  source.width)
-                height = min(height,  source.height)
-                
-                
-                
-                argv +=  ['-resize', '%dx%d' % (width, height)]
-                
-                aspect_ratio = source.height/source.width 
-                alfa = min(width/source.width, height/source.height)
-                source_width = alfa*source.width
-                source_height = alfa*source.height
+                argv +=  ['-resize', '%dx%d' % (resize_w, resize_h)]
                 
             elif action == 'crop':
-                
-                x_ratio, y_ratio = ratio.split(':')
-                y_ratio = int(y_ratio)
-                x_ratio = int(x_ratio)
-                final_width = min(source_width, source_height*x_ratio/y_ratio)
-                final_height = final_width*y_ratio/x_ratio
-                log.debug('ratio=(%s,%s), final(h,w)=(%s, %s), original(h,w)=(%s, %s)'%(
-                       x_ratio, y_ratio, final_height, final_width, source_height, source_width))
-                ul_y = (source_height - final_height)/2
-                ul_x = 0
-                lr_y = ul_y + final_height
-                lr_x = final_width 
-    #            else:
-    #                lr_x = int(int(action['parameters']['lowerright_x'])*component.source.width/100)
-    #                ul_x = int(int(action['parameters']['upperleft_x'])*component.source.width/100)
-    #                lr_y = int(int(action['parameters']['lowerright_y'])*component.source.height/100)
-    #                ul_y = int(int(action['parameters']['upperleft_y'])*component.source.height/100)
-                
-                source_width = lr_x -ul_x 
-                source_height = lr_y - ul_y
-                log.debug('orig(h,w)=(%s, %s)' % (source.height, source.width))
-                argv +=  ['-crop', '%dx%d+%d+%d' % (source_width, source_height,  ul_x, ul_y)]
-                log.debug('argv %s'%argv)
-            
+                if crop_ratio:
+                    x, y = crop_ratio.split(':')
+                    argv += ['-gravity', 'center', '-crop', '%dx%d%%+0+0' % (int(100./float(x)), int(100./float(y)))]
+                else:
+                    crop_x = crop_x or 0   # here None means 0
+                    crop_y = crop_y or 0
+                    argv += ['-crop', '%sx%s+%s+%s' % (int(crop_w), int(crop_h), int(crop_x), int(crop_y))]
+
             elif action == 'watermark':
-                pos_x = int(pos_x_percent)*source_width/100
-                pos_y = int(int(pos_y_percent)*source_height/100)
-                argv += ['cache://' + watermark_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
+                pos_x = int(pos_x_percent * source.width/100.)
+                pos_y = int(pos_y_percent * source.height/100.)
+                argv += ['cache://' + wm_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
         
         adapter_proxy = Proxy('Adapter')
         log.debug("calling adapter")
-        log.debug('orig %s'%source)
-        dest_res_id = dest_res_id + '.' + output_format
+        dest_res_id = new_id() + '.' + output_format
+        #print('calling %s', argv)
+        #self.deferred.callback('done')
         d = adapter_proxy.adapt_image_magick('%s[0]' % source.ID, dest_res_id, argv)
-        d.addCallbacks(self.handle_result, self.handle_error, [output_component])
-        
+        d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
         return self.deferred
     
 
 def test():
     print 'test'
-    
-    item = Item.objects.all()[0]
+    item = Item.objects.get(pk=1)
     workspace = DAMWorkspace.objects.get(pk = 1)
-    source_variant = 'original'
     
-    actions = ['resize'] 
-    height = width = 100
-    output_variant = 'fullscreen'
-    output_format = 'jpg'
-    d = run(item, workspace, source_variant, output_variant,output_format, actions, height, width)
+    d = run(item.pk,
+            workspace,
+            source_variant = 'original',
+            output_variant='fullscreen',
+            output_format = 'jpg',
+            actions = ['crop', 'resize'],
+            resize_h=100,
+            resize_w=100,
+            crop_ratio="2:2",
+            )
     d.addBoth(print_result)
     
 def print_result(result):
-    
-    print result
+    print 'print_result', result
     reactor.stop()
 
 if __name__ == "__main__":
