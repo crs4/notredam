@@ -110,60 +110,10 @@ def _admin_workspace(request,  ws):
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     if ws not in item.workspaces.all():
         item.workspaces.add(ws)
-        EventRegistration.objects.notify('item copy',  ws,  **{'items':[item]})
-#        
-##                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
-#        components = item.component_set.all().filter(variant__is_global = True, workspace = current_ws)
-#        
-#        for comp in components:
-#            
-#            if not comp.variant.auto_generated:
-#                comp.workspace.add(ws)
-#            
-##                    elif comp.variant.shared:
-##                        logger.debug('shared %s'%comp.variant)
-##                        new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID)
-##                        new_comp.workspace.add(ws)
-#            
-#            elif comp.imported:
-#                new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID,  imported = True)
-##                    else:
-##                        new_comp = Component.objects.create(variant = comp.variant,  item = item, _id = comp.ID )
-##                        new_comp.workspace.add(ws)
-##                        new_comp.preferences = comp.preferences
-##                        new_comp.source_id = comp.source_id
-##                        new_comp.save()
-#            
-#            
-##                    default_source_variant = comp.variant.get_source
-#        ws_variants = Variant.objects.filter(Q(workspace = ws) | Q(is_global = True),  auto_generated = True,  media_type = item.type)
-#        
-##                logger.debug('item.component_set.filter(workspace = ws)[0].variant.pk %s' %item.component_set.filter(workspace = ws)[0].variant.pk)
-#        for variant in ws_variants:
-#            if item.component_set.filter(variant = variant, workspace = ws).count() == 0: #if component for variant has not been created yet
-#                
-#                
-#                comps = item.component_set.filter(variant = variant, workspace = current_ws) 
-#                if comps.count() > 0: #if variant exists in the current ws
-#                    comp = comps[0]
-##                    new_comp = _create_variant(variant,  item, ws)
-##                    new_comp._id = comp._id
-##                    new_comp.save()
-#
-##                    new_comp = Component.objects.create(variant = variant,  item = item,  _id = comp._id)
-#                    new_comp = Component.objects.create(variant = variant,  item = item,  _id = comp._id)
-##                        new_comp.preferences = comp.preferences
-##                        new_comp.source_id = comp.source_id
-#
-#                else:
-#                    new_comp = Component.objects.create(variant = variant,  item = item,  )
-##                    new_comp = _create_variant(variant,  item, ws)
-#                    
-#                    
-#                new_comp.workspace.add(ws)                        
-##               TODO: event for upload scripts
-##                generate_tasks(variant,  ws,  item,  check_for_existing = True)
-#        
+        orig_variant = Variant.objects.get(name = 'original')
+        original = item.get_variant(current_ws, orig_variant)
+        original.workspace.add(ws)
+        
         return True
     
     return False
@@ -177,22 +127,26 @@ def _remove_items(request, ws, items):
 @login_required
 @permission_required('add_item', False)
 def add_items_to_ws(request):
+    from dam.mprocessor.models import new_processor
     try:
         item_ids = request.POST.getlist('item_id')
         ws_id = request.POST.get('ws_id')
         
         ws = Workspace.objects.get(pk = ws_id)
+        user = request.user
         current_ws = request.session['workspace']
         remove = request.POST.get('remove')
         move_public = request.POST.get('move_public', 'false')
         items = Item.objects.filter(pk__in = item_ids)
         
+        upload_process = new_processor('uploader', user, ws)
+        
         item_imported = []
         
         for item in items:
-            added = _add_items_to_ws(item, ws, current_ws,remove)
+            added = _add_items_to_ws(item, ws, current_ws, remove)
             if added:
-                item_imported.append(item)
+                upload_process.add_params(item.pk)
         
         if remove == 'true':
             _remove_items(request, current_ws, items)
@@ -203,6 +157,9 @@ def add_items_to_ws(request):
             node = Node.objects.get_or_create(label = time_imported,  type = 'inbox',  parent = imported,  workspace = ws,  depth = 2)[0]
             
             node.items.add(*item_imported)
+        
+        upload_process.run()
+
                 
         resp = simplejson.dumps({'success': True, 'errors': []})
 
@@ -780,7 +737,7 @@ def get_status(request):
         
         resp['status_bar'] = {
             'process_in_progress':  process_in_progress.count(),
-            'pending_items': pending_items
+            'pending_items': pending_items.count()
         }
 ####
         if request.POST.get('update_script_monitor'):

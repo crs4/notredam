@@ -259,38 +259,43 @@ def _script_monitor(workspace):
     processes = workspace.get_active_processes()
     processes_info = []
     for process in processes:
-        
+        try:
 
-        if not process.last_show_date:
-            process.last_show_date = datetime.datetime.now()
-            process.save()
-#                status = 'in progress'
+            if not process.last_show_date:
+                process.last_show_date = datetime.datetime.now()
+                process.save()
+    #                status = 'in progress'
+                
+            elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
+                
+                process.delete()
+                continue
+    #            else:
+    #                status = 'in progress'
             
-        elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
-            
-            process.delete()
+            items_completed =  process.get_num_target_completed()
+            items_failed =  process.get_num_target_failed()
+            total_items = process.processtarget_set.all().count()
+            if total_items == 0:
+                progress = 0
+            else:
+                progress =  round(float(items_failed + items_completed)/float(total_items)*100)
+              
+            processes_info.append({
+                'id': process.pk,
+                 'name':process.pipeline.name,
+    #                 'status': status,                 
+                 'total_items':total_items,
+                 'items_completed': items_completed,
+                 'progress':progress,
+                 'type': process.pipeline.type,
+                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
+                 'end_date': process.end_date.strftime("%d/%m/%y %I:%M"),
+                 'launched_by': process.launched_by.username,
+                 'items_failed': items_failed
+                 })
+        except:
             continue
-#            else:
-#                status = 'in progress'
-        
-        items_completed =  process.get_num_target_completed()
-        items_failed =  process.get_num_target_failed()
-        total_items = process.processtarget_set.all().count()
-        progress =  round(float(items_failed + items_completed)/float(total_items)*100)
-          
-        processes_info.append({
-            'id': process.pk,
-             'name':process.pipeline.name,
-#                 'status': status,                 
-             'total_items':total_items,
-             'items_completed': items_completed,
-             'progress':progress,
-             'type': process.pipeline.type,
-             'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
-             'end_date': process.end_date.strftime("%d/%m/%y %I:%M"),
-             'launched_by': process.launched_by.username,
-             'items_failed': items_failed
-             })
         
     return processes_info
         

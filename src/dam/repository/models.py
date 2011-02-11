@@ -423,7 +423,7 @@ class Item(AbstractItem):
         thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail')
         preview_url = '/item/%s/%s/'%(self.ID, 'preview')
 #        fullscreen_url = '/item/%s/%s/'%(self.ID, 'fullscreen')
-        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0).count() > 0
+        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0, process__workspace = workspace).count() > 0
         
         if in_progress:
             status = 'in_progress'
