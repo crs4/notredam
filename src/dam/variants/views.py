@@ -232,8 +232,12 @@ def get_variants(request):
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             
             work_in_progress = False #TODO
-            resource_url = comp.get_component_url()
-            abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
+            resource_url = comp.get_url()
+            
+            if resource_url:
+                abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
+            else:
+                abs_resource_url = resource_url
             info_list = []
             if comp.media_type.name== 'image':
                 extension = comp.format
@@ -372,3 +376,4 @@ def get_variants_menu_list(request):
     for va in vas:
         resp['variants'].append({'variant_name': va})
     return HttpResponse(simplejson.dumps(resp))
+

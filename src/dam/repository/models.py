@@ -23,19 +23,25 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from dam.mprocessor.models import ProcessTarget
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
-from dam.settings import SERVER_PUBLIC_ADDRESS
+from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
 from dam.metadata.models import MetadataProperty
 
-
-
+import os
 import urlparse
 from dam import logger
 from django.utils import simplejson
 import time
 from django.utils.encoding import smart_str
 import re
+import settings
 
 from mediadart.storage import Storage
+
+from uuid import uuid4
+
+def new_id():
+    return uuid4().hex
+
 
 
 def _get_resource_url(id):
@@ -64,8 +70,18 @@ class Item(AbstractItem):
     Concrete class that inherits from the abstract class AbstractItem found in core/dam_repository/models.py     
     Base model describing items. They can contain components only.
     """
-    
+    _id = models.CharField(max_length=40,  db_column = 'md_id')    
     metadata = generic.GenericRelation('metadata.MetadataValue')
+        
+    def _get_id(self):
+        return self._id
+    
+    ID = property(fget=_get_id)   
+    
+#    def save(self, *args, **kwargs):
+#        if not self.pk and not self._id:
+#            self._id = new_id()
+#        super(Item, self).save(*args, **kwargs)
 
     class Meta:
         db_table = 'item'
@@ -339,19 +355,15 @@ class Item(AbstractItem):
             return 'unknown'
         
     def get_variant_url(self, variant_name, workspace):
-        url = None
-        url_ready = 0
-    
+        url = None       
         try:
             variant = workspace.get_variants().distinct().get(media_type =  self.type, name = variant_name)
-            url = self.get_variant(workspace, variant).get_component_url()
-            if url:
-                url_ready = 1
+            url = self.get_variant(workspace, variant).get_url()
                 
         except Exception, ex:
-            logger.exception(ex)
+            logger.error(ex)
             
-        return url, url_ready
+        return url
 
     def _replace_groups(self, group, default_language):
         namespace = group.group('namespace')
@@ -395,7 +407,6 @@ class Item(AbstractItem):
             logger.exception(ex)
     
         return caption
-
         
     def get_info(self, workspace,  caption = None, default_language = None):        
         from dam.geo_features.models import GeoInfo
@@ -404,13 +415,28 @@ class Item(AbstractItem):
         else:
             caption = ''
                         
-        thumb_url, thumb_ready = self.get_variant_url('thumbnail', workspace)  
-        try:      
-            process_target = ProcessTarget.objects.get(target_id = str(self.pk), process__workspace = workspace)
-        except ProcessTarget.DoesNotExist:
-            status = 'completed' 'old process, removed'
+#        thumb_url = self.get_variant_url('thumbnail', workspace)
+#        preview_url = self.get_variant_url('preview', workspace)
+#        fullscreen_url = self.get_variant_url('fullscreen', workspace)
+
+        now = '?t=' + str(time.time())
+        thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail') + now
+        preview_url = '/item/%s/%s/'%(self.ID, 'preview') + now
+#        fullscreen_url = '/item/%s/%s/'%(self.ID, 'fullscreen')
+        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0).count() > 0
+        logger.debug('in_progress %s'%in_progress)
+        if in_progress:
+            status = 'in_progress'
+#            now = '?t=' + str(time.time())
+#            thumb_url += now
+#            preview_url += now
+#            fullscreen_url += now
         else:
-            status = process_target.get_status()
+            status = 'completed'
+            
+#        thumb_url = preview_url = fullscreen_url = None
+        
+        
         
         if GeoInfo.objects.filter(item=self).count() > 0:
             geotagged = 1
@@ -421,12 +447,13 @@ class Item(AbstractItem):
             'name': caption,
             'size':self.get_file_size(), 
             'pk': smart_str(self.pk), 
-            'thumb': thumb_ready,
+           
             'status': status,
+            'thumb': thumb_url is not None,
             'url':smart_str(thumb_url), 
             'type': smart_str(self.type.name),
-            'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (self.pk, 'test')),
-            'preview_available': False,
+            'url_preview':preview_url,
+#            'preview_available': False,
             'geotagged': geotagged
             }
             
@@ -437,7 +464,11 @@ class Item(AbstractItem):
             info['state'] = state_association.state.pk
     
         return info
-                                
+
+
+def get_storage_file_name(item_id, workspace_id, variant_name, extension):
+    return item_id +  '_' + str(workspace_id) + '_' + variant_name + '.' + extension
+                       
 class Component(AbstractComponent):
 
     """ 
@@ -462,6 +493,10 @@ class Component(AbstractComponent):
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False) 
     pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
+    
+    
+    
+    
     
     class Meta:
         db_table = 'component'
@@ -495,27 +530,23 @@ class Component(AbstractComponent):
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
     
-    def get_component_url(self, full_address = False):
+    def get_url(self, full_address = False):
         """
         Returns the component url (something like /storage/res_id.ext)
         """
-        from dam.application.views import NOTAVAILABLE
-
-        url = NOTAVAILABLE    
         
-        try:
-            component = self
+        storage = Storage()
+        url = None
+        try:        
+            file_name = self.uri
+            if  storage.exists(file_name):
+                url = os.path.join(STORAGE_SERVER_URL, file_name)
         
-            if component.uri:
-                url =  component.uri
-            else:
-                url = _get_resource_url(component.ID)
-            
-            if full_address:
-                url = SERVER_PUBLIC_ADDRESS + url
-        
-        except Exception,ex:
-            url = NOTAVAILABLE    
+                if full_address:
+                    url = SERVER_PUBLIC_ADDRESS + url
+                
+        except Exception, ex:
+            logger.exception(ex)
         
         return url
 

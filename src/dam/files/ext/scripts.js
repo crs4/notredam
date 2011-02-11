@@ -2104,31 +2104,19 @@ function show_monitor(){
 			height: 500,
 			width: 800,
 			layout: 'fit',
-			collapsible: true,
+			collapsible: true,			
+			
 			update_progress: function(){
 				var store = Ext.getCmp('script_monitor_list').getStore();
-				if (store.query('status', 'in_progress').items.length > 0)
-					Ext.Ajax.request({
-	        			url: store.url,
-	        			params:{
-	        				do_not__delete_old_scripts: true
-	        			},
-	        			success: function(response){
-	        				 var resp = Ext.decode(response.responseText);
-	        				 var record;
-	        				 Ext.each(resp.scripts, function(script){
-	        				 	record = store.getById(script.id);
-	        				 	record.set('status', script.status);
-	        				 	record.set('items_completed', script.items_completed);
-	        				 	record.set('items_failed', script.items_failed);
-	        				 	record.commit();
-	        				 	
-	        				 
-	        				 });
-	        				 
-	        				
-	        			}
-	        		});
+				var script_in_progress = store.queryBy(function(r){
+					return (r.data.progress < 100)
+				}).items;
+				if (script_in_progress.length > 0){				
+					
+					return true;
+				}
+				else
+					return false;
 			
 			},
 			
@@ -2145,7 +2133,7 @@ function show_monitor(){
 					    		'id',
 					    		'name',
 					    		'time_elapsed',
-					    		'status',
+					    	
 					    		'progress',
 					    		'type',
 					    		'total_items',
@@ -2185,6 +2173,15 @@ function show_monitor(){
 					    {
 					        header: 'Start Date',											        
 					        dataIndex: 'start_date',
+					        type: 'date',
+					        sortable: true,
+					        menuDisabled: true
+					        
+					    },
+					    
+					    {
+					        header: 'End Date',											        
+					        dataIndex: 'end_date',
 					        type: 'date',
 					        sortable: true,
 					        menuDisabled: true
@@ -2244,22 +2241,7 @@ function show_monitor(){
 		});
 		
 		win.show();
-		Ext.getCmp('script_monitor_list').getStore().load({
-//			callback: function(records){
-//				var pr;
-//				Ext.each(records, function(r){
-//					
-//					pr = new Ext.ProgressBar({
-//				        text: r.data.items_completed + '/' + r.data.total_items + ' items',
-//				        id:'progress_' + r.id,
-//				        renderTo:'process_' + r.id
-//				    });
-//				    pr.updateProgress(r.data.items_completed/r.data.total_items);
-//				
-//				});	
-//			}
-			
-		});
+		Ext.getCmp('script_monitor_list').getStore().load();
 		
 		
 };

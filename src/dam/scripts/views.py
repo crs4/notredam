@@ -19,7 +19,7 @@
 from django.http import HttpResponse, HttpResponseServerError
 from django.utils import simplejson
 from django.contrib.auth.decorators import login_required
-from dam.scripts.models import *
+from dam.mprocessor.models import *
 from dam.eventmanager.models import Event, EventRegistration
 from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
@@ -43,7 +43,7 @@ def _get_scripts_info(script):
 def get_scripts(request):
     workspace = request.session.get('workspace')
     
-    scripts = Script.objects.filter(workspace = workspace).distinct()
+    scripts = Pipeline.objects.filter(workspace = workspace).distinct()
     resp = {'scripts': []}
             
     for script in scripts:
@@ -78,7 +78,7 @@ def get_actions(request):
     actions_dir = actions_modules.replace('.', '/')
     all_files = os.listdir(os.path.join(src_dir, actions_dir))
     
-    resp = {}
+    resp = {'scripts':[]}
     modules_to_load = []
     try:
         for file in all_files:
@@ -88,16 +88,22 @@ def get_actions(request):
         top_module = __import__(actions_modules, fromlist=modules_to_load)
         logger.debug('modules_to_load %s'%modules_to_load)
         for module in modules_to_load:
-            logger.debug(module)
-            
-            module_loaded = getattr(top_module, module, None)
-            if module_loaded:
-                logger.debug(module_loaded)
-                logger.debug('aaaa %s'%hasattr(module_loaded, 'inspect'))
+            try:
+                logger.debug(module)
                 
-                if hasattr(module_loaded, 'inspect'):
-                    resp[module] = module_loaded.inspect()
-                    media_type = request.POST.get('media_type') # if no media_type all actions will be returned
+                module_loaded = getattr(top_module, module, None)
+                if module_loaded:
+                    logger.debug(module_loaded)
+                    logger.debug('aaaa %s'%hasattr(module_loaded, 'inspect'))
+                    
+                    if hasattr(module_loaded, 'inspect'):
+                        tmp = module_loaded.inspect()
+                        tmp.update({'name': module})
+                        resp['scripts'].append(tmp)
+                        media_type = request.POST.get('media_type') # if no media_type all actions will be returned
+            except Exception, ex:
+                logger.error(ex)
+                continue
         
     except Exception, ex:
         logger.exception(ex)
@@ -247,4 +253,63 @@ def get_available_actions(request):
                          
             ]}
     return HttpResponse(simplejson.dumps(resp))
+
+def _script_monitor(workspace):
+    import datetime    
+    processes = workspace.get_active_processes()
+    processes_info = []
+    for process in processes:
+        
+
+        if not process.last_show_date:
+            process.last_show_date = datetime.datetime.now()
+            process.save()
+#                status = 'in progress'
+            
+        elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
+            
+            process.delete()
+            continue
+#            else:
+#                status = 'in progress'
+        
+        items_completed =  process.get_num_target_completed()
+        items_failed =  process.get_num_target_failed()
+        total_items = process.processtarget_set.all().count()
+        progress =  round(float(items_failed + items_completed)/float(total_items)*100)
+          
+        processes_info.append({
+            'id': process.pk,
+             'name':process.pipeline.name,
+#                 'status': status,                 
+             'total_items':total_items,
+             'items_completed': items_completed,
+             'progress':progress,
+             'type': process.pipeline.type,
+             'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
+             'end_date': process.end_date.strftime("%d/%m/%y %I:%M"),
+             'launched_by': process.launched_by.username,
+             'items_failed': items_failed
+             })
+        
+    return processes_info
+        
+    
+
+
+@login_required
+def script_monitor(request):   
+    
+    try:
+        workspace = request.session['workspace']
+        processes_info = _script_monitor(workspace)
+        
+        return HttpResponse(simplejson.dumps({
+            'success': True,
+            'scripts':processes_info
+        }))
+    except Exception, ex:
+        logger.exception(ex)
+        return HttpResponse(simplejson.dumps({'success': False}))
+    
     

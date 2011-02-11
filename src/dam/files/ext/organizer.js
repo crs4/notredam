@@ -222,7 +222,7 @@ var store_nodes_checked = new Ext.data.JsonStore({
 var current_item_selected;
 
 function showFullscreen(view, index, node, e){
-	console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaa');
+	
     var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
         
     Ext.Ajax.request({
@@ -491,7 +491,7 @@ var showDetails = function(view){
         
         if(admin | run_scripts){
             Ext.getCmp('object_menu').menu.items.get('addto').enable();
-            Ext.getCmp('object_menu').menu.items.get('runscript').enable();
+            Ext.getCmp('runscript').enable();
         }
         
         if (admin | remove_item){
@@ -567,7 +567,7 @@ var showDetails = function(view){
         Ext.getCmp('sync_xmp').disable();
         
         
-        Ext.getCmp('object_menu').menu.items.get('runscript').disable();
+        Ext.getCmp('runscript').disable();
 //            preview = Ext.getCmp('preview_panel').body;
 //            preview.update('');
         if(active_tab) {
@@ -1392,15 +1392,37 @@ Ext.onReady(function(){
                 }
             }
             
-            if (items.length > 0)            	
+            var update_script_monitor;
+            var script_monitor_win = Ext.WindowMgr.get('script_monitor');
+			if (script_monitor_win)
+				update_script_monitor = script_monitor_win.update_progress();
+				
+            
+            if (items.length > 0 || update_script_monitor){
+            	var params = {};
+            	
+            	if (items.length > 0)
+            		params.items = items;
+            		
+            	if (update_script_monitor)
+            		params.update_script_monitor = true;
+				
             	Ext.Ajax.request({
                 url: '/get_status/',
-                params: {items: items},
+                params: params,
                 
-                success: function(data){                    
+                success: function(data){    
+                	console.log(data);
 //                    set_status_bar_busy();
                     data = Ext.decode(data.responseText);
-                    
+                    if (data.scripts){
+                    	var monitor = Ext.getCmp('script_monitor_list')
+                    	if (monitor){
+                    		store = monitor.getStore();
+                    		store.loadData(data);
+                    	}
+                    	
+                    }
                     var update_items = data.items;
                    
                     var tab = Ext.getCmp('media_tabs').getActiveTab();
@@ -1417,14 +1439,20 @@ Ext.onReady(function(){
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = info['thumb'];
                                     for (var key in info) {
-                                        if (key == 'url') {
-                                            if (previous_thumb_ready == 0 && thumb_ready == 1) {
-                                                item_data.set(key, info[key]);
-                                            }
-                                        }
-                                        else {
-                                            item_data.set(key, info[key]);
-                                        }
+                                    	if (key == 'url') 
+                                    		info[key] = info[key] + '?t=' + (new Date()).getTime();
+                                    	item_data.set(key, info[key]);
+//                                        if (key == 'url') {
+//                                        	info[key] = info[key] + '?t=' + (new Date()).getTime();
+//                                        	
+//                                            if (previous_thumb_ready == 0 && thumb_ready == 1) {
+//                                                item_data.set(key, info[key]);
+//                                            }
+//                                        }
+//                                        else {
+//                                            item_data.set(key, info[key]);
+//                                            
+//                                        }
                                     }
                                     
                                     var detail_tabs_panel = Ext.getCmp('detail_tabs');
@@ -1455,6 +1483,7 @@ Ext.onReady(function(){
 
                 }
             });
+        }
         },
         interval: 3000 //3 second
     };
@@ -1899,18 +1928,17 @@ var search_box = {
                                                 tpl: new Ext.XTemplate(  
                                                 	'<div class="list-variant">',
                                                     '<b style="color:#3764A0;">{variant_name:capitalize()}</b>', 
-                                                    '<tpl if="work_in_progress" >',                                                
+                                                    '<tpl if="work_in_progress">',                                                
                                                         '<img src="/files/images/warning.gif" style="width: 13px; padding-left: 5px; height: 13px;"/>',                                                                                                    
                                                     '</tpl>',
                                                
                                                 
                                                 '<span style="position:absolute; right:10px;">' ,
-                                                '<tpl if="resource_url">',
-                                                	
+                                                '<tpl if="resource_url">',                                                
                                                     '<tpl if="work_in_progress == 0">',
                                                         '<img ext:qtip="View" src="/files/images/search_blue.png" class="variant_button"  onclick="open_variant(\'{variant_name}\',\'{resource_url}\', \'{media_type}\', \'{width}\', \'{height}\')"/>',
                                                     '</tpl>',
-                                                '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'/download_component/{item_id}/{variant_name}\')" class="variant_button"/>',
+                                                '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'{resource_url}?download=true\')" class="variant_button"/>',
                                                 '</tpl>',
                                                 '<img ext:qtip="Replace" id="import_{pk}" src="/files/images/box_upload.png" onclick="variant_id=this.id.split(\'_\')[1];import_variant(variant_id)" class="variant_button"/>',
                                                 

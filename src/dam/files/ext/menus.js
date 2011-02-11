@@ -18,6 +18,7 @@
 
 Ext.onReady(function(){
     Ext.QuickTips.init();
+    
 
     var members_configuration = function() {
 
@@ -623,7 +624,86 @@ Ext.onReady(function(){
                     calculatePageSize();
 //                    var up = new Upload();
 //                    up.openUpload();
-                    upload_dialog();
+                    upload_dialog({
+                    	url: '/upload_resource/',
+                    	after_upload: function(session_id){
+                    		Ext.Ajax.request({
+				            	url: '/upload_session_finished/',
+				            	params: {session: session_id},
+				            	success: function(){
+				            		var tab = Ext.getCmp('media_tabs').getActiveTab();
+					                var view = tab.getComponent(0);
+					                var selecteds = view.getSelectedRecords();
+					                var store = view.getStore();
+					                var uploads_failed = Ext.getCmp('files_list').getStore().query('status', 'failed').items.length;
+					                var uploads_success = Ext.getCmp('files_list').getStore().query('status', 'ok').items.length;
+					                var buttons = []
+					                
+					                if (uploads_failed > 0) 
+					                	buttons.push({
+							            	text: 'Retry failed upload',							            	
+							            	handler: function(){							            		
+							            	}							            
+							            });
+							        buttons.push({
+							            	text: 'Upload more files',
+							            	handler: function(){
+							            		Ext.getCmp('files_list').getStore().removeAll();
+							            		Ext.getCmp('upload_finished').close();
+							            		session_id = user + '_' + new Date().getTime();
+							            	}							            
+							            });
+							      	buttons.push({
+								            text: 'Show monitor',
+								            handler: function(){
+								            	Ext.getCmp('upload_finished').close();
+								            	win.close();
+								            	show_monitor();
+								            }
+								          });
+							        buttons.push({
+							            text: 'Close',
+							            handler: function(){
+							            	Ext.getCmp('upload_finished').close();
+							            	win.close();
+							            }
+						            });
+								          
+					                var upload_finished = new Ext.Window({
+										id: 'upload_finished',
+							            title    : 'Upload Finished',
+							            closable : true,
+							            width    : 400,
+							            height   : 200,
+							            buttonAlign: 'center',
+							            modal: true,
+							            html: '<p>successfull uploads: ' + uploads_success + '</p><p>failed uploads: ' + uploads_failed +'</p>',
+							            buttons: buttons
+							       	});
+							        upload_finished.show();
+							       
+							        
+					                store.reload({
+					                    scope: view,
+					                    callback:function(){
+					                        var ids = [];
+					                        for(i = 0; i<selecteds.length; i++){
+					                            ids.push(selecteds[i].data.pk);
+					                            }
+					                        this.select(ids);
+					                        
+					                        }
+					                    });		
+				            	
+				            	}
+				            });
+                    		
+                    	
+                    	}
+                    	
+                    	
+                    	
+                    });
                 }
             }, {
                 text: 'Share with...',
@@ -866,99 +946,100 @@ Ext.onReady(function(){
                 id: 'set_state_to',
                 menu: states_menu,
                 disabled: true
-            },{
-                text     :'Run scripts',
-                id       : 'runscript',
-                disabled : true,
-            	handler  : function(){
-            		var open_script_win = new Ext.Window({
-	            	    constrain   : true,
-	            	    title       : 'Choose scripts',
-	            	    layout      : 'fit',
-	            	    width       : 400,
-	            	    height      : 440,
-	            	    modal       : true,
-	            	    resizable   : false,
-	            	    items:[new Ext.FormPanel({
-	            	        id      :'open_form',
-	            		    layout  : 'fit',
-	            	        frame   :true,
-	            	        items:[ 
-	            	           	new Ext.grid.GridPanel({
-	            	                id          : 'my_scripts' ,
-	            	        	    store            : new Ext.data.JsonStore({
-	            	        		    url      : '/get_scripts/',
-	            	        		    method   :'POST',
-	            	        		    autoLoad :true,
-	            	        		    root     : 'scripts',
-	            	        		    fields   : ['id', 'name', 'description', 'actions_media_type']
-	            	        	    }),
-	            	        	    columns          : [
-	            	        		        	        { id : 'name',  header: "Name", dataIndex: 'name', sortable: true},
-	            	        		        	        { id : 'description',  header: "Description", dataIndex: 'description'}
-	            	        	    ],
-	            	        	    stripeRows       : true,
-	            	        	    autoExpandColumn : 'name',
-	            	        		frame            : true,
-	            	                hideHeaders      : true,
-	            	        		sm               : new Ext.grid.RowSelectionModel({
-	            	        								singleSelect : true
-	            	        							})
-	
-	            	           	})
-	            	        ]
-	            	    })],
-	                    buttons: [{
-	            	        text: 'Create script',
-	            	        type: 'submit',	    
-	            	        handler: function(){
-	                    		new_script(true,'New Script', null, null, false, true);
-	                    		
-	                    		var my_win = this.findParentByType('window');
-	                    		my_win.close();
-	                    	}
-                    	},{
-	            	        text: 'Run',
-	            	        type: 'submit',
-	            	        handler: function(){
-	            		    		var my_win = this.findParentByType('window');
-	            		    		
-	            		    		var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
-	            		    		var selNodes= view.getSelectedNodes();
-	            		    		if(selNodes && selNodes.length > 0){ 
-	                                    var selected_ids = get_selected_items();
-	            						Ext.Ajax.request({
-	            					        url: '/run_script/',
-	            			                params: {
-	            								items: selected_ids,
-	            								script_id : my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data.id
-	            							},
-	            					        success: function(data){
-//	            								var tab = Ext.getCmp('media_tabs').getActiveTab();
-//	        					                var view = tab.getComponent(0);
-//	    					                    var store = view.getStore();
-//	    					                    store.reload();
-	            					        }
-	            					    });
-	                                }
-//	            		    		//Update data view
-//    							    var ac = Ext.getCmp('media_tabs').getActiveTab();
-//    							    var view = ac.getComponent(0);
-//    							    view.refresh();
-	            		    		my_win.close();
-	            	        }
-                    },{
-        		        text: 'Cancel',
-        		        handler: function(){
-        			            var my_win = this.findParentByType('window');
-        			            my_win.close();
-        		        	}
-        		        }]          
-	                });
-	            	open_script_win.show(); 
-            		
-            	}
             }
+//            	{
+//                text     :'Run scripts',
+//                id       : 'runscript',
+//                disabled : true,
+//            	handler  : function(){
+//            		var open_script_win = new Ext.Window({
+//	            	    constrain   : true,
+//	            	    title       : 'Choose scripts',
+//	            	    layout      : 'fit',
+//	            	    width       : 400,
+//	            	    height      : 440,
+//	            	    modal       : true,
+//	            	    resizable   : false,
+//	            	    items:[new Ext.FormPanel({
+//	            	        id      :'open_form',
+//	            		    layout  : 'fit',
+//	            	        frame   :true,
+//	            	        items:[ 
+//	            	           	new Ext.grid.GridPanel({
+//	            	                id          : 'my_scripts' ,
+//	            	        	    store            : new Ext.data.JsonStore({
+//	            	        		    url      : '/get_scripts/',
+//	            	        		    method   :'POST',
+//	            	        		    autoLoad :true,
+//	            	        		    root     : 'scripts',
+//	            	        		    fields   : ['id', 'name', 'description', 'actions_media_type']
+//	            	        	    }),
+//	            	        	    columns          : [
+//	            	        		        	        { id : 'name',  header: "Name", dataIndex: 'name', sortable: true},
+//	            	        		        	        { id : 'description',  header: "Description", dataIndex: 'description'}
+//	            	        	    ],
+//	            	        	    stripeRows       : true,
+//	            	        	    autoExpandColumn : 'name',
+//	            	        		frame            : true,
+//	            	                hideHeaders      : true,
+//	            	        		sm               : new Ext.grid.RowSelectionModel({
+//	            	        								singleSelect : true
+//	            	        							})
+//	
+//	            	           	})
+//	            	        ]
+//	            	    })],
+//	                    buttons: [{
+//	            	        text: 'Create script',
+//	            	        type: 'submit',	    
+//	            	        handler: function(){
+//	                    		new_script(true,'New Script', null, null, false, true);
+//	                    		
+//	                    		var my_win = this.findParentByType('window');
+//	                    		my_win.close();
+//	                    	}
+//                    	},{
+//	            	        text: 'Run',
+//	            	        type: 'submit',
+//	            	        handler: function(){
+//	            		    		var my_win = this.findParentByType('window');
+//	            		    		
+//	            		    		var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
+//	            		    		var selNodes= view.getSelectedNodes();
+//	            		    		if(selNodes && selNodes.length > 0){ 
+//	                                    var selected_ids = get_selected_items();
+//	            						Ext.Ajax.request({
+//	            					        url: '/run_script/',
+//	            			                params: {
+//	            								items: selected_ids,
+//	            								script_id : my_win.get('open_form').get('my_scripts').getSelectionModel().getSelected().data.id
+//	            							},
+//	            					        success: function(data){
+////	            								var tab = Ext.getCmp('media_tabs').getActiveTab();
+////	        					                var view = tab.getComponent(0);
+////	    					                    var store = view.getStore();
+////	    					                    store.reload();
+//	            					        }
+//	            					    });
+//	                                }
+////	            		    		//Update data view
+////    							    var ac = Ext.getCmp('media_tabs').getActiveTab();
+////    							    var view = ac.getComponent(0);
+////    							    view.refresh();
+//	            		    		my_win.close();
+//	            	        }
+//                    },{
+//        		        text: 'Cancel',
+//        		        handler: function(){
+//        			            var my_win = this.findParentByType('window');
+//        			            my_win.close();
+//        		        	}
+//        		        }]          
+//	                });
+//	            	open_script_win.show(); 
+//            		
+//            	}
+//            }
         ]
     });
 
@@ -1020,17 +1101,32 @@ Ext.onReady(function(){
                             
                             },{ 
                             	text    : 'Edit',                                                      
-	                            handler : function(){manage_script();}                   
-                            },{ 
-                            	text    : 'Events',
-                            	handler : function(){manage_events();}
+	                            handler : function(){
+	                            window.open('/wireit/','Edit script')
+//	                            manage_script();
+	                            }                   
                             },
+                            	
+                            
+//                            { 
+//                            	text    : 'Events',
+//                            	handler : function(){manage_events();}
+//                            },
                             { 
                             	text    : 'Monitor',
                             	handler : function(){
                             		show_monitor();
                             	
                             	}
+                            },
+                            {
+                            	id: 'runscript',
+                            	disabled: true,
+                            	text: 'Run...',
+                            	menu: new Ext.menu.Menu({
+								    id: 'scripts_menu',
+								    items:[]
+								})
                             }
                             
                         ]
@@ -1092,6 +1188,7 @@ Ext.onReady(function(){
     
     
     create_toolbar();
+    
     
     ws_store.on('load', function(){
     	

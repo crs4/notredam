@@ -47,11 +47,7 @@ urlpatterns = patterns('',
     (r'^get_available_permissions/', 'dam.workspace.views.get_available_permissions'),
     (r'^get_available_users/', 'dam.workspace.views.get_available_users'),
     (r'^save_members/', 'dam.workspace.views.save_members'), 
-    (r'^download_renditions/', 'dam.workspace.views.download_renditions'),
-    (r'^script_monitor/', 'dam.workspace.views.script_monitor')
-    
-    
-    
+    (r'^download_renditions/', 'dam.workspace.views.download_renditions'),    
 )
 
 

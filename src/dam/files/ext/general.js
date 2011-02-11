@@ -900,6 +900,7 @@ function createTemplate(panel_id, media_type){
 					tpl_str += '<tpl if="inbasket === 1"><span class="basket_icon" ></span></tpl>';
 					tpl_str += '<tpl if="inbasket === 0"><span class="nobasket_icon" ></span></tpl>'; 
 					tpl_str += '<div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div>';
+//					tpl_str += '<img src="{url}"></img>';
 				tpl_str +='</div>';                
 				
 				tpl_str += '<span>{shortName}</span>' 
@@ -912,3 +913,51 @@ function createTemplate(panel_id, media_type){
         );
 	
 };
+
+var scripts_jsonstore = new Ext.data.JsonStore({
+	url: '/get_scripts/',
+	root: 'scripts',
+	fields: ['id', 'name'],
+	listeners:{
+		load: function(store, records){			
+			var scripts_menu = Ext.getCmp('scripts_menu'); 
+			scripts_menu.removeAll();
+			Ext.each(records, function(record){
+				scripts_menu.add({
+					
+					text: record.data.name,
+					handler: function(){
+						var items = []
+						var tab = Ext.getCmp('media_tabs').getActiveTab();                    
+                        var view = tab.getComponent(0);
+                        var items_selected = view.getSelectedRecords();
+                        
+                        if (items_selected.length){
+                        	Ext.each(items_selected, function(i){
+                        		items.push(i.data.pk);
+                        	});
+                        Ext.Ajax.request({
+                        	url: '/run_script/',
+                        	params:{
+                        		items: items,
+                        		script_id: record.data.id
+                        	},
+                        	success: function(){
+                        		
+                        	
+                        	}
+                        
+                        });	
+                        
+                        }
+                       
+                       
+						
+					}
+				})
+			});
+			
+		
+		}
+	}
+});
