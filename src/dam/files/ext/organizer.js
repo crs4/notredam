@@ -1440,7 +1440,7 @@ Ext.onReady(function(){
                                     var thumb_ready = info['thumb'];
                                     for (var key in info) {
                                     	if (key == 'url') 
-                                    		info[key] = info[key] + '?t=' + (new Date()).getTime();
+                                    		info[key] = info[key] + '?t=' + Math.floor(Math.random()*100001);
                                     	item_data.set(key, info[key]);
 //                                        if (key == 'url') {
 //                                        	info[key] = info[key] + '?t=' + (new Date()).getTime();
