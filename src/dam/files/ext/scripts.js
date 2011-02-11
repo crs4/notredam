@@ -2104,27 +2104,15 @@ function show_monitor(){
 			height: 500,
 			width: 800,
 			layout: 'fit',
-			collapsible: true,
+			collapsible: true,			
 			
-			runner:new Ext.util.TaskRunner(),			
-			update_task:{
-				run: function(){
-					
-					var updated = win.update_progress();
-					if (!updated)
-						win.runner.stop(win.update_task);					
-					
-				},
-				interval: 3000			
-			
-			},
 			update_progress: function(){
 				var store = Ext.getCmp('script_monitor_list').getStore();
 				var script_in_progress = store.queryBy(function(r){
 					return (r.data.progress < 100)
 				}).items;
 				if (script_in_progress.length > 0){				
-					store.reload();
+					
 					return true;
 				}
 				else
@@ -2191,6 +2179,15 @@ function show_monitor(){
 					        
 					    },
 					    
+					    {
+					        header: 'End Date',											        
+					        dataIndex: 'end_date',
+					        type: 'date',
+					        sortable: true,
+					        menuDisabled: true
+					        
+					    },
+					    
 					    
 					    new Ext.ux.grid.ProgressColumn({
 						    header : "Progress",
@@ -2244,25 +2241,7 @@ function show_monitor(){
 		});
 		
 		win.show();
-		Ext.getCmp('script_monitor_list').getStore().load({
-			callback: function(){
-				win.runner.start(win.update_task);
-			}
-//			callback: function(records){
-//				var pr;
-//				Ext.each(records, function(r){
-//					
-//					pr = new Ext.ProgressBar({
-//				        text: r.data.items_completed + '/' + r.data.total_items + ' items',
-//				        id:'progress_' + r.id,
-//				        renderTo:'process_' + r.id
-//				    });
-//				    pr.updateProgress(r.data.items_completed/r.data.total_items);
-//				
-//				});	
-//			}
-			
-		});
+		Ext.getCmp('script_monitor_list').getStore().load();
 		
 		
 };

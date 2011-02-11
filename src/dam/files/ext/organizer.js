@@ -1392,15 +1392,37 @@ Ext.onReady(function(){
                 }
             }
             
-            if (items.length > 0)            	
+            var update_script_monitor;
+            var script_monitor_win = Ext.WindowMgr.get('script_monitor');
+			if (script_monitor_win)
+				update_script_monitor = script_monitor_win.update_progress();
+				
+            
+            if (items.length > 0 || update_script_monitor){
+            	var params = {};
+            	
+            	if (items.length > 0)
+            		params.items = items;
+            		
+            	if (update_script_monitor)
+            		params.update_script_monitor = true;
+				
             	Ext.Ajax.request({
                 url: '/get_status/',
-                params: {items: items},
+                params: params,
                 
-                success: function(data){                    
+                success: function(data){    
+                	console.log(data);
 //                    set_status_bar_busy();
                     data = Ext.decode(data.responseText);
-                    
+                    if (data.scripts){
+                    	var monitor = Ext.getCmp('script_monitor_list')
+                    	if (monitor){
+                    		store = monitor.getStore();
+                    		store.loadData(data);
+                    	}
+                    	
+                    }
                     var update_items = data.items;
                    
                     var tab = Ext.getCmp('media_tabs').getActiveTab();
@@ -1461,6 +1483,7 @@ Ext.onReady(function(){
 
                 }
             });
+        }
         },
         interval: 3000 //3 second
     };
