@@ -435,7 +435,7 @@ def _search(request,  items, workspace = None):
                 elif type == 'failed':
                     q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, failed__gt = 0))
                 elif type == 'completed':
-                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, completed = True))
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, actions_todo = 0))
                 queries.append(q)
                 
             
@@ -767,43 +767,35 @@ def get_status(request):
         logger.debug('items_in_progress %s'%items_in_progress)
         resp = {'items':[]}
 #### Added by orlando
-        process_id = request.POST.get('process_id')
+#        process_id = request.POST.get('process_id')
 # get completed targets
-        targets = ProcessTarget.objects.filter(process=process_id, target_id__in=items_in_progress, actions_todo=0)
-        info = {}
-        for t in targets:
-            pass
+#        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = true)
+#        info = {}
+        
 ####
+        if request.POST.get('update_script_monitor'):
+            from dam.scripts.views import _script_monitor
+            processes_info = _script_monitor(workspace)
+            resp['scripts'] = processes_info 
+            
         for item_id in items_in_progress:
             try:
-#                process_target = ProcessTarget.objects.get(target_id = item, process__workspace = workspace)
-                
-#                
-#                if process_target.completed:
-#                    status = 'completed'
-#                elif process_target.failed > 0:
-#                    status = 'failed'
-#                else:
-#                    status = 'in_progress'
+
         
                 item = Item.objects.get(pk = int(item_id)) 
-                resp['items'].append(item.get_info(workspace, user))
+                tmp = item.get_info(workspace, user)
+#                if item_id not in completed_targets:
+#                    tmp['status'] = 'in_progress'
+#                else:
+#                    tmp['status'] = 'completed'
+                
+                resp['items'].append(tmp)
                 
             except ProcessTarget.DoesNotExist:
                 logger.debug('process target not found for item %s'%item)
                 continue
 
-#        items = Item.objects.filter(pk__in = items)
-#        #logger.debug('######## items: %s' % items)
-#        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
-#    
-#        user = request.user
-#    
-#        
-##        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
-#           
-##        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-#        resp_dict = {}
+
        
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
