@@ -771,7 +771,17 @@ def get_status(request):
 # get completed targets
 #        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = true)
 #        info = {}
+
+        process_in_progress = Process.objects.filter(end_date__isnull = True)
+        if process_in_progress:
+            pending_items = ProcessTarget.objects.filter(process__in = process_in_progress, actions_todo__gt = 0)
+        else:
+            pending_items = 0
         
+        resp['status_bar'] = {
+            'process_in_progress':  process_in_progress.count(),
+            'pending_items': pending_items
+        }
 ####
         if request.POST.get('update_script_monitor'):
             from dam.scripts.views import _script_monitor

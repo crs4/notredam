@@ -26,30 +26,40 @@ function set_status_bar_busy(){
 
 function update_task_status(data){
 	
-	var sb = Ext.getCmp('dam_statusbar');
-	if(sb){	
-	    var pending = data.pending + data.failed;
-	    var text, iconCls;
-	    if (pending == 0) {
-	        text = 'No tasks pending';
 	
-	        iconCls = 'status-ok';	        
-	        if (Ext.query('.'+ cls_audio).length > 0)
-	        	start_audio_player();
+	var sb = Ext.getCmp('dam_statusbar');
+	if(sb){
+		
+		
+		data = data.status_bar;
+		if (data){
+		    var pending = data.pending + data.failed;
+		    var text, iconCls;
+		    
+		    
+		    function _set_ok(){
+				text = 'No script running';
+			
+		        iconCls = 'status-ok';	        
+		        if (Ext.query('.'+ cls_audio).length > 0)
+		        	start_audio_player();
+			};
+		    
+		    
+		    if (data.process_in_progress == 0) {
+		        _set_ok();
+		    }
+		    else {
+		
+		        text = String.format('<a href=javascript:show_monitor();>running {0} script(s), {1} item(s) left</a>', data.process_in_progress, data.pending_items);
+				iconCls = 'status-warning';
+		    }
+	    
 	    }
 	    else {
-	
-	        text = '';
-	
-	        if (data.pending > 0) {
-	            text += data.pending + ' task(s) pending ';
-	        }
-	        if (data.failed > 0) {
-	            text += data.failed + ' task(s) failed ';
-	          
-	        
-	        }
-			iconCls = 'status-warning';
+	    	_set_ok();
+	    	
+	    	
 	    }
 	    (function(){
 	        sb.setStatus({
@@ -1755,15 +1765,15 @@ var search_box = {
                         }
             },
             items:[
-//            new Ext.ux.StatusBar({
-//                region: 'south',
-//                defaultText: 'Default status',
-//                id: 'dam_statusbar',
-//                height: 25,
-//                statusAlign: 'right', // the magic config
-//                bodyStyle: 'padding:5px;'
-////                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
-//            }),
+            new Ext.ux.StatusBar({
+                region: 'south',
+                defaultText: 'Default status',
+                id: 'dam_statusbar',
+                height: 25,
+                statusAlign: 'right', // the magic config
+                bodyStyle: 'padding:5px;'
+//                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
+            }),
             
 //                new Ext.BoxComponent({ // raw
 //                    region:'north',
