@@ -16,94 +16,62 @@
 #
 #########################################################################
 
-from django.db import models
-from django.utils import simplejson
-from django.contrib.contenttypes import generic
-from dam.variants.models import Variant
-from dam.repository.models import Component
-from dam.core.dam_repository.models import Type
-from django.db.models import Q
-from dam import logger
-from django.contrib.auth.models import User
-from dam.mprocessor.models import Process, ProcessTarget
-from mediadart.mqueue.mqclient_async import Proxy
+#from django.db import models
+
 from django.utils import simplejson
 
-INPROGRESS= 'in_progress'
-FAILED = 'failed'
-FINISHED = 'finished'
-
-#class Pipeline(models.Model):
-#    name = models.CharField(max_length= 50)
-#    description = models.TextField(blank=True)
-#    # upload etc, used to group pipelines that must be run in succession at certain points
-#    type = models.CharField(max_length=32, blank=True, default="") 
-#    params = models.TextField()
-#    workspace = models.ForeignKey('workspace.DAMWorkspace')
-#    
-#    def num_actions(self):
-#        return len(simplejson.loads(self.params))
-#        
-#        
-#    
-#    def create_process(self, user):
-#        return Process.objects.create(pipeline = self, workspace =  self.workspace, launched_by = user)
-    
-#    def run(self,user,items, session):
-#        process = Process.objects.create(pipeline = self, session = session, launched_by = user)
-#        for item in items:
-#            ProcessTarget.objects.create(process = process, target_id = item.pk)
-#       
-#        Proxy('MProcessor').run(process.pk)
-#    def run(self, user,items, session = None):
-#        process = Process.objects.create(script = self, session = session, launched_by = user)
-#        for item in items:
-#            target = ProcessTarget.objects.create(process = process, target_id = item.pk)
-            
-def inspect_actions():
-    from settings import INSTALLED_ACTIONS
-    import sys
-    
-    actions = []
-    
-    for action in INSTALLED_ACTIONS:
-        __import__(action)   
-        m = sys.modules[action]
-        name = m.__name__.split('.')[-1]
-        actions.append({'name': name, 'parameters': m.inspect()})
-
-    return actions
+DEFAULT_PIPELINE = [{
+    'name': 'uploader',
+    'type': 'upload',
+    'description': '',
+    'params': simplejson.dumps({'thumbnail_image':{
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':100,
+            'resize_w': 100,
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format' : 'jpeg'        
+            },
+         'in': [],
+         'out':[]    
         
+        
+    },
+    'preview_image': {
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':300,
+            'resize_w': 300,
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format' : 'jpeg'        
+            },
+         'in': [],
+         'out':[]    
+        },
+        
+    
+    'fullscreen_image': {
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':800,
+            'resize_w': 600,
+            'source_variant': 'original',
+            'output_variant': 'fullscreen',
+            'output_format' : 'jpeg'        
+            },
+         'in': [],
+         'out':[]    
+    },
+    
+})
+    
+                     
+                     
+                     
+}]
 
-
-
-#class ScriptItemExecution(models.Model):
-#    script_execution = models.ForeignKey('ScriptExecution')
-#    item = models.ForeignKey('repository.Item')
-#    status = models.TextField(default = INPROGRESS)
-#
-#class ScriptExecution(models.Model):
-#    script = models.ForeignKey('Script')
-#    session = models.CharField(max_length=256,null = True, blank = True)
-#    start_date = models.DateTimeField(auto_now_add = True)
-#    end_date = models.DateTimeField(null = True, blank = True)
-##    event =  models.ForeignKey('eventmanager.Event', null = True, blank = True)    
-#    launched_by = models.ForeignKey(User)
-#    items = models.ManyToManyField('repository.Item', through = ScriptItemExecution)  
-#    
-#    def get_status(self):
-#        if self.items.filter(status = INPROGRESS).count() > 0:
-#            return INPROGRESS
-#        return FINISHED
-#         
-#    def get_items_in_progress(self):
-#        return self.items.filter(status = INPROGRESS)
-#    
-#    def get_items_finished(self):
-#        return self.items.filter(status = FINISHED)
-#    
-#    def get_items_failed(self):
-#        return self.items.filter(status = FAILED)
-#    
-#    def get_time_elapsed(self):
-#        pass
