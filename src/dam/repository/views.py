@@ -16,7 +16,7 @@
 #
 #########################################################################
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
@@ -128,7 +128,7 @@ def get_variant_url(request, item_ID, variant_name):
             url =  component.get_url()
                         
         except Component.DoesNotExist, ex:
-            pass
+            return HttpResponseNotFound()
             
 #        if not url:
 #            url = settings.INPROGRESS
