@@ -84,6 +84,7 @@ class Batch:
         return self.deferred
 
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
+        log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled))
         item.actions_passed += success
         item.actions_failed += failure
         item.actions_cancelled += cancelled
@@ -92,6 +93,7 @@ class Batch:
             self.results[item.target_id] = {}
         self.results[item.target_id][action] = (success, result)
         if item.actions_todo <= 0:
+            log.debug('_update_item_stats: finalizing item %s' % item.target_id)
             item.result = dumps(self.results[item.target_id])
             del self.results[item.target_id]
         
@@ -143,24 +145,23 @@ class Batch:
             else:
                 log.debug('%s: DONE' % task['item'].target_id)
             method, params = self.scripts[action]
-            log.debug('_get_action: return %s' % action)
+            log.debug('_get_action: %s' % action)
             return action, task['item'], schedule, method, params
         else:
-            log.debug('_get_action: return None')
+            log.debug('_get_action: None')
             return None, None, None, None, None
 
     def _iterate(self):
         """ Run the actions listed in schedule on the items returned by _new_batch """
-        log.debug('_iterate')
+        #log.debug('_iterate')
         if self.tasks is None:
-            log.debug('ALREADY DONE')
+            #log.debug('ALREADY DONE')
             return
         if not self.tasks:
             self.tasks = self._new_batch()
-            log.debug('_iterate: loaded task')
         action, item, schedule, method, params = self._get_action()
         if action:
-            log.debug('target %s: executing action=%s (%d: %s)' % (item.target_id, action, id(schedule), schedule))
+            log.debug('target %s: executing action %s: remaining %s' % (item.target_id, action, schedule))
             try:
                 log.debug('calling run with params %s'%params)
                 self.outstanding += 1
@@ -177,7 +178,7 @@ class Batch:
             reactor.callLater(0, self._iterate)
 
     def _handle_ok(self, result, item, schedule, action, params):
-        log.info("target %s: action %s: %s" % (item.target_id, action, result))
+        log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result))
         self.outstanding -= 1
         if self.outstanding < self.max_outstanding:
             reactor.callLater(0, self._iterate)
@@ -185,7 +186,7 @@ class Batch:
         item.save()
 
     def _handle_err(self, result, item, schedule, action, params):
-        log.error('handler_err %s %s %s' % (str(result), item.target_id, action))
+        log.error('_handle_err %s %s %s' % (str(result), item.target_id, action))
         self.outstanding -= 1
         dependencies = self.dag.dependencies(action)
         cancelled = 0
@@ -198,7 +199,6 @@ class Batch:
             reactor.callLater(0, self._iterate)
         self._update_item_stats(item, action, str(result), 0, 1, cancelled)
         item.save()
-
 
 
 def start_server():

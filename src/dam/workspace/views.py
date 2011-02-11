@@ -435,7 +435,7 @@ def _search(request,  items, workspace = None):
                 elif type == 'failed':
                     q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, failed__gt = 0))
                 elif type == 'completed':
-                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, completed = True))
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, actions_todo = 0))
                 queries.append(q)
                 
             
@@ -771,36 +771,36 @@ def get_status(request):
         items_in_progress = request.POST.getlist('items')
         logger.debug('items_in_progress %s'%items_in_progress)
         resp = {'items':[]}
+#### Added by orlando
+#        process_id = request.POST.get('process_id')
+# get completed targets
+#        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = true)
+#        info = {}
+        
+####
+        if request.POST.get('update_script_monitor'):
+            from dam.scripts.views import _script_monitor
+            processes_info = _script_monitor(workspace)
+            resp['scripts'] = processes_info 
+            
         for item_id in items_in_progress:
             try:
-#                process_target = ProcessTarget.objects.get(target_id = item, process__workspace = workspace)
-                
-#                
-#                if process_target.completed:
-#                    status = 'completed'
-#                elif process_target.failed > 0:
-#                    status = 'failed'
-#                else:
-#                    status = 'in_progress'
+
         
                 item = Item.objects.get(pk = int(item_id)) 
-                resp['items'].append(item.get_info(workspace, user))
+                tmp = item.get_info(workspace, user)
+#                if item_id not in completed_targets:
+#                    tmp['status'] = 'in_progress'
+#                else:
+#                    tmp['status'] = 'completed'
+                
+                resp['items'].append(tmp)
                 
             except ProcessTarget.DoesNotExist:
                 logger.debug('process target not found for item %s'%item)
                 continue
 
-#        items = Item.objects.filter(pk__in = items)
-#        #logger.debug('######## items: %s' % items)
-#        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
-#    
-#        user = request.user
-#    
-#        
-##        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
-#           
-##        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-#        resp_dict = {}
+
        
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
@@ -1019,61 +1019,3 @@ def download_renditions(request):
         archive.close()
     
     return HttpResponse(simplejson.dumps({'success': True,  'url':'/storage/' + os.path.basename(tmp) }))
-
-
-@login_required
-def script_monitor(request):
-    import datetime
-    
-    try:
-        workspace = request.session['workspace']
-        do_not_delete = request.POST.get('do_not__delete_old_scripts')
-        
-        
-        processes = workspace.get_active_processes()
-         
-        
-        processes_info = []
-        for process in processes:
-            
-#            if do_not_delete and process.is_completed():
-#                status = 'completed'
-#                process.delete()
-            if not process.last_show_date:
-                process.last_show_date = datetime.datetime.now()
-                process.save()
-#                status = 'in progress'
-                
-            elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
-                logger.debug('(datetime.datetime.now() - process.last_show_date).days %s'%(datetime.datetime.now() - process.last_show_date).days)
-                process.delete()
-                continue
-#            else:
-#                status = 'in progress'
-            
-            items_completed =  process.get_num_target_completed()
-            items_failed =  process.get_num_target_failed()
-            total_items = process.processtarget_set.all().count()
-            progress =  (items_failed + items_completed)/float(total_items)*100
-              
-            processes_info.append({
-                'id': process.pk,
-                 'name':process.pipeline.name,
-#                 'status': status,                 
-                 'total_items':total_items,
-                 'items_completed': items_completed,
-                 'progress':progress,
-                 'type': process.pipeline.type,
-                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
-#                 'end_date': process.end_date.time(),
-                 'launched_by': process.launched_by.username,
-                 'items_failed': items_failed
-                 })
-             
-        return HttpResponse(simplejson.dumps({
-            'success': True,
-            'scripts':processes_info
-        }))
-    except Exception, ex:
-        logger.exception(ex)
-        return HttpResponse(simplejson.dumps({'success': False}))

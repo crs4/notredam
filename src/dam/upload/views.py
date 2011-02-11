@@ -33,7 +33,7 @@ from django.conf import settings
 
 #from dam.scripts.models import Pipeline
 from dam.mprocessor.models import new_processor
-from dam.repository.models import Item, Component, Watermark
+from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
@@ -183,8 +183,8 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
         
 
 
-def _create_item(user, workspace, media_type):
-    item = Item.objects.create(owner = user, uploader = user,  type = media_type)
+def _create_item(user, workspace, media_type, res_id):
+    item = Item.objects.create(owner = user, uploader = user,  type = media_type, _id = res_id)    
     item.add_to_uploaded_inbox(workspace)    
     item.workspaces.add(workspace)
     return item
@@ -194,14 +194,14 @@ def _get_media_type(file_name):
     media_type = Type.objects.get(name=type)
     return media_type
 
-def _create_variant(file_name, res_id, item, workspace, variant):
+def _create_variant(file_name, uri, item, workspace, variant):
     
     comp = item.create_variant(variant, workspace)        
     if variant.auto_generated:
         comp.imported = True
         
     comp.file_name = file_name
-    comp._id = res_id        
+    comp.uri = uri        
     mime_type = mimetypes.guess_type(file_name)[0]
         
     ext = mime_type.split('/')[1]
@@ -221,29 +221,28 @@ def import_dir(dir_name, user, workspace, session):
     files =os.listdir(dir_name)
     logger.debug('files %s'%files)
     
-    upload_process = new_processor('upload', user, workspace)
+    upload_process = new_processor('uploader', user, workspace)
     
     for file_name in files:
-        file_path = os.path.join(dir_name, file_name)
+        tmp = file_name.split('_')
+        res_id = tmp[0]        
+        original_file_name = '_'.join(tmp[1:])
         
-        fpath, res_id = _get_filepath(file_name)
-        shutil.move(file_path, fpath)
-        media_type = _get_media_type(file_name) 
+        ext = file_name.split('.')[-1]
+        final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+        
+        file_path = os.path.join(dir_name, file_name)
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+        
+        shutil.move(file_path, final_path)
+        media_type = _get_media_type(file_name)
                
-        item = _create_item(user, workspace, media_type)
-        _create_variant(file_name, res_id, item, workspace, variant)
+        item = _create_item(user, workspace, media_type, res_id)
+        _create_variant(original_file_name, final_file_name, item, workspace, variant)
         upload_process.add_params(item.pk)
         
     upload_process.run()
         
-#    pipeline = Pipeline.objects.get(pk = 1)
-#    pipeline.run(user, items, session)
-    
-    
-
-    
-    
-
 @login_required
 def upload_resource(request):
 
@@ -258,7 +257,6 @@ def upload_resource(request):
         session = request.GET['session']
         file_counter = int(request.GET['counter'])
         total = int(request.GET['total'])
-        item_id = request.GET.get('item')        
         user = request.user  
 
         file_name = request.META['HTTP_X_FILE_NAME']
@@ -274,6 +272,7 @@ def upload_resource(request):
             
         logger.debug('tmp_dir %s'%tmp_dir)
         logger.debug('os.path.exists(%s) %s'%(tmp_dir, os.path.exists(tmp_dir)))
+        file_name = new_id() + '_' + file_name
         file = open(os.path.join(tmp_dir, file_name), 'wb')
         file.write(request.raw_post_data)
         file.close()           
@@ -294,18 +293,53 @@ def upload_variant(request):
     """
     Used for uploading/replacing an item's variant. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-        
-    request.upload_handlers = [StorageHandler()]
-
-    url = request.POST['unique_url']    
-    upload_file = request.FILES['Filedata']
+    workspace = request.session['workspace']
+    variant_name = request.GET['variant']
+    logger.debug('--- variant_name %s'%variant_name)
     
-    user, workspace = UploadURL.objects.get_user_ws_from_url(url)
+    variant = Variant.objects.get(name = variant_name)
+    item_id = request.GET.get('item')        
+    user = request.user  
+    item = Item.objects.get(pk = item_id)
 
-    _save_uploaded_variant(request, upload_file, user, workspace)        
-
-    resp = simplejson.dumps({})
+    file_name = request.META['HTTP_X_FILE_NAME']
+    if not isinstance(file_name, unicode):
+        file_name = unicode(file_name, 'utf-8')
+    
+    
+    ext = os.path.splitext(file_name)[1]
+    res_id = item.ID
+    
+    final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+    final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+     
+        
+    file = open(final_path, 'wb')
+    file.write(request.raw_post_data)
+    file.close()
+     
+    _create_variant(file_name, final_file_name, item, workspace, variant)
+    
+#    upload_process = new_processor('upload', user, workspace)
+#    upload_process.add_params(item.pk)
+#    upload_process.run()
+    
+    resp = simplejson.dumps({'success': True})
+        
+   
     return HttpResponse(resp)
+        
+#    request.upload_handlers = [StorageHandler()]
+#
+#    url = request.POST['unique_url']    
+#    upload_file = request.FILES['Filedata']
+#    
+#    user, workspace = UploadURL.objects.get_user_ws_from_url(url)
+#
+#    _save_uploaded_variant(request, upload_file, user, workspace)        
+#
+#    resp = simplejson.dumps({})
+#    return HttpResponse(resp)
 
 def upload_watermark(request):
     """

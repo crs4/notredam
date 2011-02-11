@@ -38,14 +38,14 @@ class Process(models.Model):
         return ProcessTarget.objects.filter(process = self, actions_failed__gt = 0).count()
     
     def is_completed(self):
-        return self.end_data is not None
+        return self.end_date is not None
 
     def run(self):
         Proxy('MProcessor').run(self.pk)        
 
 def new_processor(pipeline_name, user, workspace):
     "utility function to create a process associated to a given pipeline"
-    pipeline = Pipeline.objects.get(type=pipeline_name)
+    pipeline = Pipeline.objects.get(name=pipeline_name)
     return Process.objects.create(pipeline = pipeline, workspace = workspace, launched_by = user)
     
 
