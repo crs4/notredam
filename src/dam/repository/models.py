@@ -433,7 +433,8 @@ class Item(AbstractItem):
            
         else:
             status = 'completed'
-            
+        
+#        status = 'in_progress'
 #        thumb_url = preview_url = fullscreen_url = None
         
         
