@@ -22,14 +22,14 @@ actions = {'thumbnail_image':{
         'script_name': 'adapt_image', 
         'params':{
             'actions':['resize'],
-            'height':100,
-            'width': 100,
+            'resize_h':100,
+            'resize_w': 100,
             'source_variant': 'original',
             'output_variant': 'thumbnail',
             'output_format' : 'jpeg'        
             },
-         'in': ['fakethumb'],
-         'out':['fakethumbout']    
+         'in': [],
+         'out':[]    
         
         
     },
@@ -37,14 +37,14 @@ actions = {'thumbnail_image':{
         'script_name': 'adapt_image', 
         'params':{
             'actions':['resize'],
-            'height':300,
-            'width': 300,
+            'resize_h':300,
+            'resize_w': 300,
             'source_variant': 'original',
             'output_variant': 'preview',
             'output_format' : 'jpeg'        
             },
-         'in': ['fakepreview'],
-         'out':['fakepreviewout']    
+         'in': [],
+         'out':[]    
         },
         
     
@@ -52,14 +52,14 @@ actions = {'thumbnail_image':{
         'script_name': 'adapt_image', 
         'params':{
             'actions':['resize'],
-            'height':800,
-            'width': 600,
+            'resize_h':800,
+            'resize_w': 600,
             'source_variant': 'original',
             'output_variant': 'fullscreen',
             'output_format' : 'jpeg'        
             },
-         'in': ['fakefull'],
-         'out':['fakefullout']    
+         'in': [],
+         'out':[]    
     },
     
 }
