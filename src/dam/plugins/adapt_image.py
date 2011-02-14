@@ -32,116 +32,201 @@ def inspect():
         'params':[
             {   
                 'name': 'source_variant',
-                'type': 'select',
-                'values': ['original'],
+                'fieldLabel': 'Source Variant',
+                'xtype': 'select',
+                'values': [['original']],
                 'description': 'input-variant',
-                'default': 0,
+                
                 'help': ''
             },
-             {   
-                'name': 'output_variant',
-                'type': 'select',
-                'values': ['thumbnail', 'preview', 'fullscreen'],
+            
+            {   
+                'name': 'source_variant',
+                'fieldLabel': 'Output Variant',
+                'xtype': 'select',
+                'values': [['thumbnail'], ['preview'], ['fullscreen']],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
-            },
-            {
-             'type': 'group',
-             'name': 'resize', 
-             'fields':[
-                {
+            },             
+             {
+              'xtype': 'fieldset',
+              'title': 'Resize',
+              'checkboxToggle': True,
+              'collapsed': True,
+              'items':[{
+                    'xtype':'numberfield',
                     'name': 'resize_h',
-                    'type': 'int',
+                    'fieldLabel': 'height',                    
                     'description': 'height',
-                    'default': 100,
-                    'help': 'height of resized image in pixels'           
+                    'minValue':0,
+                    'value': 100,
+                    'help': 'height of resized image in pixels'
                 },
-                      
                 {
+                    'xtype':'numberfield',
                     'name': 'resize_w',
-                    'type': 'int',
+                    'fieldLabel': 'width',                    
                     'description': 'width',
-                    'default': 100,
-                    'help': 'width of resized image in pixels'           
+                    'value': 100,
+                    'minValue':0,
+                    'help': 'width of resized image in pixels'
                 },
-             ]
+                    
+              ]
+              },
+               {
+              'xtype': 'fieldset',
+              'title': 'Crop',
+              'checkboxToggle': True,
+              'collapsed': True,
+              'items':[{
+                    'xtype':'numberfield',
+                    'name': 'crop_h',
+                    'fieldLabel': 'height',                    
+                    'description': 'height',
+                    'minValue':0,
+                    'value': 100,
+                    'help': 'heigth of crop area, default till bottom edge of image'
+                },
+                {
+                    'xtype':'numberfield',
+                    'name': 'crop_w',
+                    'fieldLabel': 'width',                    
+                    'description': 'width',
+                    'value': 100,
+                    'minValue':0,
+                    'help': 'width of crop area, default till right edge of image'
+                },
+##                {
+##                    'name': 'crop_x',
+##                    'fieldLabel': 'X left corner',
+##                    'xtype':'numberfield',
+##                    'description': 'upper left corner',
+##                    'default': 0,
+##                    'help': 'x-coordinate of upper left pixel of crop area',
+##                },                
+##                
+##                
+##                {
+##                    'name':'crop_y',
+##                    'xtype':'numberfield',
+##                    'fieldLabel': 'upper left corner',
+##                    'description': 'upper left corner',
+##                    'default': 0,
+##                    'help': 'y-coordinate of upper left pixel of crop area',
+##                }, 
+#                {
+#                    'name':'crop_ratio',
+#                    'xtype':'textfield',
+#                    'description': 'ratio x:y',
+#                    'default': '1:1',
+#                    'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
+#                },
+
+                
+                    
+              ]
+              },
+              
+              
              
-             
-             },
-                  
-                  
-           
-            
-                  
-            
-            {
-                'name': 'actions',
-                'type': 'list',
-                'available_values':['resize', 'crop', 'watermark']
-                     
-            },
-            {
-                'name':  'crop_w',
-                'type': 'int',
-                'description': 'width',
-                'default': 100,
-                'help': 'width of crop area, default till right edge of image',
-            }, 
-            {
-                'name':'crop_h',
-                'type': 'int',
-                'description': 'width',
-                'default': 100,
-                'help': 'heigth of crop area, default till bottom edge of image',
-            }, 
-            {
-                'name': 'crop_x',
-                'type': 'int',
-                'description': 'upper left corner',
-                'default': 0,
-                'help': 'x-coordinate of upper left pixel of crop area',
-            }, 
-            {
-                'name':'crop_y',
-                'type': 'int',
-                'description': 'upper left corner',
-                'default': 0,
-                'help': 'y-coordinate of upper left pixel of crop area',
-            }, 
-            {
-                'name':'crop_ratio',
-                'type': 'string',
-                'description': 'ratio x:y',
-                'default': '1:1',
-                'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
-            },
-            
-            {
-                'name': 'wm_id',
-                'type': 'component_id',
-                'description': 'component',
-                'default': '',
-                'help': ''
-                           
-            },
-             {
-                'name':'pos_x_percent',
-                'type': 'string',
-                'description': 'pos_x_percent',
-                'default': 0,
-                'help': ''
-                           
-            },
-            
-             {
-                'name': 'pos_y_percent',
-                'type': 'string',
-                'description': 'pos_y_percent',
-                'default': 0,
-                'help': ''
-                           
-            }
+#            {
+#             'type': 'group',
+#             'name': 'resize', 
+#             'fields':[
+#                {
+#                    'name': 'resize_h',
+#                    'type': 'int',
+#                    'description': 'height',
+#                    'default': 100,
+#                    'help': 'height of resized image in pixels'           
+#                },
+#                      
+#                {
+#                    'name': 'resize_w',
+#                    'type': 'int',
+#                    'description': 'width',
+#                    'default': 100,
+#                    'help': 'width of resized image in pixels'           
+#                },
+#             ]
+#             
+#             
+#             },
+#                  
+#                  
+#           
+#            
+#                  
+#            
+#            {
+#                'name': 'actions',
+#                'type': 'list',
+#                'available_values':['resize', 'crop', 'watermark']
+#                     
+#            },
+#            {
+#                'name':  'crop_w',
+#                'type': 'int',
+#                'description': 'width',
+#                'default': 100,
+#                'help': 'width of crop area, default till right edge of image',
+#            }, 
+#            {
+#                'name':'crop_h',
+#                'type': 'int',
+#                'description': 'width',
+#                'default': 100,
+#                'help': 'heigth of crop area, default till bottom edge of image',
+#            }, 
+#            {
+#                'name': 'crop_x',
+#                'type': 'int',
+#                'description': 'upper left corner',
+#                'default': 0,
+#                'help': 'x-coordinate of upper left pixel of crop area',
+#            }, 
+#            {
+#                'name':'crop_y',
+#                'type': 'int',
+#                'description': 'upper left corner',
+#                'default': 0,
+#                'help': 'y-coordinate of upper left pixel of crop area',
+#            }, 
+#            {
+#                'name':'crop_ratio',
+#                'type': 'string',
+#                'description': 'ratio x:y',
+#                'default': '1:1',
+#                'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
+#            },
+#            
+#            {
+#                'name': 'wm_id',
+#                'type': 'component_id',
+#                'description': 'component',
+#                'default': '',
+#                'help': ''
+#                           
+#            },
+#             {
+#                'name':'pos_x_percent',
+#                'type': 'string',
+#                'description': 'pos_x_percent',
+#                'default': 0,
+#                'help': ''
+#                           
+#            },
+#            
+#             {
+#                'name': 'pos_y_percent',
+#                'type': 'string',
+#                'description': 'pos_y_percent',
+#                'default': 0,
+#                'help': ''
+#                           
+#            }
         ]
              
          
