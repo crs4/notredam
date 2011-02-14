@@ -22,104 +22,130 @@ def new_id():
 def inspect():
     return {
         'name': __name__,
+        
+        
         'parameter_groups':{
             'resize':['resize_w', 'resize_h'],
             'crop':['crop_x', 'crop_y', 'crop_w', 'crop_h', 'crop_ratio'],
             'watermark': ['pos_x_percent','pos_y_percent', 'wm_id']
         },
-
-        'width': {
-        'type': 'int',
-        'description': 'width',
-        'default': 100,
-        'help': ''
+        'params':[
+            {   
+                'name': 'source_variant',
+                'type': 'select',
+                'values': ['original'],
+                'description': 'input-variant',
+                'default': 0,
+                'help': ''
+            },
+             {   
+                'name': 'output_variant',
+                'type': 'select',
+                'values': ['thumbnail', 'preview', 'fullscreen'],
+                'description': 'output-variant',
+                'default': 0,
+                'help': ''
+            },
+            {
+             'type': 'group',
+             'name': 'resize', 
+             'fields':[
+                {
+                    'name': 'resize_h',
+                    'type': 'int',
+                    'description': 'height',
+                    'default': 100,
+                    'help': 'height of resized image in pixels'           
+                },
+                      
+                {
+                    'name': 'resize_w',
+                    'type': 'int',
+                    'description': 'width',
+                    'default': 100,
+                    'help': 'width of resized image in pixels'           
+                },
+             ]
+             
+             
+             },
+                  
+                  
+           
             
+                  
             
-        },     
-        'actions':{
-            'type': 'list',
-            'available_values':['resize', 'crop', 'watermark']
-                 
-        },
-        'resize_h': {
-            'type': 'int',
-            'description': 'height',
-            'default': 100,
-            'help': 'height of resized image in pixels',
-        }, 
-        'resize_w': {
-            'type': 'int',
-            'description': 'width',
-            'default': 100,
-            'help': 'width of resized image in pixels',
-        }, 
-        'crop_w': {
-            'type': 'int',
-            'description': 'width',
-            'default': 100,
-            'help': 'width of crop area, default till right edge of image',
-        }, 
-        'crop_h': {
-            'type': 'int',
-            'description': 'width',
-            'default': 100,
-            'help': 'heigth of crop area, default till bottom edge of image',
-        }, 
-        'crop_x': {
-            'type': 'int',
-            'description': 'upper left corner',
-            'default': 0,
-            'help': 'x-coordinate of upper left pixel of crop area',
-        }, 
-        'crop_y': {
-            'type': 'int',
-            'description': 'upper left corner',
-            'default': 0,
-            'help': 'y-coordinate of upper left pixel of crop area',
-        }, 
-        'crop_ratio':{
-            'type': 'string',
-            'description': 'ratio x:y',
-            'default': '1:1',
-            'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
-        },
-        
-        'wm_id':{
-            'type': 'component_id',
-            'description': 'component',
-            'default': '',
-            'help': ''
-                       
-        },
-         'pos_x_percent':{
-            'type': 'string',
-            'description': 'pos_x_percent',
-            'default': 0,
-            'help': ''
-                       
-        },
-        
-         'pos_y_percent':{
-            'type': 'string',
-            'description': 'pos_y_percent',
-            'default': 0,
-            'help': ''
-                       
-        },
-    
-        'output_variant': {
-            'type': 'variant',
-            'description': 'output-variant',
-            'default': 0,
-            'help': ''
-        },
-        'source_variant': {
-            'type': 'variant',
-            'description': 'input-variant',
-            'default': 0,
-            'help': ''
-        }      
-        
+            {
+                'name': 'actions',
+                'type': 'list',
+                'available_values':['resize', 'crop', 'watermark']
+                     
+            },
+            {
+                'name':  'crop_w',
+                'type': 'int',
+                'description': 'width',
+                'default': 100,
+                'help': 'width of crop area, default till right edge of image',
+            }, 
+            {
+                'name':'crop_h',
+                'type': 'int',
+                'description': 'width',
+                'default': 100,
+                'help': 'heigth of crop area, default till bottom edge of image',
+            }, 
+            {
+                'name': 'crop_x',
+                'type': 'int',
+                'description': 'upper left corner',
+                'default': 0,
+                'help': 'x-coordinate of upper left pixel of crop area',
+            }, 
+            {
+                'name':'crop_y',
+                'type': 'int',
+                'description': 'upper left corner',
+                'default': 0,
+                'help': 'y-coordinate of upper left pixel of crop area',
+            }, 
+            {
+                'name':'crop_ratio',
+                'type': 'string',
+                'description': 'ratio x:y',
+                'default': '1:1',
+                'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
+            },
+            
+            {
+                'name': 'wm_id',
+                'type': 'component_id',
+                'description': 'component',
+                'default': '',
+                'help': ''
+                           
+            },
+             {
+                'name':'pos_x_percent',
+                'type': 'string',
+                'description': 'pos_x_percent',
+                'default': 0,
+                'help': ''
+                           
+            },
+            
+             {
+                'name': 'pos_y_percent',
+                'type': 'string',
+                'description': 'pos_y_percent',
+                'default': 0,
+                'help': ''
+                           
+            }
+        ]
+             
+         
+                
          
         } 
 
