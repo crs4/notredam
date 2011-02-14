@@ -733,7 +733,7 @@ def get_status(request):
         if process_in_progress:
             pending_items = ProcessTarget.objects.filter(process__in = process_in_progress, actions_todo__gt = 0)
         else:
-            pending_items = 0
+            pending_items = ProcessTarget.objects.none()
         
         resp['status_bar'] = {
             'process_in_progress':  process_in_progress.count(),
