@@ -41,7 +41,7 @@ def inspect():
             },
             
             {   
-                'name': 'source_variant',
+                'name': 'output_variant',
                 'fieldLabel': 'Output Variant',
                 'xtype': 'select',
                 'values': [['thumbnail'], ['preview'], ['fullscreen']],
@@ -50,10 +50,9 @@ def inspect():
                 'help': ''
             },             
              {
-              'xtype': 'fieldset',
+              'xtype': 'cbfieldset',
               'title': 'Resize',
-              'checkboxToggle': True,
-              'collapsed': True,
+             
               'items':[{
                     'xtype':'numberfield',
                     'name': 'resize_h',
@@ -76,7 +75,7 @@ def inspect():
               ]
               },
                {
-              'xtype': 'fieldset',
+              'xtype': 'cbfieldset',
               'title': 'Crop',
               'checkboxToggle': True,
               'collapsed': True,

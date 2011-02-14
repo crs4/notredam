@@ -4,9 +4,8 @@ Ext.ux.Select = function(config) {
     // call parent constructor
     Ext.ux.Select.superclass.constructor.call(this, config);
  
-}; // end of Ext.ux.IconCombo constructor
- 
-// extend
+}; 
+
 Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {	
     initComponent:function() {
     	var values = this.values;
@@ -34,19 +33,60 @@ Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {
     displayField: 'value'
     
  
-}); // end of extend
+}); 
 
 Ext.reg('select', Ext.ux.Select);
 
+
+Ext.ux.CBFieldSet = function(config) {
+	
+	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
+};
+
+
+Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
+	 initComponent:function() {
+	 	 var cb_id = Ext.id();
+	 	 Ext.apply(this, {
+	 	 	cb_id: cb_id,
+	 	 	checkboxToggle: {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox', id: cb_id},
+	 	 });
+	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
+	 },
+	
+	 
+	 collapsed: true,
+	 onCheckClick: function(){
+	 	var cb = Ext.get(this.cb_id);
+
+	 	if (cb.dom.checked){
+	 		this.expand();
+	 		Ext.each(this.items.items, function(item){
+	 			item.enable();
+	 		});
+	 	}
+	 	else{
+	 		this.collapse();
+	 		Ext.each(this.items.items, function(item){
+	 			item.disable();
+	 		});
+	 		
+	 	
+	 	}
+	 }
+	
+});
+
+Ext.reg('cbfieldset', Ext.ux.CBFieldSet);
+
 var MDAction =  function(opts, layer) {	
+	this.id = opts.id || Ext.id();
 	
 	this.inputs = opts.inputs || [];
 	this.outputs = opts.outputs || [];
 	opts.terminals = [];
 	this.params = opts.params;
-	
-//	opts.height = 50;
-//	opts.resizable = true;
+
 	
 	
 	for(var i = 0 ; i < opts.inputs.length ; i++) {
@@ -83,10 +123,45 @@ var MDAction =  function(opts, layer) {
 YAHOO.lang.extend(MDAction, WireIt.Container, {
 	height: 150,
 	resizable: true,
+	getOutputs: function(){
+		var outputs = [];
+		var output_wires= this.getTerminal(this.outputs).wires;
+		Ext.each(output_wires, function(wire){
+			if (wire)
+				outputs.push(wire.label);
+		});
+		return outputs;
+
+	},
+	
+	getInputs: function(){
+		var inputs = [];
+		var input_wires= this.getTerminal(this.inputs).wires;
+		Ext.each(input_wires, function(wire){
+			if (wire)
+				inputs.push(wire.label);
+		});
+		return inputs;
+
+	},
+	
+	getParams: function(){
+		return this.form.getForm().getValues();
+		
+	},
+	
+	onAddWire: function(e, args){
+		var wire = args[0];
+		wire.label = Ext.id();
+		
+	
+		
+	},
+	
 	render: function(){
 		
 	 	WireIt.FormContainer.superclass.render.call(this);
-	 	new Ext.form.FormPanel({
+	 	this.form = new Ext.form.FormPanel({
 	 		renderTo: this.bodyEl,
 //	 		height: 150,
 	 		autoHeight: true,
@@ -202,7 +277,40 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 //});
 //var extract_features, adapt_1, adapt_2, adapt_3, test_form;
 
-var actions = [];
+
+var ActionManager = {
+	actions:{},
+	add: function(action){
+		this.actions[action.id] = action;
+	},
+	remove: function(action){
+		this.actions[action.id] = null;
+	
+	},
+	getJson: function(){
+		var actions_json = {}, action;
+		for(action_id in this.actions){
+			if (action_id){
+				console.log('action_id'  + action_id);
+				action = this.actions[action_id];
+				
+				actions_json[action_id] = {
+					params: action.getParams(),
+					'in': action.getInputs(),
+					out: action.getOutputs()
+				
+				}
+				
+			
+			}
+		}
+		
+		
+		return actions_json;
+	
+	}
+};
+
 var baseLayer;
 
 Ext.onReady(function(){
@@ -337,7 +445,7 @@ Ext.onReady(function(){
 			            
 			    }, baseLayer);
 			    
-			    actions.push(action);
+			    ActionManager.add(action);
           		
           		
           	} 
