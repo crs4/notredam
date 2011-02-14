@@ -1202,6 +1202,8 @@ Ext.onReady(function(){
         Ext.getCmp('switch_ws_tb').setText(ws.name);        
         switch_menu.removeAll();
         
+        cp_ws_menu.removeAll();
+        mv_ws_menu.removeAll();
             
         
         ws_store.each(function(r){
@@ -1211,6 +1213,8 @@ Ext.onReady(function(){
             }
             else{
                 checked = false;
+                
+                
                 cp_ws_menu.add(
                     new Ext.menu.Item({
                         text: r.data.name,

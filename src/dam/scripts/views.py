@@ -289,7 +289,7 @@ def _script_monitor(workspace):
                  'items_completed': items_completed,
                  'progress':progress,
                  'type': process.pipeline.type,
-                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
+                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M:%S"),
                  'end_date': process.end_date.strftime("%d/%m/%y %I:%M"),
                  'launched_by': process.launched_by.username,
                  'items_failed': items_failed
