@@ -1,8 +1,50 @@
+Ext.ux.Select = function(config) {
+ 	this.values = config.values; 	
+ 	console.log(config);
+    // call parent constructor
+    Ext.ux.Select.superclass.constructor.call(this, config);
+ 
+}; // end of Ext.ux.IconCombo constructor
+ 
+// extend
+Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {	
+    initComponent:function() {
+    	var values = this.values;
+    	
+    	 Ext.apply(this, {
+    	 	store:  new Ext.data.ArrayStore({        
+		        fields: [
+		            'value'
+		        ],
+		        data: values
+		    }),
+		    value: values[0]
+    	 });
+    	
+    	Ext.ux.Select.superclass.initComponent.call(this);
+    },
+    allowBlank: false,
+    autoSelect: true,
+    editable: false,
+    triggerAction: 'all',
+    lazyRender:true,
+    forceSelection: true,
+    mode: 'local',
+    valueField: 'value',
+    displayField: 'value'
+    
+ 
+}); // end of extend
+
+Ext.reg('select', Ext.ux.Select);
+
 var MDAction =  function(opts, layer) {	
 	
 	this.inputs = opts.inputs || [];
 	this.outputs = opts.outputs || [];
 	opts.terminals = [];
+	this.params = opts.params;
+	
 //	opts.height = 50;
 //	opts.resizable = true;
 	
@@ -42,39 +84,43 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	height: 150,
 	resizable: true,
 	render: function(){
+		
 	 	WireIt.FormContainer.superclass.render.call(this);
 	 	new Ext.form.FormPanel({
 	 		renderTo: this.bodyEl,
-	 		height: 300,
+//	 		height: 150,
+	 		autoHeight: true,
+	 		autoScroll: true,
 	 		border: false,
-	 		items:[{
-	 			xtype:'fieldset',
-//		        columnWidth: 0.5,
-		        title: 'Resize',
-		        
-		        autoHeight:true,
-		        checkboxToggle: true, 
-		        items:[{
-		        	xtype: 'textfield',
-		        	fieldLabel: 'height'
-		        	
-		        }]
-		     },
-		     {
-	 			xtype:'fieldset',
-//		        columnWidth: 0.5,
-		        title: 'Crop',
-		        
-		        autoHeight:true,
-		        checkboxToggle: true, 
-		        items:[{
-		        	xtype: 'textfield',
-		        	fieldLabel: 'height'
-		        	
-		        }]
-		     }
-		     
-	 		]
+	 		items: this.params
+//	 		items:[{
+//	 			xtype:'fieldset',
+////		        columnWidth: 0.5,
+//		        title: 'Resize',
+//		        
+//		        autoHeight:true,
+//		        checkboxToggle: true, 
+//		        items:[{
+//		        	xtype: 'textfield',
+//		        	fieldLabel: 'height'
+//		        	
+//		        }]
+//		     },
+//		     {
+//	 			xtype:'fieldset',
+////		        columnWidth: 0.5,
+//		        title: 'Crop',
+//		        
+//		        autoHeight:true,
+//		        checkboxToggle: true, 
+//		        items:[{
+//		        	xtype: 'textfield',
+//		        	fieldLabel: 'height'
+//		        	
+//		        }]
+//		     }
+//		     
+//	 		]
 	 	})
 	}
 
@@ -156,6 +202,8 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 //});
 //var extract_features, adapt_1, adapt_2, adapt_3, test_form;
 
+var actions = [];
+var baseLayer;
 
 Ext.onReady(function(){
 	
@@ -187,7 +235,7 @@ Ext.onReady(function(){
 	
 	var layer_el = Ext.get('wire-layer');
 	
-	var demoLayer = new WireIt.Layer({
+	baseLayer = new WireIt.Layer({
 		layerMap: false,
 		parentEl: layer_el
 	});
@@ -204,7 +252,7 @@ Ext.onReady(function(){
 //            width_value : 100,
 //            output_variant: 'thumbnail'
 //            
-//    }, demoLayer); 
+//    }, baseLayer); 
 //    
 //    adapt_2 = new AdaptImage({
 //            position:[500,340],
@@ -213,7 +261,7 @@ Ext.onReady(function(){
 //            width_value : 300,
 //            output_variant: 'preview'
 //            
-//    }, demoLayer); 
+//    }, baseLayer); 
 //    
 //    adapt_3 = new AdaptImage({
 //            position:[500,540],
@@ -222,7 +270,7 @@ Ext.onReady(function(){
 //            width_value : 600,
 //            output_variant: 'fullscreen'
 //            
-//    }, demoLayer); 
+//    }, baseLayer); 
 //    
 //    
 //    
@@ -249,7 +297,7 @@ Ext.onReady(function(){
 //            legend: ''
 //                    
 //                    
-//            }, demoLayer);
+//            }, baseLayer);
                     
                     
             
@@ -268,37 +316,28 @@ Ext.onReady(function(){
           		return this.dropAllowed;
           	},
           	onContainerDrop: function( source, e, data ){
-          		console.log(source);
-          		console.log(data.selections[0].data);
+          		
+          		
           		var params = data.selections[0].data.params;
           		var script_name = data.selections[0].data.name;
           		var fields = [];
-          		Ext.each(params, function(param){
-          			if (param.type == 'select')
-	          			fields.push(
-	          				 {type: param.type, inputParams: {label: param.name, name: param.name, selectValues: param.values } }
-	          			
-	          			);
-	          		
-	          		else
-	          			fields.push(
-	          				{inputParams: {label: param.name, name: param.name, required: false, value: param.value } } 
-	          			);
-          		});
+          		
           		
           		var drop_x = e.xy[0];
           		var drop_y = e.xy[1];
-          		
-          		new MDAction({
+          	
+          		var action = new MDAction({
 			            title: script_name,
 			            position:[drop_x,drop_y],
 //			            legend:'thumbnail',
 			           
 		            	inputs: ['in'],
 		            	outputs: ['out'],
-			            fields: fields
+			            params: params
 			            
-			    }, demoLayer); 
+			    }, baseLayer);
+			    
+			    actions.push(action);
           		
           		
           	} 
