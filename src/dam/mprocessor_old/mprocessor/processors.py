@@ -301,7 +301,6 @@ class Engine:
 #  Utility functions
 #
 def _save_component_features(component, features, extractor):
-
     log.debug("[_save_component_features] component %s" % component.ID)
 
     c = component

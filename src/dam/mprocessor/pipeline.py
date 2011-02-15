@@ -86,7 +86,7 @@ class DAG:
         self.root.visited += 1
         return self.root.visited
 
-    def _visit(self, node, callback, shuffled, tag):
+    def _visit(self, node, shuffled, tag, user_callback, user_data):
         """ visit the DAG depth first, call the callback at each node """
         node.visited = tag
         childs = node.childs
@@ -94,8 +94,9 @@ class DAG:
             childs = random.sample(node.childs, len(node.childs))
         for n in childs:
             if n.visited != tag:
-                self._visit(n, callback, shuffled, tag)
-        callback(node)
+                self._visit(n, shuffled, tag, user_callback, user_data)
+        if user_callback:
+            user_callback(node, user_data)
 
     def sort(self, shuffled=False):
         """returns a topological sorting of the DAG. If shuffled is True, return
@@ -103,20 +104,15 @@ class DAG:
         """
         tag = self._new_tag()
         sorted = []
-        def cb(node):
-            sorted.insert(0, node.name)
-        self._visit(self.root, cb, shuffled, tag)
+        def cb(node, user_data):
+            user_data.insert(0, node.name)
+        self._visit(self.root, shuffled, tag, cb, sorted)
         return sorted[1:]
 
-    def dependencies(self, name):
-        """ returns all the dependency of "name" in the pipeline
-        """
+    def visit(self, name, user_callback, user_data):
+        """ visit all the nodes applying callback to user_data """
         tag = self._new_tag()
-        deps = []
-        def cb(n):
-            deps.append(n.name)
-        self._visit(self.pipeline[name]['__node__'], cb, 0, tag)
-        return deps
+        self._visit(self.pipeline[name]['__node__'], 0, tag, user_callback, user_data)
 
     def show(self):
         """Print node: childs ordering nodes per depth in DAG (distance from root)"""

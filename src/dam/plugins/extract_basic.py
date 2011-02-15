@@ -1,6 +1,7 @@
 import mimetypes
 from time import strptime
 import re
+from twisted.internet import reactor, defer
 
 from mediadart import log
 from mediadart.mqueue.mqclient_twisted import Proxy
@@ -12,8 +13,10 @@ from django.db.models.loading import get_models
 
 get_models()
 
+from django.contrib.contenttypes.models import ContentType
 from dam.repository.models import Component
 from dam.metadata.models import MetadataProperty, MetadataValue
+from dam.preferences.views import get_metadata_default_language
 from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
@@ -27,41 +30,24 @@ def new_id():
 def inspect():
     return {
         'name': __name__,
-        'parameter_groups':{
-            'resize':['width', 'height'],
-            'crop':['ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'component_id']
-        },
-        'width': {
-            'type': 'int',
-            'description': 'width',
-            'default': 100,
-            'help': ''
-        },     
-        'output_variant': {
-            'type': 'output-variant',
-            'description': 'output-variant',
+        'parameter_groups':{},
+        'source_variant': {
+            'type': 'variant',
+            'description': 'input-variant',
             'default': 0,
             'help': ''
         },
-#        'source_variant': {
-#            'type': 'input-variant',
-#            'description': 'input-variant',
-#            'default': 0,
-#            'help': ''
-#        }      
-        
-         
-        } 
+    } 
 
 class ExtractError(Exception):
     pass
 
 # Entry point
-def run(item_id, workspace, source_variant, extractor='basic'):
+def run(item_id, workspace, source_variant):
+    log.debug('extract_basic: run %s %s' % (workspace, source_variant))
     deferred = defer.Deferred()
-    worker = ExtractBasicFeatures(deferred, itme_id, workspace, source_variant)
-    reactor.callLater(0, worker.extract_basic, item_id, workspace, source_variant)
+    worker = ExtractBasicFeatures(deferred, item_id, workspace, source_variant)
+    reactor.callLater(0, worker.extract_basic)
     return deferred
 
 
@@ -78,7 +64,7 @@ class ExtractBasicFeatures:
         self.item = Item.objects.get(pk = item_id)
         self.variant_name = variant_name
         self.source_variant = Variant.objects.get(name = variant_name)
-        self.component = self.item.get_variant(workspace, source_variant)
+        self.component = self.item.get_variant(workspace, self.source_variant)
         self.extractor = 'basic'
         self.ctype = None
         self.result = []
@@ -86,16 +72,17 @@ class ExtractBasicFeatures:
     # the basic extractor is taken from the component using the component type
     def extract_basic(self):
         extractor_type = self.component.get_extractor()    # one of image_basic, media_basic etc.
-        d = self.proxy.extract(self.component.ID, self.extractor_type)
+        d = self.proxy.extract(self.component.ID, extractor_type)
         d.addCallbacks(self._cb_basic_ok, self._cb_error, callbackArgs=[extractor_type], errbackArgs=[extractor_type])
 
     def _cb_basic_ok(self, features, extractor_type):
         "save results of basic extractions"
+        log.debug('ExtractBasicFeatures._cb_basic_ok: %s' % features)
         ctype = ContentType.objects.get_for_model(self.component)
         try:
             save_type(ctype, self.component)
         except Exception, e:
-            log.error("Failed to save component format as DC:Format xmp entry")
+            log.error("Failed to save component format as DC:Format: %s" % (str(e)))
         if extractor_type == 'media_basic':
             for stream in features['streams']:
                 if isinstance(features['streams'][stream], dict):  # e se no?
@@ -130,8 +117,7 @@ class ExtractBasicFeatures:
         delete_list = []
 
         media_type = c.media_type.name
-        i = self.item
-        user = i.uploaded_by()
+        user = self.item.uploaded_by()
         metadata_default_language = get_metadata_default_language(user)
 
         for feature in features.keys():
