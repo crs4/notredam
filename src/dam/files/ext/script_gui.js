@@ -49,7 +49,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	 	 var cb_id = Ext.id();
 	 	 Ext.apply(this, {
 	 	 	cb_id: cb_id,
-	 	 	checkboxToggle: {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox', id: cb_id},
+	 	 	checkboxToggle: {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox', id: cb_id}
 	 	 });
 	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
 	 },
@@ -118,11 +118,11 @@ var MDAction =  function(opts, layer) {
 	
 	
 	MDAction.superclass.constructor.call(this, opts, layer);
+	layer.containers.push(this);
 
 }; 
 YAHOO.lang.extend(MDAction, WireIt.Container, {
-	height: 150,
-	resizable: true,
+	
 	getOutputs: function(){
 		var outputs = [];
 		var output_wires= this.getTerminal(this.outputs).wires;
@@ -160,7 +160,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	
 	render: function(){
 		
-	 	WireIt.FormContainer.superclass.render.call(this);
+	 	MDAction.superclass.render.call(this);
 	 	this.form = new Ext.form.FormPanel({
 	 		renderTo: this.bodyEl,
 //	 		height: 150,
@@ -278,38 +278,6 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 //var extract_features, adapt_1, adapt_2, adapt_3, test_form;
 
 
-var ActionManager = {
-	actions:{},
-	add: function(action){
-		this.actions[action.id] = action;
-	},
-	remove: function(action){
-		this.actions[action.id] = null;
-	
-	},
-	getJson: function(){
-		var actions_json = {}, action;
-		for(action_id in this.actions){
-			if (action_id){
-				console.log('action_id'  + action_id);
-				action = this.actions[action_id];
-				
-				actions_json[action_id] = {
-					params: action.getParams(),
-					'in': action.getInputs(),
-					out: action.getOutputs()
-				
-				}
-				
-			
-			}
-		}
-		
-		
-		return actions_json;
-	
-	}
-};
 
 var baseLayer;
 
@@ -346,7 +314,26 @@ Ext.onReady(function(){
 	baseLayer = new WireIt.Layer({
 		layerMap: false,
 		parentEl: layer_el
+		
 	});
+	baseLayer.getJson =  function(){
+			var actions_json = {};
+			Ext.each(this.containers, function(action){
+				if (action){										
+					actions_json[action.id] = {
+						params: action.getParams(),
+						'in': action.getInputs(),
+						out: action.getOutputs()					
+					}					
+				
+				}
+		}
+		
+		
+		);
+			return actions_json;
+	
+	};
 		
 	YAHOO.inputEx.spacerUrl = "/files/WireIt-0.5.0/lib/inputex/images/space.gif";
  
@@ -444,10 +431,7 @@ Ext.onReady(function(){
 			            params: params
 			            
 			    }, baseLayer);
-			    
-			    ActionManager.add(action);
-          		
-          		
+			   
           	} 
           	
           });
