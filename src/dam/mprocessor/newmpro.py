@@ -42,6 +42,7 @@ from mediadart.config import Configurator
 from mediadart import log
 from dam.mprocessor.models import Process, ProcessTarget
 from dam.mprocessor.pipeline import DAG
+from dam.mprocessor.schedule import Schedule
 
 class BatchError(Exception):
     pass
@@ -68,9 +69,12 @@ class Batch:
         self.schedule_length = len(self.pipeline)
         self.process = process
         self.scripts = self._get_scripts(self.pipeline)
+        self.targets_done = False          # True when all targets have been read
+        self.gameover = False             # True when all targets are done
         self.deferred = None               # used to signal end of batch job
         self.outstanding = 0               # number of not yet answered requests
         self.cur_batch = 0                 # index in batch
+        self.cur_task = 0                  # index in tasks
         self.totals = {'update':0, 'passed':0, 'failed':0, 'targets': 0, None: 0} 
         self.results = {}
 
@@ -121,47 +125,71 @@ class Batch:
 
     def _new_batch(self):
         "Loads from db the next batch of items and associate a schedule to each item"
+        if self.targets_done:
+            return []
+
         targetset = ProcessTarget.objects.filter(process=self.process.pk)[self.cur_batch:self.cur_batch + self.batch_size]
         if targetset:
             self.cur_batch += self.batch_size
-            ret = [{'item':x, 'schedule':self.dag.sort(True)} for x in targetset]   # item, index of current action, schedule
+            ret = [{'item':x, 'schedule':Schedule(self.dag, x.target_id)} for x in targetset]   # item, index of current action, schedule
         else:
-            self.deferred.callback('done')
-            self.process.end_date = datetime.datetime.now()
-            self.process.save()
-            ret = None
+            self.targets_done = True
+            ret = []
         return ret
 
     def _get_action(self):
-        """returns the first action found or None. Retire tasks with no actions left"""
-        schedule = None
-        while not schedule and self.tasks:
-            task = self.tasks.pop(0)
-            schedule = task['schedule']
-        if schedule:
-            action = schedule.pop(0)
-            if schedule:
-                self.tasks.append(task)   # still work to do
-            else:
-                log.debug('%s: DONE' % task['item'].target_id)
-            method, params = self.scripts[action]
-            log.debug('_get_action: %s' % action)
-            return action, task['item'], schedule, method, params
+        """returns the first action found or None. Delete tasks with no actions left"""
+        log.debug("_get_action on num_tasks=%s" % len(self.tasks))
+        to_delete = []
+        action = ''
+        for n in xrange(len(self.tasks)):
+            idx = (self.cur_task + n) % len(self.tasks)
+            task = self.tasks[idx]
+            action = task['schedule'].action_to_run()
+            if action is None:
+                to_delete.append(task)
+            elif action:
+                break
+
+        for t in to_delete:                   
+            log.debug('deleting done target %s' % t['item'].target_id)
+            self.tasks.remove(t)
+
+        # update cur_task so that we do not always start querying the same task for new actions
+        if action:
+            idx = self.tasks.index(task)
+            self.cur_task = (idx + 1) % len(self.tasks)
         else:
-            log.debug('_get_action: None')
-            return None, None, None, None, None
+            self.cur_task = 0
+
+        # if action is None or empy there is no action ready to run
+        # if there are new targets available try to read some and find some new action
+        if action:
+            return action, task
+        else:
+            if not self.targets_done and self.outstanding < self.max_outstanding:
+                log.debug("_get_action: extending task")
+                self.tasks.extend(self._new_batch())
+            if self.targets_done and not self.tasks:
+                log.debug("_get_action: gameover")
+                self.gameover = True
+                self.process.end_date = datetime.datetime.now()
+                self.process.save()
+                self.deferred.callback('done')
+            return  None, None
+
 
     def _iterate(self):
         """ Run the actions listed in schedule on the items returned by _new_batch """
-        #log.debug('_iterate')
-        if self.tasks is None:
-            #log.debug('ALREADY DONE')
+        log.debug('_iterate: oustanding=%s' % self.outstanding)
+        if self.gameover:
+            log.debug('_iterate: gameover')
             return
-        if not self.tasks:
-            self.tasks = self._new_batch()
-        action, item, schedule, method, params = self._get_action()
+        action, task = self._get_action()
         if action:
-            log.debug('target %s: executing action %s: remaining %s' % (item.target_id, action, schedule))
+            item, schedule = task['item'], task['schedule']
+            method, params = self.scripts[action]
+            log.debug('target %s: executing action %s' % (item.target_id, action))
             try:
                 log.debug('calling run with params %s'%params)
                 self.outstanding += 1
@@ -171,33 +199,33 @@ class Batch:
             else:
                 d.addCallbacks(self._handle_ok, self._handle_err, 
                     callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
-            if self.outstanding < self.max_outstanding:
-                reactor.callLater(0.1, self._iterate)
-        else:
-            log.debug('EMPTY ACTION')
+        # If _get_action did not find anything and there are not more targets, no action
+        # will be available until an action completes and allows more action to go ready.
+        if self.outstanding < self.max_outstanding and (action or not self.targets_done):
+            log.debug('_iterate: rescheduling')
             reactor.callLater(0, self._iterate)
 
     def _handle_ok(self, result, item, schedule, action, params):
         log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result))
         self.outstanding -= 1
+        schedule.done(action)
         if self.outstanding < self.max_outstanding:
+            log.debug('_handle_ok: rescheduling')
             reactor.callLater(0, self._iterate)
         self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
 
+
     def _handle_err(self, result, item, schedule, action, params):
-        log.error('_handle_err %s %s %s' % (str(result), item.target_id, action))
+        log.error('_handle_err action %s on target_id=%s: %s' % (action, item.target_id, str(result)))
         self.outstanding -= 1
-        dependencies = self.dag.dependencies(action)
-        cancelled = 0
-        for a in dependencies:
-            if a in schedule:
-                log.info('target %s: removing action %s, dependent on failed %s' % (item.target_id, a, action))
-                cancelled += 1
-                schedule.remove(a)
+        cancelled = schedule.fail(action)
+        self._update_item_stats(item, action, str(result), 0, 1, 0)
+        for a in cancelled:
+            self._update_item_stats(item, a, "cancelled on failed %s" % action, 0, 0, 1)
         if self.outstanding < self.max_outstanding:
+            log.debug('_handle_err: rescheduling')
             reactor.callLater(0, self._iterate)
-        self._update_item_stats(item, action, str(result), 0, 1, cancelled)
         item.save()
 
 
@@ -211,6 +239,7 @@ def start_server():
 import sys
 from django.contrib.auth.models import User
 from dam.mprocessor.make_plugins import pipeline as test_pipe
+from dam.mprocessor.make_plugins import simple_pipe as test_pipe2
 from dam.mprocessor.models import Pipeline
 from dam.workspace.models import DAMWorkspace
 from json import dumps
@@ -230,9 +259,13 @@ class fake_config:
     def getint(self, section, option):
         return int(self.dictionary[section][option])
 
+gameover = False
+
 def end_test(result, process):
+    global gameover
+    gameover = True
     print_stats(process, [], False)
-    print 'end of test %s' % result
+    log.debug('end of test %s' % result)
     reactor.callLater(3, reactor.stop)
 
 def print_stats(process, items, redo=True):
@@ -244,7 +277,7 @@ def print_stats(process, items, redo=True):
 
     pt = ProcessTarget.objects.filter(process=process, target_id__in=items, actions_todo=0, actions_failed=0)
     print >>sys.stderr, 'Process stats: completed successfully: %s' % ' '.join([x.target_id for x in pt])
-    if redo:
+    if not gameover and redo:
         reactor.callLater(1, print_stats, process, items)
 
 def test():
@@ -253,11 +286,11 @@ def test():
     ws = DAMWorkspace.objects.get(pk=1)
     user = User.objects.get(username='admin')
     try: 
-        pipeline = Pipeline.objects.get(name='test', workspace=ws)
+        pipeline = Pipeline.objects.get(name='test4', workspace=ws)
     except:
-        pipeline = Pipeline.objects.create(name="test", type="test", description='', params=dumps(test_pipe), workspace=ws)
+        pipeline = Pipeline.objects.create(name="test4", type="test", description='', params=dumps(test_pipe2), workspace=ws)
     process = Process.objects.create(pipeline=pipeline, workspace=ws, launched_by=user)
-    for n in xrange(250):
+    for n in xrange(1):
         print 'adding target %d' % n
         process.add_params('item%d' % n)
     try:
