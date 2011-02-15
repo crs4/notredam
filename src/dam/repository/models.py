@@ -420,20 +420,21 @@ class Item(AbstractItem):
 #        fullscreen_url = self.get_variant_url('fullscreen', workspace)
 
         now = '?t=' + str(time.time())
-        thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail') + now
-        preview_url = '/item/%s/%s/'%(self.ID, 'preview') + now
+        thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail')
+        preview_url = '/item/%s/%s/'%(self.ID, 'preview')
 #        fullscreen_url = '/item/%s/%s/'%(self.ID, 'fullscreen')
-        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0).count() > 0
-        logger.debug('in_progress %s'%in_progress)
+        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0, process__workspace = workspace).count() > 0
+        
         if in_progress:
             status = 'in_progress'
-#            now = '?t=' + str(time.time())
-#            thumb_url += now
-#            preview_url += now
-#            fullscreen_url += now
+            now = '?t=' + str(time.time())
+            thumb_url += now
+            preview_url += now
+           
         else:
             status = 'completed'
-            
+        
+#        status = 'in_progress'
 #        thumb_url = preview_url = fullscreen_url = None
         
         
