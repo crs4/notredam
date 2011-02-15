@@ -1,6 +1,6 @@
 Ext.ux.Select = function(config) {
  	this.values = config.values; 	
- 	console.log(config);
+ 	
     // call parent constructor
     Ext.ux.Select.superclass.constructor.call(this, config);
  
@@ -283,7 +283,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 
 
 
-var baseLayer;
+var baseLayer, store;
 
 Ext.onReady(function(){
 	new Ext.Toolbar({
@@ -308,6 +308,12 @@ Ext.onReady(function(){
 	    ]
 	});
 	
+	store = new Ext.data.JsonStore({
+		url:'/get_actions/',
+		fields:['name', 'params'],
+//				autoLoad: true,
+		root: 'scripts'	
+	});
 	new Ext.grid.GridPanel({
 		renderTo:'actions-container',
 		title: 'Actions',
@@ -317,12 +323,7 @@ Ext.onReady(function(){
 		ddGroup: 'wireit',
 		
 		
-			store: new Ext.data.JsonStore({
-				url:'/get_actions/',
-				fields:['name', 'params'],
-				autoLoad: true,
-				root: 'scripts'	
-			}),
+			store: store,
 			columns:[{
 				name: 'Script',
 				dataIndex: 'name'
@@ -333,6 +334,7 @@ Ext.onReady(function(){
 
 		
 	});
+	
 	
 	var layer_el = Ext.get('wire-layer');
 	
@@ -460,8 +462,58 @@ Ext.onReady(function(){
           	} 
           	
           });
-            	   
+           
+          store.load({
+          	callback:function(){
+          		if (params){
+          			var action;
+          			for (action_name in params){
+          				if (action_name){
 
+          					action = params[action_name];
+          					var action_stored = store.query('name', action.script_name).items
+          					
+          					if(action_stored.length > 0){
+          						action_stored = action_stored[0];
+//          						console.log(action_stored = action_stored[0]);
+          						var action_box = new MDAction({
+						            title: action_stored.data.name,
+						            position:[20,20],
+			//			            legend:'thumbnail',
+						           
+					            	inputs: ['in'],
+					            	outputs: ['out'],
+						            params: action_stored.data.params
+						            
+						    	}, baseLayer); 
+						    	action_box.form.getForm().setValues(action.params);
+          						
+          						Ext.each(action_box.form.items.items, function(field){
+          							
+          							if (field.xtype == 'cbfieldset'){
+          								Ext.each(field.items.items, function(f){
+          									console.log(f.name);
+          									if (f.value){
+          										f.enable();
+          										field.expand();
+          									}
+          									
+          								});
+          								
+          							}
+          								
+          						});
+          					}
+          					
+          					
+          				}
+          			}
+          			
+          		}
+          	}
+          
+          });
+			
 	
 	
 });

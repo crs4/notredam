@@ -59,7 +59,7 @@ def inspect():
                     'fieldLabel': 'height',                    
                     'description': 'height',
                     'minValue':0,
-                    'value': 100,
+#                    'value': 100,
                     'help': 'height of resized image in pixels'
                 },
                 {
@@ -67,7 +67,7 @@ def inspect():
                     'name': 'resize_w',
                     'fieldLabel': 'width',                    
                     'description': 'width',
-                    'value': 100,
+#                    'value': 100,
                     'minValue':0,
                     'help': 'width of resized image in pixels'
                 },
@@ -85,7 +85,7 @@ def inspect():
                     'fieldLabel': 'height',                    
                     'description': 'height',
                     'minValue':0,
-                    'value': 100,
+#                    'value': 100,
                     'help': 'heigth of crop area, default till bottom edge of image'
                 },
                 {
@@ -93,7 +93,7 @@ def inspect():
                     'name': 'crop_w',
                     'fieldLabel': 'width',                    
                     'description': 'width',
-                    'value': 100,
+#                    'value': 100,
                     'minValue':0,
                     'help': 'width of crop area, default till right edge of image'
                 },
