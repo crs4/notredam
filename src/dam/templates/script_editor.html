@@ -55,8 +55,21 @@
  
 <link rel="stylesheet" type="text/css" href="/files/WireIt-0.5.0/css/WireIt.css" /> 
 
+<script type="text/javascript">
+	var name, params;
+	{%if params%}
+		params = Ext.decode('{{params|safe}}');
+	{%endif%}
+	
+	{%if name%}
+		name = '{{name}}';
+	{%endif%}
+	
+</script>
+
 <script type="text/javascript" src="/files/ext/script_gui.js"></script>
  
+
 <style> 
 body {
 	font-size: 10px;
@@ -90,8 +103,14 @@ div.body{
  </head> 
  <body> 
  
- <div id="wire-layer" class="wireit" style="float: left; width:80%; height:100%"></div>
- <div id= "actions-container" style="float:left; width:19%; height:100%"></div>
+	 <!--div id="left_box"  style="float:left; width:80%; height:100%">
+	 <div id="toolbar"></div> 
+	 <div id="wire-layer" class="wireit" style="height:95%"></div>
+	 </div-->
+	 <!--div id="toolbar"></div--> 
+	 <div id="wire-layer" class="wireit" style="float:left;height:100%; width:80%"></div>
+	 <div id= "actions-container" style="float:left; width:19%; height:100%"></div>
+
 </body> 
 
 </html>

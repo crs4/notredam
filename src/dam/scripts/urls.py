@@ -11,6 +11,7 @@ urlpatterns = patterns('',
     (r'^rename_script/', 'dam.scripts.views.rename_script'),
     (r'^get_available_actions/', 'dam.scripts.views.get_available_actions'),
     (r'^script_monitor/', 'dam.scripts.views.script_monitor'),
-    (r'^script_editor/$', 'django.views.generic.simple.direct_to_template', {'template': 'test_wireit.html'}),
+    (r'^script_editor/(.+)/$', 'dam.scripts.views.editor'),
+    (r'^script_editor/$', 'dam.scripts.views.editor'),
     
 )

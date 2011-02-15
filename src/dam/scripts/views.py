@@ -26,7 +26,6 @@ from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
 
-
 def _get_scripts_info(script):
         
     return {'id': script.pk, 
@@ -316,5 +315,19 @@ def script_monitor(request):
     except Exception, ex:
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'success': False}))
-    
-    
+
+@login_required
+def editor(request, script_id = None):
+    from django.template import RequestContext
+    from django.shortcuts import render_to_response
+    from dam.mprocessor.models import Pipeline
+
+    if script_id:
+        pipeline = Pipeline.objects.get(pk = script_id)
+        params = pipeline.params
+        name = pipeline.name
+    else:
+        params = ''
+        name = '' 
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name}))
+
