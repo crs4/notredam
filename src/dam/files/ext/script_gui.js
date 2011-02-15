@@ -39,6 +39,12 @@ Ext.reg('select', Ext.ux.Select);
 
 
 Ext.ux.CBFieldSet = function(config) {
+	config.collapsed = true;
+	if (config.items){
+		Ext.each(config.items, function(item){
+			item.disabled = true;
+		});
+	}
 	
 	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
 };
@@ -54,8 +60,6 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
 	 },
 	
-	 
-	 collapsed: true,
 	 onCheckClick: function(){
 	 	var cb = Ext.get(this.cb_id);
 
@@ -282,6 +286,27 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 var baseLayer;
 
 Ext.onReady(function(){
+	new Ext.Toolbar({
+	    renderTo: Ext.get('toolbar'),
+	    
+//	    height: 100,
+	    items: [
+		    {
+		    xtype: 'tbtext', 
+		    text: 'Name: '
+		    } ,
+	   		{
+            xtype: 'textfield',
+            name: 'name',
+            emptyText: 'new script'
+        	},	
+	    
+	        {
+	            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
+	            text: 'Save'
+	        }
+	    ]
+	});
 	
 	new Ext.grid.GridPanel({
 		renderTo:'actions-container',
