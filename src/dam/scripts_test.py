@@ -20,7 +20,18 @@ from mediadart.storage import new_id
 from dam.upload.views import guess_media_type
 
 
-actions = {'thumbnail_image':{
+actions = {
+    'extract_basic': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fe'],
+    },
+}
+actions2 = {
+    'thumbnail_image':{
         'script_name': 'adapt_image', 
         'params':{
             'actions':['resize'],
@@ -30,7 +41,7 @@ actions = {'thumbnail_image':{
             'output_variant': 'thumbnail',
             'output_format' : 'jpeg'        
             },
-         'in': [],
+         'in': ['fe'],
          'out':[]    
         
         
@@ -45,7 +56,7 @@ actions = {'thumbnail_image':{
             'output_variant': 'preview',
             'output_format' : 'jpeg'        
             },
-         'in': [],
+         'in': ['fe'],
          'out':[]    
         },
         
@@ -60,10 +71,10 @@ actions = {'thumbnail_image':{
             'output_variant': 'fullscreen',
             'output_format' : 'jpeg'        
             },
-         'in': [],
+         'in': ['fe'],
          'out':[]    
     },
-    
+
 }
 
 class DoTest:
@@ -106,8 +117,8 @@ class DoTest:
         print('file moved to %s' % imported_filepath)
         return item.pk
 
-    def upload(self, filepaths):
-        uploader = new_processor('uploader', self.user, self.ws)
+    def upload(self, pipe_name, filepaths):
+        uploader = new_processor(pipe_name, self.user, self.ws)
         open('/tmp/uploader', 'w').write('%s\n' % uploader.pk)
         for fn in filepaths:
             print 'uploading', fn
@@ -148,13 +159,15 @@ def main(argv):
         argv.append('register')
     task = argv[1]
 
+
+    # register <pipeline_name>  <pipeline_def (variable name in this file>)
     if task == 'register':
-        if len(argv) < 3:
-            argv.append('actions')
-        pipeline_def = globals()[argv[2]]
-        test.register('uploader', 'upload', '', pipeline_def)
+        pipeline_def = globals()[argv[3]]
+        test.register(argv[2], 'upload', '', pipeline_def)
+    # upload <pipeline_name> <files>
     elif task == 'upload':
-        test.upload(argv[2:])
+        test.upload(argv[2], argv[3:])
+    # status <process_id> <items>
     elif task == 'status':
         test.get_status(argv[2], argv[3:])
     else:

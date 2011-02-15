@@ -45,7 +45,7 @@ class Process(models.Model):
 
 def new_processor(pipeline_name, user, workspace):
     "utility function to create a process associated to a given pipeline"
-    pipeline = Pipeline.objects.get(name=pipeline_name)
+    pipeline = Pipeline.objects.get(name=pipeline_name, workspace = workspace)
     return Process.objects.create(pipeline = pipeline, workspace = workspace, launched_by = user)
     
 
