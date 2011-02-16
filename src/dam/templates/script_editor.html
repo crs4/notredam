@@ -56,13 +56,17 @@
 <link rel="stylesheet" type="text/css" href="/files/WireIt-0.5.0/css/WireIt.css" /> 
 
 <script type="text/javascript">
-	var name, params;
+	var script_pk, script_name, params;
 	{%if params%}
 		params = Ext.decode('{{params|safe}}');
 	{%endif%}
 	
 	{%if name%}
-		name = '{{name}}';
+		script_name = '{{name}}';
+	{%endif%}
+	
+	{%if pk%}
+		script_pk = '{{pk}}';
 	{%endif%}
 	
 </script>
@@ -107,10 +111,11 @@ div.body{
 	 <div id="toolbar"></div> 
 	 <div id="wire-layer" class="wireit" style="height:95%"></div>
 	 </div-->
-	 <div id="toolbar"></div>
+	 
 	  
-	 <div id="wire-layer" class="wireit" style="float:left;height:100%; width:80%"></div>
-	 <div id= "actions-container" style="float:left; width:19%; height:100%"></div>
+	 <div id="wire-layer" class="wireit" style="float:left;height:97%; width:80%"></div>
+	 <div id= "actions-container" style="float:left; width:20%; height:97%"></div>
+	 <div id="toolbar"></div>
 
 </body> 
 

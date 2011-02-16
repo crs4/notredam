@@ -85,14 +85,13 @@ Ext.reg('cbfieldset', Ext.ux.CBFieldSet);
 
 var MDAction =  function(opts, layer) {	
 	this.id = opts.id || Ext.id();
-	
+	this['in'] = opts['in'];
+	this.out = opts.out; 
 	this.inputs = opts.inputs || [];
 	this.outputs = opts.outputs || [];
 	opts.terminals = [];
 	this.params = opts.params;
 
-	
-	
 	for(var i = 0 ; i < opts.inputs.length ; i++) {
 		var input = this.inputs[i];
 		opts.terminals.push({
@@ -126,6 +125,10 @@ var MDAction =  function(opts, layer) {
 
 }; 
 YAHOO.lang.extend(MDAction, WireIt.Container, {
+	
+	getXY: function(){
+		return Ext.get(this.el).getXY();
+	},
 	
 	getOutputs: function(){
 		var outputs = [];
@@ -167,39 +170,11 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	 	MDAction.superclass.render.call(this);
 	 	this.form = new Ext.form.FormPanel({
 	 		renderTo: this.bodyEl,
-//	 		height: 150,
 	 		autoHeight: true,
 	 		autoScroll: true,
 	 		border: false,
 	 		items: this.params
-//	 		items:[{
-//	 			xtype:'fieldset',
-////		        columnWidth: 0.5,
-//		        title: 'Resize',
-//		        
-//		        autoHeight:true,
-//		        checkboxToggle: true, 
-//		        items:[{
-//		        	xtype: 'textfield',
-//		        	fieldLabel: 'height'
-//		        	
-//		        }]
-//		     },
-//		     {
-//	 			xtype:'fieldset',
-////		        columnWidth: 0.5,
-//		        title: 'Crop',
-//		        
-//		        autoHeight:true,
-//		        checkboxToggle: true, 
-//		        items:[{
-//		        	xtype: 'textfield',
-//		        	fieldLabel: 'height'
-//		        	
-//		        }]
-//		     }
-//		     
-//	 		]
+
 	 	})
 	}
 
@@ -283,7 +258,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 
 
 
-var baseLayer, store;
+var baseLayer, store, layer_el;
 
 Ext.onReady(function(){
 	new Ext.Toolbar({
@@ -292,18 +267,31 @@ Ext.onReady(function(){
 //	    height: 100,
 	    items: [
 		    {
-		    xtype: 'tbtext', 
-		    text: 'Name: '
+			    xtype: 'tbtext', 
+			    text: 'Name: '
 		    } ,
 	   		{
-            xtype: 'textfield',
-            name: 'name',
-            emptyText: 'new script'
+		   		id: 'script_name',
+	            xtype: 'textfield',
+	            name: 'name',
+	            allowBlank: false,
+	            emptyText: 'new script'
         	},	
 	    
 	        {
 	            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
-	            text: 'Save'
+	            text: 'Save',
+	            handler: function(){
+	            	Ext.Ajax.request({
+	            		url: '/edit_script/',
+	            		params: {
+	            			pk: script_pk,
+	            			name: Ext.getCmp('script_name').getValue(),
+	            			params: Ext.encode(baseLayer.getJson())
+	            		}
+	            	});
+	            	
+	            }
 	        }
 	    ]
 	});
@@ -320,8 +308,7 @@ Ext.onReady(function(){
 		layout: 'fit',
 		autoHeight: true,
 		enableDragDrop: true,
-		ddGroup: 'wireit',
-		
+		ddGroup: 'wireit',		
 		
 			store: store,
 			columns:[{
@@ -336,7 +323,7 @@ Ext.onReady(function(){
 	});
 	
 	
-	var layer_el = Ext.get('wire-layer');
+	layer_el = Ext.get('wire-layer');
 	
 	baseLayer = new WireIt.Layer({
 		layerMap: false,
@@ -346,11 +333,16 @@ Ext.onReady(function(){
 	baseLayer.getJson =  function(){
 			var actions_json = {};
 			Ext.each(this.containers, function(action){
-				if (action){										
+				if (action){
+					var posXY = action.getXY();
+					
 					actions_json[action.id] = {
 						params: action.getParams(),
 						'in': action.getInputs(),
-						out: action.getOutputs()					
+						out: action.getOutputs(),
+						script_name: action.options.title,
+						x: posXY[0],
+						y: posXY[1]
 					}					
 				
 				}
@@ -465,13 +457,18 @@ Ext.onReady(function(){
            
           store.load({
           	callback:function(){
+          		if (script_name)
+          			Ext.getCmp('script_name').setValue(script_name)
+          		
           		if (params){
+          			console.log(params);
           			var action;
           			for (action_name in params){
           				if (action_name){
 
           					action = params[action_name];
-          					var action_stored = store.query('name', action.script_name).items
+          					
+          					var action_stored = store.query('name', action.script_name).items;
           					
           					if(action_stored.length > 0){
           						action_stored = action_stored[0];
@@ -480,9 +477,11 @@ Ext.onReady(function(){
 						            title: action_stored.data.name,
 						            position:[20,20],
 			//			            legend:'thumbnail',
-						           
+						           	'in': action['in'],
+						           	'out': action['out'],
 					            	inputs: ['in'],
 					            	outputs: ['out'],
+					            	position: [action.x, action.y],
 						            params: action_stored.data.params
 						            
 						    	}, baseLayer); 
@@ -491,8 +490,7 @@ Ext.onReady(function(){
           						Ext.each(action_box.form.items.items, function(field){
           							
           							if (field.xtype == 'cbfieldset'){
-          								Ext.each(field.items.items, function(f){
-          									console.log(f.name);
+          								Ext.each(field.items.items, function(f){          									
           									if (f.value){
           										f.enable();
           										field.expand();
@@ -503,11 +501,38 @@ Ext.onReady(function(){
           							}
           								
           						});
+          						
           					}
           					
           					
           				}
           			}
+          			var w;
+          			Ext.each(baseLayer.containers, function(action){
+          				console.log(action.options.title);
+						Ext.each(baseLayer.containers, function(inner_action){
+							console.log(inner_action.options.title);
+							Ext.each(action['out'], function(out){
+								Ext.each(inner_action['in'], function(_in){
+									
+									if (out && out == _in){
+										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el);
+//								
+										w.drawBezierCurve();	
+									}
+									
+								});
+								
+							});
+							if(action['out'][0] &&  action['out'][0] == inner_action['in'][0] ){
+								
+								
+								
+							}	
+						});
+					
+					
+					});
           			
           		}
           	}

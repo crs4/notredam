@@ -25,6 +25,8 @@ from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
+from dam.mprocessor.models import Pipeline
+import logger
 
 def _get_scripts_info(script):
         
@@ -163,26 +165,24 @@ def new_script(request):
 
 @login_required
 def edit_script(request):
-    script_id = request.POST['script']
-    script = Script.objects.get(pk = script_id)
-    
-#    if script.is_global:        
-#        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+    script_id = request.POST.get('pk')
+    if script_id: #editing an existing script
+        script = Pipeline.objects.get(pk = script_id)
+    else:
+        script = Pipeline()
+        workspace = request.session['workspace']
+        script.workspace = workspace
         
-    pipeline = request.POST.get('actions_media_type')
-    workspace = request.session.get('workspace')
-    name = request.POST.get('name')
-    description = request.POST.get('description')
-    events = request.POST.getlist('event')
+    name = request.POST['name']
+    params =  request.POST['params']
+    script.params = params
+    
     try:
-        _new_script(name, description, workspace, pipeline, events, script)
+        script.save()
     except IntegrityError:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
     
-#    items = [c.item for c in script.component_set.all()]
-#    script.execute(items)
-        
-    return HttpResponse(simplejson.dumps({'success': True}))
+    return HttpResponse(simplejson.dumps({'success': True}))  
 
 @login_required
 def rename_script(request):
@@ -320,7 +320,8 @@ def script_monitor(request):
 def editor(request, script_id = None):
     from django.template import RequestContext
     from django.shortcuts import render_to_response
-    from dam.mprocessor.models import Pipeline
+    script_id = script_id or request.POST.get('pk')
+    logger.debug('script_id %s'%script_id)
 
     if script_id:
         pipeline = Pipeline.objects.get(pk = script_id)
@@ -329,5 +330,6 @@ def editor(request, script_id = None):
     else:
         params = ''
         name = '' 
-    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name}))
+        pk = ''
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id}))
 
