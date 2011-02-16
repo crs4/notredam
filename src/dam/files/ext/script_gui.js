@@ -516,7 +516,7 @@ Ext.onReady(function(){
 								Ext.each(inner_action['in'], function(_in){
 									
 									if (out && out == _in){
-										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el);
+										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom);
 //								
 										w.drawBezierCurve();	
 									}
