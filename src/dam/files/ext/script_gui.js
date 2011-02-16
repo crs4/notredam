@@ -92,6 +92,7 @@ var MDAction =  function(opts, layer) {
 	opts.terminals = [];
 	this.params = opts.params;
 	opts.resizable = false;
+	this.label = opts.label || opts.title;
 
 	for(var i = 0 ; i < opts.inputs.length ; i++) {
 		var input = this.inputs[i];
@@ -187,17 +188,18 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	 	});
 	 	this.form = form;
 	 	
+	 	this.label = new Ext.form.TextField({
+ 			value: this.label
+ 			
+ 		}); 		
+	 	
 	 	var panel = new Ext.Panel({
 	 		renderTo: this.bodyEl,
 	 		items: [
 	 		
 	 		new Ext.form.CompositeField({
 	 			items:[
-	 				new Ext.form.TextField({
-			 			value: 'adapt_image'
-			 			
-			 		}),
-			 		
+	 				this.label,
 			 		new Ext.Button({
 			 			text: 'Show',
 			 			handler: function(){
@@ -339,17 +341,19 @@ Ext.onReady(function(){
 	});
 	baseLayer.getJson =  function(){
 			var actions_json = {};
+			console.log(action.label.getValue());
 			Ext.each(this.containers, function(action){
 				if (action){
 					var posXY = action.getXY();
-					
+					console.log(action);
 					actions_json[action.id] = {
 						params: action.getParams(),
 						'in': action.getInputs(),
 						out: action.getOutputs(),
 						script_name: action.options.title,
 						x: posXY[0],
-						y: posXY[1]
+						y: posXY[1],
+						label: action.label.geValue()
 					}					
 				
 				}
@@ -383,6 +387,7 @@ Ext.onReady(function(){
           	
           		var action = new MDAction({
 			            title: script_name,
+			            label: params.label,
 			            position:[drop_x,drop_y],
 //			            legend:'thumbnail',
 			           
