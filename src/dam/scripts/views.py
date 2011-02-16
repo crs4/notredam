@@ -71,7 +71,7 @@ def get_script_actions(request):
 def get_actions(request):  
     import os, settings
     from mediadart.config import Configurator
-    
+    workspace = request.session.get('workspace')
     
     c = Configurator()
     actions_modules =  c.get("MPROCESSOR", "plugins")
@@ -95,10 +95,10 @@ def get_actions(request):
                 module_loaded = getattr(top_module, module, None)
                 if module_loaded:
                     logger.debug(module_loaded)
-                    logger.debug('aaaa %s'%hasattr(module_loaded, 'inspect'))
+                    
                     
                     if hasattr(module_loaded, 'inspect'):
-                        tmp = module_loaded.inspect()
+                        tmp = module_loaded.inspect(workspace)
                         tmp.update({'name': module})
                         resp['scripts'].append(tmp)
                         media_type = request.POST.get('media_type') # if no media_type all actions will be returned
