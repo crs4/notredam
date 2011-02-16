@@ -19,22 +19,19 @@ from uuid import uuid4
 def new_id():
     return uuid4().hex
 
-def inspect():
+def inspect(workspace):
+    from django.db.models import Q
+    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
+    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
     return {
         'name': __name__,
-        
-        
-        'parameter_groups':{
-            'resize':['resize_w', 'resize_h'],
-            'crop':['crop_x', 'crop_y', 'crop_w', 'crop_h', 'crop_ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'wm_id']
-        },
+       
         'params':[
             {   
                 'name': 'source_variant',
                 'fieldLabel': 'Source Variant',
                 'xtype': 'select',
-                'values': [['original']],
+                'values': source_variants,
                 'description': 'input-variant',
                 
                 'help': ''
@@ -44,7 +41,7 @@ def inspect():
                 'name': 'output_variant',
                 'fieldLabel': 'Output Variant',
                 'xtype': 'select',
-                'values': [['thumbnail'], ['preview'], ['fullscreen']],
+                'values': output_variants,
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
@@ -97,6 +94,8 @@ def inspect():
                     'minValue':0,
                     'help': 'width of crop area, default till right edge of image'
                 },
+                
+                
 ##                {
 ##                    'name': 'crop_x',
 ##                    'fieldLabel': 'X left corner',
@@ -125,8 +124,18 @@ def inspect():
 
                 
                     
-              ]
+              ],
+              
               },
+              {   
+                'name': 'output_format',
+                'fieldLabel': 'format',
+                'xtype': 'select',
+                'values': [['jpeg'], ['bmp'], ['gif'], ['png']],
+                'description': 'output_format',
+                
+                'help': ''
+            },
               
               
              
