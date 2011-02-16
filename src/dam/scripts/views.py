@@ -331,5 +331,6 @@ def editor(request, script_id = None):
         params = ''
         name = '' 
         pk = ''
+    logger.debug('params: %s'%params)
     return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id}))
 
