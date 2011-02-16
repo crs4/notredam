@@ -1,6 +1,29 @@
 import sys
 from random import random
 
+simple_pipe = {
+    'a1': {'params': {'l':22, 'm': 23}, 
+           'script_name': 'pya1',
+           'in':[],             
+           'out':['v1'] },
+
+    'a2': {'params': {'l':22, 'm': 23}, 
+           'script_name': 'pya1',
+           'in':['v1'],             
+           'out':['v2'] },
+
+    'a3': {'params': {'l':22, 'm': 23}, 
+           'script_name': 'pya1',
+           'in':['v1'],             
+           'out':['v3',] },
+
+    'a4': {'params': {'l':22, 'm': 23}, 
+           'script_name': 'pya1',
+           'in':['v2', 'v3'],             
+           'out':[] },
+}
+
+
 pipeline = {
     'a1': {'params': {'l':22, 'm': 23}, 
            'script_name': 'pya1',
@@ -113,7 +136,7 @@ def main(failures):
         else:
             f.write('        raise Exception("EXCEPTION error: %s" % __file__)\n')
         f.write('    else:\n')
-        f.write('        reactor.callLater(0*random(), d.callback, "ok")\n')
+        f.write('        reactor.callLater(3*random(), d.callback, "ok")\n')
         f.write('    return d\n')
         f.close()
 

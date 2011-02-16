@@ -26,30 +26,16 @@ def new_id():
 def inspect():
     return {
         'name': __name__,
-        'parameter_groups':{
-            'resize':['width', 'height'],
-            'crop':['ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'component_id']
-        },
-        'width': {
-            'type': 'int',
-            'description': 'width',
-            'default': 100,
-            'help': ''
-        },     
-        'output_variant': {
-            'type': 'output-variant',
-            'description': 'output-variant',
-            'default': 0,
-            'help': ''
-        },
-#        'source_variant': {
-#            'type': 'input-variant',
-#            'description': 'input-variant',
-#            'default': 0,
-#            'help': ''
-#        }      
-        
+        'params':[
+            {   
+                'name': 'source_variant',
+                'fieldLabel': 'Source Variant',
+                'xtype': 'select',
+                'values': [['original']],
+                'description': 'input-variant',
+                'default': 0,
+                'help': ''
+            }]
          
         } 
 
