@@ -91,6 +91,7 @@ var MDAction =  function(opts, layer) {
 	this.outputs = opts.outputs || [];
 	opts.terminals = [];
 	this.params = opts.params;
+	opts.resizable = false;
 
 	for(var i = 0 ; i < opts.inputs.length ; i++) {
 		var input = this.inputs[i];
@@ -168,95 +169,62 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	render: function(){
 		
 	 	MDAction.superclass.render.call(this);
-	 	this.form = new Ext.form.FormPanel({
-	 		renderTo: this.bodyEl,
+	 	
+	 	var form = new Ext.form.FormPanel({
+//	 		renderTo: this.bodyEl,
 	 		autoHeight: true,
 	 		autoScroll: true,
 	 		border: false,
-	 		items: this.params
+	 		items: this.params,
 	 		
-
-	 	})
+//	 		collapsible: true,
+	 		listeners:{
+	 			afterrender:function(){
+	 				this.collapse();
+	 			
+	 			}
+	 		}
+	 	});
+	 	this.form = form;
+	 	
+	 	var panel = new Ext.Panel({
+	 		renderTo: this.bodyEl,
+	 		items: [
+	 		
+	 		new Ext.form.CompositeField({
+	 			items:[
+	 				new Ext.form.TextField({
+			 			value: 'adapt_image'
+			 			
+			 		}),
+			 		
+			 		new Ext.Button({
+			 			text: 'Show',
+			 			handler: function(){
+			 				if (this.getText() == 'Show'){
+			 					this.setText('Hide');
+			 					form.expand();	
+			 				}
+			 				else{
+			 					this.setText('Show');
+			 					form.collapse();	
+			 				
+			 				}
+			 				
+			 			}
+			 		})
+	 			]
+	 		
+	 		}),
+	 		
+	 		form
+	 		],
+	 		border: false
+	 	
+	 	});
 	}
 
 });
-
-//var AdaptImage = function(opts, layer) {
-//	opts.inputs = ['in'];
-//	opts.outputs = ['out'];
-//	opts.title =  ['AdaptImage'];
-//	
-//	
-//	opts.fields= [ 
-//			{type: 'select', inputParams: {label: 'source_variant', name: 'source_variant', selectValues: ['original'] } },
-//			{type: 'select', inputParams: {label: 'output_variant', name: 'output_variant', selectValues: ['thumbnail','preview',  'fullscreen'], value: opts.output_variant } },
-//			{inputParams: {label: 'height', name: 'height', required: false, value: opts.height_value } }, 
-//			{inputParams: {label: 'width', name: 'width', required: false, value: opts.width_value} } 
-//			
-//		];
-//	
-//	AdaptImage.superclass.constructor.call(this, opts, layer);
-//};	 
-//
-//YAHOO.lang.extend(AdaptImage, MDAction, {
-//	
-//	
-//
-//});
-//
-//var SmartContainer = function(opts, layer) {
-//	
-////		this.inputs = opts.inputs ;
-////		this.outputs = opts.outputs;
-//	SmartContainer.superclass.constructor.call(this, opts, layer);
-//	
-//};
-//YAHOO.lang.extend(SmartContainer, WireIt.FormContainer, {
-//	
-//	
-//	
-////		inputs: ['lol'],
-////		outputs: [],
-//	
-//	render: function() {
-//		SmartContainer.superclass.render.call(this);
-//		this.inputs = ['in'];
-//		this.outputs = ['out'];
-//		for(var i = 0 ; i < this.inputs.length ; i++) {
-//			var input = this.inputs[i];
-//			this.terminals.push({
-//				"name": input, 
-//				"direction": [-1,0], 
-//				"offsetPosition": {"left": -14, "top": 3+30*(i+1) }, 
-//				"ddConfig": {
-//					"type": "input",
-//					"allowedTypes": ["output"]
-//				}
-//			});
-//			this.bodyEl.appendChild(WireIt.cn('div', null, {lineHeight: "30px"}, input));
-//		}
-//		
-//		for(i = 0 ; i < this.outputs.length ; i++) {
-//			var output = this.outputs[i];
-//			this.terminals.push({
-//				"name": output, 
-//				"direction": [1,0], 
-//				"offsetPosition": {"right": -14, "top": 3+30*(i+1+this.inputs.length) }, 
-//				"ddConfig": {
-//					"type": "output",
-//					"allowedTypes": ["input"]
-//				},
-//				"alwaysSrc": true
-//			});
-//			this.bodyEl.appendChild(WireIt.cn('div', null, {lineHeight: "30px", textAlign: "right"}, output));
-//		}
-//		
-//			
-//	}
-//	
-//});
-//var extract_features, adapt_1, adapt_2, adapt_3, test_form;
-
 
 
 var baseLayer, store, layer_el;
