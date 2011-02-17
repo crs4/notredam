@@ -60,7 +60,7 @@
 <link rel="stylesheet" type="text/css" href="/files/WireIt-0.5.0/css/WireIt.css" /> 
 
 <script type="text/javascript">
-	var script_pk, script_name, params;
+	var script_pk, script_name, params, script_type;
 	{%if params%}
 		params = Ext.decode('{{params|safe}}');
 	{%endif%}
@@ -71,6 +71,10 @@
 	
 	{%if pk%}
 		script_pk = '{{pk}}';
+	{%endif%}
+	
+	{%if pk%}
+		script_type = '{{type}}';
 	{%endif%}
 	
 </script>

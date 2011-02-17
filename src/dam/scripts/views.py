@@ -329,10 +329,12 @@ def editor(request, script_id = None):
         pipeline = Pipeline.objects.get(pk = script_id)
         params = pipeline.params
         name = pipeline.name
+        type = pipeline.type
     else:
         params = ''
         name = '' 
         pk = ''
+        type = ''
     logger.debug('params: %s'%params)
-    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id}))
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type}))
 
