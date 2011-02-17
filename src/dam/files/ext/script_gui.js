@@ -173,6 +173,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	 	
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
+	 		bodyStyle: {paddingTop: 10},
 	 		autoHeight: true,
 	 		autoScroll: true,
 	 		border: false,
@@ -189,26 +190,29 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	 	this.form = form;
 	 	
 	 	this.label = new Ext.form.TextField({
- 			value: this.label
- 			
+ 			value: this.label,
+ 			width: 300 			
  		}); 		
 	 	
+ 		var BUTTON_EDIT = 'Edit', BUTTON_HIDE = 'Hide';
 	 	var panel = new Ext.Panel({
 	 		renderTo: this.bodyEl,
 	 		items: [
+	 		
 	 		
 	 		new Ext.form.CompositeField({
 	 			items:[
 	 				this.label,
 			 		new Ext.Button({
-			 			text: 'Show',
+			 			text: BUTTON_EDIT,
+			 			
 			 			handler: function(){
-			 				if (this.getText() == 'Show'){
-			 					this.setText('Hide');
+			 				if (this.getText() == BUTTON_EDIT){
+			 					this.setText(BUTTON_HIDE);
 			 					form.expand();	
 			 				}
 			 				else{
-			 					this.setText('Show');
+			 					this.setText(BUTTON_EDIT);
 			 					form.collapse();	
 			 				
 			 				}
@@ -341,9 +345,10 @@ Ext.onReady(function(){
 	});
 	baseLayer.getJson =  function(){
 			var actions_json = {};
-			console.log(action.label.getValue());
+			
 			Ext.each(this.containers, function(action){
 				if (action){
+					
 					var posXY = action.getXY();
 					console.log(action);
 					actions_json[action.id] = {
@@ -353,7 +358,7 @@ Ext.onReady(function(){
 						script_name: action.options.title,
 						x: posXY[0],
 						y: posXY[1],
-						label: action.label.geValue()
+						label: action.label.getValue()
 					}					
 				
 				}
@@ -404,7 +409,7 @@ Ext.onReady(function(){
           store.load({
           	callback:function(){
           		if (script_name)
-          			Ext.getCmp('script_name').setValue(script_name)
+          			Ext.getCmp('script_name').setValue(script_name);
           		
           		if (params){
           			console.log(params);
@@ -428,7 +433,8 @@ Ext.onReady(function(){
 					            	inputs: ['in'],
 					            	outputs: ['out'],
 					            	position: [action.x, action.y],
-						            params: action_stored.data.params
+						            params: action_stored.data.params,
+						            label: action.label
 						            
 						    	}, baseLayer); 
 						    	action_box.form.getForm().setValues(action.params);
