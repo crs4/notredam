@@ -175,6 +175,8 @@ def edit_script(request):
         
     name = request.POST['name']
     params =  request.POST['params']
+    
+    script.name = name    
     script.params = params
     
     try:
