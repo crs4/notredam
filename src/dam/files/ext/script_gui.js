@@ -99,7 +99,7 @@ var MDAction =  function(opts, layer) {
 		opts.terminals.push({
 			"name": input, 
 			"direction": [-1,0], 
-			"offsetPosition": {"left": -14, "top": 3+30*(i+1) }, 
+			"offsetPosition": {"left": -14, "top": 3+23*(i+1) }, 
 			"ddConfig": {
 				"type": "input",
 				"allowedTypes": ["output"]
@@ -262,7 +262,7 @@ Ext.onReady(function(){
 		   		
 	            xtype: 'combo',
 	            name: 'type',
-	            allowBlank: false,	             
+	            allowBlank: true,	             
 			    autoSelect: true,
 			    editable: false,
 			    triggerAction: 'all',
@@ -279,7 +279,7 @@ Ext.onReady(function(){
 		        	data: [[null, '-------'],[1, 'upload']]
 	    		}),		
 		    
-//			    value: '',
+			    value: script_type,
 				    
 			    valueField: 'pk',
 			    displayField: 'name'
