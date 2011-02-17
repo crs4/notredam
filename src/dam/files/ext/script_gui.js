@@ -276,7 +276,7 @@ Ext.onReady(function(){
 			    mode: 'local',
 			    store:  new Ext.data.ArrayStore({        
 		        	fields: ['pk', 'name'],
-		        	data: [[null, '-------'],[1, 'upload']]
+		        	data: types_available
 	    		}),		
 		    
 			    value: script_type,
@@ -305,10 +305,10 @@ Ext.onReady(function(){
 		            			params: Ext.encode(baseLayer.getJson())		            			
 		            		},
 		            		success: function(){
-		            			Ext.MsgBox.msg('','Script saved');
+//		            			Ext.MsgBox.msg('','Script saved');
 		            		},
 		            		failure: function(){
-		            			Ext.MsgBox.msg('','Save failed');
+//		            			Ext.MsgBox.msg('','Save failed');
 		            		}
 		            		
 		            		

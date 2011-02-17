@@ -9,7 +9,7 @@ import datetime
 class Pipeline(models.Model):
     name = models.CharField(max_length= 50)
     description = models.TextField(blank=True)
-    type = models.CharField(max_length=32, blank=True, default="") 
+#    type = models.CharField(max_length=32, blank=True, default="") 
     params = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     
@@ -17,6 +17,12 @@ class Pipeline(models.Model):
         if not hasattr(self, 'length'):
             self.length = len(simplejson.loads(self.params))
         return self.length
+    
+    def get_type(self, workspace):
+        try:
+            return PipelineType.objects.get(pipeline = self, workspace = workspace).type
+        except PipelineType.DoesNotExist:
+            return None
     
 class Process(models.Model):    
     pipeline = models.ForeignKey(Pipeline)
@@ -58,4 +64,13 @@ class ProcessTarget(models.Model):
     actions_todo = models.IntegerField(default=0)   # passed+cancelled+failed+todo = pipeline.num_actions()
     result = models.TextField()                     # anything sensible
     
+class PipelineType(models.Model):
+    type = models.CharField(max_length = 40, null = False, choices= [('upload', 'upload')])
+    pipeline = models.ForeignKey(Pipeline, unique = True)
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
     
+    class Meta:
+        unique_together = (('type', 'workspace'),)
+    
+    
+
