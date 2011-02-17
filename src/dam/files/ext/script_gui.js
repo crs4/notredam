@@ -241,6 +241,7 @@ function save_script(params){
 		params: params,
 		success: function(){
 //		            			Ext.MsgBox.msg('','Script saved');
+			script_type = params.type
 		},
 		failure: function(){
 //		            			Ext.MsgBox.msg('','Save failed');
@@ -313,14 +314,32 @@ Ext.onReady(function(){
 	            handler: function(){
 	            	var button = Ext.getCmp('save_button');
 	            	if (Ext.getCmp('script_name').isValid()){
+            				
             				var submit_params =  {
 								pk: script_pk,
 								name: Ext.getCmp('script_name').getValue(),
 								type: Ext.getCmp('type').getValue(),
 								params: Ext.encode(baseLayer.getJson())		            			
 							};
-
-	            		save_script(submit_params);
+						
+						if (submit_params.type != script_type)
+							Ext.Msg.show({
+							   title:'Change Script Type?',
+							   msg: 'You are changing the event to whom the script is associated. Note that only a script at once can be associated with a given event. Do you confirm the change?',
+							   buttons: Ext.Msg.YESNOCANCEL,
+							   fn: function(btn){
+							   	if (btn == 'yes'){
+									save_script(submit_params);	   		
+							   		
+							   	}
+							   },
+							   
+							   icon: Ext.MessageBox.QUESTION
+							});
+						else
+							save_script(submit_params);	   		
+						
+	            		
 	            			            		
 	            	}
 	            	
