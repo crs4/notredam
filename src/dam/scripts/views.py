@@ -25,7 +25,7 @@ from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
-from dam.mprocessor.models import Pipeline
+from dam.mprocessor.models import Pipeline, PipelineType
 import logger
 
 def _get_scripts_info(script):
@@ -165,24 +165,49 @@ def new_script(request):
 
 @login_required
 def edit_script(request):
-    script_id = request.POST.get('pk')
-    if script_id: #editing an existing script
-        script = Pipeline.objects.get(pk = script_id)
+    pk = request.POST.get('pk')
+    workspace = request.session['workspace']
+    if pk: #editing an existing script
+        pipeline = Pipeline.objects.get(pk = pk)
     else:
-        script = Pipeline()
-        workspace = request.session['workspace']
-        script.workspace = workspace
+        pipeline = Pipeline()
+        
+        pipeline.workspace = workspace
         
     name = request.POST['name']
     params =  request.POST['params']
+    type = request.POST.get('type')
     
-    script.name = name    
-    script.params = params
+    pipeline.name = name    
+    pipeline.params = params
     
     try:
-        script.save()
+        pipeline.save()
     except IntegrityError:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
+    
+    
+    previous_type = pipeline.get_type(workspace)
+    if (type, type) in PipelineType._meta.get_field_by_name('type')[0].choices:
+        try:
+            pipeline_type = PipelineType.objects.get(type = type, workspace = workspace)
+            
+                
+        except PipelineType.DoesNotExist:
+            pipeline_type = PipelineType(type = type, workspace = workspace)
+        
+        
+        if pipeline_type != previous_type:
+            if previous_type:
+                previous_type.delete()
+            
+            pipeline_type.pipeline = pipeline
+            pipeline_type.save()
+    
+    elif not type:       
+        if previous_type: #removing previously set type for pipeline
+            previous_type.delete()
+        
     
     return HttpResponse(simplejson.dumps({'success': True}))  
 
@@ -329,7 +354,12 @@ def editor(request, script_id = None):
         pipeline = Pipeline.objects.get(pk = script_id)
         params = pipeline.params
         name = pipeline.name
-        type = pipeline.get_type(pipeline.workspace)
+        pipeline_type = pipeline.get_type(pipeline.workspace)
+        if pipeline_type:
+            type = pipeline_type.type
+        else:
+            type = ''
+        
     else:
         params = ''
         name = '' 

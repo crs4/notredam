@@ -235,6 +235,23 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 
 var baseLayer, store, layer_el;
 
+function save_script(params){
+	Ext.Ajax.request({
+		url: '/edit_script/',
+		params: params,
+		success: function(){
+//		            			Ext.MsgBox.msg('','Script saved');
+		},
+		failure: function(){
+//		            			Ext.MsgBox.msg('','Save failed');
+		}
+		
+		
+	});
+
+
+};
+
 Ext.onReady(function(){
 	new Ext.Toolbar({
 	    renderTo: Ext.get('toolbar'),
@@ -296,24 +313,15 @@ Ext.onReady(function(){
 	            handler: function(){
 	            	var button = Ext.getCmp('save_button');
 	            	if (Ext.getCmp('script_name').isValid()){
-	            		
-	            		Ext.Ajax.request({
-		            		url: '/edit_script/',
-		            		params: {
-		            			pk: script_pk,
-		            			name: Ext.getCmp('script_name').getValue(),
-		            			params: Ext.encode(baseLayer.getJson())		            			
-		            		},
-		            		success: function(){
-//		            			Ext.MsgBox.msg('','Script saved');
-		            		},
-		            		failure: function(){
-//		            			Ext.MsgBox.msg('','Save failed');
-		            		}
-		            		
-		            		
-		            	});
-	            		
+            				var submit_params =  {
+								pk: script_pk,
+								name: Ext.getCmp('script_name').getValue(),
+								type: Ext.getCmp('type').getValue(),
+								params: Ext.encode(baseLayer.getJson())		            			
+							};
+
+	            		save_script(submit_params);
+	            			            		
 	            	}
 	            	
 		            	

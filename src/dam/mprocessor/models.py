@@ -20,7 +20,7 @@ class Pipeline(models.Model):
     
     def get_type(self, workspace):
         try:
-            return PipelineType.objects.get(pipeline = self, workspace = workspace).type
+            return PipelineType.objects.get(pipeline = self, workspace = workspace)
         except PipelineType.DoesNotExist:
             return None
     
