@@ -272,7 +272,7 @@ Ext.onReady(function(){
         	},
         	{
 			    xtype: 'tbtext', 
-			    text: 'Type: '
+			    text: 'Event: '
 		    } ,
         	
         	{
