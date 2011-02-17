@@ -291,17 +291,32 @@ Ext.onReady(function(){
 	        {
 	            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
 	            text: 'SAVE',
+	            id: 'save_button',
 	            icon: '/files/images/icons/save.gif',
 	            handler: function(){
-	            	if (Ext.getCmp('script_name').isValid())	            		
-		            	Ext.Ajax.request({
+	            	var button = Ext.getCmp('save_button');
+	            	if (Ext.getCmp('script_name').isValid()){
+	            		
+	            		Ext.Ajax.request({
 		            		url: '/edit_script/',
 		            		params: {
 		            			pk: script_pk,
 		            			name: Ext.getCmp('script_name').getValue(),
-		            			params: Ext.encode(baseLayer.getJson())
+		            			params: Ext.encode(baseLayer.getJson())		            			
+		            		},
+		            		success: function(){
+		            			Ext.MsgBox.msg('','Script saved');
+		            		},
+		            		failure: function(){
+		            			Ext.MsgBox.msg('','Save failed');
 		            		}
+		            		
+		            		
 		            	});
+	            		
+	            	}
+	            	
+		            	
 		            
 	            	
 	            }
