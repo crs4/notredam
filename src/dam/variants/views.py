@@ -249,7 +249,6 @@ def get_variants(request):
             
             basic_group = _get_ws_groups(workspace, 'specific_basic')[0]
             full_group = _get_ws_groups(workspace, 'specific_full')[0]
-            
             info_list = comp.get_formatted_descriptors(basic_group,  user, workspace)
             info_list_full = comp.get_formatted_descriptors(full_group,  user, workspace)
             

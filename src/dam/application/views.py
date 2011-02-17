@@ -208,7 +208,6 @@ def download_component(request, item_id, variant_name):
         return HttpResponseNotFound()
     
     
-    
     response = serve(request, path, document_root = MEDIADART_STORAGE)
     
     if variant_name == 'original':

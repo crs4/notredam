@@ -135,8 +135,8 @@ Ext.onReady(function() {
     var namespace_panel = get_namespace_list();
 
     var user_panel = get_user_list();
-
     var ws_panel = get_ws_list();
+    var bk_panel = get_bk_panel();
             
     var viewport = new Ext.Viewport({
         layout:'border',
@@ -159,7 +159,7 @@ Ext.onReady(function() {
                     style: 'padding: 10px;'
                 }, {
                     layout: 'fit',
-                    title: 'Default configuration',
+                    title: 'General',
                     iconCls: 'x-icon-configuration',
                     style: 'padding: 10px;',
                     id: 'configuration_panel'
@@ -175,6 +175,12 @@ Ext.onReady(function() {
                     iconCls: 'x-icon-configuration',
                     style: 'padding: 10px;',
                     items: [ws_panel]
+                },{
+                    layout: 'fit',
+                    title: 'Backup',
+                    iconCls: 'x-icon-configuration',
+                    style: 'padding: 10px;',
+                    items: [bk_panel]
                 }]
             }, {
                 listeners: {
@@ -186,7 +192,7 @@ Ext.onReady(function() {
                     iconCls: 'x-icon-configuration',
                     style: 'padding: 10px;'
                 }, {
-                    title: 'Default Descriptors',
+                    title: 'Descriptors',
                     iconCls: 'x-icon-descriptors',
                     style: 'padding: 10px;',
                     layout: 'fit',
@@ -196,7 +202,7 @@ Ext.onReady(function() {
                         items: [descriptors_panel, descriptor_groups_panel]	
                     }]	
                 }, {
-                    title: 'XMP Management',
+                    title: 'Properties',
                     layout: 'fit',                          
                     iconCls: 'x-icon-xmp',
                     style: 'padding: 10px;',
@@ -207,7 +213,7 @@ Ext.onReady(function() {
                     }]
                 },
                 {
-                    title: 'Default Rights',
+                    title: 'Licencies',
                     iconCls: 'x-icon-rights',
                     style: 'padding: 10px;',
                     layout: 'fit',

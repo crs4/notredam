@@ -191,8 +191,8 @@ def get_basic_descriptors(request):
 
     item = Item.objects.get(pk=item_list[0])
     values = item.get_formatted_descriptors(user, workspace)
-    
     resp_dict = {'descriptors': values}
+    print ("get_basic_descriptors:descriptors: %s" %resp_dict)
     resp = simplejson.dumps(resp_dict)
     return HttpResponse(resp)
 
