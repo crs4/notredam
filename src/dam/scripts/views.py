@@ -329,12 +329,16 @@ def editor(request, script_id = None):
         pipeline = Pipeline.objects.get(pk = script_id)
         params = pipeline.params
         name = pipeline.name
-        type = pipeline.type
+        type = pipeline.get_type(pipeline.workspace)
     else:
         params = ''
         name = '' 
         pk = ''
         type = ''
     logger.debug('params: %s'%params)
-    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type}))
+    types_available = list(PipelineType._meta.get_field_by_name('type')[0].choices)
+    types_available.insert(0, ['','-------------'])
+    types_available = simplejson.dumps(types_available)
+    logger.debug('types_available %s'%types_available)
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available }))
 
