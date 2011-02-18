@@ -345,6 +345,7 @@ def script_monitor(request):
 
 @login_required
 def editor(request, script_id = None):
+    
     from django.template import RequestContext
     from django.shortcuts import render_to_response
     script_id = script_id or request.POST.get('pk')
@@ -352,6 +353,7 @@ def editor(request, script_id = None):
 
     if script_id:
         pipeline = Pipeline.objects.get(pk = script_id)
+        workspace = pipeline.workspace
         params = pipeline.params
         name = pipeline.name
         pipeline_type = pipeline.get_type(pipeline.workspace)
@@ -361,6 +363,8 @@ def editor(request, script_id = None):
             type = ''
         
     else:
+        workspace_id  = request.GET['workspace_id']
+        workspace = Workspace.objects.get(pk = workspace_id)
         params = ''
         name = '' 
         pk = ''
@@ -370,5 +374,5 @@ def editor(request, script_id = None):
     types_available.insert(0, [None,'-------------'])
     types_available = simplejson.dumps(types_available)
     logger.debug('types_available %s'%types_available)
-    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available }))
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available, 'workspace': workspace }))
 

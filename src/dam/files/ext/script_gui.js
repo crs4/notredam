@@ -256,13 +256,15 @@ function save_script(params){
 //YAHOO.inputEx.spacerUrl = "/files/WireIt-0.5.0/lib/inputex/images/space.gif";
 
 Ext.onReady(function(){
-		var store = new Ext.data.JsonStore({
-			url:'/get_actions/',
-			fields:['name', 'params'],
+	Ext.get('switch_ws_bar').setStyle({marginTop: 10});
+	Ext.get('switch_ws_bar').dom.innerHTML = workspace.name;
+	
+	var store = new Ext.data.JsonStore({
+		url:'/get_actions/',
+		fields:['name', 'params'],
 //			autoLoad: true,
-			root: 'scripts'	
-		});
-
+		root: 'scripts'	
+	});
 	
 	new Ext.Viewport({
 		layout: 'border',
@@ -514,9 +516,8 @@ Ext.onReady(function(){
 						    displayField: 'name'
 					            
 				
-				        	},
-			        	
-				    
+				        	},				        	
+				        	
 				        {
 				            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
 				            text: 'SAVE',
