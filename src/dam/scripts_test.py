@@ -12,10 +12,7 @@ setup_environ(settings)
 
 from django.utils import simplejson
 from django.contrib.auth.models import User
-from django.db import transaction
-
-from dam.mprocessor.models import new_processor, Pipeline, Process, ProcessTarget
-from dam.mprocessor.make_plugins import pipeline, pipeline2, simple_pipe
+from dam.mprocessor.models import new_processor, Pipeline, Process, ProcessTarget, PipelineType
 from dam.workspace.models import DAMWorkspace
 from dam.core.dam_repository.models import Type
 from dam.repository.models import Item, get_storage_file_name
@@ -170,8 +167,9 @@ class DoTest:
 #        return comp
 
     def register(self, name, type, description, pipeline_definition):
-        preview = Pipeline.objects.create(name=name, type=type, description='', params = simplejson.dumps(pipeline_definition), workspace = self.ws)
+        preview = Pipeline.objects.create(name=name,  description='', params = simplejson.dumps(pipeline_definition), workspace = self.ws)
         print 'registered pipeline %s, pk = %s' % (name, preview.pk)
+        PipelineType.objects.create(type = 'upload', workspace = self.ws, pipeline = preview)
 
     def _new_item(self, filepath):
         variant = Variant.objects.get(name = 'original')

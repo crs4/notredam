@@ -51,6 +51,7 @@ class MProcessor(MQServer):
     def mq_run(self, process_id, call_mode='non-blocking'):
         log.debug('#### Launching process %s'%process_id)
         process = Process.objects.get(pk=process_id)
+        log.debug('--------- process %s'%process)
         batch = Batch(process)
         d = batch.run()
         if call_mode != 'non-blocking':
