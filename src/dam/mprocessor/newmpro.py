@@ -49,7 +49,7 @@ class BatchError(Exception):
 
 class MProcessor(MQServer):
     def mq_run(self, process_id, call_mode='non-blocking'):
-        log.debug('launching process %s'%process_id)
+        log.debug('#### Launching process %s'%process_id)
         process = Process.objects.get(pk=process_id)
         batch = Batch(process)
         d = batch.run()
@@ -62,7 +62,6 @@ class Batch:
     def __init__(self, process):
         self.cfg = Configurator()
         self.max_outstanding = self.cfg.getint('MPROCESSOR', 'max_outstanding')
-        self.update_interval = self.cfg.getint('MPROCESSOR', 'update_interval')
         self.batch_size = self.cfg.getint('MPROCESSOR', 'batch_size') # how many items to load
         self.pipeline = loads(process.pipeline.params)
         self.dag = DAG(self.pipeline)
@@ -88,7 +87,7 @@ class Batch:
         return self.deferred
 
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
-        log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled))
+        #log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled))
         item.actions_passed += success
         item.actions_failed += failure
         item.actions_cancelled += cancelled
@@ -114,7 +113,7 @@ class Batch:
             script_name = script_dict['script_name']
             full_name = plugins_module + '.' + script_name + '.run'
             p = full_name.split('.')
-            log.info('<$> loading script: %s' % '.'.join(p))
+            #log.info('<$> loading script: %s' % '.'.join(p[:-1]))
             m = __import__('.'.join(p[:-1]), fromlist = p[:-1])
             f = getattr(m, p[-1], None)
             if not f or not callable(f):
@@ -139,7 +138,7 @@ class Batch:
 
     def _get_action(self):
         """returns the first action found or None. Delete tasks with no actions left"""
-        log.debug("_get_action on num_tasks=%s" % len(self.tasks))
+        #log.debug("_get_action on num_tasks=%s" % len(self.tasks))
         to_delete = []
         action = ''
         for n in xrange(len(self.tasks)):
@@ -168,7 +167,7 @@ class Batch:
             return action, task
         else:
             if not self.targets_done and self.outstanding < self.max_outstanding:
-                log.debug("_get_action: extending task")
+                #log.debug("_get_action: extending task")
                 self.tasks.extend(self._new_batch())
             if self.targets_done and not self.tasks:
                 log.debug("_get_action: gameover")
@@ -181,7 +180,7 @@ class Batch:
 
     def _iterate(self):
         """ Run the actions listed in schedule on the items returned by _new_batch """
-        log.debug('_iterate: oustanding=%s' % self.outstanding)
+        #log.debug('_iterate: oustanding=%s' % self.outstanding)
         if self.gameover:
             log.debug('_iterate: gameover')
             return
@@ -189,12 +188,13 @@ class Batch:
         if action:
             item, schedule = task['item'], task['schedule']
             method, params = self.scripts[action]
-            log.debug('target %s: executing action %s' % (item.target_id, action))
+            log.debug('target %s: executing action %s, method=%s' % (item.target_id, action, method))
             try:
                 log.debug('calling run with params %s'%params)
                 self.outstanding += 1
                 d = method(item.target_id, self.process.workspace, **params)
             except Exception, e:
+                log.debug('Exception launching %s' % method)
                 self._handle_err(str(e), item, schedule, action, params)
             else:
                 d.addCallbacks(self._handle_ok, self._handle_err, 
@@ -202,7 +202,7 @@ class Batch:
         # If _get_action did not find anything and there are not more targets, no action
         # will be available until an action completes and allows more action to go ready.
         if self.outstanding < self.max_outstanding and (action or not self.targets_done):
-            log.debug('_iterate: rescheduling')
+            #log.debug('_iterate: rescheduling')
             reactor.callLater(0, self._iterate)
 
     def _handle_ok(self, result, item, schedule, action, params):
@@ -210,7 +210,7 @@ class Batch:
         self.outstanding -= 1
         schedule.done(action)
         if self.outstanding < self.max_outstanding:
-            log.debug('_handle_ok: rescheduling')
+            #log.debug('_handle_ok: rescheduling')
             reactor.callLater(0, self._iterate)
         self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
@@ -224,7 +224,7 @@ class Batch:
         for a in cancelled:
             self._update_item_stats(item, a, "cancelled on failed %s" % action, 0, 0, 1)
         if self.outstanding < self.max_outstanding:
-            log.debug('_handle_err: rescheduling')
+            #log.debug('_handle_err: rescheduling')
             reactor.callLater(0, self._iterate)
         item.save()
 
@@ -249,7 +249,6 @@ class fake_config:
         'MPROCESSOR': {
             'plugins': 'dam.mprocessor.plugins',
             'max_outstanding': '17',
-            'update_interval': '1',
             'batch_size': '5',
         },
     }

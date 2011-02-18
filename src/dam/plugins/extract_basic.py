@@ -67,12 +67,11 @@ class ExtractBasicFeatures:
         self.component = self.item.get_variant(workspace, self.source_variant)
         self.extractor = 'basic'
         self.ctype = None
-        self.result = []
 
     # the basic extractor is taken from the component using the component type
     def extract_basic(self):
         extractor_type = self.component.get_extractor()    # one of image_basic, media_basic etc.
-        d = self.proxy.extract(self.component.ID, extractor_type)
+        d = self.proxy.extract(self.component.uri, extractor_type)
         d.addCallbacks(self._cb_basic_ok, self._cb_error, callbackArgs=[extractor_type], errbackArgs=[extractor_type])
 
     def _cb_basic_ok(self, features, extractor_type):

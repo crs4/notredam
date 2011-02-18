@@ -97,151 +97,33 @@ def inspect():
                     'minValue':0,
                     'help': 'width of crop area, default till right edge of image'
                 },
-##                {
-##                    'name': 'crop_x',
-##                    'fieldLabel': 'X left corner',
-##                    'xtype':'numberfield',
-##                    'description': 'upper left corner',
-##                    'default': 0,
-##                    'help': 'x-coordinate of upper left pixel of crop area',
-##                },                
-##                
-##                
-##                {
-##                    'name':'crop_y',
-##                    'xtype':'numberfield',
-##                    'fieldLabel': 'upper left corner',
-##                    'description': 'upper left corner',
-##                    'default': 0,
-##                    'help': 'y-coordinate of upper left pixel of crop area',
-##                }, 
-#                {
-#                    'name':'crop_ratio',
-#                    'xtype':'textfield',
-#                    'description': 'ratio x:y',
-#                    'default': '1:1',
-#                    'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
-#                },
-
-                
-                    
               ]
               },
-              
-              
-             
-#            {
-#             'type': 'group',
-#             'name': 'resize', 
-#             'fields':[
-#                {
-#                    'name': 'resize_h',
-#                    'type': 'int',
-#                    'description': 'height',
-#                    'default': 100,
-#                    'help': 'height of resized image in pixels'           
-#                },
-#                      
-#                {
-#                    'name': 'resize_w',
-#                    'type': 'int',
-#                    'description': 'width',
-#                    'default': 100,
-#                    'help': 'width of resized image in pixels'           
-#                },
-#             ]
-#             
-#             
-#             },
-#                  
-#                  
-#           
-#            
-#                  
-#            
-#            {
-#                'name': 'actions',
-#                'type': 'list',
-#                'available_values':['resize', 'crop', 'watermark']
-#                     
-#            },
-#            {
-#                'name':  'crop_w',
-#                'type': 'int',
-#                'description': 'width',
-#                'default': 100,
-#                'help': 'width of crop area, default till right edge of image',
-#            }, 
-#            {
-#                'name':'crop_h',
-#                'type': 'int',
-#                'description': 'width',
-#                'default': 100,
-#                'help': 'heigth of crop area, default till bottom edge of image',
-#            }, 
-#            {
-#                'name': 'crop_x',
-#                'type': 'int',
-#                'description': 'upper left corner',
-#                'default': 0,
-#                'help': 'x-coordinate of upper left pixel of crop area',
-#            }, 
-#            {
-#                'name':'crop_y',
-#                'type': 'int',
-#                'description': 'upper left corner',
-#                'default': 0,
-#                'help': 'y-coordinate of upper left pixel of crop area',
-#            }, 
-#            {
-#                'name':'crop_ratio',
-#                'type': 'string',
-#                'description': 'ratio x:y',
-#                'default': '1:1',
-#                'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
-#            },
-#            
-#            {
-#                'name': 'wm_id',
-#                'type': 'component_id',
-#                'description': 'component',
-#                'default': '',
-#                'help': ''
-#                           
-#            },
-#             {
-#                'name':'pos_x_percent',
-#                'type': 'string',
-#                'description': 'pos_x_percent',
-#                'default': 0,
-#                'help': ''
-#                           
-#            },
-#            
-#             {
-#                'name': 'pos_y_percent',
-#                'type': 'string',
-#                'description': 'pos_y_percent',
-#                'default': 0,
-#                'help': ''
-#                           
-#            }
         ]
-             
-         
-                
-         
         } 
 
+theProxy = None
+
 def run(*args, **kw_args):
+    #log.debug('adapt_image')
+    #global theProxy
+    #log.debug('adapt_image1')
+    #log.debug('adapt_image1 %s' % str(theProxy))
+    #log.debug('adapt_image2')
+    #if theProxy is None:
+        #log.debug('### new instance of Proxy')
+    #    theProxy = Proxy('Adapter')
+    #else:
+    #    log.debug('### reusing proxy instance %s' % str(theProxy))
     deferred = defer.Deferred()
-    adapter = Adapter(deferred)
+    adapter = Adapter(deferred, theProxy)
     reactor.callLater(0, adapter.execute, *args, **kw_args)
     return deferred
 
 class Adapter:
-    def __init__(self, deferred):    
+    def __init__(self, deferred, proxy):    
         self.deferred = deferred
+        self.adapter_proxy = Proxy('Adapter') #proxy
     
     def handle_result(self, result, component):
         log.debug('handle_result %s' % str(result))
@@ -307,13 +189,12 @@ class Adapter:
                 pos_y = int(pos_y_percent * source.height/100.)
                 argv += ['cache://' + wm_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
         
-        adapter_proxy = Proxy('Adapter')
         log.debug("calling adapter")
         dest_res_id = get_storage_file_name(item.ID, workspace.pk, output_variant.name, output_format)
         output_component.uri = dest_res_id
         output_component.save() 
         
-        d = adapter_proxy.adapt_image_magick('%s[0]' % source.uri, dest_res_id, argv)
+        d = self.adapter_proxy.adapt_image_magick('%s[0]' % source.uri, dest_res_id, argv)
         d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
         return self.deferred
     
