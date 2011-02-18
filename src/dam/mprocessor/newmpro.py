@@ -47,6 +47,10 @@ from dam.mprocessor.schedule import Schedule
 class BatchError(Exception):
     pass
 
+#
+# This class can be only a singleton (option only_one_server=True) to ensure that
+# only one process is active in mediadart at the same time.
+#
 class MProcessor(MQServer):
     def wake_process(self):
         waiting_processes = Process.objects.filter(start_date=None)
@@ -55,17 +59,20 @@ class MProcessor(MQServer):
         else:
             return None
 
-    def mq_run(self, process_id=None, call_mode='non-blocking'):
-        log.debug('#### Launching process %s'%process_id)
+    def mq_run(self, process_id=None):
         process = self.wake_process()
-        log.debug('--------- process %s'%process)
-        batch = Batch(process)
-        d = batch.run()
-        d.addCallback()
-        if call_mode != 'non-blocking':
-            return d
+        if not process:
+            msg = ""
+        elif str(process.pk) != str(process_id):
+            msg = "request put on execution queue"
         else:
-            return 'request in progress'
+            msg = "request running"
+        if process:
+            process.start_date = datetime.datetime.now()
+            process.save()
+            d = Batch(process).run()
+            d.addCallback(self.mq_run)
+        return msg
 
 class Batch:
     def __init__(self, process):
@@ -88,7 +95,7 @@ class Batch:
 
     def run(self):
         "Start the iteration initializing state so that the iteration starts correctly"
-        log.debug('running process %s' % str(self.process.pk))
+        log.debug('### Running process %s' % str(self.process.pk))
         self.deferred = defer.Deferred()
         self.process.targets = ProcessTarget.objects.filter(process=self.process).count()
         self.tasks = []
