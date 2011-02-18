@@ -23,6 +23,22 @@ from dam.variants.models import Variant
 from mediadart.storage import new_id
 from dam.upload.views import guess_media_type, _create_item, _create_variant, _get_media_type
 
+thumbnail = {
+    'thumbnail_image':{
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':100,
+            'resize_w': 100,
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format' : 'jpeg'        
+            },
+         'in': ['fe'],
+         'out':['thumbnail']    
+    },
+}
+
 action_xmp = {
     'extract_xmp': {
         'script_name':  'extract_xmp',
@@ -36,7 +52,7 @@ action_xmp = {
 
 
 actions = {
-    'extract_basic': {
+    'extract_original': {
         'script_name':  'extract_basic',
         'params' : {
             'source_variant': 'original',
@@ -44,6 +60,16 @@ actions = {
         'in':[],
         'out':['fe'],
     },
+
+    'extract_orig_xmp': {
+        'script_name':  'extract_xmp',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fx'],
+    },
+
 
     'thumbnail_image':{
         'script_name': 'adapt_image', 
@@ -56,10 +82,20 @@ actions = {
             'output_format' : 'jpeg'        
             },
          'in': ['fe'],
-         'out':[]    
+         'out':['thumbnail']    
         
         
     },
+
+    'extract_thumbnail': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'thumbnail',
+        },
+        'in':['thumbnail'],
+        'out':[],
+    },
+
     'preview_image': {
         'script_name': 'adapt_image', 
         'params':{
@@ -71,9 +107,17 @@ actions = {
             'output_format' : 'jpeg'        
             },
          'in': ['fe'],
-         'out':[]    
+         'out':['preview']    
         },
         
+    'extract_preview': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'preview',
+        },
+        'in':['preview'],
+        'out':[],
+    },
     
     'fullscreen_image': {
         'script_name': 'adapt_image', 
@@ -86,7 +130,16 @@ actions = {
             'output_format' : 'jpeg'        
             },
          'in': ['fe'],
-         'out':[]    
+         'out':['fullscreen']    
+    },
+
+    'extract_full': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'fullscreen',
+        },
+        'in':['fullscreen'],
+        'out':[],
     },
 }
 
@@ -146,6 +199,14 @@ class DoTest:
         uploader.run()
         print 'done'
 
+    def show_pipelines(self):
+        pipelines=Pipeline.objects.all()
+        for p in pipelines:
+            d = loads(p.params)
+            actions = d.keys()
+            actions.sort()
+            print('pk=%s name=%s length=%s actions=%s' % (p.pk, p.name, len(d), ' '.join(actions)))
+
     def get_status(self, pid, items):
         if items:
             targets = ProcessTarget.objects.filter(process=pid, target_id__in=items, actions_todo=0)
@@ -191,6 +252,8 @@ def main(argv):
     # status <process_id> <items>
     elif task == 'status':
         test.get_status(argv[2], argv[3:])
+    elif task == 'show':
+        test.show_pipelines()
     else:
         print usage
     
