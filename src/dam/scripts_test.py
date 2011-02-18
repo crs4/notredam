@@ -15,12 +15,24 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from dam.mprocessor.models import new_processor, Pipeline, Process, ProcessTarget
+from dam.mprocessor.make_plugins import pipeline, pipeline2, simple_pipe
 from dam.workspace.models import DAMWorkspace
 from dam.core.dam_repository.models import Type
 from dam.repository.models import Item, get_storage_file_name
 from dam.variants.models import Variant
 from mediadart.storage import new_id
 from dam.upload.views import guess_media_type, _create_item, _create_variant, _get_media_type
+
+action_xmp = {
+    'extract_xmp': {
+        'script_name':  'extract_xmp',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fe'],
+    },
+}
 
 
 actions = {
@@ -32,8 +44,7 @@ actions = {
         'in':[],
         'out':['fe'],
     },
-}
-actions2 = {
+
     'thumbnail_image':{
         'script_name': 'adapt_image', 
         'params':{
@@ -77,7 +88,6 @@ actions2 = {
          'in': ['fe'],
          'out':[]    
     },
-
 }
 
 class DoTest:

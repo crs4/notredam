@@ -67,7 +67,6 @@ class ExtractBasicFeatures:
         self.component = self.item.get_variant(workspace, self.source_variant)
         self.extractor = 'basic'
         self.ctype = None
-        self.result = []
 
     # the basic extractor is taken from the component using the component type
     def extract_basic(self):
