@@ -242,13 +242,20 @@ lang.extend(WireIt.TerminalProxy, util.DDProxy, {
       
       if(this.terminal.container) {
          var obj = this.terminal.container.layer.el;
+         
          var curleft = curtop = 0;
         	if (obj.offsetParent) {
         		do {
+//        			curleft += obj.offsetLeft;
+//        			curtop += obj.offsetTop;
+        			
         			curleft += obj.offsetLeft;
-        			curtop += obj.offsetTop;
+        			curtop += obj.offsetTop -9;
+        			
+        			
         			obj = obj.offsetParent ;
-        		} while ( obj = obj.offsetParent );
+//        		} while ( obj = obj.offsetParent );
+        		} while ( obj.offsetParent );
         	}
          this.fakeTerminal.pos = [e.clientX-curleft+this.terminal.container.layer.el.scrollLeft,
                                   e.clientY-curtop+this.terminal.container.layer.el.scrollTop];
