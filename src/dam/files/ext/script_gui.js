@@ -267,12 +267,14 @@ Ext.onReady(function(){
 	new Ext.Viewport({
 		layout: 'border',
 		items:[
+			header,
+					
 			new Ext.grid.GridPanel({
 				region: 'east',
 				title: 'Actions',
 				layout: 'fit',
 				width: 200,
-				autoHeight: true,
+//				autoHeight: true,
 				enableDragDrop: true,
 				ddGroup: 'wireit',		
 				
