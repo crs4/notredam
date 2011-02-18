@@ -43,7 +43,7 @@ class Schedule:
 
     def _cb_remove(self, node, user_data):
         "lo stato non e' ready di sicuro del nodo"
-        log.debug('target %s: cancelling %s on failed %s' % (self.target, node.name, user_data['failed_action']))
+        log.info('target %s: cancelling %s on failed %s' % (self.target, node.name, user_data['failed_action']))
         if node.name in self.actions:
             del self.actions[node.name]
             if node.name != user_data['failed_action']:
@@ -58,29 +58,29 @@ class Schedule:
         if not self.actions:
             return None
         if not self.ready:
-            log.debug('nothing ready')
+            #log.debug('nothing ready')
             return ''
         else:
             r = min(self.ready)
             action = self.action_list[r]
-            log.debug('#### %s: run %s' % (self.target, action))
+            log.info('#### %s: run %s' % (self.target, action))
             self.ready.remove(r)
             self.dag.visit(action, self._cb_set_to_wait, action)
-            self.show()
+            #self.show()
             return action
 
     def done(self, action):
         log.debug('#### %s: done %s' % (self.target, action))
         del self.actions[action]
         self.dag.visit(action, self._cb_set_to_ready, action)
-        self.show()
+        #self.show()
 
     def fail(self, action):
         "delete action and all actions dependent on it. Returns the number of actions deleted"
         log.debug('#### %s: fail %s' % (self.target, action))
         user_data = {'failed_action':action, 'deleted':[]}
         self.dag.visit(action, self._cb_remove, user_data)
-        self.show()
+        #self.show()
         return user_data['deleted']
 
     def show(self):

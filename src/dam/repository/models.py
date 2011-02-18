@@ -103,11 +103,11 @@ class Item(AbstractItem):
         @param ws an instance of workspace.DAMWorkspace
         @param media_type an instance of dam_repository.Type
         """
-        logger.debug('variant %s'%variant)
-        logger.debug('item.type %s'%self.type.name)
+        #logger.debug('variant %s'%variant)
+        #logger.debug('item.type %s'%self.type.name)
         if not media_type:
             media_type = self.type
-        logger.debug('ws %s'%ws)
+        #logger.debug('ws %s'%ws)
     #    if variant_name =='original':
     #        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
     #    else:        
@@ -134,9 +134,9 @@ class Item(AbstractItem):
             
             
         except Component.DoesNotExist:
-            logger.debug('variant does not exist yet')
-            logger.debug('variant %s'%variant)
-            logger.debug('type %s'%media_type)
+            #logger.debug('variant does not exist yet')
+            #logger.debug('variant %s'%variant)
+            #logger.debug('type %s'%media_type)
                     
             comp = Component.objects.create(variant = variant, item = self, type = media_type)
             comp.workspace.add(ws)
@@ -144,12 +144,11 @@ class Item(AbstractItem):
             if variant.shared:
                 comp.workspace.add(*self.workspaces.all())
         
-        logger.debug('comp %s'%comp)
-        logger.debug('comp.pk %s'%comp.pk)
+        #logger.debug('variant %s, comp %s' % (variant, comp))
+        #logger.debug('comp.pk %s'%comp.pk)
         
         
-        logger.debug('============== COMPONENT_VARIANT =========== %s' % comp.variant)
-        
+        logger.debug('======== COMPONENT_VARIANT  ======= %s %s' % (comp.variant, comp.pk))
         return comp
 
     def add_to_uploaded_inbox(self, workspace):
