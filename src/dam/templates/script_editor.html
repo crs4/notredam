@@ -1,3 +1,118 @@
+{% extends "workspace_gui.html" %}
+{%block css%}
+	{{ block.super }}
+	<link rel="stylesheet" type="text/css" href="/files/WireIt-0.5.0/lib/yui/fonts/fonts-min.css" /> 
+	<link rel="stylesheet" type="text/css" href="/files/WireIt-0.5.0/lib/yui/reset/reset-min.css" /> 
+	<link rel="stylesheet" type="text/css" href="/files/WireIt-0.5.0/lib/yui/container/assets/container.css"> 
+	<link rel="stylesheet" type="text/css" href="/files/WireIt-0.5.0/css/WireIt.css" />
+	<link rel="stylesheet" type="text/css" href="/files/css/msgbox.css" />
+	
+	
+	<style> 
+		body {
+			font-size: 10px;
+		}
+		div.WireIt-Container {
+			width: 350px; /* Prevent the modules from scratching on the right */
+		}
+		div.WireIt-InputExTerminal {
+			float: left;
+			width: 21px;
+			height: 21px;
+			position: relative;
+		}
+		div.WireIt-InputExTerminal div.WireIt-Terminal {
+			top: -3px;
+			left: -7px;
+		}
+		div.inputEx-Group div.inputEx-label {
+			width:100px;
+		}
+		
+		
+		div.body{
+			overflow:auto;
+		}
+		
+	</style> 
+	 
+	
+	
+{%endblock%}
+
+{%block prefs%}
+{%endblock%}
+
+{%block js%}
+	
+	
+	<script type="text/javascript" src="/files/ext/msgbox.js"></script>
+	
+	<!-- YUI-->
+	
+	
+	<script type="text/javascript" src="/files/WireIt-0.5.0/lib/yui/utilities/utilities.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/lib/yui/container/container-min.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/lib/yui/json/json-min.js"></script> 
+	
+	
+	<!-- WireIt --> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/WireIt.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/CanvasElement.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/Wire.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/Terminal.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/util/DD.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/util/DDResize.js"></script> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/Container.js"></script>
+	<!--script type="text/javascript" src="/files/WireIt-0.5.0/js/InOutContainer.js"></script--> 
+	<script type="text/javascript" src="/files/WireIt-0.5.0/js/Layer.js"></script>
+	 
+	
+	 
+
+	<script type="text/javascript">
+		var script_pk, script_name, params, script_type, types_available;
+		{%if params%}
+			params = Ext.decode('{{params|safe}}');
+		{%endif%}
+		
+		{%if name%}
+			script_name = '{{name}}';
+		{%endif%}
+		
+		{%if pk%}
+			script_pk = '{{pk}}';
+		{%endif%}
+		
+		{%if type%}
+			script_type = '{{type}}';
+		{%endif%}
+		
+		
+		{%if types_available%}
+			types_available = Ext.decode('{{types_available|safe}}');
+		{%endif%}
+		
+		
+		
+	</script>
+	
+	<script type="text/javascript" src="/files/ext/header.js"></script>
+	<script type="text/javascript" src="/files/ext/script_gui.js"></script>
+
+
+
+{%endblock%}
+
+{%block toolbar%}
+
+{%endblock%}
+
+{%block header_info%}
+	var HEADERHEIGHT = 30;
+{%endblock%}
+
+{%comment%}
 <html> 
  <head> 
   <title>NotreDam</title> 
@@ -86,6 +201,7 @@
 	
 </script>
 
+<script type="text/javascript" src="/files/ext/header.js"></script>
 <script type="text/javascript" src="/files/ext/script_gui.js"></script>
  
 
@@ -134,7 +250,33 @@ div.body{
 		 <div id= "actions-container" style="float:left; width:20%; height:97%"></div>
 	 </div>
 	 <div id="toolbar" style="clear:left;"></div-->
+	 
+	 	<div id="logo" style="width:100%">
+	   <div style="width:30%; float:left">
+            <img src="/files/images/logo_notredam_small_no_margin.png" style="vertical-align:middle;"/>
+        </div>
+	
+		<!--div style="width:30%; float:left">
+			<img src="/files/images/opendam.png" style="vertical-align:middle; padding-top:4px"/>
+		</div-->
+		<!--div style="position:absolute; left:42%; float:left; margin-top:10px; font-size:13px;">Workspace:</div-->
+		
+		<div id="switch_ws_bar" style="width:300; position:absolute; left:42%; float:left; margin-top:3px; margin-left:26px; font-size:12 !important;" ></div>
+		
+		
+		<div style="float:right; margin-top:11px; font-size:11px; padding-right:10px;">logged as <span id="user_logged">{{user}}</span> 
+		{%block prefs%}
+			| <a href='javascript:open_pref()' >preferences</a> 
+		{%endblock%}
+		| <a href="/logout/">logout</a>
+		</div>
+
+
+	</div>
+	 
+	 
 
 </body> 
 
 </html>
+{%endcomment%}

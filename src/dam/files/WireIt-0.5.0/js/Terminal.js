@@ -250,7 +250,7 @@ lang.extend(WireIt.TerminalProxy, util.DDProxy, {
 //        			curtop += obj.offsetTop;
         			
         			curleft += obj.offsetLeft;
-        			curtop += obj.offsetTop -9;
+        			curtop += obj.offsetTop -20;
         			
         			
         			obj = obj.offsetParent ;
