@@ -1,5 +1,3 @@
-import sys
-from random import random
 
 simple_pipe = {
     'a1': {'params': {'l':22, 'm': 23}, 
@@ -95,7 +93,12 @@ pipeline2 = {
 
 
 
-header = """
+
+if __name__=='__main__':
+    import sys
+    from random import random
+
+    header = """
 from random import random
 from mediadart import log
 from twisted.internet import defer, reactor
@@ -103,42 +106,40 @@ from twisted.python.failure import Failure
 
 """
 
-def main(failures):
-    keys = pipeline.keys()
-    keys.sort()
+    def main(failures):
+        keys = pipeline.keys()
+        keys.sort()
 
-    if failures == 'all':
-        failures = keys
+        if failures == 'all':
+            failures = keys
 
-    for p in keys:
-        if p in failures:
-            level = '0.9'
-        else:
-            level = '2.0'   # infinity
-        script_name = pipeline[p]['script_name']
-        f=open('plugins/%s.py' % script_name, 'w')
-        f.write(header)
-        f.write("def run(item, workspace, ")
-        paramlist = tuple(pipeline[p]['params'].keys())
-        for param in paramlist:
-            f.write('%s, ' % param)
-        f.write('):\n    log.debug("Executing %s.run(item=%%s, ' % p)
-        for param in paramlist:
-            f.write('%s=%%s, ' % param)
-        f.write(')" % (item, ')
-        for param in paramlist:
-            f.write('%s, ' % param)
-        f.write('))\n')
-        f.write('    d = defer.Deferred()\n')
-        f.write('    if random() > %s:\n' % level)
-        if random() > 0.5:
-            f.write('        d.errback(Failure(Exception("FAILURE error: %s" % __file__)))\n')
-        else:
-            f.write('        raise Exception("EXCEPTION error: %s" % __file__)\n')
-        f.write('    else:\n')
-        f.write('        reactor.callLater(3*random(), d.callback, "ok")\n')
-        f.write('    return d\n')
-        f.close()
-
-if __name__=="__main__":
+        for p in keys:
+            if p in failures:
+                level = '0.9'
+            else:
+                level = '2.0'   # infinity
+            script_name = pipeline[p]['script_name']
+            f=open('plugins/%s.py' % script_name, 'w')
+            f.write(header)
+            f.write("def run(item, workspace, ")
+            paramlist = tuple(pipeline[p]['params'].keys())
+            for param in paramlist:
+                f.write('%s, ' % param)
+            f.write('):\n    log.debug("Executing %s.run(item=%%s, ' % p)
+            for param in paramlist:
+                f.write('%s=%%s, ' % param)
+            f.write(')" % (item, ')
+            for param in paramlist:
+                f.write('%s, ' % param)
+            f.write('))\n')
+            f.write('    d = defer.Deferred()\n')
+            f.write('    if random() > %s:\n' % level)
+            if random() > 0.5:
+                f.write('        d.errback(Failure(Exception("FAILURE error: %s" % __file__)))\n')
+            else:
+                f.write('        raise Exception("EXCEPTION error: %s" % __file__)\n')
+            f.write('    else:\n')
+            f.write('        reactor.callLater(3*random(), d.callback, "ok")\n')
+            f.write('    return d\n')
+            f.close()
     main(sys.argv[1:])
