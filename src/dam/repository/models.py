@@ -121,10 +121,10 @@ class Item(AbstractItem):
                 comp.workspace.add(ws)
                 comp.workspace.add(*self.workspaces.all())
             else:
-                logger.debug('item %s'%self)
-                logger.debug('variant %s'%variant)
-                logger.debug('worskapce %s'%ws)
-                logger.debug('media_type %s'%media_type)
+                #logger.debug('item %s'%self)
+                #logger.debug('variant %s'%variant)
+                #logger.debug('worskapce %s'%ws)
+                #logger.debug('media_type %s'%media_type)
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
                 
 #                comp = Component.objects.get(pk = 1)
