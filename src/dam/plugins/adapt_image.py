@@ -19,22 +19,19 @@ from uuid import uuid4
 def new_id():
     return uuid4().hex
 
-def inspect():
+def inspect(workspace):
+    from django.db.models import Q
+    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
+    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
     return {
         'name': __name__,
-        
-        
-        'parameter_groups':{
-            'resize':['resize_w', 'resize_h'],
-            'crop':['crop_x', 'crop_y', 'crop_w', 'crop_h', 'crop_ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'wm_id']
-        },
+       
         'params':[
             {   
                 'name': 'source_variant',
                 'fieldLabel': 'Source Variant',
                 'xtype': 'select',
-                'values': [['original']],
+                'values': source_variants,
                 'description': 'input-variant',
                 
                 'help': ''
@@ -44,7 +41,7 @@ def inspect():
                 'name': 'output_variant',
                 'fieldLabel': 'Output Variant',
                 'xtype': 'select',
-                'values': [['thumbnail'], ['preview'], ['fullscreen']],
+                'values': output_variants,
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
@@ -59,7 +56,7 @@ def inspect():
                     'fieldLabel': 'height',                    
                     'description': 'height',
                     'minValue':0,
-                    'value': 100,
+#                    'value': 100,
                     'help': 'height of resized image in pixels'
                 },
                 {
@@ -67,7 +64,7 @@ def inspect():
                     'name': 'resize_w',
                     'fieldLabel': 'width',                    
                     'description': 'width',
-                    'value': 100,
+#                    'value': 100,
                     'minValue':0,
                     'help': 'width of resized image in pixels'
                 },
@@ -85,7 +82,7 @@ def inspect():
                     'fieldLabel': 'height',                    
                     'description': 'height',
                     'minValue':0,
-                    'value': 100,
+#                    'value': 100,
                     'help': 'heigth of crop area, default till bottom edge of image'
                 },
                 {
@@ -93,13 +90,156 @@ def inspect():
                     'name': 'crop_w',
                     'fieldLabel': 'width',                    
                     'description': 'width',
-                    'value': 100,
+#                    'value': 100,
                     'minValue':0,
                     'help': 'width of crop area, default till right edge of image'
                 },
-              ]
+                
+                
+##                {
+##                    'name': 'crop_x',
+##                    'fieldLabel': 'X left corner',
+##                    'xtype':'numberfield',
+##                    'description': 'upper left corner',
+##                    'default': 0,
+##                    'help': 'x-coordinate of upper left pixel of crop area',
+##                },                
+##                
+##                
+##                {
+##                    'name':'crop_y',
+##                    'xtype':'numberfield',
+##                    'fieldLabel': 'upper left corner',
+##                    'description': 'upper left corner',
+##                    'default': 0,
+##                    'help': 'y-coordinate of upper left pixel of crop area',
+##                }, 
+#                {
+#                    'name':'crop_ratio',
+#                    'xtype':'textfield',
+#                    'description': 'ratio x:y',
+#                    'default': '1:1',
+#                    'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
+#                },
+
+                
+                    
+              ],
+              
               },
+              {   
+                'name': 'output_format',
+                'fieldLabel': 'format',
+                'xtype': 'select',
+                'values': [['jpeg'], ['bmp'], ['gif'], ['png']],
+                'description': 'output_format',
+                
+                'help': ''
+            },
+              
+              
+             
+#            {
+#             'type': 'group',
+#             'name': 'resize', 
+#             'fields':[
+#                {
+#                    'name': 'resize_h',
+#                    'type': 'int',
+#                    'description': 'height',
+#                    'default': 100,
+#                    'help': 'height of resized image in pixels'           
+#                },
+#                      
+#                {
+#                    'name': 'resize_w',
+#                    'type': 'int',
+#                    'description': 'width',
+#                    'default': 100,
+#                    'help': 'width of resized image in pixels'           
+#                },
+#             ]
+#             
+#             
+#             },
+#                  
+#                  
+#           
+#            
+#                  
+#            
+#            {
+#                'name': 'actions',
+#                'type': 'list',
+#                'available_values':['resize', 'crop', 'watermark']
+#                     
+#            },
+#            {
+#                'name':  'crop_w',
+#                'type': 'int',
+#                'description': 'width',
+#                'default': 100,
+#                'help': 'width of crop area, default till right edge of image',
+#            }, 
+#            {
+#                'name':'crop_h',
+#                'type': 'int',
+#                'description': 'width',
+#                'default': 100,
+#                'help': 'heigth of crop area, default till bottom edge of image',
+#            }, 
+#            {
+#                'name': 'crop_x',
+#                'type': 'int',
+#                'description': 'upper left corner',
+#                'default': 0,
+#                'help': 'x-coordinate of upper left pixel of crop area',
+#            }, 
+#            {
+#                'name':'crop_y',
+#                'type': 'int',
+#                'description': 'upper left corner',
+#                'default': 0,
+#                'help': 'y-coordinate of upper left pixel of crop area',
+#            }, 
+#            {
+#                'name':'crop_ratio',
+#                'type': 'string',
+#                'description': 'ratio x:y',
+#                'default': '1:1',
+#                'help': "the value x:y means to crop a centered area large 1/x of the original width and 1/y of the original height."
+#            },
+#            
+#            {
+#                'name': 'wm_id',
+#                'type': 'component_id',
+#                'description': 'component',
+#                'default': '',
+#                'help': ''
+#                           
+#            },
+#             {
+#                'name':'pos_x_percent',
+#                'type': 'string',
+#                'description': 'pos_x_percent',
+#                'default': 0,
+#                'help': ''
+#                           
+#            },
+#            
+#             {
+#                'name': 'pos_y_percent',
+#                'type': 'string',
+#                'description': 'pos_y_percent',
+#                'default': 0,
+#                'help': ''
+#                           
+#            }
         ]
+             
+         
+                
+         
         } 
 
 theProxy = None
@@ -189,6 +329,7 @@ class Adapter:
                 pos_y = int(pos_y_percent * source.height/100.)
                 argv += ['cache://' + wm_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
         
+        adapter_proxy = Proxy('Adapter')
         log.debug("calling adapter")
         dest_res_id = get_storage_file_name(item.ID, workspace.pk, output_variant.name, output_format)
         output_component.uri = dest_res_id
@@ -227,5 +368,5 @@ if __name__ == "__main__":
     reactor.run()
 
     
-    
+ 
     

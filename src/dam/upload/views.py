@@ -195,6 +195,8 @@ def _get_media_type(file_name):
     return media_type
 
 def _create_variant(file_name, uri, item, workspace, variant):
+    logger.debug('file_name %s'%file_name)
+    logger.debug('uri %s'%uri)
     
     comp = item.create_variant(variant, workspace)        
     if variant.auto_generated:
@@ -236,9 +238,11 @@ def import_dir(dir_name, user, workspace, session):
         
         shutil.move(file_path, final_path)
         media_type = _get_media_type(file_name)
-               
+        
+        logger.debug('-----res_id %s'%res_id)
         item = _create_item(user, workspace, media_type, res_id)
         _create_variant(original_file_name, final_file_name, item, workspace, variant)
+        logger.debug('adding item %s'%item.pk)
         upload_process.add_params(item.pk)
         
     upload_process.run()

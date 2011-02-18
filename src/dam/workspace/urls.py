@@ -19,11 +19,7 @@
 
 from django.conf.urls.defaults import *
 
-urlpatterns = patterns('',
-                       
-    
-    (r'^wireit/$', 'django.views.generic.simple.direct_to_template', {'template': 'test_wireit.html'}),
-    
+urlpatterns = patterns('',   
     (r'^admin_workspace/(?P<ws_id>\d+)/$','dam.workspace.views.admin_workspace'),
     (r'^admin_workspace/add/$','dam.workspace.views.create_workspace'),
 
