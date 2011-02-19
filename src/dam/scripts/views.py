@@ -25,7 +25,8 @@ from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
-
+from dam.mprocessor.models import Pipeline, PipelineType
+import logger
 
 def _get_scripts_info(script):
         
@@ -70,7 +71,7 @@ def get_script_actions(request):
 def get_actions(request):  
     import os, settings
     from mediadart.config import Configurator
-    
+    workspace = request.session.get('workspace')
     
     c = Configurator()
     actions_modules =  c.get("MPROCESSOR", "plugins")
@@ -94,10 +95,10 @@ def get_actions(request):
                 module_loaded = getattr(top_module, module, None)
                 if module_loaded:
                     logger.debug(module_loaded)
-                    logger.debug('aaaa %s'%hasattr(module_loaded, 'inspect'))
+                    
                     
                     if hasattr(module_loaded, 'inspect'):
-                        tmp = module_loaded.inspect()
+                        tmp = module_loaded.inspect(workspace)
                         tmp.update({'name': module})
                         resp['scripts'].append(tmp)
                         media_type = request.POST.get('media_type') # if no media_type all actions will be returned
@@ -164,26 +165,51 @@ def new_script(request):
 
 @login_required
 def edit_script(request):
-    script_id = request.POST['script']
-    script = Script.objects.get(pk = script_id)
-    
-#    if script.is_global:        
-#        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+    pk = request.POST.get('pk')
+    workspace = request.session['workspace']
+    if pk: #editing an existing script
+        pipeline = Pipeline.objects.get(pk = pk)
+    else:
+        pipeline = Pipeline()
         
-    pipeline = request.POST.get('actions_media_type')
-    workspace = request.session.get('workspace')
-    name = request.POST.get('name')
-    description = request.POST.get('description')
-    events = request.POST.getlist('event')
+        pipeline.workspace = workspace
+        
+    name = request.POST['name']
+    params =  request.POST['params']
+    type = request.POST.get('type')
+    
+    pipeline.name = name    
+    pipeline.params = params
+    
     try:
-        _new_script(name, description, workspace, pipeline, events, script)
+        pipeline.save()
     except IntegrityError:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
     
-#    items = [c.item for c in script.component_set.all()]
-#    script.execute(items)
+    
+    previous_type = pipeline.get_type(workspace)
+    if (type, type) in PipelineType._meta.get_field_by_name('type')[0].choices:
+        try:
+            pipeline_type = PipelineType.objects.get(type = type, workspace = workspace)
+            
+                
+        except PipelineType.DoesNotExist:
+            pipeline_type = PipelineType(type = type, workspace = workspace)
         
-    return HttpResponse(simplejson.dumps({'success': True}))
+        
+        if pipeline_type != previous_type:
+            if previous_type:
+                previous_type.delete()
+            
+            pipeline_type.pipeline = pipeline
+            pipeline_type.save()
+    
+    elif not type:       
+        if previous_type: #removing previously set type for pipeline
+            previous_type.delete()
+        
+    
+    return HttpResponse(simplejson.dumps({'success': True}))  
 
 @login_required
 def rename_script(request):
@@ -316,5 +342,37 @@ def script_monitor(request):
     except Exception, ex:
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'success': False}))
+
+@login_required
+def editor(request, script_id = None):
     
-    
+    from django.template import RequestContext
+    from django.shortcuts import render_to_response
+    script_id = script_id or request.POST.get('pk')
+    logger.debug('script_id %s'%script_id)
+
+    if script_id:
+        pipeline = Pipeline.objects.get(pk = script_id)
+        workspace = pipeline.workspace
+        params = pipeline.params
+        name = pipeline.name
+        pipeline_type = pipeline.get_type(pipeline.workspace)
+        if pipeline_type:
+            type = pipeline_type.type
+        else:
+            type = ''
+        
+    else:
+        workspace_id  = request.GET['workspace_id']
+        workspace = Workspace.objects.get(pk = workspace_id)
+        params = ''
+        name = '' 
+        pk = ''
+        type = ''
+    logger.debug('params: %s'%params)
+    types_available = list(PipelineType._meta.get_field_by_name('type')[0].choices)
+    types_available.insert(0, [None,'-------------'])
+    types_available = simplejson.dumps(types_available)
+    logger.debug('types_available %s'%types_available)
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available, 'workspace': workspace }))
+

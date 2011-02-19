@@ -717,6 +717,65 @@ def workspace(request, workspace_id = None):
     return render_to_response('workspace_gui.html', RequestContext(request,{'ws_id':workspace.pk,  'ws_name': workspace.get_name(user),  'ws_description': workspace.description, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
 
 @login_required
+def upload_status(request):
+    """
+    Returns information for the given items, including name, size, url of thumbnail and preview
+    Called every 10 seconds by the GUI for refreshing information on pending items
+    """
+    try:
+        workspace = request.session.get('workspace')
+        user = request.user
+        items_in_progress = request.POST.getlist('items')
+        logger.debug('items_in_progress %s'%items_in_progress)
+        resp = {'items':[]}
+#### Added by orlando
+#        process_id = request.POST.get('process_id')
+# get completed targets
+#        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = true)
+#        info = {}
+
+        process_in_progress = Process.objects.filter(end_date__isnull = True)
+        if process_in_progress:
+            pending_items = ProcessTarget.objects.filter(process__in = process_in_progress, actions_todo__gt = 0)
+        else:
+            pending_items = ProcessTarget.objects.none()
+        
+        resp['status_bar'] = {
+            'process_in_progress':  process_in_progress.count(),
+            'pending_items': pending_items.count()
+        }
+####
+        if request.POST.get('update_script_monitor'):
+            from dam.scripts.views import _script_monitor
+            processes_info = _script_monitor(workspace)
+            resp['scripts'] = processes_info 
+            
+        for item_id in items_in_progress:
+            try:
+
+        
+                item = Item.objects.get(pk = int(item_id)) 
+                tmp = item.get_info(workspace, user)
+#                if item_id not in completed_targets:
+#                    tmp['status'] = 'in_progress'
+#                else:
+#                    tmp['status'] = 'completed'
+                
+                resp['items'].append(tmp)
+                
+            except ProcessTarget.DoesNotExist:
+                logger.debug('process target not found for item %s'%item)
+                continue
+
+
+       
+        resp = simplejson.dumps(resp)
+        return HttpResponse(resp)
+    except Exception,ex:
+        logger.exception(ex)
+        raise ex
+    
+@login_required
 def get_status(request):
     """
     Returns information for the given items, including name, size, url of thumbnail and preview

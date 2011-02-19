@@ -9,7 +9,7 @@ import datetime
 class Pipeline(models.Model):
     name = models.CharField(max_length= 50)
     description = models.TextField(blank=True)
-    type = models.CharField(max_length=32, blank=True, default="") 
+#    type = models.CharField(max_length=32, blank=True, default="") 
     params = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     
@@ -18,12 +18,18 @@ class Pipeline(models.Model):
             self.length = len(simplejson.loads(self.params))
         return self.length
     
+    def get_type(self, workspace):
+        try:
+            return PipelineType.objects.get(pipeline = self, workspace = workspace)
+        except PipelineType.DoesNotExist:
+            return None
+    
 class Process(models.Model):    
     pipeline = models.ForeignKey(Pipeline)
-    session = models.CharField(max_length=128,null = True, blank = True, unique = True)
+#    session = models.CharField(max_length=128,null = True, blank = True, unique = True)
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     targets = models.IntegerField(default=0)    # total number of items in ProcessTarget
-    start_date = models.DateTimeField(auto_now_add = True)
+    start_date = models.DateTimeField(null = True, blank = True)
     end_date = models.DateTimeField(null = True, blank = True)
     launched_by = models.ForeignKey(User)
     last_show_date = models.DateTimeField(null = True, blank = True)
@@ -58,4 +64,13 @@ class ProcessTarget(models.Model):
     actions_todo = models.IntegerField(default=0)   # passed+cancelled+failed+todo = pipeline.num_actions()
     result = models.TextField()                     # anything sensible
     
+class PipelineType(models.Model):
+    type = models.CharField(max_length = 40, null = False, choices= [('upload', 'upload')])
+    pipeline = models.ForeignKey(Pipeline, unique = True)
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
     
+    class Meta:
+        unique_together = (('type', 'workspace'),)
+    
+    
+
