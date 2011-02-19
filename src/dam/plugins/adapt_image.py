@@ -19,22 +19,23 @@ from uuid import uuid4
 def new_id():
     return uuid4().hex
 
-def inspect():
+def inspect(workspace):
+    from django.db.models import Q
+    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
+    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
     return {
         'name': __name__,
-        
-        
-        'parameter_groups':{
-            'resize':['resize_w', 'resize_h'],
-            'crop':['crop_x', 'crop_y', 'crop_w', 'crop_h', 'crop_ratio'],
-            'watermark': ['pos_x_percent','pos_y_percent', 'wm_id']
-        },
+       
+        'params':[
+            {   
+                'name': 'source_variant',
+                'fieldLabel': 'Source Variant',
         'params':[
             {   
                 'name': 'source_variant',
                 'fieldLabel': 'Source Variant',
                 'xtype': 'select',
-                'values': [['original']],
+                'values': source_variants,
                 'description': 'input-variant',
                 
                 'help': ''
@@ -44,7 +45,7 @@ def inspect():
                 'name': 'output_variant',
                 'fieldLabel': 'Output Variant',
                 'xtype': 'select',
-                'values': [['thumbnail'], ['preview'], ['fullscreen']],
+                'values': output_variants,
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
@@ -59,7 +60,7 @@ def inspect():
                     'fieldLabel': 'height',                    
                     'description': 'height',
                     'minValue':0,
-                    'value': 100,
+#                    'value': 100,
                     'help': 'height of resized image in pixels'
                 },
                 {
@@ -67,7 +68,7 @@ def inspect():
                     'name': 'resize_w',
                     'fieldLabel': 'width',                    
                     'description': 'width',
-                    'value': 100,
+#                    'value': 100,
                     'minValue':0,
                     'help': 'width of resized image in pixels'
                 },
@@ -85,7 +86,7 @@ def inspect():
                     'fieldLabel': 'height',                    
                     'description': 'height',
                     'minValue':0,
-                    'value': 100,
+#                    'value': 100,
                     'help': 'heigth of crop area, default till bottom edge of image'
                 },
                 {
