@@ -917,13 +917,17 @@ function createTemplate(panel_id, media_type){
 var scripts_jsonstore = new Ext.data.JsonStore({
 	url: '/get_scripts/',
 	root: 'scripts',
+	storeId: 'scripts_store',
 	fields: ['id', 'name'],
 	listeners:{
 		load: function(store, records){			
-			var scripts_menu = Ext.getCmp('scripts_menu'); 
-			scripts_menu.removeAll();
+			var run_scripts_menu = Ext.getCmp('run_scripts_menu');
+			var edit_scripts_menu = Ext.getCmp('edit_scripts_menu');
+			
+			run_scripts_menu.removeAll();
+			edit_scripts_menu.removeAll();
 			Ext.each(records, function(record){
-				scripts_menu.add({
+				run_scripts_menu.add({
 					
 					text: record.data.name,
 					handler: function(){
@@ -944,7 +948,6 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                         	},
                         	success: function(){
                         		
-                        	
                         	}
                         
                         });	
@@ -954,7 +957,19 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                        
 						
 					}
-				})
+				});
+				
+				edit_scripts_menu.add({
+					
+					text: record.data.name,
+					handler: function(){
+						window.open('/script_editor/' + record.data.id + '/')
+                       
+                       
+						
+					}
+				});
+				
 			});
 			
 		
