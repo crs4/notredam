@@ -236,15 +236,21 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 var baseLayer, store, layer_el;
 
 function save_script(params){
+	console.log('save_script');
 	Ext.Ajax.request({
 		url: '/edit_script/',
 		params: params,
-		success: function(){
-//		            			Ext.MsgBox.msg('','Script saved');
-			script_type = params.type
+		success: function(response){
+//		  	Ext.MsgBox.msg('','Script saved');
+			Ext.Msg.alert('Save', 'Script saved successfully.');
+			script_type = params.type;
+			if (! script_pk)
+				script_pk = Ext.decode(response.responseText).pk;
+			window.opener.scripts_jsonstore.reload();
 		},
 		failure: function(){
 //		            			Ext.MsgBox.msg('','Save failed');
+			Ext.Msg.alert('Save', 'Saving script  failed'); 
 		}
 		
 		
@@ -468,9 +474,9 @@ Ext.onReady(function(){
 			
 			}),
 				tbar: new Ext.Toolbar({
-				   region: 'north',
+//				   region: 'north',
 				    
-				    height: 30,
+				    height: 25,
 				    items: [
 					    {
 						    xtype: 'tbtext', 
@@ -489,7 +495,7 @@ Ext.onReady(function(){
 					    } ,
 			        	
 			        	{
-					   		id: 'type',
+					   		id: 'script_type',
 					   		
 				            xtype: 'combo',
 				            name: 'type',
@@ -516,7 +522,9 @@ Ext.onReady(function(){
 						    displayField: 'name'
 					            
 				
-				        	},				        	
+				        	},
+				        	
+				        	{xtype: 'tbspacer'},
 				        	
 				        {
 				            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
@@ -530,7 +538,7 @@ Ext.onReady(function(){
 			            				var submit_params =  {
 											pk: script_pk,
 											name: Ext.getCmp('script_name').getValue(),
-											type: Ext.getCmp('type').getValue(),
+											type: Ext.getCmp('script_type').getValue(),
 											params: Ext.encode(baseLayer.getJson())		            			
 										};
 									
@@ -559,6 +567,43 @@ Ext.onReady(function(){
 					            
 				            	
 				            }
+				        },{
+				        	text: 'Delete',
+				        	icon: '/files/images/icons/fam/delete.gif',
+				        	handler: function(){
+				        		if (script_pk)
+					        		Ext.Msg.show({
+					        			title:'Delete Script?',
+									   msg: 'Are you sure you want to delete this script?',
+									   buttons: Ext.Msg.YESNO,
+									   fn: function(btn){
+										   	if (btn == 'yes'){
+										   		
+												Ext.Ajax.request({
+													url: '/delete_script/',
+													params:{
+														pk: script_pk
+													},
+													success: function(){
+														window.opener.scripts_jsonstore.reload({
+															callback: function(){
+																window.close();
+															}
+														});
+														
+													
+													}
+												});
+										   		
+										   	}
+									   },
+								   
+								   icon: Ext.MessageBox.QUESTION}
+				        		
+				        		);
+				        		
+				        	}
+				        
 				        }
 				    ]
 				})
@@ -572,287 +617,7 @@ Ext.onReady(function(){
 		]
 	});
 	
-//	new Ext.Toolbar({
-//	    renderTo: Ext.get('toolbar'),
-//	    
-////	    height: 100,
-//	    items: [
-//		    {
-//			    xtype: 'tbtext', 
-//			    text: 'Name: '
-//		    } ,
-//	   		{
-//		   		id: 'script_name',
-//	            xtype: 'textfield',
-//	            name: 'name',
-//	            allowBlank: false
-////	            emptyText: 'new script'
-//        	},
-//        	{
-//			    xtype: 'tbtext', 
-//			    text: 'Event: '
-//		    } ,
-//        	
-//        	{
-//		   		id: 'type',
-//		   		
-//	            xtype: 'combo',
-//	            name: 'type',
-//	            allowBlank: true,	             
-//			    autoSelect: true,
-//			    editable: false,
-//			    triggerAction: 'all',
-//			    lazyRender:true,
-////			    forceSelection: true,
-////			    store: new Ext.data.JsonStore({
-////			    	url: '/get_script_types/',
-////			    	fields: ['pk', 'name'],
-////			    	roots: 'types'			    
-////			    }),
-//			    mode: 'local',
-//			    store:  new Ext.data.ArrayStore({        
-//		        	fields: ['pk', 'name'],
-//		        	data: types_available
-//	    		}),		
-//		    
-//			    value: script_type,
-//				    
-//			    valueField: 'pk',
-//			    displayField: 'name'
-//		            
-//	
-//	        	},
-//        	
-//	    
-//	        {
-//	            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
-//	            text: 'SAVE',
-//	            id: 'save_button',
-//	            icon: '/files/images/icons/save.gif',
-//	            handler: function(){
-//	            	var button = Ext.getCmp('save_button');
-//	            	if (Ext.getCmp('script_name').isValid()){
-//            				
-//            				var submit_params =  {
-//								pk: script_pk,
-//								name: Ext.getCmp('script_name').getValue(),
-//								type: Ext.getCmp('type').getValue(),
-//								params: Ext.encode(baseLayer.getJson())		            			
-//							};
-//						
-//						if (submit_params.type != script_type)
-//							Ext.Msg.show({
-//							   title:'Change Script Event?',
-//							   msg: 'You are changing the event to whom the script is associated. Note that only a script at once can be associated with a given event. Do you confirm the change?',
-//							   buttons: Ext.Msg.YESNOCANCEL,
-//							   fn: function(btn){
-//							   	if (btn == 'yes'){
-//									save_script(submit_params);	   		
-//							   		
-//							   	}
-//							   },
-//							   
-//							   icon: Ext.MessageBox.QUESTION
-//							});
-//						else
-//							save_script(submit_params);	   		
-//						
-//	            		
-//	            			            		
-//	            	}
-//	            	
-//		            	
-//		            
-//	            	
-//	            }
-//	        }
-//	    ]
-//	});
-//	
-//	store = new Ext.data.JsonStore({
-//		url:'/get_actions/',
-//		fields:['name', 'params'],
-////				autoLoad: true,
-//		root: 'scripts'	
-//	});
-//	new Ext.grid.GridPanel({
-//		renderTo:'actions-container',
-//		title: 'Actions',
-//		layout: 'fit',
-//		autoHeight: true,
-//		enableDragDrop: true,
-//		ddGroup: 'wireit',		
-//		
-//			store: store,
-//			columns:[{
-//				name: 'Script',
-//				dataIndex: 'name'
-//			}],
-//		hideHeaders: true,
-//		viewConfig: {
-//        forceFit: true}
-//
-//		
-//	});
-//	
-//	
-//	layer_el = Ext.get('wire-layer');
-//	
-//	baseLayer = new WireIt.Layer({
-//		layerMap: false,
-//		parentEl: layer_el
-//		
-//	});
-//	baseLayer.getJson =  function(){
-//			var actions_json = {};
-//			
-//			Ext.each(this.containers, function(action){
-//				if (action){
-//					
-//					var posXY = action.getXY();
-//					console.log(action);
-//					actions_json[action.id] = {
-//						params: action.getParams(),
-//						'in': action.getInputs(),
-//						out: action.getOutputs(),
-//						script_name: action.options.title,
-//						x: posXY[0],
-//						y: posXY[1],
-//						label: action.label.getValue()
-//					}					
-//				
-//				}
-//		}
-//		
-//		
-//		);
-//			return actions_json;
-//	
-//	};
-//		
-//	YAHOO.inputEx.spacerUrl = "/files/WireIt-0.5.0/lib/inputex/images/space.gif";
-//
-//            
-//    
-//          new Ext.dd.DropZone(Ext.get('wire-layer'),{
-//          	ddGroup: 'wireit',
-//          	onContainerOver: function(){
-//          		return this.dropAllowed;
-//          	},
-//          	onContainerDrop: function( source, e, data ){
-//          		
-//          		
-//          		var params = data.selections[0].data.params;
-//          		var script_name = data.selections[0].data.name;
-//          		var fields = [];
-//          		
-//          		
-//          		var drop_x = e.xy[0];
-//          		var drop_y = e.xy[1];
-//          	
-//          		var action = new MDAction({
-//			            title: script_name,
-//			            label: params.label,
-//			            position:[drop_x,drop_y],
-////			            legend:'thumbnail',
-//			           
-//		            	inputs: ['in'],
-//		            	outputs: ['out'],
-//			            params: params
-//			            
-//			    }, baseLayer);
-//			   
-//          	} 
-//          	
-//          });
-//           
-//          store.load({
-//          	callback:function(){
-//          		if (script_name)
-//          			Ext.getCmp('script_name').setValue(script_name);
-//          		
-//          		if (params){
-//          			console.log(params);
-//          			var action;
-//          			for (action_name in params){
-//          				if (action_name){
-//
-//          					action = params[action_name];
-//          					
-//          					var action_stored = store.query('name', action.script_name).items;
-//          					
-//          					if(action_stored.length > 0){
-//          						action_stored = action_stored[0];
-////          						console.log(action_stored = action_stored[0]);
-//          						var action_box = new MDAction({
-//						            title: action_stored.data.name,
-//						            position:[20,20],
-//			//			            legend:'thumbnail',
-//						           	'in': action['in'],
-//						           	'out': action['out'],
-//					            	inputs: ['in'],
-//					            	outputs: ['out'],
-//					            	position: [action.x, action.y],
-//						            params: action_stored.data.params,
-//						            label: action.label
-//						            
-//						    	}, baseLayer); 
-//						    	action_box.form.getForm().setValues(action.params);
-//          						
-//          						Ext.each(action_box.form.items.items, function(field){
-//          							
-//          							if (field.xtype == 'cbfieldset'){
-//          								Ext.each(field.items.items, function(f){          									
-//          									if (f.value){
-//          										f.enable();
-//          										field.expand();
-//          									}
-//          									
-//          								});
-//          								
-//          							}
-//          								
-//          						});
-//          						
-//          					}
-//          					
-//          					
-//          				}
-//          			}
-//          			var w;
-//          			Ext.each(baseLayer.containers, function(action){
-//          				console.log(action.options.title);
-//						Ext.each(baseLayer.containers, function(inner_action){
-//							console.log(inner_action.options.title);
-//							Ext.each(action['out'], function(out){
-//								Ext.each(inner_action['in'], function(_in){
-//									
-//									if (out && out == _in){
-//										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom);
-////								
-//										w.drawBezierCurve();	
-//									}
-//									
-//								});
-//								
-//							});
-//							if(action['out'][0] &&  action['out'][0] == inner_action['in'][0] ){
-//								
-//								
-//								
-//							}	
-//						});
-//					
-//					
-//					});
-//          			
-//          		}
-//          	}
-//          
-//          });
-//			
-//	
-//	
+	
 });
 
 	
