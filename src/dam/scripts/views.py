@@ -50,8 +50,6 @@ def get_scripts(request):
     for script in scripts:
         info =  _get_scripts_info(script)
         resp['scripts'].append(info)
-        
-    resp['scripts'].append(info)
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -209,7 +207,7 @@ def edit_script(request):
             previous_type.delete()
         
     
-    return HttpResponse(simplejson.dumps({'success': True}))  
+    return HttpResponse(simplejson.dumps({'success': True, 'pk': pipeline.pk}))  
 
 @login_required
 def rename_script(request):
@@ -231,12 +229,9 @@ def rename_script(request):
 
 @login_required
 def delete_script(request):        
-    script_id = request.POST['script']
-    script = Script.objects.get(pk = script_id)
-    if not script.is_global:
-        script.delete()
-    else:
-        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+    script_id = request.POST['pk']
+    script = Pipeline.objects.get(pk = script_id)
+    script.delete()
     return HttpResponse(simplejson.dumps({'success': True}))
 
 
@@ -363,15 +358,15 @@ def editor(request, script_id = None):
             type = ''
         
     else:
-        workspace_id  = request.GET['workspace_id']
+        workspace_id  = request.GET['workspace']
         workspace = Workspace.objects.get(pk = workspace_id)
         params = ''
         name = '' 
         pk = ''
-        type = ''
+        type = None
     logger.debug('params: %s'%params)
     types_available = list(PipelineType._meta.get_field_by_name('type')[0].choices)
-    types_available.insert(0, [None,'-------------'])
+    types_available.insert(0, ['','----------------------'])
     types_available = simplejson.dumps(types_available)
     logger.debug('types_available %s'%types_available)
     return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available, 'workspace': workspace }))
