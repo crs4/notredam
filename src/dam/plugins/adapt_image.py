@@ -26,10 +26,7 @@ def inspect(workspace):
     return {
         'name': __name__,
        
-        'params':[
-            {   
-                'name': 'source_variant',
-                'fieldLabel': 'Source Variant',
+        
         'params':[
             {   
                 'name': 'source_variant',
@@ -94,14 +91,15 @@ def inspect(workspace):
                     'name': 'crop_w',
                     'fieldLabel': 'width',                    
                     'description': 'width',
-                    'value': 100,
+#                    'value': 100,
                     'minValue':0,
                     'help': 'width of crop area, default till right edge of image'
                 },
               ]
               },
         ]
-        } 
+        
+    } 
 
 theProxy = None
 
