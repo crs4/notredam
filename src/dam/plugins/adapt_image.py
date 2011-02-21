@@ -21,8 +21,10 @@ def new_id():
 
 def inspect(workspace):
     from django.db.models import Q
-    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
-    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
+    variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False)]
+#    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
+#    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
+     
     return {
         'name': __name__,
        
@@ -30,9 +32,9 @@ def inspect(workspace):
         'params':[
             {   
                 'name': 'source_variant',
-                'fieldLabel': 'Source Variant',
+                'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
-                'values': source_variants,
+                'values': variants,
                 'description': 'input-variant',
                 
                 'help': ''
@@ -40,9 +42,9 @@ def inspect(workspace):
             
             {   
                 'name': 'output_variant',
-                'fieldLabel': 'Output Variant',
+                'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': output_variants,
+                'values': variants,
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
@@ -97,6 +99,51 @@ def inspect(workspace):
                 },
               ]
               },
+              {
+              'xtype': 'cbfieldset',
+              'title': 'Watermark',
+              'checkboxToggle': True,
+              'collapsed': True,
+              'items':[
+                       {
+                        'xtype': 'compositefield',
+                        'items':[
+                                 {
+                                    'id': 'wm_id',
+                                    'width': 160,
+                                    'xtype':'textfield',
+                                    'name': 'wm_id',
+                                    'fieldLabel': 'image',                    
+                                    'description': 'image',
+                                    
+                #                    'value': 100,
+                                    'help': ''
+                                },
+                                {
+                                 'xtype': 'watermarkbrowsebutton',
+                                 'text': 'Browse',
+                                 'values': variants
+                                 
+                                   
+                                }
+                        ]
+                        }
+                       
+                       
+                       
+                
+              ]
+              },
+              {   
+                'name': 'output_format',
+                'fieldLabel': 'format',
+                'xtype': 'select',
+                'values': [['jpeg'], ['bmp'], ['gif'], ['png']],
+                'description': 'output_format',
+                
+                'help': ''
+            }
+              
         ]
         
     } 
