@@ -32,19 +32,20 @@ function update_task_status(data){
 		
 		
 		data = data.status_bar;
-		if (data){
-		    var pending = data.pending + data.failed;
-		    var text, iconCls;
-		    
-		    
-		    function _set_ok(){
+		
+		function _set_ok(){
 				text = 'No script running';
 			
 		        iconCls = 'status-ok';	        
 		        if (Ext.query('.'+ cls_audio).length > 0)
 		        	start_audio_player();
 			};
-		    
+
+		
+		if (data){
+		    var pending = data.pending + data.failed;
+		    var text, iconCls;
+		    		    
 		    
 		    if (data.process_in_progress == 0) {
 		        _set_ok();

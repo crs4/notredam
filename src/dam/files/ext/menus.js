@@ -1097,14 +1097,14 @@ Ext.onReady(function(){
                         items:[
                         	{
                                 text    : 'New',
-                                handler : function(){edit_script(true);}
+                                handler : function(){window.open('/script_editor/?workspace='+ws.id)}
                             
                             },{ 
                             	text    : 'Edit',                                                      
-	                            handler : function(){
-	                            window.open('/wireit/','Edit script')
-//	                            manage_script();
-	                            }                   
+	                           	menu: new Ext.menu.Menu({
+								    id: 'edit_scripts_menu',
+								    items:[]
+								})                 
                             },
                             	
                             
@@ -1124,7 +1124,7 @@ Ext.onReady(function(){
                             	disabled: true,
                             	text: 'Run...',
                             	menu: new Ext.menu.Menu({
-								    id: 'scripts_menu',
+								    id: 'run_scripts_menu',
 								    items:[]
 								})
                             }
