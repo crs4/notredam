@@ -447,6 +447,7 @@ class Item(AbstractItem):
             'name': caption,
             'size':self.get_file_size(), 
             'pk': smart_str(self.pk), 
+            '_id':self._id,
            
             'status': status,
             'thumb': thumb_url is not None,

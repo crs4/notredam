@@ -1,3 +1,107 @@
+Ext.ux.WatermarkBrowseButton = function(config) {
+ 	
+    Ext.ux.WatermarkBrowseButton.superclass.constructor.call(this, config);
+    Ext.apply(this, {values : config.values});
+ 
+}; 
+
+Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
+	handler: function(){
+		
+		var tpl_str = '<tpl for=".">';    
+			tpl_str += '<div class="thumb-wrap" id="{pk}">';
+				tpl_str += '<div class="thumb">';		 
+				tpl_str += '<div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div>';
+
+				tpl_str +='</div>';                
+				
+//				tpl_str += '<span>{shortName}</span>' 
+			tpl_str += '</div>';
+		
+		tpl_str += '</tpl>';
+		var store = new Ext.data.JsonStore({
+		    	totalProperty: 'totalCount',
+		        root: 'items',
+		        url: '/load_items/',
+		        baseParams: {
+		        	media_type: 'image'
+		        },
+		        
+		        idProperty: 'pk',
+		        autoLoad: true, 
+				fields:[
+			        'pk', 
+	                '_id', 
+                	'url'
+                ]
+		    
+		    });
+		    
+		var wm_win = new Ext.Window({
+			title: 'Choose Watermark',
+			width: 600,
+			items:[
+				new Ext.Panel({
+					tbar: [{
+						id:'rendition_select',
+						xtype: 'select',
+						values: this.values					
+					}],
+					bbar: new Ext.PagingToolbar({
+				        store: store,       // grid and PagingToolbar using same store
+				        displayInfo: true,
+				        pageSize: 10,
+				        prependButtons: true
+				        
+				    }),
+					
+					items: new Ext.DataView({
+				        id: 'wm_dataview',
+				        itemSelector: 'div.thumb-wrap',
+				        style:'overflow:auto; background-color:white;',
+				        singleSelect: true,
+//				        plugins: new Ext.DataView.DragSelector({dragSafe:true}),
+				        height: 300,				        
+				        tpl: new Ext.XTemplate(tpl_str),
+				        store: store
+				       
+				    }),
+				    buttonAlign: 'center',
+				    buttons:[{
+				    	text: 'Select',
+				    	handler: function(){
+				    		var selected = Ext.getCmp('wm_dataview').getSelectedRecords();
+				    		if (selected.length > 0){
+				    			var rendition = Ext.getCmp('rendition_select').getValue();
+				    			
+				    			Ext.getCmp('wm_id').setValue(String.format('/item/{0}/{1}/',selected[0].data._id, rendition ));
+				    			wm_win.close();
+				    		}
+				    		
+				    		
+				    	
+				    	}
+				    	
+				    }]
+					   
+				})
+	 
+				
+			
+			]
+		
+		});
+
+		wm_win.show();
+	
+	}
+
+
+});
+
+Ext.reg('watermarkbrowsebutton', Ext.ux.WatermarkBrowseButton);
+
+
 Ext.ux.Select = function(config) {
  	this.values = config.values; 	
  	
