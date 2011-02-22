@@ -40,6 +40,7 @@ Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
 		var wm_win = new Ext.Window({
 			title: 'Choose Watermark',
 			width: 600,
+			modal: true,
 			items:[
 				new Ext.Panel({
 					tbar: [{
@@ -85,6 +86,7 @@ Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
 				    }]
 					   
 				})
+				
 	 
 				
 			
@@ -100,6 +102,79 @@ Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
 });
 
 Ext.reg('watermarkbrowsebutton', Ext.ux.WatermarkBrowseButton);
+
+
+Ext.ux.WatermarkPosition = function(config){
+	Ext.ux.WatermarkPosition.superclass.constructor.call(this, config);
+}; 
+
+Ext.extend(Ext.ux.WatermarkPosition, Ext.form.Field, {
+	
+	 initComponent:function() {
+	 	var i, j;
+	    var children_box_position = [];
+	    for(i=1; i<= 9; i++){
+	        children_box_position.push({
+	            tag:'div',
+	            id: 'square' + i,
+	            cls: 'position_watermarking',
+//            	onclick: String.format('watermarking({0}); Ext.getCmp("{1}").setValue({0})', i, this.id)
+	            onclick: 'console.log(\'aaaa\')'
+	        });
+	    }
+   
+    	
+    	
+    	 Ext.apply(this, {
+    	 	autoCreate:{
+		        tag:'div',
+	            cls: 'container_position_watermarking',
+	            children:children_box_position            
+	        }
+    	 });
+    	
+    	Ext.ux.WatermarkPosition.superclass.initComponent.call(this);
+    },
+	
+	name: 'watermarking_position',
+    
+    listeners:{
+//        render: function(){
+//                i = 0;
+//                        while (parameters[i]['name'] != 'pos_x_percent' && i<parameters.length){
+//                                i++;
+//                        }       
+//                j = 0;
+//                        while (parameters[j]['name'] != 'pos_y_percent' && j<parameters.length){
+//                                j++;
+//                        }       
+//                                if (parameters[i]['name'] == 'pos_x_percent' && parameters[i]['value']){                                                
+//                                var pos_x = ((parameters[i]['value'] - 5) / 33) + 1;
+//                                var pos_y = ((parameters[j]['value'] - 5) / 33) + 1;
+//                                watermarking_position = (pos_y-1) * 3 + pos_x;
+//                watermarking(watermarking_position);                    
+//                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
+//            }else                                                               
+//                        if(watermarking_position != 0){
+//                                watermarking(watermarking_position);                    
+//                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
+//            }
+//            else{
+//                watermarking(1);
+//                Ext.getCmp(watermarking_position_id).setValue(1);
+//            }
+//                }                
+        }
+
+});
+
+Ext.reg('watermarkposition', Ext.ux.WatermarkPosition);
+    
+Ext.ux.WatermarkField = function(config){
+	Ext.ux.WatermarkField.superclass.constructor.call(this, config);
+}; 
+
+Ext.extend(Ext.ux.WatermarkField, Ext.form.Field, {});
 
 
 Ext.ux.Select = function(config) {

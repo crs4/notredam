@@ -127,13 +127,22 @@ def inspect(workspace):
                                    
                                 }
                         ]
-                        }
+                        },
+                        {
+                         'xtype': 'watermarkposition'
+                         
+                         },
+                         
+                         
+                         
                        
                        
                        
                 
               ]
               },
+              
+
               {   
                 'name': 'output_format',
                 'fieldLabel': 'format',
