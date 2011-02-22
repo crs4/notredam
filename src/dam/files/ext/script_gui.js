@@ -1,7 +1,5 @@
 Ext.ux.ModFormPanel = function(config) {
- 	
-    Ext.ux.ModFormPanel.superclass.constructor.call(this, config);
-    
+    Ext.ux.ModFormPanel.superclass.constructor.call(this, config);    
  
 }; 
 
@@ -18,6 +16,7 @@ Ext.extend(Ext.ux.ModFormPanel, Ext.form.FormPanel, {
 	    },
 	    setValues : function(values){
         	var base_form = this.getForm();
+        	
         	if(Ext.isArray(values)){ // array of objects
             
 	            for(var i = 0, len = values.length; i < len; i++){
@@ -328,6 +327,49 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 	Ext.ux.CBFieldSet.superclass.onAdded.call(this, container, pos);
 	 },
 	 
+	 
+	 move: function(direction){
+	 	if (direction == 'up')
+	 		var sibling = this.previousSibling();
+	 	else
+	 		var sibling = this.nextSibling();
+	 		
+		 	if (sibling.xtype == this.xtype){
+		 		var current_pos = this.pos;
+		 		var copy = this.initialConfig;
+		 		var formpanel = this.ownerCt;
+		 		
+		 		var values = {};
+		 		Ext.each(this.items.items, function(item){	 			
+		 			var value = item.getValue(); 
+		 			if(value)
+		 				values[item.name] = value;
+		 		});
+		 		formpanel.remove(this);
+		 		
+		 		
+		 		if (direction == 'up')
+		 			var new_obj = formpanel.insert(current_pos - 1, copy);
+		 		else
+		 			var new_obj = formpanel.insert(current_pos + 1, copy);
+	//	 		if (!collapsed)
+	//	 			new_obj.expand();
+		 		
+		 		
+		 		formpanel.doLayout();
+		 		formpanel.setValues(values);
+		 		if (direction == 'up')
+		 			sibling.pos += 1;
+		 		else
+		 			sibling.pos -= 1;
+		 		
+		 	}
+		 		
+	 		
+	 		
+	 	
+	 
+	 },
 	 move_up: function(){
 	 	var previous = this.previousSibling(); 
 	 	if (previous.xtype == this.xtype){
@@ -389,22 +431,35 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 	}
 	 },
 	 
+	 onPositionChange: function(e, t, o ){
+	 	console.log(this.position_input);
+	 	console.log(e);
+	 	console.log(t);
+	 	console.log(o);
+	 },
 	 
 	 onRender : function(ct, position){
         if(!this.el){
             this.el = document.createElement('fieldset');
             this.el.id = this.id;
             if (this.title || this.header || this.checkboxToggle) {
-                this.el.appendChild(document.createElement('legend')).className = this.baseCls + '-header';               
+                var legend = this.el.appendChild(document.createElement('legend'));
+                legend.className = this.baseCls + '-header';               
             }
         }
 		
+        
         Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
+        legend.style = '';
+        legend.className = '';
 
         if(this.checkboxToggle){
-//        	this.header.insertFirst({tag: 'input', type: 'text', size: 10, name: 'tmp', value: '12', class: 'x-selectable'});
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
+//        	this.position_input = this.header.insertFirst({tag: 'input', type: 'text', size: 10, name: 'tmp', value: '1', style: 'width:15px; height: 15px;'});
+//        	
+////        	this.mon(this.position, 'change', this.onPositionChange, this.position.value);
+//        	this.position_input.on('keypress', this.onPositionChange, this);
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move(\'up\');', this.id)});
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move(\'down\');', this.id)});
             var o = typeof this.checkboxToggle == 'object' ?
                     this.checkboxToggle :
                     {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
