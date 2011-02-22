@@ -142,7 +142,7 @@ def inspect(workspace):
               ]
               },
               
-
+              
               {   
                 'name': 'output_format',
                 'fieldLabel': 'format',

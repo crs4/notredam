@@ -238,6 +238,31 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	 	 });
 	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
 	 },
+	 
+	 onRender : function(ct, position){
+        if(!this.el){
+            this.el = document.createElement('fieldset');
+            this.el.id = this.id;
+            if (this.title || this.header || this.checkboxToggle) {
+                this.el.appendChild(document.createElement('legend')).className = this.baseCls + '-header';               
+            }
+        }
+
+        Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
+
+        if(this.checkboxToggle){
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px'});
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px'});
+            var o = typeof this.checkboxToggle == 'object' ?
+                    this.checkboxToggle :
+                    {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
+            this.checkbox = this.header.insertFirst(o);
+            this.checkbox.dom.checked = !this.collapsed;
+            this.mon(this.checkbox, 'click', this.onCheckClick, this);
+            
+            
+        }
+    },
 	
 	 onCheckClick: function(){
 	 	var cb = Ext.get(this.cb_id);
