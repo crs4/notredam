@@ -48,11 +48,13 @@ def inspect(workspace):
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
-            },             
+            },
+            
+                         
              {
               'xtype': 'movablecbfieldset',
               'title': 'Resize',
-            'collapsed': True,
+              'collapsed': True,
              
               'items':[{
                     'xtype':'numberfield',
@@ -71,6 +73,13 @@ def inspect(workspace):
 #                    'value': 100,
                     'minValue':0,
                     'help': 'width of resized image in pixels'
+                },
+                {
+                    'xtype':'hidden',
+                    'name': 'actions',
+                    
+                    'value':'resize',
+                    
                 },
                     
               ]
@@ -97,6 +106,14 @@ def inspect(workspace):
 #                    'value': 100,
                     'minValue':0,
                     'help': 'width of crop area, default till right edge of image'
+                },
+                
+                {
+                    'xtype':'hidden',
+                    'name': 'actions',
+                    
+                    'value':'crop',
+                    
                 },
               ]
               },
