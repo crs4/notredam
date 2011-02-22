@@ -50,8 +50,9 @@ def inspect(workspace):
                 'help': ''
             },             
              {
-              'xtype': 'cbfieldset',
+              'xtype': 'movablecbfieldset',
               'title': 'Resize',
+            'collapsed': True,
              
               'items':[{
                     'xtype':'numberfield',
@@ -75,9 +76,9 @@ def inspect(workspace):
               ]
               },
                {
-              'xtype': 'cbfieldset',
+              'xtype': 'movablecbfieldset',
               'title': 'Crop',
-              'checkboxToggle': True,
+              
               'collapsed': True,
               'items':[{
                     'xtype':'numberfield',
@@ -100,7 +101,7 @@ def inspect(workspace):
               ]
               },
               {
-              'xtype': 'cbfieldset',
+              'xtype': 'movablecbfieldset',
               'title': 'Watermark',
               'checkboxToggle': True,
               'collapsed': True,

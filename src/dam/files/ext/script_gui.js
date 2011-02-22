@@ -1,3 +1,53 @@
+Ext.ux.ModFormPanel = function(config) {
+ 	
+    Ext.ux.ModFormPanel.superclass.constructor.call(this, config);
+    
+ 
+}; 
+
+Ext.extend(Ext.ux.ModFormPanel, Ext.form.FormPanel, {
+	    expand_fieldset: function(field, value){
+	    	if (value){
+	    		var parent = field.ownerCt;
+		    	if (parent instanceof Ext.ux.CBFieldSet){
+		    		console.log(parent);
+		    		parent.expand();
+		    	}
+	    }
+	    	
+	    },
+	    setValues : function(values){
+        	var base_form = this.getForm();
+        	if(Ext.isArray(values)){ // array of objects
+            
+	            for(var i = 0, len = values.length; i < len; i++){
+	                var v = values[i];
+	                var f = base_form.findField(v.id);
+	                if(f){
+	                    f.setValue(v.value);
+	                    this.expand_fieldset(f, v.value);
+	                    if(base_form.trackResetOnLoad){
+	                        f.originalValue = f.getValue();
+	                    }
+	                }
+	            }
+	        }else{ // object hash
+	            var field, id;
+	            for(id in values){
+	                if(!Ext.isFunction(values[id]) && (field = base_form.findField(id))){
+	                    field.setValue(values[id]);
+	                    this.expand_fieldset(field, values[id]);
+	                    if(base_form.trackResetOnLoad){
+	                        field.originalValue = field.getValue();
+	                    }
+	                }
+	            }
+	        }
+	        return this;
+	    }
+});
+
+
 Ext.ux.WatermarkBrowseButton = function(config) {
  	
     Ext.ux.WatermarkBrowseButton.superclass.constructor.call(this, config);
@@ -224,12 +274,13 @@ Ext.ux.CBFieldSet = function(config) {
 			item.disabled = true;
 		});
 	}
-	
+		
 	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
 };
 
 
 Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
+	
 	 initComponent:function() {
 	 	 var cb_id = Ext.id();
 	 	 Ext.apply(this, {
@@ -238,32 +289,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	 	 });
 	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
 	 },
-	 
-	 onRender : function(ct, position){
-        if(!this.el){
-            this.el = document.createElement('fieldset');
-            this.el.id = this.id;
-            if (this.title || this.header || this.checkboxToggle) {
-                this.el.appendChild(document.createElement('legend')).className = this.baseCls + '-header';               
-            }
-        }
-
-        Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
-
-        if(this.checkboxToggle){
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px'});
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px'});
-            var o = typeof this.checkboxToggle == 'object' ?
-                    this.checkboxToggle :
-                    {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
-            this.checkbox = this.header.insertFirst(o);
-            this.checkbox.dom.checked = !this.collapsed;
-            this.mon(this.checkbox, 'click', this.onCheckClick, this);
-            
-            
-        }
-    },
-	
+	 	 	
 	 onCheckClick: function(){
 	 	var cb = Ext.get(this.cb_id);
 
@@ -286,6 +312,114 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 });
 
 Ext.reg('cbfieldset', Ext.ux.CBFieldSet);
+
+
+Ext.ux.MovableCBFieldSet = function(config) {
+			
+	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
+};
+
+
+
+Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
+	
+	onAdded : function(container, pos) {
+	 	this.pos = pos;
+	 	Ext.ux.CBFieldSet.superclass.onAdded.call(this, container, pos);
+	 },
+	 
+	 move_up: function(){
+	 	var previous = this.previousSibling(); 
+	 	if (previous.xtype == this.xtype){
+	 		var current_pos = this.pos;	 		
+	 		var collapsed = this.collapsed;
+	 		var copy = this.initialConfig;
+	 		var formpanel = this.ownerCt;
+	 		
+	 		var values = {};
+	 		Ext.each(this.items.items, function(item){	 			
+	 			var value = item.getValue(); 
+	 			if(value)
+	 				values[item.name] = value;
+	 		});
+	 		
+	 		
+	 		formpanel.remove(this);
+	 		var new_obj = formpanel.insert(current_pos - 1, copy);
+//	 		if (!collapsed)
+//	 			new_obj.expand();
+	 		
+	 		
+	 		formpanel.doLayout();
+	 		formpanel.setValues(values);
+	 		previous.pos += 1; 
+	 		
+	 		
+	 	}
+	 },
+	 
+	 move_down: function(){
+	 	var next = this.nextSibling(); 
+	 	if (next.xtype == this.xtype){
+	 		var current_pos = this.pos;
+	 		var collapsed = this.collapsed;
+	 		var copy = this.initialConfig;
+	 		
+	 		var formpanel = this.ownerCt;
+	 		
+	 		var values = {};
+	 		Ext.each(this.items.items, function(item){	 			
+	 			var value = item.getValue(); 
+	 			if(value)
+	 				values[item.name] = value;
+	 		});
+	 		
+	 		
+	 		formpanel.remove(this);
+	 		var new_obj = formpanel.insert(current_pos + 1, copy);
+//	 		if (!collapsed)
+//	 			new_obj.expand();
+	 		
+	 		
+	 		formpanel.doLayout();
+	 		formpanel.setValues(values);
+	 		next.pos -= 1; 
+	 		
+	 		
+	 	}
+	 },
+	 
+	 
+	 onRender : function(ct, position){
+        if(!this.el){
+            this.el = document.createElement('fieldset');
+            this.el.id = this.id;
+            if (this.title || this.header || this.checkboxToggle) {
+                this.el.appendChild(document.createElement('legend')).className = this.baseCls + '-header';               
+            }
+        }
+		
+        Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
+
+        if(this.checkboxToggle){
+//        	this.header.insertFirst({tag: 'input', type: 'text', size: 10, name: 'tmp', value: '12', class: 'x-selectable'});
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
+            var o = typeof this.checkboxToggle == 'object' ?
+                    this.checkboxToggle :
+                    {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
+            this.checkbox = this.header.insertFirst(o);
+            this.checkbox.dom.checked = !this.collapsed;
+            this.mon(this.checkbox, 'click', this.onCheckClick, this);
+            
+            
+        }
+    }
+
+	
+});
+
+Ext.reg('movablecbfieldset', Ext.ux.MovableCBFieldSet);
 
 var MDAction =  function(opts, layer) {	
 	this.id = opts.id || Ext.id();
@@ -375,7 +509,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 		
 	 	MDAction.superclass.render.call(this);
 	 	
-	 	var form = new Ext.form.FormPanel({
+	 	var form = new Ext.ux.ModFormPanel({
 //	 		renderTo: this.bodyEl,
 	 		bodyStyle: {paddingTop: 10},
 	 		autoHeight: true,
@@ -732,7 +866,7 @@ Ext.onReady(function(){
 				        	
 				        {
 				            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
-				            text: 'SAVE',
+				            text: 'Save',
 				            id: 'save_button',
 				            icon: '/files/images/icons/save.gif',
 				            handler: function(){
