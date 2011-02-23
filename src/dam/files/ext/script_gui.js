@@ -23,7 +23,7 @@ Ext.extend(Ext.ux.PositionField, Ext.form.NumberField, {
 	setValue: function(value){
 		Ext.ux.PositionField.superclass.setValue.call(this, value);
 		
-		this.ownerCt.move(value);
+//		this.ownerCt.move(value);
 		return this;
 	},
 	getValue: function(){
@@ -356,20 +356,29 @@ Ext.ux.MovableCBFieldSet = function(config) {
 		value: config.name,
 		
 //			this field is hidden and readonly, it is used to hold the ordered list of the actions [resize, crop, watermark]
-		setValue: function(new_value){			
+		setValue: function(new_value){
+			
+			
 			if (config.name == new_value)
 				this.setRawValue(new_value);
+			else if(new_value instanceof Array){
+				console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+				var container = this.ownerCt;
+				var index = new_value.indexOf(config.name);
+//				if (container.get_position() != index)
+					container.move(index);
+			}
 		}
 	});
 	var position_field = new Ext.ux.PositionField({
 		hidden: true,
-		name: config.id + '_pos',
+		name: config.name + '_pos',
 		value: config.pos,
 		minValue: 1
 		
 				
 	});
-	config.items.push(position_field);
+//	config.items.push(position_field);
 	
 	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
 //	position_field.setMaxValue(this.ownerCt.items.items.length);
@@ -420,11 +429,11 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 },
 	move_up: function(){
 //		console.log(this.position_field.getValue());
-		this.position_field.setValue(this.get_position()  - 1);
+		this.move(this.get_position()  - 1);
 	},
 	move_down: function(){
 //		console.log(this.position_field.getValue());
-		this.position_field.setValue(this.get_position()  + 1);
+		this.move(this.get_position()  + 1);
 	},
 	 
 	 onRender : function(ct, position){
