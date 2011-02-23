@@ -49,9 +49,9 @@ def inspect(workspace):
                 'default': 0,
                 'help': ''
             },
-            
-                         
-             {
+            {
+             'xtype':'fieldsetcontainer',
+             'items':[{
               'xtype': 'movablecbfieldset',
               'title': 'Resize',
               'name': 'resize',
@@ -139,7 +139,11 @@ def inspect(workspace):
                         
               ]
               },
-              
+              ]
+             
+             },
+                         
+
               
               {   
                 'name': 'output_format',
