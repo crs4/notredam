@@ -54,7 +54,8 @@ def inspect(workspace):
              {
               'xtype': 'movablecbfieldset',
               'title': 'Resize',
-              'collapsed': True,
+              'name': 'resize',
+              
              
               'items':[{
                     'xtype':'numberfield',
@@ -74,21 +75,13 @@ def inspect(workspace):
                     'minValue':0,
                     'help': 'width of resized image in pixels'
                 },
-                {
-                    'xtype':'hidden',
-                    'name': 'actions',
-                    
-                    'value':'resize',
-                    
-                },
-                    
+                
               ]
               },
                {
               'xtype': 'movablecbfieldset',
               'title': 'Crop',
-              
-              'collapsed': True,
+              'name': 'crop',
               'items':[{
                     'xtype':'numberfield',
                     'name': 'crop_h',
@@ -108,20 +101,13 @@ def inspect(workspace):
                     'help': 'width of crop area, default till right edge of image'
                 },
                 
-                {
-                    'xtype':'hidden',
-                    'name': 'actions',
-                    
-                    'value':'crop',
-                    
-                },
+                
               ]
               },
               {
               'xtype': 'movablecbfieldset',
               'title': 'Watermark',
-              'checkboxToggle': True,
-              'collapsed': True,
+              'name': 'watermark',
               'items':[
                        {
                         'xtype': 'compositefield',
@@ -150,13 +136,7 @@ def inspect(workspace):
                          'xtype': 'watermarkposition'
                          
                          },
-                         
-                         
-                         
-                       
-                       
-                       
-                
+                        
               ]
               },
               

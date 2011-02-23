@@ -1,3 +1,5 @@
+
+
 Ext.ux.ModFormPanel = function(config) {
     Ext.ux.ModFormPanel.superclass.constructor.call(this, config);    
  
@@ -314,17 +316,33 @@ Ext.reg('cbfieldset', Ext.ux.CBFieldSet);
 
 
 Ext.ux.MovableCBFieldSet = function(config) {
-			
-	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
+	config.items = config.items || [];
+	config.items.push({
+		xtype: 'hidden',
+		name: 'actions',
+		value: config.name,
+		
+//			this field is hidden and readonly, it is used to hold the ordered list of the actions [resize, crop, watermark]
+		setValue: function(new_value){			
+			if (config.name == new_value)
+				this.setRawValue(new_value);
+		}
+	
+		
+	
+	
+	});
+	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
 };
 
 
 
 Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
-	
+	collapsed: true,
+		
 	onAdded : function(container, pos) {
 	 	this.pos = pos;
-	 	Ext.ux.CBFieldSet.superclass.onAdded.call(this, container, pos);
+	 	Ext.ux.MovableCBFieldSet.superclass.onAdded.call(this, container, pos);
 	 },
 	 
 	 
@@ -458,8 +476,8 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 //        	
 ////        	this.mon(this.position, 'change', this.onPositionChange, this.position.value);
 //        	this.position_input.on('keypress', this.onPositionChange, this);
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move(\'up\');', this.id)});
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move(\'down\');', this.id)});
+//        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move(\'up\');', this.id)});
+//        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move(\'down\');', this.id)});
             var o = typeof this.checkboxToggle == 'object' ?
                     this.checkboxToggle :
                     {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
