@@ -1,3 +1,35 @@
+Ext.ux.FieldSetContainer = function(config) {
+    Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);    
+ 
+}; 
+
+Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
+	border: false,
+	layout: 'form'
+});
+Ext.reg('fieldsetcontainer', Ext.ux.FieldSetContainer);
+
+Ext.ux.PositionField = function(config){
+	Ext.ux.PositionField.superclass.constructor.call(this, config);
+}; 
+
+Ext.extend(Ext.ux.PositionField, Ext.form.NumberField, {
+	initValue : function(){
+        if(this.value !== undefined){
+            this.setRawValue(this.value);
+        
+        }
+     },
+	setValue: function(value){
+		Ext.ux.PositionField.superclass.setValue.call(this, value);
+		
+		this.ownerCt.move(value);
+		return this;
+	},
+	getValue: function(){
+		return this.value;
+	}
+});
 
 
 Ext.ux.ModFormPanel = function(config) {
@@ -316,6 +348,7 @@ Ext.reg('cbfieldset', Ext.ux.CBFieldSet);
 
 
 Ext.ux.MovableCBFieldSet = function(config) {
+	config.id = config.id || Ext.id();
 	config.items = config.items || [];
 	config.items.push({
 		xtype: 'hidden',
@@ -327,134 +360,72 @@ Ext.ux.MovableCBFieldSet = function(config) {
 			if (config.name == new_value)
 				this.setRawValue(new_value);
 		}
-	
-		
-	
-	
 	});
+	var position_field = new Ext.ux.PositionField({
+		hidden: true,
+		name: config.id + '_pos',
+		value: config.pos,
+		minValue: 1
+		
+				
+	});
+	config.items.push(position_field);
+	
 	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
+//	position_field.setMaxValue(this.ownerCt.items.items.length);
+	Ext.apply(this, {
+		position_field: position_field
+	});
+	
 };
 
 
 
 Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	collapsed: true,
-		
+	
+	get_position: function(){
+		return this.ownerCt.items.items.indexOf(this);
+	
+	},
+	
 	onAdded : function(container, pos) {
 	 	this.pos = pos;
 	 	Ext.ux.MovableCBFieldSet.superclass.onAdded.call(this, container, pos);
 	 },
 	 
 	 
-	 move: function(direction){
-	 	if (direction == 'up')
-	 		var sibling = this.previousSibling();
-	 	else
-	 		var sibling = this.nextSibling();
-	 		
-		 	if (sibling.xtype == this.xtype){
-		 		var current_pos = this.pos;
-		 		var copy = this.initialConfig;
-		 		var formpanel = this.ownerCt;
-		 		
-		 		var values = {};
-		 		Ext.each(this.items.items, function(item){	 			
-		 			var value = item.getValue(); 
-		 			if(value)
-		 				values[item.name] = value;
-		 		});
-		 		formpanel.remove(this);
-		 		
-		 		
-		 		if (direction == 'up')
-		 			var new_obj = formpanel.insert(current_pos - 1, copy);
-		 		else
-		 			var new_obj = formpanel.insert(current_pos + 1, copy);
-	//	 		if (!collapsed)
-	//	 			new_obj.expand();
-		 		
-		 		
-		 		formpanel.doLayout();
-		 		formpanel.setValues(values);
-		 		if (direction == 'up')
-		 			sibling.pos += 1;
-		 		else
-		 			sibling.pos -= 1;
-		 		
-		 	}
-		 		
-	 		
-	 		
-	 	
-	 
+	 move: function(position){
+	 	console.log('position ' + position);
+	 	console.log(this.get_position());
+	 	var container = this.ownerCt;
+	 	var current_pos = this.get_position(); 
+	 	if (position <0 || position > container.items.items.length || position == current_pos)
+	 		return;
+	 	var copy = this.initialConfig;
+ 		
+ 		
+// 		var values = {};
+// 		Ext.each(this.items.items, function(item){	 			
+// 			var value = item.getValue(); 
+// 			if(value)
+// 				values[item.name] = value;
+// 		});
+ 		container.remove(this);
+ 		container.insert(position, copy);
+ 		
+ 		container.doLayout();
+// 		contaneir.setValues(values);
+ 		
 	 },
-	 move_up: function(){
-	 	var previous = this.previousSibling(); 
-	 	if (previous.xtype == this.xtype){
-	 		var current_pos = this.pos;	 		
-	 		var collapsed = this.collapsed;
-	 		var copy = this.initialConfig;
-	 		var formpanel = this.ownerCt;
-	 		
-	 		var values = {};
-	 		Ext.each(this.items.items, function(item){	 			
-	 			var value = item.getValue(); 
-	 			if(value)
-	 				values[item.name] = value;
-	 		});
-	 		
-	 		
-	 		formpanel.remove(this);
-	 		var new_obj = formpanel.insert(current_pos - 1, copy);
-//	 		if (!collapsed)
-//	 			new_obj.expand();
-	 		
-	 		
-	 		formpanel.doLayout();
-	 		formpanel.setValues(values);
-	 		previous.pos += 1; 
-	 		
-	 		
-	 	}
-	 },
-	 
-	 move_down: function(){
-	 	var next = this.nextSibling(); 
-	 	if (next.xtype == this.xtype){
-	 		var current_pos = this.pos;
-	 		var collapsed = this.collapsed;
-	 		var copy = this.initialConfig;
-	 		
-	 		var formpanel = this.ownerCt;
-	 		
-	 		var values = {};
-	 		Ext.each(this.items.items, function(item){	 			
-	 			var value = item.getValue(); 
-	 			if(value)
-	 				values[item.name] = value;
-	 		});
-	 		
-	 		
-	 		formpanel.remove(this);
-	 		var new_obj = formpanel.insert(current_pos + 1, copy);
-//	 		if (!collapsed)
-//	 			new_obj.expand();
-	 		
-	 		
-	 		formpanel.doLayout();
-	 		formpanel.setValues(values);
-	 		next.pos -= 1; 
-	 		
-	 		
-	 	}
-	 },
-	 
-	 onPositionChange: function(e, t, o ){
-	 	console.log(this.position_input);
-	 	console.log(e);
-	 	console.log(t);
-	 	console.log(o);
-	 },
+	move_up: function(){
+//		console.log(this.position_field.getValue());
+		this.position_field.setValue(this.get_position()  - 1);
+	},
+	move_down: function(){
+//		console.log(this.position_field.getValue());
+		this.position_field.setValue(this.get_position()  + 1);
+	},
 	 
 	 onRender : function(ct, position){
         if(!this.el){
@@ -476,8 +447,8 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 //        	
 ////        	this.mon(this.position, 'change', this.onPositionChange, this.position.value);
 //        	this.position_input.on('keypress', this.onPositionChange, this);
-//        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move(\'up\');', this.id)});
-//        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move(\'down\');', this.id)});
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
+        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
             var o = typeof this.checkboxToggle == 'object' ?
                     this.checkboxToggle :
                     {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
