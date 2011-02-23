@@ -9,29 +9,6 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 });
 Ext.reg('fieldsetcontainer', Ext.ux.FieldSetContainer);
 
-Ext.ux.PositionField = function(config){
-	Ext.ux.PositionField.superclass.constructor.call(this, config);
-}; 
-
-Ext.extend(Ext.ux.PositionField, Ext.form.NumberField, {
-	initValue : function(){
-        if(this.value !== undefined){
-            this.setRawValue(this.value);
-        
-        }
-     },
-	setValue: function(value){
-		Ext.ux.PositionField.superclass.setValue.call(this, value);
-		
-//		this.ownerCt.move(value);
-		return this;
-	},
-	getValue: function(){
-		return this.value;
-	}
-});
-
-
 Ext.ux.ModFormPanel = function(config) {
     Ext.ux.ModFormPanel.superclass.constructor.call(this, config);    
  
@@ -42,7 +19,7 @@ Ext.extend(Ext.ux.ModFormPanel, Ext.form.FormPanel, {
 	    	if (value){
 	    		var parent = field.ownerCt;
 		    	if (parent instanceof Ext.ux.CBFieldSet){
-		    		console.log(parent);
+		    		
 		    		parent.expand();
 		    	}
 	    }
@@ -302,44 +279,100 @@ Ext.reg('select', Ext.ux.Select);
 
 Ext.ux.CBFieldSet = function(config) {
 	config.collapsed = true;
-	if (config.items){
-		Ext.each(config.items, function(item){
-			item.disabled = true;
-		});
-	}
-		
+			
 	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
+	
+	
 };
 
 
-Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
-	
-	 initComponent:function() {
+Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {	
+	initComponent:function() {
 	 	 var cb_id = Ext.id();
 	 	 Ext.apply(this, {
 	 	 	cb_id: cb_id,
 	 	 	checkboxToggle: {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox', id: cb_id}
 	 	 });
 	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
+	
 	 },
-	 	 	
-	 onCheckClick: function(){
+	 
+	onRender: function(ct, pos){
+		
+		Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, pos);
+		var cbf = this;
+		
+		console.log(this.title);
+		Ext.each(this.items.items, function(item){
+			console.log('item.name ' + item.name  +' item.getValue() ' + item.getValue());
+			if (item.xtype !='hidden' && item.getValue())
+				cbf.expand();
+		});
+			
+		
+		
+	},
+	 
+//	onRender : function(ct, position){
+//        if(!this.el){
+//            this.el = document.createElement('fieldset');
+//            this.el.id = this.id;
+//            if (this.title || this.header || this.checkboxToggle) {
+//                var legend = this.el.appendChild(document.createElement('legend'));
+//                legend.className = this.baseCls + '-header';               
+//            }
+//        }
+//		
+//        
+//        Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);
+//        legend.style = '';
+//        legend.className = '';
+//
+//        if(this.checkboxToggle){
+////        	this.position_input = this.header.insertFirst({tag: 'input', type: 'text', size: 10, name: 'tmp', value: '1', style: 'width:15px; height: 15px;'});
+////        	
+//////        	this.mon(this.position, 'change', this.onPositionChange, this.position.value);
+////        	this.position_input.on('keypress', this.onPositionChange, this);
+////        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
+////        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
+//            var o = typeof this.checkboxToggle == 'object' ?
+//                    this.checkboxToggle :
+//                    {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
+//            this.checkbox = this.header.insertFirst(o);
+//            this.checkbox.dom.checked = !this.collapsed;
+//            this.mon(this.checkbox, 'click', this.onCheckClick, this);
+//            
+//            
+//        }
+//    },
+	 
+	 
+	expand: function(){
+		console.log(this.title);
+		Ext.ux.CBFieldSet.superclass.expand.call(this);
+		Ext.each(this.items.items, function(item){
+	 			item.enable();
+	 	});
+		
+	},
+	
+	collapse: function(){
+		Ext.ux.CBFieldSet.superclass.collapse.call(this);
+		Ext.each(this.items.items, function(item){
+	 			item.disable();
+	 	});
+		
+	},
+	
+	
+	onCheckClick: function(){
 	 	var cb = Ext.get(this.cb_id);
 
-	 	if (cb.dom.checked){
+	 	if (cb.dom.checked)
 	 		this.expand();
-	 		Ext.each(this.items.items, function(item){
-	 			item.enable();
-	 		});
-	 	}
-	 	else{
+	 	else
 	 		this.collapse();
-	 		Ext.each(this.items.items, function(item){
-	 			item.disable();
-	 		});
-	 		
 	 	
-	 	}
 	 }
 	
 });
@@ -362,29 +395,16 @@ Ext.ux.MovableCBFieldSet = function(config) {
 			if (config.name == new_value)
 				this.setRawValue(new_value);
 			else if(new_value instanceof Array){
-				console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+				
 				var container = this.ownerCt;
 				var index = new_value.indexOf(config.name);
 //				if (container.get_position() != index)
 					container.move(index);
 			}
 		}
-	});
-	var position_field = new Ext.ux.PositionField({
-		hidden: true,
-		name: config.name + '_pos',
-		value: config.pos,
-		minValue: 1
-		
-				
-	});
-//	config.items.push(position_field);
+	});	
 	
 	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
-//	position_field.setMaxValue(this.ownerCt.items.items.length);
-	Ext.apply(this, {
-		position_field: position_field
-	});
 	
 };
 
@@ -397,16 +417,10 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		return this.ownerCt.items.items.indexOf(this);
 	
 	},
-	
-	onAdded : function(container, pos) {
-	 	this.pos = pos;
-	 	Ext.ux.MovableCBFieldSet.superclass.onAdded.call(this, container, pos);
-	 },
 	 
 	 
 	 move: function(position){
-	 	console.log('position ' + position);
-	 	console.log(this.get_position());
+	 
 	 	var container = this.ownerCt;
 	 	var current_pos = this.get_position(); 
 	 	if (position <0 || position > container.items.items.length || position == current_pos)
@@ -436,38 +450,9 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		this.move(this.get_position()  + 1);
 	},
 	 
-	 onRender : function(ct, position){
-        if(!this.el){
-            this.el = document.createElement('fieldset');
-            this.el.id = this.id;
-            if (this.title || this.header || this.checkboxToggle) {
-                var legend = this.el.appendChild(document.createElement('legend'));
-                legend.className = this.baseCls + '-header';               
-            }
-        }
-		
-        
-        Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
-        legend.style = '';
-        legend.className = '';
-
-        if(this.checkboxToggle){
-//        	this.position_input = this.header.insertFirst({tag: 'input', type: 'text', size: 10, name: 'tmp', value: '1', style: 'width:15px; height: 15px;'});
-//        	
-////        	this.mon(this.position, 'change', this.onPositionChange, this.position.value);
-//        	this.position_input.on('keypress', this.onPositionChange, this);
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -7px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
-        	this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
-            var o = typeof this.checkboxToggle == 'object' ?
-                    this.checkboxToggle :
-                    {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
-            this.checkbox = this.header.insertFirst(o);
-            this.checkbox.dom.checked = !this.collapsed;
-            this.mon(this.checkbox, 'click', this.onCheckClick, this);
-            
-            
-        }
-    }
+	 onRender : function(ct, position){       
+        Ext.ux.MovableCBFieldSet.superclass.onRender.call(this, ct, position);
+     }
 
 	
 });
@@ -562,7 +547,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 		
 	 	MDAction.superclass.render.call(this);
 	 	
-	 	var form = new Ext.ux.ModFormPanel({
+	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
 	 		bodyStyle: {paddingTop: 10},
 	 		autoHeight: true,
@@ -627,7 +612,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 var baseLayer, store, layer_el;
 
 function save_script(params){
-	console.log('save_script');
+	
 	Ext.Ajax.request({
 		url: '/edit_script/',
 		params: params,
@@ -717,7 +702,7 @@ Ext.onReady(function(){
 									if (action){
 										
 										var posXY = action.getXY();
-										console.log(action);
+										
 										actions_json[action.id] = {
 											params: action.getParams(),
 											'in': action.getInputs(),
@@ -779,7 +764,7 @@ Ext.onReady(function(){
           			Ext.getCmp('script_name').setValue(script_name);
           		
           		if (params){
-          			console.log(params);
+          			
           			var action;
           			for (action_name in params){
           				if (action_name){
@@ -828,7 +813,7 @@ Ext.onReady(function(){
           			}
           			var w;
           			Ext.each(baseLayer.containers, function(action){
-          				console.log(action.options.title);
+          			
 						Ext.each(baseLayer.containers, function(inner_action){
 							console.log(inner_action.options.title);
 							Ext.each(action['out'], function(out){
