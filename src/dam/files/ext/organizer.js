@@ -26,30 +26,41 @@ function set_status_bar_busy(){
 
 function update_task_status(data){
 	
-	var sb = Ext.getCmp('dam_statusbar');
-	if(sb){	
-	    var pending = data.pending + data.failed;
-	    var text, iconCls;
-	    if (pending == 0) {
-	        text = 'No tasks pending';
 	
-	        iconCls = 'status-ok';	        
-	        if (Ext.query('.'+ cls_audio).length > 0)
-	        	start_audio_player();
+	var sb = Ext.getCmp('dam_statusbar');
+	if(sb){
+		
+		
+		data = data.status_bar;
+		
+		function _set_ok(){
+				text = 'No script running';
+			
+		        iconCls = 'status-ok';	        
+		        if (Ext.query('.'+ cls_audio).length > 0)
+		        	start_audio_player();
+			};
+
+		
+		if (data){
+		    var pending = data.pending + data.failed;
+		    var text, iconCls;
+		    		    
+		    
+		    if (data.process_in_progress == 0) {
+		        _set_ok();
+		    }
+		    else {
+		
+		        text = String.format('<a href=javascript:show_monitor();>running {0} script(s), {1} item(s) left</a>', data.process_in_progress, data.pending_items);
+				iconCls = 'status-warning';
+		    }
+	    
 	    }
 	    else {
-	
-	        text = '';
-	
-	        if (data.pending > 0) {
-	            text += data.pending + ' task(s) pending ';
-	        }
-	        if (data.failed > 0) {
-	            text += data.failed + ' task(s) failed ';
-	          
-	        
-	        }
-			iconCls = 'status-warning';
+	    	_set_ok();
+	    	
+	    	
 	    }
 	    (function(){
 	        sb.setStatus({
@@ -222,6 +233,7 @@ var store_nodes_checked = new Ext.data.JsonStore({
 var current_item_selected;
 
 function showFullscreen(view, index, node, e){
+	
     var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
         
     Ext.Ajax.request({
@@ -485,12 +497,12 @@ var showDetails = function(view){
         var add_item = ws_permissions_store.find('name', 'add_item') > -1;
         var edit_collection = ws_permissions_store.find('name', 'edit_collection') > -1;            
         var remove_item = ws_permissions_store.find('name', 'remove_item') > -1;
-        var set_state = ws_permissions_store.find('name', 'set_state') > -1;
+        var set_state = ws_permissions_store.find('name', 'set_state') > -1;        
+        var run_scripts = ws_permissions_store.find('name', 'run_scripts') > -1;
         
-        run_scripts = ws_permissions_store.find('name', 'run_scripts') > -1;
         if(admin | run_scripts){
             Ext.getCmp('object_menu').menu.items.get('addto').enable();
-            Ext.getCmp('object_menu').menu.items.get('runscript').enable();
+            Ext.getCmp('runscript').enable();
         }
         
         if (admin | remove_item){
@@ -566,7 +578,7 @@ var showDetails = function(view){
         Ext.getCmp('sync_xmp').disable();
         
         
-        Ext.getCmp('object_menu').menu.items.get('runscript').disable();
+        Ext.getCmp('runscript').disable();
 //            preview = Ext.getCmp('preview_panel').body;
 //            preview.update('');
         if(active_tab) {
@@ -596,8 +608,23 @@ var createStore = function(config) {
         idProperty: 'pk',
 //            autoLoad: true, 
 		fields:[
-                'name', 'url', 'url_preview', 'size', 'pk', 'geotagged', 'inprogress', 'thumb', 'type','inbasket', 'preview_available',
-                {name: 'shortName', mapping: 'name', convert: shortName}, 'state'
+		        'pk', 
+                'name', 
+                'url', 
+                'url_preview', 
+                'size', 
+
+                'geotagged', 
+                'status', 
+                'thumb', 
+                'type',
+                'inbasket', 
+                'preview_available',
+                {name: 'shortName', mapping: 'name', convert: shortName}, 
+                {name: 'inprogress', mapping: 'status', convert: function(status){
+                	return status == 'in_progress'
+                }},
+                'state'
             ],
         listeners:{
     		load: function(){start_audio_player(this.panel_id);}
@@ -621,7 +648,11 @@ var createView = function(config) {
         tpl: tpl,
         listeners: {
             selectionchange: {fn:showDetails, buffer:100},
-            dblclick: {fn:showFullscreen, buffer:100},
+//            dblclick: {fn:showFullscreen, buffer:100},
+//            dblclick: function(){
+//            	console.log('sdsfd');
+//            	
+//            },
             render: function(){
     	    	var drag_zone = new ImageDragZone(this, {containerScroll:true,
     	            ddGroup: 'organizerDD'});
@@ -1324,6 +1355,15 @@ Ext.onReady(function(){
 
     var task = {
         run: function(){
+        	
+        	
+        	var win_monitor = Ext.WindowMgr.get('script_monitor'); 
+        	if (win_monitor){
+        		win_monitor.update_progress();	
+        	
+        	}
+        	
+//        	
             var tab = Ext.getCmp('media_tabs').getActiveTab();
             var items = [];
             var reload_details = false;
@@ -1332,39 +1372,68 @@ Ext.onReady(function(){
                 var view = tab.getComponent(0);
                 if (view) {
                     var store = view.getStore();
-                    store_variant = Ext.getCmp('variant_summary').getStore();
+                    items_in_progress = store.query('status','in_progress').items;
+                    Ext.each(items_in_progress, function(i){
+                    	items.push(i.data.pk);
+                    });
                   
-                    for (var i = 0; i < store.getCount(); i++) {
-                        var current_item = store.getAt(i);
-                        var item_data = current_item.data;
-                        
-//                        if(item_data.inprogress == 0 && view.getSelectedIndexes().length == 1 && view.getSelectedIndexes()[0] == i)
-//                        	items.push(item_data.pk); //check if selected item changed,since some script has been run 
-                        
-                        if (item_data.inprogress) {
-                            items.push(item_data.pk);                          
-                            
-                            if(i == 0 &&  view.getSelectionCount()  ==  1 && Ext.getCmp('detail_tabs').isVisible() && Ext.getCmp('detail_tabs').getActiveTab().id == 'preview_panel' && store_variant.lastOptions && store_variant.lastOptions.params.items == item_data.pk) {
-                                reload_details = true;
-                            }
-                        }
-                    }
-                    
-                    if(reload_details){
-                        current_item_selected = null;
-                        showDetails(view);
-                        
-                    }
+//                    store_variant = Ext.getCmp('variant_summary').getStore();
+//                  
+//                    for (var i = 0; i < store.getCount(); i++) {
+//                        var current_item = store.getAt(i);
+//                        var item_data = current_item.data;
+//                        
+////                        if(item_data.inprogress == 0 && view.getSelectedIndexes().length == 1 && view.getSelectedIndexes()[0] == i)
+////                        	items.push(item_data.pk); //check if selected item changed,since some script has been run 
+//                        
+//                        if (item_data.inprogress) {
+//                            items.push(item_data.pk);                          
+//                            
+//                            if(i == 0 &&  view.getSelectionCount()  ==  1 && Ext.getCmp('detail_tabs').isVisible() && Ext.getCmp('detail_tabs').getActiveTab().id == 'preview_panel' && store_variant.lastOptions && store_variant.lastOptions.params.items == item_data.pk) {
+//                                reload_details = true;
+//                            }
+//                        }
+//                    }
+//                    
+//                    if(reload_details){
+//                        current_item_selected = null;
+//                        showDetails(view);
+//                        
+//                    }
                 }
             }
-            Ext.Ajax.request({
+            
+            var update_script_monitor;
+            var script_monitor_win = Ext.WindowMgr.get('script_monitor');
+			if (script_monitor_win)
+				update_script_monitor = script_monitor_win.update_progress();
+				
+            
+            if (items.length > 0 || update_script_monitor){
+            	var params = {};
+            	
+            	if (items.length > 0)
+            		params.items = items;
+            		
+            	if (update_script_monitor)
+            		params.update_script_monitor = true;
+				
+            	Ext.Ajax.request({
                 url: '/get_status/',
-                params: {items: Ext.encode(items)},
+                params: params,
                 
-                success: function(data){                    
-                    set_status_bar_busy();
+                success: function(data){    
+                	console.log(data);
+//                    set_status_bar_busy();
                     data = Ext.decode(data.responseText);
-                    
+                    if (data.scripts){
+                    	var monitor = Ext.getCmp('script_monitor_list')
+                    	if (monitor){
+                    		store = monitor.getStore();
+                    		store.loadData(data);
+                    	}
+                    	
+                    }
                     var update_items = data.items;
                    
                     var tab = Ext.getCmp('media_tabs').getActiveTab();
@@ -1381,14 +1450,20 @@ Ext.onReady(function(){
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = info['thumb'];
                                     for (var key in info) {
-                                        if (key == 'url') {
-                                            if (previous_thumb_ready == 0 && thumb_ready == 1) {
-                                                item_data.set(key, info[key]);
-                                            }
-                                        }
-                                        else {
-                                            item_data.set(key, info[key]);
-                                        }
+                                    	if (key == 'url') 
+                                    		info[key] = info[key] + '?t=' + Math.floor(Math.random()*100001);
+                                    	item_data.set(key, info[key]);
+//                                        if (key == 'url') {
+//                                        	info[key] = info[key] + '?t=' + (new Date()).getTime();
+//                                        	
+//                                            if (previous_thumb_ready == 0 && thumb_ready == 1) {
+//                                                item_data.set(key, info[key]);
+//                                            }
+//                                        }
+//                                        else {
+//                                            item_data.set(key, info[key]);
+//                                            
+//                                        }
                                     }
                                     
                                     var detail_tabs_panel = Ext.getCmp('detail_tabs');
@@ -1419,8 +1494,9 @@ Ext.onReady(function(){
 
                 }
             });
+        }
         },
-        interval: 10000 //10 second
+        interval: 3000 //3 second
     };
     var runner = new Ext.util.TaskRunner();
     runner.start(task);
@@ -1690,15 +1766,15 @@ var search_box = {
                         }
             },
             items:[
-//            new Ext.ux.StatusBar({
-//                region: 'south',
-//                defaultText: 'Default status',
-//                id: 'dam_statusbar',
-//                height: 25,
-//                statusAlign: 'right', // the magic config
-//                bodyStyle: 'padding:5px;'
-////                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
-//            }),
+            new Ext.ux.StatusBar({
+                region: 'south',
+                defaultText: 'Default status',
+                id: 'dam_statusbar',
+                height: 25,
+                statusAlign: 'right', // the magic config
+                bodyStyle: 'padding:5px;'
+//                items: [new Ext.Toolbar.TextItem('Failed jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending adaptation jobs : 0'), '-', new Ext.Toolbar.TextItem('Pending Feature extractions jobs: 0'), '-']
+            }),
             
 //                new Ext.BoxComponent({ // raw
 //                    region:'north',
@@ -1863,18 +1939,17 @@ var search_box = {
                                                 tpl: new Ext.XTemplate(  
                                                 	'<div class="list-variant">',
                                                     '<b style="color:#3764A0;">{variant_name:capitalize()}</b>', 
-                                                    '<tpl if="work_in_progress" >',                                                
+                                                    '<tpl if="work_in_progress">',                                                
                                                         '<img src="/files/images/warning.gif" style="width: 13px; padding-left: 5px; height: 13px;"/>',                                                                                                    
                                                     '</tpl>',
                                                
                                                 
                                                 '<span style="position:absolute; right:10px;">' ,
-                                                '<tpl if="resource_url">',
-                                                	
-                                                    '<tpl if="extension">',
+                                                '<tpl if="resource_url">',                                                
+                                                    '<tpl if="work_in_progress == 0">',
                                                         '<img ext:qtip="View" src="/files/images/search_blue.png" class="variant_button"  onclick="open_variant(\'{variant_name}\',\'{resource_url}\', \'{media_type}\', \'{width}\', \'{height}\')"/>',
                                                     '</tpl>',
-                                                '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'/download_component/{item_id}/{variant_name}\')" class="variant_button"/>',
+                                                '   <img ext:qtip="Download" src="/files/images/icons/save.gif" onclick=" window.open(\'{resource_url}?download=true\')" class="variant_button"/>',
                                                 '</tpl>',
                                                 '<img ext:qtip="Replace" id="import_{pk}" src="/files/images/box_upload.png" onclick="variant_id=this.id.split(\'_\')[1];import_variant(variant_id)" class="variant_button"/>',
                                                 

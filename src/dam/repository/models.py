@@ -21,16 +21,27 @@ from django.db.models import Q
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
-
+from dam.mprocessor.models import ProcessTarget
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
-from dam.settings import SERVER_PUBLIC_ADDRESS
+from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
+from dam.metadata.models import MetadataProperty
 
+import os
 import urlparse
 from dam import logger
 from django.utils import simplejson
 import time
+from django.utils.encoding import smart_str
+import re
+import settings
 
 from mediadart.storage import Storage
+
+from uuid import uuid4
+
+def new_id():
+    return uuid4().hex
+
 
 
 def _get_resource_url(id):
@@ -59,8 +70,18 @@ class Item(AbstractItem):
     Concrete class that inherits from the abstract class AbstractItem found in core/dam_repository/models.py     
     Base model describing items. They can contain components only.
     """
-    
+    _id = models.CharField(max_length=40,  db_column = 'md_id')    
     metadata = generic.GenericRelation('metadata.MetadataValue')
+        
+    def _get_id(self):
+        return self._id
+    
+    ID = property(fget=_get_id)   
+    
+#    def save(self, *args, **kwargs):
+#        if not self.pk and not self._id:
+#            self._id = new_id()
+#        super(Item, self).save(*args, **kwargs)
 
     class Meta:
         db_table = 'item'
@@ -82,11 +103,11 @@ class Item(AbstractItem):
         @param ws an instance of workspace.DAMWorkspace
         @param media_type an instance of dam_repository.Type
         """
-        logger.debug('variant %s'%variant)
-        logger.debug('item.type %s'%self.type.name)
+        #logger.debug('variant %s'%variant)
+        #logger.debug('item.type %s'%self.type.name)
         if not media_type:
             media_type = self.type
-        logger.debug('ws %s'%ws)
+        #logger.debug('ws %s'%ws)
     #    if variant_name =='original':
     #        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
     #    else:        
@@ -94,18 +115,28 @@ class Item(AbstractItem):
     #    variant = Variant.objects.get(name = variant_name)
         
         try:
+            logger.debug('variant %s'%variant)
             if variant.shared:
                 comp = Component.objects.get(item = self, variant= variant)
                 comp.workspace.add(ws)
                 comp.workspace.add(*self.workspaces.all())
             else:
+                #logger.debug('item %s'%self)
+                #logger.debug('variant %s'%variant)
+                #logger.debug('worskapce %s'%ws)
+                #logger.debug('media_type %s'%media_type)
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
+                
+#                comp = Component.objects.get(pk = 1)
+                logger.debug('comp %s'%comp)
+                
 #                comp.metadata.all().delete()
             
             
         except Component.DoesNotExist:
-            logger.debug('variant does not exist yet')
-          
+            #logger.debug('variant does not exist yet')
+            #logger.debug('variant %s'%variant)
+            #logger.debug('type %s'%media_type)
                     
             comp = Component.objects.create(variant = variant, item = self, type = media_type)
             comp.workspace.add(ws)
@@ -113,8 +144,11 @@ class Item(AbstractItem):
             if variant.shared:
                 comp.workspace.add(*self.workspaces.all())
         
-        logger.debug('============== COMPONENT_VARIANT =========== %s' % comp.variant)
+        #logger.debug('variant %s, comp %s' % (variant, comp))
+        #logger.debug('comp.pk %s'%comp.pk)
         
+        
+        logger.debug('======== COMPONENT_VARIANT  ======= %s %s' % (comp.variant, comp.pk))
         return comp
 
     def add_to_uploaded_inbox(self, workspace):
@@ -280,7 +314,10 @@ class Item(AbstractItem):
         @param variant an instance of variants.Variant
         """
         from dam.variants.models import Variant
-        return self.component_set.get(variant = variant, workspace = workspace)
+        try:
+            return self.component_set.get(variant = variant, workspace = workspace)
+        except Component.DoesNotExist:
+            return self.create_variant(variant, workspace)
 
     def get_variants(self, workspace):
         """
@@ -312,7 +349,124 @@ class Item(AbstractItem):
             return self.uploader.username
         except:
             return 'unknown'
-                                
+        
+    def get_variant_url(self, variant_name, workspace):
+        url = None       
+        try:
+            variant = workspace.get_variants().distinct().get(media_type =  self.type, name = variant_name)
+            url = self.get_variant(workspace, variant).get_url()
+                
+        except Exception, ex:
+            logger.error(ex)
+            
+        return url
+
+    def _replace_groups(self, group, default_language):
+        namespace = group.group('namespace')
+        field = group.group('field')
+        try:
+            schema = MetadataProperty.objects.get(namespace__prefix=namespace, field_name=field)
+            values = self.get_metadata_values(schema)
+            if isinstance(values, list):
+                value = values[0]
+            elif isinstance(values, dict):
+                value = values.get(default_language, '')
+            else:
+                value = values
+            if not value:
+                value = ''
+    
+            return value
+        except:
+            raise
+            return ''
+    
+
+    def _get_caption(self, template_string, language):
+        caption = ''
+        try:
+            pattern = re.compile('%(?P<namespace>\w+):(?P<field>\w+)%')
+            groups = re.finditer(pattern, template_string)
+            values_dict = {}
+            for g in groups:
+                values_dict[g.group(0)] = self._replace_groups(g, language)
+    
+            caption = template_string
+    
+            for schema in values_dict.keys():
+                caption = caption.replace(schema, values_dict[schema])
+    
+            if not len(caption):
+                #caption = str(self.get_file_name())
+                caption = unicode(self.get_file_name())
+        except Exception, ex:
+            logger.exception(ex)
+    
+        return caption
+        
+    def get_info(self, workspace,  caption = None, default_language = None):        
+        from dam.geo_features.models import GeoInfo
+        if caption and default_language: 
+           caption = self._get_caption(caption, default_language)
+        else:
+            caption = ''
+                        
+#        thumb_url = self.get_variant_url('thumbnail', workspace)
+#        preview_url = self.get_variant_url('preview', workspace)
+#        fullscreen_url = self.get_variant_url('fullscreen', workspace)
+
+        now = '?t=' + str(time.time())
+        thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail')
+        preview_url = '/item/%s/%s/'%(self.ID, 'preview')
+#        fullscreen_url = '/item/%s/%s/'%(self.ID, 'fullscreen')
+        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0, process__workspace = workspace).count() > 0
+        
+        if in_progress:
+            status = 'in_progress'
+            now = '?t=' + str(time.time())
+            thumb_url += now
+            preview_url += now
+           
+        else:
+            status = 'completed'
+        
+#        status = 'in_progress'
+#        thumb_url = preview_url = fullscreen_url = None
+        
+        
+        
+        if GeoInfo.objects.filter(item=self).count() > 0:
+            geotagged = 1
+        else:
+            geotagged = 0
+        
+        info = {
+            'name': caption,
+            'size':self.get_file_size(), 
+            'pk': smart_str(self.pk), 
+            '_id':self._id,
+           
+            'status': status,
+            'thumb': thumb_url is not None,
+            'url':smart_str(thumb_url), 
+            'type': smart_str(self.type.name),
+            'url_preview':preview_url,
+#            'preview_available': False,
+            'geotagged': geotagged
+            }
+            
+        states = self.stateitemassociation_set.all()
+        if states.count():
+            state_association = states[0]
+        
+            info['state'] = state_association.state.pk
+    
+        return info
+
+
+def get_storage_file_name(item_id, workspace_id, variant_name, extension):
+    return item_id +  '_' + str(workspace_id) + '_' + variant_name + '.' + extension
+                       
 class Component(AbstractComponent):
 
     """ 
@@ -326,7 +480,7 @@ class Component(AbstractComponent):
     variant = models.ForeignKey('variants.Variant')
     workspace = models.ManyToManyField('workspace.DAMWorkspace')    
 #    media_type = models.ForeignKey('application.Type')
-    item = models.ForeignKey('repository.Item')
+    item = models.ForeignKey(Item)
     _previous_source_id = models.CharField(max_length=40,  null = True,  blank = True)
         
     uri = models.URLField(max_length=512, verify_exists = False,  blank = True,  null = True)
@@ -336,7 +490,11 @@ class Component(AbstractComponent):
     parameters = models.TextField(null = True,  blank = True)
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False) 
-    script = models.ForeignKey('scripts.Script', null = True, blank  = True, default = None)   
+    pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
+    
+    
+    
+    
     
     class Meta:
         db_table = 'component'
@@ -370,29 +528,24 @@ class Component(AbstractComponent):
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
     
-    def get_component_url(self, full_address = False):
+    def get_url(self, full_address = False):
         """
         Returns the component url (something like /storage/res_id.ext)
         """
-        from dam.application.views import NOTAVAILABLE
-
-        url = NOTAVAILABLE    
         
-        try:
-            component = self
+        storage = Storage()
+        url = None
+        try:        
+            file_name = self.uri
+            if  storage.exists(file_name):
+                url = os.path.join(STORAGE_SERVER_URL, file_name)
         
-            if component.uri:
-                url =  component.uri
-            else:
-                url = _get_resource_url(component.ID)
-            
-            if full_address:
-                url = SERVER_PUBLIC_ADDRESS + url
+                if full_address:
+                    url = SERVER_PUBLIC_ADDRESS + url
+                
+        except Exception, ex:
+            logger.exception(ex)
         
-        except Exception,ex:
-            url = NOTAVAILABLE    
-        
-        logger.debug('url %s'%url)
         return url
 
     def save_rights_value(self, license_value, workspace):

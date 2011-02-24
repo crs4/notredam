@@ -1,102 +1,76 @@
-import os
-import time
-from json import dumps, loads
 from django.db import models
 from mediadart.storage import new_id
+from django.contrib.auth.models import User
 from mediadart.mqueue.mqclient_async import Proxy
-from dam.repository.models import Component
-from dam import logger
-
-#
-# example of use
-# task = Task().add_component(component)\
-#                .add_func('xmp_embed')\
-#                .add_func('altro')\
-#                .execute()
-#
-# or
-# task = Task.object.get(id=task_id)
-#
-
-class MAction:
-    """
-    This class can be initialized in three wasy:
-    1. with no data for initialization
-    2. with json data and a query_func
-
-    In case (1) the class is used to build a list of actions for the mprocessor.
-    In case (2) the json_data contains the list of actions and the parameter get_component.
-    is a function used to retreive a Component object from the db
-    """
-    def __init__(self, component=None, action_id=None, params=None, state='pending', last_active=0):
-        self.task = None
-        self.component = component
-        self.action_id = action_id or new_id()
-        self.params = params or [['__dummy__', []]]
-        self.state = state
-        self.last_active = last_active
-
-    def append_func(self, function_name, *function_params):
-        self.params.append([function_name, function_params])
-        return self
-
-    def add_component(self, component):
-        self.component = component
-        return self
+from django.utils import simplejson
+import logger
+import datetime
     
-    def to_json(self):
-        return dumps({'action_id':self.action_id, 'component_id':self.component.pk, 'params':self.params})
+class Pipeline(models.Model):
+    name = models.CharField(max_length= 50)
+    description = models.TextField(blank=True)
+#    type = models.CharField(max_length=32, blank=True, default="") 
+    params = models.TextField()
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
+    
+    def num_actions(self):
+        if not hasattr(self, 'length'):
+            self.length = len(simplejson.loads(self.params))
+        return self.length
+    
+    def get_type(self, workspace):
+        try:
+            return PipelineType.objects.get(pipeline = self, workspace = workspace)
+        except PipelineType.DoesNotExist:
+            return None
+    
+class Process(models.Model):    
+    pipeline = models.ForeignKey(Pipeline)
+#    session = models.CharField(max_length=128,null = True, blank = True, unique = True)
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
+    targets = models.IntegerField(default=0)    # total number of items in ProcessTarget
+    start_date = models.DateTimeField(null = True, blank = True)
+    end_date = models.DateTimeField(null = True, blank = True)
+    launched_by = models.ForeignKey(User)
+    last_show_date = models.DateTimeField(null = True, blank = True)
 
-    def activate(self, callback):
-        data = self.to_json()
-        logger.debug('MProcessor.activate %s' % data)
-        Proxy('MProcessor', callback=callback).activate(data)
+    def add_params(self, target_id):
+        ProcessTarget.objects.create(process = self, target_id = target_id, actions_todo=self.pipeline.num_actions())
 
-    def pop(self):
-        "This changes the state of the task and it is not undoable"
-        if not self.component:
-            raise('Error: executing action with no component')
-        if not self.params:
-            raise('Error: executing empty action')
-        self.last_active = int(time.time())
-        fname, fparams = self._next_func()
-        return fname, fparams
+    def get_num_target_completed(self):
+        return ProcessTarget.objects.filter(process = self, actions_todo__lte=0).count()
+    
+    def get_num_target_failed(self):
+        return ProcessTarget.objects.filter(process = self, actions_failed__gt = 0).count()
+    
+    def is_completed(self):
+        return self.end_date is not None
 
-    def _next_func(self):
-        if not self.params:
-            return None, None
-        self.params.remove(self.params[0])
-        if not self.params:
-            logger.debug('###################### CLOSING TASK')
-            if self.state == 'pending':
-                logger.debug('###################### SETTING TASK TO DONE')
-                #self.state = 'done'
-                #self.serialize()
-                self.task.delete()
-            return None, None
-        else:
-            self.serialize()
-            return self.params[0]
+    def run(self):
+        Proxy('MProcessor').run(self.pk)        
 
-    def serialize(self):
-        if not self.task:
-            logger.debug('############# CREATING TASK(%s)' % self.state)
-            self.task = Task.objects.create(component=self.component, 
-                                            params=dumps(self.params), 
-                                            last_active=int(time.time()),
-                                            state=self.state)
-        else:
-            logger.debug('############ SAVING TASK(%s)' % self.state)
-            self.task.state = self.state
-            self.task.save()
+def new_processor(pipeline_name, user, workspace):
+    "utility function to create a process associated to a given pipeline"
+    pipeline = Pipeline.objects.get(name=pipeline_name, workspace = workspace)
+    return Process.objects.create(pipeline = pipeline, workspace = workspace, launched_by = user)
+    
 
-    def failed(self):
-        logger.debug('################ ACTION FAILURE')
-        self.state = 'failed'
+class ProcessTarget(models.Model):
+    process = models.ForeignKey(Process)
+    target_id = models.CharField(max_length=512, null=False)           # foreign key to Item
+    actions_passed = models.IntegerField(default=0)
+    actions_cancelled = models.IntegerField(default=0)
+    actions_failed = models.IntegerField(default=0)
+    actions_todo = models.IntegerField(default=0)   # passed+cancelled+failed+todo = pipeline.num_actions()
+    result = models.TextField()                     # anything sensible
+    
+class PipelineType(models.Model):
+    type = models.CharField(max_length = 40, null = False, choices= [('upload', 'upload')])
+    pipeline = models.ForeignKey(Pipeline, unique = True)
+    workspace = models.ForeignKey('workspace.DAMWorkspace')
+    
+    class Meta:
+        unique_together = (('type', 'workspace'),)
+    
+    
 
-class Task(models.Model):
-    task_id = models.CharField(max_length=32, primary_key=True, default=new_id)
-    component = models.ForeignKey(Component)
-    params = models.TextField(default='[["__dummy__", []]]')
-    last_active = models.IntegerField(default=0)     # holds int(time.time())
-    state = models.CharField(max_length=7, default='pending')

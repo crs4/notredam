@@ -23,6 +23,7 @@ from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 import dam.logger as logger
+from dam.mprocessor.models import Process
 
 class WSManager(WorkspaceManager):
 
@@ -37,21 +38,16 @@ class WSManager(WorkspaceManager):
         @param description description of the new workspace (optional string)
         @param creator an instance of auth.User
         """
-        from dam.scripts.models import ScriptDefault, Script
-        from dam.scripts.views import _new_script
+        from dam.mprocessor.models import Pipeline       
         from dam.treeview.models import Node, Category
-        from dam.eventmanager.models import Event, EventRegistration
-
+        from dam.scripts.models import DEFAULT_PIPELINE
+        
         ws = super(WSManager, self).create_workspace(name, description, creator)
         
         try:
             
-            global_scripts = ScriptDefault.objects.all()
-            upload = Event.objects.get(name = 'upload')
-            for glob_script in global_scripts:
-                _new_script(name = glob_script.name, description = glob_script.description, workspace = ws, pipeline = glob_script.pipeline, events = ['upload', 'item copy'],  is_global = True)
-#                script = Script.objects.create(name = glob_script.name, description = glob_script.description, pipeline = glob_script.pipeline, workspace = ws )
-#                EventRegistration.objects.create(event = upload, listener = script, workspace = ws)
+            for pipeline in DEFAULT_PIPELINE:
+                Pipeline.objects.create(name=pipeline['name'], type=pipeline['type'], description = pipeline['description'], params = pipeline['params'], workspace = ws)
             
             root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'keyword',  cls = 'keyword')
             col_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'collection')
@@ -106,5 +102,9 @@ class DAMWorkspace(Workspace):
         Returns the list of variants for the current workspace
         """
         from dam.variants.models import Variant
-        return Variant.objects.filter(Q(workspace = self) | Q(workspace__isnull = True,  )).distinct()    
+        return Variant.objects.filter(Q(workspace = self) | Q(workspace__isnull = True,  )).distinct()  
+    
+    def get_active_processes(self, ):
+        return Process.objects.filter(pipeline__workspace = self).order_by('-start_date')
+        
     

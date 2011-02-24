@@ -16,7 +16,7 @@
 #
 #########################################################################
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
@@ -28,6 +28,7 @@ from dam.core.dam_workspace.decorators import permission_required
 from dam.treeview.models import Node
 
 from dam import logger
+import settings
 from operator import and_, or_
 
 @login_required
@@ -112,8 +113,39 @@ def delete_watermark(request):
     except Watermark.DoesNotExist:
         pass
         
-    return HttpResponse(simplejson.dumps({'success': True}))
-        
-        
-        
+    return HttpResponse(simplejson.dumps({'success': True}))  
+
+def get_variant_url(request, item_ID, variant_name):
+    from mediadart.storage import Storage
+    from django.views.generic.simple import redirect_to
     
+    try:
+        workspace = request.session['workspace']
+        storage = Storage()
+        
+        try:
+            component = Component.objects.get(item___id = item_ID, workspace = workspace, variant__name = variant_name)
+            url =  component.get_url()
+                        
+        except Component.DoesNotExist, ex:
+            return HttpResponseNotFound()
+            
+#        if not url:
+#            url = settings.INPROGRESS
+        logger.debug('url %s'%url)
+        return redirect_to(request, url)
+    except Exception, ex:
+        logger.exception(ex)
+        raise ex 
+    
+    
+@login_required
+def get_resource(request, resource_name):
+    from django.views.static import serve
+    from settings import MEDIADART_STORAGE
+    download = request.GET.get('download')
+    response = serve(request, resource_name, document_root = MEDIADART_STORAGE)
+    if download:    
+        response['Content-Disposition'] = 'attachment; filename=%s'%resource_name
+    
+    return response

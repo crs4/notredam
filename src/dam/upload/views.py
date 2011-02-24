@@ -27,8 +27,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.db import transaction
+import shutil, os
+from mediadart.storage import new_id
+from django.conf import settings
 
-from dam.repository.models import Item, Component, Watermark
+#from dam.scripts.models import Pipeline
+from dam.mprocessor.models import new_processor
+from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
@@ -40,7 +45,7 @@ from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
-from dam.mprocessor.models import MAction
+#from dam.mprocessor.models import MAction
 
 from mediadart.storage import Storage
 
@@ -173,59 +178,179 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
     file_name, type, res_id = _get_uploaded_info(upload_file)
                 
     _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
+
+
+        
+
+
+def _create_item(user, workspace, media_type, res_id):
+    item = Item.objects.create(owner = user, uploader = user,  type = media_type, _id = res_id)    
+    item.add_to_uploaded_inbox(workspace)    
+    item.workspaces.add(workspace)
+    return item
+
+def _get_media_type(file_name):
+    type = guess_media_type(file_name)
+    media_type = Type.objects.get(name=type)
+    return media_type
+
+def _create_variant(file_name, uri, item, workspace, variant):
+    logger.debug('file_name %s'%file_name)
+    logger.debug('uri %s'%uri)
+    
+    comp = item.create_variant(variant, workspace)        
+    if variant.auto_generated:
+        comp.imported = True
+        
+    comp.file_name = file_name
+    comp.uri = uri        
+    mime_type = mimetypes.guess_type(file_name)[0]
+        
+    ext = mime_type.split('/')[1]
+    comp.format = ext
+    comp.save()    
+
+def _get_filepath(file_name):
+    fname, ext = os.path.splitext(file_name)
+    res_id = new_id() + ext
+    fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
+    
+    return fpath, res_id
     
 
-
-
-@transaction.commit_manually
-def upload_item(request):
+def import_dir(dir_name, user, workspace, session):
+    variant = Variant.objects.get(name = 'original')
+    files =os.listdir(dir_name)
+    logger.debug('files %s'%files)
+    
+    upload_process = new_processor('uploader', user, workspace)
+    
+    for file_name in files:
+        tmp = file_name.split('_')
+        res_id = tmp[0]        
+        original_file_name = '_'.join(tmp[1:])
+        
+        ext = file_name.split('.')[-1]
+        final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+        
+        file_path = os.path.join(dir_name, file_name)
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+        
+        shutil.move(file_path, final_path)
+        media_type = _get_media_type(file_name)
+        
+        logger.debug('-----res_id %s'%res_id)
+        item = _create_item(user, workspace, media_type, res_id)
+        _create_variant(original_file_name, final_file_name, item, workspace, variant)
+        logger.debug('adding item %s'%item.pk)
+        upload_process.add_params(item.pk)
+        
+    upload_process.run()
+        
+@login_required
+def upload_resource(request):
 
     """
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
+    
+    try:  
+        workspace = request.session['workspace']
+        variant_name = request.GET['variant']
+        variant = Variant.objects.get(name = variant_name)
+        session = request.GET['session']
+        file_counter = int(request.GET['counter'])
+        total = int(request.GET['total'])
+        user = request.user  
 
-    try:
-        request.upload_handlers = [StorageHandler()]
+        file_name = request.META['HTTP_X_FILE_NAME']
+        if not isinstance(file_name, unicode):
+            file_name = unicode(file_name, 'utf-8')
         
-        url = request.POST['unique_url']
-        upload_file = request.FILES['Filedata']
+        tmp_dir = '/tmp/'+ session
+        if file_counter == 1:
+            if os.path.exists(tmp_dir):
+                os.rmdir(tmp_dir)
+            
+            os.mkdir(tmp_dir)
+            
+        logger.debug('tmp_dir %s'%tmp_dir)
+        logger.debug('os.path.exists(%s) %s'%(tmp_dir, os.path.exists(tmp_dir)))
+        file_name = new_id() + '_' + file_name
+        file = open(os.path.join(tmp_dir, file_name), 'wb')
+        file.write(request.raw_post_data)
+        file.close()           
         
-        user, workspace = UploadURL.objects.get_user_ws_from_url(url)
-    
-        _save_uploaded_item(request, upload_file, user, workspace)
-    
-        resp = simplejson.dumps({})
-        transaction.commit()
-        return HttpResponse(resp)
+#        if file_counter == total:
+#            import_dir(tmp_dir, user, workspace, session)
+#            os.rmdir(tmp_dir)
+        
+        resp = simplejson.dumps({'success': True})
+        
     except Exception, ex:
         logger.exception(ex)
-        transaction.rollback()
-        raise ex
+        raise ex        
+    
+    return HttpResponse(resp)
 
 def upload_variant(request):
     """
     Used for uploading/replacing an item's variant. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-
-    request.upload_handlers = [StorageHandler()]
-
-    url = request.POST['unique_url']    
-    upload_file = request.FILES['Filedata']
+    workspace = request.session['workspace']
+    variant_name = request.GET['variant']
+    logger.debug('--- variant_name %s'%variant_name)
     
-    user, workspace = UploadURL.objects.get_user_ws_from_url(url)
+    variant = Variant.objects.get(name = variant_name)
+    item_id = request.GET.get('item')        
+    user = request.user  
+    item = Item.objects.get(pk = item_id)
 
-    _save_uploaded_variant(request, upload_file, user, workspace)        
-
-    resp = simplejson.dumps({})
+    file_name = request.META['HTTP_X_FILE_NAME']
+    if not isinstance(file_name, unicode):
+        file_name = unicode(file_name, 'utf-8')
+    
+    
+    ext = os.path.splitext(file_name)[1]
+    res_id = item.ID
+    
+    final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+    final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+     
+        
+    file = open(final_path, 'wb')
+    file.write(request.raw_post_data)
+    file.close()
+     
+    _create_variant(file_name, final_file_name, item, workspace, variant)
+    
+#    upload_process = new_processor('upload', user, workspace)
+#    upload_process.add_params(item.pk)
+#    upload_process.run()
+    
+    resp = simplejson.dumps({'success': True})
+        
+   
     return HttpResponse(resp)
+        
+#    request.upload_handlers = [StorageHandler()]
+#
+#    url = request.POST['unique_url']    
+#    upload_file = request.FILES['Filedata']
+#    
+#    user, workspace = UploadURL.objects.get_user_ws_from_url(url)
+#
+#    _save_uploaded_variant(request, upload_file, user, workspace)        
+#
+#    resp = simplejson.dumps({})
+#    return HttpResponse(resp)
 
 def upload_watermark(request):
     """
     Used for uploading/replacing the watermark for the given workspace. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-
+       
     request.upload_handlers = [StorageHandler()]
-
     url = request.POST['unique_url']    
     upload_file = request.FILES['Filedata']
 
@@ -348,3 +473,21 @@ def generate_tasks(component, workspace, upload_job_id = None, force_generation 
     #Action.objects.filter(component=component).delete()
 
     _generate_tasks(component, workspace, force_generation,  check_for_existing, embed_xmp)
+
+
+def upload_session_finished(request):
+    session = request.POST['session']
+    workspace = request.session.get('workspace')
+    user = User.objects.get(pk = request.session['_auth_user_id'])
+    
+    tmp_dir = '/tmp/'+ session
+    logger.debug('tmp_dir %s'%tmp_dir)
+    
+    if os.path.exists(tmp_dir):
+        import_dir(tmp_dir, user, workspace, session)
+        os.rmdir(tmp_dir)
+        return HttpResponse(simplejson.dumps({'success': True}))
+    else:
+        return HttpResponse(simplejson.dumps({'success': False}))
+    
+        

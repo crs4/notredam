@@ -24,7 +24,7 @@ from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 
 from dam.eventmanager.models import Event, EventRegistration
-from dam.scripts.models import Script
+
 
 @login_required
 def get_events(request):

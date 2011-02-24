@@ -8,5 +8,10 @@ urlpatterns = patterns('',
     (r'^delete_script/', 'dam.scripts.views.delete_script'),
     (r'^get_actions/', 'dam.scripts.views.get_actions'),
     (r'^run_script/', 'dam.scripts.views.run_script'),
-    (r'^rename_script/', 'dam.scripts.views.rename_script')
+    (r'^rename_script/', 'dam.scripts.views.rename_script'),
+    (r'^get_available_actions/', 'dam.scripts.views.get_available_actions'),
+    (r'^script_monitor/', 'dam.scripts.views.script_monitor'),
+    (r'^script_editor/(.+)/$', 'dam.scripts.views.editor'),
+    (r'^script_editor/$', 'dam.scripts.views.editor'),
+    
 )

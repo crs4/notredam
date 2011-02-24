@@ -31,7 +31,7 @@ urlpatterns = patterns('',
     (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
     (r'^admin/(.*)', admin.site.root), 
     (r'^files/(?P<path>.*)$', 'django.views.static.serve', {'document_root': os.path.join(ROOT_PATH, 'files')}), 
-    (r'^storage/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIADART_STORAGE}), 
+#    (r'^storage/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIADART_STORAGE}), 
 #    (r'^storage/(?P<path>.*)/download$', 'django.views.static.serve', {'document_root': MEDIADART_STORAGE}), 
     
     (r'^', include('dam.application.urls')),
