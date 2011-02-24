@@ -1,6 +1,6 @@
 Ext.ux.FieldSetContainer = function(config) {
     Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);    
- 
+ 	this.form = this.ownerCt;
 }; 
 
 Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
@@ -315,21 +315,21 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	
 	 },
 	 
-	onRender: function(ct, pos){
-		
-		Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, pos);
-		var cbf = this;
-		
-		console.log(this.title);
-		Ext.each(this.items.items, function(item){
-			console.log('item.name ' + item.name  +' item.getValue() ' + item.getValue());
-			if (item.xtype !='hidden' && item.getValue())
-				cbf.expand();
-		});
-			
-		
-		
-	},
+//	onRender: function(ct, pos){
+//		
+//		Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, pos);
+//		var cbf = this;
+//		
+//		console.log(this.title);
+//		Ext.each(this.items.items, function(item){
+//			console.log('item.name ' + item.name  +' item.getValue() ' + item.getValue());
+//			if (item.xtype !='hidden' && item.getValue())
+//				cbf.expand();
+//		});
+//			
+//		
+//		
+//	},
 	 
 //	onRender : function(ct, position){
 //        if(!this.el){
@@ -446,17 +446,21 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 	var copy = this.initialConfig;
  		
  		
-// 		var values = {};
-// 		Ext.each(this.items.items, function(item){	 			
-// 			var value = item.getValue(); 
-// 			if(value)
-// 				values[item.name] = value;
-// 		});
+ 		var values = {};
+ 		
+ 		Ext.each(this.items.items, function(item){	 			
+ 			var value = item.getValue(); 
+ 			if(value && !(item instanceof Ext.form.Hidden))
+ 				values[item.name] = value;
+ 		});
  		container.remove(this);
- 		container.insert(position, copy);
+ 		
+ 		new_obj = container.insert(position, copy);
  		
  		container.doLayout();
-// 		contaneir.setValues(values);
+ 		
+ 		container.form.getForm().setValues(values);
+ 		new_obj.notify_load();
  		
 	 },
 	move_up: function(){
@@ -468,8 +472,11 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		this.move(this.get_position()  + 1);
 	},
 	 
-	 onRender : function(ct, position){       
+	 onRender : function(ct, position){
         Ext.ux.MovableCBFieldSet.superclass.onRender.call(this, ct, position);
+        
+		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
+		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
      }
 
 	
