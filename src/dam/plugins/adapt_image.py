@@ -113,7 +113,8 @@ def inspect(workspace):
               'title': 'Watermark',
               'name': 'watermark',
               'order_field_name': 'actions',
-              'order_field_value': 'watermark'
+              'order_field_value': 'watermark',
+               'renditions': variants
 #              'items':[
 #                       {
 #                        'xtype': 'compositefield',

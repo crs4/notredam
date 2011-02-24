@@ -510,7 +510,8 @@ Ext.ux.WatermarkFieldSet = function(config){
                 },
                 {
                  'xtype': 'watermarkbrowsebutton',
-                 'text': 'Browse'
+                 'text': 'Browse',
+                 values: config.renditions
                  
                  
                    
