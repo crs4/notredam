@@ -16,7 +16,10 @@
 		<link rel="stylesheet" type="text/css" href="/files/css/forms.css" />
 		<link rel="stylesheet" type="text/css" href="/files/css/itemview.css" />
 		<link rel="stylesheet" type="text/css" href="/files/css/summary.css" />
-	  	
+	  	<link rel="stylesheet" type="text/css" href="/files/css/fileuploadfield.css" />
+	  	<link rel="stylesheet" type="text/css" href="/files/css/Ext.ux.grid.ProgressColumn.css" />
+	  	<!--link rel="stylesheet" type="text/css" href="/files/css/upload_icons.css" /-->
+	  	<!--link rel="stylesheet" type="text/css" href="/files/css/fileuploader.css" /-->
 	
 	
 	    <style type="text/css">
@@ -32,14 +35,16 @@
 	<script type="text/javascript" src="/files/ext/ext-all-debug.js"></script>
 	<script type="text/javascript" src="/files/ext/header.js"></script>
 	
+	
 	{%block js%}
+		<script type="text/javascript" src="/files/ext/Ext.ux.grid.ProgressColumn.js"></script>
 		<script type="text/javascript">
 	
 		var ws = {id:{{ws_id}}, name:'{{ws_name}}', description: '{{ws_description}}'};
 		var user = "{{user.username}}";
 		
 		</script>
-			    
+			   
 	    <script type="text/javascript" src="/files/ext/addTabButton.js"></script>
 		<script type="text/javascript" src="/files/ext/general.js"></script>
 		<script type="text/javascript" src="/files/ext/workspaces.js"></script>
@@ -64,8 +69,18 @@
 		<script type="text/javascript" src="/files/ext/GmapPanel.js"></script>
 		<script type="text/javascript" src="/files/ext/gmap.js"></script>
 		<script src="/files/flowplayer/flowplayer-3.1.4.min.js"></script>
-	    <script type="text/javascript" src="/files/javascript/swfupload/swfupload.js"></script>
-	    <script type="text/javascript" src="/files/javascript/swfupload/swfupload.queue.js"></script>
+	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.js"></script-->
+	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.queue.js"></script-->
+	    <script type="text/javascript" src="/files/ext/FileUploadField.js"></script>
+	    <!--script type="text/javascript" src="/files/ext/sendFile.js"></script-->
+	    
+	    <!--script type="text/javascript" src="/files/ext/Ext.ux.form.BrowseButton.js"></script>
+	    <script type="text/javascript" src="/files/ext/Ext.ux.FileUploader.js"></script>
+	   	
+	    
+	    	    
+	    <script type="text/javascript" src="/files/ext/Ext.ux.UploadPanel.js"></script>
+	    <script type="text/javascript" src="/files/ext/fileuploader.js "></script-->
 	    <script type="text/javascript" src="/files/javascript/upload/uploader.js"></script>
 		
 		<script type="text/javascript" src="/files/ext/load_store.js"></script>

@@ -19,26 +19,22 @@
 from django.http import HttpResponse, HttpResponseServerError
 from django.utils import simplejson
 from django.contrib.auth.decorators import login_required
-from dam.scripts.models import *
+from dam.mprocessor.models import *
 from dam.eventmanager.models import Event, EventRegistration
 from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
+from dam.mprocessor.models import Pipeline, PipelineType
+import logger
 
 def _get_scripts_info(script):
-    actions_media_type = {}
-    actions = script.get_actions(True)
-    
-#    
-#    for action in script.actionlist_set.all():                        
-#        actions_media_type[action.media_type.name] = simplejson.loads(action.actions)
-    
+        
     return {'id': script.pk, 
             'name': script.name, 
             'description': script.description, 
-            'is_global': script.is_global,  
-            'actions_media_type': actions, 
+#            'is_global': script.is_global,  
+             
             'already_run': script.component_set.all().count() > 0,
             'workspace_id': script.workspace.pk
             
@@ -47,17 +43,13 @@ def _get_scripts_info(script):
 @login_required
 def get_scripts(request):
     workspace = request.session.get('workspace')
-    media_type = request.POST.getlist('media_type')
-    if not media_type:
-        media_type =  Type.objects.all().values_list('name', flat = True)
-    scripts = Script.objects.filter(workspace = workspace, actionlist__media_type__name__in = media_type).distinct()
+    
+    scripts = Pipeline.objects.filter(workspace = workspace).distinct()
     resp = {'scripts': []}
             
     for script in scripts:
         info =  _get_scripts_info(script)
         resp['scripts'].append(info)
-        
-    resp['scripts'].append(info)
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -66,8 +58,7 @@ def get_scripts(request):
 def get_script_actions(request):
     script_id = request.POST['script']
     media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
-    script = Script.objects.get(pk = script_id)
-    tmp = simplejson.loads(script.pipeline)
+    
     
     resp = {'actions': tmp['media_type'], 'already_run': script.component_set.all().count() > 0}
     return HttpResponse(simplejson.dumps(resp))
@@ -76,38 +67,47 @@ def get_script_actions(request):
 
 @login_required
 def get_actions(request):  
-    media_type = request.POST.get('media_type') # if no media_type all actions will be returned
+    import os, settings
+    from mediadart.config import Configurator
     workspace = request.session.get('workspace')
-    logger.debug('media_type %s'%media_type)  
-    actions = {'actions':[]}    
-    classes = get_all_actions()
-    logger.debug('classes %s'%classes)
+    
+    c = Configurator()
+    actions_modules =  c.get("MPROCESSOR", "plugins")
+    src_dir = '/'.join(settings.ROOT_PATH.split('/')[:-1]) #removing dam dir, it ends with src dir
+    actions_dir = actions_modules.replace('.', '/')
+    all_files = os.listdir(os.path.join(src_dir, actions_dir))
+    
+    resp = {'scripts':[]}
+    modules_to_load = []
     try:
-        for action in classes:
-                if action == SaveAction:
-                    continue
-                    
-                if media_type:
-                    if media_type in action.media_type_supported:
-                        add_action = True
-                    else:
-                        add_action = False
-                else:
-                    add_action = True
+        for file in all_files:
+            if file.endswith('.py'):
+                modules_to_load.append(file.split('.py')[0])
                 
-                if add_action:
-                   
-                    tmp = {                                 
-                            'name':action.verbose_name.lower(),
-                            'media_type': action.media_type_supported,
-                            'parameters': action.required_parameters(workspace)                    
-                    }
-                    actions['actions'].append(tmp)
-        logger.debug('actions %s'%actions)
+        top_module = __import__(actions_modules, fromlist=modules_to_load)
+        logger.debug('modules_to_load %s'%modules_to_load)
+        for module in modules_to_load:
+            try:
+                logger.debug(module)
+                
+                module_loaded = getattr(top_module, module, None)
+                if module_loaded:
+                    logger.debug(module_loaded)
+                    
+                    
+                    if hasattr(module_loaded, 'inspect'):
+                        tmp = module_loaded.inspect(workspace)
+                        tmp.update({'name': module})
+                        resp['scripts'].append(tmp)
+                        media_type = request.POST.get('media_type') # if no media_type all actions will be returned
+            except Exception, ex:
+                logger.error(ex)
+                continue
+        
     except Exception, ex:
         logger.exception(ex)
         raise ex        
-    return HttpResponse(simplejson.dumps(actions))
+    return HttpResponse(simplejson.dumps(resp))
 
 def _new_script(name = None, description = None, workspace = None, pipeline = None, events = [], script = None,  is_global = False):
     
@@ -163,26 +163,51 @@ def new_script(request):
 
 @login_required
 def edit_script(request):
-    script_id = request.POST['script']
-    script = Script.objects.get(pk = script_id)
-    
-#    if script.is_global:        
-#        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+    pk = request.POST.get('pk')
+    workspace = request.session['workspace']
+    if pk: #editing an existing script
+        pipeline = Pipeline.objects.get(pk = pk)
+    else:
+        pipeline = Pipeline()
         
-    pipeline = request.POST.get('actions_media_type')
-    workspace = request.session.get('workspace')
-    name = request.POST.get('name')
-    description = request.POST.get('description')
-    events = request.POST.getlist('event')
+        pipeline.workspace = workspace
+        
+    name = request.POST['name']
+    params =  request.POST['params']
+    type = request.POST.get('type')
+    
+    pipeline.name = name    
+    pipeline.params = params
+    
     try:
-        _new_script(name, description, workspace, pipeline, events, script)
+        pipeline.save()
     except IntegrityError:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'name', 'msg': 'script named %s already exist'%name}]}))
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
     
-#    items = [c.item for c in script.component_set.all()]
-#    script.execute(items)
+    
+    previous_type = pipeline.get_type(workspace)
+    if (type, type) in PipelineType._meta.get_field_by_name('type')[0].choices:
+        try:
+            pipeline_type = PipelineType.objects.get(type = type, workspace = workspace)
+            
+                
+        except PipelineType.DoesNotExist:
+            pipeline_type = PipelineType(type = type, workspace = workspace)
         
-    return HttpResponse(simplejson.dumps({'success': True}))
+        
+        if pipeline_type != previous_type:
+            if previous_type:
+                previous_type.delete()
+            
+            pipeline_type.pipeline = pipeline
+            pipeline_type.save()
+    
+    elif not type:       
+        if previous_type: #removing previously set type for pipeline
+            previous_type.delete()
+        
+    
+    return HttpResponse(simplejson.dumps({'success': True, 'pk': pipeline.pk}))  
 
 @login_required
 def rename_script(request):
@@ -204,12 +229,9 @@ def rename_script(request):
 
 @login_required
 def delete_script(request):        
-    script_id = request.POST['script']
-    script = Script.objects.get(pk = script_id)
-    if not script.is_global:
-        script.delete()
-    else:
-        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
+    script_id = request.POST['pk']
+    script = Pipeline.objects.get(pk = script_id)
+    script.delete()
     return HttpResponse(simplejson.dumps({'success': True}))
 
 
@@ -240,5 +262,112 @@ def run_script(request):
     _run_script(script,  items,  run_again)
    
     return HttpResponse(simplejson.dumps({'success': True}))
+
+
+@login_required
+def get_available_actions(request):
+    resp =  {'actions': [{
+                'name': 'adapt_image',
+                'params': {}
+            }
+                         
+                         
+            ]}
+    return HttpResponse(simplejson.dumps(resp))
+
+def _script_monitor(workspace):
+    import datetime    
+    processes = workspace.get_active_processes()
+    processes_info = []
+    for process in processes:
+        try:
+
+            if not process.last_show_date:
+                process.last_show_date = datetime.datetime.now()
+                process.save()
+    #                status = 'in progress'
+                
+            elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
+                
+                process.delete()
+                continue
+    #            else:
+    #                status = 'in progress'
+            
+            items_completed =  process.get_num_target_completed()
+            items_failed =  process.get_num_target_failed()
+            total_items = process.processtarget_set.all().count()
+            if total_items == 0:
+                progress = 0
+            else:
+                progress =  round(float(items_failed + items_completed)/float(total_items)*100)
+              
+            processes_info.append({
+                'id': process.pk,
+                 'name':process.pipeline.name,
+    #                 'status': status,                 
+                 'total_items':total_items,
+                 'items_completed': items_completed,
+                 'progress':progress,
+                 'type': process.pipeline.type,
+                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M:%S"),
+                 'end_date': process.end_date.strftime("%d/%m/%y %I:%M"),
+                 'launched_by': process.launched_by.username,
+                 'items_failed': items_failed
+                 })
+        except:
+            continue
+        
+    return processes_info
+        
     
-  
+
+
+@login_required
+def script_monitor(request):   
+    
+    try:
+        workspace = request.session['workspace']
+        processes_info = _script_monitor(workspace)
+        
+        return HttpResponse(simplejson.dumps({
+            'success': True,
+            'scripts':processes_info
+        }))
+    except Exception, ex:
+        logger.exception(ex)
+        return HttpResponse(simplejson.dumps({'success': False}))
+
+@login_required
+def editor(request, script_id = None):
+    
+    from django.template import RequestContext
+    from django.shortcuts import render_to_response
+    script_id = script_id or request.POST.get('pk')
+    logger.debug('script_id %s'%script_id)
+
+    if script_id:
+        pipeline = Pipeline.objects.get(pk = script_id)
+        workspace = pipeline.workspace
+        params = pipeline.params
+        name = pipeline.name
+        pipeline_type = pipeline.get_type(pipeline.workspace)
+        if pipeline_type:
+            type = pipeline_type.type
+        else:
+            type = ''
+        
+    else:
+        workspace_id  = request.GET['workspace']
+        workspace = Workspace.objects.get(pk = workspace_id)
+        params = ''
+        name = '' 
+        pk = ''
+        type = None
+    logger.debug('params: %s'%params)
+    types_available = list(PipelineType._meta.get_field_by_name('type')[0].choices)
+    types_available.insert(0, ['','----------------------'])
+    types_available = simplejson.dumps(types_available)
+    logger.debug('types_available %s'%types_available)
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available, 'workspace': workspace }))
+

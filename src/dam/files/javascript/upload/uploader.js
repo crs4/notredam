@@ -1,431 +1,239 @@
-
-var Upload = function(upload_url, single_file, post_params, done_callback) {
+function upload_dialog(cfg){
+	var uploader = this;
 	
-    this.record_entries = [    
-        {name:'queue_id', type: 'int'},    
-        {name:'filename', type: 'string'},
-        {name:'size', type: 'string'}
-    ];
-    
-    this.metadata_upload_records = [];
-
-    this.reset = function() {
-
-        this.swfu.cancelQueue();
-
-        upload_grid = Ext.getCmp('upload_grid');
-        if (upload_grid)
-            upload_grid.getStore().removeAll();
-    
-    };
-
-    this.abort = function() {
-
-        this.swfu.stopUpload();
-    
-    };
-
-    this.getFileSize = function(file){
-        
-        var size = file.size;
-        var dim;
-        
-        var KB = 1024;
-        var MB = Math.pow(KB,2);
-        var GB = Math.pow(KB,3);
-            
-        if (size < MB){
-            dim = 'KB';
-            size = size/KB;
-        }
-        else
-            if  (size < GB){
-                dim = 'MB';
-                size = size/MB;
-            }
-            else{
-                dim = 'GB';
-                size = size/GB;
-            }
-
-        size = Math.round(size*10)/10;
-            
-        size = '' + size +  ' ' + dim;
-
-        return size;
-            
-    };
-
-    this.updateGrid = function(file, value, value_text) {
-    
-        var upload_grid = Ext.getCmp('upload_grid');
-
-        if (upload_grid) {
-            var store = upload_grid.getStore();
-            var r_index = store.find('queue_id', file.index);
-            var r = store.getAt(r_index);
-            var progressBar = Ext.getCmp('progress_' + r_index);
-            progressBar.updateProgress(value, value_text);
-        }
-
-    };
-
-    this.fileQueuedHandler = function(file) {
-    
-        var upload_grid = Ext.getCmp('upload_grid');
-
-        if (upload_grid) {
-            var p = new this.customSettings.uploader.UploadFile({
-                queue_id: file.index,
-                filename: file.name,
-                size: this.customSettings.uploader.getFileSize(file),
-                progress: 0.0
-            });
-            upload_grid.getStore().add(p);
-        }
-    };
-    
-    this.uploadStartHandler = function(file) {
-
-        var upload_grid = Ext.getCmp('upload_grid');
-
-        if (upload_grid) {
-
-            var store = upload_grid.getStore();
-
-            var r_index = store.find('queue_id', file.index);
-            var r = store.getAt(r_index);
-            
-            var fields = this.customSettings.uploader.metadata_upload_records;
-            var record_name, value;
-            
-            for (var i=0; i < fields.length; i++) {
-                record_name = 'metadata_' + fields[i].id;
-                value = r.get(record_name);
-                if (value) {
-                    this.addFileParam(file.id, record_name, value);
-                }
-            }
-                        
-        }
-
-    };
-
-    
-    this.uploadSuccessHandler = function(file) {
-
-        var value = 1;
-        var text = 'Completed';
-
-        this.customSettings.uploader.updateGrid(file, value, text);
-        
-    };
-
-    this.uploadProgressHandler = function(file, bytesUploaded, bytesTotal) {
-
-        var progress = bytesUploaded/bytesTotal;
-
-        var value = progress;
-        var text = Math.round(progress*100) + '%';
-
-        this.customSettings.uploader.updateGrid(file, value, text);
-        
-    };
-    
-    this.queueCompleteHandler = function(upload_count) {
-
-        if (done_callback){
-        	done_callback();
-        }else{
-	    	Ext.MessageBox.alert('Upload',  upload_count + ' object(s) uploaded successfully.');    
+	var config = Ext.apply({
+		singleSelect: false,
+		url: '/upload_resource/',
+		after_upload: function(session_id){},
+		variant:'original',
+		item: null,
+	}, cfg);
 	
-	        var tab = Ext.getCmp('media_tabs').getActiveTab();
-	        var view = tab.getComponent(0);
-	        var selecteds = view.getSelectedRecords();
-	        var store = view.getStore();
-	        store.reload({
-	            scope: view,
-	            callback:function(){
-	                ids = []
-	                for(i = 0; i<selecteds.length; i++){
-	                    ids.push(selecteds[i].data.pk)
-	                    }
-	                this.select(ids)
-	                
-	                }
-	            });
-        }
-    
-    };
-
-    this.uploadErrorHandler = function(file, errorCode, message) {
-
-        var value = 0;
-        var text = 'Error';
-
-        try {    
-            switch (errorCode) {
-                case SWFUpload.UPLOAD_ERROR.HTTP_ERROR:
-                    text = "Upload Error: " + message;
-                    break;
-                case SWFUpload.UPLOAD_ERROR.UPLOAD_FAILED:
-                    text = "Upload Failed.";
-                    break;
-                case SWFUpload.UPLOAD_ERROR.IO_ERROR:
-                    text = "Server (IO) Error";
-                    break;
-                case SWFUpload.UPLOAD_ERROR.SECURITY_ERROR:
-                    text = "Security Error";
-                    break;
-                case SWFUpload.UPLOAD_ERROR.UPLOAD_LIMIT_EXCEEDED:
-                    text = "Upload limit exceeded.";
-                    break;
-                case SWFUpload.UPLOAD_ERROR.FILE_VALIDATION_FAILED:
-                    text = "Failed Validation.  Upload skipped.";
-                    break;
-                case SWFUpload.UPLOAD_ERROR.FILE_CANCELLED:
-                    text = 'Aborted';
-                    break;
-                case SWFUpload.UPLOAD_ERROR.UPLOAD_STOPPED:
-                    text = 'Aborted';
-                    break;
-                default:
-                    text = "Unhandled Error: " + errorCode;
-                    break;
-            }
-            
-            this.customSettings.uploader.updateGrid(file, value, text);
-            
-        } catch (ex) {
-            console.log(ex);
-        }
-    }
-
-    this.initUploader = function() {
-
-        var obj = this;
-        var i;
-
-        for (i = 0; i < this.metadata_upload_records.length; i++){
-            this.record_entries.push({name: 'metadata_' + this.metadata_upload_records[i].id, type: 'string'});
-        }
-
-        this.record_entries.push({name:'progress', type: 'string'})
-
-        this.UploadFile = Ext.data.Record.create(this.record_entries);
-
-        var store = new Ext.data.SimpleStore({
-            fields :this.record_entries
-        });
-
-        var progressbar_renderer = function(value, meta, rec, row, col, store){
-            
-            var id = Ext.id();
-            var is_int = parseInt(value)
-            var text;
-            
-            if (isNaN(is_int)) {
-                text = value;
-                value = 0;
-            }
-            else {
-                text = value + '%';
-            }
-            
-            (function() {
-                var progress_id = 'progress_' + row;
-                new Ext.ProgressBar({
-                    renderTo: id,
-                    value: value,
-                    animate: true,
-                    text: text,
-                    width: 200,
-                    id: progress_id
-                });
-            }).defer(25);
-            
-            return '<span id="' + id + '"></span>';
-        }
-
-        var columns = [
-            new Ext.grid.RowNumberer(), {
-                id:'filename',
-                header: "Filename",
-                dataIndex: 'filename',
-                sortable: false,
-                menuDisabled: true
-            }, 
-            {
-                header: "Size",
-                dataIndex: 'size',
-                sortable: false,
-                menuDisabled: true
-            }
-        ];
-
-        for(i = 0; i < this.metadata_upload_records.length; i++) {
-            columns.push({
-                header: this.metadata_upload_records[i].name,
-                sortable: false,
-                menuDisabled: true,
-                dataIndex: 'metadata_' + this.metadata_upload_records[i].id,
-                editor: new Ext.form.TextField({
-                    allowBlank: true
-                })
-            });
-        }
-
-        columns.push({
-            header: "Progress",
-            dataIndex: 'progress',
-            renderer: progressbar_renderer,
-            width:220,
-            sortable: false,
-            menuDisabled: true
-        });
-                
-        var cm = new Ext.grid.ColumnModel(columns);
-
-        var tbar_grid = [
-            {
-                text: 'Add Files',
-                iconCls: 'add_icon',
-                listeners: {
-                    render: function() {
-                        var element = this.getEl();
-                        element.child('em').insertFirst({tag: 'span', id: 'btnUploadHolder'});                    
-    
-                        var settings_object = {
-                            upload_url : upload_url ? upload_url : "/upload_item/",
-                            flash_url : "/files/javascript/swfupload/swfupload.swf",
-                            file_upload_limit : single_file ? 1 : 0, 
-                            button_placeholder_id: "btnUploadHolder",
-                            button_window_mode: SWFUpload.WINDOW_MODE.TRANSPARENT,
-                            button_action : single_file ? SWFUpload.BUTTON_ACTION.SELECT_FILE : SWFUpload.BUTTON_ACTION.SELECT_FILES,
-                            button_width: element.getWidth(),
-                            button_height: element.getHeight(),
-                            file_queued_handler : obj.fileQueuedHandler,
-                            upload_progress_handler: obj.uploadProgressHandler,
-                            upload_error_handler: obj.uploadErrorHandler,
-                            upload_success_handler: obj.uploadSuccessHandler,
-                            queue_complete_handler: obj.queueCompleteHandler,
-                            upload_start_handler: obj.uploadStartHandler,
-                            post_params: post_params ? post_params : {},
-                            custom_settings: {
-                                uploader: obj
-                            }
-                        };
-                        
-                        obj.swfu = new SWFUpload(settings_object);
-                        
-                    }
-                }
-            },
-            new Ext.Button({
-                text: 'Upload',
-                iconCls: 'upload',
-                handler: function() {
-                    
-                    var swfu = obj.swfu;
-
-            		var stats = swfu.getStats();
-                    var queued = stats.files_queued;
-                    
-                    var start = stats.successful_uploads + stats.upload_errors
-                    
-                    Ext.Ajax.request({
-                        url:'/get_upload_url/',
-                        params: {n: queued},
-                        success: function(resp){
-                            var resp_json = Ext.util.JSON.decode(resp.responseText)
-                            var urls = resp_json.urls;
-                            var file;
-                            var x=0;
-                            for (var i=start; i < queued + start; i++) {
-                                file = obj.swfu.getFile(i);
-                                obj.swfu.addFileParam(file.id, 'unique_url', urls[x++]);
-                            }
-                            
-                            obj.swfu.startUpload();
-                        },
-                        failure: function() {
-                            console.log('error retrieving urls');
-                        }
-                    });
-                }   
-            }),
-            {
-                text: 'Clear',
-                iconCls: 'clear_icon',
-                handler : function(){
-                    obj.reset();
-                }
-            }, {
-                text: 'Abort',
-                iconCls: 'abort_icon',
-                handler : function(){
-                    obj.abort();
-                }
-            }
-        ];
-                
-        this.grid = new Ext.grid.EditorGridPanel({
-            store: store,
-            cm: cm,
-            autoExpandColumn: 'filename',
-            clicksToEdit: 1,
-            stripeRows: true,
-            height: 300,
-            layout: 'fit',
-            tbar: tbar_grid,
-            id: 'upload_grid',
-            listeners: {
-                beforeedit:function(obj){
-                    var prg = Ext.getCmp('progress_' + obj.row)
-                    if (prg.value == 0)                             
-                        return true;
-                    return false;                    
-                }                
-            }
-        });
-
-        this.win = new Ext.Window({
+	Ext.apply(this, config);
+	
+	this.upload_file = function(){
+		var _show_monitor =  function (){
+			_close_upload();
+			show_monitor();
+		}; 
+        		
+		var _close_upload =  function (){    			
+			this.close();
+			
+		};
+		
+		var	_upload_more = function(){
+			Ext.getCmp('files_list').getStore().removeAll();
+		};
+		
+		var files_store = Ext.getCmp('files_list').getStore();
+		var files = files_store.query('status', 'to_upload').items;
+		if (files.length == 0)
+			return;
+		files_store.filterBy(function(r){
+			return (r.data.status == 'to_upload')
+		});
+		
+		var session_id = user + '_' + new Date().getTime();
+		
+		
+		
+		var files_length = files.length;
+		var file;
+		var params = {
+			variant: uploader.variant,
+			session: session_id,
+			total: files_length,
+			item: uploader.item
+		};            		
+		
+		
+		
+		function _upload_file(i, files, session_id, params){
+    		if (i >= files.length){
+    			uploader.after_upload(session_id);
+    			
+    			return;
+    		}
+    		file = files[i].data.file;
+			
+			params.counter = i + 1;
+			var final_params = Ext.urlEncode(params);
+			var xhr = new XMLHttpRequest();
+			xhr.file_id = files[i].data.id;
+			xhr.onreadystatechange = function(){
+				
+				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
+				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
+	            if (xhr.readyState == 4){
+		        	if (xhr.status == 200){					        		
+		        		file_record.set('status', 'ok');
+		        		file_record.commit();
+		        	}
+		        	else if(xhr.status == 500){
+		        		file_record.set('status', 'failed');
+	        			file_record.commit();
+		        	}
+		        	_upload_file(i+1, files, session_id, params);
+		        }
+		      
+		        	
+		    	
+	        };
+			
+			
+			xhr.open("POST", this.url + '?'+ final_params, true);
+	        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+	        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
+	        xhr.setRequestHeader("Content-Type", "application/octet-stream");
+	        
+	        var file_record = Ext.getCmp('files_list').getStore().getAt(i);
+	        file_record.set('status', 'inprogress');
+	        file_record.commit();
+	        
+	        xhr.send(file);
+	
+		};
+		
+		_upload_file(0, files, session_id, params);
+	
+	};
+	
+	var file_counter = 0;
+	
+	this.win =  new Ext.Window({
+			id: 'upload_win',
             title    : 'Upload',
             closable : true,
             width    : 800,
             height   : 350,
-            plain    : true,
+            //plain    : true,
             layout   : 'fit',
-            items    : [this.grid],
-            modal:true
-        });
-    
-        this.win.show();
-    
-    }
-        
-    this.getGrid  = function(){
-        return this.grid;
-    };
-
-    this.openUpload = function(menu_item) {
-
-        var obj = this;
-    
-        var metadata_upload_store = new Ext.data.JsonStore({
-            url:'/get_metadata_upload/',
-            fields: ['name', 'pk'],
-            root: 'schemas'
-        });
+            buttonAlign: 'left',
+//			bbar:[{
+//				text: 'Upload More files'
+//				
+//			},
+//			{
+//				text: 'progress monitor'
+//			}
+//			],
+            modal: true,
             
-        metadata_upload_store.load({
-            callback: function(){
-                this.each(function(r){obj.metadata_upload_records.push({id: r.data.pk, name:r.data.name, type: 'string'});});
-                obj.initUploader();
+            tbar:[
+        		new Ext.BoxComponent({
+				    autoEl: {
+				        tag: 'div',
+				        id: 'upload'
+				    },
+				    listeners:{
+				    	afterrender: function(){
+				    		new Ext.ux.form.FileUploadField({			        
+				        	id: 'files_to_upload',
+				        	buttonOnly: true,
+				        	renderTo: 'upload',
+				        	singleSelect: config.singleSelect,
+				        	
+				        	buttonCfg: {
+				        		icon: '/files/images/icons/fam/add.gif',
+				        		text: 'Browse'
+				        	},
+				        	listeners:{
+				        		fileselected: function(fb, v){
+				        			
+				        			var files = [];
+				        			var size;
+				        			Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
+				        				size = parseInt(file.size/1024) + ' KB';
+				        				files.push({
+				        					id: file_counter,
+				        					file: file,
+				        					filename: file.name,
+				        					size: size,
+				        					status: 'to_upload'
+				        				});
+				        				file_counter += 1;				        				
+				        			});
+				        			
+				        			Ext.getCmp('files_list').getStore().loadData({
+				        				files: files
+				        			}, true);
+				        		}
+				        	}
+	            			});    
+				    			
+				    	}				    
+				    }
+				}),
+            {
+            	text: 'Upload',
+            	icon:'/files/images/icons/arrow-up.gif',
+            	handler: function(){
+					uploader.upload_file();
+				    	
+            	}
+            	
+            },
+            {
+            	text: 'Abort',
+            	icon: '/files/images/icons/fam/delete.gif',
+            	handler: function(){
+            		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
+            		
+            		Ext.each(files, function(file){
+            			file.set('status', 'aborted');	
+            			file.commit();
+            		
+            		});
+            		
+            			
+            	
+            		
+            	
+            	}
+            
             }
+            ],
+            
+            items: new Ext.Panel({
+            	id: 'files_list_container',
+            	border: false,
+            	items:new Ext.list.ListView({
+            	id: 'files_list',
+            	frame: true,
+            	store: new Ext.data.JsonStore({
+            		root: 'files',
+            		fields:['id', 'file', 'filename', 'size', 'status']            		
+            	}),
+            	 columns: [{
+			        header: 'File',			        
+			        dataIndex: 'filename',
+			        cls: 'upload-row'
+			    	},
+			    	{
+			        header: 'Size',			        
+			        dataIndex: 'size',
+			        width: .3,
+			        cls: 'upload-row'
+				    },
+			    	{
+			        header: 'Status',			        
+			        dataIndex: 'status'	,
+			        width: .07,
+			        //cls: 'upload-row',
+			        tpl: '<p class="upload_{status}"/>'
+			    }]
+            }) 
+            
+            }) 
+            
+            
+
+
         });
+	this.win.show();
+	
+		
 
-    };
-    
-
+	
 };

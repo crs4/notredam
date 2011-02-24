@@ -36,7 +36,7 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.repository.models import Component,  Item
 from dam.metadata.views import _get_ws_groups
-from dam.mprocessor.models import Task
+#from dam.mprocessor.models import Task
 
 import os
 from dam import logger
@@ -231,9 +231,13 @@ def get_variants(request):
             logger.debug('variant  %s'%v)
             comp = Component.objects.get(item = item,  workspace = workspace,  variant = v)
             
-            work_in_progress = Task.objects.filter(component = comp).count() > 0
-            resource_url = comp.get_component_url()
-            abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
+            work_in_progress = False #TODO
+            resource_url = comp.get_url()
+            
+            if resource_url:
+                abs_resource_url = SERVER_PUBLIC_ADDRESS + resource_url
+            else:
+                abs_resource_url = resource_url
             info_list = []
             if comp.media_type.name== 'image':
                 extension = comp.format
@@ -261,7 +265,7 @@ def get_variants(request):
                                      'variant_name': v.name, 
                                      'item_id': item_id,  
                                      'auto_generated':auto_generated,  
-                                     'media_type': media_type, 
+#                                     'media_type': '', 
                                       'work_in_progress':work_in_progress})
             continue
             
@@ -371,3 +375,4 @@ def get_variants_menu_list(request):
     for va in vas:
         resp['variants'].append({'variant_name': va})
     return HttpResponse(simplejson.dumps(resp))
+

@@ -1,330 +1,261 @@
+import os
+import sys
+from json import loads
+import mimetypes
+import shutil
+from pprint import pprint
+
 from django.core.management import setup_environ
-import dam.settings as settings
+#from django.db import transaction
+import settings
 setup_environ(settings)
 
-
-
-
-from dam.scripts.models import *
-from dam.scripts.views import _new_script
-from dam.workspace.models import *
-from dam.eventmanager.models import *
-from dam.variants.models import Variant
 from django.utils import simplejson
+from django.contrib.auth.models import User
+from django.db import transaction
 
+from dam.mprocessor.models import new_processor, Pipeline, Process, ProcessTarget
+from dam.mprocessor.make_plugins import pipeline, pipeline2, simple_pipe
+from dam.workspace.models import DAMWorkspace
+from dam.core.dam_repository.models import Type
+from dam.repository.models import Item, get_storage_file_name
+from dam.variants.models import Variant
+from mediadart.storage import new_id
+from dam.upload.views import guess_media_type, _create_item, _create_variant, _get_media_type
 
-
-pipeline_thumb = {
-    
-        
-                  
-    
-        'image':{
+thumbnail = {
+    'thumbnail_image':{
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':100,
+            'resize_w': 100,
             'source_variant': 'original',
-            'actions': [
-                {'type': 'resize',
-                'parameters':{
-                    'max_height': 100,
-                    'max_width': 100
-                    
-                }
-                        
-                },
-               
-                {
-                'type': 'save',
-                'parameters':{
-                    'output_format': 'jpeg',
-                    'output': Variant.objects.get(name = 'thumbnail').pk,
-                    'embed_xmp': False
-                }
-                        
-            }    
-        ],
-                 
-                 
-        },
-        'audio':{},
-        'video':{
-            'source_variant': 'original',
-            'actions':[{
-                'type': 'extractvideothumbnail',
-                'parameters':{
-                'max_height': 100,
-                'max_width': 100,
-                   'output_format': 'jpeg',
-                    'output': Variant.objects.get(name = 'thumbnail').pk
-                }
+            'output_variant': 'thumbnail',
+            'output_format' : 'jpeg'        
             },
-#            {
-#                'type': 'save',
-#                'parameters':{
-#                    'output_format': 'jpeg',
-#                    'output': 'thumbnail'
-#                }
-#                            
-#            }
-            ]
-        },
-        'doc':{
+         'in': ['fe'],
+         'out':['thumbnail']    
+    },
+}
+
+action_xmp = {
+    'extract_xmp': {
+        'script_name':  'extract_xmp',
+        'params' : {
             'source_variant': 'original',
-            'actions': [
-            {
-               'type': 'resize',
-               'parameters':{                        
-                    'max_height': 100,
-                    'max_width': 100,
-                }
-            
-            },
-            {
-            'type': 'save',
-            'parameters':{
-                'output_format': 'jpeg',
-                'output': Variant.objects.get(name = 'thumbnail').pk
-            }
-                        
-            }]
-        }
-    
+        },
+        'in':[],
+        'out':['fe'],
+    },
 }
 
 
-pipeline_preview = {
-    
-        
-                  
-    
-        'image':{
+actions = {
+    'extract_original': {
+        'script_name':  'extract_basic',
+        'params' : {
             'source_variant': 'original',
-            'actions': [
-                {
-                 'type': 'resize',
-                'parameters':{
-                   'max_height': 300,
-                   'max_width': 300,
-                }
-                        
-                },
-#                {
-#                     'type': 'set rights',
-#                     'parameters':{
-#                        'rights': 'creative commons by'
-#                     }
-#                 },
-                {
-                'type': 'save',
-                'parameters':{
-                    'output_format': 'jpeg',
-                    'output': Variant.objects.get(name = 'preview').pk,
-                     'embed_xmp': False
-                    
-#                    'output': 'preview'
-                }
-                        
-            }    
-        ],
-                 
-                 
         },
-        'audio':{
-                 'source_variant': 'original',
-                 'actions':[{
-                   'type': 'audio encode',
-                   'parameters':{                        
-                        'bitrate':128,
-                        'rate':44100
-                        }
-                    },
-                    {
-                    'type': 'save',
-                    'parameters':{
-                        'output_format': 'mp3',
-                        'output': Variant.objects.get(name = 'preview').pk
-                    }
-                            
-                }]
-                 
-                 
-                 
-                 },
-        'video':{
+        'in':[],
+        'out':['fe'],
+    },
+
+    'extract_orig_xmp': {
+        'script_name':  'extract_xmp',
+        'params' : {
             'source_variant': 'original',
-            'actions':[
-                    
-                 {
-                'type': 'resize',
-                'parameters':{
-                    'max_height': 300,
-                    'max_width': 300
-                    }
-                },
-                {
-                   'type': 'video encode',
-                   'parameters':{
-                        'framerate':'25/2',
-                        'bitrate':640
-                    }
-                
-                },                
-                {
-                   'type': 'audio encode',
-                   'parameters':{                        
-                        'bitrate':128,
-                        'rate':44100
-                    }
-                
-                },
-#                {
-#                   'type': 'watermark',
-#                   'parameters':{
-#                    'filename':'14c5c8e95751401db5dd6253817b6a6d.gif',
-#                    'pos_x_percent': 20,
-#                    'pos_y_percent':20,
-#                  
-#                                 
-#                    }
-#                   
-#                },
-                
-#                {
-#                'type': 'sendbymail',
-#                'parameters':{
-#                    'output_format': 'flv',
-#                    'mail': 'mdrio@tiscali.it'
-#                }
-#                            
-#                },
-                {
-                'type': 'save',
-                'parameters':{
-                    'output_format': 'flv',
-                    'output': Variant.objects.get(name = 'preview').pk
-                }
-                            
-                }]
-                 
         },
-        
-        'doc':{
+        'in':[],
+        'out':['fx'],
+    },
+
+
+    'thumbnail_image':{
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':100,
+            'resize_w': 100,
             'source_variant': 'original',
-            'actions': [
-            {
-               'type': 'resize',
-               'parameters':{                        
-                    'max_height':300,
-                    'max_width':300,
-                }
-            
+            'output_variant': 'thumbnail',
+            'output_format' : 'jpeg'        
             },
-            {
-            'type': 'save',
-            'parameters':{
-                'output_format': 'jpeg',
-                'output': Variant.objects.get(name = 'preview').pk
-            }
-                        
-            }]
-        }
+         'in': ['fe'],
+         'out':['thumbnail']    
         
+        
+    },
+
+    'extract_thumbnail': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'thumbnail',
+        },
+        'in':['thumbnail'],
+        'out':[],
+    },
+
+    'preview_image': {
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':300,
+            'resize_w': 300,
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_format' : 'jpeg'        
+            },
+         'in': ['fe'],
+         'out':['preview']    
+        },
+        
+    'extract_preview': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'preview',
+        },
+        'in':['preview'],
+        'out':[],
+    },
     
+    'fullscreen_image': {
+        'script_name': 'adapt_image', 
+        'params':{
+            'actions':['resize'],
+            'resize_h':800,
+            'resize_w': 600,
+            'source_variant': 'original',
+            'output_variant': 'fullscreen',
+            'output_format' : 'jpeg'        
+            },
+         'in': ['fe'],
+         'out':['fullscreen']    
+    },
+
+    'extract_full': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'fullscreen',
+        },
+        'in':['fullscreen'],
+        'out':[],
+    },
 }
 
+class DoTest:
+    def __init__(self):
+        self.ws = DAMWorkspace.objects.get(pk = 1)
+        self.user = User.objects.get(username='admin')
+
+#    def create_item(self, filepath):
+#        guess = guess_media_type(filepath)
+#        media_type = Type.objects.get(name=guess)
+#        item = Item.objects.create(owner = self.user, uploader = self.user, type=media_type)
+#        item.add_to_uploaded_inbox(self.ws)
+#        item.workspaces.add(self.ws)
+#        return item
+#
+#    def create_variant(self, item, variant, filepath):
+#        fname, ext = os.path.splitext(filepath)
+#        res_id = new_id() + ext
+#        comp = item.create_variant(variant, self.ws)
+#        if variant.auto_generated:
+#            comp.imported = True
+#        comp.file_name = filepath
+#        comp.uri = res_id
+#        mime_type = mimetypes.guess_type(filepath)[0]
+#        comp.format = mime_type.split('/')[1]
+#        comp.save()
+#        return comp
+
+    def register(self, name, type, description, pipeline_definition):
+        preview = Pipeline.objects.create(name=name, type=type, description='', params = simplejson.dumps(pipeline_definition), workspace = self.ws)
+        print 'registered pipeline %s, pk = %s' % (name, preview.pk)
+
+    def _new_item(self, filepath):
+        variant = Variant.objects.get(name = 'original')
+        fpath, ext = os.path.splitext(filepath)
+        if ext:
+            ext = ext[1:]   # take away '.'
+        res_id = new_id()
+        final_file_name = get_storage_file_name(res_id, self.ws.pk, variant.name, ext)
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+        shutil.copyfile(filepath, final_path)
+        media_type = _get_media_type(filepath)
+        item = _create_item(self.user, self.ws, media_type, res_id)
+        _create_variant(filepath, final_file_name, item, self.ws, variant)
+        return item
+
+    #@transaction.commit_manually
+    def upload(self, pipe_name, filepaths):
+        uploader = new_processor(pipe_name, self.user, self.ws)
+        open('/tmp/uploader', 'w').write('%s\n' % uploader.pk)
+        for fn in filepaths:
+            print 'uploading', fn
+            item = self._new_item(fn)
+            uploader.add_params(item.pk)
+        #transaction.commit()
+        uploader.run()
+        print 'done'
+
+    def show_pipelines(self):
+        pipelines=Pipeline.objects.all()
+        for p in pipelines:
+            d = loads(p.params)
+            actions = d.keys()
+            actions.sort()
+            print('pk=%s name=%s length=%s actions=%s' % (p.pk, p.name, len(d), ' '.join(actions)))
+
+    def get_status(self, pid, items):
+        if items:
+            targets = ProcessTarget.objects.filter(process=pid, target_id__in=items, actions_todo=0)
+        else:
+            targets = ProcessTarget.objects.filter(process=pid)
+        print 'found %d targets' % len(targets)
+        for t in targets:
+            result = loads(t.result)
+            pprint("item %s" % t.target_id)
+            pprint(result, indent=5, width=100)
+
+#            if 'thumbnail_image' in result:
+#                if result['thumbnail_image'][0]:
+#                    print "item %s: thumbnail %s" % (t.target_id, result['thumbnail_image'][1])
+#                else:
+#                    print 'item %s: thumbnail generation failure: %s' % (t.target_id, result['thumbnail_image'][1])
 
 
+usage="""
+Usage: script_test.py <action> <arguments>
+ where action is
+ 
+  register [pipeline_definition]  (default register actions)
+
+  upload <filename>
+"""
 
 
+def main(argv):
+    test = DoTest()
+    if len(argv) < 2: 
+        argv.append('register')
+    task = argv[1]
 
-pipeline_fullscreen = {
-   
+
+    # register <pipeline_name>  <pipeline_def (variable name in this file>)
+    if task == 'register':
+        pipeline_def = globals()[argv[3]]
+        test.register(argv[2], 'upload', '', pipeline_def)
+    # upload <pipeline_name> <files>
+    elif task == 'upload':
+        test.upload(argv[2], argv[3:])
+    # status <process_id> <items>
+    elif task == 'status':
+        test.get_status(argv[2], argv[3:])
+    elif task == 'show':
+        test.show_pipelines()
+    else:
+        print usage
     
-        'image':{
-            'source_variant': 'original',
-            'actions': [
-                {
-                 'type': 'resize',
-                'parameters':{
-                    'max_height': 800,
-                    'max_width': 800,
-                }
-                        
-                },
-#                {
-#                 'type': 'crop',
-#                 'parameters':{
-#                    'upperleft_x': 20, 
-#                    'upperleft_y':20,
-#                    'lowerright_x':2000,
-#                    'lowerright_y': 2000           
-#                }
-#                 
-#                 },
-                
-#                {
-#                   'type': 'watermark',
-#                   'parameters':{
-#                    'filename':'14c5c8e95751401db5dd6253817b6a6d.gif',
-#                    'pos_x': 20,
-#                    'pos_y':20,
-#                    'alpha': 255
-#                                 
-#                    }
-#                   
-#                },
-                {
-                'type': 'save',
-                'parameters':{
-                    'output_format': 'jpeg',
-                    'output': Variant.objects.get(name = 'fullscreen').pk,
-                     'embed_xmp': False
-                }
-                        
-            },
-#                {
-#                 'type': 'crop',
-#                 'parameters':{
-#                    'upperleft_x': 20, 
-#                    'upperleft_y':20,
-#                    'lowerright_x':200,
-#                    'lowerright_y': 200           
-#                }
-#                 
-#                 },
-#                 {
-#                'type': 'save',
-#                'parameters':{
-#                    'output_format': 'jpeg',
-#                    'output': 'fullscreen'
-#                }
-#                        
-#            }
-                 
-                
-    
-        ],
-                 
-                 
-        },
-    
-}
-
-    
-
-ws = DAMWorkspace.objects.get(pk = 1)
-
-Event.objects.create(name = 'upload')
-Event.objects.create(name = 'item copy')
-
-pipeline_json = simplejson.dumps(pipeline_thumb)
-_new_script(name = 'thumb_generation', description = 'thumbnail generation', workspace = ws,  pipeline = pipeline_json, events = ['upload', 'item copy'],  is_global = True)
-ScriptDefault.objects.create(name = 'thumb_generation', description = 'thumbnail generation', pipeline = pipeline_json, )
-
-
-pipeline_json = simplejson.dumps(pipeline_preview)
-_new_script(name = 'preview_generation', description = 'preview generation', workspace = ws, pipeline = pipeline_json, events = ['upload', 'item copy'], is_global = True)
-ScriptDefault.objects.create(name = 'preview_generation', description = 'preview generation', pipeline = pipeline_json)
-
-pipeline_json = simplejson.dumps(pipeline_fullscreen)
-
-_new_script(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json, workspace = ws, events = ['upload', 'item copy'], is_global = True)
-ScriptDefault.objects.create(name = 'fullscreen_generation', description = 'fullscreen generation', pipeline = pipeline_json)
+if __name__=='__main__':
+    main(sys.argv)

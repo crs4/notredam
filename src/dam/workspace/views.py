@@ -36,14 +36,14 @@ from dam.variants.models import Variant
 from dam.upload.views import generate_tasks
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.core.dam_repository.models import Type
-from dam.geo_features.models import GeoInfo
-from dam.mprocessor.models import Task
+#from dam.geo_features.models import GeoInfo
+#from dam.mprocessor.models import Task
 from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language
-from dam.scripts.models import Script, ScriptDefault 
+from dam.mprocessor.models import Pipeline, Process, ProcessTarget
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
 
@@ -110,60 +110,10 @@ def _admin_workspace(request,  ws):
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     if ws not in item.workspaces.all():
         item.workspaces.add(ws)
-        EventRegistration.objects.notify('item copy',  ws,  **{'items':[item]})
-#        
-##                components = item.component_set.all().filter(Q(variant__auto_generated= False, variant__is_global = True) | Q(imported = True) | Q(variant__shared = True),  workspace = current_ws)
-#        components = item.component_set.all().filter(variant__is_global = True, workspace = current_ws)
-#        
-#        for comp in components:
-#            
-#            if not comp.variant.auto_generated:
-#                comp.workspace.add(ws)
-#            
-##                    elif comp.variant.shared:
-##                        logger.debug('shared %s'%comp.variant)
-##                        new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID)
-##                        new_comp.workspace.add(ws)
-#            
-#            elif comp.imported:
-#                new_comp = Component.objects.create(variant = comp.variant,  item = item,  _id = comp.ID,  imported = True)
-##                    else:
-##                        new_comp = Component.objects.create(variant = comp.variant,  item = item, _id = comp.ID )
-##                        new_comp.workspace.add(ws)
-##                        new_comp.preferences = comp.preferences
-##                        new_comp.source_id = comp.source_id
-##                        new_comp.save()
-#            
-#            
-##                    default_source_variant = comp.variant.get_source
-#        ws_variants = Variant.objects.filter(Q(workspace = ws) | Q(is_global = True),  auto_generated = True,  media_type = item.type)
-#        
-##                logger.debug('item.component_set.filter(workspace = ws)[0].variant.pk %s' %item.component_set.filter(workspace = ws)[0].variant.pk)
-#        for variant in ws_variants:
-#            if item.component_set.filter(variant = variant, workspace = ws).count() == 0: #if component for variant has not been created yet
-#                
-#                
-#                comps = item.component_set.filter(variant = variant, workspace = current_ws) 
-#                if comps.count() > 0: #if variant exists in the current ws
-#                    comp = comps[0]
-##                    new_comp = _create_variant(variant,  item, ws)
-##                    new_comp._id = comp._id
-##                    new_comp.save()
-#
-##                    new_comp = Component.objects.create(variant = variant,  item = item,  _id = comp._id)
-#                    new_comp = Component.objects.create(variant = variant,  item = item,  _id = comp._id)
-##                        new_comp.preferences = comp.preferences
-##                        new_comp.source_id = comp.source_id
-#
-#                else:
-#                    new_comp = Component.objects.create(variant = variant,  item = item,  )
-##                    new_comp = _create_variant(variant,  item, ws)
-#                    
-#                    
-#                new_comp.workspace.add(ws)                        
-##               TODO: event for upload scripts
-##                generate_tasks(variant,  ws,  item,  check_for_existing = True)
-#        
+        orig_variant = Variant.objects.get(name = 'original')
+        original = item.get_variant(current_ws, orig_variant)
+        original.workspace.add(ws)
+        
         return True
     
     return False
@@ -177,22 +127,26 @@ def _remove_items(request, ws, items):
 @login_required
 @permission_required('add_item', False)
 def add_items_to_ws(request):
+    from dam.mprocessor.models import new_processor
     try:
         item_ids = request.POST.getlist('item_id')
         ws_id = request.POST.get('ws_id')
         
         ws = Workspace.objects.get(pk = ws_id)
+        user = request.user
         current_ws = request.session['workspace']
         remove = request.POST.get('remove')
         move_public = request.POST.get('move_public', 'false')
         items = Item.objects.filter(pk__in = item_ids)
         
+        upload_process = new_processor('uploader', user, ws)
+        
         item_imported = []
         
         for item in items:
-            added = _add_items_to_ws(item, ws, current_ws,remove)
+            added = _add_items_to_ws(item, ws, current_ws, remove)
             if added:
-                item_imported.append(item)
+                upload_process.add_params(item.pk)
         
         if remove == 'true':
             _remove_items(request, current_ws, items)
@@ -203,6 +157,9 @@ def add_items_to_ws(request):
             node = Node.objects.get_or_create(label = time_imported,  type = 'inbox',  parent = imported,  workspace = ws,  depth = 2)[0]
             
             node.items.add(*item_imported)
+        
+        upload_process.run()
+
                 
         resp = simplejson.dumps({'success': True, 'errors': []})
 
@@ -355,6 +312,7 @@ def _search(request,  items, workspace = None):
             
 #Text query                
         if query:
+            processes =  re.findall('\s*process:(\w+):(\w+)\s*', query,  re.U)
             
             metadata_query = re.findall('\s*(\w+:\w+=\w+[.\w]*)\s*', query,  re.U)
             
@@ -380,7 +338,8 @@ def _search(request,  items, workspace = None):
             
             
             simple_query = re.sub('\s*SmartFolders:"(.+)"\s*', '', simple_query)
-            simple_query = re.sub('\s*inbox:/(\w+[/\w\-]*)/\s*', '', simple_query)
+            simple_query = re.sub('\s*Inbox:/(\w+[/\w\-]*)/\s*', '', simple_query)
+            simple_query = re.sub('\s*process:(\w+):(\w+)\s*', '', simple_query)
             
 #            removing metadata query
             simple_query = re.sub('\s*(\w+:\w+=\w+[.\w]*)\s*', '', simple_query)
@@ -424,7 +383,17 @@ def _search(request,  items, workspace = None):
                     logger.debug(' MetadataProperty.DoesNotExist %s'%metadata_q)
                     queries.append(Item.objects.none())
                 
-                
+            for process in processes:
+                process_id = process[0]
+                type = process[1]
+                logger.debug('process_id %s, type %s'%(process_id, type))
+                if type == 'total':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id))
+                elif type == 'failed':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, failed__gt = 0))
+                elif type == 'completed':
+                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, actions_todo = 0))
+                queries.append(q)
                 
             
             for inbox_el in inbox:
@@ -509,7 +478,7 @@ def _search(request,  items, workspace = None):
             else:
                 
                 items = reduce(operator.and_,  queries)
-    logger.debug('items %s'%items)
+    
     items.distinct()       
     property = None
     
@@ -548,18 +517,22 @@ def _search(request,  items, workspace = None):
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
 
     user = User.objects.get(pk=request.session['_auth_user_id'])
+    logger.debug('************** searching items for user %s' % user.pk)
 
     only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
+    logger.debug('************** searching only_basket %s' % only_basket)
     
     items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
+    logger.debug('******************8 found %d items' % len(items))
 
     user_basket = Basket.get_basket(user, workspace)
     basket_items = user_basket.items.all().values_list('pk', flat=True)
+    logger.debug('******************8 found %d basket items' % len(basket_items))
 
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-    items = _search(request,  items)
+    #items = _search(request,  items)
 
     total_count = items.count()
 
@@ -569,27 +542,28 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     return (items, total_count)
 
 
-def _get_thumb_url(item, workspace):
-
-    thumb_url = NOTAVAILABLE
-    thumb_ready = 0
-
-    try:
-        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = 'thumbnail')
-        url = item.get_variant(workspace, variant).get_component_url()
-        if url:
-            thumb_ready = 1
-            thumb_url = url
-    except:
-        pass
-        
-    return thumb_url, thumb_ready
+#def _get_thumb_url(item, workspace):
+#
+#    thumb_url = NOTAVAILABLE
+#    thumb_ready = 0
+#
+#    try:
+#        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = 'thumbnail')
+#        url = item.get_variant(workspace, variant).get_component_url()
+#        if url:
+#            thumb_ready = 1
+#            thumb_url = url
+#    except:
+#        pass
+#        
+#    return thumb_url, thumb_ready
 
 @login_required
-def load_items(request, view_type=None, unlimited=False, ):
+def load_items(request, view_type=None, unlimited=False):
+    logger.debug('********************88 load_items')
     from datetime import datetime
     try:
-        user = User.objects.get(pk=request.session['_auth_user_id'])
+        user = request.user
         workspace_id = request.POST.get('workspace_id')
 
 #        if  workspace_id:
@@ -621,8 +595,8 @@ def load_items(request, view_type=None, unlimited=False, ):
 
         items_pks = [item.pk for item in items]
         
-        tasks_pending_obj = Task.objects.filter(component__workspace=workspace, component__item__pk__in=items_pks)     
-        tasks_pending = tasks_pending_obj.values_list('component__item',  flat=True)
+        tasks_pending_obj = []
+        tasks_pending = []
                 
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
@@ -630,9 +604,22 @@ def load_items(request, view_type=None, unlimited=False, ):
         default_language = get_metadata_default_language(user, workspace)
 
         user_basket = Basket.get_basket(user, workspace)
-
         basket_items = user_basket.items.all().values_list('pk', flat=True)
-        item_dict = _get_items_info(user,workspace, items)[0]
+        
+        items_info = []
+        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+        default_language = get_metadata_default_language(user, workspace)    
+        
+        for item in items:
+            tmp = item.get_info(workspace, thumb_caption, default_language)
+            if item.pk in basket_items:
+                tmp['item_in_basket'] = 1
+            else:
+                tmp['item_in_basket'] = 0
+                
+            items_info.append(tmp)
+        
         
 #        for item in items:
 #            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
@@ -680,8 +667,7 @@ def load_items(request, view_type=None, unlimited=False, ):
 #                
 #            item_dict.append(item_info)
         
-        res_dict = {"items": item_dict, "totalCount": str(total_count)}
-
+        res_dict = {"items": items_info, "totalCount": str(total_count)}       
         resp = simplejson.dumps(res_dict)
 
         return HttpResponse(resp)
@@ -710,8 +696,8 @@ def workspace(request, workspace_id = None):
     """
     theme = _get_theme()
     
-    logger.debug('In workspace.views method workspace: current theme is %s' % theme)
-    logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
+#    logger.debug('In workspace.views method workspace: current theme is %s' % theme)
+#    logger.debug('In workspace.views method workspace: current theme css file is %s' % theme.css_file)
     user = request.user
     logger.info('workspace_id %s'%workspace_id)
     if not workspace_id:
@@ -730,134 +716,64 @@ def workspace(request, workspace_id = None):
     logger.info('workspace %s'%workspace)
     return render_to_response('workspace_gui.html', RequestContext(request,{'ws_id':workspace.pk,  'ws_name': workspace.get_name(user),  'ws_description': workspace.description, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
 
-
-
-
-def _replace_groups(group, item, default_language):
-    namespace = group.group('namespace')
-    field = group.group('field')
+@login_required
+def upload_status(request):
+    """
+    Returns information for the given items, including name, size, url of thumbnail and preview
+    Called every 10 seconds by the GUI for refreshing information on pending items
+    """
     try:
-        schema = MetadataProperty.objects.get(namespace__prefix=namespace, field_name=field)
-        values = item.get_metadata_values(schema)
-        if isinstance(values, list):
-            value = values[0]
-        elif isinstance(values, dict):
-            value = values.get(default_language, '')
+        workspace = request.session.get('workspace')
+        user = request.user
+        items_in_progress = request.POST.getlist('items')
+        logger.debug('items_in_progress %s'%items_in_progress)
+        resp = {'items':[]}
+#### Added by orlando
+#        process_id = request.POST.get('process_id')
+# get completed targets
+#        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = true)
+#        info = {}
+
+        process_in_progress = Process.objects.filter(end_date__isnull = True)
+        if process_in_progress:
+            pending_items = ProcessTarget.objects.filter(process__in = process_in_progress, actions_todo__gt = 0)
         else:
-            value = values
-        if not value:
-            value = ''
-
-        return value
-    except:
-        raise
-        return ''
-
-def _get_thumb_caption(item, template_string, language):
-    caption = 'no_valid_caption_available'
-    try:
-        pattern = re.compile('%(?P<namespace>\w+):(?P<field>\w+)%')
-        groups = re.finditer(pattern, template_string)
-        values_dict = {}
-        for g in groups:
-            values_dict[g.group(0)] = _replace_groups(g, item, language)
-
-        caption = template_string
-
-        for schema in values_dict.keys():
-            caption = caption.replace(schema, values_dict[schema])
-
-        if not len(caption):
-            #caption = str(item.get_file_name())
-            caption = unicode(item.get_file_name())
-    except Exception, ex:
-        logger.debug('ERROR while getting thumb caption: %s ' % ex)
-
-    return caption
-    
-def _get_items_info(user, workspace, items):
+            pending_items = ProcessTarget.objects.none()
         
-        items_id = [i.pk for i in items]
-        
-        user_basket = Basket.get_basket(user, workspace)
-
-        basket_items = user_basket.items.all().values_list('pk', flat=True)
-        
-        ws_tasks = Task.objects.filter(component__workspace=workspace)        
-        tasks_pending = ws_tasks.filter(state='pending')
-        #tasks_done = ws_tasks.filter(state='done')
-        tasks_failed = ws_tasks.filter(state='failed')
-    
-        #items_done = tasks_done.values_list('component__item', flat=True).distinct()
-        items_pending = tasks_pending.values_list('component__item', flat=True).distinct()
-        items_failed = tasks_failed.values_list('component__item', flat=True).distinct()
-        
-        items_done = list(set(items_id).difference(list(items_pending)))
-#        all_items = set(items_done + list(items_pending))
-        logger.debug('--------##### get_status: items done: %s' % ' '.join(map(str, items_done)))
-    
-        total_pending = items_pending.count()
-        total_failed = items_failed.count()
-        
-        update_items = []
-        now = time.time()
-        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
-        default_language = get_metadata_default_language(user, workspace)    
-        logger.debug('items_done %s'%items_done)
-        logger.debug('items %s'%items)
-        logger.debug('items_pending %s'%items_pending)
-        
-        
-        for item in items:
+        resp['status_bar'] = {
+            'process_in_progress':  process_in_progress.count(),
+            'pending_items': pending_items.count()
+        }
+####
+        if request.POST.get('update_script_monitor'):
+            from dam.scripts.views import _script_monitor
+            processes_info = _script_monitor(workspace)
+            resp['scripts'] = processes_info 
+            
+        for item_id in items_in_progress:
             try:
-                #           item = Item.objects.get(pk=i)            
-                thumb_url, thumb_ready = _get_thumb_url(item, workspace)
-                logger.debug('\n\n==>thumb_url %s, thumb_ready %s' % (thumb_url, thumb_ready))
-                my_caption = _get_thumb_caption(item, thumb_caption, default_language)
-                logger.debug('==>my_caption: %s' % my_caption)
-            
-                item_in_basket = 0
 
-                if item.pk in basket_items:
-                    item_in_basket = 1
+        
+                item = Item.objects.get(pk = int(item_id)) 
+                tmp = item.get_info(workspace, user)
+#                if item_id not in completed_targets:
+#                    tmp['status'] = 'in_progress'
+#                else:
+#                    tmp['status'] = 'completed'
                 
-                geotagged = 0
-                if GeoInfo.objects.filter(item=item).count() > 0:
-                    geotagged = 1
+                resp['items'].append(tmp)
                 
-                preview_available = tasks_pending.filter(component__variant__name = 'preview', component__item=item).count()
-                if item.type.name == 'audio':
-                    inprogress = int(not (preview_available == 0))
-                else:
-                    inprogress = int(not thumb_ready)
-                tmp = {
-                    'name':my_caption,
-                    'size':item.get_file_size(), 
-                    'pk': smart_str(item.pk), 
-                    'thumb': thumb_ready,
-                    'inprogress': inprogress,
-                    'item_in_basket': item_in_basket,
-                    'geotagged': geotagged,
-                    'url':smart_str(thumb_url), 
-                    'type': smart_str(item.type.name),
-                    'url_preview':smart_str("/redirect_to_component/%s/preview/?t=%s" % (item.pk,  now)),
-                    'preview_available': int(preview_available ==  0)
-                    }
-                if item.pk in items_pending:
-                    tmp['inprogress'] = 1
-            
-                states = item.stateitemassociation_set.all()
-                if states.count():
-                    state_association = states[0]
-                
-                    tmp['state'] = state_association.state.pk
-            
-                update_items.append(tmp)
-            except Exception, ex:
-                logger.debug('ERROR while getting file info: %s ' % ex)
+            except ProcessTarget.DoesNotExist:
+                logger.debug('process target not found for item %s'%item)
                 continue
-        return (update_items, total_pending, total_failed)
+
+
+       
+        resp = simplejson.dumps(resp)
+        return HttpResponse(resp)
+    except Exception,ex:
+        logger.exception(ex)
+        raise ex
     
 @login_required
 def get_status(request):
@@ -866,20 +782,53 @@ def get_status(request):
     Called every 10 seconds by the GUI for refreshing information on pending items
     """
     try:
-        items = simplejson.loads(request.POST.get('items'))
-        items = [int(i) for i in items]
-        items = Item.objects.filter(pk__in = items)
-        #logger.debug('######## items: %s' % items)
-        #logger.debug('##### get_status: items requested %s' % ' '.join(map(str, items)))
-    
+        workspace = request.session.get('workspace')
         user = request.user
-    
-        workspace = request.session.get('workspace', None)
-        update_items, total_pending, total_failed = _get_items_info(user,workspace, items)
-           
-        resp_dict = {'pending': total_pending, 'failed': total_failed, 'items': update_items}
-        logger.debug('\n ################### get_status: %s' % resp_dict)
-        resp = simplejson.dumps(resp_dict)
+        items_in_progress = request.POST.getlist('items')
+        logger.debug('items_in_progress %s'%items_in_progress)
+        resp = {'items':[]}
+#### Added by orlando
+#        process_id = request.POST.get('process_id')
+# get completed targets
+#        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = true)
+#        info = {}
+
+        process_in_progress = Process.objects.filter(end_date__isnull = True)
+        if process_in_progress:
+            pending_items = ProcessTarget.objects.filter(process__in = process_in_progress, actions_todo__gt = 0)
+        else:
+            pending_items = ProcessTarget.objects.none()
+        
+        resp['status_bar'] = {
+            'process_in_progress':  process_in_progress.count(),
+            'pending_items': pending_items.count()
+        }
+####
+        if request.POST.get('update_script_monitor'):
+            from dam.scripts.views import _script_monitor
+            processes_info = _script_monitor(workspace)
+            resp['scripts'] = processes_info 
+            
+        for item_id in items_in_progress:
+            try:
+
+        
+                item = Item.objects.get(pk = int(item_id)) 
+                tmp = item.get_info(workspace, user)
+#                if item_id not in completed_targets:
+#                    tmp['status'] = 'in_progress'
+#                else:
+#                    tmp['status'] = 'completed'
+                
+                resp['items'].append(tmp)
+                
+            except ProcessTarget.DoesNotExist:
+                logger.debug('process target not found for item %s'%item)
+                continue
+
+
+       
+        resp = simplejson.dumps(resp)
         return HttpResponse(resp)
     except Exception,ex:
         logger.exception(ex)

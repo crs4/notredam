@@ -152,3 +152,8 @@ INSTALLED_APPS = (
 	'dam.appearance',
     'dam.mprocessor',
 )
+
+INSTALLED_ACTIONS=[
+    'dam.scripts.actions.adapt_image'
+                   
+]

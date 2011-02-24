@@ -19,8 +19,7 @@
 
 from django.conf.urls.defaults import *
 
-urlpatterns = patterns('',
-
+urlpatterns = patterns('',   
     (r'^admin_workspace/(?P<ws_id>\d+)/$','dam.workspace.views.admin_workspace'),
     (r'^admin_workspace/add/$','dam.workspace.views.create_workspace'),
 
@@ -44,5 +43,7 @@ urlpatterns = patterns('',
     (r'^get_available_permissions/', 'dam.workspace.views.get_available_permissions'),
     (r'^get_available_users/', 'dam.workspace.views.get_available_users'),
     (r'^save_members/', 'dam.workspace.views.save_members'), 
-    (r'^download_renditions/', 'dam.workspace.views.download_renditions')
+    (r'^download_renditions/', 'dam.workspace.views.download_renditions'),    
 )
+
+

@@ -809,7 +809,7 @@ function generate_details_forms(panel, grid, selected, actionsStore, media_type)
  * @return
  */
 
-function newRecord(data, media_type){
+function newRecord(data){
 	//why copy() not work
 	var cloned_parameters = [];
 	var tmp = {};
@@ -834,60 +834,60 @@ function newRecord(data, media_type){
  * @param media_type type of media ('image', 'movie'...)
  * @return
  */
-function _pull_data(sm,media_type, actionsStore){
+function _pull_data(sm, actionsStore){
 
-	var i,j;
-	if (DEBUG_SCRIPT){
-		console.log('pull_data init');
-		console.log(sm.getSelected());
-	}
-	
-	if 	(sm.getSelected()){
-		var newParams = [];
-		var appParams = {};
-		var r = sm.getSelected();
-		
-		var params = r.get('parameters');		
-		
-		for (i=0;i<params.length;i++){
-    		appParams = params[i];
-    		if (DEBUG_SCRIPT)
-    			console.log(appParams.name);
-    		if (appParams.name == 'ratio'){
-    			appParams = {};
-    			appParams['name']  = 'ratio';
-    			appParams['type']  = 'string';
-    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
-    			if (appParams['value'] == 'custom'){
-    				var w = Ext.getCmp('crop_width_custom').getValue();
-    				var h = Ext.getCmp('crop_height_custom').getValue();
-    				appParams['value'] = w+':'+h;
-    			}
-    		}else if (appParams.name == 'output'){
-    			//recuperare dizionario
-    			
-    			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
-    			for (key in dict['data']['parameters'][2]['values'][media_type]) {
-    				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
-    					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
-    						appParams['value'] = key;
-    					}
-    				}
-    			}
-    		}else{
-    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
-    		}
-    		newParams.push(appParams);
-    	}
-		if (DEBUG_SCRIPT){
-			console.log("_pull_data finished");
-			console.log(newParams);
-		}
-	    r.set('parameters',newParams);
-	    r.commit();
-	}else{
-//		console.log('else sm.getSelected()');
-	}
+//	var i,j;
+//	if (DEBUG_SCRIPT){
+//		console.log('pull_data init');
+//		console.log(sm.getSelected());
+//	}
+//	
+//	if 	(sm.getSelected()){
+//		var newParams = [];
+//		var appParams = {};
+//		var r = sm.getSelected();
+//		
+//		var params = r.get('parameters');		
+//		
+//		for (i=0;i<params.length;i++){
+//    		appParams = params[i];
+//    		if (DEBUG_SCRIPT)
+//    			console.log(appParams.name);
+//    		if (appParams.name == 'ratio'){
+//    			appParams = {};
+//    			appParams['name']  = 'ratio';
+//    			appParams['type']  = 'string';
+//    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()['radio_custom_crop'].value;
+//    			if (appParams['value'] == 'custom'){
+//    				var w = Ext.getCmp('crop_width_custom').getValue();
+//    				var h = Ext.getCmp('crop_height_custom').getValue();
+//    				appParams['value'] = w+':'+h;
+//    			}
+//    		}else if (appParams.name == 'output'){
+//    			//recuperare dizionario
+//    			
+//    			dict = Ext.getCmp('action_list_'+media_type).getStore().getAt(actionsStore.findExact('name', 'save'))
+//    			for (key in dict['data']['parameters'][2]['values'][media_type]) {
+//    				if (dict['data']['parameters'][2]['values'][media_type].hasOwnProperty(key)) {
+//    					if (dict['data']['parameters'][2]['values'][media_type][key] == Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name]){
+//    						appParams['value'] = key;
+//    					}
+//    				}
+//    			}
+//    		}else{
+//    			appParams['value'] = Ext.getCmp('detailAction_'+media_type).getForm().getFieldValues()[appParams.name];
+//    		}
+//    		newParams.push(appParams);
+//    	}
+//		if (DEBUG_SCRIPT){
+//			console.log("_pull_data finished");
+//			console.log(newParams);
+//		}
+//	    r.set('parameters',newParams);
+//	    r.commit();
+//	}else{
+////		console.log('else sm.getSelected()');
+//	}
 }
 
 /**
@@ -943,7 +943,7 @@ function _get_layout_tab(obj, media_type){
 								listeners    :{
 									beforerowselect : function(sm,rowIndex, keepExisting, record){
 								        //pull data
-								        _pull_data(sm,media_type,Ext.getCmp('action_list_'+media_type).getStore());
+								        _pull_data(sm,Ext.getCmp('action_list').getStore());
 							        	return true;
 									}, 
 									selectionchange : function(){
@@ -1350,6 +1350,8 @@ function newRecordLoad(data,type){
 
 		cloned_parameters.push(tmp);
 	}
+	
+
 
 	return new ActionRecord({name: data.type, parameters: cloned_parameters});
 
@@ -1780,3 +1782,466 @@ function manage_events(){
 	manage_events_win.show();
 }
 
+
+
+function edit_script(is_new){
+//	var cols = [
+//		{ id : 'name',  header: "Action", dataIndex: 'name'}
+//	];
+//	var my_action = new Ext.grid.GridPanel({
+//	    region           : 'west',
+//        title            : 'Your script action',
+//        id               : 'my_action' ,
+//		width            : 300,
+//		border		     : false,
+//	    store            : new Ext.data.JsonStore({
+//	    					fields:['name', 'parameters'],
+//	    					root: 'actions'
+//	    					}),
+//	    columns          :cols,
+//	    stripeRows       : true,
+//	    autoExpandColumn : 'name',
+//		frame            : true,
+//        hideHeaders      : true,
+//		sm               : new Ext.grid.RowSelectionModel({
+//								singleSelect : true,
+//								listeners    :{
+//									 
+//									selectionchange : function(){
+//										var record = this.getSelected();
+//										var details_form = Ext.getCmp('detailAction');
+//										details_form.removeAll();
+//										
+//										Ext.each(record.data.parameters, function(param){
+//											//console.log(param);
+//											if (param.type == 'int')
+//												details_form.add(new Ext.form.NumberField({
+//												fieldLabel: param.name
+//													
+//													
+//												}))
+//											
+//										});
+//										details_form.doLayout();
+//								        
+//									}			
+//								}
+//							})
+//
+//	});
+//
+//	var action_list = new Ext.grid.GridPanel({
+//	    region           : 'east',
+//        title            : 'Available action',
+//        id               : 'action_list',
+//		width            : 300,	
+//		border		     : false,
+//	    store            : new Ext.data.JsonStore({
+//	    					fields:['name', 'parameters'],
+//	    					url: '/get_actions/',
+//	    					autoLoad: true,
+//	    					root: 'actions'
+//	    					}),
+//	    columns          : cols,
+//	    stripeRows       : true,
+//	    autoExpandColumn : 'name',
+//		frame            : true,
+//        hideHeaders      : true,
+//		sm               : new Ext.grid.RowSelectionModel({singleSelect : true})
+//    });
+//
+//	var detail_action = new Ext.FormPanel({
+//        title       : 'Details',
+//        id          : 'detailAction',
+//	    region      : 'south',
+//	    height      : 180,
+//	    frame       : true,
+//	    border		: false
+//	});
+//
+//	var button_panel =new Ext.Panel({
+//        region  : 'center',
+//        border: false,
+//        id      : 'buttons_panel', 
+//        html    : '<div style="text-align:center; padding-top:80;"><img style="margin:2px" src="/files/images/up2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_up()" /><br/><img style="margin:2px" src="/files/images/down2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_down()"/><img style="margin:2px" src="/files/images/left2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_left()" /><br/><img style="margin:2px" src="/files/images/right2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_right()"/> </div>',
+//        
+//	    move_to_up:function(){
+//	        var grid = Ext.getCmp('my_action');
+//	        var record_selected = grid.getSelectionModel().getSelected();
+//	        if(record_selected){
+//	            var rank = grid.getStore().indexOf(record_selected);
+//	            if (rank > 0){
+//	                grid.getStore().remove(record_selected);
+//	                grid.getStore().insert(rank - 1, record_selected);
+//	                grid.getSelectionModel().selectRecords([record_selected]);
+//	            }
+//	        }
+//	            
+//	    },   
+//
+//	    move_to_down: function(){
+//	        var grid = Ext.getCmp('my_action');
+//	        var record_selected = grid.getSelectionModel().getSelected();
+//	        if(record_selected ){
+//	            var rank = grid.getStore().indexOf(record_selected);
+//	            if (rank < grid.getStore().getCount() - 1){
+//	                grid.getStore().remove(record_selected);
+//	                grid.getStore().insert(rank +1, record_selected);
+//	                grid.getSelectionModel().selectRecords([record_selected]);
+//	            }
+//	        }
+//	        
+//	    },
+//
+//        move_to_left: function (){
+//	        var selected_grid = Ext.getCmp('action_list');
+//	        var available_grid = Ext.getCmp('my_action');
+//	        if (selected_grid.getSelectionModel().hasSelection()){
+//	        	//define parameters through form
+//	        	var selected  = selected_grid.getSelectionModel().getSelected();
+//	        	//why copy() not work
+//	        	
+//	        	available_grid.getStore().loadData({actions:[{name: selected.data.name, parameters: selected.data.parameters}]}, true);
+//	        	available_grid.getSelectionModel().selectLastRow();
+//	        }else{
+//				// Show a dialog using config options:
+//				Ext.Msg.show({
+//				   title:'Warning',
+//				   msg: 'You must select one row!',
+//				   width: 300,
+//				   buttons: Ext.Msg.OK,
+//				   icon: Ext.MessageBox.WARNING
+//				});	        				
+//			}
+//	     },  
+//
+//	    move_to_right: function(){
+//	        var selected_grid = Ext.getCmp('my_action');
+//	        var available_grid = Ext.getCmp('action_list');
+//	        if (selected_grid.getSelectionModel().hasSelection()){
+//	        	var selected  = selected_grid.getSelectionModel().getSelected();
+//	        	selected_grid.getStore().remove(selected);
+//	        	Ext.getCmp('detailAction_'+media_type).removeAll();
+//	        }
+//	     }
+//        
+//    }); 	
+//
+//	var script_form = new Ext.form.FormPanel({
+//		frame:true,		
+//		region: 'north',
+//		border: false,
+//		height:40,
+//		items:[
+//			new Ext.form.TextField({
+//				id:'script_name',
+//				name: 'name',
+//				fieldLabel: 'Name',
+//				allowBlank: false,
+//				width: 200
+//			})
+//		]
+//	});
+	
+	
+	var actions_store, win;
+	
+	function create_window(available_actions){
+		var menu_actions = [];
+		Ext.each(available_actions, function(action_name){
+			menu_actions.push({
+				text: action_name,
+				handler: function(){}
+				
+			});
+			
+		});
+//		console.log(available_actions);
+//		console.log(menu_actions);
+//		
+		return new Ext.Window({
+	        id:'edit_script',        
+	        title       : 'Edit Script',
+	        layout      : 'fit',
+		    width       : 650,
+		    height      : 570,
+	        modal: true,
+	        resizable : false,
+	        border: false,
+	        items:[
+	        	
+	        	new Ext.Panel({
+	        		
+	        		
+	        		layout: 'border',
+	        		items: [
+	        			new Ext.form.FormPanel({
+	        				region: 'north',
+	        				height: 100,
+					        bodyStyle:'padding:5px 5px 0',
+	        				defaults: {width:400},
+	        				border: false,
+	        				 
+	        				 
+	        				items:[
+	        					new Ext.form.TextField({
+	        						fieldLabel: 'Name',
+	        						name: 'name'
+	        					}),
+	        					new Ext.form.TextArea({
+	        						fieldLabel: 'Description',
+	        						name: 'description'
+	        					})
+	        				]
+	        			}),
+		        		new Ext.Panel({
+			        		region: 'center',
+			        		height: 400,
+			        		title: 'Actions',
+	//		        		border: false,
+			        		tbar:[{
+			        				text: 'Add',
+			        				menu: menu_actions
+			        			},
+			        			
+			        			{
+			        				text: 'Remove'
+			        			}
+			        		],
+			        		items:	new Ext.list.ListView({
+			        			
+			        			hideHeaders: true,
+			        			store: new Ext.data.JsonStore({
+			        				root: 'actions',
+			        				fields: ['name'],
+			        				url: '/get_pipeline/'
+			        				
+			        			}),
+			        			columns:[{
+			        				dataIndex: 'name',
+			        				header: 'Actions'
+			        			}
+			        			]
+			        			
+			        		})
+		        			
+		        		})
+		        			        		
+	        		]
+	        	
+	        	})
+	        ],
+	        buttons:[
+	        	{
+	        		text: 'Save'
+	        	},
+	        	{
+	        		text: 'Cancel'
+	        	}
+	        ]
+	        
+		});
+	
+	};
+	
+	
+	actions_store = new Ext.data.JsonStore({
+		url: '/get_available_actions/',
+		root: 'actions',
+		fields: ['name', 'params'],
+		listeners: {
+			load: function(store, actions){
+				var available_actions = [];
+				console.log(actions);
+				Ext.each(actions, function(action){
+					available_actions.push(action.data.name);
+					
+				
+				});
+				console.log(available_actions);
+				win = create_window(available_actions);
+				win.show();
+			
+			},
+			exception: function(){
+				win = create_window([]);
+				win.show()
+			
+			}
+		}
+	
+	});
+	actions_store.load();	
+	
+	
+	
+}
+
+function show_items (process_id, type){
+	var query = String.format('process:{0}:{1}',process_id, type)
+	var media_tab = Ext.getCmp('media_tabs').getActiveTab();
+	 media_tab.getSearch().setValue(query);
+	set_query_on_store({query: query});
+
+};
+
+function show_monitor(){
+		var win_id = 'script_monitor';
+		if (Ext.WindowMgr.get(win_id))
+			return;
+			
+		 var expander = new Ext.ux.grid.RowExpander({
+	        tpl : new Ext.Template(
+	            '<p>Launched By: <b>{launched_by}</b></p>',
+	            '<p>Total Items: <a href="javascript:show_items(\'{id}\', \'total\')"><b>{total_items}</b></a></p>',
+	            '<p>Items Completed: <a href="javascript:show_items(\'{id}\', \'completed\')"><b>{items_completed}</b></a></p>',
+	            '<p>Items Failed: <a href="javascript:show_items(\'{id}\', \'failed\')"><b>{items_failed}</b></a></p>'
+	        )
+	    });
+		var win = new Ext.Window({
+			id: win_id,
+			title: 'Script Monitor',
+			height: 500,
+			width: 800,
+			layout: 'fit',
+			collapsible: true,			
+			
+			update_progress: function(){
+				var store = Ext.getCmp('script_monitor_list').getStore();
+				var script_in_progress = store.queryBy(function(r){
+					return (r.data.progress < 100)
+				}).items;
+				if (script_in_progress.length > 0){				
+					
+					return true;
+				}
+				else
+					return false;
+			
+			},
+			
+			items:[
+				
+			
+				new Ext.grid.GridPanel({
+					autoScroll: true,
+					id: 'script_monitor_list',
+					plugins: expander,
+					store: new Ext.data.JsonStore({
+					    	url: '/script_monitor/',				    	
+					    	fields:[
+					    		'id',
+					    		'name',
+					    		'time_elapsed',
+					    	
+					    		'progress',
+					    		'type',
+					    		'total_items',
+					    		'items_completed',
+					    		'items_failed',
+					    		'start_date',
+					    		'end_date',
+					    		'launched_by'
+					    	],
+					    	root: 'scripts'
+					    }),		
+					    viewConfig: {
+    						forceFit: true
+    					},
+    					
+					    columns: [
+					    	expander,
+					    {
+					        header: 'Name',											       
+					        dataIndex: 'name',
+					        width: 250,
+					        sortable: true,
+					        menuDisabled: true
+					    },
+					    
+					    {
+					        header: 'Type',											        
+					        dataIndex: 'type',
+					        menuDisabled: true
+					        
+					    },
+					    
+//					    {
+//					        header: 'Launched By',											        
+//					        dataIndex: 'launched_by'												        
+//					    },
+					    {
+					        header: 'Start Date',											        
+					        dataIndex: 'start_date',
+					        type: 'date',
+					        sortable: true,
+					        menuDisabled: true
+					        
+					    },
+					    
+					    {
+					        header: 'End Date',											        
+					        dataIndex: 'end_date',
+					        type: 'date',
+					        sortable: true,
+					        menuDisabled: true
+					        
+					    },
+					    
+					    
+					    new Ext.ux.grid.ProgressColumn({
+						    header : "Progress",
+						    dataIndex : 'progress',
+						    width : 120,
+					        menuDisabled: true,
+						    renderer : function(v, p, record) {
+							    var style = '';
+							    var textClass = (v < 55) ? 'x-progress-text-back' : 'x-progress-text-front' + (Ext.isIE6 ? '-ie6' : '');
+							
+							    //ugly hack to deal with IE6 issue
+							    var failures;
+							    if (record.data.items_failed > 0)
+							    	failures = String.format('({0} items failed)', record.data.items_failed);
+							    else
+							    	failures = '';
+							    var text = String.format('</div><div class="x-progress-text {0}" style="width:100%;" id="{1}">{2}</div></div>',
+							      textClass, Ext.id(), v + this.textPst + failures
+							    );
+							    text = (v<96) ? text.substring(0, text.length - 6) : text.substr(6);
+							
+							    if (this.colored == true) {
+							      if (v <= 100 && v > 66)
+							        style = '-green';
+							      if (v < 67 && v > 33)
+							        style = '-orange';
+							      if (v < 34)
+							        style = '-red';
+							    }
+							
+							    p.css += ' x-grid3-progresscol';
+							    return String.format(
+							      '<div class="x-progress-wrap"><div class="x-progress-inner"><div class="x-progress-bar{0}" style="width:{1}%;">{2}</div>' +
+							      '</div>', style, v, text
+							    );
+							  }
+//						    textPst : '%', // string added to the end of the cell value (defaults to '%')
+//						    actionEvent: 'click', // click event (defaults to 'dblclick')
+//						    colored : true, // True for pretty colors, false for just blue (defaults to false)
+//						    editor : new Ext.form.TextField() // Define an editor if you want to edit
+						  })
+
+					   
+					    ]
+				
+				})
+			]
+			
+			
+		
+		});
+		
+		win.show();
+		Ext.getCmp('script_monitor_list').getStore().load();
+		
+		
+};
