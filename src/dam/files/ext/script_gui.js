@@ -5,7 +5,13 @@ Ext.ux.FieldSetContainer = function(config) {
 
 Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	border: false,
-	layout: 'form'
+	layout: 'form',
+	notify_load: function(){
+		Ext.each(this.items.items, function(item){
+			if (item.notify_load)
+				item.notify_load();
+		});
+	}
 });
 Ext.reg('fieldsetcontainer', Ext.ux.FieldSetContainer);
 
@@ -287,6 +293,18 @@ Ext.ux.CBFieldSet = function(config) {
 
 
 Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {	
+	
+	notify_load: function(){
+		var expand = false;
+		Ext.each(this.items.items, function(item){
+			if (!(item instanceof Ext.form.Hidden) && item.getValue())
+				expand = true;			
+		});
+		
+		if (expand)
+			this.expand();
+	},
+	
 	initComponent:function() {
 	 	 var cb_id = Ext.id();
 	 	 Ext.apply(this, {
@@ -792,17 +810,8 @@ Ext.onReady(function(){
 						    	action_box.form.getForm().setValues(action.params);
           						
           						Ext.each(action_box.form.items.items, function(field){
-          							
-          							if (field.xtype == 'cbfieldset'){
-          								Ext.each(field.items.items, function(f){          									
-          									if (f.value){
-          										f.enable();
-          										field.expand();
-          									}
-          									
-          								});
-          								
-          							}
+          							if (field.notify_load)
+          								field.notify_load();
           								
           						});
           						
