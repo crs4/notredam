@@ -55,6 +55,8 @@ def inspect(workspace):
               'xtype': 'movablecbfieldset',
               'title': 'Resize',
               'name': 'resize',
+              'order_field_name': 'actions',
+              'order_field_value': 'resize',
               
              
               'items':[{
@@ -82,6 +84,8 @@ def inspect(workspace):
               'xtype': 'movablecbfieldset',
               'title': 'Crop',
               'name': 'crop',
+              'order_field_name': 'actions',
+              'order_field_value': 'crop',
               'items':[{
                     'xtype':'numberfield',
                     'name': 'crop_h',
@@ -105,39 +109,41 @@ def inspect(workspace):
               ]
               },
               {
-              'xtype': 'movablecbfieldset',
+              'xtype': 'watermarkfieldset',
               'title': 'Watermark',
               'name': 'watermark',
-              'items':[
-                       {
-                        'xtype': 'compositefield',
-                        'items':[
-                                 {
-                                    'id': 'wm_id',
-                                    'width': 160,
-                                    'xtype':'textfield',
-                                    'name': 'wm_id',
-                                    'fieldLabel': 'image',                    
-                                    'description': 'image',
-                                    
-                #                    'value': 100,
-                                    'help': ''
-                                },
-                                {
-                                 'xtype': 'watermarkbrowsebutton',
-                                 'text': 'Browse',
-                                 'values': variants
-                                 
-                                   
-                                }
-                        ]
-                        },
-                        {
-                         'xtype': 'watermarkposition'
-                         
-                         },
-                        
-              ]
+              'order_field_name': 'actions',
+              'order_field_value': 'watermark'
+#              'items':[
+#                       {
+#                        'xtype': 'compositefield',
+#                        'items':[
+#                                 {
+#                                    'id': 'wm_id',
+#                                    'width': 160,
+#                                    'xtype':'textfield',
+#                                    'name': 'wm_id',
+#                                    'fieldLabel': 'image',                    
+#                                    'description': 'image',
+#                                    
+#                #                    'value': 100,
+#                                    'help': ''
+#                                },
+#                                {
+#                                 'xtype': 'watermarkbrowsebutton',
+#                                 'text': 'Browse',
+#                                 'values': variants
+#                                 
+#                                   
+#                                }
+#                        ]
+#                        },
+#                        {
+#                         'xtype': 'watermarkposition'
+#                         
+#                         },
+#                        
+#              ]
               },
               ]
              

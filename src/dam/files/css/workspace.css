@@ -105,8 +105,9 @@
     width: 150px;
     height: 116px;
     float: left;
+    /*left:0px !important;*/
     margin-top: 20px;
-    margin-right: 200px;
+    
     margin-bottom: 20px;
     border: 3px double #104166;
     border-top-color: #104166;
@@ -122,7 +123,7 @@
 }
 
 .position_watermarking:hover {
-    background: yellow !important;
+    background-color: yellow !important;
     opacity: 0.8 !important;
 }
 .tri_state_cb{
