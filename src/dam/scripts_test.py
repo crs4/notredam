@@ -172,6 +172,7 @@ class DoTest:
     def register(self, name, type, description, pipeline_definition):
         preview = Pipeline.objects.create(name=name,  description='', params = simplejson.dumps(pipeline_definition), workspace = self.ws)
         print 'registered pipeline %s, pk = %s' % (name, preview.pk)
+        
         PipelineType.objects.create(type = type, workspace = self.ws, pipeline = preview)
 
     def _new_item(self, filepath):
