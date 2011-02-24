@@ -805,7 +805,7 @@ def damadmin_get_list_file_backup(request):
             if extension == '.ndar':
                 resp['file_backup'].append(f)
     else:
-        resp['file_backup'].append({'file_name': 'pizza.ndar', 'data':'aaa'})
+        resp['file_backup'].append({})
 
     return HttpResponse(simplejson.dumps(resp))
 
