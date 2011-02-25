@@ -470,7 +470,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
  		
  		console.log(values);
  		container.form.getForm().setValues(values);
- 		new_obj.check_expand();
+ 		new_obj.data_loaded();
  		
 	 },
 	move_up: function(){
