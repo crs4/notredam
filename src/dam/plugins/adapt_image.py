@@ -57,7 +57,7 @@ def inspect(workspace):
               'name': 'resize',
               'order_field_name': 'actions',
               'order_field_value': 'resize',
-              
+              'position':0,
              
               'items':[{
                     'xtype':'numberfield',
@@ -84,6 +84,7 @@ def inspect(workspace):
               'xtype': 'movablecbfieldset',
               'title': 'Crop',
               'name': 'crop',
+              'position':1,
               'order_field_name': 'actions',
               'order_field_value': 'crop',
               'items':[{
@@ -114,6 +115,7 @@ def inspect(workspace):
               'name': 'watermark',
               'order_field_name': 'actions',
               'order_field_value': 'watermark',
+              'position':2,
                'renditions': variants
 #              'items':[
 #                       {
