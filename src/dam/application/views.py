@@ -190,7 +190,6 @@ def confirm_user(request, url):
 
     return render_to_response('registration_completed.html', RequestContext(request,{'usr':user}))
 
-    
 def activate_user(username):
     from django.core.mail import send_mail
     

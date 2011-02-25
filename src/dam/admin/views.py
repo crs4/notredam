@@ -18,6 +18,11 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermissionsGroup, WorkspacePermission
 from dam.workspace.views import _get_theme
 
+from settings import BACKUP_PATH, INSTALLATIONPATH
+from dam import logger
+import os
+import time
+
 @staff_member_required
 def dam_admin(request):
     """
@@ -638,6 +643,8 @@ def damadmin_get_workspaces(request):
         ws_dict = {'id': ws.id, 'ws': ws.name, 'description': ws.description, 'creator_id': ws.creator.id, 'creator': ws.creator.username}
 
         resp['elements'].append(ws_dict)
+        
+    logger.info("get_workspaces %s" %resp)
 
     return HttpResponse(simplejson.dumps(resp))    
 
@@ -781,4 +788,203 @@ def damadmin_save_ws(request):
             except:
                 continue
 
-    return HttpResponse(simplejson.dumps({'success': True}))        
+    return HttpResponse(simplejson.dumps({'success': True}))     
+
+@staff_member_required
+def damadmin_get_list_file_backup(request):
+
+    resp = {'file_backup':[]}
+    if (os.path.exists(BACKUP_PATH)):
+        files = []
+        for f in os.listdir(BACKUP_PATH):
+            if os.path.isfile(BACKUP_PATH + os.path.sep + f):
+                data = time.ctime(os.path.getctime(BACKUP_PATH + os.path.sep + f))
+                files.append({'file_name' : f, 'data' : data})
+        for f in files:
+            (shortname, extension) = os.path.splitext(f['file_name'])
+            if extension == '.ndar':
+                resp['file_backup'].append(f)
+    else:
+        resp['file_backup'].append({})
+
+    return HttpResponse(simplejson.dumps(resp))
+
+@staff_member_required
+def damadmin_download_file_backup(request, filename):
+    from django.views.static import serve
+    
+
+    response = serve(request, filename, document_root = BACKUP_PATH)
+    
+    response['Content-Disposition'] = 'attachment; filename=%s'%filename
+
+    logger.info("\n Filename: %s\n" %filename)
+    
+    return response
+
+@staff_member_required
+def damadmin_delete_file_backup(request):
+    
+    try:
+        filename = request.POST.get('filename')
+        filename_path = os.path.join(BACKUP_PATH, filename)
+        os.remove(filename_path)
+        return HttpResponse(simplejson.dumps({'success': True}))
+    except Exception, ex:
+        logger.exception(ex)
+        return HttpResponse(simplejson.dumps({'success': False}))
+
+
+@staff_member_required
+def damadmin_create_file_backup(request):
+    from api.views import Auth, WorkspaceResource, ItemResource, KeywordsResource
+    import tempfile
+    import tarfile
+    from django.utils.simplejson.decoder import JSONDecoder
+    from django.utils.simplejson.encoder import JSONEncoder    
+
+    try:
+        json_enc = JSONEncoder()
+         
+        name = request.POST.get('name')
+        if not os.path.exists(BACKUP_PATH):
+            os.mkdir(BACKUP_PATH)
+        
+        archive_name = name + '.ndar'
+        backup_file = os.path.join(BACKUP_PATH,archive_name)
+        
+        basedir = tempfile.mkdtemp()
+        f = file(os.path.join(basedir, 'users.json'), 'w')
+#User
+        resp = Auth()._get_users()
+        logger.info(resp)
+        f.write(json_enc.encode(resp))
+        f.close()
+
+        for w in WorkspaceResource()._get_list(Workspace.objects.all()):
+            #Backup workspace
+            logger.info("Export workspace %s" % w['id'])
+            workspacedir = os.path.join(basedir,'w_' + str(w['id']))
+            os.mkdir(workspacedir)
+            
+            items = WorkspaceResource()._get_items(w['id'])
+    
+    
+            logger.info("workspace.json")
+            f = file(os.path.join(workspacedir, 'workspace.json'), 'w')
+            f.write(json_enc.encode(WorkspaceResource()._read(w['id'])))
+            f.close()
+    
+            #Backup collections
+            logger.info("collections.json")
+            f = file(os.path.join(workspacedir, 'collections.json'),'w')
+            f.write(json_enc.encode(WorkspaceResource()._get_collections(w['id'])))    
+            f.close()
+    
+            #Backup keywords
+            logger.info("keywords.json")
+            f = file(os.path.join(workspacedir, 'keywords.json'),'w')
+#            logger.info("\n\n\n %s " %KeywordsResource()._read(User.objects.get(pk = request.session['_auth_user_id']), w['id'], None, True))
+            f.write(json_enc.encode(KeywordsResource()._read(User.objects.get(pk = request.session['_auth_user_id']), w['id'], None, True)))
+            f.close()
+            
+            #Backup renditions configuration
+            logger.info( "renditions.json")
+            f = file(os.path.join(workspacedir, 'renditions.json'),'w')
+            f.write(json_enc.encode(WorkspaceResource()._get_variants(w['id'])))
+            f.close()
+
+            #Backup smartfolder configuration
+            logger.info("smartfolders.json")
+            f = file(os.path.join(workspacedir, 'smartfolders.json'),'w')
+            f.write(json_enc.encode(WorkspaceResource()._get_smartfolders(w['id'])))
+            f.close()
+    
+            #_workspace_get_members
+            logger.info("members.json")
+            f = file(os.path.join(workspacedir, 'members.json'),'w')
+            f.write(json_enc.encode(WorkspaceResource()._get_members((w['id']))))
+            f.close()
+    
+            
+            #Backup items
+            logger.info("items %s" %items)
+            for i in items:
+                #Backup item's metadata
+                item = ItemResource()._read(User.objects.get(pk = request.session['_auth_user_id']), i, True, w['id'], [])
+               
+                logger.debug("===========")
+                logger.debug("%s" %item['id'])
+    
+
+                itemdir = os.path.join(workspacedir, 'i_' + str(item['id']))
+                os.mkdir(itemdir)    
+                itemjson = json_enc.encode(item)
+                f = file(os.path.join(itemdir,'item.json'),'w')
+                f.write(itemjson)
+                f.close()
+
+                #read item's rendition
+                f = file(os.path.join(itemdir,'rendition.json'),'w')
+                f.write(json_enc.encode(WorkspaceResource()._get_variants(w['id'])))
+                f.close()        
+               
+        logger.debug('backup_file %s'%backup_file)
+        t = tarfile.open(backup_file, 'w')
+        t.add(basedir,arcname='backup')
+        t.close()
+
+        return HttpResponse(simplejson.dumps({'success': True}))
+
+    except Exception, ex:
+        logger.exception(ex)
+        return HttpResponse(simplejson.dumps({'success': False}))  
+    
+
+#@staff_member_required
+#def damadmin_create_file_backup(request):      
+#    import subprocess
+#    
+#    try:
+#        name = request.POST.get('name')
+#        #test if exist folder BACKUP_PATH
+#        if not os.path.exists(BACKUP_PATH):
+#            os.mkdir(BACKUP_PATH)
+#    except Exception, ex:
+#        logger.exception(ex)
+#        return HttpResponse(simplejson.dumps({'success': False}))  
+#
+#    try:
+##        mycmd = os.path.join(INSTALLATIONPATH,'api/fixtures/test_data.json')
+##        arg = []
+##        arg.append("python ")
+##        arg.append("%s/manage.py loaddata"%INSTALLATIONPATH)
+##        arg.append("%s"%mycmd)
+##        logger.info('arg %s' %arg)
+##        retcode = subprocess.call(arg)
+#        mycmd = os.path.join(INSTALLATIONPATH,'migration_scripts/ndexport.py')
+#        if os.path.exists(BACKUP_PATH) and os.path.exists(mycmd):
+#            arg = []
+#            arg.append("python")
+#            arg.append("%s"%mycmd)
+#            arg.append('-a')
+#            arg.append("%s" %BACKUP_PATH)
+#            arg.append('-f')
+#            arg.append(name)
+#            arg.append('-u')
+#            arg.append('admin')
+#            arg.append('-p')
+#            arg.append('notredam')
+#            arg.append('-m')
+#            logger.info('arg %s' %arg)
+#            retcode = subprocess.call(arg)
+#            if retcode < 0:
+#                logger.info("Child was terminated by signal %s" %retcode)
+#            else:
+#                logger.info("Child returned %s" %retcode)
+#            return HttpResponse(simplejson.dumps({'success': True}))
+#        else:
+#            return HttpResponse(simplejson.dumps({'success': False}))               
+#    except OSError, e:
+#        logger.exception( "Execution failed: %s" %e)
+#        return HttpResponse(simplejson.dumps({'success': False}))  

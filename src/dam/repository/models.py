@@ -226,7 +226,7 @@ class Item(AbstractItem):
         """
         from dam.metadata.models import MetadataDescriptor, MetadataProperty
         from dam.preferences.views import get_metadata_default_language
-
+        
         descriptors = self.get_descriptors(workspace)
         default_language = get_metadata_default_language(user, workspace)
         values = []
@@ -234,7 +234,6 @@ class Item(AbstractItem):
             desc = MetadataDescriptor.objects.get(pk=d)
             desc_dict = {'caption': '%s' % desc.name}
             desc_value = v
-    
             if isinstance(v, dict):
                 if v.has_key(default_language):
                     desc_value = v.get(default_language)
@@ -248,11 +247,9 @@ class Item(AbstractItem):
                         for key, v_value  in value.iteritems():
                             p = MetadataProperty.objects.get(pk=key)
                             desc_value['properties'].append({'caption': p.caption, 'value': v_value})
-    
             desc_dict['value'] = desc_value
-    
             values.append(desc_dict)
-        
+
         return values
 
     def get_descriptors(self, workspace=None):  
@@ -693,7 +690,7 @@ class Component(AbstractComponent):
             desc = MetadataDescriptor.objects.get(pk=d)
             desc_dict = {'caption': '%s' % desc.name}
             desc_value = v
-    
+            logger.info("desc_value %s " %desc_value)
             if isinstance(v, dict):
                 if v.has_key(default_language):
                     desc_value = v.get(default_language)
@@ -707,11 +704,9 @@ class Component(AbstractComponent):
                         for key, v_value  in value.iteritems():
                             p = MetadataProperty.objects.get(pk=key)
                             desc_value['properties'].append({'caption': p.caption, 'value': v_value})
-    
             desc_dict['value'] = desc_value
-    
             values.append(desc_dict)
-        
+
         return values
 
     def get_descriptors(self, desc_group):

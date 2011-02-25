@@ -210,7 +210,7 @@ var get_rights_list = function() {
             }
         },
         columns: [rights_sm, {
-            header: 'Rights',
+            header: 'Licencies',
             dataIndex: 'name'
         }],
         bbar: [{
@@ -325,7 +325,7 @@ var get_desc_groups_list = function() {
     var list_groups = new Ext.grid.GridPanel({
         id: 'list_group',
         layout: 'fit',
-        title: 'Descriptors Group',        
+        title: 'Groups',        
         store: d_group_store,
         viewConfig: {
          forceFit: true

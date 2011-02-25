@@ -31,6 +31,7 @@ from django_restapi.authentication import *
 from django_restapi.responder import *
 
 from django.contrib.auth.models import Permission
+from decimal import *
 
 from dam.repository.models import Item,  Component, _get_resource_url
 from dam.core.dam_repository.models import Type
@@ -246,18 +247,8 @@ class WorkspaceResource(ModResource):
         ws.description = request.POST['description']
         ws.save()
         return HttpResponse('')            
-            
-    @exception_handler
-    @api_key_required
-    def get_collections(self,  request,  workspace_id):
-        """
-        - Method: GET
-            - No parameters.
-        - Returns:
-            information about the workspace collections, for example:{"collections": [{'items': [], 'label': 'test_with_item', 'parent_id': None, 'workspace': 1, 'id': 19, 'children': []}]}
-        """
-        
-        
+
+    def _get_collections(self, workspace_id):
         ws = Workspace.objects.get(pk = workspace_id)
         
         kws = []
@@ -271,10 +262,34 @@ class WorkspaceResource(ModResource):
         
         tax = {'collections': kws}
         logger.debug('collections %s'%kws )
+        
+        return tax
+    
+    @exception_handler
+    @api_key_required
+    def get_collections(self,  request,  workspace_id):
+        """
+        - Method: GET
+            - No parameters.
+        - Returns:
+            information about the workspace collections, for example:{"collections": [{'items': [], 'label': 'test_with_item', 'parent_id': None, 'workspace': 1, 'id': 19, 'children': []}]}
+        """
+        tax = WorkspaceResource()._get_collections(workspace_id)
         resp = json.dumps(tax)
 
         return HttpResponse(resp)        
     
+    def _get_members(self, workspace_id):
+        ws = Workspace.objects.get(pk = workspace_id)
+        resp = {'members':[]}
+        members = ws.members.all()
+        for member in members:
+            tmp = {'username': member.username}
+            permissions = ws.get_permissions(member)
+            tmp['permissions'] = [perm.name for perm in permissions]            
+            resp['members'].append(tmp)
+            
+        return resp
     
     @exception_handler
     @api_key_required
@@ -286,15 +301,7 @@ class WorkspaceResource(ModResource):
         - returns: a list of members and their permissions, for example: {'members': [{'username': 'test', 'permissions': ['admin']}]})
         """
         
-        ws = Workspace.objects.get(pk = workspace_id)
-        resp = {'members':[]}
-        members = ws.members.all()
-        for member in members:
-            tmp = {'username': member.username}
-            permissions = ws.get_permissions(member)
-            tmp['permissions'] = [perm.name for perm in permissions]            
-            resp['members'].append(tmp)
-            
+        resp = WorkspaceResource()._get_members(workspace_id)
         resp = json.dumps(resp)
         return HttpResponse(resp)
   
@@ -393,6 +400,19 @@ class WorkspaceResource(ModResource):
         return HttpResponse('')
 
     
+    def  _get_list(self, wss):
+        
+        wss_list = []
+        
+        for ws in wss:
+            tmp = {'id':ws.pk,  'name': ws.name,  'description':ws.description,  }
+            if  ws.creator:
+                tmp['creator'] = ws.creator.username
+            else:
+                tmp['creator']  = None
+            wss_list.append(tmp)
+        
+        return wss_list
     
     @exception_handler
     @api_key_required
@@ -407,22 +427,13 @@ class WorkspaceResource(ModResource):
         user_id = request.GET['user_id']
         user = User.objects.get(pk = user_id)        
         
-        
-        
-        wss_list = []
-        
         if user.is_superuser:
             wss = Workspace.objects.all()
         else:
             wss = user.workspaces.all()
-            
-        for ws in wss:
-            tmp = {'id':ws.pk,  'name': ws.name,  'description':ws.description,  }
-            if  ws.creator:
-                tmp['creator'] = ws.creator.username
-            else:
-                tmp['creator']  = None
-            wss_list.append(tmp)
+
+        wss_list = WorkspaceResource()._get_list(wss)    
+
         logger.debug('wss_list %s'%wss_list)
         resp = json.dumps(wss_list)            
         return HttpResponse(resp)        
@@ -461,10 +472,7 @@ class WorkspaceResource(ModResource):
                     
 #        resp = json.dumps(tax)            
 #        return HttpResponse(resp)        
-        new_GET = request.GET.copy()
-        new_GET['workspace_id'] = workspace_id
-        request.GET= new_GET
-        return KeywordsResource()._read(request)
+        return KeywordsResource()._read(user, workspace_id)
     
     @exception_handler
     @api_key_required
@@ -573,6 +581,18 @@ class WorkspaceResource(ModResource):
         json_resp = json.dumps(resp)        
         return HttpResponse(json_resp)
     
+    def _get_variants(self, workspace_id):
+        vas = Variant.objects.filter(Q(workspace__pk = workspace_id) |Q (workspace__isnull = True), hidden = False)
+        resp = {'renditions':[]}
+        workspace = Workspace.objects.get(pk = workspace_id)
+        
+        
+        for va in vas:           
+            tmp = VariantsResource().get_info(va,  workspace)
+            resp['renditions'].append( tmp)
+        
+        return resp
+    
     @exception_handler
     @api_key_required   
     def get_variants(self,  request,  workspace_id):
@@ -584,20 +604,18 @@ class WorkspaceResource(ModResource):
  
         
         """
-        
-        vas = Variant.objects.filter(Q(workspace__pk = workspace_id) |Q (workspace__isnull = True), hidden = False)
-        resp = {'renditions':[]}
-        workspace = Workspace.objects.get(pk = workspace_id)
-        
-        
-        for va in vas:           
-            tmp = VariantsResource().get_info(va,  workspace)
-            resp['renditions'].append( tmp)
+        resp = WorkspaceResource()._get_variants(workspace_id)
                 
         json_resp = json.dumps(resp)
         logger.debug(json_resp)
         return HttpResponse(json_resp)
         
+    def _get_items(self, workspace_id):
+        items = Item.objects.filter(workspaces__pk = workspace_id)
+        resp = [i.pk for i in items]            
+        
+        return resp
+    
     @exception_handler
     @api_key_required   
     def get_items(self,  request,  workspace_id):   
@@ -608,12 +626,22 @@ class WorkspaceResource(ModResource):
         - parameters: none 
         - Returns: a json string similar to ['adcc76c9c76fe5905ea7fa27a6ea8099e5aa97ec4']
         """ 
-        items = Item.objects.filter(workspaces__pk = workspace_id)
-        resp = [i.pk for i in items]            
+        resp = WorkspaceResource()._get_items(workspace_id)
         json_resp = json.dumps(resp)
         return HttpResponse(json_resp)
         
-    
+    def _read(self, workspace_id):
+        ws = Workspace.objects.get(pk = workspace_id)        
+        resp = {'id': workspace_id}
+        if ws.creator:
+            resp['creator'] = ws.creator.username
+        else:
+            resp['creator'] = None
+        resp['name'] = ws.name
+        resp['description'] = ws.description
+        
+        return resp
+        
     @exception_handler
     @api_key_required   
     def read(self,  request,  workspace_id):        
@@ -625,21 +653,13 @@ class WorkspaceResource(ModResource):
             - JSON example:{'creator': 'test', 'description': '', 'name': 'test workspace', 'id': '2'}
         """
         
-        ws = Workspace.objects.get(pk = workspace_id)        
         user = User.objects.get(pk = request.GET.get('user_id'))
-        
         if not user.is_superuser:
             if ws not in user.workspaces.all() :
                 raise InsufficientPermissions
         
-        resp = {'id': workspace_id}
-        if ws.creator:
-            resp['creator'] = ws.creator.username
-        else:
-            resp['creator'] = None
-        resp['name'] = ws.name
-        resp['description'] = ws.description
-            
+        resp = WorkspaceResource()._read(workspace_id)
+        
         json_resp = json.dumps(resp)
         return HttpResponse(json_resp)
     
@@ -698,6 +718,16 @@ class WorkspaceResource(ModResource):
         ws.delete()        
         return HttpResponse('')
         
+    def _get_smartfolders(self, workspace_id):
+        sms = SmartFolder.objects.filter(workspace__pk = workspace_id)            
+                   
+        resp = {'smartfolders':[]}
+        sm_resource = SmartFolderResource()
+        for sm in sms:
+            resp['smartfolders'].append(sm_resource.get_info(sm))
+        
+        return resp
+    
     @exception_handler
     @api_key_required
     def get_smartfolders(self,  request,  workspace_id,  ):      
@@ -709,13 +739,7 @@ class WorkspaceResource(ModResource):
          {'smart_folders': [{'and_condition': True, 'id': 1, 'label': 'test', 'workspace_id': 1, 'queries': [{'negated': False, 'type': 'keyword', 'id': 17}]}]}
             
         """ 
-        sms = SmartFolder.objects.filter(workspace__pk = workspace_id)            
-                   
-        resp = {'smartfolders':[]}
-        sm_resource = SmartFolderResource()
-        for sm in sms:
-            resp['smartfolders'].append(sm_resource.get_info(sm))
-        
+        resp = WorkspaceResource()._get_smartfolders(workspace_id)
         return HttpResponse(simplejson.dumps(resp))
         
         
@@ -862,6 +886,60 @@ class ItemResource(ModResource):
         except Exception,ex:
             logger.exception(ex)
             raise ex  
+        return HttpResponse('')
+
+#    @exception_handler
+#    @api_key_required
+    def add_component(self,  request,  item_id,):
+        """ 
+        Allows to add new component with url must to do.
+        - method: POST
+            - params:
+                - workspace_id
+                - rendition_id
+                - url url of file
+            
+        - returns: empty string
+
+        """       
+        try:
+            if not request.POST.has_key('workspace_id'):
+                raise MissingArgs
+            if not  request.POST.has_key('uri'):
+                raise MissingArgs
+            if not  request.POST.has_key('rendition_id'):
+                raise MissingArgs
+            if not  request.POST.has_key('file_name'):
+                raise MissingArgs
+            
+            variant_id = request.POST['rendition_id']
+            variant =  Variant.objects.get(pk = variant_id)
+            item = Item.objects.get(pk = item_id)
+
+            workspace_id = request.POST['workspace_id']
+            comp = item.create_variant(variant, workspace_id)
+            
+            if variant.auto_generated:
+                comp.imported = True
+
+            comp.file_name = request.POST['file_name']
+            uri = request.POST['uri']
+            res_id = uri.split('/')
+            res_id.reverse()
+            comp._id = res_id[0]            
+            logger.info('res_id[0] %s' %res_id[0])
+            mime_type = mimetypes.guess_type(res_id[0])[0]
+            logger.info('mime_type %s' %mime_type)    
+            ext = mime_type.split('/')[1]
+            comp.format = ext
+            comp.save()
+            
+            generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
+
+        except Exception,ex:
+            logger.exception(ex)
+            raise ex 
+        
         return HttpResponse('')
         
     @exception_handler
@@ -1334,8 +1412,57 @@ class ItemResource(ModResource):
         _add_items_to_ws(item, ws, current_ws)        
         return HttpResponse('')        
     
-    
-    
+    def _read(self, user, item_id, flag, ws_id = None, variants = None):
+        item = Item.objects.get(pk = item_id)         
+        
+        keywords = list(item.keywords())
+        colls = item.node_set.filter(type = 'collection')
+        collection_ids = list(item.collections())
+            
+        wss = item.workspaces.all()
+        logger.debug('wss %s'%wss)
+        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': item.type.name}
+        try:
+            upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace
+            resp['upload_workspace']= upload_workspace.pk
+        except Node.DoesNotExist:
+            pass
+        
+        try:    
+            metadata = self._get_metadata(item)            
+            resp['metadata'] = metadata
+            
+        except:
+            resp['metadata'] = {}        
+        
+        
+#            request.POST.['get_variant_urls'] = workspace
+        if flag:
+            self.get_variant_urls(user,  item, ws_id, variants )
+            
+            logger.debug(item.variants)
+            resp['renditions'] = {}
+                
+            for variant_name,  value in item.variants.items():
+                tmp = {}
+                try:
+                    file_name = item.component_set.get(variant__name = variant_name, workspace__pk = ws_id).file_name
+                    tmp['file_name'] = file_name
+                except Exception, ex:
+                    logger.exception(ex)
+                    
+                tmp['url'] = value
+                v = Variant.objects.get(name = variant_name)
+                c = v.get_component(Workspace.objects.get(pk = ws_id),item)
+                try:
+                    tmp['metadata_list'] = item.get_metadata_values()
+                except Exception, ex:
+                    tmp['metadata_list'] = {}
+                    logger.exception(ex)
+
+                resp['renditions'] [variant_name] = tmp
+        
+        return resp
     
     @exception_handler
     @api_key_required
@@ -1366,58 +1493,19 @@ class ItemResource(ModResource):
         
         
         user_id = request.GET.get('user_id')        
-        item = Item.objects.get(pk = item_id)         
-        
         user = User.objects.get(pk = user_id)
         if not user.is_superuser:
             if item.workspaces.filter(members = user).count() == 0:
                 raise  InsufficientPermissions            
-        
-        keywords = list(item.keywords())
-        colls = item.node_set.filter(type = 'collection')
-        collection_ids = list(item.collections())
-            
-        wss = item.workspaces.all()
-        logger.debug('wss %s'%wss)
-        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': item.type.name}
-        try:
-            upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace
-            resp['upload_workspace']= upload_workspace.pk
-        except Node.DoesNotExist:
-            pass
-        
-        
-        
-        try:    
-            metadata = self._get_metadata(item)            
-            resp['metadata'] = metadata
-            
-        except:
-            resp['metadata'] = {}        
-        
-        
-#            request.POST.['get_variant_urls'] = workspace
-        if request.GET.__contains__('renditions_workspace'):
+        flag = request.GET.__contains__('renditions_workspace')
+        if flag:
             ws_id = request.GET.get('renditions_workspace')
             variants = request.GET.getlist('renditions')
-            
-            self.get_variant_urls(user,  item, ws_id, variants )
-            
-            logger.debug(item.variants)
-            resp['renditions'] = {}
-                
-            for variant_name,  value in item.variants.items():
-                tmp = {}
-                try:
-                    file_name = item.component_set.get(variant__name = variant_name, workspace__pk = ws_id).file_name
-                    tmp['file_name'] = file_name
-                except Exception, ex:
-                    logger.exception(ex)
-                    
-                tmp['url'] = value
-
-                
-                resp['renditions'] [variant_name] = tmp
+        else:
+            ws_id = None
+            variants = None
+        
+        resp = ItemResource()._read(user, item_id, flag, ws_id, variants)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
@@ -1550,6 +1638,7 @@ class ItemResource(ModResource):
             raise WorkspaceDoesNotExist
         
         item = Item.objects.get(pk = item_id)
+        logger.info("\n\n\n item_id %s \n\n\n")
         parent = request.GET.get('parent')
         if parent:
             parent_node = Node.objects.get(pk = parent)
@@ -1931,11 +2020,9 @@ class CollectionResource(ModResource):
         return HttpResponse('')
             
 class KeywordsResource(ModResource):    
-
-
     
-    @exception_handler
-    def _read(self, request,  node_id = None):
+#    @exception_handler
+    def _read(self, user, workspace_id, node_id = None, flag = False):
         def get_info(kw,  get_branch = False):
             kw_info = {
                 'id': kw.pk,  
@@ -1969,10 +2056,11 @@ class KeywordsResource(ModResource):
             else:
                 kw_info['children'] = [i.pk for i in kw.children.all()] 
             
+            logger.info('\n\n\n kw_info %s' %kw_info)
             return kw_info
         
-        user_id = request.GET.get('user_id')        
-        user = User.objects.get(pk = user_id)
+#        user_id = request.GET.get('user_id')        
+#        user = User.objects.get(pk = user_id)
         
         
         
@@ -1987,12 +2075,11 @@ class KeywordsResource(ModResource):
                     raise InsufficientPermissions       
                 
             resp = get_info(node,  True)
-            resp = json.dumps(resp)
         else:
 
-            if not request.GET.has_key('workspace_id'):
-                raise MissingArgs
-            workspace_id = request.GET.get('workspace_id')
+#            if not request.GET.has_key('workspace_id'):
+#                raise MissingArgs
+#            workspace_id = request.GET.get('workspace_id')
             ws = Workspace.objects.get(pk = workspace_id)
             
             if not user.is_superuser:
@@ -2009,10 +2096,13 @@ class KeywordsResource(ModResource):
             tax = {'keywords': kws}
             logger.debug('keywords %s'%kws)
             
-            resp = json.dumps(tax)
+            resp = tax
         
-        
-        return HttpResponse(resp)
+        if(flag):
+            return resp 
+        else:
+            resp = json.dumps(resp)
+            return HttpResponse(resp)
         
         
         
@@ -2258,7 +2348,6 @@ class KeywordsResource(ModResource):
         request.POST= new_post
         
         for item_id in items:
-            logger.debug('------------------------------- item_id %s'%item_id)
             ItemResource()._add_keywords(request,  item_id)
             
         return HttpResponse('')            
@@ -2365,6 +2454,17 @@ class Auth(ModResource):
         logger.debug('resp %s' %resp)
         return HttpResponse(resp)
         
+    def _get_users(self):
+        users = User.objects.all()
+        resp = {'users':[]}
+        for user in users:
+            tmp = {'id': user.pk, 'username': user.username, 'is_superuser':user.is_superuser, 'password': user.password, 'email': user.email}
+            resp['users'].append(tmp)
+        
+        logger.debug('resp %s'%resp)
+        
+        return resp    
+    
     @exception_handler
     @api_key_required    
     def get_users(self,  request,  variant_id = None):
@@ -2379,13 +2479,7 @@ class Auth(ModResource):
         if not u.is_superuser:
             raise InsufficientPermissions
         
-        users = User.objects.all()
-        resp = {'users':[]}
-        for user in users:
-            tmp = {'id': user.pk, 'username': user.username, 'is_superuser':user.is_superuser, 'password': user.password, 'email': user.email}
-            resp['users'].append(tmp)
-        
-        logger.debug('resp %s'%resp)    
+        resp = Auth()._get_users()
         resp = json.dumps(resp)
         return HttpResponse(resp)
 
@@ -2446,7 +2540,7 @@ class VariantsResource(ModResource):
             'name': variant.name, 
             'caption': variant.caption, 
             'media_type': [media_type.name for media_type in variant.media_type.all()], 
-            'auto_generated': variant.auto_generated, 
+            'auto_generated': variant.auto_generated,
         }
 
         if variant.workspace:

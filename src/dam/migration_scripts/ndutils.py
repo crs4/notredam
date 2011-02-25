@@ -25,7 +25,6 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG, format= "%(levelname)s - %(filename)s:%(lineno)d - %(message)s")
 
-DEBUG = False
 
 class ImportExport(object):
     """
@@ -58,8 +57,7 @@ class ImportExport(object):
         p =  {    'api_key': self.api_key,
                 'user_id': self.userid }
 
-        if DEBUG:
-            logging.debug("%s" %url)
+        logging.debug("%s" %url)
             
         if kwargs:
             p.update(kwargs)
@@ -68,14 +66,12 @@ class ImportExport(object):
             p.extend(args)
             p.extend(kwargs.items())
             
-        if DEBUG:
-            logging.debug("params: %s " %p) 
-            logging.debug("%s" %url)
+        logging.debug("params: %s " %p) 
+        logging.debug("%s" %url)
 
         p = self._add_checksum_new(p)
         params = urllib.urlencode(p)
-        if DEBUG:
-            logging.debug("---------------params: %s" %params) 
+        logging.debug("---------------params: %s" %params) 
         if method == 'POST':
             self.conn.request(method, url, params)
         elif method == 'GET':
@@ -85,8 +81,7 @@ class ImportExport(object):
         
         response = self.conn.getresponse()
         json_data = response.read()
-        if DEBUG:
-            logging.debug('response : %s' %json_data)
+        logging.info('response xxxx: %s' %json_data)
         if json_data != '':
             data = JSONDecoder().decode(json_data)
             return data
@@ -133,11 +128,14 @@ class ImportExport(object):
         -returns: True if login is established, false else.
 
         """
+        
         params = urllib.urlencode({'api_key':self.api_key, 
                                    'user_name':self.username, 
                                    'password':self.password})
+        logging.info("params %s" %params)
         self.conn.request('POST', '/api/login/',params)
         response = self.conn.getresponse()
+        logging.info("response %s" %response)
         json_data = response.read()
         data = JSONDecoder().decode(json_data)
         try:
@@ -282,5 +280,8 @@ class Importer(ImportExport):
 
     def _item_set_metadata(self,item_id,param):
         return self._call_server('POST','/api/item/%s/set_metadata/' % item_id, **param)
+    
+    def _item_add_component(self,item_id,param):
+        return self._call_server('POST','/api/item/%s/add_component/' % item_id, **param)
         
         

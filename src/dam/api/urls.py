@@ -41,6 +41,7 @@ urlpatterns = patterns('',
    url(r'^api/private/item/(.+)/generate_renditions/$', ItemResource(permitted_methods=('POST',), private= True).generate_variants),
    
    url(r'^api/item/(.+)/upload/$', ItemResource(permitted_methods=('POST',), ).upload_variant),
+   url(r'^api/item/(.+)/add_component/$', ItemResource(permitted_methods=('POST'),).add_component),
    
 #   url(r'^api/item/(.+)/(.+)/get/$', ItemResource(permitted_methods=('POST',), ).get_variant),
    url(r'^api/item/(.+)/get_state/$', ItemResource(permitted_methods=('POST'),).get_state),
@@ -51,7 +52,7 @@ urlpatterns = patterns('',
 #   url(r'^api/item/search/$', ItemResource(permitted_methods=('POST'),).search),
    url(r'^api/item/(.+)/get_keywords/$', ItemResource(permitted_methods=('GET'),).get_keywords),
    url(r'^api/item/(.+)/get_collections/$', ItemResource(permitted_methods=('GET'),).get_collections),
-
+   
 
 
    
@@ -65,7 +66,7 @@ urlpatterns = patterns('',
    url(r'^api/workspace/(\d+)/get/$', WorkspaceResource(permitted_methods=('GET',), ).read),  
    url(r'^api/workspace/get/$', WorkspaceResource(permitted_methods=('GET',), ).get_list),  
    url(r'^api/workspace/(\d+)/get_keywords/$', WorkspaceResource(permitted_methods=('GET',), ).get_keywords),  
-   url(r'^api/workspace/(\d+)/get_items/$', WorkspaceResource(permitted_methods=('GET',), ). get_items),  
+   url(r'^api/workspace/(\d+)/get_items/$', WorkspaceResource(permitted_methods=('GET',), ).get_items),  
      
    url(r'^api/workspace/(\d+)/get_renditions/$', WorkspaceResource(permitted_methods=('GET',), ).get_variants),  
    url(r'^api/workspace/(\d+)/get_collections/$', WorkspaceResource(permitted_methods=('GET',), ).get_collections),  
