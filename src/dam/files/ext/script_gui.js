@@ -8,7 +8,7 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	layout: 'form',
 	data_loaded: function(values){
 		
-		var actions = values['actions'];
+		var actions = values[this.order_field_name];
 		console.log('actions');
 		console.log(actions);
 
@@ -356,26 +356,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	initComponent: function(){
 		Ext.ux.MovableCBFieldSet.superclass.initComponent.call(this, config);
 		var config = this.initialConfig; 
-		this.position = new Ext.form.Hidden({
 		
-			name: config.order_field_value + '_pos',
-			value: config.position,
-//			setValue: function(value){
-//				Ext.form.Hidden.prototype.setValue.call(this, value);
-//				if(value && value != this.ownerCt.get_position)
-//					this.ownerCt.move(value);
-//				return this;
-//			},
-			getValue: function(){
-				if (this.ownerCt)
-					return this.ownerCt.get_position();
-				else
-					return this.originalValue;
-				
-			}
-			
-		
-		});
 		this.add({
 		xtype: 'hidden',
 		name: config.order_field_name,
@@ -396,7 +377,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 //			}
 		}
 	});
-	this.add(this.position);
+	
 	
 	
 		
