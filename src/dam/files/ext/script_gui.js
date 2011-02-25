@@ -363,6 +363,12 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	initComponent: function(){
 		Ext.ux.MovableCBFieldSet.superclass.initComponent.call(this, config);
 		var config = this.initialConfig; 
+		this.position = new Ext.form.Hidden({
+		
+			name: config.order_field_value + '_pos',
+			value: config.position
+		
+		});
 		this.add({
 		xtype: 'hidden',
 		name: config.order_field_name,
@@ -382,18 +388,17 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 					container.move(index);
 			}
 		}
-	})
+	});
+	this.add(this.position);
+	
 	
 		
 	},
 	
-	data_loaded: function(){
-		var cbf = this;
-		var expand = false;
-		console.log(this.title);
+	check_expand: function(){
 		Ext.each(this.items.items, function(item){
 			
-//			if (item.name != cbf.initialConfig.order_field_name && item.getValue())
+	//			if (item.name != cbf.initialConfig.order_field_name && item.getValue())
 			if (!(item instanceof Ext.form.Hidden) && item.getValue())
 			
 				expand = true;			
@@ -401,6 +406,13 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		
 		if (expand)
 			this.expand();
+		
+	},
+	
+	data_loaded: function(){
+		var cbf = this;
+		var expand = false;
+		this.check_expand();
 	},
 	onRender : function(ct, position){
         if(!this.el){
@@ -412,7 +424,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
         }
 
         Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
-		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
+		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
 		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
         
         var o = typeof this.checkboxToggle == 'object' ?
@@ -440,18 +452,25 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 		return;
 	 	var copy = this.initialConfig;
  		
+	 	
  		
- 		var values = container.form.getForm().getValues();
+ 		var values = {};
+ 		Ext.each(this.items.items, function(item){                              
+                var value = item.getValue(); 
+//                      console.log(item.name);
+                if(value && item.name != cbf.initialConfig.order_field_name)
+                
+                        values[item.name] = value;
+        });
  		
- 		container.remove(this);
- 	
+ 		container.remove(this); 	
  		new_obj = container.insert(position, copy);
  		
  		container.doLayout();
  		
  		console.log(values);
  		container.form.getForm().setValues(values);
- 		new_obj.data_loaded();
+ 		new_obj.check_expand();
  		
 	 },
 	move_up: function(){
@@ -504,7 +523,9 @@ Ext.ux.WatermarkFieldSet = function(config){
         name: 'wm_id',
         fieldLabel: 'Image',
         wm_id : wm_id,
-        
+        getValue: function(){
+        	return this.wm_id.getValue();
+        }, 
         setValue: function(value){
         	this.wm_id.setValue(value);
         },
