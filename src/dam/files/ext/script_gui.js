@@ -393,7 +393,8 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		console.log(this.title);
 		Ext.each(this.items.items, function(item){
 			
-			if (item.name != cbf.initialConfig.order_field_name && item.getValue())
+//			if (item.name != cbf.initialConfig.order_field_name && item.getValue())
+			if (!(item instanceof Ext.form.Hidden) && item.getValue())
 			
 				expand = true;			
 		});
@@ -503,10 +504,7 @@ Ext.ux.WatermarkFieldSet = function(config){
         name: 'wm_id',
         fieldLabel: 'Image',
         wm_id : wm_id,
-        getValue: function(){
-        	return 111111;
-        	
-        },
+        
         setValue: function(value){
         	this.wm_id.setValue(value);
         },
@@ -558,6 +556,7 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
 		console.log('square_selected ' + square_selected);
 		if(square_selected)
 			this.watermarking(square_selected);
+		
 	},
 	 _reset_watermarking: function(){  
 	    for (i=1; i<10; i++){
