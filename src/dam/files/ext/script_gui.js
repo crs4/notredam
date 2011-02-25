@@ -6,10 +6,10 @@ Ext.ux.FieldSetContainer = function(config) {
 Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	border: false,
 	layout: 'form',
-	notify_load: function(){
+	data_loaded: function(){
 		Ext.each(this.items.items, function(item){
-			if (item.notify_load)
-				item.notify_load();
+			if (item.data_loaded)
+				item.data_loaded();
 		});
 	}
 });
@@ -72,7 +72,9 @@ Ext.ux.WatermarkBrowseButton = function(config) {
 }; 
 
 Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
+	getValue: function(){},
 	handler: function(){
+		
 		
 		var tpl_str = '<tpl for=".">';    
 			tpl_str += '<div class="thumb-wrap" id="{pk}">';
@@ -291,7 +293,7 @@ Ext.ux.CBFieldSet = function(config) {
 
 Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {	
 	
-	notify_load: function(){
+	data_loaded: function(){
 		var expand = false;
 		Ext.each(this.items.items, function(item){
 			if (item.getValue())
@@ -385,9 +387,10 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		
 	},
 	
-	notify_load: function(){
+	data_loaded: function(){
 		var cbf = this;
 		var expand = false;
+		console.log(this.title);
 		Ext.each(this.items.items, function(item){
 			
 			if (item.name != cbf.initialConfig.order_field_name && item.getValue())
@@ -437,26 +440,17 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 	var copy = this.initialConfig;
  		
  		
- 		var values = {};
- 		console.log('-----------');
- 		console.log(copy);
-// 		console.log(cbf.initialConfig.order_field_name);
- 		Ext.each(this.items.items, function(item){	 			
- 			var value = item.getValue(); 
-// 			console.log(item.name);
- 			if(value && item.name != cbf.initialConfig.order_field_name)
- 			
- 				values[item.name] = value;
- 		});
+ 		var values = container.form.getForm().getValues();
+ 		
  		container.remove(this);
- 		console.log('copy');
- 		console.log(copy);
+ 	
  		new_obj = container.insert(position, copy);
  		
  		container.doLayout();
  		
+ 		console.log(values);
  		container.form.getForm().setValues(values);
- 		new_obj.notify_load();
+ 		new_obj.data_loaded();
  		
 	 },
 	move_up: function(){
@@ -494,20 +488,30 @@ Ext.ux.WatermarkFieldSet = function(config){
 		name: 'square'
 	});
 	
+	var wm_id = new Ext.form.TextField({
+//        'id': 'wm_id',
+        'width': 160,
+        'xtype':'textfield',
+        'name': 'wm_id',
+        
+        'description': 'image',
+        'help': ''
+    }); 
 	
 	config.items = [
-		{
-        'xtype': 'compositefield',
+		new Ext.form.CompositeField({
+        name: 'wm_id',
+        fieldLabel: 'Image',
+        wm_id : wm_id,
+        getValue: function(){
+        	return 111111;
+        	
+        },
+        setValue: function(value){
+        	this.wm_id.setValue(value);
+        },
         'items':[
-                 {
-                    'id': 'wm_id',
-                    'width': 160,
-                    'xtype':'textfield',
-                    'name': 'wm_id',
-                    'fieldLabel': 'image',                    
-                    'description': 'image',
-                    'help': ''
-                },
+                 wm_id,
                 {
                  'xtype': 'watermarkbrowsebutton',
                  'text': 'Browse',
@@ -518,7 +522,8 @@ Ext.ux.WatermarkFieldSet = function(config){
                 }
                 
         ]
-        },
+        }),
+		
         {
         	 xtype: 'watermarkposition'
         },
@@ -533,6 +538,8 @@ Ext.ux.WatermarkFieldSet = function(config){
 		pos_x_percent: pos_x_percent,
         pos_y_percent: pos_y_percent,
         square: square
+        
+       
 	});
 	
 }; 
@@ -545,6 +552,13 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
         this.pos_y_percent.setValue(parseInt(pos_y));
 	},
 	
+	data_loaded: function(){
+		Ext.ux.WatermarkFieldSet.superclass.data_loaded.call(this);
+		var square_selected = this.square.getValue();
+		console.log('square_selected ' + square_selected);
+		if(square_selected)
+			this.watermarking(square_selected);
+	},
 	 _reset_watermarking: function(){  
 	    for (i=1; i<10; i++){
 	        Ext.get('square'+i).setStyle({
@@ -562,7 +576,7 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
 	        opacity: 0.6
 	        });
 	    this.square.setValue(id);
-	},
+	}
 	
 
 
@@ -735,7 +749,10 @@ function save_script(params){
 			script_type = params.type;
 			if (! script_pk)
 				script_pk = Ext.decode(response.responseText).pk;
-			window.opener.scripts_jsonstore.reload();
+			try{
+				window.opener.scripts_jsonstore.reload();
+			}
+			catch(e){}
 		},
 		failure: function(){
 //		            			Ext.MsgBox.msg('','Save failed');
@@ -905,8 +922,8 @@ Ext.onReady(function(){
 						    	action_box.form.getForm().setValues(action.params);
           						
           						Ext.each(action_box.form.items.items, function(field){
-          							if (field.notify_load)
-          								field.notify_load();
+          							if (field.data_loaded)
+          								field.data_loaded();
           								
           						});
           						
