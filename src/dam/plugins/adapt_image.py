@@ -224,6 +224,11 @@ class Adapter:
                 wm_id = None):
 
         log.info('executing adaptation')
+        
+        if  not isinstance(actions, list):
+            actions = [actions]
+        
+        
         item = Item.objects.get(pk = item_id)
         source = Component.objects.get(workspace=workspace, variant__name=source_variant, item=item)
         
@@ -249,9 +254,18 @@ class Adapter:
                     argv += ['-crop', '%sx%s+%s+%s' % (int(crop_w), int(crop_h), int(crop_x), int(crop_y))]
 
             elif action == 'watermark':
-                pos_x = int(pos_x_percent * source.width/100.)
-                pos_y = int(pos_y_percent * source.height/100.)
-                argv += ['cache://' + wm_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
+                item_id,variant_name = wm_id.split('/')[-2:]
+                try:
+                    item = Item.objects.get(pk = item_id)
+                    comp = item.get_variant(Variant.objects.get(name = variant_name))
+                    wm_id = comp.uri
+                    
+                    pos_x = int(pos_x_percent * source.width/100.)
+                    pos_y = int(pos_y_percent * source.height/100.)
+                    argv += ['cache://' + wm_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
+                except Item.DoesNotExist:
+                    pass
+                
         
         log.debug("calling adapter")
         dest_res_id = get_storage_file_name(item.ID, workspace.pk, output_variant.name, output_format)
