@@ -90,7 +90,10 @@ Ext.extend(Ext.ux.SelectFieldSet, Ext.form.FieldSet, {
 		console.log(data);
 		this.select_field._select(data.preset);
 		this.ownerCt.getForm().setValues(data); //temporary, since form items are deleted and new ones are added, i have to reload the data 
-		
+		Ext.each(this.items.items, function(item){
+		if (item.data_loaded)
+			item.data_loaded(data);
+		});
 		
 	}
 	
@@ -878,6 +881,7 @@ Ext.onReady(function(){
 				layout: 'fit',
 				width: 200,
 //				autoHeight: true,
+				
 				enableDragDrop: true,
 				ddGroup: 'wireit',		
 				
@@ -887,8 +891,12 @@ Ext.onReady(function(){
 						dataIndex: 'name'
 					}],
 				hideHeaders: true,
+				sm: new Ext.grid.RowSelectionModel({
+					singleSelect: true
+				}),
 				viewConfig: {
-		        forceFit: true}
+					forceFit: true
+				}
 		
 				
 			}),
