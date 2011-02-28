@@ -1,16 +1,17 @@
 from variants.models import Variant
 def inspect(workspace):
     from django.db.models import Q
-    variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False)]
+    variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False, media_type__name = 'audio')]
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
     width = 200
     audio_rate = {
                   'xtype': 'numberfield',
-                  'fieldLabel': 'Sample Rate',
+                  'fieldLabel': 'Sample Rate (Hz)',
                   'name': 'audio_rate',                  
-                  'width': 200
+                  'width': 200,
+                  'value':44100
     }
     
     return {
@@ -50,7 +51,8 @@ def inspect(workspace):
                         'xtype': 'numberfield',
                         'name': 'audio_bitrate_kb',    
                         'fieldLabel': 'Bit Rate  (Kbps)',
-                        'width': width
+                        'width': width,
+                        'value': 128
                     }],
                     
                     'AAC':[
@@ -59,7 +61,8 @@ def inspect(workspace):
                         'xtype': 'numberfield',
                         'name': 'audio_bitrate_b',    
                         'fieldLabel': 'Bit Rate (bps)',
-                        'width': width
+                        'width': width,
+                        'value': 320000
                     }],
                     
                     'OGG':[
@@ -71,7 +74,8 @@ def inspect(workspace):
                         'minValue': 0,
                         'maxValue': 1,
                         'allowsDecimal': True,                    
-                        'width': width
+                        'width': width,
+                        'value': 0.9
                     }],
                     'WAV': [audio_rate]
                     
