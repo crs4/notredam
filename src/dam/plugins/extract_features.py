@@ -30,7 +30,7 @@ def inspect(workspace):
         'params':[
             {   
                 'name': 'source_variant',
-                'fieldLabel': 'Source Variant',
+                'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
                 'values': variants,
                 'description': 'input-variant',                
