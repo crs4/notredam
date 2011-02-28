@@ -9,7 +9,7 @@ from django.core.management import setup_environ
 import dam.settings as settings
 setup_environ(settings)
 from django.db.models.loading import get_models
-
+from django.db.models import Q
 get_models()
 
 from dam.repository.models import Component
@@ -17,13 +17,14 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
-
+from dam.plugins.common.utils import get_variants
 from uuid import uuid4
 
 def new_id():
     return uuid4().hex
 
-def inspect():
+def inspect(workspace):
+    variants = get_variants(workspace)
     return {
         'name': __name__,
         'params':[
@@ -31,9 +32,8 @@ def inspect():
                 'name': 'source_variant',
                 'fieldLabel': 'Source Variant',
                 'xtype': 'select',
-                'values': [['original']],
-                'description': 'input-variant',
-                'default': 0,
+                'values': variants,
+                'description': 'input-variant',                
                 'help': ''
             }]
          

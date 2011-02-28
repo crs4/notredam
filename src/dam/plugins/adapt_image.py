@@ -7,11 +7,12 @@ from django.core.management import setup_environ
 import dam.settings as settings
 setup_environ(settings)
 from django.db.models.loading import get_models
+from dam.plugins.common.utils import get_variants
 
 get_models()
 
 from dam.repository.models import *
-from dam.variants.models import Variant    
+
 from dam.workspace.models import DAMWorkspace
 
 from uuid import uuid4
@@ -20,8 +21,8 @@ def new_id():
     return uuid4().hex
 
 def inspect(workspace):
-    from django.db.models import Q
-    variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False)]
+   
+    variants = get_variants(workspace, 'image')
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      

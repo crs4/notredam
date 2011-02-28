@@ -20,24 +20,29 @@ from dam.preferences.views import get_metadata_default_language
 from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
-from dam.plugins.common.utils import save_type
+from dam.plugins.common.utils import save_type, get_variants
 
 from uuid import uuid4
 
 def new_id():
     return uuid4().hex
 
-def inspect():
+def inspect(workspace):
+    variants = get_variants(workspace)
     return {
         'name': __name__,
-        'parameter_groups':{},
-        'source_variant': {
-            'type': 'variant',
-            'description': 'input-variant',
-            'default': 0,
-            'help': ''
-        },
-    } 
+        'params':[
+            {   
+                'name': 'source_variant',
+                'fieldLabel': 'Source Variant',
+                'xtype': 'select',
+                'values': variants,
+                'description': 'input-variant',
+               
+                'help': ''
+            }]
+         
+        } 
 
 class ExtractError(Exception):
     pass
