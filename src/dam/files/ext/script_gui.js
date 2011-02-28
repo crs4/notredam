@@ -7,6 +7,7 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	border: false,
 	layout: 'form',
 	data_loaded: function(values){
+		console.log('aaaaaaaaa');
 		
 		var actions = values[this.order_field_name];
 		console.log('actions');
@@ -21,17 +22,83 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 			
 		});
 		
-		Ext.each(this.items.items, function(item){
-			var position = actions.indexOf(item.name);
-			if (item.get_position() != position)
-				item.move(position);
-		
-		});
+		try{
+			Ext.each(this.items.items, function(item){
+				var position = actions.indexOf(item.name);
+				if (item.get_position() != position)
+					item.move(position);
+			
+			});
+		}
+		catch(e){}
 		
 		
 	}
 });
 Ext.reg('fieldsetcontainer', Ext.ux.FieldSetContainer);
+
+Ext.ux.SelectFieldSet = function(config) {
+	var fieldLabel = config.fieldLabel;
+	delete config.fieldLabel;
+	var select_values = [];
+	for (select in config.values)
+		select_values.push([select]);
+		
+	var fieldset = new Ext.ux.FieldSetContainer({
+	xtype: 'fieldsetcontainer',
+	items: config.values[select_values[0]]
+	});
+	
+	var select_field = new Ext.ux.Select({
+		
+		values: select_values,
+		name: config.select_name,
+		fieldLabel: fieldLabel,
+		_select : function(value){
+			new_values = this.ownerCt.values[value];				
+			fieldset.removeAll();
+			fieldset.add(new_values);
+			this.ownerCt.doLayout();
+			
+		},
+		listeners: {
+			select: function(combo, record){				
+				this._select(record.data.value);
+			}
+			
+			
+		}
+	});
+	
+	config.items = [
+		select_field,
+		fieldset
+	];
+		
+    Ext.ux.SelectFieldSet.superclass.constructor.call(this, config);    
+    this.fieldset = fieldset;
+    this.select_field = select_field;
+    this.values = config.values;
+    
+ 	
+}; 
+
+Ext.extend(Ext.ux.SelectFieldSet, Ext.form.FieldSet, {
+	data_loaded: function(data){
+//		Ext.ux.SelectFieldSet.superclass.data_loaded.call(this, data);
+		console.log('data');
+		console.log(data);
+		this.select_field._select(data.preset);
+		this.ownerCt.getForm().setValues(data); //temporary, since form items are deleted and new ones are added, i have to reload the data 
+		
+		
+	}
+	
+	
+});
+Ext.reg('selectfieldset', Ext.ux.SelectFieldSet);
+
+
 
 Ext.ux.ModFormPanel = function(config) {
     Ext.ux.ModFormPanel.superclass.constructor.call(this, config);    
@@ -943,7 +1010,7 @@ Ext.onReady(function(){
 						    	}, baseLayer); 
 						    	action_box.form.getForm().setValues(action.params);
           						
-          						Ext.each(action_box.form.items.items, function(field){
+          						Ext.each(action_box.form.items.items, function(field){          						
           							if (field.data_loaded)
           								field.data_loaded(action.params);
           								
