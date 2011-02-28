@@ -73,7 +73,7 @@ def inspect(workspace):
                         'fieldLabel': 'Audio Quality',
                         'minValue': 0,
                         'maxValue': 1,
-                        'allowsDecimal': True,                    
+                        'allowDecimals': True,                    
                         'width': width,
                         'value': 0.9
                     }],
