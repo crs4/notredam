@@ -915,7 +915,11 @@ Ext.onReady(function(){
 		url:'/get_actions/',
 		fields:['name', 'params'],
 //			autoLoad: true,
-		root: 'scripts'	
+		root: 'scripts'	,
+		sortInfo: {
+		    field: 'name',
+		    direction: 'ASC' // or 'DESC' (case sensitive for local sorting)
+		}
 	});
 	
 	new Ext.Viewport({
@@ -1204,10 +1208,8 @@ Ext.onReady(function(){
 				            		
 				            			            		
 				            	}
-				            	
-					            	
-					            
-				            	
+				            	else
+				            		Ext.Msg.alert('Save', 'Saving script failed, invaild name');
 				            }
 				        },{
 				        	text: 'Delete',
