@@ -59,6 +59,52 @@ def inspect(workspace):
      }
     
     
+    bit_rate_b = {
+                  'xtype': 'select',
+                  'fieldLabel': 'Audio Bit Rate (kbps)',
+                  'name': 'audio_bitrate_b',
+                  'width': 200,
+                  'values': [[64, 64000], [80, 80000], [96, 96000], [112, 112000],[128, 128000], [160, 16000], [192, 192000], [224, 224000], [256, 256000], [590, 59000]],
+                  'value': 128000,
+                  'fields': ['kbps', 'bps'],                  
+                  'valueField': 'bps',
+                  'displayField': 'kbps',
+                  'hiddenName': 'audio_bitrate_b',
+                  
+    }
+    
+    bit_rate_kb = {
+                  'xtype': 'select',
+                  'fieldLabel': 'Audio Bit Rate (kbps)',
+                  'name': 'audio_bitrate_kb',
+                  'width': 200,
+                  'values': [[64], [80], [96], [112],[128], [160], [192], [224], [256], [590]],
+                  'value': 128
+    }
+    
+    
+    video_bit_rate_b = {
+                  'xtype': 'select',
+                  'fieldLabel': 'Video Bit Rate (kbps)',
+                  'name': 'video_bitrate_b',
+                  'width': 200,
+                  'values': [[64, 64000], [128, 128000], [192, 192000], [256, 256000], [590, 59000], [640, 640000], [1024, 1024000], [1536, 1536000], [2048, 2048000], [4096, 4096000], [8192, 8192000], [12288, 12288000], [20040, 20040000]],
+                  'value': 640000,
+                  'fields': ['kbps', 'bps'],                  
+                  'valueField': 'bps',
+                  'displayField': 'kbps',
+                  'hiddenName': 'video_bitrate_b',
+                  
+    }
+    
+    video_bit_rate_kb = {
+          'xtype': 'select',
+          'fieldLabel': 'Video Bit Rate (kbps)',
+          'name': 'video_bitrate_kb',
+          'width': 200,
+          'values': [[64], [128], [192], [256], [590], [640], [1024], [1536], [2048], [4096], [8192], [12288], [20040]],
+          'value': 640
+    }
 
                          
     
@@ -97,21 +143,8 @@ def inspect(workspace):
                  'select_value': 'FLV',
                  'values':{
                     'FLV':[       
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'video_bitrate_b',    
-                            'fieldLabel': 'Video Bit Rate  (bps)',
-                            'width': width,
-                            'value': 640000
-                        },
-                         
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'audio_bitrate_kb',    
-                            'fieldLabel': 'Audio Bit Rate  (Kbps)',
-                            'width': width,
-                            'value': 128
-                        },
+                        video_bit_rate_b,                         
+                        bit_rate_kb,
                        {
                         'xtype': 'cbfieldset',
                         'title': 'Sampling',
@@ -129,21 +162,8 @@ def inspect(workspace):
                     ],
                     'FLV_H264_AAC':[                            
                        
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'video_bitrate_b',    
-                            'fieldLabel': 'Video Bit Rate  (kbps)',
-                            'width': width,
-                            'value': 2048
-                        },
-                        
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'audio_bitrate_b',    
-                            'fieldLabel': 'Audio Bit Rate  (bps)',
-                            'width': width,
-                            'value': 128000
-                        },
+                        video_bit_rate_b,
+                        bit_rate_b,
                         
                         {
                         'xtype': 'cbfieldset',
@@ -160,20 +180,8 @@ def inspect(workspace):
                     ],
                     'MPGETS':[
                        
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'video_bitrate_b',    
-                            'fieldLabel': 'Video Bit Rate  (bps)',
-                            'width': width,
-                            'value': 12000000
-                        },
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'audio_bitrate_kb',    
-                            'fieldLabel': 'Audio Bit Rate  (Kbps)',
-                            'width': width,
-                            'value': 256
-                        },
+                        video_bit_rate_b,
+                        bit_rate_kb,
                         {
                         'xtype': 'cbfieldset',
                         'title': 'Sampling',
@@ -188,21 +196,8 @@ def inspect(workspace):
                     
                     ],
                     'MATROSKA_MPEG4_AAC':[
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'video_bitrate_b',    
-                            'fieldLabel': 'Video Bit Rate  (bps)',
-                            'width': width,
-                            'value': 264000
-                        },                        
-                       
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'audio_bitrate_b',    
-                            'fieldLabel': 'Audio Bit Rate  (bps)',
-                            'width': width,
-                            'value': 128000
-                        },
+                        video_bit_rate_b,
+                        bit_rate_b,
                         {
                         'xtype': 'cbfieldset',
                         'title': 'Sampling',
@@ -217,23 +212,8 @@ def inspect(workspace):
                     
                     ],
                     'MP4_H264_AACLOW':[
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'video_bitrate_kb',    
-                            'fieldLabel': 'Video Bit Rate  (Kbps)',
-                            'width': width,
-                            'value': 192
-                        },
-                        
-                        
-                        
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'audio_bitrate_b',    
-                            'fieldLabel': 'Audio Bit Rate  (bps)',
-                            'width': width,
-                            'value': 128000
-                        },
+                       video_bit_rate_kb,
+                       bit_rate_b,
                         {
                         'xtype': 'cbfieldset',
                         'title': 'Sampling',
@@ -249,20 +229,8 @@ def inspect(workspace):
                     
                     ],
                     'AVI':[                      
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'video_bitrate_b',    
-                            'fieldLabel': 'Video Bit Rate  (bps)',
-                            'width': width,
-                            'value': 180000
-                        },                      
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'audio_bitrate_kb',    
-                            'fieldLabel': 'Audio Bit Rate  (Kbps)',
-                            'width': width,
-                            'value': 128
-                        },
+                        video_bit_rate_b,                      
+                        bit_rate_kb,
                         {
                         'xtype': 'cbfieldset',
                         'title': 'Sampling',
@@ -279,14 +247,7 @@ def inspect(workspace):
                      
                     
                     'THEORA':[
-                        {
-                            'xtype': 'numberfield',
-                            'name': 'video_bitrate_kb',    
-                            'fieldLabel': 'Video Bit Rate  (kbps)',
-                            'width': width,
-                            'value': 192
-                        },
-                        
+                        video_bit_rate_kb,
                         
                         {
                             'xtype': 'numberfield',
