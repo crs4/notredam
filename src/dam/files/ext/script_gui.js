@@ -314,37 +314,48 @@ Ext.reg('watermarkposition', Ext.ux.WatermarkPosition);
 
 Ext.ux.Select = function(config) {
  	this.values = config.values; 	
+ 	Ext.apply(config, {
+ 		store: new Ext.data.ArrayStore({        
+	        fields: config.fields || ['value'],
+	        data: config.values
+	    }),
+	    valueField: config.valueField || 'value',
+		displayField: config.displayField || 'value'
+		
+	    
+	    
+	    
+ 	});
  	
     // call parent constructor
     Ext.ux.Select.superclass.constructor.call(this, config);
+    
  
 }; 
 
 Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {	
-    initComponent:function() {
-    	var values = this.values;
-    	
-    	 Ext.apply(this, {
-    	 	store:  new Ext.data.ArrayStore({        
-		        fields: [
-		            'value'
-		        ],
-		        data: values
-		    })
-//		    value: values[0]
-    	 });
-    	
-    	Ext.ux.Select.superclass.initComponent.call(this);
-    },
+//    initComponent:function() {
+//    	
+//    	var values = this.values;
+//    	
+//    	 Ext.apply(this, {
+//    	 	store:  new Ext.data.ArrayStore({        
+//		        fields: this.fields || ['value'],
+//		        data: values
+//		    })
+////		    value: values[0]
+//    	 });
+//    	
+//    	Ext.ux.Select.superclass.initComponent.call(this);
+//    },
     allowBlank: false,
     autoSelect: true,
     editable: false,
     triggerAction: 'all',
     lazyRender:true,
     forceSelection: true,
-    mode: 'local',
-    valueField: 'value',
-    displayField: 'value'
+    mode: 'local'
+    
     
  
 }); 

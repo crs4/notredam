@@ -4,15 +4,42 @@ def inspect(workspace):
     output_variants = get_variants(workspace, 'audio', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
-     
+    
+    
     width = 200
     audio_rate = {
-                  'xtype': 'numberfield',
+                  'xtype': 'select',
                   'fieldLabel': 'Sample Rate (Hz)',
                   'name': 'audio_rate',                  
                   'width': 200,
-                  'value':44100
+                  'value':44100,
+                  'values': [[44100],[48000],[59000] ]
     }
+    
+    
+    bit_rate_b = {
+                  'xtype': 'select',
+                  'fieldLabel': 'Bit Rate (kbps)',
+                  'name': 'audio_bitrate_b',
+                  'width': 200,
+                  'values': [[64, 64000], [80, 80000], [96, 96000], [112, 112000],[128, 128000], [160, 16000], [192, 192000], [224, 224000], [256, 256000], [590, 59000]],
+                  'value': 128,
+                  'fields': ['kbps', 'bps'],                  
+                  'valueField': 'bps',
+                  'displayField': 'kbps',
+                  'hiddenName': 'bps'
+    }
+    
+    bit_rate_kb = {
+                  'xtype': 'select',
+                  'fieldLabel': 'Bit Rate (kbps)',
+                  'name': 'audio_bitrate_b',
+                  'width': 200,
+                  'values': [[64], [80], [96], [112],[128], [160], [192], [224], [256], [590]],
+                  'value': 128
+    }
+    
+    
     
     return {
         'name': __name__,
@@ -49,24 +76,14 @@ def inspect(workspace):
                  'select_value': 'MP3',
                  'values':{
                     'MP3':[
-                           audio_rate,
-                           {
-                        'xtype': 'numberfield',
-                        'name': 'audio_bitrate_kb',    
-                        'fieldLabel': 'Bit Rate  (Kbps)',
-                        'width': width,
-                        'value': 128
-                    }],
+                       audio_rate,
+                       bit_rate_kb
+                    ],
                     
                     'AAC':[
-                           audio_rate,
-                           {
-                        'xtype': 'numberfield',
-                        'name': 'audio_bitrate_b',    
-                        'fieldLabel': 'Bit Rate (bps)',
-                        'width': width,
-                        'value': 320000
-                    }],
+                       audio_rate,
+                       bit_rate_b
+                    ],
                     
                     'OGG':[
                            audio_rate,
