@@ -1,3 +1,14 @@
+function random_color(){
+	var color = '#', num;
+	for (var i = 0; i <6; i++){
+		num = Math.round(Math.random()*15);
+		color += num.toString(16);	
+	}
+	console.log('color '+ color);
+	return color;
+	
+	
+}
 Ext.ux.FieldSetContainer = function(config) {
     Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);    
  	this.form = this.ownerCt;
@@ -713,7 +724,10 @@ var MDAction =  function(opts, layer) {
 			"ddConfig": {
 				"type": "input",
 				"allowedTypes": ["output"]
-			} 
+			} ,
+			wireConfig:{
+				color: random_color()
+			}
 		});
 	}
 	for(i = 0 ; i < this.outputs.length ; i++) {
@@ -726,7 +740,10 @@ var MDAction =  function(opts, layer) {
 				"type": "output",
 				"allowedTypes": ["input"]
 			},
-			"alwaysSrc": true
+			"alwaysSrc": true,
+			wireConfig:{
+				color: random_color()
+			}
 		});
 	}
 	
@@ -1069,7 +1086,7 @@ Ext.onReady(function(){
 								Ext.each(inner_action['in'], function(_in){
 									
 									if (out && out == _in){
-										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom.childNodes[0]);
+										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom.childNodes[0], {color: random_color()});
 //								
 										w.drawBezierCurve();	
 									}
