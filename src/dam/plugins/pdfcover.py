@@ -1,6 +1,7 @@
 from dam.plugins.common.utils import save_type, get_variants
 def inspect(workspace):    
     variants = get_variants(workspace, 'doc')
+    output_variants = get_variants(workspace, 'image', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
@@ -15,6 +16,7 @@ def inspect(workspace):
                 'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
                 'values': variants,
+                'value': variants[0],
                 'description': 'input-variant',
                 
                 'help': ''
@@ -24,7 +26,8 @@ def inspect(workspace):
                 'name': 'output_variant',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': variants,
+                'values': output_variants,
+                'value': output_variants[0],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''

@@ -33,6 +33,7 @@ def inspect(workspace):
                 'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
                 'values': variants,
+                'value': variants[0],
                 'description': 'input-variant',                
                 'help': ''
             }]

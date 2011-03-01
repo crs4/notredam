@@ -52,6 +52,7 @@ Ext.ux.SelectFieldSet = function(config) {
 	var select_field = new Ext.ux.Select({
 		
 		values: select_values,
+		value: config.select_value,
 		name: config.select_name,
 		fieldLabel: fieldLabel,
 		_select : function(value){
@@ -323,8 +324,8 @@ Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {
 		            'value'
 		        ],
 		        data: values
-		    }),
-		    value: values[0]
+		    })
+//		    value: values[0]
     	 });
     	
     	Ext.ux.Select.superclass.initComponent.call(this);
@@ -413,10 +414,10 @@ Ext.reg('cbfieldset', Ext.ux.CBFieldSet);
 Ext.ux.MovableCBFieldSet = function(config) {
 	config.id = config.id || Ext.id();
 	config.items = config.items || [];
-	
-	
+	if (config.movable == undefined)
+		config.movable = true;		
+		
 	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
-	
 };
 
 
@@ -485,9 +486,10 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
         }
 
         Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
-		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
-		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
-        
+		if (this.movable){
+			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
+			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
+		}
         var o = typeof this.checkboxToggle == 'object' ?
                 this.checkboxToggle :
                 {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
@@ -505,6 +507,9 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 
 	 
 	 move: function(position){
+	 	if (! this.movable)
+	 		return;
+	 		
 	 	var cbf = this;
 	 	
 	 	var container = this.ownerCt;
@@ -560,11 +565,11 @@ Ext.reg('movablecbfieldset', Ext.ux.MovableCBFieldSet);
 
 Ext.ux.WatermarkFieldSet = function(config){
 	var pos_x_percent = new Ext.form.Hidden({
-		name: 'pos_x_percent'
+		name: config.wm_x_name || 'pos_x_percent'
 	});
 	
 	var pos_y_percent = new Ext.form.Hidden({
-		name: 'pos_y_percent'
+		name: config.wm_x_name || 'pos_y_percent'
 	});
 	
 	var square = new Ext.form.Hidden({
@@ -574,9 +579,10 @@ Ext.ux.WatermarkFieldSet = function(config){
 	
 	var wm_id = new Ext.form.TextField({
 //        'id': 'wm_id',
-        'width': 160,
+        'width': config.wm_id_width || 160,
         'xtype':'textfield',
-        'name': 'wm_id',
+        'name': config.wm_id_name ||'wm_id',
+        
         
         'description': 'image',
         'help': ''
@@ -831,6 +837,22 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 var baseLayer, store, layer_el;
 
 function save_script(params){
+	var invalid = false;
+	var action_invalid;
+	var tmp;
+	
+	for (var i = 0; i < baseLayer.containers.length; i++){
+		tmp = baseLayer.containers[i];
+		if (!tmp.form.getForm().isValid()){
+			action_invalid = tmp.label.getValue();
+			invalid = true
+		}
+		
+	}
+	if(invalid){
+		Ext.Msg.alert('Save', String.format('Saving failed. Please check action "{0}", some of its required fields are missing.', action_invalid));
+		return;
+	}
 	
 	Ext.Ajax.request({
 		url: '/edit_script/',
