@@ -23,17 +23,17 @@ def inspect(workspace):
                   'name': 'audio_bitrate_b',
                   'width': 200,
                   'values': [[64, 64000], [80, 80000], [96, 96000], [112, 112000],[128, 128000], [160, 16000], [192, 192000], [224, 224000], [256, 256000], [590, 59000]],
-                  'value': 128,
+                  'value': 128000,
                   'fields': ['kbps', 'bps'],                  
                   'valueField': 'bps',
                   'displayField': 'kbps',
-                  'hiddenName': 'bps'
+                  'hiddenName': 'audio_bitrate_b'
     }
     
     bit_rate_kb = {
                   'xtype': 'select',
                   'fieldLabel': 'Bit Rate (kbps)',
-                  'name': 'audio_bitrate_b',
+                  'name': 'audio_bitrate_kb',
                   'width': 200,
                   'values': [[64], [80], [96], [112],[128], [160], [192], [224], [256], [590]],
                   'value': 128
