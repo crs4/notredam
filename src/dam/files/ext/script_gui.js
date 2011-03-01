@@ -7,19 +7,11 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	border: false,
 	layout: 'form',
 	data_loaded: function(values){
-		console.log('aaaaaaaaa');
-		
+				
 		var actions = values[this.order_field_name];
-		console.log('actions');
-		console.log(actions);
-
-		console.log(this.items.items)
 		Ext.each(this.items.items, function(item){
-			
-			console.log(item.title)
 			if (item.data_loaded)
-				item.data_loaded();
-			
+				item.data_loaded(values);
 		});
 		
 		try{
@@ -87,8 +79,7 @@ Ext.ux.SelectFieldSet = function(config) {
 Ext.extend(Ext.ux.SelectFieldSet, Ext.form.FieldSet, {
 	data_loaded: function(data){
 //		Ext.ux.SelectFieldSet.superclass.data_loaded.call(this, data);
-		console.log('data');
-		console.log(data);
+		
 		this.select_field._select(data.preset);
 		this.ownerCt.getForm().setValues(data); //temporary, since form items are deleted and new ones are added, i have to reload the data 
 		Ext.each(this.items.items, function(item){
@@ -271,15 +262,16 @@ Ext.extend(Ext.ux.WatermarkPosition, Ext.form.Field, {
 	
 	
 	 initComponent:function() {
-	 	var container = this.ownerCt;
-	 	var i, j;
+	 	
+	 	var i, j, box_id;
 	    var children_box_position = [];
 	    for(i=1; i<= 9; i++){
+	    	box_id = Ext.id();
 	        children_box_position.push({
 	            tag:'div',
-	            id: 'square' + i,
+	            id: box_id,
 	            cls: 'position_watermarking',
-            	onclick: String.format('Ext.getCmp(\'{2}\').watermarking({0});', i, this.id, container.id)
+            	onclick: String.format('Ext.getCmp(\'{2}\').ownerCt.watermarking({0});', i, this.id, this.id)
 
 	        });
 	    }
@@ -292,10 +284,12 @@ Ext.extend(Ext.ux.WatermarkPosition, Ext.form.Field, {
 	            cls: 'container_position_watermarking',
 //	            style: 'height:135px;',
 	            children:children_box_position            
-	        }
+	        },
+	        boxes: children_box_position
     	 });
     	
     	Ext.ux.WatermarkPosition.superclass.initComponent.call(this);
+    	
     },
 	
 	name: 'watermarking_position'
@@ -469,12 +463,8 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		
 	},
 	
-	data_loaded: function(){
-		
+	data_loaded: function(values){	
 		this.check_expand();
-		
-		
-		
 	},
 	onRender : function(ct, position){
         if(!this.el){
@@ -588,15 +578,29 @@ Ext.ux.WatermarkFieldSet = function(config){
         'help': ''
     }); 
 	
+    var position = new Ext.ux.WatermarkPosition({
+//    	 xtype: 'watermarkposition',
+    	 listeners: {
+    	 	afterrender: function(){
+    	 		var square = this.ownerCt.square.getValue();
+    	 		
+    	 		if (square)
+    	 			this.ownerCt.watermarking(square);
+    	 	}
+    	 }
+    });
+    
 	config.items = [
 		new Ext.form.CompositeField({
-        name: 'wm_id',
+        name: wm_id.name,
         fieldLabel: 'Image',
         wm_id : wm_id,
+        
         getValue: function(){
         	return this.wm_id.getValue();
         }, 
         setValue: function(value){
+        	
         	this.wm_id.setValue(value);
         },
         'items':[
@@ -613,28 +617,18 @@ Ext.ux.WatermarkFieldSet = function(config){
         ]
         }),
 		
-        {
-        	 xtype: 'watermarkposition',
-        	 listeners: {
-        	 	afterrender: function(){
-        	 		var square = this.ownerCt.square.getValue();
-        	 		
-        	 		if (square)
-        	 			this.ownerCt.watermarking(square);
-        	 	}
-        	 }
-        },
-        
+        position,        
         pos_x_percent,
         pos_y_percent,
-        square
-	];
+        square	];
 	
 	Ext.ux.WatermarkFieldSet.superclass.constructor.call(this, config);
 	Ext.apply(this, {
 		pos_x_percent: pos_x_percent,
         pos_y_percent: pos_y_percent,
-        square: square
+        square: square,
+        position: position,
+        wm_id: wm_id
         
        
 	});
@@ -649,31 +643,46 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
         this.pos_y_percent.setValue(parseInt(pos_y));
 	},
 	
-	data_loaded: function(){
-		Ext.ux.WatermarkFieldSet.superclass.data_loaded.call(this);
+	data_loaded: function(values){
+		console.log(values);		
 		var square_selected = this.square.getValue();
-		
+		console.log(this.wm_id)
 		if(square_selected)
 			this.watermarking(square_selected);
+			
+		Ext.ux.WatermarkFieldSet.superclass.data_loaded.call(this, values);
 		
 	},
-	 _reset_watermarking: function(){  
-	    for (i=1; i<10; i++){
-	        Ext.get('square'+i).setStyle({
-	            background: 'none',
-	            opacity: 1
-	            });
+	 _reset_watermarking: function(){	 	
+	 	try{
+		 	for (i=0; i<9; i++){		    	
+		        Ext.get(this.position.boxes[i].id).setStyle({
+		            background: 'none',
+		            opacity: 1
+		            });
+		    }
 	    }
+	 	catch(e){
+	 	
+	 	}
+	    
 	},
 	
 	watermarking: function(id){      
 	    this._reset_watermarking();
 	    this._set_hidden_position_percent(id);
-	    Ext.get('square'+id).setStyle({
+	    try{
+	    	Ext.get(this.position.boxes[id -1].id).setStyle({
 	        background: 'green',
 	        opacity: 0.6
 	        });
-	    this.square.setValue(id);
+	    	this.square.setValue(id);
+	    
+	    }
+	    catch(e){
+	    
+	    }
+	    
 	}
 	
 
