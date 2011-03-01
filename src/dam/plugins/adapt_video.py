@@ -1,6 +1,8 @@
 from dam.plugins.common.utils import get_variants
 def inspect(workspace):
     variants = get_variants(workspace, 'video')
+    image_variants = get_variants(workspace, 'image') 
+    output_variants = get_variants(workspace, 'video', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
@@ -9,8 +11,8 @@ def inspect(workspace):
                   'xtype': 'numberfield',
                   'fieldLabel': 'Sample Rate (Hz)',
                   'name': 'audio_rate',                  
-                  'width': 200,
-                  'value':44100
+#                  'width': 200,
+#                  'value':44100
     }
     
     resize = {
@@ -35,37 +37,25 @@ def inspect(workspace):
                 ]
                      
              }
-    wm = {
-            'xtype': 'cbfieldset',
-            'title': 'Watermark',
-            'items':[{
-                'xtype': 'numberfield',
-                'name': 'watermark_top',    
-                'fieldLabel': 'Watermark Top',
-                'width': width,
-                
-            },
-            {
-                    'xtype': 'numberfield',
-                    'name': 'watermark_left',    
-                    'fieldLabel': 'Watermark Left',
-                    'width': width,
-                    
-                },
-                {
-                   'xtype': 'textfield',
-                   'name': 'watermark_filename', 
-                   'fieldLabel': 'Image'                           
-                }]
-            
-            }
+    
+    wm = {'xtype': 'watermarkfieldset',
+              'title': 'Watermark',
+              'name': 'watermark',                            
+              'movable': False,
+              'renditions': variants,
+              'wm_x_name': 'watermark_top_percent',
+              'wm_y_name':'watermark_left_percent',
+              'wm_id_name': 'watermark_filename',
+              'wm_id_width': 120
+          }
     
     frame_rate = {
-        'xtype': 'textfield',
+        'xtype': 'select',
         'name': 'video_framerate',
         'fieldLabel': 'Frame Rate',
-        'value': '30/1',
-        'width': width,
+#        'value': '30/1',
+        'values':[['24/1'], ['25/1'],['30/1'],['25/2'],['57000/1001'],['57/1']],
+        'width': 150,
      }
     
     
@@ -82,6 +72,7 @@ def inspect(workspace):
                 'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
                 'values': variants,
+                'value': variants[0],
                 'description': 'input-variant',
                 
                 'help': ''
@@ -91,7 +82,8 @@ def inspect(workspace):
                 'name': 'output_variant',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': variants,
+                'values': output_variants,
+                'value': output_variants[0],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
@@ -102,11 +94,9 @@ def inspect(workspace):
                  'fieldLabel': 'Name',
                  'title': 'Preset',
                  'select_name': 'preset',
+                 'select_value': 'FLV',
                  'values':{
-                    'FLV':[
-                            
-                        frame_rate,
-                              
+                    'FLV':[       
                         {
                             'xtype': 'numberfield',
                             'name': 'video_bitrate_b',    
@@ -114,9 +104,7 @@ def inspect(workspace):
                             'width': width,
                             'value': 640000
                         },
-                        
-                        
-                         audio_rate,
+                         
                         {
                             'xtype': 'numberfield',
                             'name': 'audio_bitrate_kb',    
@@ -124,16 +112,23 @@ def inspect(workspace):
                             'width': width,
                             'value': 128
                         },
+                       {
+                        'xtype': 'cbfieldset',
+                        'title': 'Sampling',
+                        'items': [
+                          frame_rate,
+                          audio_rate
+                        ]
                         
+                        }, 
                        
                         
                         resize,
                         wm
                     
                     ],
-                    'FLV_H264_AAC':[
-                            
-                        frame_rate,      
+                    'FLV_H264_AAC':[                            
+                       
                         {
                             'xtype': 'numberfield',
                             'name': 'video_bitrate_b',    
@@ -142,8 +137,6 @@ def inspect(workspace):
                             'value': 2048
                         },
                         
-                        
-                         audio_rate,
                         {
                             'xtype': 'numberfield',
                             'name': 'audio_bitrate_b',    
@@ -152,13 +145,21 @@ def inspect(workspace):
                             'value': 128000
                         },
                         
+                        {
+                        'xtype': 'cbfieldset',
+                        'title': 'Sampling',
+                        'items': [
+                          frame_rate,
+                          audio_rate
+                        ]
+                        
+                        },
                         resize,
                         wm
                     
                     ],
                     'MPGETS':[
-                            
-                        frame_rate,      
+                       
                         {
                             'xtype': 'numberfield',
                             'name': 'video_bitrate_b',    
@@ -166,9 +167,6 @@ def inspect(workspace):
                             'width': width,
                             'value': 12000000
                         },
-                        
-                        
-                         audio_rate,
                         {
                             'xtype': 'numberfield',
                             'name': 'audio_bitrate_kb',    
@@ -176,24 +174,28 @@ def inspect(workspace):
                             'width': width,
                             'value': 256
                         },
+                        {
+                        'xtype': 'cbfieldset',
+                        'title': 'Sampling',
+                        'items': [
+                          frame_rate,
+                          audio_rate
+                        ]
                         
+                        },
                         resize,
                         wm
                     
                     ],
                     'MATROSKA_MPEG4_AAC':[
-                            
-                        frame_rate,      
                         {
                             'xtype': 'numberfield',
                             'name': 'video_bitrate_b',    
                             'fieldLabel': 'Video Bit Rate  (bps)',
                             'width': width,
                             'value': 264000
-                        },
-                        
-                        
-                         audio_rate,
+                        },                        
+                       
                         {
                             'xtype': 'numberfield',
                             'name': 'audio_bitrate_b',    
@@ -201,14 +203,20 @@ def inspect(workspace):
                             'width': width,
                             'value': 128000
                         },
+                        {
+                        'xtype': 'cbfieldset',
+                        'title': 'Sampling',
+                        'items': [
+                          frame_rate,
+                          audio_rate
+                        ]
                         
+                        },
                         resize,
                         wm
                     
                     ],
                     'MP4_H264_AACLOW':[
-                            
-                        frame_rate,      
                         {
                             'xtype': 'numberfield',
                             'name': 'video_bitrate_kb',    
@@ -218,7 +226,7 @@ def inspect(workspace):
                         },
                         
                         
-                         audio_rate,
+                        
                         {
                             'xtype': 'numberfield',
                             'name': 'audio_bitrate_b',    
@@ -226,24 +234,28 @@ def inspect(workspace):
                             'width': width,
                             'value': 128000
                         },
+                        {
+                        'xtype': 'cbfieldset',
+                        'title': 'Sampling',
+                        'items': [
+                          frame_rate,
+                          audio_rate
+                        ]
+                        
+                        },
                         
                         resize,
                         wm
                     
                     ],
-                    'AVI':[
-                            
-                        frame_rate,      
+                    'AVI':[                      
                         {
                             'xtype': 'numberfield',
                             'name': 'video_bitrate_b',    
                             'fieldLabel': 'Video Bit Rate  (bps)',
                             'width': width,
                             'value': 180000
-                        },
-                        
-                        
-                         audio_rate,
+                        },                      
                         {
                             'xtype': 'numberfield',
                             'name': 'audio_bitrate_kb',    
@@ -251,7 +263,15 @@ def inspect(workspace):
                             'width': width,
                             'value': 128
                         },
+                        {
+                        'xtype': 'cbfieldset',
+                        'title': 'Sampling',
+                        'items': [
+                          frame_rate,
+                          audio_rate
+                        ]
                         
+                        },
                         resize,
                         wm
                     
@@ -259,7 +279,6 @@ def inspect(workspace):
                      
                     
                     'THEORA':[
-                        frame_rate,
                         {
                             'xtype': 'numberfield',
                             'name': 'video_bitrate_kb',    
@@ -269,7 +288,6 @@ def inspect(workspace):
                         },
                         
                         
-                         audio_rate,
                         {
                             'xtype': 'numberfield',
                             'name': 'audio_quality',    
@@ -280,7 +298,15 @@ def inspect(workspace):
                             'maxValue':1,
                             'allowDecimals':True
                         },
+                        {
+                        'xtype': 'cbfieldset',
+                        'title': 'Sampling',
+                        'items': [
+                          frame_rate,
+                          audio_rate
+                        ]
                         
+                        },
                         resize,
                         wm
                                

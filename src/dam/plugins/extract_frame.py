@@ -17,6 +17,7 @@ def inspect(workspace):
                 'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
                 'values': source_variants,
+                'value': source_variants[0],
                 'description': 'input-variant',
                 
                 'help': ''
@@ -27,6 +28,7 @@ def inspect(workspace):
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
                 'values': output_variants,
+                'value': output_variants[0],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''

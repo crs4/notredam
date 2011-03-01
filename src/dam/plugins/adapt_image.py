@@ -23,6 +23,7 @@ def new_id():
 def inspect(workspace):
    
     variants = get_variants(workspace, 'image')
+    output_variants = get_variants(workspace, 'image', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
@@ -36,6 +37,7 @@ def inspect(workspace):
                 'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
                 'values': variants,
+                'value': variants[0],
                 'description': 'input-variant',
                 
                 'help': ''
@@ -45,7 +47,8 @@ def inspect(workspace):
                 'name': 'output_variant',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': variants,
+                'values': output_variants,
+                'value': output_variants[0],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
@@ -116,39 +119,8 @@ def inspect(workspace):
               'title': 'Watermark',
               'name': 'watermark',
               'order_field_name': 'actions',
-              'order_field_value': 'watermark',
-              
+              'order_field_value': 'watermark',                            
                'renditions': variants
-#              'items':[
-#                       {
-#                        'xtype': 'compositefield',
-#                        'items':[
-#                                 {
-#                                    'id': 'wm_id',
-#                                    'width': 160,
-#                                    'xtype':'textfield',
-#                                    'name': 'wm_id',
-#                                    'fieldLabel': 'image',                    
-#                                    'description': 'image',
-#                                    
-#                #                    'value': 100,
-#                                    'help': ''
-#                                },
-#                                {
-#                                 'xtype': 'watermarkbrowsebutton',
-#                                 'text': 'Browse',
-#                                 'values': variants
-#                                 
-#                                   
-#                                }
-#                        ]
-#                        },
-#                        {
-#                         'xtype': 'watermarkposition'
-#                         
-#                         },
-#                        
-#              ]
               },
               ]
              
@@ -162,7 +134,7 @@ def inspect(workspace):
                 'xtype': 'select',
                 'values': [['jpeg'], ['bmp'], ['gif'], ['png']],
                 'description': 'output_format',
-                
+                'value': 'jpeg',
                 'help': ''
             }
               
