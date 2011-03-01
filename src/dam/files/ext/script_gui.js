@@ -46,10 +46,11 @@ Ext.ux.SelectFieldSet = function(config) {
 	var select_values = [];
 	for (select in config.values)
 		select_values.push([select]);
-		
+	
+	console.log('config.select_value '  + config.select_value);
 	var fieldset = new Ext.ux.FieldSetContainer({
 	xtype: 'fieldsetcontainer',
-	items: config.values[select_values[0]]
+	items: config.values[config.select_value]
 	});
 	
 	var select_field = new Ext.ux.Select({
@@ -918,7 +919,7 @@ Ext.onReady(function(){
 		root: 'scripts'	,
 		sortInfo: {
 		    field: 'name',
-		    direction: 'ASC' // or 'DESC' (case sensitive for local sorting)
+		    direction: 'ASC'
 		}
 	});
 	
