@@ -6,7 +6,7 @@ function upload_dialog(cfg){
 		url: '/upload_resource/',
 		after_upload: function(session_id){},
 		variant:'original',
-		item: null,
+		item: null
 	}, cfg);
 	
 	Ext.apply(this, config);
@@ -68,6 +68,7 @@ function upload_dialog(cfg){
 	            if (xhr.readyState == 4){
 		        	if (xhr.status == 200){					        		
 		        		file_record.set('status', 'ok');
+						file_record.set('progress', 100);
 		        		file_record.commit();
 		        	}
 		        	else if(xhr.status == 500){
@@ -80,6 +81,18 @@ function upload_dialog(cfg){
 		        	
 		    	
 	        };
+	        
+	        xhr.upload.onprogress = function(evt){
+	        	if (evt.lengthComputable) {
+	        		var complete = evt.loaded / evt.total;
+		        	var percentComplete = Math.round((complete)*100);
+		        	console.log(percentComplete);
+		        	
+		        	Ext.getCmp('progress_' + i).updateProgress(complete, percentComplete + '%');
+	        	}
+	        	
+	        };
+	        
 			
 			
 			xhr.open("POST", this.url + '?'+ final_params, true);
@@ -100,6 +113,39 @@ function upload_dialog(cfg){
 	};
 	
 	var file_counter = 0;
+	
+	
+    var progressbar_renderer = function(value, meta, rec, row, col, store){
+    
+	    var id = Ext.id();
+	    var is_int = parseInt(value)
+	    var text;
+	    
+	    if (isNaN(is_int)) {
+	        text = value;
+	        value = 0;
+	    }
+	    else {
+	        text = value + '%';
+	    }
+	    
+	    (function() {
+	        var progress_id = 'progress_' + row;
+	        new Ext.ProgressBar({
+	            renderTo: id,
+	            value: value,
+	            animate: true,
+	            text: text,
+	            width: 200,
+	            id: progress_id
+	        });
+	    }).defer(25);
+	    
+	    return '<span id="' + id + '"></span>';
+	}
+
+       
+	
 	
 	this.win =  new Ext.Window({
 			id: 'upload_win',
@@ -150,7 +196,8 @@ function upload_dialog(cfg){
 				        					file: file,
 				        					filename: file.name,
 				        					size: size,
-				        					status: 'to_upload'
+				        					status: 'to_upload',
+											progress: 0
 				        				});
 				        				file_counter += 1;				        				
 				        			});
@@ -198,12 +245,21 @@ function upload_dialog(cfg){
             items: new Ext.Panel({
             	id: 'files_list_container',
             	border: false,
-            	items:new Ext.list.ListView({
+            	items:new Ext.grid.GridPanel({
             	id: 'files_list',
             	frame: true,
+            	layout: 'fit',
+//            	autoHeight: true,
+            	height: 300,
+            	border: false,
+            	viewConfig: {
+            		forceFit: true,
+            		border: false
+            	
+            	},
             	store: new Ext.data.JsonStore({
             		root: 'files',
-            		fields:['id', 'file', 'filename', 'size', 'status']            		
+            		fields:['id', 'file', 'filename', 'size', 'status', 'progress']            		
             	}),
             	 columns: [{
 			        header: 'File',			        
@@ -213,15 +269,16 @@ function upload_dialog(cfg){
 			    	{
 			        header: 'Size',			        
 			        dataIndex: 'size',
-			        width: .3,
+			        width: 50,
 			        cls: 'upload-row'
 				    },
 			    	{
 			        header: 'Status',			        
-			        dataIndex: 'status'	,
-			        width: .07,
+			        dataIndex: 'progress'	,
+			        width: 100,
 			        //cls: 'upload-row',
-			        tpl: '<p class="upload_{status}"/>'
+//			        tpl: '<p class="upload_{status}"/>'
+			        renderer: progressbar_renderer
 			    }]
             }) 
             

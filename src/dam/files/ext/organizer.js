@@ -1499,7 +1499,7 @@ Ext.onReady(function(){
         interval: 3000 //3 second
     };
     var runner = new Ext.util.TaskRunner();
-    runner.start(task);
+//    runner.start(task);
  
 
     var media_tabs = new Ext.TabPanel({
