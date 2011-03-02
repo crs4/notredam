@@ -27,16 +27,15 @@ function upload_dialog(cfg){
 		};
 		
 		var files_store = Ext.getCmp('files_list').getStore();
-		var files = files_store.query('status', 'to_upload').items;
-		if (files.length == 0)
+		var files_num = files_store.getCount();
+		if (files_num == 0)
 			return;
-		files_store.filterBy(function(r){
-			return (r.data.status == 'to_upload')
-		});
+		files = files_store.data.items;
+//		files_store.filterBy(function(r){
+//			return (r.data.status == 'to_upload')
+//		});
 		
 		var session_id = user + '_' + new Date().getTime();
-		
-		
 		
 		var files_length = files.length;
 		var file;
@@ -67,13 +66,15 @@ function upload_dialog(cfg){
 				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
 	            if (xhr.readyState == 4){
 		        	if (xhr.status == 200){					        		
-		        		file_record.set('status', 'ok');
-						file_record.set('progress', 100);
-		        		file_record.commit();
+//		        		file_record.set('status', 'ok');
+//						file_record.set('progress', 100);
+//		        		file_record.commit();
+		        		Ext.getCmp('progress_' + i).updateProgress(1, 'completed');
 		        	}
 		        	else if(xhr.status == 500){
-		        		file_record.set('status', 'failed');
-	        			file_record.commit();
+//		        		file_record.set('status', 'failed');
+//	        			file_record.commit();
+		        		Ext.getCmp('progress_' + i).updateProgress(1, 'failed');
 		        	}
 		        	_upload_file(i+1, files, session_id, params);
 		        }
@@ -86,14 +87,19 @@ function upload_dialog(cfg){
 	        	if (evt.lengthComputable) {
 	        		var complete = evt.loaded / evt.total;
 		        	var percentComplete = Math.round((complete)*100);
-		        	console.log(percentComplete);
-		        	
 		        	Ext.getCmp('progress_' + i).updateProgress(complete, percentComplete + '%');
 	        	}
 	        	
 	        };
 	        
 			
+	        var progressbar = Ext.getCmp('progress_' + i);
+	        if (progressbar.text == 'completed' || progressbar.text == 'aborted'){
+	        	return _upload_file(i+1, files, session_id, params);
+	        	
+	        	}
+	        	
+	        	
 			
 			xhr.open("POST", this.url + '?'+ final_params, true);
 	        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
@@ -101,8 +107,9 @@ function upload_dialog(cfg){
 	        xhr.setRequestHeader("Content-Type", "application/octet-stream");
 	        
 	        var file_record = Ext.getCmp('files_list').getStore().getAt(i);
-	        file_record.set('status', 'inprogress');
-	        file_record.commit();
+	        
+//	        file_record.set('status', 'inprogress');
+//	        file_record.commit();
 	        
 	        xhr.send(file);
 	
@@ -110,13 +117,13 @@ function upload_dialog(cfg){
 		
 		_upload_file(0, files, session_id, params);
 	
-	};
-	
+	};	
 	var file_counter = 0;
 	
-	
     var progressbar_renderer = function(value, meta, rec, row, col, store){
-    
+		console.log(rec.data.status);
+    	
+    	
 	    var id = Ext.id();
 	    var is_int = parseInt(value)
 	    var text;
@@ -225,13 +232,9 @@ function upload_dialog(cfg){
             	text: 'Abort',
             	icon: '/files/images/icons/fam/delete.gif',
             	handler: function(){
-            		var files = Ext.getCmp('files_list').getStore().query('status', 'to_upload').items;
-            		
-            		Ext.each(files, function(file){
-            			file.set('status', 'aborted');	
-            			file.commit();
-            		
-            		});
+            		var files_num = Ext.getCmp('files_list').getStore().getCount();
+            		for(var i = 0; i<files_num; i++)
+            			Ext.getCmp('progress_'+i).updateProgress(1, 'aborted');
             		
             			
             	
@@ -264,18 +267,24 @@ function upload_dialog(cfg){
             	 columns: [{
 			        header: 'File',			        
 			        dataIndex: 'filename',
-			        cls: 'upload-row'
+			        sortable: false,
+			        menuDisabled: true
+//			        cls: 'upload-row'
 			    	},
 			    	{
 			        header: 'Size',			        
 			        dataIndex: 'size',
 			        width: 50,
-			        cls: 'upload-row'
+			        sortable: false,
+			        menuDisabled: true
+//			        cls: 'upload-row'
 				    },
 			    	{
 			        header: 'Status',			        
 			        dataIndex: 'progress'	,
 			        width: 100,
+			        sortable: false,
+			        menuDisabled: true,
 			        //cls: 'upload-row',
 //			        tpl: '<p class="upload_{status}"/>'
 			        renderer: progressbar_renderer
