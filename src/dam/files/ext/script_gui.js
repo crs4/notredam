@@ -766,7 +766,7 @@ var MDAction =  function(opts, layer) {
 
 }; 
 YAHOO.lang.extend(MDAction, WireIt.Container, {
-	
+		
 	getXY: function(){
 		return Ext.get(this.el).getXY();
 	},
@@ -801,6 +801,21 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	onAddWire: function(e, args){
 		var wire = args[0];
 		wire.label = Ext.id();
+		var terminal_out = wire.terminal2;
+		var terminal_in = wire.terminal1;
+		var values = terminal_in.container.form.getForm().getValues();
+		var output_variant = values.output_variant || values.source_variant;
+		console.log('outpt_variant ' + output_variant);
+		
+		if (output_variant){
+			terminal_out.container.form.getForm().setValues({
+				source_variant: output_variant
+			});
+			console.log(terminal_out.container.form.getForm().getValues())
+		}
+		
+		
+		
 		
 	
 		
