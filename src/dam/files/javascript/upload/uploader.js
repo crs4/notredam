@@ -157,6 +157,7 @@ function upload_dialog(cfg){
 	this.win =  new Ext.Window({
 			id: 'upload_win',
             title    : 'Upload',
+            resizable: true,
             closable : true,
             width    : 800,
             height   : 350,
@@ -248,12 +249,15 @@ function upload_dialog(cfg){
             items: new Ext.Panel({
             	id: 'files_list_container',
             	border: false,
+            	layout: 'fit',
+            	autoScroll: true,
             	items:new Ext.grid.GridPanel({
             	id: 'files_list',
-            	frame: true,
+            	
+//            	frame: true,
             	layout: 'fit',
-//            	autoHeight: true,
-            	height: 300,
+            	autoHeight: true,
+//            	height: 300,
             	border: false,
             	viewConfig: {
             		forceFit: true,
@@ -267,22 +271,22 @@ function upload_dialog(cfg){
             	 columns: [{
 			        header: 'File',			        
 			        dataIndex: 'filename',
-			        sortable: false,
+			        sortable: false,			        
 			        menuDisabled: true
 //			        cls: 'upload-row'
 			    	},
 			    	{
 			        header: 'Size',			        
 			        dataIndex: 'size',
-			        width: 50,
+			        width: 25,
 			        sortable: false,
 			        menuDisabled: true
 //			        cls: 'upload-row'
 				    },
 			    	{
-			        header: 'Status',			        
+			        header: 'Progress',			        
 			        dataIndex: 'progress'	,
-			        width: 100,
+			        width: 60,
 			        sortable: false,
 			        menuDisabled: true,
 			        //cls: 'upload-row',
