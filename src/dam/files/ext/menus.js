@@ -630,21 +630,31 @@ Ext.onReady(function(){
                     		Ext.Ajax.request({
 				            	url: '/upload_session_finished/',
 				            	params: {session: session_id},
+				            	failure: function(){
+				            		Ext.Msg.alert('Error', 'An upload error occurs server side, sorry.');
+//				            		Ext.getCmp('files_list').getStore().removeAll();
+				            		var files_num = Ext.getCmp('files_list').getStore().getCount();
+				            		for (var i = 0; i < files_num; i++){
+				            			Ext.getCmp('progress_' + i).updateProgress(1,'failed');
+				            		
+				            		}
+				            		
+				            	},
 				            	success: function(){
 				            		var tab = Ext.getCmp('media_tabs').getActiveTab();
 					                var view = tab.getComponent(0);
 					                var selecteds = view.getSelectedRecords();
 					                var store = view.getStore();
-					                var uploads_failed = Ext.getCmp('files_list').getStore().query('status', 'failed').items.length;
-					                var uploads_success = Ext.getCmp('files_list').getStore().query('status', 'ok').items.length;
-					                var buttons = []
-					                
-					                if (uploads_failed > 0) 
-					                	buttons.push({
-							            	text: 'Retry failed upload',							            	
-							            	handler: function(){							            		
-							            	}							            
-							            });
+//					                var uploads_failed = Ext.getCmp('files_list').getStore().query('status', 'failed').items.length;
+//					                var uploads_success = Ext.getCmp('files_list').getStore().query('status', 'ok').items.length;
+//					                var buttons = []
+//					                
+//					                if (uploads_failed > 0) 
+//					                	buttons.push({
+//							            	text: 'Retry failed upload',							            	
+//							            	handler: function(){							            		
+//							            	}							            
+//							            });
 							        buttons.push({
 							            	text: 'Upload more files',
 							            	handler: function(){
