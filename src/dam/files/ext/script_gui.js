@@ -1102,7 +1102,7 @@ Ext.onReady(function(){
 								Ext.each(inner_action['in'], function(_in){
 									
 									if (out && out == _in){
-										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom.childNodes[0], {color: random_color()});
+										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom.childNodes[0], {color: action.getTerminal('out').options.wireConfig.color});
 //								
 										w.drawBezierCurve();	
 									}
