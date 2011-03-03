@@ -16,9 +16,9 @@ Ext.ux.StoreMenu = function(config){
     Ext.apply(store_cfg, {
         autoLoad: true,
         listeners: {
-            load: function(store, records){
-                console.log(records);
+            load: function(store, records){               
                 menu.removeAll();
+                console.log(menu);
                 Ext.each(records, function(record){
                     var cfg = record.data;            
                     Ext.apply(cfg, config.item_cfg);
@@ -32,7 +32,8 @@ Ext.ux.StoreMenu = function(config){
     this.store = new Ext.data.JsonStore(store_cfg);
     
 };
-Ext.extend(Ext.ux.StoreMenu, Ext.menu.Menu, {});
+Ext.extend(Ext.ux.StoreMenu, Ext.menu.Menu, {
+    });
 
 
 
@@ -935,7 +936,7 @@ function save_script(params){
 		success: function(response){
 //		  	Ext.MsgBox.msg('','Script saved');
 			Ext.Msg.alert('Save', 'Script saved successfully.');
-			script_type = params.type;
+			
 			if (! script_pk)
 				script_pk = Ext.decode(response.responseText).pk;
 			try{
@@ -1183,9 +1184,30 @@ Ext.onReady(function(){
 				            allowBlank: false
 			//	            emptyText: 'new script'
 			        	},
-                        {
-                            text:'Events',
+                        {xtype: 'tbseparator'},
+                        //~ {
+                            //~ text:'Events',
+                            //~ menu: new Ext.ux.StoreMenu({
+                                //~ store_cfg: {
+                                    //~ url: '/get_events/',
+                                    //~ root:'events',
+                                    //~ fields: ['id', 'text', 'checked'],
+                                    //~ baseParams:{
+                                        //~ script_id: script_pk
+                                    //~ }
+                                //~ },                                
+                                //~ item_text_field: 'name',
+                                //~ item_cfg: {
+                                        //~ hideOnClick: true,
+                                        //~ xtype: 'menucheckitem'
+                                //~ },                               
+                            //~ })
+                            //~ 
+                        //~ },
+                        {                           
+                            text:'Events',                            
                             menu: new Ext.ux.StoreMenu({
+                                id: 'events',
                                 store_cfg: {
                                     url: '/get_events/',
                                     root:'events',
@@ -1196,12 +1218,72 @@ Ext.onReady(function(){
                                 },                                
                                 item_text_field: 'name',
                                 item_cfg: {
-                                        hideOnClick: true,
-                                        xtype: 'menucheckitem'
+                                        hideOnClick: false,
+                                        xtype: 'menucheckitem',
+                                        handler: function(event){
+                                            
+                                            (function(){
+                                                var record = event.ownerCt.store.getById(event.id);
+                                                console.log('event.checked '+ event.checked);
+                                                record.set('checked', event.checked);
+                                                record.commit();
+                                            }).defer(100);
+                                        }
                                 },                               
+                                getValue: function(){
+                                    var records_checked = this.store.query('checked', true);                                    
+                                    var values = []
+                                    Ext.each(records_checked.items, function(record){
+                                        values.push(record.data.id);
+                                    });
+                                    return values;
+                                }
                             })
                             
                         },
+                        
+                        {                           
+                            text:'Media',                            
+                            menu: new Ext.ux.StoreMenu({
+                                id: 'media_types',
+                                store_cfg: {
+                                    //~ url: '/get_types/',
+                                    data: {'types':[{'pk': 1,'text': 'image'}, {'pk': 2,'text': 'audio'},{'pk': 3,'text': 'video'},{'pk': 4,'text': 'doc'}]},
+                                    root:'types',
+                                    idProperty: 'pk',
+                                    fields: ['pk', 'text', 'checked'],
+                                    baseParams:{
+                                        script_id: script_pk
+                                    }
+                                },                                
+                                item_text_field: 'name',
+                                item_cfg: {
+                                        hideOnClick: false,
+                                        xtype: 'menucheckitem',
+                                        handler: function(event){
+                                            
+                                            (function(){
+                                                var record = event.ownerCt.store.getById(event.id);
+                                                console.log('event.checked '+ event.checked);
+                                                record.set('checked', event.checked);
+                                                record.commit();
+                                            }).defer(100);
+                                        }
+                                },                               
+                                getValue: function(){
+                                    var records_checked = this.store.query('checked', true);                                    
+                                    var values = []
+                                    Ext.each(records_checked.items, function(record){
+                                        values.push(record.data.id);
+                                    });
+                                    return values;
+                                }
+                            })
+                            
+                        },
+                        
+                        
+                        
                         
 			        	//~ {
 						    //~ xtype: 'tbtext', 
@@ -1232,10 +1314,9 @@ Ext.onReady(function(){
 				//~ 
 				        	//~ },
 				        	
-				        	{xtype: 'tbspacer'},
+				        	{xtype: 'tbseparator'},
 				        	
-				        {
-				            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
+				        {				            
 				            text: 'Save',
 				            id: 'save_button',
 				            icon: '/files/images/icons/save.gif',
@@ -1246,25 +1327,9 @@ Ext.onReady(function(){
 			            				var submit_params =  {
 											pk: script_pk,
 											name: Ext.getCmp('script_name').getValue(),
-											type: Ext.getCmp('script_type').getValue(),
+											events: Ext.getCmp('events').getValue(),
 											params: Ext.encode(baseLayer.getJson())		            			
 										};
-									
-									if (submit_params.type != script_type)
-										Ext.Msg.show({
-										   title:'Change Script Event?',
-										   msg: 'You are changing the event to whom the script is associated. Note that only a script at once can be associated with a given event. Do you confirm the change?',
-										   buttons: Ext.Msg.YESNOCANCEL,
-										   fn: function(btn){
-										   	if (btn == 'yes'){
-												save_script(submit_params);	   		
-										   		
-										   	}
-										   },
-										   
-										   icon: Ext.MessageBox.QUESTION
-										});
-									else
 										save_script(submit_params);	   		
 									
 				            		
