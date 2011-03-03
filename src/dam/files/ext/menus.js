@@ -645,9 +645,16 @@ Ext.onReady(function(){
 					                var view = tab.getComponent(0);
 					                var selecteds = view.getSelectedRecords();
 					                var store = view.getStore();
-//					                var uploads_failed = Ext.getCmp('files_list').getStore().query('status', 'failed').items.length;
-//					                var uploads_success = Ext.getCmp('files_list').getStore().query('status', 'ok').items.length;
-//					                var buttons = []
+									var uploads_failed = 0, uploads_success = 0, progressbar;
+									var files_num = Ext.getCmp('files_list').getStore().getCount();
+									for(var i = 0; i<files_num; i++){
+										progressbar = Ext.getCmp('progress_' + i);
+										if(progressbar.text == 'failed')
+											uploads_failed += 1;
+										else if (progressbar.text == 'completed')
+										uploads_success += 1;
+									}
+									var buttons = []
 //					                
 //					                if (uploads_failed > 0) 
 //					                	buttons.push({
