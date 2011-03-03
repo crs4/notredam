@@ -13,5 +13,6 @@ urlpatterns = patterns('',
     (r'^script_monitor/', 'dam.scripts.views.script_monitor'),
     (r'^script_editor/(.+)/$', 'dam.scripts.views.editor'),
     (r'^script_editor/$', 'dam.scripts.views.editor'),
+	(r'^get_events/$', 'dam.scripts.views.get_events'),
     
 )

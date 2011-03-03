@@ -4,11 +4,38 @@ function random_color(){
 		num = Math.round(Math.random()*15);
 		color += num.toString(16);	
 	}
-	console.log('color '+ color);
-	return color;
-	
-	
+    return color;
+    
 }
+
+Ext.ux.StoreMenu = function(config){
+    
+    Ext.ux.StoreMenu.superclass.constructor.call(this, config);    
+    var menu = this;
+    var store_cfg = config.store_cfg;
+    Ext.apply(store_cfg, {
+        autoLoad: true,
+        listeners: {
+            load: function(store, records){
+                console.log(records);
+                menu.removeAll();
+                Ext.each(records, function(record){
+                    var cfg = record.data;            
+                    Ext.apply(cfg, config.item_cfg);
+                    menu.add(cfg);
+                
+                });
+                
+            }
+        }        
+    });
+    this.store = new Ext.data.JsonStore(store_cfg);
+    
+};
+Ext.extend(Ext.ux.StoreMenu, Ext.menu.Menu, {});
+
+
+
 Ext.ux.FieldSetContainer = function(config) {
     Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);    
  	this.form = this.ownerCt;
@@ -47,7 +74,6 @@ Ext.ux.SelectFieldSet = function(config) {
 	for (select in config.values)
 		select_values.push([select]);
 	
-	console.log('config.select_value '  + config.select_value);
 	var fieldset = new Ext.ux.FieldSetContainer({
 	xtype: 'fieldsetcontainer',
 	items: config.values[config.select_value]
@@ -389,7 +415,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	 	 var cb_id = Ext.id();
 	 	 Ext.apply(this, {
 	 	 	cb_id: cb_id,
-	 	 	checkboxToggle: {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox', id: cb_id}
+	 	 	checkboxToggle: {tag: 'input', type: 'checkbox'}
 	 	 });
 	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
 	
@@ -666,10 +692,8 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
         this.pos_y_percent.setValue(parseInt(pos_y));
 	},
 	
-	data_loaded: function(values){
-		console.log(values);		
-		var square_selected = this.square.getValue();
-		console.log(this.wm_id)
+	data_loaded: function(values){        
+		var square_selected = this.square.getValue();		
 		if(square_selected)
 			this.watermarking(square_selected);
 			
@@ -805,13 +829,11 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 		var terminal_in = wire.terminal1;
 		var values = terminal_in.container.form.getForm().getValues();
 		var output_variant = values.output_variant || values.source_variant;
-		console.log('outpt_variant ' + output_variant);
 		
 		if (output_variant){
 			terminal_out.container.form.getForm().setValues({
 				source_variant: output_variant
-			});
-			console.log(terminal_out.container.form.getForm().getValues())
+			});			
 		}
 		
 		
@@ -993,8 +1015,7 @@ Ext.onReady(function(){
 				region: 'center',
 				listeners:{
 					afterrender: function(){
-						layer_el = this.getEl();
-						console.log('layer_el.dom.id ' + layer_el.dom.id);
+						layer_el = this.getEl();						
 						baseLayer = new WireIt.Layer({
 							layerMap: false,
 							parentEl: layer_el
@@ -1162,40 +1183,54 @@ Ext.onReady(function(){
 				            allowBlank: false
 			//	            emptyText: 'new script'
 			        	},
-			        	{
-						    xtype: 'tbtext', 
-						    text: 'Event: '
-					    } ,
-			        	
-			        	{
-					   		id: 'script_type',
-					   		
-				            xtype: 'combo',
-				            name: 'type',
-				            allowBlank: true,	             
-						    autoSelect: true,
-						    editable: false,
-						    triggerAction: 'all',
-						    lazyRender:true,
-			//			    forceSelection: true,
-			//			    store: new Ext.data.JsonStore({
-			//			    	url: '/get_script_types/',
-			//			    	fields: ['pk', 'name'],
-			//			    	roots: 'types'			    
-			//			    }),
-						    mode: 'local',
-						    store:  new Ext.data.ArrayStore({        
-					        	fields: ['pk', 'name'],
-					        	data: types_available
-				    		}),		
-					    
-						    value: script_type,
-							    
-						    valueField: 'pk',
-						    displayField: 'name'
-					            
-				
-				        	},
+                        {
+                            text:'Events',
+                            menu: new Ext.ux.StoreMenu({
+                                store_cfg: {
+                                    url: '/get_events/',
+                                    root:'events',
+                                    fields: ['id', 'text', 'checked'],
+                                    baseParams:{
+                                        script_id: script_pk
+                                    }
+                                },                                
+                                item_text_field: 'name',
+                                item_cfg: {
+                                        hideOnClick: true,
+                                        xtype: 'menucheckitem'
+                                },                               
+                            })
+                            
+                        },
+                        
+			        	//~ {
+						    //~ xtype: 'tbtext', 
+						    //~ text: 'Event: '
+					    //~ } ,
+			        	//~ 
+			        	//~ {
+					   		//~ id: 'script_type',
+					   		//~ 
+				            //~ xtype: 'combo',
+				            //~ name: 'type',
+				            //~ allowBlank: true,	             
+						    //~ autoSelect: true,
+						    //~ editable: false,
+						    //~ triggerAction: 'all',
+						    //~ lazyRender:true,
+						    //~ mode: 'local',
+						    //~ store:  new Ext.data.ArrayStore({        
+					        	//~ fields: ['pk', 'name'],
+					        	//~ data: types_available
+				    		//~ }),		
+					    //~ 
+						    //~ value: script_type,
+							    //~ 
+						    //~ valueField: 'pk',
+						    //~ displayField: 'name'
+					            //~ 
+				//~ 
+				        	//~ },
 				        	
 				        	{xtype: 'tbspacer'},
 				        	

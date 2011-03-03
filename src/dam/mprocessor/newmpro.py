@@ -55,7 +55,7 @@ class MProcessor(MQServer):
     def wake_process(self):
         waiting_processes = Process.objects.filter(start_date=None)
         if waiting_processes:
-            return wait_processes[0]
+            return waiting_processes[0]
         else:
             return None
 

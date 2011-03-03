@@ -371,3 +371,15 @@ def editor(request, script_id = None):
     logger.debug('types_available %s'%types_available)
     return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available, 'workspace': workspace }))
 
+@login_required
+def get_events(request):
+	script_id = request.POST.get('script_id')
+	return HttpResponse(simplejson.dumps({
+		'events':[{
+			'id':1,
+			'text': 'upload',
+			'checked': True
+		}],
+		'success':True
+	
+	}))
