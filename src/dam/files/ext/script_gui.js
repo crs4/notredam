@@ -548,96 +548,61 @@ Ext.onReady(function(){
                             //~ })
                             handler: function(){
                                 
-                                var expander = new Ext.ux.grid.RowExpander({
-                                    lazyRender: false,
-                                    getRowClass : function(record, rowIndex, p, ds){
-                                        p.cols = p.cols-1;
-                                        var content = this.bodyContent[record.id];
-                                        if(!content && !this.lazyRender){
-                                            content = this.getBodyContent(record, rowIndex);
+                                var reader = new Ext.data.ArrayReader({}, [
+                                   {name: 'name'},
+                                   {name: 'type'},
+                                   {name: 'checked'},
+                                   
+                                ]);
+
+                                var store = new Ext.data.GroupingStore({
+                                        reader: reader,
+                                        //~ data: [{name: 'jpeg', type:'image', checked: true}],                                        
+                                        data: [['jpeg', 'image', true], ['png', 'image', false], ['mp3', 'audio', true]],                                        
+                                        groupField:'type'
+                                    });
+    
+                                var grid_id = 'media_grid';
+                                var grid = new Ext.grid.GridPanel({
+                                    id: grid_id,
+                                    store: store,                                    
+                                    columns: [
+                                        {id:'name',header: "name", width: 260, dataIndex: 'name',
+                                        renderer: function(value, metaData, record, rowIndex, colIndex, store) {
+                                                var tmp = String.format('<input type="checkbox" name={0} ', record.data.name);
+                                                tmp += String.format('onclick="var record = Ext.getCmp(\'{0}\').getStore().query(\'name\', \'{1}\').items[0]; record.set(\'checked\', this.checked); record.commit();"', grid_id, record.data.name);
+                                                tmp += " "
+                                                if(record.data.checked)
+                                                    tmp+='checked';
+                                                tmp += '/>';
+                                                tmp += String.format('<span>{0}</span>', record.data.name);
+                                                return tmp;
+                                                
                                         }
-                                        if(content){
-                                            p.body = content;
-                                        }
-                                        if (record.data.expanded)
-                                            return 'x-grid3-row-expanded';
-                                        else
-                                            return this.state[record.id] ? 'x-grid3-row-expanded' : 'x-grid3-row-collapsed';
+                                        },
+                                        {id:'type',header: "type", width: 260, dataIndex: 'type', hidden: true}
                                         
-                                    },
-                                    tpl : new Ext.XTemplate(
-                                        '<tpl for="mimetypes">',
-                                            //~ '<input type="checkbox" name="{name}" class="{parent.name}" onclick="Ext.get(\'cb_{parent.name}\').dom.checked=true;"/> {name}',
-                                            '<div><input style="margin-left: 20px;" type="checkbox" name="{name}" class="{parent.name}"  onclick="', 
-                                                'if(!this.checked) Ext.get(\'cb_{parent.name}\').dom.checked=false;"',
-                                            '<tpl if="checked">',
-                                                'checked',
-                                            '</tpl>',
-                                            '/>',
-                                             ' <span style="padding-left:5px">{name}<span></div>',
-                                        '</tpl>'                                       
-                                    )
-                                });
+                                        ],
+
+                                    view: new Ext.grid.GroupingView({
+                                        forceFit:true,
+                                        groupTextTpl: '{text}'
+                                    }),
+                                    
+                                    border:false,
+                                    width: 600,
+                                    height: 300,                                    
+                                    title: 'Media Types'
+                            });
+
+
+                                
                                 var win = new Ext.Window({
                                     width: 600,
                                     height: 300,
-                                  
-                                    items: new Ext.grid.GridPanel({
-                                             store: new Ext.data.JsonStore({
-                                            fields: ['name', 'mimetypes', 'expanded'],
-                                            'root': 'types',                                
-                                            data: {types:[{
-                                                    name:'image',
-                                                    expanded: true,
-                                                    mimetypes: [{
-                                                        name: 'jpeg',
-                                                        checked: true
-                                                        
-                                                    },
-                                                    {
-                                                        name: 'png',
-                                                        checked: false
-                                                        
-                                                        
-                                                    }
-                                                    ]
-                                                },
-                                                {
-                                                    name:'audio',
-                                                    expanded: false,
-                                                    mimetypes: [{
-                                                        name: 'mp3',
-                                                        checked: false
-                                                        
-                                                    },
-                                                    {
-                                                        name: 'ogg',
-                                                        checked: false
-                                                    }
-                                                    ]
-                                                }
-                                            ]}
-                                        }),                            
-                                        columns: [
-                                                expander, 
-                                                                             
-                                                {id:'name',header: "Name",  dataIndex: 'name',
-                                                renderer: function(value, metaData, record, rowIndex, colIndex, store) {
-                                                    var tpl = String.format('<input type="checkbox" id="cb_{0}" name="{0}" onclick="Ext.each(Ext.query(\'.{0}\'),function(cb){cb.checked=true;})"/><span style="padding-left:5px">{0}</span>', record.data.name);
-                                                    return tpl;
-                                                }
-                                            }
-                                        ],
-                                        plugins: expander,
-                                        viewConfig: {
-                                            forceFit:true
-                                        },        
-                                        width: 600,
-                                        height: 300,                            
-                                        title: 'Media Types'
-                                            
-                                        })
-                                })
+                                    modal: true,
+                                    items: grid
+                                        });
                                 win.show();
                                 
                             }
