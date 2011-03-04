@@ -547,11 +547,34 @@ Ext.onReady(function(){
                                 //~ }
                             //~ })
                             handler: function(){
+                                
                                 var expander = new Ext.ux.grid.RowExpander({
+                                    lazyRender: false,
+                                    getRowClass : function(record, rowIndex, p, ds){
+                                        p.cols = p.cols-1;
+                                        var content = this.bodyContent[record.id];
+                                        if(!content && !this.lazyRender){
+                                            content = this.getBodyContent(record, rowIndex);
+                                        }
+                                        if(content){
+                                            p.body = content;
+                                        }
+                                        if (record.data.expanded)
+                                            return 'x-grid3-row-expanded';
+                                        else
+                                            return this.state[record.id] ? 'x-grid3-row-expanded' : 'x-grid3-row-collapsed';
+                                        
+                                    },
                                     tpl : new Ext.XTemplate(
                                         '<tpl for="mimetypes">',
                                             //~ '<input type="checkbox" name="{name}" class="{parent.name}" onclick="Ext.get(\'cb_{parent.name}\').dom.checked=true;"/> {name}',
-                                            '<div><input style="margin-left: 20px;" type="checkbox" name="{name}" class="{parent.name}" onclick="if(!this.checked) Ext.get(\'cb_{parent.name}\').dom.checked=false;"/> <span style="padding-left:5px">{name}<span></div>',
+                                            '<div><input style="margin-left: 20px;" type="checkbox" name="{name}" class="{parent.name}"  onclick="', 
+                                                'if(!this.checked) Ext.get(\'cb_{parent.name}\').dom.checked=false;"',
+                                            '<tpl if="checked">',
+                                                'checked',
+                                            '</tpl>',
+                                            '/>',
+                                             ' <span style="padding-left:5px">{name}<span></div>',
                                         '</tpl>'                                       
                                     )
                                 });
@@ -561,29 +584,35 @@ Ext.onReady(function(){
                                   
                                     items: new Ext.grid.GridPanel({
                                              store: new Ext.data.JsonStore({
-                                            fields: ['name', 'mimetypes'],
+                                            fields: ['name', 'mimetypes', 'expanded'],
                                             'root': 'types',                                
                                             data: {types:[{
                                                     name:'image',
+                                                    expanded: true,
                                                     mimetypes: [{
                                                         name: 'jpeg',
+                                                        checked: true
                                                         
                                                     },
                                                     {
                                                         name: 'png',
+                                                        checked: false
+                                                        
                                                         
                                                     }
                                                     ]
                                                 },
                                                 {
                                                     name:'audio',
+                                                    expanded: false,
                                                     mimetypes: [{
                                                         name: 'mp3',
+                                                        checked: false
                                                         
                                                     },
                                                     {
                                                         name: 'ogg',
-                                                        
+                                                        checked: false
                                                     }
                                                     ]
                                                 }
