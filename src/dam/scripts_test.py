@@ -307,6 +307,14 @@ Usage: script_test.py <action> <arguments>
  
   register <trigger> <mime_type> [pipeline_definition]  
   upload <trigger> <filenames>
+
+  Examples:
+  python scripts_test.py register up1 upload image actions  
+    registers the pipeline described in the global dict "actions" with the name up1,
+    to react to the trigger "upload", for all types "image/*"
+
+  python scripts_test.py execpipes upload megan-fox*.jpg
+    exec all tipes registered for trigger upload on the files megan-fox*.jpg 
 """
 
 
@@ -324,7 +332,7 @@ def main(argv):
         pipeline_def = globals()[argv[5]]
         test.register(name, trigger, mime_type, '', pipeline_def)
     
-    elif task == 'upload':
+    elif task == 'execpipes':
         trigger = argv[2]
         files = argv[3:]
         if not files:
