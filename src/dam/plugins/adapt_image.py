@@ -1,7 +1,7 @@
+import os
 from twisted.internet import defer, reactor
 from mediadart import log
 from mediadart.mqueue.mqclient_twisted import Proxy
-import os
 
 from django.core.management import setup_environ
 import dam.settings as settings
@@ -13,6 +13,8 @@ get_models()
 from dam.repository.models import *
 from dam.variants.models import Variant    
 from dam.workspace.models import DAMWorkspace
+from dam.plugins.common.utils import get_source_rendition
+from dam.core.dam_repository.models import Type
 
 from uuid import uuid4
 
@@ -21,18 +23,18 @@ def new_id():
 
 def inspect(workspace):
     from django.db.models import Q
-    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
-    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
+    variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False)]
+#    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
+#    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
+     
     return {
         'name': __name__,
-       
-        
         'params':[
             {   
                 'name': 'source_variant',
-                'fieldLabel': 'Source Variant',
+                'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
-                'values': source_variants,
+                'values': variants,
                 'description': 'input-variant',
                 
                 'help': ''
@@ -40,16 +42,22 @@ def inspect(workspace):
             
             {   
                 'name': 'output_variant',
-                'fieldLabel': 'Output Variant',
+                'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': output_variants,
+                'values': variants,
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
-            },             
-             {
-              'xtype': 'cbfieldset',
+            },
+            {
+             'xtype':'fieldsetcontainer',
+             'items':[{
+              'xtype': 'movablecbfieldset',
               'title': 'Resize',
+              'name': 'resize',
+              'order_field_name': 'actions',
+              'order_field_value': 'resize',
+              
              
               'items':[{
                     'xtype':'numberfield',
@@ -69,14 +77,15 @@ def inspect(workspace):
                     'minValue':0,
                     'help': 'width of resized image in pixels'
                 },
-                    
+                
               ]
               },
                {
-              'xtype': 'cbfieldset',
+              'xtype': 'movablecbfieldset',
               'title': 'Crop',
-              'checkboxToggle': True,
-              'collapsed': True,
+              'name': 'crop',
+              'order_field_name': 'actions',
+              'order_field_value': 'crop',
               'items':[{
                     'xtype':'numberfield',
                     'name': 'crop_h',
@@ -95,34 +104,77 @@ def inspect(workspace):
                     'minValue':0,
                     'help': 'width of crop area, default till right edge of image'
                 },
+                
+                
               ]
               },
+              {
+              'xtype': 'watermarkfieldset',
+              'title': 'Watermark',
+              'name': 'watermark',
+              'order_field_name': 'actions',
+              'order_field_value': 'watermark',
+               'renditions': variants
+#              'items':[
+#                       {
+#                        'xtype': 'compositefield',
+#                        'items':[
+#                                 {
+#                                    'id': 'wm_id',
+#                                    'width': 160,
+#                                    'xtype':'textfield',
+#                                    'name': 'wm_id',
+#                                    'fieldLabel': 'image',                    
+#                                    'description': 'image',
+#                                    
+#                #                    'value': 100,
+#                                    'help': ''
+#                                },
+#                                {
+#                                 'xtype': 'watermarkbrowsebutton',
+#                                 'text': 'Browse',
+#                                 'values': variants
+#                                 
+#                                   
+#                                }
+#                        ]
+#                        },
+#                        {
+#                         'xtype': 'watermarkposition'
+#                         
+#                         },
+#                        
+#              ]
+              },
+              ]
+             
+             },
+                         
+              
+              {   
+                'name': 'output_format',
+                'fieldLabel': 'format',
+                'xtype': 'select',
+                'values': [['image/jpeg'], ['image/x-ms-bmp'], ['image/gif'], ['image/png'], ['same_as_source']],
+                'description': 'output_format',
+                'help': 'output_format: use the string "same_as_source" to produce a file of the same type as the source'
+            }
+              
         ]
         
     } 
 
-theProxy = None
 
 def run(*args, **kw_args):
-    #log.debug('adapt_image')
-    #global theProxy
-    #log.debug('adapt_image1')
-    #log.debug('adapt_image1 %s' % str(theProxy))
-    #log.debug('adapt_image2')
-    #if theProxy is None:
-        #log.debug('### new instance of Proxy')
-    #    theProxy = Proxy('Adapter')
-    #else:
-    #    log.debug('### reusing proxy instance %s' % str(theProxy))
     deferred = defer.Deferred()
-    adapter = Adapter(deferred, theProxy)
+    adapter = AdaptImage(deferred)
     reactor.callLater(0, adapter.execute, *args, **kw_args)
     return deferred
 
-class Adapter:
-    def __init__(self, deferred, proxy):    
+class AdaptImage:
+    def __init__(self, deferred):    
         self.deferred = deferred
-        self.adapter_proxy = Proxy('Adapter') #proxy
+        self.adapter_proxy = Proxy('Adapter')
     
     def handle_result(self, result, component):
         log.debug('handle_result %s' % str(result))
@@ -158,12 +210,14 @@ class Adapter:
                 pos_y_percent = None,
                 wm_id = None):
 
-        log.info('executing adaptation')
-        item = Item.objects.get(pk = item_id)
-        source = Component.objects.get(workspace=workspace, variant__name=source_variant, item=item)
-        
+        log.info('AdaptImage.execute')
+        item, source = get_source_rendition(item_id, source_variant, workspace)
+        if output_format == 'same_as_source':
+            media_type = source.media_type
+        else:
+            media_type = Type.objects.get_or_create_by_mime(output_format)
         output_variant = Variant.objects.get(name = output_variant)
-        output_component = item.create_variant(output_variant, workspace)
+        output_component = item.create_variant(output_variant, workspace, media_type)
                 
         log.debug("[adapt_resource] from original component %s" % output_component.source)
         
@@ -189,7 +243,8 @@ class Adapter:
                 argv += ['cache://' + wm_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
         
         log.debug("calling adapter")
-        dest_res_id = get_storage_file_name(item.ID, workspace.pk, output_variant.name, output_format)
+        extension = media_type.ext
+        dest_res_id = get_storage_file_name(new_id(), workspace.pk, output_variant.name, extension)
         output_component.uri = dest_res_id
         output_component.save() 
         
@@ -207,7 +262,7 @@ def test():
             workspace,
             source_variant = 'original',
             output_variant='fullscreen',
-            output_format = 'jpg',
+            output_format = 'image/jpeg',
             actions = ['crop', 'resize'],
             resize_h=100,
             resize_w=100,

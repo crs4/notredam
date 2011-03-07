@@ -25,6 +25,7 @@ from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 import dam.logger as logger
 from dam.mprocessor.models import Process
 
+
 class WSManager(WorkspaceManager):
 
     """

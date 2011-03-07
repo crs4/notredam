@@ -22,6 +22,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from dam import logger
 
+
 class Event(models.Model):
     name = models.CharField(max_length=128, unique = True)
     description = models.CharField(max_length=512)

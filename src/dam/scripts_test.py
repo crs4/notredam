@@ -1,7 +1,6 @@
 import os
 import sys
 from json import loads
-import mimetypes
 import shutil
 from pprint import pprint
 
@@ -14,14 +13,15 @@ from django.utils import simplejson
 from django.contrib.auth.models import User
 from django.db import transaction
 
-from dam.mprocessor.models import new_processor, Pipeline, Process, ProcessTarget
+from dam.mprocessor.models import new_processor, Pipeline, Process, ProcessTarget, TriggerEvent
 from dam.mprocessor.make_plugins import pipeline, pipeline2, simple_pipe
 from dam.workspace.models import DAMWorkspace
 from dam.core.dam_repository.models import Type
 from dam.repository.models import Item, get_storage_file_name
 from dam.variants.models import Variant
 from mediadart.storage import new_id
-from dam.upload.views import guess_media_type, _create_item, _create_variant, _get_media_type
+from dam.upload.views import _create_item, _create_variant
+from supported_types import mime_types_by_type, supported_types
 
 thumbnail = {
     'thumbnail_image':{
@@ -39,7 +39,16 @@ thumbnail = {
     },
 }
 
-action_xmp = {
+action_audio = {
+    'extract_original': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fe'],
+    },
+
     'extract_xmp': {
         'script_name':  'extract_xmp',
         'params' : {
@@ -47,6 +56,42 @@ action_xmp = {
         },
         'in':[],
         'out':['fe'],
+    },
+
+
+}
+
+action_video = {
+    'extract_original': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fe'],
+    },
+
+    'extract_orig_xmp': {
+        'script_name':  'extract_xmp',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fx'],
+    },
+
+    'extract_frame': {
+        'script_name':  'extract_frame',
+        'params' : {
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_format': 'image/jpeg',
+            'frame_w': '100',
+            'frame_h': '100',
+            'position': '20',
+        },
+        'in':['fe', 'fx'],
+        'out':[],
     },
 }
 
@@ -79,7 +124,7 @@ actions = {
             'resize_w': 100,
             'source_variant': 'original',
             'output_variant': 'thumbnail',
-            'output_format' : 'jpeg'        
+            'output_format' : 'image/jpeg'        
             },
          'in': ['fe'],
          'out':['thumbnail']    
@@ -104,7 +149,7 @@ actions = {
             'resize_w': 300,
             'source_variant': 'original',
             'output_variant': 'preview',
-            'output_format' : 'jpeg'        
+            'output_format' : 'image/jpeg'        
             },
          'in': ['fe'],
          'out':['preview']    
@@ -127,7 +172,7 @@ actions = {
             'resize_w': 600,
             'source_variant': 'original',
             'output_variant': 'fullscreen',
-            'output_format' : 'jpeg'        
+            'output_format' : 'image/jpeg'        
             },
          'in': ['fe'],
          'out':['fullscreen']    
@@ -148,56 +193,85 @@ class DoTest:
         self.ws = DAMWorkspace.objects.get(pk = 1)
         self.user = User.objects.get(username='admin')
 
-#    def create_item(self, filepath):
-#        guess = guess_media_type(filepath)
-#        media_type = Type.objects.get(name=guess)
-#        item = Item.objects.create(owner = self.user, uploader = self.user, type=media_type)
-#        item.add_to_uploaded_inbox(self.ws)
-#        item.workspaces.add(self.ws)
-#        return item
-#
-#    def create_variant(self, item, variant, filepath):
-#        fname, ext = os.path.splitext(filepath)
-#        res_id = new_id() + ext
-#        comp = item.create_variant(variant, self.ws)
-#        if variant.auto_generated:
-#            comp.imported = True
-#        comp.file_name = filepath
-#        comp.uri = res_id
-#        mime_type = mimetypes.guess_type(filepath)[0]
-#        comp.format = mime_type.split('/')[1]
-#        comp.save()
-#        return comp
+    def _search_types(self, media_types):
+        err_msg = ""
+        tbd = []
+        l = media_types.split(':')
+        for media_type in l:
+            if not media_type:
+                continue
+            if media_type.find('/') < 0:
+                if media_type in mime_types_by_type:
+                    for subtype in mime_types_by_type[media_type]:
+                        mime_type = '%s/%s' % (media_type, subtype)
+                        tbd.append((mime_type, supported_types[mime_type][0]))
+                else:
+                    err_msg += '### Unrecognized media type %s\n' % media_type
+            else:
+                if media_type in supported_types:
+                    tbd.append((media_type, supported_types[media_type][0]))
+                else:
+                    err_msg += '### unrecognized type/subtype %s: %s\n' % (media_type, str(e))
+        if err_msg:
+            raise(Exception(err_msg))
+        return tbd
 
-    def register(self, name, type, description, pipeline_definition):
-        preview = Pipeline.objects.create(name=name, type=type, description='', params = simplejson.dumps(pipeline_definition), workspace = self.ws)
-        print 'registered pipeline %s, pk = %s' % (name, preview.pk)
+    def register(self, name, trigger, media_types, description, pipeline_definition):
+        e, created=TriggerEvent.objects.get_or_create(name=trigger)
+        pipe = Pipeline.objects.create(name=name,  description='', params = simplejson.dumps(pipeline_definition), workspace = self.ws)
+        pipe.triggers.add(e)
+        for (mime_type, ext) in self._search_types(media_types):
+            t=Type.objects.get_or_create_by_mime(mime_type, ext)
+            pipe.media_type.add(t)
+        pipe.save
+        print 'registered pipeline %s, pk=%s, trigger=%s' % (name, pipe.pk, '-'.join( [x.name for x in pipe.triggers.all()] ) )
 
-    def _new_item(self, filepath):
+    def _new_item(self, filepath, media_type):
         variant = Variant.objects.get(name = 'original')
         fpath, ext = os.path.splitext(filepath)
-        if ext:
-            ext = ext[1:]   # take away '.'
         res_id = new_id()
         final_file_name = get_storage_file_name(res_id, self.ws.pk, variant.name, ext)
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
-        shutil.copyfile(filepath, final_path)
-        media_type = _get_media_type(filepath)
-        item = _create_item(self.user, self.ws, media_type, res_id)
-        _create_variant(filepath, final_file_name, item, self.ws, variant)
-        return item
+        item = _create_item(self.user, self.ws, res_id, media_type)
+        component = _create_variant(filepath, final_file_name, media_type, item, self.ws, variant)
+        return item, component
 
     #@transaction.commit_manually
-    def upload(self, pipe_name, filepaths):
-        uploader = new_processor(pipe_name, self.user, self.ws)
-        open('/tmp/uploader', 'w').write('%s\n' % uploader.pk)
+    def upload(self, trigger, filepaths):
+        print "executing upload, trigger=%s, filepaths=%s" % (trigger, ' '.join(filepaths))
+        uploaders = []
+        f = open('/tmp/uploader', 'w')
+        for p in Pipeline.objects.filter(triggers__name=trigger):
+            print '## adding pipeline %s to uploaders' % p.name
+            uploader=Process.objects.create(pipeline=p, workspace=self.ws, launched_by=self.user)
+            uploaders.append(uploader)
+            f.write('%s\n' % uploader.pk)
+        f.close()
         for fn in filepaths:
             print 'uploading', fn
-            item = self._new_item(fn)
-            uploader.add_params(item.pk)
+            variant = Variant.objects.get(name = 'original')
+            fpath, ext = os.path.splitext(fn)
+            res_id = new_id()
+            media_type = Type.objects.get_or_create_by_filename(fn)
+            item = _create_item(self.user, self.ws, res_id, media_type)
+            found = 0
+            for uploader in uploaders:
+                # here decide which uploader to use based on the content type of the item
+                if uploader.is_compatible(media_type):
+                    found = 1
+                    uploader.add_params(item.pk)
+            if not found:
+                print ">>>>>>>>>> No action for %s" % fn
+            final_file_name = get_storage_file_name(res_id, self.ws.pk, variant.name, ext)
+            final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+            component = _create_variant(fn, final_file_name, media_type, item, self.ws, variant)
+            shutil.copyfile(fn, final_path)
         #transaction.commit()
-        uploader.run()
-        print 'done'
+        print '#### uploaders', uploaders
+        for uploader in uploaders:
+            print 'Launching %s-%s' % (str(uploader.pk), uploader.pipeline.name)
+            uploader.run()
+        print 'Launched uploaders ',
+        print ' '.join(open('/tmp/uploader', 'r').readlines())
 
     def show_pipelines(self):
         pipelines=Pipeline.objects.all()
@@ -208,8 +282,10 @@ class DoTest:
             print('pk=%s name=%s length=%s actions=%s' % (p.pk, p.name, len(d), ' '.join(actions)))
 
     def get_status(self, pid, items):
+        if pid == 'auto':
+            pid=[x.strip() for x in open('/tmp/uploader', 'r').readlines()]
         if items:
-            targets = ProcessTarget.objects.filter(process=pid, target_id__in=items, actions_todo=0)
+            targets = ProcessTarget.objects.filter(process__in=pid, target_id__in=items, actions_todo=0)
         else:
             targets = ProcessTarget.objects.filter(process=pid)
         print 'found %d targets' % len(targets)
@@ -229,9 +305,8 @@ usage="""
 Usage: script_test.py <action> <arguments>
  where action is
  
-  register [pipeline_definition]  (default register actions)
-
-  upload <filename>
+  register <trigger> <mime_type> [pipeline_definition]  
+  upload <trigger> <filenames>
 """
 
 
@@ -241,19 +316,29 @@ def main(argv):
         argv.append('register')
     task = argv[1]
 
-
-    # register <pipeline_name>  <pipeline_def (variable name in this file>)
+    
     if task == 'register':
-        pipeline_def = globals()[argv[3]]
-        test.register(argv[2], 'upload', '', pipeline_def)
-    # upload <pipeline_name> <files>
+        name = argv[2]
+        trigger = argv[3]
+        mime_type = argv[4]
+        pipeline_def = globals()[argv[5]]
+        test.register(name, trigger, mime_type, '', pipeline_def)
+    
     elif task == 'upload':
-        test.upload(argv[2], argv[3:])
-    # status <process_id> <items>
+        trigger = argv[2]
+        files = argv[3:]
+        if not files:
+            raise Exception('too few arguments')
+        test.upload(trigger, files)
+   
     elif task == 'status':
-        test.get_status(argv[2], argv[3:])
+        process_id = argv[2]
+        targets = argv[3:]
+        test.get_status(process_id, targets)
+
     elif task == 'show':
         test.show_pipelines()
+
     else:
         print usage
     

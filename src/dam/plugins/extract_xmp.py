@@ -166,3 +166,30 @@ class ExtractXMP:
         d.addCallbacks(self._cb_xmp_ok, self._cb_error)
         return d
         
+
+def test():
+    print 'test'
+    item = Item.objects.get(pk=1)
+    workspace = DAMWorkspace.objects.get(pk = 1)
+    
+    d = run(4,
+            workspace,
+            source_variant = 'original',
+            )
+    print 'addBoth'
+    d.addBoth(print_result)
+    print 'dopo addBoth'
+    
+def print_result(result):
+    print 'print_result', result
+    reactor.stop()
+
+if __name__ == "__main__":
+    from twisted.internet import reactor
+    
+    reactor.callWhenRunning(test)
+    reactor.run()
+
+    
+    
+    

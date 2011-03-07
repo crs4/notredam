@@ -25,7 +25,7 @@ from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
-from dam.mprocessor.models import Pipeline, PipelineType
+from dam.mprocessor.models import Pipeline, TriggerEvent
 import logger
 
 def _get_scripts_info(script):
@@ -185,27 +185,16 @@ def edit_script(request):
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
     
     
-    previous_type = pipeline.get_type(workspace)
-    if (type, type) in PipelineType._meta.get_field_by_name('type')[0].choices:
-        try:
-            pipeline_type = PipelineType.objects.get(type = type, workspace = workspace)
-            
-                
-        except PipelineType.DoesNotExist:
-            pipeline_type = PipelineType(type = type, workspace = workspace)
-        
-        
-        if pipeline_type != previous_type:
-            if previous_type:
-                previous_type.delete()
-            
-            pipeline_type.pipeline = pipeline
-            pipeline_type.save()
-    
-    elif not type:       
-        if previous_type: #removing previously set type for pipeline
-            previous_type.delete()
-        
+    previous_triggers = pipeline.triggers.all()
+    #if (type, type) in TriggerEvent._meta.get_field_by_name('type')[0].choices:
+    if not type:       
+        if previous_triggers:            #removing previously set type for pipeline
+            pipeline.triggers.none()     #this way the pipeline cannot be called
+    else:
+        trigger_event, created = TriggerEvent.objects.get_or_create(name=type)
+        if trigger_event not in previous_triggers:
+            pipeline.triggers.add(trigger_event)
+        pipeline.save()
     
     return HttpResponse(simplejson.dumps({'success': True, 'pk': pipeline.pk}))  
 
@@ -351,9 +340,9 @@ def editor(request, script_id = None):
         workspace = pipeline.workspace
         params = pipeline.params
         name = pipeline.name
-        pipeline_type = pipeline.get_type(pipeline.workspace)
-        if pipeline_type:
-            type = pipeline_type.type
+        trigger_event = pipeline.get_type(pipeline.workspace)
+        if trigger_event:
+            type = trigger_event.type
         else:
             type = ''
         
@@ -365,7 +354,7 @@ def editor(request, script_id = None):
         pk = ''
         type = None
     logger.debug('params: %s'%params)
-    types_available = list(PipelineType._meta.get_field_by_name('type')[0].choices)
+    types_available = list(TriggerEvent._meta.get_field_by_name('type')[0].choices)
     types_available.insert(0, ['','----------------------'])
     types_available = simplejson.dumps(types_available)
     logger.debug('types_available %s'%types_available)

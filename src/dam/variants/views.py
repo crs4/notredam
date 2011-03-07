@@ -220,7 +220,8 @@ def get_variants(request):
     logger.debug('before comps')
     user = User.objects.get(pk=request.session['_auth_user_id'])
     
-    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = item.type, hidden = False).distinct()
+    #item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), media_type = item.type, hidden = False).distinct()
+    item_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), hidden = False).distinct()
     logger.debug('item_variants %s'%item_variants)
 
     now = time.time()
@@ -239,7 +240,7 @@ def get_variants(request):
             else:
                 abs_resource_url = resource_url
             info_list = []
-            if comp.media_type.name== 'image':
+            if comp.media_type.name== 'image':  
                 extension = comp.format
             else:
                 if comp.format in ['flv',  'mp3',  'mp4',  'mpeg',  'mpg',  'x-flv']:

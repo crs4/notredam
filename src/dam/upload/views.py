@@ -183,32 +183,34 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
         
 
 
-def _create_item(user, workspace, media_type, res_id):
-    item = Item.objects.create(owner = user, uploader = user,  type = media_type, _id = res_id)    
+def _create_item(user, workspace, res_id, media_type):
+    item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type)    
     item.add_to_uploaded_inbox(workspace)    
     item.workspaces.add(workspace)
     return item
 
-def _get_media_type(file_name):
-    type = guess_media_type(file_name)
-    media_type = Type.objects.get(name=type)
-    return media_type
+#def _get_media_type(file_name):
+#    type = guess_media_type(file_name)
+#    media_type = Type.objects.get(name=type)
+#    return media_type
 
-def _create_variant(file_name, uri, item, workspace, variant):
+def _create_variant(file_name, uri, media_type, item, workspace, variant):
     logger.debug('file_name %s'%file_name)
     logger.debug('uri %s'%uri)
     
-    comp = item.create_variant(variant, workspace)        
+    comp = item.create_variant(variant, workspace, media_type)        
+    if not item.type:
+        item.type = media_type
     if variant.auto_generated:
         comp.imported = True
         
     comp.file_name = file_name
     comp.uri = uri        
-    mime_type = mimetypes.guess_type(file_name)[0]
-        
-    ext = mime_type.split('/')[1]
-    comp.format = ext
+    #mime_type = mimetypes.guess_type(file_name)[0]
+    #ext = mime_type.split('/')[1]
+    comp.format = media_type.ext   # bad bad
     comp.save()    
+    return comp
 
 def _get_filepath(file_name):
     fname, ext = os.path.splitext(file_name)
@@ -223,7 +225,10 @@ def import_dir(dir_name, user, workspace, session):
     files =os.listdir(dir_name)
     logger.debug('files %s'%files)
     
-    upload_process = new_processor('uploader', user, workspace)
+    uploaders = []
+    for p in Pipeline.objects.filter(triggers='upload'):
+        log.debug('Using pipeline %s' % p.name)
+        uploaders.append(Process.objects.create(pipeline=p, workspace=workspace, launched_by=user))
     
     for file_name in files:
         tmp = file_name.split('_')
@@ -236,16 +241,25 @@ def import_dir(dir_name, user, workspace, session):
         file_path = os.path.join(dir_name, file_name)
         final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
         
+        media_type = Type.objects.get_or_create_by_filename(file_name)
+        item = _create_item(user, workspace, res_id, media_type)
+        found = 0
+        for uploader in uploaders:
+            # here decide which uploader to use based on the content type of the item
+            if uploader.is_compatible(media_type):
+                found = 1
+                uploader.add_params(item.pk)
+        if not found:
+            item.delete()
+            raise "Resource %s is not of a supported type" % file_name
+        
         shutil.move(file_path, final_path)
-        media_type = _get_media_type(file_name)
-        
         logger.debug('-----res_id %s'%res_id)
-        item = _create_item(user, workspace, media_type, res_id)
-        _create_variant(original_file_name, final_file_name, item, workspace, variant)
+        _create_variant(fn, final_file_name, media_type, item, workspace, variant)
         logger.debug('adding item %s'%item.pk)
-        upload_process.add_params(item.pk)
-        
-    upload_process.run()
+
+    for uploader in uploaders:
+        uploader.run()
         
 @login_required
 def upload_resource(request):
