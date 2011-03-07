@@ -26,6 +26,7 @@ from dam.core.dam_repository.models import Type
 from httplib import HTTP
 from django.db import IntegrityError
 from dam.mprocessor.models import Pipeline, TriggerEvent
+from dam.supported_types import mime_types_by_type
 import logger
 
 def _get_scripts_info(script):
@@ -164,38 +165,51 @@ def new_script(request):
 @login_required
 def edit_script(request):
     pk = request.POST.get('pk')
+    name = request.POST['name']
+    params =  request.POST['params']
+    media_types = request.POST.getlist('media_types')
+    events = request.POST.getlist('events')
     workspace = request.session['workspace']
     if pk: #editing an existing script
         pipeline = Pipeline.objects.get(pk = pk)
+        pipeline.triggers.remove(*pipeline.triggers.all())
+        pipeline.media_type.remove(*pipeline.media_type.all())
     else:
         pipeline = Pipeline()
         
         pipeline.workspace = workspace
         
-    name = request.POST['name']
-    params =  request.POST['params']
-    type = request.POST.get('type')
-    
     pipeline.name = name    
     pipeline.params = params
-    
     try:
         pipeline.save()
-    except IntegrityError:
+    except integrityerror:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
+
+    for m in media_types:
+        if m not in mime_types_by_type:
+            continue
+        for subm in mime_types_by_type[m]:
+            t = Type.objects.get_or_create_by_mime('%s/%s' % (m, subm))
+            pipeline.media_type.add(t)
+
+    existing_events = [e.name for e in TriggerEvent.objects.all()]
+    for e in events:
+        if e not in existing_events:
+            continue
+        pipeline.triggers.add(TriggerEvent.objects.get(name = e))
     
     
-    previous_triggers = pipeline.triggers.all()
-    #if (type, type) in TriggerEvent._meta.get_field_by_name('type')[0].choices:
-    if not type:       
-        if previous_triggers:            #removing previously set type for pipeline
-            pipeline.triggers.none()     #this way the pipeline cannot be called
-    else:
-        trigger_event, created = TriggerEvent.objects.get_or_create(name=type)
-        if trigger_event not in previous_triggers:
-            pipeline.triggers.add(trigger_event)
-        pipeline.save()
-    
+#    previous_triggers = pipeline.triggers.all()
+#    #if (type, type) in TriggerEvent._meta.get_field_by_name('type')[0].choices:
+#    if not type:       
+#        if previous_triggers:            #removing previously set type for pipeline
+#            pipeline.triggers.none()     #this way the pipeline cannot be called
+#    else:
+#        trigger_event, created = TriggerEvent.objects.get_or_create(name=type)
+#        if trigger_event not in previous_triggers:
+#            pipeline.triggers.add(trigger_event)
+
     return HttpResponse(simplejson.dumps({'success': True, 'pk': pipeline.pk}))  
 
 @login_required
@@ -327,6 +341,38 @@ def script_monitor(request):
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'success': False}))
 
+
+@login_required
+def get_events(request):
+    script_id = request.POST.get('script_id')
+
+    if script_id:
+        pipeline = Pipeline.objects.get(pk = script_id)
+        pipeline_triggers = pipeline.triggers.all()
+    else:
+        pipeline_triggers = TriggerEvent.objects.none()
+    
+    resp = {'events':[], 'success':True,}
+    for t in TriggerEvent.objects.all():
+        resp['events'].append({'id':t.pk, 'text':t.name, 'checked':(t in pipeline_triggers)})
+    return HttpResponse(simplejson.dumps(resp))
+
+@login_required
+def get_media_types(request):
+    script_id = request.POST.get('script_id')
+
+    if script_id:
+        pipeline = Pipeline.objects.get(pk = script_id)
+        pipeline_media_types = [x.name for x in pipeline.media_type.all()]
+    else:
+        pipeline_media_types = []
+    
+    resp = {'types':[], 'success':True,}
+    for t in mime_types_by_type.keys():
+        resp['types'].append({'value': t, 'text':{'application':'doc'}.get(t, t), 'checked':(t in pipeline_media_types)})
+    return HttpResponse(simplejson.dumps(resp))
+
+
 @login_required
 def editor(request, script_id = None):
     
@@ -340,23 +386,12 @@ def editor(request, script_id = None):
         workspace = pipeline.workspace
         params = pipeline.params
         name = pipeline.name
-        trigger_event = pipeline.get_type(pipeline.workspace)
-        if trigger_event:
-            type = trigger_event.type
-        else:
-            type = ''
-        
     else:
         workspace_id  = request.GET['workspace']
         workspace = Workspace.objects.get(pk = workspace_id)
         params = ''
         name = '' 
         pk = ''
-        type = None
     logger.debug('params: %s'%params)
-    types_available = list(TriggerEvent._meta.get_field_by_name('type')[0].choices)
-    types_available.insert(0, ['','----------------------'])
-    types_available = simplejson.dumps(types_available)
-    logger.debug('types_available %s'%types_available)
-    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'type': type, 'types_available':types_available, 'workspace': workspace }))
+    return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'workspace': workspace }))
 

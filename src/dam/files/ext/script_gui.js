@@ -501,7 +501,7 @@ Ext.onReady(function(){
                                     var records_checked = this.store.query('checked', true);                                    
                                     var values = []
                                     Ext.each(records_checked.items, function(record){
-                                        values.push(record.data.id);
+                                        values.push(record.data.text);
                                     });
                                     return values;
                                 }
@@ -511,42 +511,41 @@ Ext.onReady(function(){
                         
                         {                           
                             text:'Media',                            
-                            //~ menu: new Ext.ux.StoreMenu({
-                                //~ id: 'media_types',
-                                //~ store_cfg: {
+                             menu: new Ext.ux.StoreMenu({
+                                 id: 'media_types',
+                                 store_cfg: {
                                     url: '/get_types/',
-                                    //~ data: {'types':[{'pk': 1,'text': 'image'}, {'pk': 2,'text': 'audio'},{'pk': 3,'text': 'video'},{'pk': 4,'text': 'doc'}]},
-                                    //~ root:'types',
-                                    //~ idProperty: 'pk',
-                                    //~ fields: ['pk', 'text', 'checked'],
-                                    //~ baseParams:{
-                                        //~ script_id: script_pk
-                                    //~ }
-                                //~ },                                
-                                //~ item_text_field: 'name',
-                                //~ item_cfg: {
-                                        //~ hideOnClick: false,
-                                        //~ xtype: 'menucheckitem',
-                                        //~ handler: function(obj){
-                                            //~ 
-                                            //~ (function(){
-                                                //~ var record = obj.ownerCt.store.getById(obj.pk);
-                                                //~ console.log('obj.checked '+ obj.checked);
-                                                //~ record.set('checked', obj.checked);
-                                                //~ record.commit();
-                                            //~ }).defer(100);
-                                        //~ }
-                                //~ },                                                               
-                                //~ getValue: function(){
-                                    //~ var records_checked = this.store.query('checked', true);                                    
-                                    //~ var values = []
-                                    //~ Ext.each(records_checked.items, function(record){
-                                        //~ values.push(record.data.id);
-                                    //~ });
-                                    //~ return values;
-                                //~ }
-                            //~ })
-                            handler: function(){
+                                     root:'types',
+                                     idProperty: 'text',
+                                     fields: ['value', 'text', 'checked'],
+                                     baseParams:{
+                                         script_id: script_pk
+                                     }
+                                 },                                
+                                 item_text_field: 'name',
+                                 item_cfg: {
+                                         hideOnClick: false,
+                                         xtype: 'menucheckitem',
+                                         handler: function(obj){
+                                             
+                                             (function(){
+                                                 var record = obj.ownerCt.store.getById(obj.text);
+                                                 console.log('obj.checked '+ obj.checked);
+                                                 record.set('checked', obj.checked);
+                                                 record.commit();
+                                             }).defer(100);
+                                         }
+                                 },                                                               
+                                 getValue: function(){
+                                     var records_checked = this.store.query('checked', true);                                    
+                                     var values = []
+                                     Ext.each(records_checked.items, function(record){
+                                         values.push(record.data.value);
+                                     });
+                                     return values;
+                                 }
+                             })
+/*                            handler: function(){
                                 
                                 var reader = new Ext.data.ArrayReader({}, [
                                    {name: 'name'},
@@ -595,7 +594,6 @@ Ext.onReady(function(){
                                     title: 'Media Types'
                             });
 
-
                                 
                                 var win = new Ext.Window({
                                     width: 600,
@@ -607,6 +605,7 @@ Ext.onReady(function(){
                                 
                             }
                             
+*/
                             
                             
                         },
@@ -657,6 +656,7 @@ Ext.onReady(function(){
 											pk: script_pk,
 											name: Ext.getCmp('script_name').getValue(),
 											events: Ext.getCmp('events').getValue(),
+											media_types: Ext.getCmp('media_types').getValue(),
 											params: Ext.encode(baseLayer.getJson())		            			
 										};
 										save_script(submit_params);	   		
