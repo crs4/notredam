@@ -1,576 +1,12 @@
-Ext.ux.FieldSetContainer = function(config) {
-    Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);    
- 	this.form = this.ownerCt;
-}; 
-
-Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
-	border: false,
-	layout: 'form',
-	notify_load: function(){
-		Ext.each(this.items.items, function(item){
-			if (item.notify_load)
-				item.notify_load();
-		});
+function random_color(){
+	var color = '#', num;
+	for (var i = 0; i <6; i++){
+		num = Math.round(Math.random()*15);
+		color += num.toString(16);	
 	}
-});
-Ext.reg('fieldsetcontainer', Ext.ux.FieldSetContainer);
-
-Ext.ux.ModFormPanel = function(config) {
-    Ext.ux.ModFormPanel.superclass.constructor.call(this, config);    
- 
-}; 
-
-Ext.extend(Ext.ux.ModFormPanel, Ext.form.FormPanel, {
-	    expand_fieldset: function(field, value){
-	    	if (value){
-	    		var parent = field.ownerCt;
-		    	if (parent instanceof Ext.ux.CBFieldSet){
-		    		
-		    		parent.expand();
-		    	}
-	    }
-	    	
-	    },
-	    setValues : function(values){
-        	var base_form = this.getForm();
-        	
-        	if(Ext.isArray(values)){ // array of objects
-            
-	            for(var i = 0, len = values.length; i < len; i++){
-	                var v = values[i];
-	                var f = base_form.findField(v.id);
-	                if(f){
-	                    f.setValue(v.value);
-	                    this.expand_fieldset(f, v.value);
-	                    if(base_form.trackResetOnLoad){
-	                        f.originalValue = f.getValue();
-	                    }
-	                }
-	            }
-	        }else{ // object hash
-	            var field, id;
-	            for(id in values){
-	                if(!Ext.isFunction(values[id]) && (field = base_form.findField(id))){
-	                    field.setValue(values[id]);
-	                    this.expand_fieldset(field, values[id]);
-	                    if(base_form.trackResetOnLoad){
-	                        field.originalValue = field.getValue();
-	                    }
-	                }
-	            }
-	        }
-	        return this;
-	    }
-});
-
-
-Ext.ux.WatermarkBrowseButton = function(config) {
- 	
-    Ext.ux.WatermarkBrowseButton.superclass.constructor.call(this, config);
-    Ext.apply(this, {values : config.values});
- 
-}; 
-
-Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
-	handler: function(){
-		
-		var tpl_str = '<tpl for=".">';    
-			tpl_str += '<div class="thumb-wrap" id="{pk}">';
-				tpl_str += '<div class="thumb">';		 
-				tpl_str += '<div style="width: 100; height: 100; background: url({url}) no-repeat bottom center; border:1px solid white;"></div>';
-
-				tpl_str +='</div>';                
-				
-//				tpl_str += '<span>{shortName}</span>' 
-			tpl_str += '</div>';
-		
-		tpl_str += '</tpl>';
-		var store = new Ext.data.JsonStore({
-		    	totalProperty: 'totalCount',
-		        root: 'items',
-		        url: '/load_items/',
-		        baseParams: {
-		        	media_type: 'image'
-		        },
-		        
-		        idProperty: 'pk',
-		        autoLoad: true, 
-				fields:[
-			        'pk', 
-	                '_id', 
-                	'url'
-                ]
-		    
-		    });
-		    
-		var wm_win = new Ext.Window({
-			title: 'Choose Watermark',
-			width: 600,
-			modal: true,
-			items:[
-				new Ext.Panel({
-					tbar: [{
-						id:'rendition_select',
-						xtype: 'select',
-						values: this.values					
-					}],
-					bbar: new Ext.PagingToolbar({
-				        store: store,       // grid and PagingToolbar using same store
-				        displayInfo: true,
-				        pageSize: 10,
-				        prependButtons: true
-				        
-				    }),
-					
-					items: new Ext.DataView({
-				        id: 'wm_dataview',
-				        itemSelector: 'div.thumb-wrap',
-				        style:'overflow:auto; background-color:white;',
-				        singleSelect: true,
-//				        plugins: new Ext.DataView.DragSelector({dragSafe:true}),
-				        height: 300,				        
-				        tpl: new Ext.XTemplate(tpl_str),
-				        store: store
-				       
-				    }),
-				    buttonAlign: 'center',
-				    buttons:[{
-				    	text: 'Select',
-				    	handler: function(){
-				    		var selected = Ext.getCmp('wm_dataview').getSelectedRecords();
-				    		if (selected.length > 0){
-				    			var rendition = Ext.getCmp('rendition_select').getValue();
-				    			
-				    			Ext.getCmp('wm_id').setValue(String.format('/item/{0}/{1}/',selected[0].data._id, rendition ));
-				    			wm_win.close();
-				    		}
-				    		
-				    		
-				    	
-				    	}
-				    	
-				    }]
-					   
-				})
-				
-	 
-				
-			
-			]
-		
-		});
-
-		wm_win.show();
-	
-	}
-
-
-});
-
-Ext.reg('watermarkbrowsebutton', Ext.ux.WatermarkBrowseButton);
-
-
-Ext.ux.WatermarkPosition = function(config){
-	Ext.ux.WatermarkPosition.superclass.constructor.call(this, config);
-}; 
-
-Ext.extend(Ext.ux.WatermarkPosition, Ext.form.Field, {
-//	height: 160,
-	
-	 initComponent:function() {
-	 	var container = this.ownerCt;
-	 	var i, j;
-	    var children_box_position = [];
-	    for(i=1; i<= 9; i++){
-	        children_box_position.push({
-	            tag:'div',
-	            id: 'square' + i,
-	            cls: 'position_watermarking',
-            	onclick: String.format('Ext.getCmp(\'{2}\').watermarking({0});', i, this.id, container.id)
-
-	        });
-	    }
-   
-    	
-    	
-    	 Ext.apply(this, {
-    	 	autoCreate:{
-		        tag:'div',
-	            cls: 'container_position_watermarking',
-//	            style: 'height:135px;',
-	            children:children_box_position            
-	        }
-    	 });
-    	
-    	Ext.ux.WatermarkPosition.superclass.initComponent.call(this);
-    },
-	
-	name: 'watermarking_position',
+    return color;
     
-    listeners:{
-//        render: function(){
-//                i = 0;
-//                        while (parameters[i]['name'] != 'pos_x_percent' && i<parameters.length){
-//                                i++;
-//                        }       
-//                j = 0;
-//                        while (parameters[j]['name'] != 'pos_y_percent' && j<parameters.length){
-//                                j++;
-//                        }       
-//                                if (parameters[i]['name'] == 'pos_x_percent' && parameters[i]['value']){                                                
-//                                var pos_x = ((parameters[i]['value'] - 5) / 33) + 1;
-//                                var pos_y = ((parameters[j]['value'] - 5) / 33) + 1;
-//                                watermarking_position = (pos_y-1) * 3 + pos_x;
-//                watermarking(watermarking_position);                    
-//                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
-//            }else                                                               
-//                        if(watermarking_position != 0){
-//                                watermarking(watermarking_position);                    
-//                Ext.getCmp(watermarking_position_id).setValue(watermarking_position);
-//            }
-//            else{
-//                watermarking(1);
-//                Ext.getCmp(watermarking_position_id).setValue(1);
-//            }
-//                }                
-        }
-
-});
-
-Ext.reg('watermarkposition', Ext.ux.WatermarkPosition);
-    
-
-Ext.ux.Select = function(config) {
- 	this.values = config.values; 	
- 	
-    // call parent constructor
-    Ext.ux.Select.superclass.constructor.call(this, config);
- 
-}; 
-
-Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {	
-    initComponent:function() {
-    	var values = this.values;
-    	
-    	 Ext.apply(this, {
-    	 	store:  new Ext.data.ArrayStore({        
-		        fields: [
-		            'value'
-		        ],
-		        data: values
-		    }),
-		    value: values[0]
-    	 });
-    	
-    	Ext.ux.Select.superclass.initComponent.call(this);
-    },
-    allowBlank: false,
-    autoSelect: true,
-    editable: false,
-    triggerAction: 'all',
-    lazyRender:true,
-    forceSelection: true,
-    mode: 'local',
-    valueField: 'value',
-    displayField: 'value'
-    
- 
-}); 
-
-Ext.reg('select', Ext.ux.Select);
-
-
-Ext.ux.CBFieldSet = function(config) {
-	config.collapsed = true;
-			
-	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
-	
-	
-};
-
-
-Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {	
-	
-	notify_load: function(){
-		var expand = false;
-		Ext.each(this.items.items, function(item){
-			if (item.getValue())
-				expand = true;			
-		});
-		
-		if (expand)
-			this.expand();
-	},
-	
-	initComponent:function() {
-	 	 var cb_id = Ext.id();
-	 	 Ext.apply(this, {
-	 	 	cb_id: cb_id,
-	 	 	checkboxToggle: {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox', id: cb_id}
-	 	 });
-	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
-	
-	 },
-	 
-	expand: function(){
-	
-		Ext.ux.CBFieldSet.superclass.expand.call(this);
-		Ext.each(this.items.items, function(item){
-	 			item.enable();
-	 	});
-		
-	},
-	
-	collapse: function(){
-		Ext.ux.CBFieldSet.superclass.collapse.call(this);
-		Ext.each(this.items.items, function(item){
-	 			item.disable();
-	 	});
-		
-	},
-	
-	
-	onCheckClick: function(){
-	 	var cb = Ext.get(this.cb_id);
-
-	 	if (cb.dom.checked)
-	 		this.expand();
-	 	else
-	 		this.collapse();
-	 	
-	 }
-	
-});
-
-Ext.reg('cbfieldset', Ext.ux.CBFieldSet);
-
-
-Ext.ux.MovableCBFieldSet = function(config) {
-	config.id = config.id || Ext.id();
-	config.items = config.items || [];
-	
-	
-	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
-	
-};
-
-
-
-Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
-	collapsed: true,
-	initComponent: function(){
-		Ext.ux.MovableCBFieldSet.superclass.initComponent.call(this, config);
-		var config = this.initialConfig; 
-		this.add({
-		xtype: 'hidden',
-		name: config.order_field_name,
-		value: config.order_field_value,
-		
-//			this field is hidden and readonly, it is used to hold the ordered list of the actions [resize, crop, watermark]
-		setValue: function(new_value){
-			
-			
-			if (config.name == new_value)
-				this.setRawValue(new_value);
-			else if(new_value instanceof Array){
-				
-				var container = this.ownerCt;
-				var index = new_value.indexOf(config.name);
-//				if (container.get_position() != index)
-					container.move(index);
-			}
-		}
-	})
-	
-		
-	},
-	
-	notify_load: function(){
-		var cbf = this;
-		var expand = false;
-		Ext.each(this.items.items, function(item){
-			
-			if (item.name != cbf.initialConfig.order_field_name && item.getValue())
-			
-				expand = true;			
-		});
-		
-		if (expand)
-			this.expand();
-	},
-	onRender : function(ct, position){
-        if(!this.el){
-            this.el = document.createElement('fieldset');
-            this.el.id = this.id;
-            if (this.title || this.header || this.checkboxToggle) {
-                this.el.appendChild(document.createElement('legend')).className = this.baseCls + '-header';
-            }
-        }
-
-        Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
-		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
-		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
-        
-        var o = typeof this.checkboxToggle == 'object' ?
-                this.checkboxToggle :
-                {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
-        this.checkbox = this.header.insertFirst(o);
-        this.checkbox.dom.checked = !this.collapsed;
-        this.mon(this.checkbox, 'click', this.onCheckClick, this);
-    
-        
-    },
-
-	get_position: function(){
-		return this.ownerCt.items.items.indexOf(this);
-	
-	},
-	 
-	 
-	 move: function(position){
-	 	var cbf = this;
-	 	
-	 	var container = this.ownerCt;
-	 	var current_pos = this.get_position(); 
-	 	if (position <0 || position > container.items.items.length || position == current_pos)
-	 		return;
-	 	var copy = this.initialConfig;
- 		
- 		
- 		var values = {};
- 		console.log('-----------');
- 		console.log(copy);
-// 		console.log(cbf.initialConfig.order_field_name);
- 		Ext.each(this.items.items, function(item){	 			
- 			var value = item.getValue(); 
-// 			console.log(item.name);
- 			if(value && item.name != cbf.initialConfig.order_field_name)
- 			
- 				values[item.name] = value;
- 		});
- 		container.remove(this);
- 		console.log('copy');
- 		console.log(copy);
- 		new_obj = container.insert(position, copy);
- 		
- 		container.doLayout();
- 		
- 		container.form.getForm().setValues(values);
- 		new_obj.notify_load();
- 		
-	 },
-	move_up: function(){
-//		console.log(this.position_field.getValue());
-		this.move(this.get_position()  - 1);
-	},
-	move_down: function(){
-//		console.log(this.position_field.getValue());
-		this.move(this.get_position()  + 1);
-	}
-//	 
-//	 onRender : function(ct, position){
-//        Ext.ux.MovableCBFieldSet.superclass.onRender.call(this, ct, position);
-////        
-//		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
-//		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
-//     }
-
-	
-});
-
-Ext.reg('movablecbfieldset', Ext.ux.MovableCBFieldSet);
-
-
-Ext.ux.WatermarkFieldSet = function(config){
-	var pos_x_percent = new Ext.form.Hidden({
-		name: 'pos_x_percent'
-	});
-	
-	var pos_y_percent = new Ext.form.Hidden({
-		name: 'pos_y_percent'
-	});
-	
-	var square = new Ext.form.Hidden({
-		name: 'square'
-	});
-	
-	
-	config.items = [
-		{
-        'xtype': 'compositefield',
-        'items':[
-                 {
-                    'id': 'wm_id',
-                    'width': 160,
-                    'xtype':'textfield',
-                    'name': 'wm_id',
-                    'fieldLabel': 'image',                    
-                    'description': 'image',
-                    'help': ''
-                },
-                {
-                 'xtype': 'watermarkbrowsebutton',
-                 'text': 'Browse',
-                 values: config.renditions
-                 
-                 
-                   
-                }
-                
-        ]
-        },
-        {
-        	 xtype: 'watermarkposition'
-        },
-        
-        pos_x_percent,
-        pos_y_percent,
-        square
-	];
-	
-	Ext.ux.WatermarkFieldSet.superclass.constructor.call(this, config);
-	Ext.apply(this, {
-		pos_x_percent: pos_x_percent,
-        pos_y_percent: pos_y_percent,
-        square: square
-	});
-	
-}; 
-
-Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
-	_set_hidden_position_percent: function(id){
-        var pos_x = ((id-1) % 3) * 33 + 5;
-        var pos_y = (parseInt((id-1) / 3)) * 33 + 5;
-        this.pos_x_percent.setValue(parseInt(pos_x));
-        this.pos_y_percent.setValue(parseInt(pos_y));
-	},
-	
-	 _reset_watermarking: function(){  
-	    for (i=1; i<10; i++){
-	        Ext.get('square'+i).setStyle({
-	            background: 'none',
-	            opacity: 1
-	            });
-	    }
-	},
-	
-	watermarking: function(id){      
-	    this._reset_watermarking();
-	    this._set_hidden_position_percent(id);
-	    Ext.get('square'+id).setStyle({
-	        background: 'green',
-	        opacity: 0.6
-	        });
-	    this.square.setValue(id);
-	},
-	
-
-
-});
-
-Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
-
-
+}
 
 var MDAction =  function(opts, layer) {	
 	this.id = opts.id || Ext.id();
@@ -592,7 +28,10 @@ var MDAction =  function(opts, layer) {
 			"ddConfig": {
 				"type": "input",
 				"allowedTypes": ["output"]
-			} 
+			} ,
+			wireConfig:{
+				color: random_color()
+			}
 		});
 	}
 	for(i = 0 ; i < this.outputs.length ; i++) {
@@ -605,7 +44,10 @@ var MDAction =  function(opts, layer) {
 				"type": "output",
 				"allowedTypes": ["input"]
 			},
-			"alwaysSrc": true
+			"alwaysSrc": true,
+			wireConfig:{
+				color: random_color()
+			}
 		});
 	}
 	
@@ -616,7 +58,7 @@ var MDAction =  function(opts, layer) {
 
 }; 
 YAHOO.lang.extend(MDAction, WireIt.Container, {
-	
+		
 	getXY: function(){
 		return Ext.get(this.el).getXY();
 	},
@@ -651,6 +93,19 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	onAddWire: function(e, args){
 		var wire = args[0];
 		wire.label = Ext.id();
+		var terminal_out = wire.terminal2;
+		var terminal_in = wire.terminal1;
+		var values = terminal_in.container.form.getForm().getValues();
+		var output_variant = values.output_variant || values.source_variant;
+		
+		if (output_variant){
+			terminal_out.container.form.getForm().setValues({
+				source_variant: output_variant
+			});			
+		}
+		
+		
+		
 		
 	
 		
@@ -725,6 +180,22 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 var baseLayer, store, layer_el;
 
 function save_script(params){
+	var invalid = false;
+	var action_invalid;
+	var tmp;
+	
+	for (var i = 0; i < baseLayer.containers.length; i++){
+		tmp = baseLayer.containers[i];
+		if (!tmp.form.getForm().isValid()){
+			action_invalid = tmp.label.getValue();
+			invalid = true
+		}
+		
+	}
+	if(invalid){
+		Ext.Msg.alert('Save', String.format('Saving failed. Please check action "{0}", some of its required fields are missing.', action_invalid));
+		return;
+	}
 	
 	Ext.Ajax.request({
 		url: '/edit_script/',
@@ -732,10 +203,13 @@ function save_script(params){
 		success: function(response){
 //		  	Ext.MsgBox.msg('','Script saved');
 			Ext.Msg.alert('Save', 'Script saved successfully.');
-			script_type = params.type;
+			
 			if (! script_pk)
 				script_pk = Ext.decode(response.responseText).pk;
-			window.opener.scripts_jsonstore.reload();
+			try{
+				window.opener.scripts_jsonstore.reload();
+			}
+			catch(e){}
 		},
 		failure: function(){
 //		            			Ext.MsgBox.msg('','Save failed');
@@ -758,7 +232,11 @@ Ext.onReady(function(){
 		url:'/get_actions/',
 		fields:['name', 'params'],
 //			autoLoad: true,
-		root: 'scripts'	
+		root: 'scripts'	,
+		sortInfo: {
+		    field: 'name',
+		    direction: 'ASC'
+		}
 	});
 	
 	new Ext.Viewport({
@@ -772,6 +250,7 @@ Ext.onReady(function(){
 				layout: 'fit',
 				width: 200,
 //				autoHeight: true,
+				
 				enableDragDrop: true,
 				ddGroup: 'wireit',		
 				
@@ -781,8 +260,12 @@ Ext.onReady(function(){
 						dataIndex: 'name'
 					}],
 				hideHeaders: true,
+				sm: new Ext.grid.RowSelectionModel({
+					singleSelect: true
+				}),
 				viewConfig: {
-		        forceFit: true}
+					forceFit: true
+				}
 		
 				
 			}),
@@ -800,8 +283,7 @@ Ext.onReady(function(){
 				region: 'center',
 				listeners:{
 					afterrender: function(){
-						layer_el = this.getEl();
-						
+						layer_el = this.getEl();						
 						baseLayer = new WireIt.Layer({
 							layerMap: false,
 							parentEl: layer_el
@@ -904,9 +386,9 @@ Ext.onReady(function(){
 						    	}, baseLayer); 
 						    	action_box.form.getForm().setValues(action.params);
           						
-          						Ext.each(action_box.form.items.items, function(field){
-          							if (field.notify_load)
-          								field.notify_load();
+          						Ext.each(action_box.form.items.items, function(field){          						
+          							if (field.data_loaded)
+          								field.data_loaded(action.params);
           								
           						});
           						
@@ -924,7 +406,7 @@ Ext.onReady(function(){
 								Ext.each(inner_action['in'], function(_in){
 									
 									if (out && out == _in){
-										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom);
+										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom.childNodes[0], {color: action.getTerminal('out').options.wireConfig.color});
 //								
 										w.drawBezierCurve();	
 									}
@@ -969,45 +451,201 @@ Ext.onReady(function(){
 				            allowBlank: false
 			//	            emptyText: 'new script'
 			        	},
-			        	{
-						    xtype: 'tbtext', 
-						    text: 'Event: '
-					    } ,
-			        	
-			        	{
-					   		id: 'script_type',
-					   		
-				            xtype: 'combo',
-				            name: 'type',
-				            allowBlank: true,	             
-						    autoSelect: true,
-						    editable: false,
-						    triggerAction: 'all',
-						    lazyRender:true,
-			//			    forceSelection: true,
-			//			    store: new Ext.data.JsonStore({
-			//			    	url: '/get_script_types/',
-			//			    	fields: ['pk', 'name'],
-			//			    	roots: 'types'			    
-			//			    }),
-						    mode: 'local',
-						    store:  new Ext.data.ArrayStore({        
-					        	fields: ['pk', 'name'],
-					        	data: types_available
-				    		}),		
-					    
-						    value: script_type,
-							    
-						    valueField: 'pk',
-						    displayField: 'name'
-					            
-				
-				        	},
+                        {xtype: 'tbseparator'},
+                        //~ {
+                            //~ text:'Events',
+                            //~ menu: new Ext.ux.StoreMenu({
+                                //~ store_cfg: {
+                                    //~ url: '/get_events/',
+                                    //~ root:'events',
+                                    //~ fields: ['id', 'text', 'checked'],
+                                    //~ baseParams:{
+                                        //~ script_id: script_pk
+                                    //~ }
+                                //~ },                                
+                                //~ item_text_field: 'name',
+                                //~ item_cfg: {
+                                        //~ hideOnClick: true,
+                                        //~ xtype: 'menucheckitem'
+                                //~ },                               
+                            //~ })
+                            //~ 
+                        //~ },
+                        {                           
+                            text:'Events',                            
+                            menu: new Ext.ux.StoreMenu({
+                                id: 'events',
+                                store_cfg: {
+                                    url: '/get_events/',
+                                    root:'events',
+                                    fields: ['id', 'text', 'checked'],
+                                    baseParams:{
+                                        script_id: script_pk
+                                    }
+                                },                                
+                                item_text_field: 'name',
+                                item_cfg: {
+                                        hideOnClick: false,
+                                        xtype: 'menucheckitem',
+                                        handler: function(event){
+                                            
+                                            (function(){
+                                                var record = event.ownerCt.store.getById(event.id);
+                                                console.log('event.checked '+ event.checked);
+                                                record.set('checked', event.checked);
+                                                record.commit();
+                                            }).defer(100);
+                                        }
+                                },                               
+                                getValue: function(){
+                                    var records_checked = this.store.query('checked', true);                                    
+                                    var values = []
+                                    Ext.each(records_checked.items, function(record){
+                                        values.push(record.data.id);
+                                    });
+                                    return values;
+                                }
+                            })
+                            
+                        },
+                        
+                        {                           
+                            text:'Media',                            
+                            //~ menu: new Ext.ux.StoreMenu({
+                                //~ id: 'media_types',
+                                //~ store_cfg: {
+                                    url: '/get_types/',
+                                    //~ data: {'types':[{'pk': 1,'text': 'image'}, {'pk': 2,'text': 'audio'},{'pk': 3,'text': 'video'},{'pk': 4,'text': 'doc'}]},
+                                    //~ root:'types',
+                                    //~ idProperty: 'pk',
+                                    //~ fields: ['pk', 'text', 'checked'],
+                                    //~ baseParams:{
+                                        //~ script_id: script_pk
+                                    //~ }
+                                //~ },                                
+                                //~ item_text_field: 'name',
+                                //~ item_cfg: {
+                                        //~ hideOnClick: false,
+                                        //~ xtype: 'menucheckitem',
+                                        //~ handler: function(obj){
+                                            //~ 
+                                            //~ (function(){
+                                                //~ var record = obj.ownerCt.store.getById(obj.pk);
+                                                //~ console.log('obj.checked '+ obj.checked);
+                                                //~ record.set('checked', obj.checked);
+                                                //~ record.commit();
+                                            //~ }).defer(100);
+                                        //~ }
+                                //~ },                                                               
+                                //~ getValue: function(){
+                                    //~ var records_checked = this.store.query('checked', true);                                    
+                                    //~ var values = []
+                                    //~ Ext.each(records_checked.items, function(record){
+                                        //~ values.push(record.data.id);
+                                    //~ });
+                                    //~ return values;
+                                //~ }
+                            //~ })
+                            handler: function(){
+                                
+                                var reader = new Ext.data.ArrayReader({}, [
+                                   {name: 'name'},
+                                   {name: 'type'},
+                                   {name: 'checked'},
+                                   
+                                ]);
+
+                                var store = new Ext.data.GroupingStore({
+                                        reader: reader,
+                                        //~ data: [{name: 'jpeg', type:'image', checked: true}],                                        
+                                        data: [['jpeg', 'image', true], ['png', 'image', false], ['mp3', 'audio', true]],                                        
+                                        groupField:'type'
+                                    });
+    
+                                var grid_id = 'media_grid';
+                                var grid = new Ext.grid.GridPanel({
+                                    id: grid_id,
+                                    store: store,                                    
+                                    columns: [
+                                        {id:'name',header: "name", width: 260, dataIndex: 'name',
+                                        renderer: function(value, metaData, record, rowIndex, colIndex, store) {
+                                                var tmp = String.format('<input type="checkbox" name={0} ', record.data.name);
+                                                tmp += String.format('onclick="var record = Ext.getCmp(\'{0}\').getStore().query(\'name\', \'{1}\').items[0]; record.set(\'checked\', this.checked); record.commit();"', grid_id, record.data.name);
+                                                tmp += " "
+                                                if(record.data.checked)
+                                                    tmp+='checked';
+                                                tmp += '/>';
+                                                tmp += String.format('<span>{0}</span>', record.data.name);
+                                                return tmp;
+                                                
+                                        }
+                                        },
+                                        {id:'type',header: "type", width: 260, dataIndex: 'type', hidden: true}
+                                        
+                                        ],
+
+                                    view: new Ext.grid.GroupingView({
+                                        forceFit:true,
+                                        groupTextTpl: '{text}'
+                                    }),
+                                    
+                                    border:false,
+                                    width: 600,
+                                    height: 300,                                    
+                                    title: 'Media Types'
+                            });
+
+
+                                
+                                var win = new Ext.Window({
+                                    width: 600,
+                                    height: 300,
+                                    modal: true,
+                                    items: grid
+                                        });
+                                win.show();
+                                
+                            }
+                            
+                            
+                            
+                        },
+                        
+                        
+                        
+                        
+			        	//~ {
+						    //~ xtype: 'tbtext', 
+						    //~ text: 'Event: '
+					    //~ } ,
+			        	//~ 
+			        	//~ {
+					   		//~ id: 'script_type',
+					   		//~ 
+				            //~ xtype: 'combo',
+				            //~ name: 'type',
+				            //~ allowBlank: true,	             
+						    //~ autoSelect: true,
+						    //~ editable: false,
+						    //~ triggerAction: 'all',
+						    //~ lazyRender:true,
+						    //~ mode: 'local',
+						    //~ store:  new Ext.data.ArrayStore({        
+					        	//~ fields: ['pk', 'name'],
+					        	//~ data: types_available
+				    		//~ }),		
+					    //~ 
+						    //~ value: script_type,
+							    //~ 
+						    //~ valueField: 'pk',
+						    //~ displayField: 'name'
+					            //~ 
+				//~ 
+				        	//~ },
 				        	
-				        	{xtype: 'tbspacer'},
+				        	{xtype: 'tbseparator'},
 				        	
-				        {
-				            // xtype: 'button', // default for Toolbars, same as 'tbbutton'
+				        {				            
 				            text: 'Save',
 				            id: 'save_button',
 				            icon: '/files/images/icons/save.gif',
@@ -1018,34 +656,16 @@ Ext.onReady(function(){
 			            				var submit_params =  {
 											pk: script_pk,
 											name: Ext.getCmp('script_name').getValue(),
-											type: Ext.getCmp('script_type').getValue(),
+											events: Ext.getCmp('events').getValue(),
 											params: Ext.encode(baseLayer.getJson())		            			
 										};
-									
-									if (submit_params.type != script_type)
-										Ext.Msg.show({
-										   title:'Change Script Event?',
-										   msg: 'You are changing the event to whom the script is associated. Note that only a script at once can be associated with a given event. Do you confirm the change?',
-										   buttons: Ext.Msg.YESNOCANCEL,
-										   fn: function(btn){
-										   	if (btn == 'yes'){
-												save_script(submit_params);	   		
-										   		
-										   	}
-										   },
-										   
-										   icon: Ext.MessageBox.QUESTION
-										});
-									else
 										save_script(submit_params);	   		
 									
 				            		
 				            			            		
 				            	}
-				            	
-					            	
-					            
-				            	
+				            	else
+				            		Ext.Msg.alert('Save', 'Saving script failed, invaild name');
 				            }
 				        },{
 				        	text: 'Delete',

@@ -22,19 +22,23 @@ def new_id():
     return uuid4().hex
 
 def inspect(workspace):
-    from django.db.models import Q
-    variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False)]
+   
+    variants = get_variants(workspace, 'image')
+    output_variants = get_variants(workspace, 'image', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
     return {
         'name': __name__,
+       
+        
         'params':[
             {   
                 'name': 'source_variant',
                 'fieldLabel': 'Source Rendition',
                 'xtype': 'select',
                 'values': variants,
+                'value': variants[0],
                 'description': 'input-variant',
                 
                 'help': ''
@@ -44,20 +48,22 @@ def inspect(workspace):
                 'name': 'output_variant',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': variants,
+                'values': output_variants,
+                'value': output_variants[0],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
             },
             {
              'xtype':'fieldsetcontainer',
+             'order_field_name': 'actions',
              'items':[{
               'xtype': 'movablecbfieldset',
               'title': 'Resize',
               'name': 'resize',
               'order_field_name': 'actions',
               'order_field_value': 'resize',
-              
+            
              
               'items':[{
                     'xtype':'numberfield',
@@ -84,6 +90,7 @@ def inspect(workspace):
               'xtype': 'movablecbfieldset',
               'title': 'Crop',
               'name': 'crop',
+             
               'order_field_name': 'actions',
               'order_field_value': 'crop',
               'items':[{
@@ -113,51 +120,23 @@ def inspect(workspace):
               'title': 'Watermark',
               'name': 'watermark',
               'order_field_name': 'actions',
-              'order_field_value': 'watermark',
+              'order_field_value': 'watermark',                            
                'renditions': variants
-#              'items':[
-#                       {
-#                        'xtype': 'compositefield',
-#                        'items':[
-#                                 {
-#                                    'id': 'wm_id',
-#                                    'width': 160,
-#                                    'xtype':'textfield',
-#                                    'name': 'wm_id',
-#                                    'fieldLabel': 'image',                    
-#                                    'description': 'image',
-#                                    
-#                #                    'value': 100,
-#                                    'help': ''
-#                                },
-#                                {
-#                                 'xtype': 'watermarkbrowsebutton',
-#                                 'text': 'Browse',
-#                                 'values': variants
-#                                 
-#                                   
-#                                }
-#                        ]
-#                        },
-#                        {
-#                         'xtype': 'watermarkposition'
-#                         
-#                         },
-#                        
-#              ]
               },
               ]
              
              },
                          
+
               
               {   
                 'name': 'output_format',
                 'fieldLabel': 'format',
                 'xtype': 'select',
-                'values': [['image/jpeg'], ['image/x-ms-bmp'], ['image/gif'], ['image/png'], ['same_as_source']],
+                'values': [['jpeg'], ['bmp'], ['gif'], ['png']],
                 'description': 'output_format',
-                'help': 'output_format: use the string "same_as_source" to produce a file of the same type as the source'
+                'value': 'jpeg',
+                'help': ''
             }
               
         ]
