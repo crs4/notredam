@@ -2,6 +2,7 @@ import mimetypes
 from mediadart import log
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
+from dam.supported_types import mime_types_by_type
 
 
 
@@ -11,6 +12,12 @@ def save_type(ctype, component):
     component.format = mime_type.split('/')[1]
     metadataschema_mimetype = MetadataProperty.objects.get(namespace__prefix='dc',field_name='format')
     MetadataValue.objects.create(schema=metadataschema_mimetype, content_object=component, value=mime_type)
+
+def get_ext_by_type(type_name):
+    if type_name in mime_types_by_type:
+        return [[x[1][0], x[0]] for x in mime_types_by_type[type_name].items()]
+    else:
+        return None
 
 def get_variants(workspace, media_type = None, auto_generated = None):
     from django.db.models import Q

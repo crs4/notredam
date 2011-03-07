@@ -274,12 +274,20 @@ class DoTest:
         print ' '.join(open('/tmp/uploader', 'r').readlines())
 
     def show_pipelines(self):
+        print ("Pipelines:")
         pipelines=Pipeline.objects.all()
         for p in pipelines:
             d = loads(p.params)
             actions = d.keys()
             actions.sort()
-            print('pk=%s name=%s length=%s actions=%s' % (p.pk, p.name, len(d), ' '.join(actions)))
+            print('Pipe pk=%s name=%s length=%s actions=%s' % (p.pk, p.name, len(d), ' '.join(actions)))
+
+    def show_process(self):
+        print ("Processes:")
+        processes=Process.objects.all()
+        for p in processes:
+            targets = ProcessTarget.objects.filter(process=p, actions_todo__gt=0)
+            print('Process pk=%s start=%s end=%s pending=%s' % (p.pk, p.start_date, p.end_date, targets.count()))
 
     def get_status(self, pid, items):
         if pid == 'auto':
@@ -290,9 +298,12 @@ class DoTest:
             targets = ProcessTarget.objects.filter(process=pid)
         print 'found %d targets' % len(targets)
         for t in targets:
-            result = loads(t.result)
-            pprint("item %s" % t.target_id)
-            pprint(result, indent=5, width=100)
+            if not t.result:
+                pprint("item %s: no result in DB" % t.target_id)
+            else:
+                result = loads(t.result)
+                pprint("item %s" % t.target_id)
+                pprint(result, indent=5, width=100)
 
 #            if 'thumbnail_image' in result:
 #                if result['thumbnail_image'][0]:
@@ -345,7 +356,13 @@ def main(argv):
         test.get_status(process_id, targets)
 
     elif task == 'show':
-        test.show_pipelines()
+        what = argv[2]
+        if what == 'pipe':
+            test.show_pipelines()
+        elif what == 'process':
+            test.show_process()
+        else:
+            print("Error: use show pipe or show process")
 
     else:
         print usage

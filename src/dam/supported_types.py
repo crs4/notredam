@@ -53,11 +53,13 @@ def get_types_by_type(dict):
         ret[t][subt] = v
     return ret
 
+
 mime_types_by_ext = get_types_by_ext(supported_types)
 mime_types_by_type = get_types_by_type(supported_types)
 
 def supported_extensions(mime_type):
     return supported_types.get(mime_type, None)
+
 
 def guess_file_type(filename):
     ext = os.path.splitext(os.path.normpath(filename))[1]

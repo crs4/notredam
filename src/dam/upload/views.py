@@ -32,7 +32,7 @@ from mediadart.storage import new_id
 from django.conf import settings
 
 #from dam.scripts.models import Pipeline
-from dam.mprocessor.models import new_processor
+from dam.mprocessor.models import Pipeline, Process
 from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
@@ -221,14 +221,16 @@ def _get_filepath(file_name):
     
 
 def import_dir(dir_name, user, workspace, session):
+    logger.debug('########### INSIDE import_dir')
     variant = Variant.objects.get(name = 'original')
     files =os.listdir(dir_name)
     logger.debug('files %s'%files)
     
     uploaders = []
-    for p in Pipeline.objects.filter(triggers='upload'):
-        log.debug('Using pipeline %s' % p.name)
+    for p in Pipeline.objects.filter(triggers__name='upload'):
+        logger.debug('Using pipeline %s' % p.name)
         uploaders.append(Process.objects.create(pipeline=p, workspace=workspace, launched_by=user))
+    logger.debug('###### Loaded %d pipelines' % len(uploaders))
     
     for file_name in files:
         tmp = file_name.split('_')
@@ -248,17 +250,17 @@ def import_dir(dir_name, user, workspace, session):
             # here decide which uploader to use based on the content type of the item
             if uploader.is_compatible(media_type):
                 found = 1
+                logger.debug('find pipeline for item %s' % item.pk)
                 uploader.add_params(item.pk)
         if not found:
-            item.delete()
-            raise "Resource %s is not of a supported type" % file_name
-        
+            logger.info('No action associated to item %s' % file_name)
         shutil.move(file_path, final_path)
         logger.debug('-----res_id %s'%res_id)
-        _create_variant(fn, final_file_name, media_type, item, workspace, variant)
+        _create_variant(file_name, final_file_name, media_type, item, workspace, variant)
         logger.debug('adding item %s'%item.pk)
 
     for uploader in uploaders:
+        logger.debug('running pipeline')
         uploader.run()
         
 @login_required

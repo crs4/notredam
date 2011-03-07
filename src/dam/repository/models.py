@@ -291,8 +291,8 @@ class Item(AbstractItem):
         """
         Returns the file size found in the original variant
         """
-        from dam.variants.models import Variant
-        orig = self.component_set.get(variant = Variant.objects.get(name = 'original'))
+#        logger.debug('######## ITEM=%s' % self.pk)
+        orig = self.component_set.get(variant__name = 'original')
         return float(orig.size)
 
     def get_states(self, workspace=None):

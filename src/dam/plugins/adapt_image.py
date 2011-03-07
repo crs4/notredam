@@ -13,7 +13,7 @@ get_models()
 from dam.repository.models import *
 from dam.variants.models import Variant    
 from dam.workspace.models import DAMWorkspace
-from dam.plugins.common.utils import get_source_rendition
+from dam.plugins.common.utils import get_source_rendition, get_variants, get_ext_by_type
 from dam.core.dam_repository.models import Type
 
 from uuid import uuid4
@@ -23,6 +23,7 @@ def new_id():
 
 def inspect(workspace):
    
+    media_types = get_ext_by_type('image')
     variants = get_variants(workspace, 'image')
     output_variants = get_variants(workspace, 'image', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
@@ -133,9 +134,9 @@ def inspect(workspace):
                 'name': 'output_format',
                 'fieldLabel': 'format',
                 'xtype': 'select',
-                'values': [['jpeg'], ['bmp'], ['gif'], ['png']],
+                'values': media_types,
                 'description': 'output_format',
-                'value': 'jpeg',
+                'value': '.jpg',
                 'help': ''
             }
               
@@ -194,7 +195,7 @@ class AdaptImage:
         if output_format == 'same_as_source':
             media_type = source.media_type
         else:
-            media_type = Type.objects.get_or_create_by_mime(output_format)
+            media_type = Type.objects.get_or_create_by_filename('foo%s' % output_format)
         output_variant = Variant.objects.get(name = output_variant)
         output_component = item.create_variant(output_variant, workspace, media_type)
                 
@@ -205,16 +206,16 @@ class AdaptImage:
     
         for action in actions:
             if action == 'resize':
-                argv +=  ['-resize', '%dx%d' % (resize_w, resize_h)]
+                argv +=  ['-resize', '%sx%s' % (resize_w, resize_h)]
                 
             elif action == 'crop':
                 if crop_ratio:
                     x, y = crop_ratio.split(':')
-                    argv += ['-gravity', 'center', '-crop', '%dx%d%%+0+0' % (int(100./float(x)), int(100./float(y)))]
+                    argv += ['-gravity', 'center', '-crop', '%sx%s%%+0+0' % (int(100./float(x)), int(100./float(y)))]
                 else:
                     crop_x = crop_x or 0   # here None means 0
                     crop_y = crop_y or 0
-                    argv += ['-crop', '%sx%s+%s+%s' % (int(crop_w), int(crop_h), int(crop_x), int(crop_y))]
+                    argv += ['-gravity', 'center', '-crop', '%sx%s+%s+%s' % (int(crop_w), int(crop_h), int(crop_x), int(crop_y))]
 
             elif action == 'watermark':
                 pos_x = int(pos_x_percent * source.width/100.)
@@ -241,7 +242,7 @@ def test():
             workspace,
             source_variant = 'original',
             output_variant='fullscreen',
-            output_format = 'image/jpeg',
+            output_format = '.jpg',
             actions = ['crop', 'resize'],
             resize_h=100,
             resize_w=100,

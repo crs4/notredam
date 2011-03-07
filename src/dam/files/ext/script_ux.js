@@ -406,7 +406,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	 	 var cb_id = Ext.id();
 	 	 Ext.apply(this, {
 	 	 	cb_id: cb_id,
-	 	 	checkboxToggle: {tag: 'input', type: 'checkbox'}
+	 	 	checkboxToggle: {tag: 'input',id: cb_id,  type: 'checkbox'}
 	 	 });
 	 	Ext.ux.CBFieldSet.superclass.initComponent.call(this);
 	
@@ -604,11 +604,10 @@ Ext.ux.WatermarkFieldSet = function(config){
 	
 	var square = new Ext.form.Hidden({
 		name: 'square'
-		
 	});
 	
 	var wm_id = new Ext.form.TextField({
-//        'id': 'wm_id',
+        'id': 'wm_id',
         'width': config.wm_id_width || 160,
         'xtype':'textfield',
         'name': config.wm_id_name ||'wm_id',
@@ -643,20 +642,11 @@ Ext.ux.WatermarkFieldSet = function(config){
         	
         	this.wm_id.setValue(value);
         },
-        'items':[
-                 wm_id,
-                {
+        'items':[ wm_id, {
                  'xtype': 'watermarkbrowsebutton',
                  'text': 'Browse',
                  values: config.renditions
-                 
-                 
-                   
-                }
-                
-        ]
-        }),
-		
+                } ] }),
         position,        
         pos_x_percent,
         pos_y_percent,
@@ -682,6 +672,12 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
         this.pos_x_percent.setValue(parseInt(pos_x));
         this.pos_y_percent.setValue(parseInt(pos_y));
 	},
+
+    _get_square: function(xpercent, ypercent) {
+        var x = Math.round(((xpercent - 5)/100) * 3) + 1;
+        var y = Math.round(((ypercent - 5)/100) * 3);
+        return  3*y + x;
+    },
 	
 	data_loaded: function(values){        
 		var square_selected = this.square.getValue();		
