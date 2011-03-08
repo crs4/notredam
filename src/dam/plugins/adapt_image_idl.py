@@ -2,7 +2,7 @@
 #
 # Interface definition for adapt_image: used by the GUI
 #
-
+from dam.plugins.common.utils import get_variants, get_ext_by_type
 def inspect(workspace):
    
     media_types = get_ext_by_type('image')
