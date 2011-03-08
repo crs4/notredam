@@ -95,14 +95,14 @@ Ext.ux.SelectFieldSet = function(config) {
 	config.items = [
 		select_field,
 		fieldset
+		
 	];
 		
     Ext.ux.SelectFieldSet.superclass.constructor.call(this, config);    
     this.fieldset = fieldset;
     this.select_field = select_field;
     this.values = config.values;
-    
- 	
+	
 }; 
 
 Ext.extend(Ext.ux.SelectFieldSet, Ext.form.FieldSet, {
