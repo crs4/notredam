@@ -1,4 +1,5 @@
 from dam.plugins.common.utils import get_variants
+
 def inspect(workspace):
     variants = get_variants(workspace, 'video')
     image_variants = get_variants(workspace, 'image') 

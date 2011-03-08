@@ -1,4 +1,5 @@
 from dam.plugins.common.utils import save_type, get_variants
+
 def inspect(workspace):    
     variants = get_variants(workspace, 'doc')
     output_variants = get_variants(workspace, 'image', auto_generated = True)
