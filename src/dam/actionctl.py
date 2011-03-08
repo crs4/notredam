@@ -124,7 +124,7 @@ actions = {
             'resize_w': 100,
             'source_variant': 'original',
             'output_variant': 'thumbnail',
-            'output_format' : 'image/jpeg'        
+            'output_format' : '.jpeg'        
             },
          'in': ['fe'],
          'out':['thumbnail']    
@@ -149,7 +149,7 @@ actions = {
             'resize_w': 300,
             'source_variant': 'original',
             'output_variant': 'preview',
-            'output_format' : 'image/jpeg'        
+            'output_format' : '.jpeg'        
             },
          'in': ['fe'],
          'out':['preview']    
@@ -172,7 +172,7 @@ actions = {
             'resize_w': 600,
             'source_variant': 'original',
             'output_variant': 'fullscreen',
-            'output_format' : 'image/jpeg'        
+            'output_format' : '.jpeg'        
             },
          'in': ['fe'],
          'out':['fullscreen']    
@@ -320,11 +320,11 @@ Usage: script_test.py <action> <arguments>
   upload <trigger> <filenames>
 
   Examples:
-  python scripts_test.py register up1 upload image actions  
+  python actionctl.py register up1 upload image actions  
     registers the pipeline described in the global dict "actions" with the name up1,
     to react to the trigger "upload", for all types "image/*"
 
-  python scripts_test.py execpipes upload megan-fox*.jpg
+  python actionctl.py execpipes upload megan-fox*.jpg
     exec all tipes registered for trigger upload on the files megan-fox*.jpg 
 """
 

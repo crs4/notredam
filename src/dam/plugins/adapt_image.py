@@ -72,7 +72,7 @@ class AdaptImage:
         if output_format == 'same_as_source':
             media_type = source.media_type
         else:
-            media_type = Type.objects.get_or_create_by_mime(output_format)
+            media_type = Type.objects.get_or_create_by_filename('foo%s' % output_format)
         output_variant = Variant.objects.get(name = output_variant)
         output_component = item.create_variant(output_variant, workspace, media_type)
                 

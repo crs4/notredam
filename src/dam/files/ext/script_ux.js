@@ -679,8 +679,8 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
 	
 	data_loaded: function(values){        
 		
-		if(this.pos_x_percent && pos_y_percent)
-			this.watermarking(_get_square(pos_x_percent, pos_y_percent));
+		if(this.pos_x_percent && this.pos_y_percent)
+			this.watermarking(this._get_square(this.pos_x_percent, this.pos_y_percent));
 			
 		Ext.ux.WatermarkFieldSet.superclass.data_loaded.call(this, values);
 		
