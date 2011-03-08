@@ -81,9 +81,9 @@ def get_actions(request):
     resp = {'scripts':[]}
     modules_to_load = []
     try:
-        for file in all_files:
-            if file.endswith('.py'):
-                modules_to_load.append(file.split('.py')[0])
+        for filename in all_files:
+            if filename.endswith('.py') and not filename.endswith('_idl.py'):
+                modules_to_load.append(filename.split('.py')[0])
                 
         top_module = __import__(actions_modules, fromlist=modules_to_load)
         logger.debug('modules_to_load %s'%modules_to_load)
