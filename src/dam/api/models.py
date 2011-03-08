@@ -22,6 +22,7 @@ import hashlib
 import time
 import random
 
+
 class Application(models.Model):
     name = models.CharField(max_length = 50)
     api_key = models.CharField(max_length = 50,  unique = True)

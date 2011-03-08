@@ -16,17 +16,60 @@
 #
 #########################################################################
 
+import os
+import mimetypes
 from django.db import models
 from django.contrib.auth.models import User
+from dam.supported_types import supported_extensions, guess_file_type
+
+class MimeError(Exception):
+    pass
+
+class TypeManager(models.Manager):
+    def get_by_mime(self, mime_type):
+        name, subname = mime_type.split('/')
+        return self.filter(name=name, subname=subname)
+
+    def get_or_create_by_mime(self, mime_type, extension=None):
+        "Returns just the type, not the tuple (type, created) and get_or_create"
+        standard_exts = supported_extensions(mime_type)
+        if not standard_exts:
+            raise MimeError("Type %s is not supported" % mime_type)
+        if extension: 
+            if extension[0] != '.':
+                extension = '.' + extension
+            if extension not in standard_exts: 
+                raise MimeError('extension %s is not standard for mime type %s' % (extension, mime_type))
+            register_ext = extension
+        else:
+            register_ext = standard_exts[0]
+        name, subname = mime_type.split('/')
+        t, created = self.get_or_create(name=name, subname=subname)
+        if created:
+            t.ext = register_ext
+            t.save()
+        return t
+
+    def get_or_create_by_filename(self, filename):
+        "Return a type registered in notre dam for use. Create a type if does not exists"
+        mime_type = guess_file_type(filename)
+        basename, ext = os.path.splitext(filename)
+        if mime_type is None:
+            raise MimeError('Unrecognized file type: %s' % filename)
+        return self.get_or_create_by_mime(mime_type, ext)
 
 class Type(models.Model):
     """
     It contains the supported media type.
     """
-    name =  models.CharField(max_length=30)
+    name =  models.CharField(max_length=30)      # the mime type
+    subname = models.CharField(max_length=30)    # the mime subtype
+    ext = models.CharField(max_length=5)         # the extension used in Notredam (with the leading dot)
+    objects = TypeManager()
 
     def __str__(self):
-        return self.name
+        return "%s/%s" % (self.name, self.subname)
+
 
 class ItemManager(models.Manager):
 
@@ -47,7 +90,7 @@ class AbstractItem(models.Model):
 
     owner =  models.ForeignKey(User, related_name='owned_items', null=True, blank=True)
     uploader = models.ForeignKey(User, related_name='uploaded_items', null=True, blank=True)
-    type =  models.ForeignKey(Type)
+    type =  models.ForeignKey(Type)  # used to create new components when the type is not specified
     creation_time = models.DateTimeField(auto_now_add = True)
     update_time = models.DateTimeField(auto_now = True)
     objects = ItemManager()

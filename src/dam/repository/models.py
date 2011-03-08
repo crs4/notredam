@@ -39,6 +39,7 @@ from mediadart.storage import Storage
 
 from uuid import uuid4
 
+
 def new_id():
     return uuid4().hex
 
@@ -95,7 +96,7 @@ class Item(AbstractItem):
         """
         return self.workspaces.all().count()
         
-    def create_variant(self, variant, ws,  media_type = None):
+    def create_variant(self, variant, ws,  media_type):  # no default for media_type
         """
         Create a new component for this item, using the given variant/media_type 
         and add it to the given workspace
@@ -103,16 +104,8 @@ class Item(AbstractItem):
         @param ws an instance of workspace.DAMWorkspace
         @param media_type an instance of dam_repository.Type
         """
-        #logger.debug('variant %s'%variant)
-        #logger.debug('item.type %s'%self.type.name)
-        if not media_type:
-            media_type = self.type
-        #logger.debug('ws %s'%ws)
-    #    if variant_name =='original':
-    #        variant,  created = Variant.objects.get_or_create(variant_name = 'original')        
-    #    else:        
-    
-    #    variant = Variant.objects.get(name = variant_name)
+#        if not media_type:
+#            media_type = self.default_type
         
         try:
             logger.debug('variant %s'%variant)
@@ -125,7 +118,7 @@ class Item(AbstractItem):
                 #logger.debug('variant %s'%variant)
                 #logger.debug('worskapce %s'%ws)
                 #logger.debug('media_type %s'%media_type)
-                comp = Component.objects.get(item = self, variant= variant,  workspace = ws,  type = media_type)
+                comp = Component.objects.get(item = self, variant= variant,  workspace = ws)
                 
 #                comp = Component.objects.get(pk = 1)
                 logger.debug('comp %s'%comp)
@@ -295,8 +288,8 @@ class Item(AbstractItem):
         """
         Returns the file size found in the original variant
         """
-        from dam.variants.models import Variant
-        orig = self.component_set.get(variant = Variant.objects.get(name = 'original'))
+#        logger.debug('######## ITEM=%s' % self.pk)
+        orig = self.component_set.get(variant__name = 'original')
         return float(orig.size)
 
     def get_states(self, workspace=None):
@@ -465,7 +458,8 @@ class Item(AbstractItem):
 
 
 def get_storage_file_name(item_id, workspace_id, variant_name, extension):
-    return item_id +  '_' + str(workspace_id) + '_' + variant_name + '.' + extension
+    print(' ######## get_storage_file_name item_id=%s, workspace_id=%s, variant_name=%s, extension=%s' % (item_id, workspace_id, variant_name, extension))
+    return item_id +  '_' + str(workspace_id) + '_' + variant_name + extension
                        
 class Component(AbstractComponent):
 
@@ -479,7 +473,7 @@ class Component(AbstractComponent):
     
     variant = models.ForeignKey('variants.Variant')
     workspace = models.ManyToManyField('workspace.DAMWorkspace')    
-#    media_type = models.ForeignKey('application.Type')
+    media_type = models.ForeignKey('core.dam_repository.Type')
     item = models.ForeignKey(Item)
     _previous_source_id = models.CharField(max_length=40,  null = True,  blank = True)
         

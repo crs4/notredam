@@ -24,17 +24,6 @@ from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 
 from dam.eventmanager.models import Event, EventRegistration
-
-
-@login_required
-def get_events(request):
-    workspace = request.session.get('workspace')
-    
-    resp = {'events':[]}
-    for event in Event.objects.filter(Q(workspace = workspace)| Q(workspace__isnull = True)):
-        resp['events'].append({'id': event.pk, 'name': event.name, 'description': event.name})
-    
-    return HttpResponse(simplejson.dumps(resp))
  
 @login_required
 def set_script_associations(request):
