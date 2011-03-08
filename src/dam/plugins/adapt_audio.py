@@ -16,10 +16,10 @@ from dam.plugins.adapt_audio_idl import inspect
 
 
 AUDIO_PRESETS = {
-    'audio/mpeg': 'MP3',
-    'audio/x-mp4':'AAC',
-    'audio/x-wav': 'WAV',
-    'audio/ogg':  'OGG',
+     'MP3': 'audio/mpeg',
+    'AAC':'audio/x-mp4',
+    'WAV':'audio/x-wav',
+    'OGG': 'audio/ogg',
 }
 
 def run(*args, **kw_args):

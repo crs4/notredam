@@ -9,6 +9,7 @@ from mediadart import log
 from dam.variants.models import Variant    
 from dam.plugins.common.utils import get_source_rendition
 from dam.core.dam_repository.models import Type
+from dam.repository.models import get_storage_file_name
 
 class AdaptAV:
     VIDEO_PRESETS = {
@@ -46,13 +47,15 @@ class AdaptAV:
                 source_variant,  # name of the variant
                 output_variant,  # name of the variat
                 output_preset,   # a mime type or a Mediadart PRESET
-                preset_params,   # json encoded dictionary
+                **preset_params   # json encoded dictionary
                 ):
 
-        log.info('%s.execute' % self.name)
+        log.info('%s.execute' % self)
+        log.info('output_preset %s'%output_preset)
+        log.info('self.presets %s'%self.presets)
         if output_preset not in self.presets:
-            raise  Exception('%s: unsupported output_preset' % (self.name, output_preset))
-        preset_params = loads(preset_params)
+            raise  Exception('%s: unsupported output_preset' % (self, output_preset))
+        #~ preset_params = loads(preset_params)
         try:
             output_type = Type.objects.get_or_create_by_mime(self.presets[output_preset])
             item, source = get_source_rendition(item_id, source_variant, workspace)
@@ -64,6 +67,6 @@ class AdaptAV:
             self.deferred.errback(Failure(e))
             return
                 
-        d = self.adapter_method(source.uri, output_file, preset, preset_params)
+        d = self.adapter_method(source.uri, output_file, output_preset, preset_params)
         d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
         return self.deferred
