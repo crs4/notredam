@@ -1,24 +1,5 @@
 from dam.core.dam_metadata.models import XMPStructure
-from dam.plugins.common.utils import save_type, get_variants
-
-def inspect(workspace):
-    variants = get_variants(workspace, 'image')
-    return {
-        'name': __name__,
-        'params':[
-            {   
-                'name': 'source_variant',
-                'fieldLabel': 'Source Rendition',
-                'xtype': 'select',
-                'values': variants,
-                'value': variants[0],
-                'description': 'input-variant',
-               
-                'help': ''
-            }]
-         
-        } 
-
+from dam.plugins.embed_xmp_idl import inspect
 
 # Entry point
 def run(item_id, workspace, source_variant):

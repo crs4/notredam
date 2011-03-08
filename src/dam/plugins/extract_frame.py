@@ -16,6 +16,7 @@ from dam.variants.models import Variant
 from dam.core.dam_repository.models import Type
 from dam.workspace.models import DAMWorkspace
 from dam.plugins.common.utils import get_source_rendition
+from dam.plugins.extract_frame_idl import inspect
 from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
 
 from uuid import uuid4
@@ -74,75 +75,6 @@ class FrameExtractor:
         d = self.adapter_proxy.extract_video_thumbnail(source.uri, output_file, (frame_w, frame_h), position)
         d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
     
-
-#
-# Interface definition: used by the GUI
-#
-def inspect(workspace):
-    from django.db.models import Q
-    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
-    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
-    return {
-        'name': __name__,
-        'params':[
-            {   
-                'name': 'source_variant',
-                'fieldLabel': 'Source Variant',
-                'xtype': 'select',
-                'values': source_variants,
-                'description': 'input-variant',
-                'help': ''
-            },
-            
-            {   
-                'name': 'output_variant',
-                'fieldLabel': 'Output Variant',
-                'xtype': 'select',
-                'values': output_variants,
-                'description': 'output-variant',
-                'default': 0,
-                'help': ''
-            },             
-            {
-                'xtype':'numberfield',
-                'name': 'frame_w',
-                'fieldLabel': 'frame width',                    
-                'description': 'width of the extracted frame',
-                'minValue':10,
-#                    'value': 100,
-                'help': 'width of the extracted image in pixels (aspect ratio is preserved)'
-            },
-            {
-                'xtype':'numberfield',
-                'name': 'frame_h',
-                'fieldLabel': 'frame height',                    
-                'description': 'height of the extracted frame',
-                'minValue':10,
-#                    'value': 100,
-                'help': 'height of the extracted image in pixels (aspect ratio is preserved)'
-            },
-            {
-                'xtype':'????????',
-                'name': 'output_format',
-                'fieldLabel': 'format',                    
-                'description': 'format of output variant',
-                'minValue':10,
-#                    'value': 100,
-                'help': 'mime type of the format of the output_variant'
-            },
-            {
-                'xtype':'numberfield',
-                'name': 'position',
-                'fieldLabel': 'position',                    
-                'description': 'position of frame',
-                'minValue':10,
-#                    'value': 100,
-                'help': 'position of frame to extract as percentage of total time'
-            },
-        ],
-    } 
-
-
 #
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a video comp.)
 #
