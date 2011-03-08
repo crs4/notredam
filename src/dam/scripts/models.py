@@ -23,7 +23,8 @@ from django.utils import simplejson
 
 DEFAULT_PIPELINE = [{
     'name': 'uploader',
-    'type': 'upload',
+    'events': ['upload'],
+	'media_types': ['image'],
     'description': '',
     'params': simplejson.dumps({'thumbnail_image':{
         'script_name': 'adapt_image', 
@@ -33,7 +34,7 @@ DEFAULT_PIPELINE = [{
             'resize_w': 100,
             'source_variant': 'original',
             'output_variant': 'thumbnail',
-            'output_format' : 'jpeg'        
+            'output_format' : '.jpeg'        
             },
          'in': [],
          'out':[]    
@@ -48,7 +49,7 @@ DEFAULT_PIPELINE = [{
             'resize_w': 300,
             'source_variant': 'original',
             'output_variant': 'preview',
-            'output_format' : 'jpeg'        
+            'output_format' : '.jpeg'        
             },
          'in': [],
          'out':[]    
@@ -63,7 +64,7 @@ DEFAULT_PIPELINE = [{
             'resize_w': 600,
             'source_variant': 'original',
             'output_variant': 'fullscreen',
-            'output_format' : 'jpeg'        
+            'output_format' : '.jpeg'        
             },
          'in': [],
          'out':[]    
