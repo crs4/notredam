@@ -1540,7 +1540,7 @@ class ItemResource(ModResource):
                             
             
             logger.debug('v %s'%v)
-            url  = c.get_component_url()        
+            url  = c.get_url()        
 #            item.variants[va.pk] = url
             if url:
                 item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
