@@ -60,7 +60,7 @@ class AdaptAudio:
                 workspace,       # workspace object
                 source_variant,  # name of the variant
                 output_variant,  # name of the variat
-                output_format,   # a mime type
+                output_preset,   # a mime type or a Mediadart PRESET
                 preset_params,   # json encoded dictionary
                 ):
 
