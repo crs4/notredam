@@ -406,10 +406,7 @@ class Item(AbstractItem):
            caption = self._get_caption(caption, default_language)
         else:
             caption = ''
-                        
-#        thumb_url = self.get_variant_url('thumbnail', workspace)
-#        preview_url = self.get_variant_url('preview', workspace)
-#        fullscreen_url = self.get_variant_url('fullscreen', workspace)
+
 
         now = '?t=' + str(time.time())
         thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail')
@@ -425,11 +422,7 @@ class Item(AbstractItem):
            
         else:
             status = 'completed'
-        
-#        status = 'in_progress'
-#        thumb_url = preview_url = fullscreen_url = None
-        
-        
+
         
         if GeoInfo.objects.filter(item=self).count() > 0:
             geotagged = 1

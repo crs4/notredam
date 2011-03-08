@@ -256,7 +256,7 @@ def import_dir(dir_name, user, workspace, session):
             logger.info('No action associated to item %s' % file_name)
         shutil.move(file_path, final_path)
         logger.debug('-----res_id %s'%res_id)
-        _create_variant(file_name, final_file_name, media_type, item, workspace, variant)
+        _create_variant(original_file_name, final_file_name, media_type, item, workspace, variant)
         logger.debug('adding item %s'%item.pk)
 
     for uploader in uploaders:
