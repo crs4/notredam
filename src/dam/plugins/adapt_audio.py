@@ -1,7 +1,5 @@
 import os
-from json import loads
 from twisted.internet import defer, reactor
-from twisted.python.failure import Failure
 from mediadart import log
 from mediadart.mqueue.mqclient_twisted import Proxy
 
@@ -12,30 +10,27 @@ setup_environ(settings)
 from django.db.models.loading import get_models
 get_models()
 
-from dam.repository.models import *
 from dam.variants.models import Variant    
-from dam.workspace.models import DAMWorkspace
-from dam.plugins.common.utils import get_source_rendition
+from dam.plugins.common.av_adapt import AdaptAV
 from dam.plugins.adapt_audio_idl import inspect
-from dam.core.dam_repository.models import Type
-from uuid import uuid4
 
-def new_id():
-    return uuid4().hex
+
+AUDIO_PRESETS = {
+     'MP3': 'audio/mpeg',
+    'AAC':'audio/x-mp4',
+    'WAV':'audio/x-wav',
+    'OGG': 'audio/ogg',
+}
 
 def run(*args, **kw_args):
     deferred = defer.Deferred()
-    adapter = AdaptAudio(deferred)
+    adapt_method = Proxy('Adapter').adapt_audio
+    adapter = AdaptAV(deferred, adapt_method, AUDIO_PRESETS)
     reactor.callLater(0, adapter.execute, *args, **kw_args)
     return deferred
 
 class AdaptAudio:
-    AUDIO_PRESETS = {
-        'audio/mpeg': 'MP3',
-        'audio/x-mp4':'AAC',
-        'audio/x-wav': 'WAV',
-        'audio/ogg':  'OGG',
-    }
+   
     def __init__(self, deferred):    
         self.deferred = deferred
         self.adapter_proxy = Proxy('Adapter')
@@ -64,32 +59,35 @@ class AdaptAudio:
                 **preset_params   # json encoded dictionary
                 ):
 
-		log.info('AdaptAudio.execute')
-		log.debug('preset_params %s'%preset_params)		
-		log.debug('self.AUDIO_PRESETS %s'%self.AUDIO_PRESETS)
-		if output_preset not in self.AUDIO_PRESETS:
-			raise  Exception('Unsupported output_preset for audio adaptation %s' % output_preset)
-		else:
-			preset = self.AUDIO_PRESETS[output_preset]
-		#~ preset_params = loads(preset_params)
-		try:
-			output_type = Type.objects.get_or_create_by_mime(output_preset)
-			item, source = get_source_rendition(item_id, source_variant, workspace)
-			output_variant_obj = Variant.objects.get(name = output_variant)
-			output_component = item.create_variant(output_variant_obj, workspace, output_type)
-			output_component.source = source
-			output_file = get_storage_file_name(item.ID, workspace.pk, output_variant_obj.name, output_type.ext)
-		except Exception, e:
-			self.deferred.errback(Failure(e))
-			return
+	log.info('AdaptAudio.execute')
+	log.debug('preset_params %s'%preset_params)		
+	log.debug('self.AUDIO_PRESETS %s'%self.AUDIO_PRESETS)
+	if output_preset not in self.AUDIO_PRESETS:
+		raise  Exception('Unsupported output_preset for audio adaptation %s' % output_preset)
+	else:
+	    preset = self.AUDIO_PRESETS[output_preset]
+	#~ preset_params = loads(preset_params)
+	try:
+		output_type = Type.objects.get_or_create_by_mime(output_preset)
+		item, source = get_source_rendition(item_id, source_variant, workspace)
+		output_variant_obj = Variant.objects.get(name = output_variant)
+		output_component = item.create_variant(output_variant_obj, workspace, output_type)
+		output_component.source = source
+		output_file = get_storage_file_name(item.ID, workspace.pk, output_variant_obj.name, output_type.ext)
+	except Exception, e:
+		self.deferred.errback(Failure(e))
+		return
 				
-		d = self.adapter_proxy.adapt_audio(source.uri, output_file, preset, preset_params)
-		d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
-		return self.deferred
+	d = self.adapter_proxy.adapt_audio(source.uri, output_file, preset, preset_params)
+	d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
+	return self.deferred
 
 #
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
 #
+from dam.repository.models import Item
+from dam.workspace.models import DAMWorkspace
+
 def test():
     print 'test'
     item = Item.objects.get(pk=2)
@@ -113,6 +111,10 @@ if __name__ == "__main__":
     
     reactor.callWhenRunning(test)
     reactor.run()
+
+    
+    
+    
 
     
     
