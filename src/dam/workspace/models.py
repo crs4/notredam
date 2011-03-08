@@ -22,8 +22,9 @@ from django.db.models import Q
 from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
+from dam.core.dam_repository.models import Type
 import dam.logger as logger
-from dam.mprocessor.models import Process
+from dam.mprocessor.models import Process, TriggerEvent
 
 
 class WSManager(WorkspaceManager):
@@ -47,8 +48,14 @@ class WSManager(WorkspaceManager):
         
         try:
             
+			
             for pipeline in DEFAULT_PIPELINE:
-                Pipeline.objects.create(name=pipeline['name'], type=pipeline['type'], description = pipeline['description'], params = pipeline['params'], workspace = ws)
+                events = TriggerEvent.objects.filter(name__in = pipeline['events'])
+                media_types = Type.objects.filter(name__in = pipeline['media_types'])
+                p = Pipeline.objects.create(name=pipeline['name'],  description = pipeline['description'], params = pipeline['params'], workspace = ws)
+                p.triggers.add(*events)
+                p.media_type.add(*media_types)
+				
             
             root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'keyword',  cls = 'keyword')
             col_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'collection')
