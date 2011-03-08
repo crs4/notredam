@@ -1,13 +1,12 @@
+from mediadart.adapter.adapt_video import transcoder
 from dam.plugins.common.utils import get_variants
 
 def inspect(workspace):
     variants = get_variants(workspace, 'video')
+    video_presets = transcoder.keys()
     image_variants = get_variants(workspace, 'image') 
     output_variants = get_variants(workspace, 'video', auto_generated = True)
-#    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
-#    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
-    width = 200
     audio_rate = {
                   'xtype': 'numberfield',
                   'fieldLabel': 'Sample Rate (Hz)',
