@@ -892,7 +892,7 @@ function createTemplate(panel_id, media_type){
 		
 		tpl_str += '<tpl if="type != \'audio\'">';    
 			tpl_str += '<div class="thumb-wrap" id="{pk}">';
-				tpl_str += '<div class="thumb" ondbclick="javascript:function(){console.log(\'aaaaaa\')}">';
+				tpl_str += '<div class="thumb">';
 					if (media_type.length > 1)
 						tpl_str += '<span class="{type}_icon media_icon"></span>'; 
 			

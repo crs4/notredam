@@ -235,61 +235,40 @@ var current_item_selected;
 function showFullscreen(view, index, node, e){
 	
     var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
-        
-    Ext.Ajax.request({
-        url:'/get_component_url/'+data.pk+'/fullscreen/',
-        success: function(response){
-            var resp = response.responseText;
-//                img =Ext.get('fullscreen_img').dom
+    var img = new Image();
+	var img_width, img_height;
+	console.log('aaaaaaaaaaaaaaaaaaaa');
+	console.log(data);
+	img.onload = function(){
+		var tmp = getFullscreenSize(img);
+		
+		img_width = tmp[0];
+		img_height = tmp[1];
+		img.width = img_width; 
+		img.height= img_height;
+		
+		var win = new Ext.Window({
+			modal: true,
+			width:img_width + 15 ,
+			height:img_height + 30,
+			resizable: false,
+			constrain: true,
+			title: 'fullscreen',
+			html: '<div id="fullscreen"><img width="'+img_width +'" height="'+img_height+'" src="' +  data.url_fullscreen+'"></img></div>',
 
-            try {
-                var decoded_resp = Ext.decode(resp);
-                var url = '/redirect_to_component/' + data.pk + '/original/?download=1';
-                window.open(url);
+			listeners:{
+				show: function(){
+					this.center();                     
+				}                            
+			}                
+		});
 
-            }
-            catch(err) {
+		win.show();
+	   
+	};
 
-                var fullscreen_url = resp;            
-
-                var img = new Image();
-                var img_width, img_height;
-                img.onload = function(){
-                    var tmp = getFullscreenSize(img);
-                    
-                    img_width = tmp[0];
-                    img_height = tmp[1];
-                    img.width = img_width; 
-                    img.height= img_height;
-                    
-                    var win = new Ext.Window({
-                        modal: true,
-                        width:img_width + 15 ,
-                        height:img_height + 30,
-                        resizable: false,
-                        constrain: true,
-                        title: 'fullscreen',
-                        html: '<div id="fullscreen"><img width="'+img_width +'" height="'+img_height+'" src="' + fullscreen_url+'"></img></div>',
+	img.src = data.url_fullscreen;    
     
-                        listeners:{
-                            show: function(){
-                                this.center();                     
-                            }                            
-                        }                
-                    });
-
-                    win.show();
-                   
-                };
-    
-                img.src = fullscreen_url;
-                            
-            }
-
-
-        }
-        
-    });
     
 }
 
@@ -613,7 +592,7 @@ var createStore = function(config) {
                 'url', 
                 'url_preview', 
                 'size', 
-
+				'url_fullscreen',
                 'geotagged', 
                 'status', 
                 'thumb', 
@@ -648,7 +627,7 @@ var createView = function(config) {
         tpl: tpl,
         listeners: {
             selectionchange: {fn:showDetails, buffer:100},
-//            dblclick: {fn:showFullscreen, buffer:100},
+            dblclick: {fn:showFullscreen, buffer:100},
 //            dblclick: function(){
 //            	console.log('sdsfd');
 //            	
