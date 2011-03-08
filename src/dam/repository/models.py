@@ -457,7 +457,9 @@ class Item(AbstractItem):
 
 def get_storage_file_name(item_id, workspace_id, variant_name, extension):
     logger.debug(' ######## get_storage_file_name item_id=%s, workspace_id=%s, variant_name=%s, extension=%s' % (item_id, workspace_id, variant_name, extension))
-    return item_id +  '_' + str(workspace_id) + '_' + variant_name + '.'+ extension
+    if not extension.startswith('.'):
+        extension = '.' + extension
+    return item_id +  '_' + str(workspace_id) + '_' + variant_name +  extension
                        
 class Component(AbstractComponent):
 
