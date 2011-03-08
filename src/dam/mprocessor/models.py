@@ -3,13 +3,24 @@ from mediadart.storage import new_id
 from django.contrib.auth.models import User
 from mediadart.mqueue.mqclient_async import Proxy
 from django.utils import simplejson
+from dam.core.dam_repository.models import Type
 import logger
 import datetime
+
+
+# this class is used to group together pipelines that must executed at specific
+# trigger points, like after an upload, before an export. 
+class TriggerEvent(models.Model):
+    name = models.CharField(max_length = 40, null = False, blank=False, choices=[('upload', 'upload')])
+
+    def __str__(self):
+        return self.name
     
 class Pipeline(models.Model):
     name = models.CharField(max_length= 50)
     description = models.TextField(blank=True)
-#    type = models.CharField(max_length=32, blank=True, default="") 
+    triggers = models.ManyToManyField(TriggerEvent)
+    media_type  = models.ManyToManyField(Type)  # mime types of objects that can be in params
     params = models.TextField()
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     
@@ -17,12 +28,6 @@ class Pipeline(models.Model):
         if not hasattr(self, 'length'):
             self.length = len(simplejson.loads(self.params))
         return self.length
-    
-    def get_type(self, workspace):
-        try:
-            return PipelineType.objects.get(pipeline = self, workspace = workspace)
-        except PipelineType.DoesNotExist:
-            return None
     
 class Process(models.Model):    
     pipeline = models.ForeignKey(Pipeline)
@@ -46,6 +51,11 @@ class Process(models.Model):
     def is_completed(self):
         return self.end_date is not None
 
+    def is_compatible(self, media_type):
+        "return True if no type is registered or if media_type is registered"
+        types = self.pipeline.media_type.all()
+        return (not types)  or (media_type in types)
+
     def run(self):
         Proxy('MProcessor').run(self.pk)        
 
@@ -63,14 +73,5 @@ class ProcessTarget(models.Model):
     actions_failed = models.IntegerField(default=0)
     actions_todo = models.IntegerField(default=0)   # passed+cancelled+failed+todo = pipeline.num_actions()
     result = models.TextField()                     # anything sensible
-    
-class PipelineType(models.Model):
-    type = models.CharField(max_length = 40, null = False, choices= [('upload', 'upload')])
-    pipeline = models.ForeignKey(Pipeline, unique = True)
-    workspace = models.ForeignKey('workspace.DAMWorkspace')
-    
-    class Meta:
-        unique_together = (('type', 'workspace'),)
-    
     
 

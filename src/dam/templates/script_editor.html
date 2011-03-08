@@ -46,7 +46,9 @@
 {%block js%}
 	
 	
-	<script type="text/javascript" src="/files/ext/msgbox.js"></script>
+	<!--script type="text/javascript" src="/files/ext/msgbox.js"></script-->
+	<script type="text/javascript" src="/files/ext/RowExpander.js"></script>
+	<script type="text/javascript" src="/files/ext/script_ux.js"></script>
 	
 	<!-- YUI-->
 	
@@ -89,11 +91,6 @@
 		{%if pk%}
 			script_pk = '{{pk}}';
 		{%endif%}
-		
-		{%if type%}
-			script_type = '{{type}}';
-		{%endif%}
-		
 		
 		{%if types_available%}
 			types_available = Ext.decode('{{types_available|safe}}');

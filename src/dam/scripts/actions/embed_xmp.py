@@ -1,5 +1,18 @@
 from dam.core.dam_metadata.models import XMPStructure
-from dam.plugins.embed_xmp_idl import inspect
+
+def inspect():
+    return {
+        'name': __name__,
+        'parameter_groups':{
+        },
+        'source_variant': {
+            'type': 'input-variant',
+            'description': 'input-variant',
+            'default': 0,
+            'help': ''
+        }      
+    } 
+
 
 # Entry point
 def run(item_id, workspace, source_variant):

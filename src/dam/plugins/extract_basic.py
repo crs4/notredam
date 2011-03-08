@@ -21,23 +21,12 @@ from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
 from dam.plugins.common.utils import save_type
+from dam.plugins.extract_basic_idl import inspect
 
 from uuid import uuid4
 
 def new_id():
     return uuid4().hex
-
-def inspect():
-    return {
-        'name': __name__,
-        'parameter_groups':{},
-        'source_variant': {
-            'type': 'variant',
-            'description': 'input-variant',
-            'default': 0,
-            'help': ''
-        },
-    } 
 
 class ExtractError(Exception):
     pass

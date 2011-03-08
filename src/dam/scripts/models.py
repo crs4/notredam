@@ -20,6 +20,7 @@
 
 from django.utils import simplejson
 
+
 DEFAULT_PIPELINE = [{
     'name': 'uploader',
     'type': 'upload',

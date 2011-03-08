@@ -22,23 +22,12 @@ from dam.variants.models import Variant
 from dam.repository.models import Item    
 from dam.workspace.models import DAMWorkspace
 from dam.plugins.common.utils import save_type
+from dam.plugins.extract_xmp_idl import inspect
 
 from uuid import uuid4
 
 def new_id():
     return uuid4().hex
-
-def inspect():
-    return {
-        'name': __name__,
-        'parameter_groups':{},
-        'source_variant': {
-            'type': 'variant',
-            'description': 'input-variant',
-            'default': 0,
-            'help': ''
-        },
-    } 
 
 class ExtractError(Exception):
     pass
@@ -166,3 +155,30 @@ class ExtractXMP:
         d.addCallbacks(self._cb_xmp_ok, self._cb_error)
         return d
         
+
+def test():
+    print 'test'
+    item = Item.objects.get(pk=1)
+    workspace = DAMWorkspace.objects.get(pk = 1)
+    
+    d = run(4,
+            workspace,
+            source_variant = 'original',
+            )
+    print 'addBoth'
+    d.addBoth(print_result)
+    print 'dopo addBoth'
+    
+def print_result(result):
+    print 'print_result', result
+    reactor.stop()
+
+if __name__ == "__main__":
+    from twisted.internet import reactor
+    
+    reactor.callWhenRunning(test)
+    reactor.run()
+
+    
+    
+    
