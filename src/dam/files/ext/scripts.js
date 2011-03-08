@@ -2091,6 +2091,7 @@ function show_monitor(){
 			return;
 			
 		 var expander = new Ext.ux.grid.RowExpander({
+			collapsed: true,
 	        tpl : new Ext.Template(
 	            '<p>Launched By: <b>{launched_by}</b></p>',
 	            '<p>Total Items: <a href="javascript:show_items(\'{id}\', \'total\')"><b>{total_items}</b></a></p>',

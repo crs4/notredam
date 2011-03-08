@@ -281,6 +281,7 @@ def get_available_actions(request):
 def _script_monitor(workspace):
     import datetime    
     processes = workspace.get_active_processes()
+    logger.debug('processes %s'%processes)
     processes_info = []
     for process in processes:
         try:
@@ -293,6 +294,7 @@ def _script_monitor(workspace):
             elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
                 
                 process.delete()
+                logger.debug('process %s deleted'%process.pk)
                 continue
     #            else:
     #                status = 'in progress'
@@ -304,21 +306,26 @@ def _script_monitor(workspace):
                 progress = 0
             else:
                 progress =  round(float(items_failed + items_completed)/float(total_items)*100)
-              
-            processes_info.append({
+            
+            tmp = {
                 'id': process.pk,
                  'name':process.pipeline.name,
     #                 'status': status,                 
                  'total_items':total_items,
                  'items_completed': items_completed,
                  'progress':progress,
-                 'type': process.pipeline.type,
-                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M:%S"),
-                 'end_date': process.end_date.strftime("%d/%m/%y %I:%M"),
+                 'type': ','.join([trigger.name for trigger in process.pipeline.triggers.all()]),                 
+                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M"),
                  'launched_by': process.launched_by.username,
                  'items_failed': items_failed
-                 })
-        except:
+                 }
+        
+            if process.end_date:
+                tmp['end_date'] = process.start_date.strftime("%d/%m/%y %I:%M:%S")
+                
+            processes_info.append(tmp)
+        except Exception, ex:
+            logger.exception(ex)
             continue
         
     return processes_info

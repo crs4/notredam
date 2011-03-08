@@ -104,8 +104,8 @@ Ext.ux.grid.RowExpander = Ext.extend(Ext.util.Observable, {
         if(content){
             p.body = content;
         }
-        //~ return this.state[record.id] ? 'x-grid3-row-expanded' : 'x-grid3-row-collapsed';
-		return 'x-grid3-row-expanded';
+        return this.state[record.id] ? 'x-grid3-row-expanded' : 'x-grid3-row-collapsed';
+		
     },
 
     init : function(grid){
