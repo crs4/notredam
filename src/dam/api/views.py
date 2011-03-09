@@ -893,7 +893,7 @@ class ItemResource(ModResource):
             item_id = request.POST.get('item_id')        
             user = request.user  
             item = Item.objects.get(pk = item_id)            
-            _upload_variant(item, variant, workspace, file_name, upload_file)
+            _upload_variant(item, variant, workspace, user, file_name, upload_file)
 			
         except Exception,ex:
             logger.exception(ex)
