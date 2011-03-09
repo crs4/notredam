@@ -68,6 +68,8 @@ class AdaptImage:
                 wm_id = None):
 
         log.info('AdaptImage.execute')
+        if not isinstance(actions, list):
+            actions = [actions]
         item, source = get_source_rendition(item_id, source_variant, workspace)
         if output_format == 'same_as_source':
             media_type = source.media_type
