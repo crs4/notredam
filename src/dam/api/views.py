@@ -886,7 +886,7 @@ class ItemResource(ModResource):
             #~ _save_uploaded_variant(request, upload_file, user, ws)
 			
             
-            variant_id = request.POST['variant_id']
+            variant_id = request.POST['rendition_id']
             
 
             variant = Variant.objects.get(name = variant_id)
