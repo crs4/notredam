@@ -13,7 +13,7 @@ get_models()
 from dam.variants.models import Variant    
 from dam.repository.models import get_storage_file_name
 from dam.plugins.common.av_adapt import AdaptAV
-from dam.plugins.adapt_audio_idl import inspect
+from dam.plugins.pdfcover_idl import inspect
 
 #
 # External interface
@@ -31,7 +31,7 @@ class PdfCover:
         self.adapter_proxy = Proxy('Adapter')
 
     def handle_result(self, result, outfile, component):
-        log.debug('handle_result'   # result is empty on success
+        log.debug('handle_result')   # result is empty on success
         
         directory, name = os.path.split(outfile)
         component.uri = name
@@ -50,7 +50,7 @@ class PdfCover:
                 max_size,          # largest dimension
                 ):
 
-        log.info('AdaptImage.execute')
+        log.info('AdaptDoc.execute')
         item, source = get_source_rendition(item_id, source_variant, workspace)
         output_variant_obj = Variant.objects.get(name = output_variant)
         output_component = item.create_variant(output_variant_obj, workspace, media_type)

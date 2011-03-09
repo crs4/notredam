@@ -63,7 +63,7 @@ action_audio = {
         'script_name':  'adapt_audio',
         'params' : {
             'source_variant': 'original',
-            'output_variant': 'thumbnail',
+            'output_variant': 'preview',
             'output_preset': 'MP3',
             'bitrate': '128',
             'rate': 44100,
