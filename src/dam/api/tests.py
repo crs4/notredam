@@ -37,7 +37,7 @@ from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.core.dam_repository.models import Type
 from dam.workflow.models import State, StateItemAssociation
 from dam.workflow.views import _set_state
-from dam.scripts.models import Script
+from dam.mprocessor.models import Pipeline
 import hashlib
 
 
@@ -502,7 +502,7 @@ class ItemTest(MyTestCase):
     def test_create(self):
         workspace_id = 1
         metadata_dict = {'namespace':'dc',  'name':'title',  'value': 'test',  'lang': 'en', }
-        params = {'workspace_id':workspace_id, 'media_type': 'image' }
+        params = {'workspace_id':workspace_id, 'media_type': 'image/jpeg' }
     
         params = self.get_final_parameters(params)                
         
@@ -769,25 +769,25 @@ class ItemTest(MyTestCase):
 
         
         
-#    def test_upload(self):
-#        from django.test import client 
-#        from mprocessor.models import Task
-#        workspace = DAMWorkspace.objects.all()[0]
-#        image = Type.objects.get(name = 'image')
-#        item = Item.objects.create(type = image)
-#        item.workspaces.add(workspace)
-#        
-#        file = open('files/images/logo_blue.jpg')
-#        params = self.get_final_parameters({ 'workspace_id': 1,  'rendition_id':1})                
-#        params['Filedata'] = file
-#        
-#        response = self.client.post('/api/item/%s/upload/'%item.pk, params, )            
-#        file.close()
-#        
-#        print response.content 
-#        self.assertTrue(response.content == '')
-#        self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
-##        self.assertTrue(Task.objects.filter(component__in = item.component_set.all()).count()) #(adapt + extract feat)*3 + extract feat orig
+    #def test_upload(self):
+        #from django.test import client 
+        #from mprocessor.models import Task
+        #workspace = DAMWorkspace.objects.all()[0]
+        #image = Type.objects.get(name = 'image')
+        #item = Item.objects.create(type = image)
+        #item.workspaces.add(workspace)
+        #
+        #file = open('files/images/logo_blue.jpg')
+        #params = self.get_final_parameters({ 'workspace_id': 1,  'rendition_id':1})                
+        #params['Filedata'] = file
+        #
+        #response = self.client.post('/api/item/%s/upload/'%item.pk, params, )            
+        #file.close()
+        #
+        #print response.content 
+        #self.assertTrue(response.content == '')
+        #self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
+        #self.assertTrue(Task.objects.filter(component__in = item.component_set.all()).count()) #(adapt + extract feat)*3 + extract feat orig
                  
         
     def test_get_state(self):
@@ -1611,11 +1611,11 @@ class ScriptsTest(MyTestCase):
         ]
                  
         }}
-        script = Script.objects.get(name = 'preview_generation')
+        script = Pipeline.objects.get(name = 'preview_generation')
         params = self.get_final_parameters({ 'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
                 
         response = self.client.post('/api/script/%s/edit/'%script.pk, params,  )  
-        script = Script.objects.get(pk = script.pk)
+        script = Pipeline.objects.get(pk = script.pk)
         self.assertTrue(response.content == '')
         print script.name
         print "script.actionlist_set.get(media_type__name = 'image').actions",  script.actionlist_set.get(media_type__name = 'image').actions
@@ -1627,14 +1627,14 @@ class ScriptsTest(MyTestCase):
         
        
     def test_run(self):
-        script = Script.objects.get(name = 'preview_generation')
+        script = Pipeline.objects.get(name = 'preview_generation')
         params = self.get_final_parameters({ 'items': Item.objects.all()[0].pk})     
         response = self.client.post('/api/script/%s/run/'%script.pk, params,  )  
         self.assertTrue(response.content == '')
         
         
     def test_run_again(self):
-        script = Script.objects.get(name = 'preview_generation')
+        script = Pipeline.objects.get(name = 'preview_generation')
         params = self.get_final_parameters({})    
         
         response = self.client.post('/api/script/%s/run_again/'%script.pk, params,  )  
@@ -1642,14 +1642,14 @@ class ScriptsTest(MyTestCase):
         
 #TODO: generate new fixtures for testing delete script
 #    def test_delete(self):
-#        script = Script.objects.get(name = 'thumb_generation')
+#        script = Pipeline.objects.get(name = 'thumb_generation')
 #        params = self.get_final_parameters({ })     
 #        response = self.client.post('/api/script/%s/delete/'%script.pk, params,  )  
 #        self.assertTrue(response.content == '')
-#        self.assertTrue(Script.objects.filter(pk = script.pk).count() == 0)
+#        self.assertTrue(Pipeline.objects.filter(pk = script.pk).count() == 0)
        
     def test_get(self):
-        script = Script.objects.get(name = 'thumb_generation')
+        script = Pipeline.objects.get(name = 'thumb_generation')
         params = self.get_final_parameters({ })     
         response = self.client.post('/api/script/%s/get/'%script.pk, params,  )  
         resp_dict = json.loads(response.content)        

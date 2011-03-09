@@ -203,7 +203,7 @@ class InnerException(VerboseCodeErrorException):
             self.error_message = 'item does not exist'
             self.__error_class = 'Item' + ex.__class__.__name__
             
-        elif isinstance(ex, Script.DoesNotExist):
+        elif isinstance(ex, Pipeline.DoesNotExist):
             self.error_code = 12
             self.error_message = 'script does not exist'
             self.__error_class = 'Script' + ex.__class__.__name__

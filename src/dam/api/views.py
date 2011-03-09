@@ -46,7 +46,7 @@ from dam.mprocessor.models import Pipeline
 from dam.workspace.views import _add_items_to_ws, _search
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.upload.views import generate_tasks, _get_upload_url, guess_media_type, _save_uploaded_variant
+from dam.upload.views import _upload_variant
 from dam.workflow.views import _set_state 
 from dam.scripts.views import _new_script,  _get_scripts_info
 from dam.settings import SERVER_PUBLIC_ADDRESS
@@ -55,7 +55,7 @@ from dam.api.decorators import *
 from dam.api.exceptions import *
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.variants.views import _edit_variant
-from dam.upload.uploadhandler import StorageHandler
+#~ from dam.upload.uploadhandler import StorageHandler
 from django.contrib.auth import authenticate,  login
 
 #from django.contrib.sessions.backends.db import SessionStore
@@ -870,8 +870,9 @@ class ItemResource(ModResource):
         """       
 
         try:
-            request.upload_handlers = [StorageHandler()]
-            upload_file = request.FILES['Filedata']
+            #~ request.upload_handlers = [StorageHandler()]
+            file_name = request.FILES.keys()[0]
+            upload_file = request.FILES[file_name]
             
             ws_id = request.POST.get('workspace_id')
             if not ws_id:
@@ -881,8 +882,19 @@ class ItemResource(ModResource):
             user_id = request.POST ['user_id']
             user = User.objects.get(pk = user_id)
             request.POST = request.POST.copy()
-            request.POST['item_id'] = item_id
-            _save_uploaded_variant(request, upload_file, user, ws)
+            #~ request.POST['item_id'] = item_id
+            #~ _save_uploaded_variant(request, upload_file, user, ws)
+			
+            
+            variant_id = request.POST['variant_id']
+            
+
+            variant = Variant.objects.get(name = variant_id)
+            item_id = request.POST.get('item_id')        
+            user = request.user  
+            item = Item.objects.get(pk = item_id)            
+            _upload_variant(item, variant, workspace, file_name, upload_file)
+			
         except Exception,ex:
             logger.exception(ex)
             raise ex  
@@ -902,43 +914,43 @@ class ItemResource(ModResource):
         - returns: empty string
 
         """       
-        try:
-            if not request.POST.has_key('workspace_id'):
-                raise MissingArgs
-            if not  request.POST.has_key('uri'):
-                raise MissingArgs
-            if not  request.POST.has_key('rendition_id'):
-                raise MissingArgs
-            if not  request.POST.has_key('file_name'):
-                raise MissingArgs
-            
-            variant_id = request.POST['rendition_id']
-            variant =  Variant.objects.get(pk = variant_id)
-            item = Item.objects.get(pk = item_id)
+        #~ try:
+            #~ if not request.POST.has_key('workspace_id'):
+                #~ raise MissingArgs
+            #~ if not  request.POST.has_key('uri'):
+                #~ raise MissingArgs
+            #~ if not  request.POST.has_key('rendition_id'):
+                #~ raise MissingArgs
+            #~ if not  request.POST.has_key('file_name'):
+                #~ raise MissingArgs
+            #~ 
+            #~ variant_id = request.POST['rendition_id']
+            #~ variant =  Variant.objects.get(pk = variant_id)
+            #~ item = Item.objects.get(pk = item_id)
+#~ 
+            #~ workspace_id = request.POST['workspace_id']
+            #~ comp = item.create_variant(variant, workspace_id)
+            #~ 
+            #~ if variant.auto_generated:
+                #~ comp.imported = True
+#~ 
+            #~ comp.file_name = request.POST['file_name']
+            #~ uri = request.POST['uri']
+            #~ res_id = uri.split('/')
+            #~ res_id.reverse()
+            #~ comp._id = res_id[0]            
+            #~ logger.info('res_id[0] %s' %res_id[0])
+            #~ mime_type = mimetypes.guess_type(res_id[0])[0]
+            #~ logger.info('mime_type %s' %mime_type)    
+            #~ ext = mime_type.split('/')[1]
+            #~ comp.format = ext
+            #~ comp.save()
+            #~ 
+            #~ generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
 
-            workspace_id = request.POST['workspace_id']
-            comp = item.create_variant(variant, workspace_id)
-            
-            if variant.auto_generated:
-                comp.imported = True
-
-            comp.file_name = request.POST['file_name']
-            uri = request.POST['uri']
-            res_id = uri.split('/')
-            res_id.reverse()
-            comp._id = res_id[0]            
-            logger.info('res_id[0] %s' %res_id[0])
-            mime_type = mimetypes.guess_type(res_id[0])[0]
-            logger.info('mime_type %s' %mime_type)    
-            ext = mime_type.split('/')[1]
-            comp.format = ext
-            comp.save()
-            
-            generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
-
-        except Exception,ex:
-            logger.exception(ex)
-            raise ex 
+        #~ except Exception,ex:
+            #~ logger.exception(ex)
+            #~ raise ex 
         
         return HttpResponse('')
         
@@ -1570,13 +1582,6 @@ class ItemResource(ModResource):
             raise MissingArgs
         
         media_type = request.POST['media_type']
-        try:
-            media_type = Type.objects.get(name = media_type)
-            
-        except Type.DoesNotExist:
-            raise InvalidMediaType
-        
-            
         
         user_id = request.POST ['user_id']
         logger.debug('user_id %s'%user_id)
@@ -1588,32 +1593,9 @@ class ItemResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
 
 
-        item = Item.objects.create(uploader = user,  type = media_type,)
+        item = Item.objects.create(uploader = user,  type = Type.objects.get_or_create_by_mime(media_type))
         ws.items.add(item)
         item.add_to_uploaded_inbox(ws)        
-        
-#        if request.POST.has_key('metadata'):
-#            self._set_metadata(request,  item_id,)
-        
-#        for variant in ws.get_variants().filter(media_type__name = media_type):
-#            comp = _create_variant(variant,  item, ws)
-
-#            TODO: manage media type
-#        if request.POST.has_key('metadata'):
-#            metadata = request.POST['metadata']
-#            if not isinstance(metadata,  list):
-#                logger.exception('metadata is not a list')
-#                ArgsValidationError( {'metadata': ['metadata must be a list']})
-#                
-#            try:
-#                self.metadata_update(metadata,  item)
-#            except MetadataProperty.DoesNotExist,  ex:
-#                ex.error_dict = {'metadata schema' :[str(ex)]}
-#                raise ex
-#                
-#            except MalformedJSON,  ex:
-#                ex.error_dict = {'metadata schema' :[str(ex)]}
-#                raise ex
         
         resp = {'id': item.pk,   'workspace_id':ws_id}
         json_resp = json.dumps(resp)
