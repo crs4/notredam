@@ -54,7 +54,7 @@ class AdaptImage:
                 workspace, 
                 source_variant,
                 output_variant,
-                output_format,
+                output_extension,
                 actions,
                 resize_h = None,
                 resize_w = None,
@@ -71,10 +71,10 @@ class AdaptImage:
         if not isinstance(actions, list):
             actions = [actions]
         item, source = get_source_rendition(item_id, source_variant, workspace)
-        if output_format == 'same_as_source':
+        if output_extension == 'same_as_source':
             media_type = source.media_type
         else:
-            media_type = Type.objects.get_or_create_by_filename('foo%s' % output_format)
+            media_type = Type.objects.get_or_create_by_filename('foo%s' % output_extension)
         output_variant = Variant.objects.get(name = output_variant)
         output_component = item.create_variant(output_variant, workspace, media_type)
                 
@@ -121,7 +121,7 @@ def test():
             workspace,
             source_variant = 'original',
             output_variant='fullscreen',
-            output_format = '.jpg',
+            output_extension = '.jpg',
             actions = ['crop', 'resize'],
             resize_h=100,
             resize_w=100,
