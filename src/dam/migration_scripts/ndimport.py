@@ -30,15 +30,9 @@ from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
 from urllib_uploader import StandardUploader
 from ndutils import ImportExport, Exporter, Importer
-import logging
+from dam import logger
 import time
 import string
-
-logger = logging.getLogger('import_logger')
-logger.setLevel(logging.INFO)
-
-fh = logging.FileHandler("import.log")
-logger.addHandler(fh)
 
 #CONFIGURATION GOES HERE
 ERROR_STR= """Error removing %(path)s, %(error)s """
@@ -696,8 +690,8 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
             logger.info('items %s/%s'%(custom_listdirs(current_workspace).index(itemdir), len_items))
             current_item = current_workspace + '/' +  itemdir
            
-            logger.debug('current_item')
-            logger.debug('%s' %current_item)
+            logger.info('\n\ncurrent_item')
+            logger.info('%s' %current_item)
             if os.path.isdir(current_item) and itemdir != 'watermarking':#exclude folder watermarking
                 paramitem = custom_open_file(current_item, 'item.json')
                 paramitem['workspace_id'] = ws_origTows_new[paramworkspace['id']]
@@ -712,6 +706,7 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                 if len(paramitem['workspaces']) == 1:#NOT shared object
     
                     #create item
+                    logger.info('\n\n\n\n paramitem %s' %paramitem)
                     resp_new_item = i._item_new(paramitem)
                     
                     #update equivalent id_item_old con id_item_new
@@ -953,34 +948,34 @@ if __name__ == '__main__':
                     logger.error(ex)
     
             keyColl_origTokeyColl_new = {}
-#            try:
-#                for workspacedir in custom_listdirs(path_extract):
-#                    current_workspace = path_extract + '/' + workspacedir
-#                    #creation and assosiation of the keywords at the item
-#                    paramkeywords = custom_open_file(current_workspace, 'keywords.json')
-#                    
-#                    #FIXME: read and after delete all. Maybe should to be avoided
-#                    param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
-#                    for data in param['keywords']:
-#                        i._keyword_delete(data['id'])
-#                    
-#                    logger.info('keywords.json for %s' % workspacedir)
-#                    for data in paramkeywords['keywords']:
-#                        add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
-#        
-#                    logger.info('collections.json for %s' % workspacedir)
-#                    paramcollection = custom_open_file(current_workspace, 'collections.json')
-#                    for data in paramcollection['collections']:
-#                        add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
-#        
-#                    logger.info('smartfolders.json for %s' % workspacedir)
-#                    paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
-#    
-#                    for data in paramsmartfolders['smartfolders']:
-#                            add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
-#
-#            except Exception, ex:
-#                logger.error(ex)
+            try:
+                for workspacedir in custom_listdirs(path_extract):
+                    current_workspace = path_extract + '/' + workspacedir
+                    #creation and assosiation of the keywords at the item
+                    paramkeywords = custom_open_file(current_workspace, 'keywords.json')
+                    
+                    #FIXME: read and after delete all. Maybe should to be avoided
+                    param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
+                    for data in param['keywords']:
+                        i._keyword_delete(data['id'])
+                    
+                    logger.info('keywords.json for %s' % workspacedir)
+                    for data in paramkeywords['keywords']:
+                        add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+        
+                    logger.info('collections.json for %s' % workspacedir)
+                    paramcollection = custom_open_file(current_workspace, 'collections.json')
+                    for data in paramcollection['collections']:
+                        add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+        
+                    logger.info('smartfolders.json for %s' % workspacedir)
+                    paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
+    
+                    for data in paramsmartfolders['smartfolders']:
+                            add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
+
+            except Exception, ex:
+                logger.error(ex)
              
             logger.info("DONE")
 
