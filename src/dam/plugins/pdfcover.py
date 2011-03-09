@@ -31,7 +31,7 @@ class PdfCover:
         self.adapter_proxy = Proxy('Adapter')
 
     def handle_result(self, result, outfile, component):
-        log.debug('handle_result'   # result is empty on success
+        log.debug('handle_result')   # result is empty on success
         
         directory, name = os.path.split(outfile)
         component.uri = name
