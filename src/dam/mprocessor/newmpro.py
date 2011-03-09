@@ -129,7 +129,7 @@ class Batch:
             script_name = script_dict['script_name']
             full_name = plugins_module + '.' + script_name + '.run'
             p = full_name.split('.')
-            #log.info('<$> loading script: %s' % '.'.join(p[:-1]))
+            log.info('<$> loading script: %s' % '.'.join(p[:-1]))
             m = __import__('.'.join(p[:-1]), fromlist = p[:-1])
             f = getattr(m, p[-1], None)
             if not f or not callable(f):

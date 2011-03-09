@@ -218,49 +218,71 @@ def _get_filepath(file_name):
     fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
     
     return fpath, res_id
-    
-def import_dir(dir_name, user, workspace, session):
-    logger.debug('########### INSIDE import_dir')
-    variant = Variant.objects.get(name = 'original')
-    files =os.listdir(dir_name)
-    logger.debug('files %s'%files)
-    
-    uploaders = []
-    for p in Pipeline.objects.filter(triggers__name='upload'):
-        logger.debug('Using pipeline %s' % p.name)
-        uploaders.append(Process.objects.create(pipeline=p, workspace=workspace, launched_by=user))
-    logger.debug('###### Loaded %d pipelines' % len(uploaders))
-    
-    for file_name in files:
-        tmp = file_name.split('_')
-        res_id = tmp[0]        
-        original_file_name = '_'.join(tmp[1:])
-        
-        ext = file_name.split('.')[-1]
-        final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
-        
-        file_path = os.path.join(dir_name, file_name)
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
-        
-        media_type = Type.objects.get_or_create_by_filename(file_name)
+
+def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=False):
+    """
+       Parameters:
+       <filenames> is a list of tuples (filename, original_filename, res_id).
+       <trigger> is a string, like 'upload'
+       <variant_name> is the name of a registered variant
+       <user> and <workspace> are two objects as usual.
+       <split_file> = True means the names in filenames have the structure:
+          <res_id>_<original_file_name>
+
+       Creates a new item for each filename;
+       Create a component with variant = variant_name;
+       Find all the pipelines associated to the trigger;
+       Associates each item to all pipelines thata accept that type of item;
+       Launches all pipenes;
+       Returns the list of process_id launched;
+    """
+    pipes = Pipeline.objects.filter(triggers__name=trigger)
+    for pipe in pipes:
+        pipe.__process = False
+    for filename in filenames:
+        if split_file:
+            tmp = filename.split('_')
+            res_id = l[0]
+            original_filename = '_'.join(tmp[1:])
+        else:
+            res_id = new_id()
+            original_filename = filename
+        variant = Variant.objects.get(name = variant_name)
+        fpath, ext = os.path.splitext(filename)
+        res_id = new_id()
+        media_type = Type.objects.get_or_create_by_filename(filename)
         item = _create_item(user, workspace, res_id, media_type)
         found = 0
-        for uploader in uploaders:
-            # here decide which uploader to use based on the content type of the item
-            if uploader.is_compatible(media_type):
+        for pipe in pipes:
+            if pipe.is_compatible(media_type):
+                if not pipe.__process:
+                    pipe.__process = Process.objects.create(pipeline=pipe, 
+                                                            workspace=workspace, 
+                                                            launched_by=user)
+                pipe.__process.add_params(item.pk)
                 found = 1
-                logger.debug('find pipeline for item %s' % item.pk)
-                uploader.add_params(item.pk)
+                log.debug('item %s added to %s' % (item.pk, pipe.name))
         if not found:
-            logger.info('No action associated to item %s' % file_name)
-        shutil.move(file_path, final_path)
-        logger.debug('-----res_id %s'%res_id)
+            logger.debug( ">>>>>>>>>> No action for %s" % filename)
+        final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
         _create_variant(original_file_name, final_file_name, media_type, item, workspace, variant)
-        logger.debug('adding item %s'%item.pk)
+        shutil.copyfile(filename, final_path)
+    ret = []
+    for pipe in pipes:
+        if pipe.__process:
+            print 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name)
+            pipe.__process.run()
+            ret.append(pipe.__process.pk)
+    return ret
 
-    for uploader in uploaders:
-        logger.debug('running pipeline')
-        uploader.run()
+
+def import_dir(dir_name, user, workspace, session):
+    logger.debug('########### INSIDE import_dir')
+    files =os.listdir(dir_name)
+    ret = _upload_loop(files, 'upload', 'original', user, workspace, True)
+    logger.debug('Launched %s' % ' '.join(ret))
+
 
 def _upload_item(file_name, file_raw,  variant, user, session, workspace, session_finished = False):
     if not isinstance(file_name, unicode):

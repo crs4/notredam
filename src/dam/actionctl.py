@@ -349,33 +349,18 @@ class DoTest:
         print 'registered pipeline %s, pk=%s, trigger=%s' % (name, pipe.pk, '-'.join( [x.name for x in pipe.triggers.all()] ) )
 
     def standard_upload(self):
-        pipes = Pipeline.objects.filter(triggers__name='upload')
-        for p in pipes:
-            p.delete()
+        [x.delete() for x in Pipeline.objects.filter(triggers__name='upload')]
         for action, mime in standard_actions:
             print('Registering upload pipeline for %s' % mime)
             self.register('pipe_%s' % mime, 'upload', mime, '', action)
-
-    def _new_item(self, filepath, media_type):
-        variant = Variant.objects.get(name = 'original')
-        fpath, ext = os.path.splitext(filepath)
-        res_id = new_id()
-        final_file_name = get_storage_file_name(res_id, self.ws.pk, variant.name, ext)
-        item = _create_item(self.user, self.ws, res_id, media_type)
-        component = _create_variant(filepath, final_file_name, media_type, item, self.ws, variant)
-        return item, component
 
     #@transaction.commit_manually
     def upload(self, trigger, filepaths):
         print "executing upload, trigger=%s, filepaths=%s" % (trigger, ' '.join(filepaths))
         uploaders = []
-        f = open('/tmp/uploader', 'w')
-        for p in Pipeline.objects.filter(triggers__name=trigger):
-            print '## adding pipeline %s to uploaders' % p.name
-            uploader=Process.objects.create(pipeline=p, workspace=self.ws, launched_by=self.user)
-            uploaders.append(uploader)
-            f.write('%s\n' % uploader.pk)
-        f.close()
+        pipes = Pipeline.objects.filter(triggers__name=trigger)
+        for pipe in pipes:
+            pipe.__process = False
         for fn in filepaths:
             print 'uploading', fn
             variant = Variant.objects.get(name = 'original')
@@ -384,11 +369,14 @@ class DoTest:
             media_type = Type.objects.get_or_create_by_filename(fn)
             item = _create_item(self.user, self.ws, res_id, media_type)
             found = 0
-            for uploader in uploaders:
+            for pipe in pipes:
                 # here decide which uploader to use based on the content type of the item
-                if uploader.is_compatible(media_type):
+                if pipe.is_compatible(media_type):
+                    if not pipe.__process:
+                        pipe.__process = Process.objects.create(pipeline=pipe, workspace=self.ws, launched_by=self.user)
+                    pipe.__process.add_params(item.pk)
                     found = 1
-                    uploader.add_params(item.pk)
+                    print('item %s added to %s' % (item.pk, pipe.name))
             if not found:
                 print ">>>>>>>>>> No action for %s" % fn
             final_file_name = get_storage_file_name(res_id, self.ws.pk, variant.name, ext)
@@ -397,11 +385,10 @@ class DoTest:
             shutil.copyfile(fn, final_path)
         #transaction.commit()
         print '#### uploaders', uploaders
-        for uploader in uploaders:
-            print 'Launching %s-%s' % (str(uploader.pk), uploader.pipeline.name)
-            uploader.run()
-        print 'Launched uploaders ',
-        print ' '.join(open('/tmp/uploader', 'r').readlines())
+        for pipe in pipes:
+            if pipe.__process:
+                print 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name)
+                pipe.__process.run()
 
     def show_pipelines(self):
         print ("Pipelines:")
@@ -487,6 +474,9 @@ def main(argv):
             raise Exception('too few arguments')
         test.upload(trigger, files)
 
+    elif task == 'clear':
+        [x.delete() for x in Process.objects.all()]
+        [x.delete() for x in ProcessTarget.objects.all()]
    
     elif task == 'status':
         process_id = argv[2]
