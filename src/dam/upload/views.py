@@ -317,7 +317,7 @@ def upload_item(request):
     return HttpResponse(resp)
 
 def _upload_variant(item, variant, workspace, file_name, file_raw):   
-    #~ TODO: refresh url in gui, otherwise old variant will be shown
+    #TODO: refresh url in gui, otherwise old variant will be shown
     if not isinstance(file_name, unicode):
         file_name = unicode(file_name, 'utf-8')
         
