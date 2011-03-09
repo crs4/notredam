@@ -886,14 +886,14 @@ class ItemResource(ModResource):
             #~ _save_uploaded_variant(request, upload_file, user, ws)
 			
             
-            variant_id = request.POST['variant_id']
+            variant_id = request.POST['rendition_id']
             
 
             variant = Variant.objects.get(name = variant_id)
             item_id = request.POST.get('item_id')        
             user = request.user  
             item = Item.objects.get(pk = item_id)            
-            _upload_variant(item, variant, workspace, file_name, upload_file)
+            _upload_variant(item, variant, workspace, user, file_name, upload_file)
 			
         except Exception,ex:
             logger.exception(ex)
@@ -914,43 +914,43 @@ class ItemResource(ModResource):
         - returns: empty string
 
         """       
-        #~ try:
-            #~ if not request.POST.has_key('workspace_id'):
-                #~ raise MissingArgs
-            #~ if not  request.POST.has_key('uri'):
-                #~ raise MissingArgs
-            #~ if not  request.POST.has_key('rendition_id'):
-                #~ raise MissingArgs
-            #~ if not  request.POST.has_key('file_name'):
-                #~ raise MissingArgs
-            #~ 
-            #~ variant_id = request.POST['rendition_id']
-            #~ variant =  Variant.objects.get(pk = variant_id)
-            #~ item = Item.objects.get(pk = item_id)
-#~ 
-            #~ workspace_id = request.POST['workspace_id']
-            #~ comp = item.create_variant(variant, workspace_id)
-            #~ 
-            #~ if variant.auto_generated:
-                #~ comp.imported = True
-#~ 
-            #~ comp.file_name = request.POST['file_name']
-            #~ uri = request.POST['uri']
-            #~ res_id = uri.split('/')
-            #~ res_id.reverse()
-            #~ comp._id = res_id[0]            
-            #~ logger.info('res_id[0] %s' %res_id[0])
-            #~ mime_type = mimetypes.guess_type(res_id[0])[0]
-            #~ logger.info('mime_type %s' %mime_type)    
-            #~ ext = mime_type.split('/')[1]
-            #~ comp.format = ext
-            #~ comp.save()
-            #~ 
-            #~ generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
+        try:
+             if not request.POST.has_key('workspace_id'):
+                 raise MissingArgs
+             if not  request.POST.has_key('uri'):
+                 raise MissingArgs
+             if not  request.POST.has_key('rendition_id'):
+                 raise MissingArgs
+             if not  request.POST.has_key('file_name'):
+                 raise MissingArgs
+             
+             variant_id = request.POST['rendition_id']
+             variant =  Variant.objects.get(pk = variant_id)
+             item = Item.objects.get(pk = item_id)
+ 
+             workspace_id = request.POST['workspace_id']
+             comp = item.create_variant(variant, workspace_id)
+             
+             if variant.auto_generated:
+                 comp.imported = True
+ 
+             comp.file_name = request.POST['file_name']
+             uri = request.POST['uri']
+             res_id = uri.split('/')
+             res_id.reverse()
+             comp._id = res_id[0]            
+             logger.info('res_id[0] %s' %res_id[0])
+             mime_type = mimetypes.guess_type(res_id[0])[0]
+             logger.info('mime_type %s' %mime_type)    
+             ext = mime_type.split('/')[1]
+             comp.format = ext
+             comp.save()
+             
+             #~generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
 
-        #~ except Exception,ex:
-            #~ logger.exception(ex)
-            #~ raise ex 
+        except Exception,ex:
+            logger.exception(ex)
+            raise ex 
         
         return HttpResponse('')
         

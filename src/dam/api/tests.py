@@ -526,14 +526,14 @@ class ItemTest(MyTestCase):
     
         
         
-    def test_create_media_type_exception(self):
-        workspace_id = 1
-        media_type = 'movieeee'
-        params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': media_type})
-        
-        response = self.client.post('/api/item/new/', params,)                
-        resp_dict = json.loads(response.content)        
-        self.assertTrue(resp_dict['error code'] == InvalidMediaType.error_code) 
+    #def test_create_media_type_exception(self):
+        #workspace_id = 1
+        #media_type = 'movieeee'
+        #params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': media_type})
+        #
+        #response = self.client.post('/api/item/new/', params,)                
+        #resp_dict = json.loads(response.content)        
+        #self.assertTrue(resp_dict['error code'] == InvalidMediaType.error_code) 
         
     
     def test_get_keywords(self):
@@ -579,8 +579,9 @@ class ItemTest(MyTestCase):
         print "item.node_set.filter(type = 'collection')%s"%item.node_set.filter(type = 'collection')
         self.assertTrue(resp_dict['collections'] == list(item.collections()))
     
-        metadata = {"dc_title": {"en-US": "test"}, "dc_subject": ["test_remove_1"], "dc_description": {"en-US": "test prova"}}
+        metadata = {'dc_subject': ['test']}
 #        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
+        print("resp_dict['metadata'] %s"%resp_dict['metadata'])
         self.assertTrue(resp_dict['metadata'] == metadata)
         
         
@@ -650,7 +651,7 @@ class ItemTest(MyTestCase):
      
     def test_remove_metadata_single(self):
         workspace_id = 1
-        params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': 'image'})        
+        params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': 'image/jpeg'})        
         response = self.client.post('/api/item/new/', params,  )                
         
         resp_dict = json.loads(response.content)        
@@ -680,10 +681,11 @@ class ItemTest(MyTestCase):
         
     def test_remove_metadata_all(self):
         workspace_id = 1
-        params = self.get_final_parameters({ 'workspace_id':workspace_id,  'media_type': 'image'})        
+        params = self.get_final_parameters({ 'workspace_id':workspace_id,  'media_type': 'image/jpeg'})        
         response = self.client.post('/api/item/new/', params,  )                
         
-        resp_dict = json.loads(response.content)        
+        resp_dict = json.loads(response.content) 
+        print('resp_dict %s'%resp_dict)       
         item_id = resp_dict.get('id')
         item = Item.objects.get(pk = item_id)
         
