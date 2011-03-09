@@ -914,7 +914,7 @@ class ItemResource(ModResource):
         - returns: empty string
 
         """       
-         try:
+        try:
              if not request.POST.has_key('workspace_id'):
                  raise MissingArgs
              if not  request.POST.has_key('uri'):
@@ -948,9 +948,9 @@ class ItemResource(ModResource):
              
              #~generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
 
-         except Exception,ex:
-             logger.exception(ex)
-             raise ex 
+        except Exception,ex:
+            logger.exception(ex)
+            raise ex 
         
         return HttpResponse('')
         
