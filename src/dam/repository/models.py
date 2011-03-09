@@ -405,17 +405,18 @@ class Item(AbstractItem):
             caption = ''
 
 
-        now = '?t=' + str(time.time())
-        thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail')
-        preview_url = '/item/%s/%s/'%(self.ID, 'preview')
-#        fullscreen_url = '/item/%s/%s/'%(self.ID, 'fullscreen')
-        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0, process__workspace = workspace).count() > 0
+        now = '?t=' + str(time.time());
+        thumb_url = '/item/%s/%s/'%(self.ID, 'thumbnail');
+        preview_url = '/item/%s/%s/'%(self.ID, 'preview');
+        fullscreen_url = '/item/%s/%s/'%(self.ID, 'fullscreen');
+        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0, process__workspace = workspace).count() > 0;
         
         if in_progress:
-            status = 'in_progress'
-            now = '?t=' + str(time.time())
-            thumb_url += now
-            preview_url += now
+            status = 'in_progress';
+            now = '?t=' + str(time.time());
+            thumb_url += now;
+            preview_url += now;
+            fullscreen_url += now;
            
         else:
             status = 'completed'
@@ -437,6 +438,7 @@ class Item(AbstractItem):
             'url':smart_str(thumb_url), 
             'type': smart_str(self.type.name),
             'url_preview':preview_url,
+			'url_fullscreen': fullscreen_url,
 #            'preview_available': False,
             'geotagged': geotagged
             }
@@ -452,7 +454,9 @@ class Item(AbstractItem):
 
 def get_storage_file_name(item_id, workspace_id, variant_name, extension):
     logger.debug(' ######## get_storage_file_name item_id=%s, workspace_id=%s, variant_name=%s, extension=%s' % (item_id, workspace_id, variant_name, extension))
-    return item_id +  '_' + str(workspace_id) + '_' + variant_name + '.'+ extension
+    if not extension.startswith('.'):
+        extension = '.' + extension
+    return item_id +  '_' + str(workspace_id) + '_' + variant_name +  extension
                        
 class Component(AbstractComponent):
 

@@ -47,7 +47,7 @@ class AdaptAV:
                 source_variant,  # name of the variant
                 output_variant,  # name of the variat
                 output_preset,   # a mime type or a Mediadart PRESET
-                **preset_params   # json encoded dictionary
+                **preset_params  # additional parameters (see adapter server for explanation)
                 ):
 
         log.info('%s.execute' % self)
@@ -55,7 +55,7 @@ class AdaptAV:
         log.info('self.presets %s'%self.presets)
         if output_preset not in self.presets:
             raise  Exception('%s: unsupported output_preset' % (self, output_preset))
-        #~ preset_params = loads(preset_params)
+
         try:
             output_type = Type.objects.get_or_create_by_mime(self.presets[output_preset])
             item, source = get_source_rendition(item_id, source_variant, workspace)
