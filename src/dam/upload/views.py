@@ -299,15 +299,8 @@ def upload_item(request):
         file_counter = int(request.GET['counter'])
         total = int(request.GET['total'])
         user = request.user  
-
         file_name = request.META['HTTP_X_FILE_NAME']
-        _upload_item(file_name,request.raw_post_data, variant, request.user, session, workspace)
-                
-        
-#        if file_counter == total:
-#            import_dir(tmp_dir, user, workspace, session)
-#            os.rmdir(tmp_dir)
-        
+        _upload_item(file_name,request.raw_post_data, variant, request.user, session, workspace)        
         resp = simplejson.dumps({'success': True})
         
     except Exception, ex:
@@ -316,7 +309,7 @@ def upload_item(request):
     
     return HttpResponse(resp)
 
-def _upload_variant(item, variant, workspace, file_name, file_raw):   
+def _upload_variant(item, variant, workspace, user, file_name, file_raw):   
     #TODO: refresh url in gui, otherwise old variant will be shown
     if not isinstance(file_name, unicode):
         file_name = unicode(file_name, 'utf-8')
@@ -332,6 +325,20 @@ def _upload_variant(item, variant, workspace, file_name, file_raw):
     media_type = Type.objects.get_or_create_by_filename(file_name)
      
     _create_variant(file_name, final_file_name,media_type, item, workspace, variant)    
+    uploaders = []
+    if variant.name == 'original':
+        triggers_name = 'upload'
+    else:
+        triggers_name = 'upload_variant'
+    
+    for p in Pipeline.objects.filter(triggers__name=triggers_name):
+        logger.debug('Using pipeline %s' % p.name)        
+        uploader = Process.objects.create(pipeline=p, workspace=workspace, launched_by=user)
+                
+        if uploader.is_compatible(media_type):            
+            uploader.add_params(item.pk)        
+            logger.debug('running pipeline')
+            uploader.run()
 
 @login_required
 def upload_variant(request):  
@@ -344,7 +351,7 @@ def upload_variant(request):
     user = request.user  
     item = Item.objects.get(pk = item_id)
     file_name = request.META['HTTP_X_FILE_NAME']
-    _upload_variant(item, variant, workspace, file_name, request.raw_post_data)
+    _upload_variant(item, variant, workspace, request.user, file_name, request.raw_post_data)
 
     
     
@@ -430,61 +437,6 @@ def guess_media_type (file):
         raise Exception('unsupported media type')
 
     return media_type
-
-
-
-def _generate_tasks( component, workspace, force_generation,  check_for_existing, embed_xmp):
-    """
-    Generates MediaDART tasks
-    """
-    def _cb_start_upload_events(status_ok, result, userargs):
-        logger.debug('_generate_tasks: starting upload events: %s' % result)
-        item = component.item
-        for ws in item.workspaces.all():
-            EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
-
-    logger.debug('############ _generate_tasks')
-    from dam.core.dam_repository.models import Type
-    variant = component.variant
-
-    maction = MAction()
-    maction.add_component(component)
-    
-    if variant and not variant.auto_generated:    # The component is a source component
-        maction.append_func('extract_features')
-        maction.append_func('extract_xmp', component.get_extractor())
-        callback = _cb_start_upload_events
-    else:                                         # The component is derived from a source component
-        if not component.imported:
-            maction.append_func('adapt_resource')
-        maction.append_func('extract_features')
-        
-        if embed_xmp:
-            maction.append_func('embed_xmp')
-                
-        if  variant.name == 'mail':
-            maction.append_func('send_mail')
-        callback = lambda a, b, c: None
-    maction.activate(callback)
-#    maction.activate(None)
-#    callback(None, None,None)
-    
-def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
-    
-    """
-    Generate MediaDART Tasks for the given variant, item and workspace
-    """
-    logger.debug('generate_tasks')
-
-    if upload_job_id:
-        component.imported = True
-        component.save()
-        
-    
-    #Action.objects.filter(component=component).delete()
-
-    _generate_tasks(component, workspace, force_generation,  check_for_existing, embed_xmp)
-
 
 def upload_session_finished(request):
     session = request.POST['session']
