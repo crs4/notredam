@@ -55,7 +55,7 @@ class FrameExtractor:
                 workspace, 
                 source_variant,
                 output_variant,
-                output_format,
+                output_extension,  # with the leading '.'
                 frame_w = None,
                 frame_h = None,
                 position = None):
@@ -63,7 +63,7 @@ class FrameExtractor:
         log.info('executing action extract_frame')
         try:
             item, source = get_source_rendition(item_id, source_variant, workspace)
-            output_type = Type.objects.get_or_create_by_mime(output_format)
+            output_type = Type.objects.get_or_create_by_filename('foo%s' % output_extension)
             output_variant_obj = Variant.objects.get(name = output_variant)
             output_component = item.create_variant(output_variant_obj, workspace, output_type)
             output_component.source = source
