@@ -31,7 +31,7 @@ from mediadart.config import Configurator
 c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
 
-
+BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
 INSTALLATIONPATH = ROOT_PATH
 THUMBS_DIR = os.path.join(INSTALLATIONPATH, 'files', 'thumbs')
 dir_log = os.path.join(INSTALLATIONPATH, 'log')

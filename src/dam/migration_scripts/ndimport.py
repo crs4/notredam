@@ -32,6 +32,7 @@ from urllib_uploader import StandardUploader
 from ndutils import ImportExport, Exporter, Importer
 import logging
 import time
+import string
 
 logger = logging.getLogger('import_logger')
 logger.setLevel(logging.INFO)
@@ -520,7 +521,7 @@ def _send_file(current_rendition, param, shortname, extension, id_item):
     
     return urllib2.urlopen(request)
     
-def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,shortname_original, upload_orig = False):
+def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,shortname_original,upload_orig = False):
     """
     Allows to upload renditions
     parameters:
@@ -530,6 +531,7 @@ def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,s
         id_item: id item
         file_name: filename with extencion
         shortname_original: 
+        metadata_only: Flag is True if import only metadata instead is False (default) if imported also the rendition 
         upload_orig: True if start upload original else False
     returns:
         empty string
@@ -547,13 +549,13 @@ def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,s
             (shortname, extension) = os.path.splitext(filename)
             #upload prima le renditioni per ultima l'original. 
            
-            logger.debug('current rendition')
-            logger.debug(current_rendition)
+            logger.info('#################################################\n####################################current rendition')
+            logger.info(current_rendition)
             if extension[1:] != 'json' and shortname != shortname_original:
                 
                 param = get_data_for_upload(current_rendition,id_workspace,file_name,filepath,shortname,rendition_ws)
               
-                logger.debug( 'param')
+                logger.debug('param')
                 logger.debug("%s" %param)
                 
                 logger.debug('SERVER RESPONSE:')
@@ -586,7 +588,55 @@ def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,s
         logger.exception(ex)    
         
     return ''
-    
+
+def restore_rendition(current_item,id_workspace,rendition_ws,id_item,file_name,shortname_original, upload_orig = False):
+    """
+    Allows to upload renditions
+    parameters:
+        current_item: path of the directory of the current item
+        id_workspace: id workspace
+        rendition_ws: dict read from rendition.json that is in workspace
+        id_item: id item
+        file_name: filename with extencion
+        shortname_original: 
+        upload_orig: True if start upload original else False
+    returns:
+        empty string
+    """
+
+    logger.debug("RESTORE RENDITION")
+    try:
+        if "item.json" in custom_listfiles(current_item) and "rendition.json" in custom_listfiles(current_item):
+            
+            logger.info("\n\n\n\n\n AAAAAAAA ci sono.")
+         
+            fitem = custom_open_file(current_item, 'item.json')
+            frendition = custom_open_file(current_item, 'rendition.json')
+            
+            for rendition in fitem['renditions']:
+                param = {}
+                param['workspace_id'] = id_workspace
+                param['uri'] = fitem['renditions'][rendition]['url']
+                param['file_name'] = fitem['renditions'][rendition]['file_name']
+                #file_name can be NULL
+                if not param['file_name']:
+                    param['file_name'] = rendition
+                param['rendition_id'] = search_id_rendition(current_item,rendition,rendition_ws)
+                if string.lower(rendition) == 'original':
+                    param_orig = param
+                else:
+                    logger.info("params %s" %param)
+                    i._item_add_component(id_item,param)
+
+            logger.info("param_orig %s" %param_orig)
+            i._item_add_component(id_item,param_orig)
+                
+            logger.info("/n/n param %s" %param)
+        
+    except Exception, ex:
+        logger.exception(ex)    
+    return ''
+
 def add_to_ws(ws_origTows_new,id_old_ws,id_new_item):
     #aggiorno id_ws al ws_corrente
     """
@@ -619,7 +669,7 @@ def set_metadata(id_item,param):
     
     return ''
     
-def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemToid_new_item):
+def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemToid_new_item, metadata_only):
     """
     Allows to create item and upload varinat into workspace.
     parameters:
@@ -629,6 +679,7 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
         paramworkspace: parameters read from workspace.json
         ws_origTows_new: ws_origTows_new: dict with key 'id' ws read to file workspace.json end value 'id' workspace create.
         id_orig_itemToid_new_item: dict with key 'id' item read to file item.json end value 'id' item create .
+        metadata_only: Flag is True if import only metadata instead is False (default) if imported also the rendition 
     return:
         empty string
     """
@@ -669,8 +720,11 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                     logger.debug("id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
     
                     #rendition's upload
-                    logger.debug("upload renditioni")
-                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],shortname_original,shortname_original,True)
+                    logger.debug("\n\n\n\nupload renditioni")
+                    if not metadata_only:
+                        upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],shortname_original,shortname_original,True)
+                    else:
+                        restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],shortname_original,shortname_original,True)
     
                     #set metadata
                     set_metadata(resp_new_item['id'],paramitem)
@@ -698,8 +752,10 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
     
                         #upload delle renditioni
                         shortname_original = 'original'
-                        #upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],paramitem['renditions'][shortname_original]['file_name'],shortname_original,False) # sempre false sono nel primo ws della lista
-                        upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],shortname_original,shortname_original,False) # sempre false sono nel primo ws della lista
+                        if not metadata_only:
+                            upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],shortname_original,shortname_original,False) # sempre false sono nel primo ws della lista
+                        else:
+                            restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,resp_new_item['id'],shortname_original,shortname_original,False)
     
                         #set_metadata
                         set_metadata(resp_new_item['id'],paramitem)
@@ -712,13 +768,17 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         #upload delle renditioni
                         if int(paramitem['workspace_id']) == int(ws_origTows_new[str(paramitem['workspaces'][len(paramitem['workspaces'])-1])]):
                             #nell'ultimo della lista devo fare l'upload dell'original
-                            #upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],paramitem['renditions'][shortname_original]['file_name'],shortname_original,True)
-                            upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                            if not metadata_only:
+                                upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                            else:
+                                restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
                             #set_metadata
                             set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
                         else:
-                            #upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],paramitem['renditions'][shortname_original]['file_name'],shortname_original,False)
-                            upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                            if not metadata_only:
+                                upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                            else:
+                                restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
                         
                         #set_metadata
                         set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
@@ -748,11 +808,11 @@ def add_users(i,path_extract):
     logger.debug('fusers %s'%fusers)
     users = {}
     for u in fusers['users']:
-        if u['username'] != 'demo':
+        if u['id'] != 1:
             users[u['username']] = i._api_add_user(u)
             if not 'id' in users[u['username']]:
                 raise Exception, "Error create user:%s responce:%s" %(u['username'],users[u['username']])
-    users['demo'] = {'id' : 1}
+#    users['admin'] = {'id' : 1}
     
     return users
 
@@ -810,10 +870,10 @@ def main():
                       action="store",dest="api_key",type="string",default='c3dfbc0331175f01f6464683c7ecce05c7bad60f',
                       help="api_key")
     op.add_option("-u", "--user", 
-                      action="store",dest="user",type="string",default='demo',
+                      action="store",dest="user",type="string",default='admin',
                       help="Username for DAM")
     op.add_option("-p", "--password", 
-                      action="store",dest="password",type="string",default='demo',
+                      action="store",dest="password",type="string",default='notredam',
                       help="Password for DAM")
     op.add_option("-w", "--workspace", 
                       action="store",dest="workspace",type="string",default='',
@@ -822,6 +882,10 @@ def main():
     op.add_option("-I", "--item", 
                       action="store",dest="item",type="int",default=0,
                       help="item")
+    op.add_option("-m", "--metadata-only",
+                  action="store_true", dest="metadata_only",default=False,
+                      help="Set option if you want only metadata backup." )
+    
     
     
     op.add_option("-f", "--force", 
@@ -835,28 +899,24 @@ if __name__ == '__main__':
 
     options = main()
     logger.debug('options %s'%options)
-    
+        
     if (tarfile.is_tarfile(options.path_tar) and os.path.exists(options.path_extract) 
         and os.access(options.path_extract,os.W_OK)):
         try:
             path_tar = options.path_tar
             path_extract = options.path_extract
-    
             tar = tarfile.open(path_tar)
             logger.debug('tar opened')
-            
             if os.path.exists(path_extract + tar.getmembers()[0].name):
                 logger.info('removing all')
                 removeall(path_extract + tar.getmembers()[0].name)
-            
             logger.info('extracting tar...')
             for tarinfo in tar:
                 tar.extract(tarinfo, path=path_extract)
             tar.close()
             logger.info('tar extracted!')
-            #scompattato il file tar. scorrere la cartella path_extract/backup
+            #unzip tar file into path_extract/backup
             path_extract += 'backup'
-        
         
             i = Importer(options.host, options.port, options.api_key, options.user, options.password)
             i.login() 
@@ -872,17 +932,14 @@ if __name__ == '__main__':
                     raise
                 else:
                     logger.info('error in adding users... passing by')
-            
-                        
 
             #ws_origTows_new {'id_ws_orig': id_ws_new}
             ws_origTows_new = {}
             add_workspaces(i,e,users,path_extract,ws_origTows_new)
-            
-            #corrispettivo id_item_old con id_item_new
+            #match between id_item_old and id_item_new
             id_orig_itemToid_new_item = {}
             
-            #creazione item e risorse relative agli item.
+            #creation item and item's resource.
             for workspacedir in custom_listdirs(path_extract):
                 if options.workspace:
                     if workspacedir != options.workspace:
@@ -890,42 +947,40 @@ if __name__ == '__main__':
                 try:
                     current_workspace = path_extract + '/' + workspacedir
                     paramworkspace = custom_open_file(current_workspace, 'workspace.json')
-                    add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemToid_new_item)
+                    add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemToid_new_item, options.metadata_only)
                     
                 except Exception, ex:
                     logger.error(ex)
-                
-    
     
             keyColl_origTokeyColl_new = {}
-            for workspacedir in custom_listdirs(path_extract):
-                try:
-                    current_workspace = path_extract + '/' + workspacedir
-                    #creazione e associazione delle keywords agli item
-                    paramkeywords = custom_open_file(current_workspace, 'keywords.json')
-                    
-                    #FIXME: read e poi delete all forse si puo' evitare
-                    param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
-                    for data in param['keywords']:
-                        i._keyword_delete(data['id'])
-                    
-                    logger.info('keywords.json for %s' % workspacedir)
-                    for data in paramkeywords['keywords']:
-                        add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
-        
-                    logger.info('collections.json for %s' % workspacedir)
-                    paramcollection = custom_open_file(current_workspace, 'collections.json')
-                    for data in paramcollection['collections']:
-                        add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
-        
-                    logger.info('smartfolders.json for %s' % workspacedir)
-                    paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
-    
-                    for data in paramsmartfolders['smartfolders']:
-                            add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
-
-                except Exception, ex:
-                    logger.error(ex)
+#            try:
+#                for workspacedir in custom_listdirs(path_extract):
+#                    current_workspace = path_extract + '/' + workspacedir
+#                    #creation and assosiation of the keywords at the item
+#                    paramkeywords = custom_open_file(current_workspace, 'keywords.json')
+#                    
+#                    #FIXME: read and after delete all. Maybe should to be avoided
+#                    param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
+#                    for data in param['keywords']:
+#                        i._keyword_delete(data['id'])
+#                    
+#                    logger.info('keywords.json for %s' % workspacedir)
+#                    for data in paramkeywords['keywords']:
+#                        add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+#        
+#                    logger.info('collections.json for %s' % workspacedir)
+#                    paramcollection = custom_open_file(current_workspace, 'collections.json')
+#                    for data in paramcollection['collections']:
+#                        add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+#        
+#                    logger.info('smartfolders.json for %s' % workspacedir)
+#                    paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
+#    
+#                    for data in paramsmartfolders['smartfolders']:
+#                            add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
+#
+#            except Exception, ex:
+#                logger.error(ex)
              
             logger.info("DONE")
 

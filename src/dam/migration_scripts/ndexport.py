@@ -64,6 +64,9 @@ def main():
     op.add_option("-p", "--password", 
                       action="store",dest="password",type="string",default='demo',
                       help="Password for DAM")
+    op.add_option("-m", "--metadata-only",
+                  action="store_true", dest="metadata_only",default=False,
+                      help="Set option if you want only metadata backup." )
     
     (options, args) = op.parse_args()
 
@@ -167,20 +170,21 @@ if __name__ == '__main__':
                 f.write(renditionjson)
                 f.close()
                
-                #Backup item's resources/renditions
-               
                 logger.info("%s" %item['renditions'])
-                for v_id, data in item['renditions'].items():
-                   
-                    logger.debug("v_id %s" %v_id)
-                    logger.debug("data %s" %data)
-                    try:
-                        filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
-                    except AttributeError: #Some resource is None
-                        logger.debug("%s WAS None" % str(v_id))                    
-                        continue
-                   
-                    urllib.urlretrieve(data['url'], filename)
+                if not options.metadata_only:
+                    logger.info("Item's is saving soon.")
+                    #Backup item's resources/renditions
+                    for v_id, data in item['renditions'].items():
+                       
+                        logger.debug("v_id %s" %v_id)
+                        logger.debug("data %s" %data)
+                        try:
+                            filename = os.path.join(itemdir,str(v_id) + os.path.splitext(data['url'])[-1])
+                        except AttributeError: #Some resource is None
+                            logger.debug("%s WAS None" % str(v_id))                    
+                            continue
+                       
+                        urllib.urlretrieve(data['url'], filename)
         
         logger.debug('backup_file %s'%backup_file)
         t = tarfile.open(backup_file, 'w')
