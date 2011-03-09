@@ -113,11 +113,11 @@ def inspect(workspace):
 
               
               {   
-                'name': 'output_format',
+                'name': 'output_extension',
                 'fieldLabel': 'format',
                 'xtype': 'select',
                 'values': media_types,
-                'description': 'output_format',
+                'description': 'output_extension',
                 'value': '.jpg',
                 'help': ''
             }

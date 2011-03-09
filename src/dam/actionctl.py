@@ -39,6 +39,7 @@ thumbnail = {
     },
 }
 
+
 action_audio = {
     'extract_original': {
         'script_name':  'extract_basic',
@@ -49,16 +50,36 @@ action_audio = {
         'out':['fe'],
     },
 
-    'extract_xmp': {
+    'extract_orig_xmp': {
         'script_name':  'extract_xmp',
         'params' : {
             'source_variant': 'original',
         },
         'in':[],
-        'out':['fe'],
+        'out':['fx'],
     },
 
+    'preview_audio': {
+        'script_name':  'adapt_audio',
+        'params' : {
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_preset': 'MP3',
+            'bitrate': '128',
+            'rate': 44100,
+        },
+        'in':['fe', 'fx'],
+        'out':['preview'],
+    },
 
+    'extract_preview': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'preview',
+        },
+        'in':['preview'],
+        'out':[],
+    },
 }
 
 action_video = {
@@ -80,23 +101,58 @@ action_video = {
         'out':['fx'],
     },
 
-    'extract_frame': {
+    'thumbnail': {
         'script_name':  'extract_frame',
         'params' : {
             'source_variant': 'original',
             'output_variant': 'thumbnail',
-            'output_format': 'image/jpeg',
+            'output_extension': '.jpg',
             'frame_w': '100',
             'frame_h': '100',
-            'position': '20',
+            'position': '25',
         },
         'in':['fe', 'fx'],
+        'out':['thumbnail'],
+    },
+
+    'extract_thumbnail': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'thumbnail',
+        },
+        'in':['thumbnail'],
+        'out':[],
+    },
+
+    'preview': {
+        'script_name':  'adapt_video',
+        'params' : {
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_preset': 'FLV',
+            'video_width': '300',
+            'video_height': '300',
+            'video_bitrate_b': '640000',
+            'video_framerate': '25/2',
+            'audio_bitrate_kb': '128',
+            'audio_rate': '44100',
+        },
+        'in':['fe', 'fx'],
+        'out':['preview'],
+    },
+
+    'extract_preview': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'preview',
+        },
+        'in':['preview'],
         'out':[],
     },
 }
 
 
-actions = {
+action_image = {
     'extract_original': {
         'script_name':  'extract_basic',
         'params' : {
@@ -115,7 +171,6 @@ actions = {
         'out':['fx'],
     },
 
-
     'thumbnail_image':{
         'script_name': 'adapt_image', 
         'params':{
@@ -124,7 +179,7 @@ actions = {
             'resize_w': 100,
             'source_variant': 'original',
             'output_variant': 'thumbnail',
-            'output_format' : '.jpeg'        
+            'output_extension' : '.jpg'        
             },
          'in': ['fe'],
          'out':['thumbnail']    
@@ -149,7 +204,7 @@ actions = {
             'resize_w': 300,
             'source_variant': 'original',
             'output_variant': 'preview',
-            'output_format' : '.jpeg'        
+            'output_extension' : '.jpeg'        
             },
          'in': ['fe'],
          'out':['preview']    
@@ -169,10 +224,10 @@ actions = {
         'params':{
             'actions':['resize'],
             'resize_h':800,
-            'resize_w': 600,
+            'resize_w': 800,
             'source_variant': 'original',
             'output_variant': 'fullscreen',
-            'output_format' : '.jpeg'        
+            'output_extension' : '.jpeg'        
             },
          'in': ['fe'],
          'out':['fullscreen']    
@@ -187,6 +242,73 @@ actions = {
         'out':[],
     },
 }
+
+action_pdf = {
+    'extract_original': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fe'],
+    },
+
+    'extract_orig_xmp': {
+        'script_name':  'extract_xmp',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fx'],
+    },
+
+    'thumbnail': {
+        'script_name':  'pdfcover',
+        'params' : {
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_extension': '.jpg',
+            'max_size': '100',
+        },
+        'in':['fe', 'fx'],
+        'out':['thumbnail'],
+    },
+
+    'extract_thumbnail': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'thumbnail',
+        },
+        'in':['thumbnail'],
+        'out':[],
+    },
+
+    'preview': {
+        'script_name':  'pdfcover',
+        'params' : {
+            'source_variant': 'original',
+            'output_variant': 'preview',
+            'output_extension': '.jpg',
+            'max_size': '300',
+        },
+        'in':['fe', 'fx'],
+        'out':['preview'],
+    },
+
+    'extract_preview': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'preview',
+        },
+        'in':['preview'],
+        'out':[],
+    },
+}
+
+standard_actions = [(action_audio, 'audio'), 
+                    (action_video, 'video'),
+                    (action_image, 'image'),
+                    (action_pdf,   'application')]
 
 class DoTest:
     def __init__(self):
@@ -225,6 +347,14 @@ class DoTest:
             pipe.media_type.add(t)
         pipe.save
         print 'registered pipeline %s, pk=%s, trigger=%s' % (name, pipe.pk, '-'.join( [x.name for x in pipe.triggers.all()] ) )
+
+    def standard_upload(self):
+        pipes = Pipeline.objects.filter(triggers__name='upload')
+        for p in pipes:
+            p.delete()
+        for action, mime in standard_actions:
+            print('Registering upload pipeline for %s' % mime)
+            self.register('pipe_%s' % mime, 'upload', mime, '', action)
 
     def _new_item(self, filepath, media_type):
         variant = Variant.objects.get(name = 'original')
@@ -320,6 +450,10 @@ Usage: script_test.py <action> <arguments>
   upload <trigger> <filenames>
 
   Examples:
+  python actionctl.py standard_upload
+    register all default pipelines for image, video, audio and doc.
+    delete existing pipelines triggered for upload
+
   python actionctl.py register up1 upload image actions  
     registers the pipeline described in the global dict "actions" with the name up1,
     to react to the trigger "upload", for all types "image/*"
@@ -342,6 +476,9 @@ def main(argv):
         mime_type = argv[4]
         pipeline_def = globals()[argv[5]]
         test.register(name, trigger, mime_type, '', pipeline_def)
+
+    elif task == 'standard_upload':
+        test.standard_upload()
     
     elif task == 'execpipes':
         trigger = argv[2]
@@ -349,6 +486,7 @@ def main(argv):
         if not files:
             raise Exception('too few arguments')
         test.upload(trigger, files)
+
    
     elif task == 'status':
         process_id = argv[2]
