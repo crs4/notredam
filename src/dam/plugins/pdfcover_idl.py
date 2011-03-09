@@ -1,8 +1,9 @@
-from dam.plugins.common.utils import save_type, get_variants
-
+from dam.plugins.common.utils import save_type, get_variants,get_ext_by_type
+    
 def inspect(workspace):    
     variants = get_variants(workspace, 'doc')
     output_variants = get_variants(workspace, 'image', auto_generated = True)
+    media_types = get_ext_by_type('image')
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
@@ -35,19 +36,22 @@ def inspect(workspace):
             },
             {
              'xtype': 'numberfield',
-             'name': 'xsize',
-             'fieldLabel': 'width',
+             'name': 'maxsize',
+             'fieldLabel': 'Max_size',
              'value': 300,
              'width':200
              },
-             {
-             'xtype': 'numberfield',
-             'name': 'ysize',
-             'fieldLabel': 'height',
-             'value': 300,
-             'width':200
              
-             }
+             {   
+                'name': 'output_extension',
+                'fieldLabel': 'format',
+                'xtype': 'select',
+                'values': media_types,
+                'description': 'output_extension',
+                'value': '.jpg',
+                'help': ''
+            }
+             
             
             ]
              
