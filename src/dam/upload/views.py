@@ -278,6 +278,7 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
 def import_dir(dir_name, user, workspace, session):
     logger.debug('########### INSIDE import_dir')
     files =os.listdir(dir_name)
+    logger.debug('files %s'%files)
     ret = _upload_loop(files, 'upload', 'original', user, workspace, True)
     logger.debug('Launched %s' % ' '.join(ret))
 

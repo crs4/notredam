@@ -33,7 +33,7 @@ sys.path.append(ROOT_PATH)
 from mediadart.config import Configurator
 c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
-#MEDIADART_STORAGE = '/home/mdtest/mediadart_files'
+STORAGE_SERVER_URL= '/storage/'
 
 BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
 INSTALLATIONPATH = os.path.join(os.getenv('HOME'), ".dam"  )
@@ -62,6 +62,7 @@ DEMO_STRING="Development Demo"
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+INPROGRESS = '/files/images/inprogress.png'
 
 ADMINS = (
 	# ('Your Name', 'your_email@domain.com'),
