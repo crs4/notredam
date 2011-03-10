@@ -465,7 +465,7 @@ class Component(AbstractComponent):
     Base model describing components. They can be contained by items.
     """
 
-    _id = models.CharField(max_length=40,  db_column = 'md_id')
+    _id = models.CharField(max_length=70,  db_column = 'md_id')
     metadata = generic.GenericRelation('metadata.MetadataValue')
     
     variant = models.ForeignKey('variants.Variant')
