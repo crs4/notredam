@@ -15,7 +15,7 @@
 *    GNU General Public License for more details.
 *
 */
-
+var task;
 function set_status_bar_busy(){
 	var sb = Ext.getCmp('dam_statusbar');
 	if(sb)
@@ -1332,7 +1332,7 @@ Ext.onReady(function(){
         ]}
     );
 
-    var task = {
+    task = {
         run: function(){
         	
         	

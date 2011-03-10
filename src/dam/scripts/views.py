@@ -162,14 +162,7 @@ def new_script(request):
     
     return HttpResponse(simplejson.dumps({'success': True, 'id': script.pk}))
 
-@login_required
-def edit_script(request):
-    pk = request.POST.get('pk')
-    name = request.POST['name']
-    params =  request.POST['params']
-    media_types = request.POST.getlist('media_types')
-    events = request.POST.getlist('events')
-    workspace = request.session['workspace']
+def _edit_script(pk, name, params,workspace, media_types, events):
     if pk: #editing an existing script
         pipeline = Pipeline.objects.get(pk = pk)
         pipeline.triggers.remove(*pipeline.triggers.all())
@@ -181,11 +174,9 @@ def edit_script(request):
         
     pipeline.name = name    
     pipeline.params = params
-    try:
-        pipeline.save()
-    except integrityerror:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
 
+    pipeline.save()
+    
     for m in media_types:
         if m not in mime_types_by_type:
             continue
@@ -199,16 +190,25 @@ def edit_script(request):
             continue
         pipeline.triggers.add(TriggerEvent.objects.get(name = e))
     
+    return pipeline
+
+@login_required
+def edit_script(request):
+    pk = request.POST.get('pk')
+    name = request.POST['name']
+    params =  request.POST['params']
+    media_types = request.POST.getlist('media_types')
+    events = request.POST.getlist('events')
+    workspace = request.session['workspace']
     
-#    previous_triggers = pipeline.triggers.all()
-#    #if (type, type) in TriggerEvent._meta.get_field_by_name('type')[0].choices:
-#    if not type:       
-#        if previous_triggers:            #removing previously set type for pipeline
-#            pipeline.triggers.none()     #this way the pipeline cannot be called
-#    else:
-#        trigger_event, created = TriggerEvent.objects.get_or_create(name=type)
-#        if trigger_event not in previous_triggers:
-#            pipeline.triggers.add(trigger_event)
+    try:
+        pipeline = _edit_script(pk, name, params, workspace, media_types, events)
+    except IntegrityError:
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
+
+    
+    
+    
 
     return HttpResponse(simplejson.dumps({'success': True, 'pk': pipeline.pk}))  
 

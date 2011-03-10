@@ -33,7 +33,7 @@ from django_restapi.responder import *
 from django.contrib.auth.models import Permission
 from decimal import *
 
-from dam.repository.models import Item,  Component, _get_resource_url
+from dam.repository.models import Item,  Component, _get_resource_url, new_id
 from dam.core.dam_repository.models import Type
 from dam.core.dam_metadata.models import XMPStructure
 from dam.workspace.models import DAMWorkspace
@@ -48,7 +48,7 @@ from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.upload.views import _upload_variant
 from dam.workflow.views import _set_state 
-from dam.scripts.views import _new_script,  _get_scripts_info
+from dam.scripts.views import _edit_script
 from dam.settings import SERVER_PUBLIC_ADDRESS
 
 from dam.api.decorators import *
@@ -1586,7 +1586,7 @@ class ItemResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
 
 
-        item = Item.objects.create(uploader = user,  type = Type.objects.get_or_create_by_mime(media_type))
+        item = Item.objects.create(uploader = user,_id = new_id(),  type = Type.objects.get_or_create_by_mime(media_type))
         ws.items.add(item)
         item.add_to_uploaded_inbox(ws)        
         
@@ -2895,26 +2895,26 @@ class ScriptResource(ModResource):
        
         name = request.POST['name']
         description = request.POST['description']
-        pipeline = request.POST['pipeline']
         events = request.POST.getlist('events')
+        params = request.POST.get('params')
+        media_types = request.POST.getlist('media_types')
         workspace_id = request.POST.get('workspace_id')
         workspace = DAMWorkspace.objects.get(pk = workspace_id)        
         
-        script  = _new_script(name = name, description = description, workspace =workspace, pipeline = pipeline, events = events)
+        script  = _edit_script(None, name, params, workspace, media_types, events)
         return HttpResponse(simplejson.dumps({'id': script.pk,  'name': script.name,  'description': description}))
         
         
     @exception_handler
     @api_key_required
     def edit(self,  request,  script_id):
-        script = Script.objects.get(pk = script_id)
         name = request.POST['name']
         description = request.POST['description']
-        pipeline = request.POST['pipeline']
+        params = request.POST['params']
         events = request.POST.getlist('events')
         workspace = script.workspace        
         
-        script  = _new_script(name = name, description = description, workspace =workspace, script = script,  pipeline = pipeline, events = events)
+        script  = _edit_script(script_id, name, params, workspace, media_types, events)
         return HttpResponse('')
         
     @exception_handler

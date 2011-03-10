@@ -66,7 +66,14 @@ function import_variant(variant_id){
      	variant: variant.variant_name,
      	item: variant.item_id,
      	after_upload: function(){
-     		console.log('asd');
+     		var ac = Ext.getCmp('media_tabs').getActiveTab();
+		    var view = ac.getComponent(0);
+		    var store = view.getStore();
+		    record = store.query('pk', variant.item_id).items[0];
+		    record.set('status', 'in_progress');
+		    record.commit();
+		    task.run();
+
      		this.close();	
      	}
      	
