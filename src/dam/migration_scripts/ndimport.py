@@ -498,6 +498,7 @@ def _send_file(current_rendition, param, shortname, extension, id_item):
     form.add_field('user_id', str(i.userid))
     # Add a fake file
    
+    logger.debug("form %s " %form)
     logger.debug("open %s " %current_rendition)
     file = open(current_rendition)
     form.add_file('Filedata', shortname +'.'+ extension[1:], 
