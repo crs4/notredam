@@ -28,6 +28,12 @@ class Pipeline(models.Model):
         if not hasattr(self, 'length'):
             self.length = len(simplejson.loads(self.params))
         return self.length
+
+    def is_compatible(self, media_type):
+        "return True if no type is registered or if media_type is registered"
+        types = self.media_type.all()
+        return (not types)  or (media_type in types)
+
     
 class Process(models.Model):    
     pipeline = models.ForeignKey(Pipeline)
@@ -50,11 +56,6 @@ class Process(models.Model):
     
     def is_completed(self):
         return self.end_date is not None
-
-    def is_compatible(self, media_type):
-        "return True if no type is registered or if media_type is registered"
-        types = self.pipeline.media_type.all()
-        return (not types)  or (media_type in types)
 
     def run(self):
         Proxy('MProcessor').run(self.pk)        

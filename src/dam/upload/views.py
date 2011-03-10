@@ -28,7 +28,6 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.db import transaction
 import shutil, os
-from mediadart.storage import new_id
 from django.conf import settings
 
 #from dam.scripts.models import Pipeline
@@ -219,49 +218,71 @@ def _get_filepath(file_name):
     fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
     
     return fpath, res_id
-    
-def import_dir(dir_name, user, workspace, session):
-    logger.debug('########### INSIDE import_dir')
-    variant = Variant.objects.get(name = 'original')
-    files =os.listdir(dir_name)
-    logger.debug('files %s'%files)
-    
-    uploaders = []
-    for p in Pipeline.objects.filter(triggers__name='upload'):
-        logger.debug('Using pipeline %s' % p.name)
-        uploaders.append(Process.objects.create(pipeline=p, workspace=workspace, launched_by=user))
-    logger.debug('###### Loaded %d pipelines' % len(uploaders))
-    
-    for file_name in files:
-        tmp = file_name.split('_')
-        res_id = tmp[0]        
-        original_file_name = '_'.join(tmp[1:])
-        
-        ext = file_name.split('.')[-1]
-        final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
-        
-        file_path = os.path.join(dir_name, file_name)
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
-        
-        media_type = Type.objects.get_or_create_by_filename(file_name)
+
+def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=False):
+    """
+       Parameters:
+       <filenames> is a list of tuples (filename, original_filename, res_id).
+       <trigger> is a string, like 'upload'
+       <variant_name> is the name of a registered variant
+       <user> and <workspace> are two objects as usual.
+       <split_file> = True means the names in filenames have the structure:
+          <res_id>_<original_file_name>
+
+       Creates a new item for each filename;
+       Create a component with variant = variant_name;
+       Find all the pipelines associated to the trigger;
+       Associates each item to all pipelines that accept that type of item;
+       Launches all pipes;
+       Returns the list of process_id launched;
+    """
+    pipes = Pipeline.objects.filter(triggers__name=trigger)
+    for pipe in pipes:
+        pipe.__process = False
+    for filename in filenames:
+        if split_file:
+            tmp = filename.split('_')
+            res_id = tmp[0]
+            original_filename = '_'.join(tmp[1:])
+        else:
+            res_id = new_id()
+            original_filename = filename
+        variant = Variant.objects.get(name = variant_name)
+        fpath, ext = os.path.splitext(filename)
+        media_type = Type.objects.get_or_create_by_filename(filename)
         item = _create_item(user, workspace, res_id, media_type)
         found = 0
-        for uploader in uploaders:
-            # here decide which uploader to use based on the content type of the item
-            if uploader.is_compatible(media_type):
+        for pipe in pipes:
+            if pipe.is_compatible(media_type):
+                if not pipe.__process:
+                    pipe.__process = Process.objects.create(pipeline=pipe, 
+                                                            workspace=workspace, 
+                                                            launched_by=user)
+                pipe.__process.add_params(item.pk)
                 found = 1
-                logger.debug('find pipeline for item %s' % item.pk)
-                uploader.add_params(item.pk)
+                logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if not found:
-            logger.info('No action associated to item %s' % file_name)
-        shutil.move(file_path, final_path)
-        logger.debug('-----res_id %s'%res_id)
-        _create_variant(original_file_name, final_file_name, media_type, item, workspace, variant)
-        logger.debug('adding item %s'%item.pk)
+            logger.debug( ">>>>>>>>>> No action for %s" % filename)
+        final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
+        _create_variant(original_filename, final_filename, media_type, item, workspace, variant)
+        shutil.copyfile(filename, final_path)
+    ret = []
+    for pipe in pipes:
+        if pipe.__process:
+            logger.debug( 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name))
+            pipe.__process.run()
+            ret.append(str(pipe.__process.pk))
+    return ret
 
-    for uploader in uploaders:
-        logger.debug('running pipeline')
-        uploader.run()
+
+def import_dir(dir_name, user, workspace, session):
+    logger.debug('########### INSIDE import_dir')
+    files =os.listdir(dir_name)
+    logger.debug('files %s'%files)
+    ret = _upload_loop(files, 'upload', 'original', user, workspace, True)
+    logger.debug('Launched %s' % ' '.join(ret))
+
 
 def _upload_item(file_name, file_raw,  variant, user, session, workspace, session_finished = False):
     if not isinstance(file_name, unicode):
@@ -300,15 +321,8 @@ def upload_item(request):
         file_counter = int(request.GET['counter'])
         total = int(request.GET['total'])
         user = request.user  
-
         file_name = request.META['HTTP_X_FILE_NAME']
-        _upload_item(file_name,request.raw_post_data, variant, request.user, session, workspace)
-                
-        
-#        if file_counter == total:
-#            import_dir(tmp_dir, user, workspace, session)
-#            os.rmdir(tmp_dir)
-        
+        _upload_item(file_name,request.raw_post_data, variant, request.user, session, workspace)        
         resp = simplejson.dumps({'success': True})
         
     except Exception, ex:
@@ -317,7 +331,7 @@ def upload_item(request):
     
     return HttpResponse(resp)
 
-def _upload_variant(item, variant, workspace, file_name, file_raw):   
+def _upload_variant(item, variant, workspace, user, file_name, file_raw):   
     #TODO: refresh url in gui, otherwise old variant will be shown
     if not isinstance(file_name, unicode):
         file_name = unicode(file_name, 'utf-8')
@@ -333,6 +347,20 @@ def _upload_variant(item, variant, workspace, file_name, file_raw):
     media_type = Type.objects.get_or_create_by_filename(file_name)
      
     _create_variant(file_name, final_file_name,media_type, item, workspace, variant)    
+    uploaders = []
+    if variant.name == 'original':
+        triggers_name = 'upload'
+    else:
+        triggers_name = 'upload_variant'
+    
+    for p in Pipeline.objects.filter(triggers__name=triggers_name):
+        logger.debug('Using pipeline %s' % p.name)        
+        uploader = Process.objects.create(pipeline=p, workspace=workspace, launched_by=user)
+                
+        if uploader.is_compatible(media_type):            
+            uploader.add_params(item.pk)        
+            logger.debug('running pipeline')
+            uploader.run()
 
 @login_required
 def upload_variant(request):  
@@ -345,7 +373,7 @@ def upload_variant(request):
     user = request.user  
     item = Item.objects.get(pk = item_id)
     file_name = request.META['HTTP_X_FILE_NAME']
-    _upload_variant(item, variant, workspace, file_name, request.raw_post_data)
+    _upload_variant(item, variant, workspace, request.user, file_name, request.raw_post_data)
 
     
     
@@ -431,61 +459,6 @@ def guess_media_type (file):
         raise Exception('unsupported media type')
 
     return media_type
-
-
-
-def _generate_tasks( component, workspace, force_generation,  check_for_existing, embed_xmp):
-    """
-    Generates MediaDART tasks
-    """
-    def _cb_start_upload_events(status_ok, result, userargs):
-        logger.debug('_generate_tasks: starting upload events: %s' % result)
-        item = component.item
-        for ws in item.workspaces.all():
-            EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
-
-    logger.debug('############ _generate_tasks')
-    from dam.core.dam_repository.models import Type
-    variant = component.variant
-
-    maction = MAction()
-    maction.add_component(component)
-    
-    if variant and not variant.auto_generated:    # The component is a source component
-        maction.append_func('extract_features')
-        maction.append_func('extract_xmp', component.get_extractor())
-        callback = _cb_start_upload_events
-    else:                                         # The component is derived from a source component
-        if not component.imported:
-            maction.append_func('adapt_resource')
-        maction.append_func('extract_features')
-        
-        if embed_xmp:
-            maction.append_func('embed_xmp')
-                
-        if  variant.name == 'mail':
-            maction.append_func('send_mail')
-        callback = lambda a, b, c: None
-    maction.activate(callback)
-#    maction.activate(None)
-#    callback(None, None,None)
-    
-def generate_tasks(component, workspace, upload_job_id = None, force_generation = False,  check_for_existing = False, embed_xmp = False):
-    
-    """
-    Generate MediaDART Tasks for the given variant, item and workspace
-    """
-    logger.debug('generate_tasks')
-
-    if upload_job_id:
-        component.imported = True
-        component.save()
-        
-    
-    #Action.objects.filter(component=component).delete()
-
-    _generate_tasks(component, workspace, force_generation,  check_for_existing, embed_xmp)
-
 
 def upload_session_finished(request):
     session = request.POST['session']

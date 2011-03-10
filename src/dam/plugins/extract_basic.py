@@ -65,6 +65,7 @@ class ExtractBasicFeatures:
 
     def _cb_basic_ok(self, features, extractor_type):
         "save results of basic extractions"
+        metadata_list, delete_list = [], []
         log.debug('ExtractBasicFeatures._cb_basic_ok: %s' % features)
         ctype = ContentType.objects.get_for_model(self.component)
         try:
@@ -74,7 +75,7 @@ class ExtractBasicFeatures:
         if extractor_type == 'media_basic':
             for stream in features['streams']:
                 if isinstance(features['streams'][stream], dict):  # e se no?
-                    m_list, d_list = self._save_features(features['streams'][stream])
+                    m_list, d_list = self._save_features(features['streams'][stream], ctype)
                     metadata_list.extend(m_list)
                     delete_list.extend(d_list)
         else: 
