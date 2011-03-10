@@ -21,10 +21,7 @@ import urllib
 from hashlib import sha1 
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
-import logging
-
-logging.basicConfig(level=logging.DEBUG, format= "%(levelname)s - %(filename)s:%(lineno)d - %(message)s")
-
+from dam import logger
 
 class ImportExport(object):
     """
@@ -57,7 +54,7 @@ class ImportExport(object):
         p =  {    'api_key': self.api_key,
                 'user_id': self.userid }
 
-        logging.debug("%s" %url)
+        logger.debug("%s" %url)
             
         if kwargs:
             p.update(kwargs)
@@ -66,12 +63,12 @@ class ImportExport(object):
             p.extend(args)
             p.extend(kwargs.items())
             
-        logging.debug("params: %s " %p) 
-        logging.debug("%s" %url)
+        logger.debug("params: %s " %p) 
+        logger.debug("%s" %url)
 
         p = self._add_checksum_new(p)
         params = urllib.urlencode(p)
-        logging.debug("---------------params: %s" %params) 
+        logger.debug("---------------params: %s" %params) 
         if method == 'POST':
             self.conn.request(method, url, params)
         elif method == 'GET':
@@ -81,7 +78,7 @@ class ImportExport(object):
         
         response = self.conn.getresponse()
         json_data = response.read()
-        logging.info('response xxxx: %s' %json_data)
+        logger.debug('response xxxx: %s' %json_data)
         if json_data != '':
             data = JSONDecoder().decode(json_data)
             return data
@@ -132,10 +129,10 @@ class ImportExport(object):
         params = urllib.urlencode({'api_key':self.api_key, 
                                    'user_name':self.username, 
                                    'password':self.password})
-        logging.info("params %s" %params)
+        logger.debug("params %s" %params)
         self.conn.request('POST', '/api/login/',params)
         response = self.conn.getresponse()
-        logging.info("response %s" %response)
+        logger.debug("response %s" %response)
         json_data = response.read()
         data = JSONDecoder().decode(json_data)
         try:

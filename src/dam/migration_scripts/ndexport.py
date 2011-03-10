@@ -30,11 +30,7 @@ from hashlib import sha1
 from optparse import OptionParser
 
 from ndutils import ImportExport, Exporter, Importer
-import logging
-
-#CONFIGURATION GOES HERE
-logger = logging.getLogger('export_logger')
-logger.setLevel(logging.INFO)
+from dam import logger
 
 def usage():
     return '\n'.join((
@@ -76,7 +72,7 @@ if __name__ == '__main__':
 
     options = main()
     
-    archive_name = options.filename + '.ndar'    
+    archive_name = options.filename + '.tar'    
     backup_file = os.path.join(options.path,archive_name)
     
     basedir = tempfile.mkdtemp()
@@ -184,6 +180,8 @@ if __name__ == '__main__':
                             logger.debug("%s WAS None" % str(v_id))                    
                             continue
                        
+                        ##add login required dangerous!!!!!! It must delete!!! ask to Mauro
+                        logger.info("\n\n -------filename = %s------data[url]: %s" %(filename,data['url']))
                         urllib.urlretrieve(data['url'], filename)
         
         logger.debug('backup_file %s'%backup_file)

@@ -802,7 +802,7 @@ def damadmin_get_list_file_backup(request):
                 files.append({'file_name' : f, 'data' : data})
         for f in files:
             (shortname, extension) = os.path.splitext(f['file_name'])
-            if extension == '.ndar':
+            if extension == '.tar':
                 resp['file_backup'].append(f)
     else:
         resp['file_backup'].append({})
@@ -850,7 +850,7 @@ def damadmin_create_file_backup(request):
         if not os.path.exists(BACKUP_PATH):
             os.mkdir(BACKUP_PATH)
         
-        archive_name = name + '.ndar'
+        archive_name = name + '.tar'
         backup_file = os.path.join(BACKUP_PATH,archive_name)
         
         basedir = tempfile.mkdtemp()
