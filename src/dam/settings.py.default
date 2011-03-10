@@ -139,6 +139,7 @@ TEMPLATE_CONTEXT_PROCESSORS = ("django.core.context_processors.auth",
 "django.core.context_processors.media", "django.core.context_processors.request")
 
 
+
 INSTALLED_APPS = (
 	'django.contrib.auth',
 	'django.contrib.contenttypes',
@@ -165,7 +166,3 @@ INSTALLED_APPS = (
 	'dam.appearance',
     'dam.mprocessor',
 )
-
-FILE_UPLOAD_HANDLERS = (
-#    "django.core.files.uploadhandler.MemoryFileUploadHandler",
- "django.core.files.uploadhandler.TemporaryFileUploadHandler",)
