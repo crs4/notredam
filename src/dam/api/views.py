@@ -855,7 +855,7 @@ class ItemResource(ModResource):
         
 #    @exception_handler
 #    @api_key_required
-    def upload_variant(self,  request,  item_id,):
+    def upload_variant(self,  request,  item_id):
 #    TODO:FINISH DOC
         """ 
         Allows to upload a variant of a item.
@@ -884,8 +884,7 @@ class ItemResource(ModResource):
             logger.debug('----------user %s'%user)
             variant_id = request.POST['rendition_id']
             variant = Variant.objects.get(id = variant_id)
-            item_id = request.POST.get('item_id')        
-            
+            logger.debug('item_id %s'%item_id)
             item = Item.objects.get(pk = item_id)           
             logger.debug('file_name %s'%file_name) 
             _upload_variant(item, variant, ws, user, file_name, upload_file.read())
@@ -896,7 +895,7 @@ class ItemResource(ModResource):
 
 #    @exception_handler
 #    @api_key_required
-    def add_component(self,  request,  item_id,):
+    def add_component(self,  request,  item_id):
         """ 
         Allows to add new component with url must to do.
         - method: POST

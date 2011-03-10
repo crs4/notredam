@@ -506,7 +506,7 @@ def _send_file(current_rendition, param, shortname, extension, id_item):
                   fileHandle=file)
     file.close() 
     # Build the request
-   
+    
     logger.debug("urlib2.Request : http://%s:%s/api/item/%s/upload/" %(i.host,i.port, id_item))
     request = urllib2.Request('http://%s:%s/api/item/%s/upload/' %(i.host,i.port, id_item))
     request.add_header('User-agent', 'PyMOTW (http://www.doughellmann.com/PyMOTW/)')
