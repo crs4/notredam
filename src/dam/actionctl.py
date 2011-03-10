@@ -383,7 +383,7 @@ class DoTest:
         print 'registered pipeline %s, pk=%s, trigger=%s' % (name, pipe.pk, '-'.join( [x.name for x in pipe.triggers.all()] ) )
 
     def execpipes(self, trigger, filepaths):
-        ret = _upload_loop(filepaths, trigger, 'original', self.user, self.ws, False)
+        ret = _upload_loop(filepaths, trigger, 'original', self.user, self.ws)
         print('Executed processes %s' % ' '.join(ret))
 
     def show_pipelines(self):
