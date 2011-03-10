@@ -501,7 +501,8 @@ def _send_file(current_rendition, param, shortname, extension, id_item):
     logger.debug("form %s " %form)
     logger.debug("open %s " %current_rendition)
     file = open(current_rendition)
-    form.add_file('Filedata', shortname +'.'+ extension[1:], 
+    filedata = 'Filedata'+'.'+ extension[1:]
+    form.add_file(filedata, shortname +'.'+ extension[1:], 
                   fileHandle=file)
     file.close() 
     # Build the request
