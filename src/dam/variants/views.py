@@ -109,28 +109,28 @@ def delete_variant(request):
 
 	return HttpResponse(simplejson.dumps({'success':True}))
 
-@login_required
-@permission_required('admin')
-def force_variant_generation(request,  variant_id,  item_id):
-    from dam.upload.views import generate_tasks
-    
-    workspace = request.session['workspace']
-    variant = Variant.objects.get(pk = variant_id)
-        
-    component = variant.component_set.get(workspace = workspace,  item__pk = item_id)
-    component.imported = False
-    component.save()
-    item = component.item
-    try:
-        
-#        variant = component.variant
-#        component = variant.get_component(workspace,  item)
-#        component.new_md_id()
-        generate_tasks(variant, workspace,  item,  force_generation = True)    
-    except Exception,  ex:
-        logger.exception(ex)
-    
-    return HttpResponse(simplejson.dumps({'success': True}))
+#@login_required
+#@permission_required('admin')
+#def force_variant_generation(request,  variant_id,  item_id):
+    #from dam.upload.views import generate_tasks
+    #
+    #workspace = request.session['workspace']
+    #variant = Variant.objects.get(pk = variant_id)
+        #
+    #component = variant.component_set.get(workspace = workspace,  item__pk = item_id)
+    #component.imported = False
+    #component.save()
+    #item = component.item
+    #try:
+        #
+        #variant = component.variant
+        #component = variant.get_component(workspace,  item)
+        #component.new_md_id()
+        #generate_tasks(variant, workspace,  item,  force_generation = True)    
+    #except Exception,  ex:
+        #logger.exception(ex)
+    #
+    #return HttpResponse(simplejson.dumps({'success': True}))
 
 @login_required
 def get_variant_sources(request):

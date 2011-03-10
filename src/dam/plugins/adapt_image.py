@@ -19,9 +19,6 @@ from dam.plugins.adapt_image_idl import inspect
 
 from uuid import uuid4
 
-def new_id():
-    return uuid4().hex
-
 def run(*args, **kw_args):
     deferred = defer.Deferred()
     adapter = AdaptImage(deferred)
@@ -103,7 +100,7 @@ class AdaptImage:
         
         log.debug("calling adapter")
         extension = media_type.ext
-        dest_res_id = get_storage_file_name(new_id(), workspace.pk, output_variant.name, extension)
+        dest_res_id = get_storage_file_name(item.ID, workspace.pk, output_variant.name, extension)
         output_component.uri = dest_res_id
         output_component.save() 
         

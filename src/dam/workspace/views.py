@@ -33,7 +33,6 @@ from dam.treeview.models import Node,  Category,  SmartFolder
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.variants.models import Variant      
-from dam.upload.views import generate_tasks
 from dam.workspace.forms import AdminWorkspaceForm
 from dam.core.dam_repository.models import Type
 #from dam.geo_features.models import GeoInfo

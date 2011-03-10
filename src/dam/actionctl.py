@@ -19,8 +19,7 @@ from dam.workspace.models import DAMWorkspace
 from dam.core.dam_repository.models import Type
 from dam.repository.models import Item, get_storage_file_name
 from dam.variants.models import Variant
-from mediadart.storage import new_id
-from dam.upload.views import _create_item, _create_variant
+from dam.upload.views import _upload_loop
 from supported_types import mime_types_by_type, supported_types
 
 thumbnail = {
@@ -81,6 +80,41 @@ action_audio = {
         'out':[],
     },
 }
+
+action_short = {
+    'extract_original': {
+        'script_name':  'extract_basic',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fe'],
+    },
+
+    'extract_orig_xmp': {
+        'script_name':  'extract_xmp',
+        'params' : {
+            'source_variant': 'original',
+        },
+        'in':[],
+        'out':['fx'],
+    },
+
+    'thumbnail': {
+        'script_name':  'extract_frame',
+        'params' : {
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_extension': '.jpg',
+            'frame_w': '100',
+            'frame_h': '100',
+            'position': '25',
+        },
+        'in':['fe', 'fx'],
+        'out':['thumbnail'],
+    },
+}
+
 
 action_video = {
     'extract_original': {
@@ -348,60 +382,9 @@ class DoTest:
         pipe.save
         print 'registered pipeline %s, pk=%s, trigger=%s' % (name, pipe.pk, '-'.join( [x.name for x in pipe.triggers.all()] ) )
 
-    def standard_upload(self):
-        pipes = Pipeline.objects.filter(triggers__name='upload')
-        for p in pipes:
-            p.delete()
-        for action, mime in standard_actions:
-            print('Registering upload pipeline for %s' % mime)
-            self.register('pipe_%s' % mime, 'upload', mime, '', action)
-
-    def _new_item(self, filepath, media_type):
-        variant = Variant.objects.get(name = 'original')
-        fpath, ext = os.path.splitext(filepath)
-        res_id = new_id()
-        final_file_name = get_storage_file_name(res_id, self.ws.pk, variant.name, ext)
-        item = _create_item(self.user, self.ws, res_id, media_type)
-        component = _create_variant(filepath, final_file_name, media_type, item, self.ws, variant)
-        return item, component
-
-    #@transaction.commit_manually
-    def upload(self, trigger, filepaths):
-        print "executing upload, trigger=%s, filepaths=%s" % (trigger, ' '.join(filepaths))
-        uploaders = []
-        f = open('/tmp/uploader', 'w')
-        for p in Pipeline.objects.filter(triggers__name=trigger):
-            print '## adding pipeline %s to uploaders' % p.name
-            uploader=Process.objects.create(pipeline=p, workspace=self.ws, launched_by=self.user)
-            uploaders.append(uploader)
-            f.write('%s\n' % uploader.pk)
-        f.close()
-        for fn in filepaths:
-            print 'uploading', fn
-            variant = Variant.objects.get(name = 'original')
-            fpath, ext = os.path.splitext(fn)
-            res_id = new_id()
-            media_type = Type.objects.get_or_create_by_filename(fn)
-            item = _create_item(self.user, self.ws, res_id, media_type)
-            found = 0
-            for uploader in uploaders:
-                # here decide which uploader to use based on the content type of the item
-                if uploader.is_compatible(media_type):
-                    found = 1
-                    uploader.add_params(item.pk)
-            if not found:
-                print ">>>>>>>>>> No action for %s" % fn
-            final_file_name = get_storage_file_name(res_id, self.ws.pk, variant.name, ext)
-            final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
-            component = _create_variant(fn, final_file_name, media_type, item, self.ws, variant)
-            shutil.copyfile(fn, final_path)
-        #transaction.commit()
-        print '#### uploaders', uploaders
-        for uploader in uploaders:
-            print 'Launching %s-%s' % (str(uploader.pk), uploader.pipeline.name)
-            uploader.run()
-        print 'Launched uploaders ',
-        print ' '.join(open('/tmp/uploader', 'r').readlines())
+    def execpipes(self, trigger, filepaths):
+        ret = _upload_loop(filepaths, trigger, 'original', self.user, self.ws, False)
+        print('Executed processes %s' % ' '.join(ret))
 
     def show_pipelines(self):
         print ("Pipelines:")
@@ -478,15 +461,22 @@ def main(argv):
         test.register(name, trigger, mime_type, '', pipeline_def)
 
     elif task == 'standard_upload':
-        test.standard_upload()
+        [x.delete() for x in Pipeline.objects.filter(triggers__name='upload')]
+        for action, mime in standard_actions:
+            print('Registering upload pipeline for %s' % mime)
+            test.register('pipe_%s' % mime, 'upload', mime, '', action)
     
     elif task == 'execpipes':
         trigger = argv[2]
         files = argv[3:]
         if not files:
             raise Exception('too few arguments')
-        test.upload(trigger, files)
+        test.execpipes(trigger, files)
 
+    elif task == 'clear':
+        print('deleting all processes and processtargets')
+        [x.delete() for x in Process.objects.all()]
+        [x.delete() for x in ProcessTarget.objects.all()]
    
     elif task == 'status':
         process_id = argv[2]
