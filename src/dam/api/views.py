@@ -892,15 +892,9 @@ class ItemResource(ModResource):
             #item_id = request.POST.get('item_id') 
             logger.debug("item_id %s" %item_id)       
             user = request.user  
-<<<<<<< local
             item = Item.objects.get(pk = item_id)
             logger.debug("paramentri passati a _upload_variant: %s, %s, %s, %s, %s " %(item, variant, ws, file_name, upload_file))            
             _upload_variant(item, variant, ws, file_name, upload_file)
-=======
-            item = Item.objects.get(pk = item_id)            
-            _upload_variant(item, variant, workspace, user, file_name, upload_file)
-			
->>>>>>> other
         except Exception,ex:
             logger.exception(ex)
             raise ex  
@@ -2430,6 +2424,7 @@ class Auth(ModResource):
         if user.is_active:
             login(request,  user)
         else:
+            logger.debug('login failed')
             raise LoginFailed
         
         
