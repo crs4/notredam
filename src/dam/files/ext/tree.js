@@ -439,7 +439,9 @@ function create_tree(title, id){
                 });
                 
                 this.getEl().on('contextmenu',
-                    function(e){             
+                	
+                    function(e){     
+                    	console.log('cm');
                         if (this.id == 'keywords_tree') {
                             contextMenuShow(root_keywords,e);
                         }
@@ -962,6 +964,7 @@ var contextMenuCollections = new Ext.menu.Menu({id:'mainContextCollections',
 });
     
 contextMenuShow = function( node_menu,e ){
+		
         var admin = ws_permissions_store.find('name', 'admin') > - 1;
         var edit_taxonomy = ws_permissions_store.find('name', 'edit_taxonomy') > - 1;
         var edit_collection = ws_permissions_store.find('name', 'edit_collection') > - 1;

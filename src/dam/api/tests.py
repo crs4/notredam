@@ -1528,7 +1528,7 @@ class SmartFolderTest(MyTestCase):
         
 
 class ScriptsTest(MyTestCase):
-    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  
+    fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json', 'core/dam_repository/fixtures/test_data.json',  
 #                'scripts/fixtures/test_data.json'
                 ]   
    
@@ -1567,7 +1567,7 @@ class ScriptsTest(MyTestCase):
         ]
                  
         }}
-        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'name':name,  'description': description,  'params': json.dumps(pipeline)})     
                 
         response = self.client.post('/api/script/new/', params,  )  
         
@@ -1583,65 +1583,34 @@ class ScriptsTest(MyTestCase):
         name = 'test_edit'
         description = 'test_edit'
         pipeline =  {
-        'image':{
-            'source_variant': 'edited',
-            'actions': [
-                {
-                 'type': 'resize',
-                'parameters':{
-                   'max_height': 300,
-                   'max_width': 300,
-                }
-                        
-                },
-                {
-                     'type': 'setrights',
-                     'parameters':{
-                        'rights': 'creative commons by'
-                     }
-                 },
-                {
-                'type': 'save',
-                'parameters':{
-                    'output_format': 'jpeg',
-                    'output': 'preview'
-                    
-#                    'output': 'preview'
-                }
-                        
-            }    
-        ]
+             
                  
-        }}
-        script = Pipeline.objects.get(name = 'preview_generation')
-        params = self.get_final_parameters({ 'name':name,  'description': description,  'pipeline': json.dumps(pipeline)})     
+        }
+        script = Pipeline.objects.get(name = 'pipe_image')
+        params = self.get_final_parameters({ 'name':name,  'description': description,  'params': json.dumps(pipeline)})     
                 
         response = self.client.post('/api/script/%s/edit/'%script.pk, params,  )  
         script = Pipeline.objects.get(pk = script.pk)
         self.assertTrue(response.content == '')
         print script.name
-        print "script.actionlist_set.get(media_type__name = 'image').actions",  script.actionlist_set.get(media_type__name = 'image').actions
-        print "json.dumps(pipeline['image'])",  json.dumps(pipeline['image'])
-
         self.assertTrue(script.name == params['name'])
-        self.assertTrue(script.description == params['description'])
-        self.assertTrue(json.loads(script.actionlist_set.get(media_type__name = 'image').actions)['source_variant'] == pipeline['image']['source_variant'] )
-        
+               
        
     def test_run(self):
-        script = Pipeline.objects.get(name = 'preview_generation')
-        params = self.get_final_parameters({ 'items': Item.objects.all()[0].pk})     
-        response = self.client.post('/api/script/%s/run/'%script.pk, params,  )  
+        script = Pipeline.objects.get(name = 'pipe_image')
+        params = self.get_final_parameters({ 'items': [i.pk for i in Item.objects.all()]})     
+        response = self.client.post('/api/script/%s/run/'%script.pk, params)  
         self.assertTrue(response.content == '')
         
         
-    def test_run_again(self):
-        script = Pipeline.objects.get(name = 'preview_generation')
-        params = self.get_final_parameters({})    
-        
-        response = self.client.post('/api/script/%s/run_again/'%script.pk, params,  )  
-        self.assertTrue(response.content == '')
-        
+#    def test_run_again(self):
+#        script = Pipeline.objects.get(name = 'pipe_image')
+#        params = self.get_final_parameters({})    
+#        
+#        response = self.client.post('/api/script/%s/run_again/'%script.pk, params,  )  
+#        self.assertTrue(response.content == '')
+#        
+
 #TODO: generate new fixtures for testing delete script
 #    def test_delete(self):
 #        script = Pipeline.objects.get(name = 'thumb_generation')
@@ -1651,7 +1620,7 @@ class ScriptsTest(MyTestCase):
 #        self.assertTrue(Pipeline.objects.filter(pk = script.pk).count() == 0)
        
     def test_get(self):
-        script = Pipeline.objects.get(name = 'thumb_generation')
+        script = Pipeline.objects.get(name = 'pipe_image')
         params = self.get_final_parameters({ })     
         response = self.client.post('/api/script/%s/get/'%script.pk, params,  )  
         resp_dict = json.loads(response.content)        
@@ -1676,7 +1645,7 @@ class ScriptsTest(MyTestCase):
         response = self.client.post('/api/workspace/%s/get_scripts/'%ws.pk , params,  )  
         resp_dict = json.loads(response.content)        
    
-        self.assertTrue(len(resp_dict['scripts']) == ws.script_set.all().count())
+        self.assertTrue(len(resp_dict['scripts']) == ws.pipeline_set.all().count())
         
         
         

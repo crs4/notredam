@@ -2912,6 +2912,8 @@ class ScriptResource(ModResource):
         description = request.POST['description']
         params = request.POST['params']
         events = request.POST.getlist('events')
+        media_types = request.POST.getlist('media_types')
+        script = Pipeline.objects.get(pk = script_id)
         workspace = script.workspace        
         
         script  = _edit_script(script_id, name, params, workspace, media_types, events)
@@ -2923,16 +2925,21 @@ class ScriptResource(ModResource):
         from scripts.views import _run_script
        
         items = request.POST.getlist('items')
-        script = Script.objects.get(pk = script_id)
+        logger.debug('items %s'%items)
+        script = Pipeline.objects.get(pk = script_id)
         items = Item.objects.filter(pk__in = items)
-        _run_script(script, items ,   False )
+        logger.debug('items %s'%items)
+        user_id = request.POST['user_id']
+        user = User.objects.get(pk = user_id)
+        
+        _run_script(script, user, script.workspace, items ,   False )
         return HttpResponse('')
     
     @exception_handler
     @api_key_required
     def run_again(self,  request,  script_id):
         from scripts.views import _run_script
-        script = Script.objects.get(pk = script_id)        
+        script = Pipeline.objects.get(pk = script_id)        
         _run_script(script, [] ,   True )
         return HttpResponse('')
 
