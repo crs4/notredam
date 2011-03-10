@@ -536,7 +536,7 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-    #items = _search(request,  items)
+    items = _search(request,  items)
 
     total_count = items.count()
 
