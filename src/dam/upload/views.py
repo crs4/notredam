@@ -232,8 +232,8 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
        Creates a new item for each filename;
        Create a component with variant = variant_name;
        Find all the pipelines associated to the trigger;
-       Associates each item to all pipelines thata accept that type of item;
-       Launches all pipenes;
+       Associates each item to all pipelines that accept that type of item;
+       Launches all pipes;
        Returns the list of process_id launched;
     """
     pipes = Pipeline.objects.filter(triggers__name=trigger)
@@ -242,7 +242,7 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
     for filename in filenames:
         if split_file:
             tmp = filename.split('_')
-            res_id = l[0]
+            res_id = tmp[0]
             original_filename = '_'.join(tmp[1:])
         else:
             res_id = new_id()
@@ -261,17 +261,17 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
                                                             launched_by=user)
                 pipe.__process.add_params(item.pk)
                 found = 1
-                log.debug('item %s added to %s' % (item.pk, pipe.name))
+                logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if not found:
             logger.debug( ">>>>>>>>>> No action for %s" % filename)
         final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
         final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
-        _create_variant(original_file_name, final_file_name, media_type, item, workspace, variant)
+        _create_variant(original_filename, final_file_name, media_type, item, workspace, variant)
         shutil.copyfile(filename, final_path)
     ret = []
     for pipe in pipes:
         if pipe.__process:
-            print 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name)
+            logger.debug( 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name))
             pipe.__process.run()
             ret.append(pipe.__process.pk)
     return ret
