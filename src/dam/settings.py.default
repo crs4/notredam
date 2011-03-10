@@ -166,7 +166,6 @@ INSTALLED_APPS = (
     'dam.mprocessor',
 )
 
-INSTALLED_ACTIONS=[
-    'dam.scripts.actions.adapt_image'
-                   
-]
+FILE_UPLOAD_HANDLERS = (
+#    "django.core.files.uploadhandler.MemoryFileUploadHandler",
+ "django.core.files.uploadhandler.TemporaryFileUploadHandler",)
