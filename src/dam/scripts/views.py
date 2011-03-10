@@ -154,20 +154,26 @@ def delete_script(request):
 
 
 
-def _run_script(script, items = None,   run_again = False):
+def _run_script(pipe, user, workspace, items = None, run_again = False):
     if run_again:
-        items = [c.item for c in script.component_set.all()]
-    logger.debug('items %s'%items)
-    logger.debug('script %s'%script)
-    logger.debug('script.actionlist_set.all() %s'%script.actionlist_set.all())
-    script.execute(items)
-    
+        pass
+    process = None
+    for item in items:        
+#        logger.debug('item.type'%item.type)
+        if pipe.is_compatible(item.type):
+            if not process:
+                process = Process.objects.create(pipeline=pipe, 
+                    workspace=workspace, 
+                    launched_by=user)
+            process.add_params(item.pk)
+    if process:
+        process.run()
     
 @login_required
 def run_script(request):
     from dam.repository.models import Item
     script_id = request.POST['script_id']
-    script = Script.objects.get(pk = script_id)
+    script = Pipeline.objects.get(pk = script_id)
     
     run_again = request.POST.get('run_again')
    
@@ -177,7 +183,7 @@ def run_script(request):
     else:
         items = []
         
-    _run_script(script,  items,  run_again)
+    _run_script(script, request.user, request.session['workspace'], items,  run_again)
    
     return HttpResponse(simplejson.dumps({'success': True}))
 

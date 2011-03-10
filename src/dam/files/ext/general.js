@@ -947,7 +947,14 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                         		script_id: record.data.id
                         	},
                         	success: function(){
+                        		Ext.Msg.alert('','Script started successfully.');
+                        		var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
+                        		var view = media_tabs.getComponent(0);
+                        		view.getStore().reload();
                         		
+                        	},
+                        	failure: function(){
+                        		Ext.Msg.alert('', 'Script failed, a server side error occurred.');
                         	}
                         
                         });	
