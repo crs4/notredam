@@ -1,6 +1,6 @@
 from django.core.management import setup_environ
 from django.utils import simplejson
-import settings
+import dam.settings as settings
 setup_environ(settings)
 
 from api.tests import _get_final_parameters
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     
     workspace_id = 1
     metadata_dict = {'namespace':'dc',  'name':'title',  'value': 'test',  'lang': 'en'}
-    params = {'workspace_id':workspace_id, 'media_type': 'image' }
+    params = {'workspace_id':workspace_id, 'media_type': 'image/jpeg' }
 
     params = _get_final_parameters(api_key = api_key, secret = secret, user_id = user_id, kwargs = params)                
     
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     file = open('/home/mauro/work/dam_trunk/src/dam/files/images/logo_blue.jpg')
     params = _get_final_parameters(api_key = api_key, secret = secret, user_id = user_id, kwargs = {'workspace_id': 1,  'rendition_id':1})                
-    params['Filedata'] = file
+    params['Filedata.jpeg'] = file
     
     
     response = client.post('/api/item/%s/upload/'%resp_dict['id'], params, )            
