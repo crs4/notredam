@@ -48,7 +48,7 @@ from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.upload.views import _upload_variant
 from dam.workflow.views import _set_state 
-from dam.scripts.views import _edit_script
+from dam.scripts.views import _edit_script, get_scripts_info
 from dam.settings import SERVER_PUBLIC_ADDRESS
 
 from dam.api.decorators import *
@@ -748,8 +748,8 @@ class WorkspaceResource(ModResource):
     def get_scripts(self,  request,  workspace_id,  ):      
         """
         """ 
-        from scripts.views import _get_scripts_info
-        scripts = Script.objects.filter(workspace__pk = workspace_id)            
+        
+        scripts = Pipeline.objects.filter(workspace__pk = workspace_id)            
                    
         resp = {'scripts':[]}
         for script in scripts:
@@ -2939,17 +2939,15 @@ class ScriptResource(ModResource):
     @exception_handler
     @api_key_required
     def delete(self,  request,  script_id):
-        script = Script.objects.get(pk = script_id)
-        if not script.is_global:
-            script.delete()
-        else:
-            raise GlobalScriptDeletion
+        script = Pipeline.objects.get(pk = script_id)
+        script.delete()
+        
         return HttpResponse('')
 
     @exception_handler
     @api_key_required
     def read(self,  request,  script_id):
-        script = Script.objects.get(pk = script_id)
+        script = Pipeline.objects.get(pk = script_id)
         info = _get_scripts_info(script)
         return HttpResponse(simplejson.dumps(info))
 

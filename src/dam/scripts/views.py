@@ -54,18 +54,6 @@ def get_scripts(request):
     
     return HttpResponse(simplejson.dumps(resp))
 
-
-@login_required
-def get_script_actions(request):
-    script_id = request.POST['script']
-    media_type = request.POST.getlist('media_type', Type.objects.all().values_list('name', flat = True))
-    
-    
-    resp = {'actions': tmp['media_type'], 'already_run': script.component_set.all().count() > 0}
-    return HttpResponse(simplejson.dumps(resp))
-
-    
-
 @login_required
 def get_actions(request):  
     import os, settings
@@ -110,57 +98,6 @@ def get_actions(request):
         raise ex        
     return HttpResponse(simplejson.dumps(resp))
 
-def _new_script(name = None, description = None, workspace = None, pipeline = None, events = [], script = None,  is_global = False):
-    
-    if script:        
-        if pipeline:
-            ActionList.objects.filter(script = script).delete()
-        if name:
-            script.name = name
-        if description:
-            script.description = description
-        script.save()
-    else:
-        script = Script.objects.create(name = name, description = description, workspace = workspace,  is_global = is_global)
- 
-        
-    if pipeline:
-        pipeline = simplejson.loads(pipeline)
-    
-        for media_type, actions in pipeline.items():
-            if actions.get('actions'):
-                source_variant_name = actions.get('source_variant',  'original')
-                logger.debug('media_type %s'%media_type)
-                logger.debug('actions %s'%actions)
-                
-                logger.debug('source_variant_name %s' %source_variant_name)
-                source_variant = Variant.objects.get(name = source_variant_name, auto_generated = False )
-                ActionList.objects.create(script = script, media_type = Type.objects.get(name = media_type), actions = simplejson.dumps(actions), source_variant = source_variant)
-
-    
-#    EventRegistration.objects.filter( script = script, workspace = workspace).delete()
-    for event_name in events:
-        event = Event.objects.get(name = event_name)
-        EventRegistration.objects.create(event = event, listener = script, workspace = workspace)
-
-    return script
-
-@login_required
-def new_script(request):
-    
-    no_actions = simplejson.dumps({'image':[], 'audio': [], 'video': [], 'doc': []})
-    pipeline = request.POST.get('actions_media_type', no_actions)
-    name = request.POST['name']
-    description = request.POST.get('description')
-    workspace = request.session.get('workspace')
-      
-    events = request.POST.getlist('event')
-    try:
-        script = _new_script(name, description, workspace, pipeline, events)
-    except IntegrityError:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'id': 'script_name', 'msg': 'A script named %s already exist'%name}]}))
-    
-    return HttpResponse(simplejson.dumps({'success': True, 'id': script.pk}))
 
 def _edit_script(pk, name, params,workspace, media_types, events):
     if pk: #editing an existing script
@@ -206,29 +143,7 @@ def edit_script(request):
     except IntegrityError:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
 
-    
-    
-    
-
     return HttpResponse(simplejson.dumps({'success': True, 'pk': pipeline.pk}))  
-
-@login_required
-def rename_script(request):
-    script_id = request.POST['script']
-    script = Script.objects.get(pk = script_id)
-    
-#    if script.is_global:        
-#        return HttpResponse(simplejson.dumps({'error': 'script is not editable'}))
-#        
-    workspace = request.session.get('workspace')
-    name = request.POST['name']
-    description = request.POST['description']
-    script.name = name
-    script.description = description
-    script.save()
-    
-    return HttpResponse(simplejson.dumps({'success': True}))
-
 
 @login_required
 def delete_script(request):        
@@ -265,18 +180,6 @@ def run_script(request):
     _run_script(script,  items,  run_again)
    
     return HttpResponse(simplejson.dumps({'success': True}))
-
-
-@login_required
-def get_available_actions(request):
-    resp =  {'actions': [{
-                'name': 'adapt_image',
-                'params': {}
-            }
-                         
-                         
-            ]}
-    return HttpResponse(simplejson.dumps(resp))
 
 def _script_monitor(workspace):
     import datetime    
