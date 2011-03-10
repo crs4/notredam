@@ -332,6 +332,7 @@ def upload_item(request):
     return HttpResponse(resp)
 
 def _upload_variant(item, variant, workspace, user, file_name, file_raw):   
+    logger.debug('user %s'%user)
     #TODO: refresh url in gui, otherwise old variant will be shown
     if not isinstance(file_name, unicode):
         file_name = unicode(file_name, 'utf-8')
@@ -357,7 +358,7 @@ def _upload_variant(item, variant, workspace, user, file_name, file_raw):
         logger.debug('Using pipeline %s' % p.name)        
         uploader = Process.objects.create(pipeline=p, workspace=workspace, launched_by=user)
                 
-        if uploader.is_compatible(media_type):            
+        if p.is_compatible(media_type):            
             uploader.add_params(item.pk)        
             logger.debug('running pipeline')
             uploader.run()

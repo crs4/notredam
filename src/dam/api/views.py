@@ -881,15 +881,11 @@ class ItemResource(ModResource):
             ws = DAMWorkspace.objects.get(pk = ws_id)   
             user_id = request.POST ['user_id']
             user = User.objects.get(pk = user_id)
-            request.POST = request.POST.copy()
-            #~ request.POST['item_id'] = item_id
-            #~ _save_uploaded_variant(request, upload_file, user, ws)
-            
+            logger.debug('----------user %s'%user)
             variant_id = request.POST['rendition_id']
-            
             variant = Variant.objects.get(id = variant_id)
             item_id = request.POST.get('item_id')        
-            user = request.user  
+            
             item = Item.objects.get(pk = item_id)           
             logger.debug('file_name %s'%file_name) 
             _upload_variant(item, variant, ws, user, file_name, upload_file.read())
