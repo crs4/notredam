@@ -48,7 +48,7 @@ from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
 from dam.upload.views import _upload_variant
 from dam.workflow.views import _set_state 
-from dam.scripts.views import _edit_script, get_scripts_info
+from dam.scripts.views import _edit_script, _get_scripts_info
 from dam.settings import SERVER_PUBLIC_ADDRESS
 
 from dam.api.decorators import *
