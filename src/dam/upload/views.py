@@ -218,7 +218,7 @@ def _get_filepath(file_name):
     
     return fpath, res_id
 
-def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=False):
+def _upload_loop(filenames, trigger, variant_name, user, workspace):
     """
        Parameters:
        <filenames> is a list of tuples (filename, original_filename, res_id).
@@ -238,17 +238,10 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
     pipes = Pipeline.objects.filter(triggers__name=trigger)
     for pipe in pipes:
         pipe.__process = False
-    for filename in filenames:
-        if split_file:
-            tmp = filename.split('_')
-            res_id = tmp[0]
-            original_filename = '_'.join(tmp[1:])
-        else:
-            res_id = new_id()
-            original_filename = filename
+    for original_filename in filenames:
+        res_id = new_id()
         variant = Variant.objects.get(name = variant_name)
-        fpath, ext = os.path.splitext(filename)
-        media_type = Type.objects.get_or_create_by_filename(filename)
+        media_type = Type.objects.get_or_create_by_filename(original_filename)
         item = _create_item(user, workspace, res_id, media_type)
         found = 0
         for pipe in pipes:
@@ -261,11 +254,11 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
                 found = 1
                 logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if not found:
-            logger.debug( ">>>>>>>>>> No action for %s" % filename)
-        final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
+            logger.debug( ">>>>>>>>>> No action for %s" % original_filename)
+        final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
         final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
-        _create_variant(original_filename, final_filename, media_type, item, workspace, variant)
-        shutil.copyfile(filename, final_path)
+        _create_variant(os.path.basename(original_filename), final_filename, media_type, item, workspace, variant)
+        shutil.move(original_filename, final_path)
     ret = []
     for pipe in pipes:
         if pipe.__process:
@@ -276,10 +269,10 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
 
 
 def import_dir(dir_name, user, workspace, session):
-    logger.debug('########### INSIDE import_dir')
-    files =os.listdir(dir_name)
-    ret = _upload_loop(files, 'upload', 'original', user, workspace, True)
-    logger.debug('Launched %s' % ' '.join(ret))
+    #logger.debug('########### INSIDE import_dir: %s' % dir_name)
+    files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
+    ret = _upload_loop(files, 'upload', 'original', user, workspace)
+    #logger.debug('Launched %s' % ' '.join(ret))
 
 
 def _upload_item(file_name, file_raw,  variant, user, session, workspace, session_finished = False):
@@ -295,7 +288,7 @@ def _upload_item(file_name, file_raw,  variant, user, session, workspace, sessio
         #~ 
         #~ os.mkdir(tmp_dir)
         
-    logger.debug('tmp_dir %s'%tmp_dir)	
+    logger.debug('_upload_item: using %s'%tmp_dir)	
     file_name = new_id() + '_' + file_name
     file = open(os.path.join(tmp_dir, file_name), 'wb')
     file.write(file_raw)
