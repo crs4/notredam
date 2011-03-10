@@ -35,17 +35,14 @@ class FrameExtractor:
         self.deferred = deferred
         self.adapter_proxy = Proxy('Adapter')
     
-    def handle_result(self, result, component):
+    def handle_result(self, result, output_file, component):
         log.debug('handle_result %s' % str(result))
         log.debug("[save_component] component %s" % component.pk)        
         
-        if result:
-            directory, name = os.path.split(result)
-            component.uri = name
-            component.save()
-        else:
-            log.error('Empty result passed to save_and_extract_features')
-        self.deferred.callback(result)
+        directory, name = os.path.split(output_file)
+        component.uri = name
+        component.save()
+        self.deferred.callback(output_file)
         
     def handle_error(self, result):
         self.deferred.errback('error %s' % str(result))
@@ -73,7 +70,8 @@ class FrameExtractor:
             return
         
         d = self.adapter_proxy.extract_video_thumbnail(source.uri, output_file, (frame_w, frame_h), position)
-        d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
+        d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_file, output_component])
+
     
 #
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a video comp.)
