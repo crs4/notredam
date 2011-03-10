@@ -501,7 +501,9 @@ def _send_file(current_rendition, param, shortname, extension, id_item):
     logger.debug("form %s " %form)
     logger.debug("open %s " %current_rendition)
     file = open(current_rendition)
-    filedata = 'Filedata'+'.'+ extension[1:]
+    filedata = shortname +'.'+ extension[1:]
+    
+    logger.debug("filedata: %s" %(shortname +'.'+ extension[1:]))
     form.add_file(filedata, shortname +'.'+ extension[1:], 
                   fileHandle=file)
     file.close() 
@@ -554,7 +556,7 @@ def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,s
                 logger.debug('param')
                 logger.debug("%s" %param)
                 
-                logger.debug('SERVER RESPONSE:')
+                logger.debug('SERVER RESPONSE: workspace_id: %s, rendition_id: %s' %(param['workspace_id'], param['rendition_id']))
                 resp_upload_rendition = _send_file(current_rendition, param, shortname, extension, id_item)
     
                
@@ -575,7 +577,7 @@ def upload_renditions(current_item,id_workspace,rendition_ws,id_item,file_name,s
           
             logger.debug("Original rendition")
             logger.debug(current_rendition_orig)
-            logger.debug('SERVER RESPONSE ORIGINAL: %s' %param_orig)
+            logger.debug('SERVER RESPONSE ORIGINAL: workspace_id: %s, rendition_id: %s' %(param_orig['workspace_id'], param_orig['rendition_id']))
             resp_upload_rendition = _send_file(current_rendition_orig, param_orig, param_orig['shortname'], param_orig['extension'], id_item)
 
             logger.debug('id_item = %s, resp = %s' %(id_item,resp_upload_rendition.read()))

@@ -1,5 +1,6 @@
 import os
 from twisted.internet import defer, reactor
+from twisted.python.failure import Failure
 from mediadart import log
 from mediadart.mqueue.mqclient_twisted import Proxy
 
@@ -11,8 +12,10 @@ from django.db.models.loading import get_models
 get_models()
 
 from dam.variants.models import Variant    
+from dam.core.dam_repository.models import Type
 from dam.repository.models import get_storage_file_name
 from dam.plugins.common.av_adapt import AdaptAV
+from dam.plugins.common.utils import get_source_rendition
 from dam.plugins.pdfcover_idl import inspect
 
 #
@@ -51,10 +54,6 @@ class PdfCover:
                 ):
 
         log.info('AdaptDoc.execute')
-        item, source = get_source_rendition(item_id, source_variant, workspace)
-        output_variant_obj = Variant.objects.get(name = output_variant)
-        output_component = item.create_variant(output_variant_obj, workspace, media_type)
-
         try:
             output_type = Type.objects.get_or_create_by_filename('foo%s' % output_extension)
             item, source = get_source_rendition(item_id, source_variant, workspace)

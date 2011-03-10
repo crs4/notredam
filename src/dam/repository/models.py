@@ -513,8 +513,12 @@ class Component(AbstractComponent):
         return self.type            
 
     def get_extractor(self):
-        extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
-        return extractors[self.media_type.name]
+        extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'application': 'doc_basic'}
+        if self.media_type.name == 'doc':
+            search_term = 'application'
+        else:
+            search_term = self.media_type.name
+        return extractors[search_term]
 
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
