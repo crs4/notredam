@@ -139,7 +139,7 @@ def get_variant_url(request, item_ID, variant_name):
         raise ex 
     
     
-@login_required
+#@login_required
 def get_resource(request, resource_name):
     from django.views.static import serve
     from settings import MEDIADART_STORAGE

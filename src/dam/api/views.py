@@ -889,7 +889,6 @@ class ItemResource(ModResource):
             item = Item.objects.get(pk = item_id)           
             logger.debug('file_name %s'%file_name) 
             _upload_variant(item, variant, ws, user, file_name, upload_file.read())
-			
         except Exception,ex:
             logger.exception(ex)
             raise ex  
@@ -910,38 +909,38 @@ class ItemResource(ModResource):
 
         """       
         try:
-             if not request.POST.has_key('workspace_id'):
-                 raise MissingArgs
-             if not  request.POST.has_key('uri'):
-                 raise MissingArgs
-             if not  request.POST.has_key('rendition_id'):
-                 raise MissingArgs
-             if not  request.POST.has_key('file_name'):
-                 raise MissingArgs
+            if not request.POST.has_key('workspace_id'):
+                raise MissingArgs
+            if not  request.POST.has_key('uri'):
+                raise MissingArgs
+            if not  request.POST.has_key('rendition_id'):
+                raise MissingArgs
+            if not  request.POST.has_key('file_name'):
+                raise MissingArgs
              
-             variant_id = request.POST['rendition_id']
-             variant =  Variant.objects.get(pk = variant_id)
-             item = Item.objects.get(pk = item_id)
- 
-             workspace_id = request.POST['workspace_id']
-             comp = item.create_variant(variant, workspace_id)
+            variant_id = request.POST['rendition_id']
+            variant =  Variant.objects.get(pk = variant_id)
+            item = Item.objects.get(pk = item_id)
+            workspace_id = request.POST['workspace_id']
+            media_type = Type.objects.get_or_create_by_filename(request.POST['uri'])
+            comp = item.create_variant(variant, workspace_id, media_type)
+            if variant.auto_generated:
+                comp.imported = True
+            comp.file_name = request.POST['file_name']
+            uri = request.POST['uri']
+            res_id = uri.split('/')
+            res_id.reverse()
+            logger.debug("\n\n res_id[] %s, len: %s" %(res_id[0], len(res_id[0])))
+            comp._id = res_id[0]
+            comp.uri = res_id[0]            
+            logger.debug('res_id[0] %s' %comp._id)
+            mime_type = mimetypes.guess_type(res_id[0])[0]
+            logger.info('mime_type %s' %mime_type)    
+            ext = mime_type.split('/')[1]
+            comp.format = ext
+            comp.save()
              
-             if variant.auto_generated:
-                 comp.imported = True
- 
-             comp.file_name = request.POST['file_name']
-             uri = request.POST['uri']
-             res_id = uri.split('/')
-             res_id.reverse()
-             comp._id = res_id[0]            
-             logger.info('res_id[0] %s' %res_id[0])
-             mime_type = mimetypes.guess_type(res_id[0])[0]
-             logger.info('mime_type %s' %mime_type)    
-             ext = mime_type.split('/')[1]
-             comp.format = ext
-             comp.save()
-             
-             #~generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
+            #generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
 
         except Exception,ex:
             logger.exception(ex)
@@ -1001,7 +1000,7 @@ class ItemResource(ModResource):
         logger.debug('request.POST %s'%request.POST)
         if not request.POST.has_key('metadata'):
             raise MissingArgs
-       # logger.debug("request.POST.get('metadata') %s"%request.POST.get('metadata') )
+        # logger.debug("request.POST.get('metadata') %s"%request.POST.get('metadata') )
         metadata = json.loads(request.POST.get('metadata'))
         
         user_id = request.POST['user_id']
@@ -1428,7 +1427,7 @@ class ItemResource(ModResource):
             
         wss = item.workspaces.all()
         logger.debug('wss %s'%wss)
-        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': item.type.name}
+        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': str(item.type)}
         try:
             upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace
             resp['upload_workspace']= upload_workspace.pk
@@ -2419,6 +2418,7 @@ class Auth(ModResource):
         if user.is_active:
             login(request,  user)
         else:
+            logger.debug('login failed')
             raise LoginFailed
         
         

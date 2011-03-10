@@ -155,6 +155,7 @@ def _save_uploaded_item(request, upload_file, user, workspace):
     
     item_ctype = ContentType.objects.get_for_model(Item)
 
+    
     media_type = Type.objects.get(name=type)
     
     item = Item.objects.create(owner = user, uploader = user,  type = media_type)
