@@ -887,12 +887,14 @@ class ItemResource(ModResource):
             
             variant_id = request.POST['rendition_id']
             
-
-            variant = Variant.objects.get(name = variant_id)
-            item_id = request.POST.get('item_id')        
+            logger.debug("variant_id %s" %variant_id)
+            variant = Variant.objects.get(pk = variant_id)
+            #item_id = request.POST.get('item_id') 
+            logger.debug("item_id %s" %item_id)       
             user = request.user  
-            item = Item.objects.get(pk = item_id)            
-            _upload_variant(item, variant, workspace, file_name, upload_file)
+            item = Item.objects.get(pk = item_id)
+            logger.debug("paramentri passati a _upload_variant: %s, %s, %s, %s, %s " %(item, variant, ws, file_name, upload_file))            
+            _upload_variant(item, variant, ws, file_name, upload_file)
         except Exception,ex:
             logger.exception(ex)
             raise ex  
