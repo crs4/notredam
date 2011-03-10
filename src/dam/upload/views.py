@@ -248,7 +248,6 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace, split_file=F
             original_filename = filename
         variant = Variant.objects.get(name = variant_name)
         fpath, ext = os.path.splitext(filename)
-        res_id = new_id()
         media_type = Type.objects.get_or_create_by_filename(filename)
         item = _create_item(user, workspace, res_id, media_type)
         found = 0
