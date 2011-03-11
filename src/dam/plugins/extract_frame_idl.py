@@ -4,11 +4,13 @@
 #
 
 from dam.variants.models import Variant    
+from dam.plugins.common.utils import get_ext_by_type, get_variants
 
 def inspect(workspace):
     from django.db.models import Q
-    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
-    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
+    media_types = get_ext_by_type('image')
+    source_variants = get_variants(workspace, 'video')
+    output_variants = get_variants(workspace, 'image', auto_generated=True)
     return {
         'name': __name__,
         'params':[
@@ -49,15 +51,6 @@ def inspect(workspace):
                 'help': 'height of the extracted image in pixels (aspect ratio is preserved)'
             },
             {
-                'xtype':'????????',
-                'name': 'output_format',
-                'fieldLabel': 'format',                    
-                'description': 'format of output variant',
-                'minValue':10,
-#                    'value': 100,
-                'help': 'mime type of the format of the output_variant'
-            },
-            {
                 'xtype':'numberfield',
                 'name': 'position',
                 'fieldLabel': 'position',                    
@@ -65,6 +58,15 @@ def inspect(workspace):
                 'minValue':10,
 #                    'value': 100,
                 'help': 'position of frame to extract as percentage of total time'
+            },
+            {   
+                'name': 'output_extension',
+                'fieldLabel': 'format',
+                'xtype': 'select',
+                'values': media_types,
+                'description': 'output_extension',
+                'value': '.jpg',
+                'help': ''
             },
         ],
     } 

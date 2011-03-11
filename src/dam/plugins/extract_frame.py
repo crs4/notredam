@@ -78,16 +78,16 @@ class FrameExtractor:
 #
 def test():
     print 'test'
-    item = Item.objects.get(pk=1)
+    item = Item.objects.get(pk=16)
     workspace = DAMWorkspace.objects.get(pk = 1)
     
-    d = run(4,
+    d = run(item.pk,
             workspace,
             source_variant = 'original',
             output_variant='thumbnail',
-            output_format = 'image/png',
-            frame_w = 100,
-            frame_h = 100,
+            output_extension = '.jpg',
+            frame_w = 200,
+            frame_h = 200,
             position = 30,
             )
     print 'addBoth'

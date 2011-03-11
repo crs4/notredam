@@ -46,7 +46,7 @@ action_audio = {
             'source_variant': 'original',
         },
         'in':[],
-        'out':['fe'],
+        'out':[],
     },
 
     'extract_orig_xmp': {
@@ -55,7 +55,7 @@ action_audio = {
             'source_variant': 'original',
         },
         'in':[],
-        'out':['fx'],
+        'out':[],
     },
 
     'preview_audio': {
@@ -64,11 +64,11 @@ action_audio = {
             'source_variant': 'original',
             'output_variant': 'preview',
             'output_preset': 'MP3',
-            'bitrate': '128',
-            'rate': 44100,
+            'audio_bitrate_b': '128',
+            'audio_rate': 44100,
         },
-        'in':['fe', 'fx'],
-        'out':['preview'],
+        'in':[],
+        'out':[],
     },
 
     'extract_preview': {
@@ -76,7 +76,7 @@ action_audio = {
         'params' : {
             'source_variant': 'preview',
         },
-        'in':['preview'],
+        'in':[],
         'out':[],
     },
 }
@@ -215,7 +215,7 @@ action_image = {
             'output_variant': 'thumbnail',
             'output_extension' : '.jpg'        
             },
-         'in': ['fe'],
+         'in': ['fe', 'fx'],
          'out':['thumbnail']    
         
         
@@ -240,7 +240,7 @@ action_image = {
             'output_variant': 'preview',
             'output_extension' : '.jpeg'        
             },
-         'in': ['fe'],
+         'in': ['fe', 'fx'],
          'out':['preview']    
         },
         
@@ -263,7 +263,7 @@ action_image = {
             'output_variant': 'fullscreen',
             'output_extension' : '.jpeg'        
             },
-         'in': ['fe'],
+         'in': ['fe', 'fx'],
          'out':['fullscreen']    
     },
 
