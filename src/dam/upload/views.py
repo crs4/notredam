@@ -264,9 +264,8 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace):
         final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
         
         upload_filename = os.path.basename(original_filename)
-        tmp = upload_filename.split('_')
-        if tmp[1]:
-            upload_filename = tmp[1]
+        tmp = upload_filename.split('_')        
+        upload_filename = '_'.join(tmp[1:])
             
         _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
         shutil.move(original_filename, final_path)

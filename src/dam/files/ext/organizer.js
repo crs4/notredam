@@ -1385,7 +1385,8 @@ Ext.onReady(function(){
             var update_script_monitor;
             var script_monitor_win = Ext.WindowMgr.get('script_monitor');
 			if (script_monitor_win)
-				update_script_monitor = script_monitor_win.update_progress();
+				update_script_monitor = true;
+//				update_script_monitor = script_monitor_win.update_progress();
 				
             
             if (items.length > 0 || update_script_monitor){
