@@ -11,7 +11,7 @@ from django.db.models.loading import get_models
 get_models()
 
 from dam.plugins.common.av_adapt import AdaptAV
-from dam.plugins.adapt_audio_idl import inspect
+from dam.plugins.adapt_video_idl import inspect
 
 VIDEO_PRESETS = {
     'MATROSKA_MPEG4_AAC': 'video/x-m4v',

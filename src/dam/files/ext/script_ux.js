@@ -77,7 +77,11 @@ Ext.ux.SelectFieldSet = function(config) {
 		name: config.select_name,
 		fieldLabel: fieldLabel,
 		_select : function(value){
-			new_values = this.ownerCt.values[value];				
+			console.log('value');
+			console.log(this.ownerCt.values);
+			var new_values = this.ownerCt.values[value];	
+			console.log('new_values');
+			console.log(new_values);
 			fieldset.removeAll();
 			fieldset.add(new_values);
 			this.ownerCt.doLayout();

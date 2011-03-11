@@ -329,7 +329,7 @@ function _show_details(data, active_tab, view, selNode){
             
             }
         
-        if (data.type == 'image' || data.type == 'doc') {
+        if (data.type == 'image' || data.type == 'doc' || data.type == 'application' ) {
             previewTemplate.overwrite(preview, data);
         }
         else if (data.type == 'video') {

@@ -253,7 +253,7 @@ def inspect(workspace):
                             'xtype': 'numberfield',
                             'name': 'audio_quality',    
                             'fieldLabel': 'Audio Quality',
-                            'width': width,
+                            'width': 150,
                             'value': 0.9,
                             'minValue': 0,
                             'maxValue':1,
