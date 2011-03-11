@@ -41,7 +41,7 @@ def inspect(workspace):
                   'name': 'audio_bitrate_kb',
                   'width': 200,
                   'values': [[64], [80], [96], [112],[128], [160], [192], [224], [256], [590]],
-                  'value': 128
+                  'value': 128,
     }
     
     
