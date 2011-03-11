@@ -25,6 +25,7 @@ from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 from dam.core.dam_repository.models import Type
 import dam.logger as logger
 from dam.mprocessor.models import Process, TriggerEvent
+import simplejson
 
 
 class WSManager(WorkspaceManager):
@@ -42,7 +43,7 @@ class WSManager(WorkspaceManager):
         """
         from dam.mprocessor.models import Pipeline       
         from dam.treeview.models import Node, Category
-        from dam.scripts.models import DEFAULT_PIPELINE
+        from dam.scripts.models import DEFAULT_PIPELINE, register_pipeline
         
         ws = super(WSManager, self).create_workspace(name, description, creator)
         
@@ -52,10 +53,7 @@ class WSManager(WorkspaceManager):
             for pipeline in DEFAULT_PIPELINE:
                 events = TriggerEvent.objects.filter(name__in = pipeline['events'])
                 media_types = Type.objects.filter(name__in = pipeline['media_types'])
-                p = Pipeline.objects.create(name=pipeline['name'],  description = pipeline['description'], params = pipeline['params'], workspace = ws)
-                p.triggers.add(*events)
-                p.media_type.add(*media_types)
-				
+                register_pipeline(ws,pipeline['name'], pipeline['description'], simplejson.dumps(pipeline['params']), events, media_types)
             
             root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'keyword',  cls = 'keyword')
             col_root = Node.objects.create(label = 'root', depth = 0,  workspace = ws,  editable = False,  type = 'collection')
