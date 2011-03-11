@@ -195,6 +195,7 @@ def _create_item(user, workspace, res_id, media_type):
 #    return media_type
 
 def _create_variant(file_name, uri, media_type, item, workspace, variant):
+    logger.debug('####### create_variant#########')
     logger.debug('file_name %s'%file_name)
     logger.debug('uri %s'%uri)
     
@@ -203,7 +204,7 @@ def _create_variant(file_name, uri, media_type, item, workspace, variant):
         item.type = media_type
     if variant.auto_generated:
         comp.imported = True
-        
+    
     comp.file_name = file_name
     comp.uri = uri        
     #mime_type = mimetypes.guess_type(file_name)[0]
@@ -261,7 +262,13 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace):
             logger.debug( ">>>>>>>>>> No action for %s" % original_filename)
         final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
         final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
-        _create_variant(os.path.basename(original_filename), final_filename, media_type, item, workspace, variant)
+        
+        upload_filename = os.path.basename(original_filename)
+        tmp = upload_filename.split('_')
+        if tmp[1]:
+            upload_filename = tmp[1]
+            
+        _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
         shutil.move(original_filename, final_path)
     ret = []
     for pipe in pipes:

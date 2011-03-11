@@ -214,8 +214,8 @@ def _script_monitor(workspace):
             if total_items == 0:
                 progress = 0
             else:
-                progress =  round(float(items_failed + items_completed)/float(total_items)*100)
-            
+                progress =  round(float(items_completed)/float(total_items)*100)
+                            
             tmp = {
                 'id': process.pk,
                  'name':process.pipeline.name,
