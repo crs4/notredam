@@ -311,3 +311,15 @@ def editor(request, script_id = None):
     logger.debug('params: %s'%params)
     return render_to_response('script_editor.html', RequestContext(request,{'params':params,  'name': name, 'pk': script_id, 'workspace': workspace }))
 
+@login_required
+def get_failures_info(request):
+    process_id = request.POST['process_id']
+    process = Process.objects.get(pk = process_id)
+    resp = ''
+    for process_target in process.processtarget_set.filter(actions_failed__gt = 0):
+        resp += '<p>item pk:<b>%s</b></p>'%(process_target.target_id)
+        resp += '<p>Errors:</p>'
+        resp += '<p>' +  process_target.result + '</p>'
+
+    return HttpResponse(resp)
+
