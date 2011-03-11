@@ -45,6 +45,7 @@ from dam.preferences.views import get_metadata_default_language
 from dam.mprocessor.models import Pipeline, Process, ProcessTarget
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
+from dam.upload.views import _run_pipelines
 
 from django.utils.datastructures import SortedDict
 
@@ -112,9 +113,7 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
         orig_variant = Variant.objects.get(name = 'original')
         original = item.get_variant(current_ws, orig_variant)
         original.workspace.add(ws)
-        
         return True
-    
     return False
         
 @permission_required('remove_item')
@@ -126,7 +125,6 @@ def _remove_items(request, ws, items):
 @login_required
 @permission_required('add_item', False)
 def add_items_to_ws(request):
-    from dam.mprocessor.models import new_processor
     try:
         item_ids = request.POST.getlist('item_id')
         ws_id = request.POST.get('ws_id')
@@ -138,15 +136,16 @@ def add_items_to_ws(request):
         move_public = request.POST.get('move_public', 'false')
         items = Item.objects.filter(pk__in = item_ids)
         
-        upload_process = new_processor('uploader', user, ws)
         
         item_imported = []
+        run_items = []
         
         for item in items:
-            added = _add_items_to_ws(item, ws, current_ws, remove)
-            if added:
-                upload_process.add_params(item.pk)
-        
+            if _add_items_to_ws(item, ws, current_ws, remove):
+                run_items.append(item)
+
+        _run_pipelines(run_items, 'upload', user, ws)
+
         if remove == 'true':
             _remove_items(request, current_ws, items)
                 
@@ -154,12 +153,8 @@ def add_items_to_ws(request):
             imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
             time_imported = time.strftime("%Y-%m-%d", time.gmtime())
             node = Node.objects.get_or_create(label = time_imported,  type = 'inbox',  parent = imported,  workspace = ws,  depth = 2)[0]
-            
             node.items.add(*item_imported)
         
-        upload_process.run()
-
-                
         resp = simplejson.dumps({'success': True, 'errors': []})
 
         return HttpResponse(resp)
