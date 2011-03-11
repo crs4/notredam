@@ -1785,164 +1785,6 @@ function manage_events(){
 
 
 function edit_script(is_new){
-//	var cols = [
-//		{ id : 'name',  header: "Action", dataIndex: 'name'}
-//	];
-//	var my_action = new Ext.grid.GridPanel({
-//	    region           : 'west',
-//        title            : 'Your script action',
-//        id               : 'my_action' ,
-//		width            : 300,
-//		border		     : false,
-//	    store            : new Ext.data.JsonStore({
-//	    					fields:['name', 'parameters'],
-//	    					root: 'actions'
-//	    					}),
-//	    columns          :cols,
-//	    stripeRows       : true,
-//	    autoExpandColumn : 'name',
-//		frame            : true,
-//        hideHeaders      : true,
-//		sm               : new Ext.grid.RowSelectionModel({
-//								singleSelect : true,
-//								listeners    :{
-//									 
-//									selectionchange : function(){
-//										var record = this.getSelected();
-//										var details_form = Ext.getCmp('detailAction');
-//										details_form.removeAll();
-//										
-//										Ext.each(record.data.parameters, function(param){
-//											//console.log(param);
-//											if (param.type == 'int')
-//												details_form.add(new Ext.form.NumberField({
-//												fieldLabel: param.name
-//													
-//													
-//												}))
-//											
-//										});
-//										details_form.doLayout();
-//								        
-//									}			
-//								}
-//							})
-//
-//	});
-//
-//	var action_list = new Ext.grid.GridPanel({
-//	    region           : 'east',
-//        title            : 'Available action',
-//        id               : 'action_list',
-//		width            : 300,	
-//		border		     : false,
-//	    store            : new Ext.data.JsonStore({
-//	    					fields:['name', 'parameters'],
-//	    					url: '/get_actions/',
-//	    					autoLoad: true,
-//	    					root: 'actions'
-//	    					}),
-//	    columns          : cols,
-//	    stripeRows       : true,
-//	    autoExpandColumn : 'name',
-//		frame            : true,
-//        hideHeaders      : true,
-//		sm               : new Ext.grid.RowSelectionModel({singleSelect : true})
-//    });
-//
-//	var detail_action = new Ext.FormPanel({
-//        title       : 'Details',
-//        id          : 'detailAction',
-//	    region      : 'south',
-//	    height      : 180,
-//	    frame       : true,
-//	    border		: false
-//	});
-//
-//	var button_panel =new Ext.Panel({
-//        region  : 'center',
-//        border: false,
-//        id      : 'buttons_panel', 
-//        html    : '<div style="text-align:center; padding-top:80;"><img style="margin:2px" src="/files/images/up2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_up()" /><br/><img style="margin:2px" src="/files/images/down2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_down()"/><img style="margin:2px" src="/files/images/left2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_left()" /><br/><img style="margin:2px" src="/files/images/right2.gif" onclick="Ext.getCmp(\'buttons_panel\').move_to_right()"/> </div>',
-//        
-//	    move_to_up:function(){
-//	        var grid = Ext.getCmp('my_action');
-//	        var record_selected = grid.getSelectionModel().getSelected();
-//	        if(record_selected){
-//	            var rank = grid.getStore().indexOf(record_selected);
-//	            if (rank > 0){
-//	                grid.getStore().remove(record_selected);
-//	                grid.getStore().insert(rank - 1, record_selected);
-//	                grid.getSelectionModel().selectRecords([record_selected]);
-//	            }
-//	        }
-//	            
-//	    },   
-//
-//	    move_to_down: function(){
-//	        var grid = Ext.getCmp('my_action');
-//	        var record_selected = grid.getSelectionModel().getSelected();
-//	        if(record_selected ){
-//	            var rank = grid.getStore().indexOf(record_selected);
-//	            if (rank < grid.getStore().getCount() - 1){
-//	                grid.getStore().remove(record_selected);
-//	                grid.getStore().insert(rank +1, record_selected);
-//	                grid.getSelectionModel().selectRecords([record_selected]);
-//	            }
-//	        }
-//	        
-//	    },
-//
-//        move_to_left: function (){
-//	        var selected_grid = Ext.getCmp('action_list');
-//	        var available_grid = Ext.getCmp('my_action');
-//	        if (selected_grid.getSelectionModel().hasSelection()){
-//	        	//define parameters through form
-//	        	var selected  = selected_grid.getSelectionModel().getSelected();
-//	        	//why copy() not work
-//	        	
-//	        	available_grid.getStore().loadData({actions:[{name: selected.data.name, parameters: selected.data.parameters}]}, true);
-//	        	available_grid.getSelectionModel().selectLastRow();
-//	        }else{
-//				// Show a dialog using config options:
-//				Ext.Msg.show({
-//				   title:'Warning',
-//				   msg: 'You must select one row!',
-//				   width: 300,
-//				   buttons: Ext.Msg.OK,
-//				   icon: Ext.MessageBox.WARNING
-//				});	        				
-//			}
-//	     },  
-//
-//	    move_to_right: function(){
-//	        var selected_grid = Ext.getCmp('my_action');
-//	        var available_grid = Ext.getCmp('action_list');
-//	        if (selected_grid.getSelectionModel().hasSelection()){
-//	        	var selected  = selected_grid.getSelectionModel().getSelected();
-//	        	selected_grid.getStore().remove(selected);
-//	        	Ext.getCmp('detailAction_'+media_type).removeAll();
-//	        }
-//	     }
-//        
-//    }); 	
-//
-//	var script_form = new Ext.form.FormPanel({
-//		frame:true,		
-//		region: 'north',
-//		border: false,
-//		height:40,
-//		items:[
-//			new Ext.form.TextField({
-//				id:'script_name',
-//				name: 'name',
-//				fieldLabel: 'Name',
-//				allowBlank: false,
-//				width: 200
-//			})
-//		]
-//	});
-	
 	
 	var actions_store, win;
 	
@@ -2099,11 +1941,28 @@ function show_monitor(){
 	            '<p>Items Failed: <a href="javascript:show_items(\'{id}\', \'failed\')"><b>{items_failed}</b></a></p>'
 	        )
 	    });
+	    
+	    var items_columns_renderer = function(items_type){
+//	    items_type = 'total' or 'completed' or 'failed'
+	    	return function(value, metaData, record, rowIndex, colIndex, store){
+		    	console.log('items_columns_renderer');
+		    	console.log(metaData);
+		    	if (value > 0){
+		    		var id = record.data.id;
+		    		
+		    		return String.format('<a href="javascript:show_items(\'{0}\', \'{1}\')"><b>{2}</b></a>', id,items_type,  value);
+		    	}
+		    	return value;
+		    
+		    }; 
+	    }; 
+	    
+	    
 		var win = new Ext.Window({
 			id: win_id,
 			title: 'Script Monitor',
 			height: 500,
-			width: 800,
+			width: 900,
 			layout: 'fit',
 			collapsible: true,			
 			
@@ -2142,7 +2001,7 @@ function show_monitor(){
 					    		'items_failed',
 					    		'start_date',
 					    		'end_date',
-					    		'launched_by'
+					    		'launched_by'					    		
 					    	],
 					    	root: 'scripts'
 					    }),		
@@ -2151,21 +2010,23 @@ function show_monitor(){
     					},
     					
 					    columns: [
-					    	expander,
+//					    	expander,
 					    {
 					        header: 'Name',											       
 					        dataIndex: 'name',
-					        width: 250,
+					        width: 150,
 					        sortable: true,
 					        menuDisabled: true
 					    },
 					    
-					    {
-					        header: 'Type',											        
-					        dataIndex: 'type',
-					        menuDisabled: true
-					        
-					    },
+//					    {
+//					        header: 'Event',											        
+//					        dataIndex: 'type',
+//					        menuDisabled: true,
+//					        width: 70
+//					        
+//					        
+//					    },
 					    
 //					    {
 //					        header: 'Launched By',											        
@@ -2175,6 +2036,7 @@ function show_monitor(){
 					        header: 'Start Date',											        
 					        dataIndex: 'start_date',
 					        type: 'date',
+					        width: 100,
 					        sortable: true,
 					        menuDisabled: true
 					        
@@ -2184,8 +2046,35 @@ function show_monitor(){
 					        header: 'End Date',											        
 					        dataIndex: 'end_date',
 					        type: 'date',
+					        width: 100,
 					        sortable: true,
 					        menuDisabled: true
+					        
+					    },
+					    
+					    {
+					        header: 'items completed',											        
+					        dataIndex: 'items_completed',
+					        width: 100,
+					        menuDisabled: true,
+					        renderer: items_columns_renderer('completed')
+					        
+					    },
+					    
+					    {
+					        header: 'items failed',											        
+					        dataIndex: 'items_failed',
+					        menuDisabled: true,
+					        width: 100,
+					        renderer: items_columns_renderer('failed')
+					        
+					    },
+					    {
+					        header: 'total items',											        
+					        dataIndex: 'total_items',
+					        menuDisabled: true,
+					        width: 100,
+					        renderer: items_columns_renderer('total')
 					        
 					    },
 					    
