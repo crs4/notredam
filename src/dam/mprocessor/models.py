@@ -11,7 +11,7 @@ import datetime
 # this class is used to group together pipelines that must executed at specific
 # trigger points, like after an upload, before an export. 
 class TriggerEvent(models.Model):
-    name = models.CharField(max_length = 40, null = False, blank=False, choices=[('upload', 'upload')])
+    name = models.CharField(max_length = 40, null = False, blank=False)
 
     def __str__(self):
         return self.name
