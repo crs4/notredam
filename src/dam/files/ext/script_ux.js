@@ -108,14 +108,15 @@ Ext.ux.SelectFieldSet = function(config) {
 Ext.extend(Ext.ux.SelectFieldSet, Ext.form.FieldSet, {
 	data_loaded: function(data){
 //		Ext.ux.SelectFieldSet.superclass.data_loaded.call(this, data);
-		
-		this.select_field._select(data.preset);
+		console.log('data_loaded');
+		console.log(data);
+		this.select_field._select(data.output_preset);
 		this.ownerCt.getForm().setValues(data); //temporary, since form items are deleted and new ones are added, i have to reload the data 
 		Ext.each(this.items.items, function(item){
 		if (item.data_loaded)
 			item.data_loaded(data);
 		});
-		
+		console.log('end loaded');
 	}
 	
 	
