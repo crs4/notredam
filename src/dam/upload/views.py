@@ -237,6 +237,7 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace):
        Returns the list of process_id launched;
     """
     pipes = Pipeline.objects.filter(triggers__name=trigger)
+    
     for pipe in pipes:
         pipe.__process = False
     for original_filename in filenames:
@@ -244,9 +245,11 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace):
         variant = Variant.objects.get(name = variant_name)
         media_type = Type.objects.get_or_create_by_filename(original_filename)
         item = _create_item(user, workspace, res_id, media_type)
+        logger.debug('item %s, media_type%s'%(item.pk, media_type))
         found = 0
         for pipe in pipes:
             if pipe.is_compatible(media_type):
+                
                 if not pipe.__process:
                     pipe.__process = Process.objects.create(pipeline=pipe, 
                                                             workspace=workspace, 
