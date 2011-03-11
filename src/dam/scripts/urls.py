@@ -11,5 +11,7 @@ urlpatterns = patterns('',
     (r'^script_editor/$', 'dam.scripts.views.editor'),
 	(r'^get_events/$', 'dam.scripts.views.get_events'),
 	(r'^get_types/$', 'dam.scripts.views.get_media_types'),
+    (r'^get_failures_info/$', 'dam.scripts.views.get_failures_info'),
+    
     
 )

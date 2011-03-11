@@ -158,6 +158,30 @@ function show_items (process_id, type){
 	set_query_on_store({query: query});
 
 };
+function show_failures(process_id, pipe_name){
+	Ext.Ajax.request({
+		url: '/get_failures_info/',
+		params: {
+			process_id: process_id			
+		},
+		success: function(response){
+			var win = new Ext.Window({
+				title: 'Debug script ' + pipe_name,
+				height: 600,
+				width: 800,
+				html: response.responseText ,
+				frame: true,
+				autoScroll: true
+			});
+			
+			win.show();
+			
+		}
+	});
+
+	show_items(process_id, 'failed');
+
+}
 
 function show_monitor(){
 		var win_id = 'script_monitor';
@@ -297,8 +321,14 @@ function show_monitor(){
 					        dataIndex: 'items_failed',
 					        menuDisabled: true,
 					        width: 100,
-					        renderer: items_columns_renderer('failed')
-					        
+					        renderer: function(value, metaData, record, rowIndex, colIndex, store){
+					        	var id = record.data.id;
+					        	var pipe_name = record.data.name;
+					        	if (value == 0)
+					        		return value;
+					        	
+							    return String.format('<a href="javascript:show_failures(\'{0}\', \'{2}\')"><b>{1}</b></a>', id,value, pipe_name);
+							}
 					    },
 					    {
 					        header: 'total items',											        
