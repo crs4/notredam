@@ -387,11 +387,11 @@ def _search(request,  items, workspace = None):
                 type = process[1]
                 logger.debug('process_id %s, type %s'%(process_id, type))
                 if type == 'total':
-                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id))
+                    q = items.filter(pk__in = [p.target_id for p in ProcessTarget.objects.filter(process__pk = process_id)])
                 elif type == 'failed':
-                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, failed__gt = 0))
+                    q = items.filter(pk__in = [p.target_id for p in ProcessTarget.objects.filter(process__pk = process_id, actions_failed__gt = 0)])
                 elif type == 'completed':
-                    q = items.filter(pk__in = ProcessTarget.objects.filter(process__pk = process_id, actions_todo = 0))
+                    q = items.filter(pk__in = [p.target_id for p in ProcessTarget.objects.filter(process__pk = process_id, actions_todo = 0)])
                 queries.append(q)
                 
             
