@@ -220,18 +220,13 @@ def _get_filepath(file_name):
     
     return fpath, res_id
 
-def _upload_loop(filenames, trigger, variant_name, user, workspace):
+def _run_pipelines(items, trigger, user, workspace):
     """
        Parameters:
-       <filenames> is a list of tuples (filename, original_filename, res_id).
+       <items> list of items on which to run the pipelines associated to trigger.
        <trigger> is a string, like 'upload'
-       <variant_name> is the name of a registered variant
        <user> and <workspace> are two objects as usual.
-       <split_file> = True means the names in filenames have the structure:
-          <res_id>_<original_file_name>
 
-       Creates a new item for each filename;
-       Create a component with variant = variant_name;
        Find all the pipelines associated to the trigger;
        Associates each item to all pipelines that accept that type of item;
        Launches all pipes;
@@ -242,16 +237,10 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace):
     for pipe in pipes:
         pipe.__process = False
 
-    for original_filename in filenames:
-        res_id = new_id()
-        variant = Variant.objects.get(name = variant_name)
-        media_type = Type.objects.get_or_create_by_filename(original_filename)
-        item = _create_item(user, workspace, res_id, media_type)
-        logger.debug('item %s, media_type%s'%(item.pk, media_type))
+    for item in items:
         found = 0
         for pipe in pipes:
-            if pipe.is_compatible(media_type):
-                
+            if pipe.is_compatible(item.type):
                 if not pipe.__process:
                     pipe.__process = Process.objects.create(pipeline=pipe, 
                                                             workspace=workspace, 
@@ -261,16 +250,7 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace):
                 logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if not found:
             logger.debug( ">>>>>>>>>> No action for %s" % original_filename)
-        final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
-        
-        upload_filename = os.path.basename(original_filename)
-        tmp = upload_filename.split('_')
-        if len(tmp) > 1:
-            upload_filename = '_'.join(tmp[1:])
-            
-        _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
-        shutil.move(original_filename, final_path)
+
     ret = []
     for pipe in pipes:
         if pipe.__process:
@@ -279,13 +259,41 @@ def _upload_loop(filenames, trigger, variant_name, user, workspace):
             ret.append(str(pipe.__process.pk))
     return ret
 
+def _create_items(filenames, variant_name, user, workspace):
+    """
+       Parameters:
+       <filenames> is a list of tuples (filename, original_filename, res_id).
+       <variant_name> is the name of a registered variant
+       <user> and <workspace> are two objects as usual.
+
+       Creates a new item for each filename;
+       Create a component with variant = variant_name;
+       Returns the list of items created;
+    """
+    items = []
+    for original_filename in filenames:
+        res_id = new_id()
+        variant = Variant.objects.get(name = variant_name)
+        media_type = Type.objects.get_or_create_by_filename(original_filename)
+        item = _create_item(user, workspace, res_id, media_type)
+        final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
+        upload_filename = os.path.basename(original_filename)
+        tmp = upload_filename.split('_')
+        if len(tmp) > 1:
+            upload_filename = '_'.join(tmp[1:])
+        _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
+        shutil.move(original_filename, final_path)
+        items.append(item)
+    return items
+
 
 def import_dir(dir_name, user, workspace, session):
     #logger.debug('########### INSIDE import_dir: %s' % dir_name)
     files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
-    ret = _upload_loop(files, 'upload', 'original', user, workspace)
+    items = _create_items(files, 'original', user, workspace)
+    ret = _run_pipelines(items, 'upload',  user, workspace)
     #logger.debug('Launched %s' % ' '.join(ret))
-
 
 def _upload_item(file_name, file_raw,  variant, user, session, workspace, session_finished = False):
     if not isinstance(file_name, unicode):
@@ -356,15 +364,8 @@ def _upload_variant(item, variant, workspace, user, file_name, file_raw):
         triggers_name = 'upload'
     else:
         triggers_name = 'upload_variant'
-    
-    for p in Pipeline.objects.filter(triggers__name=triggers_name):
-        logger.debug('Using pipeline %s' % p.name)        
-        uploader = Process.objects.create(pipeline=p, workspace=workspace, launched_by=user)
-                
-        if p.is_compatible(media_type):            
-            uploader.add_params(item.pk)        
-            logger.debug('running pipeline')
-            uploader.run()
+
+    _run_pipelines([item], triggers_name, user, workspace)
 
 @login_required
 def upload_variant(request):  

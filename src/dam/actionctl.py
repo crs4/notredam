@@ -19,7 +19,7 @@ from dam.workspace.models import DAMWorkspace
 from dam.core.dam_repository.models import Type
 from dam.repository.models import Item, get_storage_file_name
 from dam.variants.models import Variant
-from dam.upload.views import _upload_loop
+from dam.upload.views import _create_items, _run_pipelines
 from supported_types import mime_types_by_type, supported_types
 
 thumbnail = {
@@ -383,7 +383,8 @@ class DoTest:
         print 'registered pipeline %s, pk=%s, trigger=%s' % (name, pipe.pk, '-'.join( [x.name for x in pipe.triggers.all()] ) )
 
     def execpipes(self, trigger, filepaths):
-        ret = _upload_loop(filepaths, trigger, 'original', self.user, self.ws)
+        items = _create_items(filepaths, 'original', self.user, self.ws)
+        ret = _run_pipelines(items, trigger,  user, workspace)
         print('Executed processes %s' % ' '.join(ret))
 
     def show_pipelines(self):
