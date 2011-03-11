@@ -29,7 +29,7 @@ def get_variants(workspace, media_type = None, auto_generated = None):
     if auto_generated is not None:
         tmp_variants= tmp_variants.filter(auto_generated = auto_generated)
      
-    return [[variant.name] for variant in tmp_variants]
+    return [[variant.name] for variant in tmp_variants.distinct()]
 
 def get_source_rendition(item_id, variant_name, workspace):
     """
