@@ -104,9 +104,9 @@ action_image = {"thumbnail":{"params":{"source_variant":"original", "output_vari
 
 action_pdf = {"extract_xmp":{"params":{"source_variant":"original"},"in":[],"out":["ext-gen173","ext-gen175"],"script_name":"extract_xmp","x":14,"y":178,"label":"extract_xmp"},
 "extract_orig":{"params":{"source_variant":"original"},"in":[],"out":["ext-gen177","ext-gen179"],"script_name":"extract_basic","x":10,"y":442,"label":"extract_basic"},
-"thumbnail":{"params":{"source_variant":"original","output_variant":"thumbnail","maxsize":"300","output_extension":".jpg"},"in":["ext-gen173","ext-gen177"],"out":["ext-gen181"],"script_name":"pdfcover","x":551,"y":395,"label":"thumbnail"},
+"thumbnail":{"params":{"source_variant":"original","output_variant":"thumbnail","max_size":"300","output_extension":".jpg"},"in":["ext-gen173","ext-gen177"],"out":["ext-gen181"],"script_name":"pdfcover","x":551,"y":395,"label":"thumbnail"},
 "extract_thumb":{"params":{"source_variant":"thumbnail"},"in":["ext-gen181"],"out":[],"script_name":"extract_basic","x":1036,"y":385,"label":"extract_basic"},
-"preview":{"params":{"source_variant":"original","output_variant":"preview","maxsize":"300","output_extension":".jpg"},"in":["ext-gen175","ext-gen179"],"out":["ext-gen183"],"script_name":"pdfcover","x":560,"y":184,"label":"preview"},
+"preview":{"params":{"source_variant":"original","output_variant":"preview","max_size":"300","output_extension":".jpg"},"in":["ext-gen175","ext-gen179"],"out":["ext-gen183"],"script_name":"pdfcover","x":560,"y":184,"label":"preview"},
 "extract_preview":{"params":{"source_variant":"preview"},"in":["ext-gen183"],"out":[],"script_name":"extract_basic","x":1017,"y":185,"label":"extract_basic"}}
 
 DEFAULT_PIPELINE = [{
