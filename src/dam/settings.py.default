@@ -35,8 +35,9 @@ c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
 STORAGE_SERVER_URL= '/storage/'
 
-BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
+
 INSTALLATIONPATH = os.path.join(os.getenv('HOME'), ".dam"  )
+BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
 sys.path.append(INSTALLATIONPATH)
 
 THUMBS_DIR = os.path.join(INSTALLATIONPATH,  'thumbs')
