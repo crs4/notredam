@@ -627,10 +627,19 @@ Ext.onReady(function(){
                     upload_dialog({
                     	url: '/upload_resource/',
                     	after_upload: function(session_id){
+                            var tmp_win = new Ext.Window({
+                                title: 'Upload',
+                                height: 100,
+                                width: 200,
+                                html: 'Processing files, please wait...',
+                                modal: true
+                            });
+                            tmp_win.show();
                     		Ext.Ajax.request({
 				            	url: '/upload_session_finished/',
 				            	params: {session: session_id},
 				            	failure: function(){
+                                    tmp_win.close();
 				            		Ext.Msg.alert('Error', 'An upload error occurs server side, sorry.');
 //				            		Ext.getCmp('files_list').getStore().removeAll();
 				            		var files_num = Ext.getCmp('files_list').getStore().getCount();
@@ -641,6 +650,7 @@ Ext.onReady(function(){
 				            		
 				            	},
 				            	success: function(){
+                                    tmp_win.close();
 				            		var tab = Ext.getCmp('media_tabs').getActiveTab();
 					                var view = tab.getComponent(0);
 					                var selecteds = view.getSelectedRecords();
