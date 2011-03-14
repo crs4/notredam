@@ -60,6 +60,12 @@ class MProcessor(MQServer):
             return None
 
     def mq_run(self, process_id=None):
+        """Run a waiting process.
+        
+           This method tries to run a waiting process and schedules itself to run again
+           when the process ends so that the queue of waiting processes can be emptied
+           """
+
         process = self.wake_process()
         if not process:
             msg = ""
@@ -108,13 +114,13 @@ class Batch:
         item.actions_failed += failure
         item.actions_cancelled += cancelled
         item.actions_todo -= (success + failure + cancelled)
-        if item.target_id not in self.results:
-            self.results[item.target_id] = {}
-        self.results[item.target_id][action] = (success, result)
+        if item.pk not in self.results:
+            self.results[item.pk] = {}
+        self.results[item.pk][action] = (success, result)
         if item.actions_todo <= 0:
             log.debug('_update_item_stats: finalizing item %s' % item.target_id)
-            item.result = dumps(self.results[item.target_id])
-            del self.results[item.target_id]
+            item.result = dumps(self.results[item.pk])
+            del self.results[item.pk]
         
     def _get_scripts(self, pipeline):
         """Load scripts from plugin directory. 
@@ -206,9 +212,11 @@ class Batch:
             method, params = self.scripts[action]
             log.debug('target %s: executing action %s, method=%s' % (item.target_id, action, method))
             try:
-                log.debug('calling run with params %s'%params)
+                item_params = loads(item.params)
+                params.update(item_params)
                 self.outstanding += 1
-                d = method(item.target_id, self.process.workspace, **params)
+                log.debug('calling method with params ws=%s, id=%s, params=%s' % (self.process.workspace.pk, item.target_id, params))
+                d = method(self.process.workspace, item.target_id, **params)
             except Exception, e:
                 log.debug('Exception launching %s' % method)
                 self._handle_err(str(e), item, schedule, action, params)
@@ -256,7 +264,7 @@ import sys
 from django.contrib.auth.models import User
 from dam.mprocessor.make_plugins import pipeline as test_pipe
 from dam.mprocessor.make_plugins import simple_pipe as test_pipe2
-from dam.mprocessor.models import Pipeline
+from dam.mprocessor.models import Pipeline, TriggerEvent
 from dam.workspace.models import DAMWorkspace
 from json import dumps
 
@@ -279,35 +287,44 @@ gameover = False
 def end_test(result, process):
     global gameover
     gameover = True
-    print_stats(process, [], False)
+    print_stats(process, False)
     log.debug('end of test %s' % result)
     reactor.callLater(3, reactor.stop)
 
-def print_stats(process, items, redo=True):
+def print_stats(process, redo=True):
     if process.targets == 0:
         print >>sys.stderr, 'Process stats: not initialized'
     else:
         print >>sys.stderr, 'Process stats: completed=%d/%d failed=%d/%d' % (process.get_num_target_completed(), process.targets,
                                    process.get_num_target_failed(), process.targets)
 
-    pt = ProcessTarget.objects.filter(process=process, target_id__in=items, actions_todo=0, actions_failed=0)
+    pt = ProcessTarget.objects.filter(process=process, actions_todo=0, actions_failed=0)
     print >>sys.stderr, 'Process stats: completed successfully: %s' % ' '.join([x.target_id for x in pt])
     if not gameover and redo:
-        reactor.callLater(1, print_stats, process, items)
+        reactor.callLater(1, print_stats, process)
 
 def test():
     global Configurator
     Configurator = fake_config
     ws = DAMWorkspace.objects.get(pk=1)
     user = User.objects.get(username='admin')
+    t = TriggerEvent.objects.get_or_create(name="test")[0]
+    print 't.pk=', t.pk
     try: 
+        print 'attempting to reuse pipeline'
         pipeline = Pipeline.objects.get(name='test4', workspace=ws)
     except:
-        pipeline = Pipeline.objects.create(name="test4", type="test", description='', params=dumps(test_pipe2), workspace=ws)
+        print 'creating new pipeline'
+        pipeline = Pipeline.objects.create(name="test4", description='', params=dumps(test_pipe2), workspace=ws)
+        print 'ok'
+        pipeline.triggers.add(t)
+        print 'ok2'
+        pipeline.save()
+        print 'done'
     process = Process.objects.create(pipeline=pipeline, workspace=ws, launched_by=user)
-    for n in xrange(1):
+    for n in xrange(15):
         print 'adding target %d' % n
-        process.add_params('item%d' % n)
+        process.add_params(item = 'item%d' % n)
     try:
         batch = Batch(process)
         d = batch.run()
@@ -315,9 +332,7 @@ def test():
     except Exception, e:
         log.error("Fatal initialization error: %s" % str(e))
         reactor.stop()
-    print_stats(process, [
-        'item0', 'item9', 'item18', 'item27', 'item36', 'item45', 'item54', 'item63', 'item72', 'item81', 'item90', 'item99', 'item108', 'item117', 'item126', 'item135', 'item144', 'item153', 'item162', 'item171', 'item180', 'item189', 'item198', 'item207', 'item216', 'item225', 'item234', 'item243',
-    ])
+    print_stats(process)
 
 if __name__=='__main__':
     reactor.callWhenRunning(test)

@@ -50,6 +50,7 @@ from dam.upload.views import _upload_variant
 from dam.workflow.views import _set_state 
 from dam.scripts.views import _edit_script, _get_scripts_info
 from dam.settings import SERVER_PUBLIC_ADDRESS
+from dam.plugins import extract_basic
 
 from dam.api.decorators import *
 from dam.api.exceptions import *
@@ -893,6 +894,7 @@ class ItemResource(ModResource):
             raise ex  
         return HttpResponse('')
 
+       
 #    @exception_handler
 #    @api_key_required
     def add_component(self,  request,  item_id):
@@ -934,13 +936,11 @@ class ItemResource(ModResource):
             comp.uri = res_id[0]            
             logger.debug('res_id[0] %s' %comp._id)
             mime_type = mimetypes.guess_type(res_id[0])[0]
-            logger.info('mime_type %s' %mime_type)    
+            logger.debug('mime_type %s' %mime_type)    
             ext = mime_type.split('/')[1]
             comp.format = ext
             comp.save()
              
-            #generate_tasks(comp, DAMWorkspace.objects.get(pk = workspace_id))
-
         except Exception,ex:
             logger.exception(ex)
             raise ex 

@@ -232,34 +232,56 @@ def _run_pipelines(items, trigger, user, workspace):
        Launches all pipes;
        Returns the list of process_id launched;
     """
-    pipes = Pipeline.objects.filter(triggers__name=trigger)
-    
-    for pipe in pipes:
-        pipe.__process = False
-
-    for item in items:
-        found = 0
-        for pipe in pipes:
-            if pipe.is_compatible(item.type):
-                if not pipe.__process:
-                    pipe.__process = Process.objects.create(pipeline=pipe, 
-                                                            workspace=workspace, 
-                                                            launched_by=user)
-                pipe.__process.add_params(item.pk)
-                found = 1
-                logger.debug('item %s added to %s' % (item.pk, pipe.name))
-        if not found:
-            logger.debug( ">>>>>>>>>> No action for %s" % original_filename)
-
+    assigned_items = set()
     ret = []
-    for pipe in pipes:
-        if pipe.__process:
-            logger.debug( 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name))
-            pipe.__process.run()
-            ret.append(str(pipe.__process.pk))
+    for pipe in Pipeline.objects.filter(triggers__name=trigger):
+        process = None
+        for item in items:
+            if pipe.is_compatible(item.type):
+                if process is None:
+                    process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
+                process.add_params(target_id=item.pk)
+                assigned_items.add(item)
+                logger.debug('item %s added to %s' % (item.pk, pipe.name))
+        if process:
+            logger.debug( 'Launching process %s-%s' % (str(process.pk), pipe.name))
+            ret.append(str(process.pk))
+            process.run()
+
+    unassigned = assigned_items.symmetric_difference(items)
+    if unassigned:
+        logger.debug("##### The following items have no compatible %s action: %s" % list(unassigned))
     return ret
 
-def _create_items(filenames, variant_name, user, workspace):
+#
+#
+#    for pipe in pipes:
+#        pipe.__process = False
+#
+#    for item in items:
+#        found = 0
+#        for pipe in pipes:
+#            if pipe.is_compatible(item.type):
+#                if not pipe.__process:
+#                    pipe.__process = Process.objects.create(pipeline=pipe, 
+#                                                            workspace=workspace, 
+#                                                            launched_by=user)
+#                pipe.__process.add_params(item_id=item.pk)
+#                found = 1
+#                logger.debug('item %s added to %s' % (item.pk, pipe.name))
+#        if not found:
+#            logger.debug( ">>>>>>>>>> No action for %s" % original_filename)
+#
+#    ret = []
+#    for pipe in pipes:
+#        if pipe.__process:
+#            logger.debug( 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name))
+#            pipe.__process.run()
+#            ret.append(str(pipe.__process.pk))
+#    return ret
+#
+
+def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     """
        Parameters:
        <filenames> is a list of tuples (filename, original_filename, res_id).
@@ -283,7 +305,10 @@ def _create_items(filenames, variant_name, user, workspace):
         if len(tmp) > 1:
             upload_filename = '_'.join(tmp[1:])
         _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
-        shutil.move(original_filename, final_path)
+        if make_copy:
+            shutil.copyfile(original_filename, final_path)
+        else:
+            shutil.move(original_filename, final_path)
         items.append(item)
     return items
 
@@ -291,7 +316,7 @@ def _create_items(filenames, variant_name, user, workspace):
 def import_dir(dir_name, user, workspace, session):
     #logger.debug('########### INSIDE import_dir: %s' % dir_name)
     files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
-    items = _create_items(files, 'original', user, workspace)
+    items = _create_items(files, 'original', user, workspace, False)
     ret = _run_pipelines(items, 'upload',  user, workspace)
     #logger.debug('Launched %s' % ' '.join(ret))
 
@@ -380,11 +405,6 @@ def upload_variant(request):
     file_name = request.META['HTTP_X_FILE_NAME']
     _upload_variant(item, variant, workspace, request.user, file_name, request.raw_post_data)
 
-    
-    
-#    upload_process = new_processor('upload', user, workspace)
-#    upload_process.add_params(item.pk)
-#    upload_process.run()
     
     resp = simplejson.dumps({'success': True})        
    

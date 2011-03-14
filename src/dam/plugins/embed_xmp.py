@@ -1,16 +1,20 @@
+from twisted.internet import reactor, defer
+from mediadart.mqueue.mqclient_twisted import Proxy
 from dam.core.dam_metadata.models import XMPStructure
 from dam.plugins.embed_xmp_idl import inspect
+from dam.variants.models import Variant
+from dam.repository.models import Item, Component
 
 # Entry point
-def run(item_id, workspace, source_variant):
+def run(workspace, item_id, source_variant):
     deferred = defer.Deferred()
-    embedder = EmbedXMP(deferred)
-    reactor.callLater(0, embedder.execute, item_id, workspace, source_variant)
+    embedder = EmbedXMP(deferred, workspace)
+    reactor.callLater(0, embedder.execute, item_id, source_variant)
     return deferred
 
 
 class EmbedXMP:
-    def __init__(self, deferred):
+    def __init__(self, deferred, workspace):
         self.deferred = deferred
         self.workspace = workspace
         self.item = None
@@ -66,13 +70,18 @@ class EmbedXMP:
         self.deferred.errback(failure)
         return failure
 
-    def execute(self, item_id, workspace, variant_name):
+    def execute(self, item_id, variant_name):
         self.item = Item.objects.get(pk = item_id)
         source_variant = Variant.objects.get(name = variant_name)
-        self.component = self.item.get_variant(workspace, source_variant)
+        try:
+            self.component = self.item.get_variant(self.workspace, source_variant)
+        except Exception, e:
+            self.deferred.callback('variant %s not present in item %s' % item_id)
+            return
+
         xmp_embedder_proxy = Proxy('XMPEmbedder') 
-        metadata_dict = self._synchronize_metadata(variant_name)
-        d = xmp_embedder_proxy.metadata_synch(component.ID, metadata_dict)
+        metadata_dict = self._synchronize_metadata()
+        d = xmp_embedder_proxy.metadata_synch(self.component.uri, metadata_dict)
         d.addCallback(self._cb_embed_reset_xmp)
         d.addErrback(self._cb_error)
         

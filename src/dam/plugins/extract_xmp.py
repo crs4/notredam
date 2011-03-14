@@ -33,9 +33,9 @@ class ExtractError(Exception):
     pass
 
 # Entry point
-def run(item_id, workspace, source_variant):
+def run(workspace, item_id, source_variant):
     deferred = defer.Deferred()
-    worker = ExtractXMP(deferred, item_id, workspace, source_variant)
+    worker = ExtractXMP(deferred, workspace, item_id, source_variant)
     reactor.callLater(0, worker.extract_xmp)
     return deferred
 
@@ -46,7 +46,7 @@ def run(item_id, workspace, source_variant):
 ## are saved, and an error is returned.
 ##
 class ExtractXMP:
-    def __init__(self, deferred, item_id, workspace, variant_name):
+    def __init__(self, deferred, workspace, item_id, variant_name):
         self.deferred = deferred
         self.proxy = Proxy('FeatureExtractor')
         self.workspace = workspace

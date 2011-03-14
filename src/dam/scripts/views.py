@@ -165,7 +165,7 @@ def _run_script(pipe, user, workspace, items = None, run_again = False):
                 process = Process.objects.create(pipeline=pipe, 
                     workspace=workspace, 
                     launched_by=user)
-            process.add_params(item.pk)
+            process.add_params(target_id=item.pk, item_id=item.pk)
     if process:
         process.run()
     
@@ -190,7 +190,6 @@ def run_script(request):
 def _script_monitor(workspace):
     import datetime    
     processes = workspace.get_active_processes()
-    logger.debug('processes %s'%processes)
     processes_info = []
     for process in processes:
         try:

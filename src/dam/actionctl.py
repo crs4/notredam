@@ -13,7 +13,7 @@ from django.utils import simplejson
 from django.contrib.auth.models import User
 from django.db import transaction
 
-from dam.mprocessor.models import new_processor, Pipeline, Process, ProcessTarget, TriggerEvent
+from dam.mprocessor.models import Pipeline, Process, ProcessTarget, TriggerEvent
 from dam.mprocessor.make_plugins import pipeline, pipeline2, simple_pipe
 from dam.workspace.models import DAMWorkspace
 from dam.core.dam_repository.models import Type
@@ -339,10 +339,23 @@ action_pdf = {
     },
 }
 
-standard_actions = [(action_audio, 'audio'), 
-                    (action_video, 'video'),
-                    (action_image, 'image'),
-                    (action_pdf,   'application')]
+
+# all parameters are passed dynamically by the launcher metadata.views.sync_component
+action_embed_xmp = {
+    'embed_xmp': {
+        'script_name': 'embed_xmp',
+        'params' : {},
+        'in':[],
+        'out':[],
+    },
+}
+
+standard_actions =  [('upload_audio', action_audio, 'audio', 'upload'), 
+                    ('upload_video', action_video, 'video', 'upload'),
+                    ('upload_image', action_image, 'image', 'upload'),
+                    ('upload_pdf', action_pdf,   'application', 'upload'),
+                    ('embed_xmp', action_embed_xmp, '', 'sync_xmp'),       # '' means any type
+                   ]
 
 class DoTest:
     def __init__(self):
@@ -384,7 +397,7 @@ class DoTest:
 
     def execpipes(self, trigger, filepaths):
         items = _create_items(filepaths, 'original', self.user, self.ws)
-        ret = _run_pipelines(items, trigger,  user, workspace)
+        ret = _run_pipelines(items, trigger,  self.user, self.ws)
         print('Executed processes %s' % ' '.join(ret))
 
     def show_pipelines(self):
@@ -416,7 +429,7 @@ class DoTest:
                 pprint("item %s: no result in DB" % t.target_id)
             else:
                 result = loads(t.result)
-                pprint("item %s" % t.target_id)
+                pprint("target %s" % t.target_id)
                 pprint(result, indent=5, width=100)
 
 #            if 'thumbnail_image' in result:
@@ -453,7 +466,6 @@ def main(argv):
         argv.append('register')
     task = argv[1]
 
-    
     if task == 'register':
         name = argv[2]
         trigger = argv[3]
@@ -461,11 +473,12 @@ def main(argv):
         pipeline_def = globals()[argv[5]]
         test.register(name, trigger, mime_type, '', pipeline_def)
 
-    elif task == 'standard_upload':
-        [x.delete() for x in Pipeline.objects.filter(triggers__name='upload')]
-        for action, mime in standard_actions:
-            print('Registering upload pipeline for %s' % mime)
-            test.register('pipe_%s' % mime, 'upload', mime, '', action)
+    elif task == 'reg_standard':
+        triggers = [x[3] for x in standard_actions]
+        [x.delete() for x in Pipeline.objects.filter(triggers__name__in=triggers)]
+        for name, action, mime, trigger in standard_actions:
+            print('Registering standard pipeline %s for %s' % (name, mime))
+            test.register(name, trigger, mime, '', action)
     
     elif task == 'execpipes':
         trigger = argv[2]
