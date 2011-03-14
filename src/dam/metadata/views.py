@@ -266,25 +266,29 @@ def save_descriptors(request):
     Longitude = None
     logger.debug('metadata %s'%metadata)
     for m in metadata:
+        logger.debug('m %s'%m)
         ids = m.split('_')
         desc_id = ids[1]
         if desc_id == 'license':
+            logger.debug('license')
             license_id = metadata[m]
             license = RightsValue.objects.get(pk=int(license_id))
             comp = Component.objects.get(item=item, variant__name=variant_name, workspace=workspace)
             comp.save_rights_value(license, workspace)
         else:
+            logger.debug('descriptor')
             descriptor = MetadataDescriptor.objects.get(pk=int(desc_id))
-            
+            logger.debug('descriptor %s'%descriptor)
             if descriptor.name == 'Latitude':
                 Latitude = metadata[m]
             elif descriptor.name == 'Longitude':
                 Longitude = metadata[m]
             
-
+            logger.debug('ids %s'%ids)        
             if len(ids) == 2:
                 MetadataValue.objects.save_descriptor_values(descriptor, items, metadata[m], workspace, variant_name, default_language)
             else:
+                
                 MetadataValue.objects.save_descriptor_structure_values(descriptor, ids[2], items, metadata[m], workspace, variant_name)
     for item in items: 
         if Latitude != None and Longitude != None:
