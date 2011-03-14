@@ -1065,7 +1065,7 @@ Ext.onReady(function(){
         items: [{
             text: 'Tutorial',
             handler: function() {
-                window.open('http://www.opendam.org/opendam/QuickGuide.html', 'tutorial');
+                window.open('http://www.opendam.org/NotreDAM/QuickGuide.html', 'tutorial');
             }
         }, {
             text: 'Info',

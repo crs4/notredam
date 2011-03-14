@@ -114,7 +114,7 @@ class WSTestCase(MyTestCase):
         response = self.client.get('/api/workspace/%s/get_members/'%ws_pk,  params)                
         resp_dict = json.loads(response.content)        
         print 'resp_dict ',  resp_dict        
-        self.assertTrue(resp_dict == {'members': [{'username': 'demo', 'permissions': ['admin']}]})
+        self.assertTrue(resp_dict == {'members': [{'username': 'admin', 'permissions': ['admin']}]})
         
         
     def test_add_members(self):
@@ -1275,7 +1275,7 @@ class TestLogin(MyTestCase):
     def test_login(self):
         user = User.objects.get(pk = self.user_id)
         
-        password = 'demo'
+        password = 'notredam'
         params = {'user_name':user.username,  'api_key':self.api_key,  'password': password}
         response = self.client.post('/api/login/', params)        
         json_resp = json.loads(response.content)
