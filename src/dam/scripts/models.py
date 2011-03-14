@@ -109,33 +109,42 @@ action_pdf = {"extract_xmp":{"params":{"source_variant":"original"},"in":[],"out
 "preview":{"params":{"source_variant":"original","output_variant":"preview","max_size":"300","output_extension":".jpg"},"in":["ext-gen175","ext-gen179"],"out":["ext-gen183"],"script_name":"pdfcover","x":560,"y":184,"label":"preview"},
 "extract_preview":{"params":{"source_variant":"preview"},"in":["ext-gen183"],"out":[],"script_name":"extract_basic","x":1017,"y":185,"label":"extract_basic"}}
 
+embed_xmp = {"ext-gen57":{"params":{},"in":[],"out":[],"script_name":"embed_xmp","x":603,"y":263,"label":"embed_xmp"}}
+
 DEFAULT_PIPELINE = [{
-                     'name': 'action_audio', 
+                     'name': 'audio_rendition', 
                      'params': action_audio, 
                      'events': ['upload'],
                      'description': '', 
                      'media_types': ['audio']                     
                      },
                     {
-                     'name': 'action_video', 
+                     'name': 'video_rendition', 
                      'params': action_video,
                      'description': '', 
                      'events': ['upload'], 
                      'media_types': ['video']                     
                      },
                      {
-                     'name': 'action_image',
+                     'name': 'image_rendition',
                      'description': '', 
                      'params': action_image, 
                      'events': ['upload'], 
                      'media_types': ['image']                     
                      },
                      {
-                     'name': 'action_pdf', 
+                     'name': 'doc_rendition', 
                      'description': '',
                      'params': action_pdf, 
                      'events': ['upload'], 
                      'media_types': ['application']                     
+                     },
+                     {
+                     'name': 'embed_xmp', 
+                     'description': '',
+                     'params': embed_xmp, 
+                     'events': ['sync_xmp'], 
+                     'media_types': ['application', 'video', 'audio', 'image']                     
                      }
                     ]
 
