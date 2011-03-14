@@ -46,9 +46,9 @@ class Process(models.Model):
     launched_by = models.ForeignKey(User)
     last_show_date = models.DateTimeField(null = True, blank = True)
 
-    def add_params(self, **params):
+    def add_params(self, target_id, **params):
         s = dumps(params)
-        ProcessTarget.objects.create(process = self, target_id = s, actions_todo=self.pipeline.num_actions())
+        ProcessTarget.objects.create(process = self, target_id = target_id, params=s, actions_todo=self.pipeline.num_actions())
 
     def get_num_target_completed(self):
         return ProcessTarget.objects.filter(process = self, actions_todo__lte=0).count()
@@ -70,7 +70,8 @@ def new_processor(pipeline_name, user, workspace):
 
 class ProcessTarget(models.Model):
     process = models.ForeignKey(Process)
-    target_id = models.CharField(max_length=512, null=False)           # foreign key to Item
+    target_id = models.CharField(max_length=64, null=False)           # foreign key to Item
+    params = models.TextField(null=True, blank=True)                  # json encoded dictonary of parameters
     actions_passed = models.IntegerField(default=0)
     actions_cancelled = models.IntegerField(default=0)
     actions_failed = models.IntegerField(default=0)

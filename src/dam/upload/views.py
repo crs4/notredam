@@ -240,7 +240,7 @@ def _run_pipelines(items, trigger, user, workspace):
             if pipe.is_compatible(item.type):
                 if process is None:
                     process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
-                process.add_params(item_id=item.pk)
+                process.add_params(target_id=item.pk)
                 assigned_items.add(item)
                 logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if process:
