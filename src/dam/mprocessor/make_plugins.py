@@ -121,7 +121,7 @@ from twisted.python.failure import Failure
             script_name = pipeline[p]['script_name']
             f=open('plugins/%s.py' % script_name, 'w')
             f.write(header)
-            f.write("def run(item, workspace, ")
+            f.write("def run(workspace, item, ")
             paramlist = tuple(pipeline[p]['params'].keys())
             for param in paramlist:
                 f.write('%s, ' % param)

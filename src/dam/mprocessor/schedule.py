@@ -18,7 +18,7 @@ class Schedule:
         self.actions.
     """
     def __init__(self, dag, target, sorted=True):
-        self.target = target   # used only when logging
+        self.target = target   # used only for logging
         self.dag = dag
         a = self.action_list = self.dag.sort(sorted)
         self.ready = set(range(len(a)))
@@ -77,7 +77,7 @@ class Schedule:
 
     def fail(self, action):
         "delete action and all actions dependent on it. Returns the number of actions deleted"
-        log.debug('#### %s: fail %s' % (self.target, action))
+        log.debug('#### %s: FAIL %s' % (self.target, action))
         user_data = {'failed_action':action, 'deleted':[]}
         self.dag.visit(action, self._cb_remove, user_data)
         #self.show()

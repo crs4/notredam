@@ -48,8 +48,8 @@ class FrameExtractor:
         self.deferred.errback('error %s' % str(result))
     
     def execute(self,
-                item_id, 
                 workspace, 
+                item_id, 
                 source_variant,
                 output_variant,
                 output_extension,  # with the leading '.'

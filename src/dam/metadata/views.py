@@ -123,14 +123,48 @@ def get_item_cuepoint(request):
     
     return HttpResponse('')
 
-def _add_sync_machine(component):
-    def _cb_log_result(status_ok, result, userargs):
-        logger.debug('_generate_tasks on source component: %s' % result)
+#def _add_sync_machine(component):
+#    def _cb_log_result(status_ok, result, userargs):
+#        logger.debug('_generate_tasks on source component: %s' % result)
+#
+#    maction = MAction()
+#    maction.add_component(component)
+#    maction.append_func('embed_xmp')
+#    maction.activate(_cb_log_result)
 
-    maction = MAction()
-    maction.add_component(component)
-    maction.append_func('embed_xmp')
-    maction.activate(_cb_log_result)
+
+# function call
+def _run_sync_pipes(items, variants, workspace, user):
+    pipes = Pipeline.objects.filter(triggers__name='sync_xmp')
+    if not pipes:
+        raise Exception('No pipelines registered for trigger event "sync_xmp"')
+    else:
+        for pipe in pipes:
+
+    # update xmp:MetadataDate
+    try:
+        original_name = request.POST.get('obj', 'original')
+        default_language= get_metadata_default_language(user, workspace)
+        metadata_schema = MetadataProperty.objects.get(field_name = 'MetadataDate')
+        metadataschema_id = str(metadata_schema.pk)
+        metadatavalue = time.strftime("%d/%m/%yT%H:%M%S",time.gmtime()) + time.strftime('%z')
+        my_metadata = {metadataschema_id.decode('utf-8'):[metadatavalue.decode('utf-8')]}
+        items_objs = Item.objects.filter(pk__in=items)
+        MetadataValue.objects.save_metadata_value(items_objs, my_metadata, original_name, workspace, default_language)
+    except Exception, err:
+        logger.debug('Error while changing xmp MetadataDate: ')
+        logger.exception(err)
+    # end of xmp:MetadataDate updating
+
+    for pipe in pipes:
+        for source_variant in variants:
+            process = Process.objects.create(pipeline=pipe, 
+                                             workspace=workspace, 
+                                             launched_by=user)
+            for pk in items:
+                process.add_params(item_id=pk, source_variant=source_variant)
+            process.run()
+            
 
 
 @login_required
@@ -141,13 +175,20 @@ def sync_component(request):
 
     items = request.POST.getlist('items')
     variants = request.POST.getlist('variants')
-
     workspace = request.session['workspace']
-    
+    user = User.objects.get(pk=request.session['_auth_user_id'])
+    _run_sync_pipes(items, variants, workspace, user)
+    return HttpResponse('')
+
+    pipes = Pipeline.objects.filter(triggers__name='sync_xmp')
+    if not pipes:
+        raise Exception('No pipelines registered for trigger event "sync_xmp"')
+    else:
+        for pipe in pipes:
+
     # update xmp:MetadataDate
     try:
         variant_name = request.POST.get('obj', 'original')
-        user = User.objects.get(pk=request.session['_auth_user_id'])
         default_language= get_metadata_default_language(user, workspace)
         metadata_schema = MetadataProperty.objects.get(field_name = 'MetadataDate')
         metadataschema_id = str(metadata_schema.pk)
@@ -160,20 +201,30 @@ def sync_component(request):
         logger.exception(err)
     # end of xmp:MetadataDate updating
 
-    for pk in items:
-    
-        item = Item.objects.get(pk=pk)
-    
-        components = item.get_variants(workspace)
+    for pipe in pipes:
+        for source_variant in variants:
+            process = Process.objects.create(pipeline=pipe, 
+                                             workspace=workspace, 
+                                             launched_by=user)
+            for pk in items:
+                process.add_params(item_id=pk, source_variant=source_variant)
+            process.run()
+            
+#    
+#        item = Item.objects.get(pk=pk)
+#    
+#        components = item.get_variants(workspace)
+#
+#        if 'all' in variants:
+#            sync_comp = components
+#        else:
+#            sync_comp = components.filter(variant__name__in=variants)
+#
+#        for component in sync_comp:
+#
+#            _add_sync_machine(component)
+#
 
-        if 'all' in variants:
-            sync_comp = components
-        else:
-            sync_comp = components.filter(variant__name__in=variants)
-
-        for component in sync_comp:
-
-            _add_sync_machine(component)
     return HttpResponse('')
 
 

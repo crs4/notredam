@@ -2,10 +2,10 @@ from dam.core.dam_metadata.models import XMPStructure
 from dam.plugins.embed_xmp_idl import inspect
 
 # Entry point
-def run(item_id, workspace, source_variant):
+def run(workspace, item_id, source_variant):
     deferred = defer.Deferred()
     embedder = EmbedXMP(deferred)
-    reactor.callLater(0, embedder.execute, item_id, workspace, source_variant)
+    reactor.callLater(0, embedder.execute, workspace, item_id, source_variant)
     return deferred
 
 
@@ -66,7 +66,7 @@ class EmbedXMP:
         self.deferred.errback(failure)
         return failure
 
-    def execute(self, item_id, workspace, variant_name):
+    def execute(self, workspace, item_id, variant_name):
         self.item = Item.objects.get(pk = item_id)
         source_variant = Variant.objects.get(name = variant_name)
         self.component = self.item.get_variant(workspace, source_variant)

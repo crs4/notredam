@@ -42,8 +42,8 @@ class AdaptAV:
         self.deferred.errback('error %s' % str(result))
     
     def execute(self,
-                item_id,         # item pk
                 workspace,       # workspace object
+                item_id,         # item pk
                 source_variant,  # name of the variant
                 output_variant,  # name of the variat
                 output_preset,   # a mime type or a Mediadart PRESET

@@ -32,10 +32,10 @@ class ExtractError(Exception):
     pass
 
 # Entry point
-def run(item_id, workspace, source_variant):
+def run(workspace, item_id, source_variant):
     log.debug('extract_basic: run %s %s' % (workspace, source_variant))
     deferred = defer.Deferred()
-    worker = ExtractBasicFeatures(deferred, item_id, workspace, source_variant)
+    worker = ExtractBasicFeatures(deferred, workspace, item_id, source_variant)
     reactor.callLater(0, worker.extract_basic)
     return deferred
 
@@ -46,7 +46,7 @@ def run(item_id, workspace, source_variant):
 ## are saved, and an error is returned.
 ##
 class ExtractBasicFeatures:
-    def __init__(self, deferred, item_id, workspace, variant_name):
+    def __init__(self, deferred, workspace, item_id, variant_name):
         self.deferred = deferred
         self.proxy = Proxy('FeatureExtractor')
         self.workspace = workspace

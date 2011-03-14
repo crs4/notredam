@@ -1,3 +1,4 @@
+from json import dumps
 from django.db import models
 from mediadart.storage import new_id
 from django.contrib.auth.models import User
@@ -40,13 +41,14 @@ class Process(models.Model):
 #    session = models.CharField(max_length=128,null = True, blank = True, unique = True)
     workspace = models.ForeignKey('workspace.DAMWorkspace')
     targets = models.IntegerField(default=0)    # total number of items in ProcessTarget
-    start_date = models.DateTimeField(null = True, blank = True)
-    end_date = models.DateTimeField(null = True, blank = True)
+    start_date = models.DateTimeField(null = True, blank = True)  # None if waiting. Set on running
+    end_date = models.DateTimeField(null = True, blank = True)    # Set on completion
     launched_by = models.ForeignKey(User)
     last_show_date = models.DateTimeField(null = True, blank = True)
 
-    def add_params(self, target_id):
-        ProcessTarget.objects.create(process = self, target_id = target_id, actions_todo=self.pipeline.num_actions())
+    def add_params(self, **params):
+        s = dumps(params)
+        ProcessTarget.objects.create(process = self, target_id = s, actions_todo=self.pipeline.num_actions())
 
     def get_num_target_completed(self):
         return ProcessTarget.objects.filter(process = self, actions_todo__lte=0).count()
