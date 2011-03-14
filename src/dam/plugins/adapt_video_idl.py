@@ -139,7 +139,7 @@ def inspect(workspace):
                  'xtype':'selectfieldset',
                  'fieldLabel': 'Name',
                  'title': 'Preset',
-                 'select_name': 'preset',
+                 'select_name': 'output_preset',
                  'select_value': 'FLV',
                  'values':{
                     'FLV':[       

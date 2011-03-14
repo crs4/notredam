@@ -18,6 +18,7 @@
 
 from django.db import models
 
+import logger
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
@@ -287,13 +288,15 @@ class MetadataManager(models.Manager):
         
         ctype_item = ContentType.objects.get_for_model(Item)
         ctype_obj = ContentType.objects.get_for_model(Component)
-
+        logger.debug('descriptor %s'%descriptor)
+        logger.debug('descriptor.properties %s'%descriptor.properties)
         for item in items:
-
-            properties = descriptor.properties.filter(media_type=item.type)
-
-            for p in properties:
         
+            properties = descriptor.properties.filter(media_type__name=item.type.name)
+            logger.debug('properties %s'%properties)
+            logger.debug('item.type %s'%item.type)
+            for p in properties:
+                logger.debug('p.editable %s'%p.editable)
                 if not p.editable:
                     continue
         
@@ -309,6 +312,7 @@ class MetadataManager(models.Manager):
                 new_metadata = MetadataValue.objects.get_or_create(schema=p, object_id=obj.pk, content_type=ctype, xpath=xpath)
                 new_metadata[0].value = values
                 new_metadata[0].save()
+                logger.debug('new_metadata[0] %s'%new_metadata[0])
                 set_modified_flag(new_metadata[0],obj)
 
     def save_descriptor_values(self, descriptor, items, values, workspace, variant_name='original', default_language='en-US'):
