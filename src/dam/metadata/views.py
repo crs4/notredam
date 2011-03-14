@@ -264,6 +264,7 @@ def save_descriptors(request):
     items = Item.objects.filter(pk__in=item_list)            
     Latitude = None
     Longitude = None
+    logger.debug('metadata %s'%metadata)
     for m in metadata:
         ids = m.split('_')
         desc_id = ids[1]
@@ -274,6 +275,7 @@ def save_descriptors(request):
             comp.save_rights_value(license, workspace)
         else:
             descriptor = MetadataDescriptor.objects.get(pk=int(desc_id))
+            
             if descriptor.name == 'Latitude':
                 Latitude = metadata[m]
             elif descriptor.name == 'Longitude':
