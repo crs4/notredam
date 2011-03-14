@@ -36,8 +36,8 @@ def inspect(workspace):
             },
             {
              'xtype': 'numberfield',
-             'name': 'maxsize',
-             'fieldLabel': 'Max_size',
+             'name': 'max_size',
+             'fieldLabel': 'Max size',
              'value': 300,
              'width':200
              },

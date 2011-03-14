@@ -1028,13 +1028,13 @@ def download_renditions(request):
             for rendition in renditions:
                 try:
                     c = Component.objects.get(item__pk = item,  variant__pk = rendition)
-                    file = os.path.join(settings.MEDIADART_STORAGE, c._id)
-                    try:
-                        ext = c._id.split('.')[1]                       
-                        file_name =  item + '_' +  c.variant.name +  '.' + ext 
-                    except:
-                        file_name = item + '_' +  c.variant.name
-                     
+                    file = os.path.join(settings.MEDIADART_STORAGE, c.uri)
+                    #try:
+                        #ext = c._id.split('.')[1]                       
+                        #file_name =  item + '_' +  c.variant.name +  '.' + ext 
+                    #except:
+                        #file_name = item + '_' +  c.variant.name
+                    file_name = c.uri 
 
                     
                     archive.write(file, file_name)
