@@ -41,7 +41,7 @@ def inspect(workspace):
               
             {   
                 'name': 'output_extension',
-                'fieldLabel': 'format',
+                'fieldLabel': 'Output format',
                 'xtype': 'select',
                 'values': media_types,
                 'description': 'output_extension',
