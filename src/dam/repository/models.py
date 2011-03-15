@@ -26,6 +26,7 @@ from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
 from dam.metadata.models import MetadataProperty
 
+
 import os
 import urlparse
 from dam import logger
@@ -34,7 +35,7 @@ import time
 from django.utils.encoding import smart_str
 import re
 import settings
-
+import logger
 from mediadart.storage import Storage
 
 from uuid import uuid4
@@ -162,16 +163,28 @@ class Item(AbstractItem):
         @param user an instance of auth.User
         @param workspaces a querySet of workspace.DAMWorkspace (optional)
         """
+        from dam.workspace.models import DAMWorkspace as Workspace 
+        from operator import or_
         if not workspaces:
-            q1 = Workspace.objects.filter( Q(workspacepermissionassociation__permission__codename = 'admin') | Q(workspacepermissionassociation__permission__codename = 'remove_item'), members = user,workspacepermissionassociation__users = user)
+            q1 = Workspace.objects.filter( Q(ws_permissions__permission__codename = 'admin') | Q(ws_permissions__permission__codename = 'remove_item'), members = user,ws_permissions__users = user)
             q2 =  Workspace.objects.filter(Q(workspacepermissionsgroup__permissions__codename = 'admin') | Q(workspacepermissionsgroup__permissions__codename = 'remove_item'), members = user, workspacepermissionsgroup__users = user)
             workspaces = reduce(or_, [q1,q2])
 
+        
+        for c in self.component_set.filter(workspace__in = workspaces).exclude(variant__name = 'original'):                
+            os.remove(c.get_file_path())
+            c.delete()
+                
         self.workspaces.remove(*workspaces)
-            
+        
         if self.get_workspaces_count() == 0:
-            components = self.component_set.all().delete()
+            #REMOVING ORIGINAL FILE
+            orig = self.component_set.get(variant__name = 'original')
+            os.remove(orig.get_file_path())
+            orig.delete()
             self.delete()
+            
+           
         else:
             inboxes = self.node_set.filter(type = 'inbox',  workspace__in= workspaces)
             for inbox in inboxes:
@@ -529,6 +542,10 @@ class Component(AbstractComponent):
 
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
+    
+    
+    def get_file_path(self):
+        return os.path.join(MEDIADART_STORAGE, self.uri)
     
     def get_url(self, full_address = False):
         """
