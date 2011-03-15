@@ -41,8 +41,8 @@ def test():
     item = Item.objects.get(pk=2)
     workspace = DAMWorkspace.objects.get(pk = 1)
     
-    d = run(item.pk,
-            workspace,
+    d = run( workspace,
+            item.pk,
             source_variant = 'original',
             output_variant=  'fullscreen',
             output_preset =  'WAV',
