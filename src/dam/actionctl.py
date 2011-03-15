@@ -340,6 +340,20 @@ action_pdf = {
     },
 }
 
+action_magick = {
+    'image_magick': {
+        'script_name':  'adapt_magick',
+        'params' : {
+            'source_variant': 'original',
+            'output_variant': 'thumbnail',
+            'output_extension' : '.jpg'        
+            'cmdline': '-resize 100x100 -annotate 90x90 Notredam',
+        },
+        'in':[],
+        'out':[],
+    },
+}
+
 
 # all parameters are passed dynamically by the launcher metadata.views.sync_component
 action_embed_xmp = {
@@ -358,6 +372,7 @@ standard_actions =  [('upload_audio', action_audio, 'audio', 'upload'),
                     ('upload_image', action_image, 'image', 'upload'),
                     ('upload_pdf', action_pdf,   'application', 'upload'),
                     ('embed_xmp', action_embed_xmp, '', 'sync_xmp'),       # '' means any type
+                    ('adapt_image', action_magick, 'image', 'custom'),     # custom non usato
                    ]
 
 class DoTest:
