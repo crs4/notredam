@@ -16,9 +16,11 @@ function params_equal(p1, p2){
 	return Ext.encode(p1) == Ext.encode(p2);
 };
 
+
 var MDAction =  function(opts, layer) {	
 	this.id = opts.id || Ext.id();
 	this['in'] = opts['in'];
+	opts.width = 355;
 	this.out = opts.out; 
 	this.inputs = opts.inputs || [];
 	this.outputs = opts.outputs || [];
@@ -31,6 +33,7 @@ var MDAction =  function(opts, layer) {
 		var input = this.inputs[i];
 		opts.terminals.push({
 			"name": input, 
+			"label":'previous',
 			"direction": [-1,0], 
 			"offsetPosition": {"left": -14, "top": 3+23*(i+1) }, 
 			"ddConfig": {
@@ -46,6 +49,7 @@ var MDAction =  function(opts, layer) {
 		var output = this.outputs[i];
 		opts.terminals.push({
 			"name": output, 
+			"label": 'next',
 			"direction": [1,0], 
 			"offsetPosition": {"right": -14, "top": 3+10*(i+1+this.inputs.length) }, 
 			"ddConfig": {
