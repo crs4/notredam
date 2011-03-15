@@ -138,7 +138,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
  			width: 300 			
  		}); 		
 	 	
- 		var BUTTON_EDIT = 'Edit', BUTTON_HIDE = 'Hide';
+ 		var BUTTON_EDIT = 'Show', BUTTON_HIDE = 'Hide';
 	 	var panel = new Ext.Panel({
 	 		renderTo: this.bodyEl,
 	 		items: [
