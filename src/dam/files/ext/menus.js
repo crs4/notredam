@@ -631,7 +631,7 @@ Ext.onReady(function(){
                                 title: 'Upload',
                                 height: 100,
                                 width: 200,
-                                html: 'Processing files, please wait...',
+                                html: 'Completing upload, please wait...',
                                 modal: true
                             });
                             tmp_win.show();
