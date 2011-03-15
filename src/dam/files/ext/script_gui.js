@@ -442,7 +442,7 @@ Ext.onReady(function(){
 				    items: [
 					    {
 						    xtype: 'tbtext', 
-						    text: 'Name: '
+						    text: 'Script Name: '
 					    } ,
 				   		{
 					   		id: 'script_name',
