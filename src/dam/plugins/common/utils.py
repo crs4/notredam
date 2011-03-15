@@ -72,6 +72,44 @@ def get_rendition_by_url(rendition_id, workspace):
     return get_rendition(parse_rendition_url(rendition_id), workspace)
 
 
+def splitstring(s):
+    """Tokenizes a string containing command line arguments:
+
+    Valid Examples
+      "a b c" -> ['a', 'b', 'c']
+      "a   c" -> ['a, 'c']
+      "a 'a b', c" -> ['a', 'a b', 'c']
+      'a "a b" c' -> ['a', 'a b', 'c']
+    """
+    sep = ' '
+    l = s.split(sep)
+    print l
+    quotes = ['"', "'"]
+    inside = False
+    ret = []
+    for w in l:
+        if inside:
+            if not w:
+                word += sep
+            elif w[-1] == quote:
+                word += sep + w[:-1]
+                inside = False
+                quote=None
+                ret.append(word)
+            else:
+                word += sep + w
+        else:
+            if not w:
+                continue
+            elif w[0] in quotes:
+                quote = w[0]
+                inside = True
+                word = w[1:]
+            else:
+                ret.append(w)
+    if inside:
+        raise Exception("Error: unmatched quote in string")
+    return ret
 
 
 

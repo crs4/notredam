@@ -4,11 +4,19 @@
 from dam.plugins.common.utils import get_variants
 
 def inspect(workspace):
-#    variants = get_variants(workspace, 'image')
+    variants = get_variants(workspace, 'image')
     return {
         'name': __name__,
         'params':[
-            ]
-         
-        } 
+            {   
+                'name': 'variant',
+                'fieldLabel': 'Renditions',
+                'xtype': 'select',
+                'values': variants,
+                'value': variants[0],          # The pipeline accepts a single variant
+                'description': 'input-variant',
+                'help': ''
+            },
+         ],
+    } 
 
