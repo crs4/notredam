@@ -139,3 +139,7 @@
     </div>
     
 {%endblock%}
+
+{%block body%}
+onunload="try{console.log(baseLayer.getJson());console.log(params);console.log(baseLayer.getJson() == params);} catch(e){console.log(e)} alert('byyyye');"
+{%endblock%}

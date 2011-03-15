@@ -660,9 +660,7 @@ Ext.onReady(function(){
 											params: Ext.encode(baseLayer.getJson())		            			
 										};
 										save_script(submit_params);	   		
-									
-				            		
-				            			            		
+										            		
 				            	}
 				            	else
 				            		Ext.Msg.alert('Save', 'Saving script failed, invaild name');
