@@ -1,0 +1,129 @@
+<html>
+<head>
+	<title>NotreDAM</title>
+	<link rel="stylesheet" type="text/css" href="/files/ext/resources/css/ext-all.css" />
+	<link rel="stylesheet" type="text/css" href="/files/css/tools_icons.css" />
+	
+	<link rel="stylesheet" type="text/css" href='{{theme_css}}'/>
+	{%block css%}
+		
+		
+		<link rel="stylesheet" type="text/css" href="/files/css/workspace.css" />
+	
+		
+		<link rel="stylesheet" type="text/css" href="/files/css/languages.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/status.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/forms.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/itemview.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/summary.css" />
+	  	<link rel="stylesheet" type="text/css" href="/files/css/fileuploadfield.css" />
+	  	<link rel="stylesheet" type="text/css" href="/files/css/Ext.ux.grid.ProgressColumn.css" />
+	  	<!--link rel="stylesheet" type="text/css" href="/files/css/upload_icons.css" /-->
+	  	<!--link rel="stylesheet" type="text/css" href="/files/css/fileuploader.css" /-->
+	
+	
+	    <style type="text/css">
+	    .swfupload {
+	        position: absolute;
+	        z-index: 1;
+	    }
+	    </style>
+	{%endblock%}
+	
+	
+	<script type="text/javascript" src="/files/ext/adapter/ext/ext-base.js"></script>
+	<script type="text/javascript" src="/files/ext/ext-all-debug.js"></script>
+	<script type="text/javascript" src="/files/ext/header.js"></script>
+	
+	
+	{%block js%}
+		<script type="text/javascript" src="/files/ext/Ext.ux.grid.ProgressColumn.js"></script>
+		<script type="text/javascript">
+	
+		var ws = {id:{{ws_id}}, name:'{{ws_name}}', description: '{{ws_description}}'};
+		var user = "{{user.username}}";
+		
+		</script>
+			   
+	    <script type="text/javascript" src="/files/ext/addTabButton.js"></script>
+		<script type="text/javascript" src="/files/ext/general.js"></script>
+		<script type="text/javascript" src="/files/ext/workspaces.js"></script>
+		<script type="text/javascript" src="/files/ext/tree.js"></script>
+		<script type="text/javascript" src="/files/ext/menus.js"></script>
+		<script type="text/javascript" src="/files/ext/preferences.js"></script>
+	
+		<script type="text/javascript" src="/files/ext/data-view-plugins.js"></script>
+		<script type="text/javascript" src="/files/ext/StatusBar.js"></script>
+		<script type="text/javascript" src="/files/ext/RowExpander.js"></script>
+		<script type="text/javascript" src="/files/ext/datetime.js"></script>
+		<script type="text/javascript" src="/files/ext/metadata_grid.js"></script>
+		<script type="text/javascript" src="/files/ext/variants.js"></script>
+		<script type="text/javascript" src="/files/ext/config_metadata.js"></script>
+	        <script type="text/javascript" src="/files/ext/scripts.js"></script>
+		<script type="text/javascript" src="/files/ext/organizer.js"></script>
+	
+		<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={{GOOGLE_KEY}}" type="text/javascript"></script>
+		<script type="text/javascript" src="/files/javascript/maps/mapiconmaker.js"></script>
+		<script type="text/javascript" src="/files/javascript/maps/dragzoom.js"></script>
+		<script type="text/javascript" src="/files/javascript/maps/ClusterMarker.js"></script>
+		<script type="text/javascript" src="/files/ext/GmapPanel.js"></script>
+		<script type="text/javascript" src="/files/ext/gmap.js"></script>
+		<script src="/files/flowplayer/flowplayer-3.1.4.min.js"></script>
+	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.js"></script-->
+	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.queue.js"></script-->
+	    <script type="text/javascript" src="/files/ext/FileUploadField.js"></script>
+	    <!--script type="text/javascript" src="/files/ext/sendFile.js"></script-->
+	    
+	    <!--script type="text/javascript" src="/files/ext/Ext.ux.form.BrowseButton.js"></script>
+	    <script type="text/javascript" src="/files/ext/Ext.ux.FileUploader.js"></script>
+	   	
+	    
+	    	    
+	    <script type="text/javascript" src="/files/ext/Ext.ux.UploadPanel.js"></script>
+	    <script type="text/javascript" src="/files/ext/fileuploader.js "></script-->
+	    <script type="text/javascript" src="/files/javascript/upload/uploader.js"></script>
+		
+		<script type="text/javascript" src="/files/ext/load_store.js"></script>
+	{%endblock%}
+	
+    	<script type="text/javascript">
+    		{%block header_info%}
+    			var HEADERHEIGHT = 60;
+    		{%endblock%}
+   		</script>
+	 	
+	
+</head>
+<body>
+
+	<div id="logo" style="width:100%">
+	   <div style="width:30%; float:left">
+	   		<a href="/" title="Home">
+            	<img src="/files/images/logo_notredam_small_no_margin.png" style="vertical-align:middle;"/>
+            </a>
+        </div>
+	
+		<!--div style="width:30%; float:left">
+			<img src="/files/images/opendam.png" style="vertical-align:middle; padding-top:4px"/>
+		</div-->
+		<!--div style="position:absolute; left:42%; float:left; margin-top:10px; font-size:13px;">Workspace:</div-->
+		
+		<div id="switch_ws_bar" style="width:300; position:absolute; left:42%; float:left; margin-top:3px; margin-left:26px; font-size:12 !important;" ></div>
+		
+		
+		<div style="float:right; margin-top:11px; font-size:11px; padding-right:10px;">logged as <span id="user_logged">{{user}}</span> 
+		{%block prefs%}
+			| <a href='javascript:open_pref()' >preferences</a> 
+		{%endblock%}
+		| <a href="/logout/">logout</a>
+		</div>
+
+
+	</div>
+	{%block toolbar%}
+		<div id="toolbar_container">
+			<div id="toolbar"></div>
+		</div>
+	{%endblock%}
+</body>
+</html>
