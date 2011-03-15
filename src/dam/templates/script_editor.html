@@ -44,7 +44,20 @@
 {%endblock%}
 
 {%block js%}
-	
+	<script type="text/javascript">
+        if (window['loadFirebugConsole']) {
+            window.loadFirebugConsole();
+        } else {
+            if (!window['console']) {
+                window.console = {};
+                var f = function func(arg){};
+                window.console.info = f;
+                window.console.log = f;
+                window.console.warn = f;
+                window.console.error = f;
+            }
+        }
+    </script>
 	
 	<!--script type="text/javascript" src="/files/ext/msgbox.js"></script-->
 	<script type="text/javascript" src="/files/ext/RowExpander.js"></script>
