@@ -5,9 +5,10 @@ import shutil
 from pprint import pprint
 
 from django.core.management import setup_environ
-#from django.db import transaction
 import settings
 setup_environ(settings)
+from django.db.models.loading import get_models
+loaded_models = get_models()
 
 from django.utils import simplejson
 from django.contrib.auth.models import User
@@ -344,7 +345,9 @@ action_pdf = {
 action_embed_xmp = {
     'embed_xmp': {
         'script_name': 'embed_xmp',
-        'params' : {},
+        'params' : {
+            'source_variant': 'original',
+            },
         'in':[],
         'out':[],
     },
