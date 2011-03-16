@@ -11,7 +11,7 @@ def inspect(workspace):
     'params':[
         {   
             'name': 'source_variant',
-            'fieldLabel': 'Source Rendition',
+            'fieldLabel': 'Input Rendition',
             'xtype': 'select',
             'values': variants,
             'value': variants[0],
