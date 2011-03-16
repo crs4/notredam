@@ -522,7 +522,7 @@ Ext.onReady(function(){
                         },
                         
                         {                           
-                            text:'Media',                            
+                            text:'Type',                            
                              menu: new Ext.ux.StoreMenu({
                                  id: 'media_types',
                                  store_cfg: {
