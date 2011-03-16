@@ -188,7 +188,7 @@ def run_script(request):
     return HttpResponse(simplejson.dumps({'success': True}))
 
 def _script_monitor(workspace):
-    import datetime    
+    import datetime, settings    
     processes = workspace.get_active_processes()
     processes_info = []
     for process in processes:
@@ -199,7 +199,7 @@ def _script_monitor(workspace):
                 process.save()
     #                status = 'in progress'
                 
-            elif process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
+            elif settings.REMOVE_OLD_PROCESSES and process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
                 
                 process.delete()
                 logger.debug('process %s deleted'%process.pk)
