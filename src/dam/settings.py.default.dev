@@ -34,13 +34,14 @@ c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
 STORAGE_SERVER_URL= '/storage/'
 
-BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
+
 INSTALLATIONPATH = ROOT_PATH
+BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
 THUMBS_DIR = os.path.join(INSTALLATIONPATH, 'files', 'thumbs')
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
 
-DATABASE_ENGINE = 'sqlite3'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'dam.db'	         # Or path to database file if using sqlite3.
+DATABASE_ENGINE = 'mysql'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'dam_db'	         # Or path to database file if using sqlite3.
 DATABASE_USER = ''	         # Not used with sqlite3.
 DATABASE_PASSWORD = ''	     # Not used with sqlite3.
 if DATABASE_ENGINE == 'sqlite3':
