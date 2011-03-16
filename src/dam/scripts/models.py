@@ -112,35 +112,35 @@ action_pdf = {"extract_xmp":{"params":{"source_variant":"original"},"in":[],"out
 embed_xmp = {"ext-gen57":{"params":{},"in":[],"out":[],"script_name":"embed_xmp","x":603,"y":263,"label":"embed_xmp"}}
 
 DEFAULT_PIPELINE = [{
-                     'name': 'audio_rendition', 
+                     'name': 'audio renditions', 
                      'params': action_audio, 
                      'events': ['upload'],
                      'description': '', 
                      'media_types': ['audio']                     
                      },
                     {
-                     'name': 'video_rendition', 
+                     'name': 'video renditions', 
                      'params': action_video,
                      'description': '', 
                      'events': ['upload'], 
                      'media_types': ['video']                     
                      },
                      {
-                     'name': 'image_rendition',
+                     'name': 'image renditions',
                      'description': '', 
                      'params': action_image, 
                      'events': ['upload'], 
                      'media_types': ['image']                     
                      },
                      {
-                     'name': 'doc_rendition', 
+                     'name': 'doc renditions', 
                      'description': '',
                      'params': action_pdf, 
                      'events': ['upload'], 
                      'media_types': ['application']                     
                      },
                      {
-                     'name': 'embed_xmp', 
+                     'name': 'embed xmp', 
                      'description': '',
                      'params': embed_xmp, 
                      'events': ['sync_xmp'], 
