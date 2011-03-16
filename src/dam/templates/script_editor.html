@@ -44,7 +44,20 @@
 {%endblock%}
 
 {%block js%}
-	
+	<script type="text/javascript">
+        if (window['loadFirebugConsole']) {
+            window.loadFirebugConsole();
+        } else {
+            if (!window['console']) {
+                window.console = {};
+                var f = function func(arg){};
+                window.console.info = f;
+                window.console.log = f;
+                window.console.warn = f;
+                window.console.error = f;
+            }
+        }
+    </script>
 	
 	<!--script type="text/javascript" src="/files/ext/msgbox.js"></script-->
 	<script type="text/javascript" src="/files/ext/RowExpander.js"></script>
@@ -115,3 +128,20 @@
 	var HEADERHEIGHT = 30;
 {%endblock%}
 
+
+{%block logo%}
+    <div id="logo" style="width:100%">
+       <div style="width:30%; float:left">
+            <a href="/" title="Home">
+                <img src="/files/images/logo_notredam_small_no_margin.png" style="vertical-align:middle;"/>
+        </a>
+        <span style="font-size:12px; position: relative; left:1px; top: 4px;">Script Editor</span>
+    </div>
+    
+{%endblock%}
+
+{%block body%}
+
+onbeforeunload="if (!params_equal(baseLayer.getJson(),saved_params)) return 'Warning: script modified. Are you sure you want to close this window without saving?'; "
+
+{%endblock%}

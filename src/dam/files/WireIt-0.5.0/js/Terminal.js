@@ -541,6 +541,7 @@ WireIt.Terminal.prototype = {
        */  
       this.options = {};
       this.options.name = options.name;
+      this.options.label = options.label; //MOD BY MDR
       this.options.direction = options.direction || [0,1];
       this.options.fakeDirection = options.fakeDirection || [-this.options.direction[0],-this.options.direction[1]];
       this.options.className = options.className || CSS_PREFIX+'Terminal';
@@ -577,7 +578,9 @@ WireIt.Terminal.prototype = {
    
       // Create the DIV element
       this.el = WireIt.cn('div', {className: this.options.className} );
-      if(this.options.name) { this.el.title = this.options.name; }
+      var label = this.options.label || this.options.name; //MOD BY MDR
+      if(label) { this.el.title = label;}
+      //if(this.options.name) { this.el.title = this.options.name; }
 
       // Set the offset position
       var pos = this.options.offsetPosition;

@@ -8,9 +8,19 @@ function random_color(){
     
 }
 
+var saved_params = {};
+
+
+function params_equal(p1, p2){
+		
+	return Ext.encode(p1) == Ext.encode(p2);
+};
+
+
 var MDAction =  function(opts, layer) {	
 	this.id = opts.id || Ext.id();
 	this['in'] = opts['in'];
+	opts.width = 355;
 	this.out = opts.out; 
 	this.inputs = opts.inputs || [];
 	this.outputs = opts.outputs || [];
@@ -23,6 +33,7 @@ var MDAction =  function(opts, layer) {
 		var input = this.inputs[i];
 		opts.terminals.push({
 			"name": input, 
+			"label":'previous',
 			"direction": [-1,0], 
 			"offsetPosition": {"left": -14, "top": 3+23*(i+1) }, 
 			"ddConfig": {
@@ -38,6 +49,7 @@ var MDAction =  function(opts, layer) {
 		var output = this.outputs[i];
 		opts.terminals.push({
 			"name": output, 
+			"label": 'next',
 			"direction": [1,0], 
 			"offsetPosition": {"right": -14, "top": 3+10*(i+1+this.inputs.length) }, 
 			"ddConfig": {
@@ -138,7 +150,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
  			width: 300 			
  		}); 		
 	 	
- 		var BUTTON_EDIT = 'Edit', BUTTON_HIDE = 'Hide';
+ 		var BUTTON_EDIT = 'Show', BUTTON_HIDE = 'Hide';
 	 	var panel = new Ext.Panel({
 	 		renderTo: this.bodyEl,
 	 		items: [
@@ -203,7 +215,7 @@ function save_script(params){
 		success: function(response){
 //		  	Ext.MsgBox.msg('','Script saved');
 			Ext.Msg.alert('Save', 'Script saved successfully.');
-			
+			saved_params = baseLayer.getJson();
 			if (! script_pk)
 				script_pk = Ext.decode(response.responseText).pk;
 			try{
@@ -423,7 +435,7 @@ Ext.onReady(function(){
 					
 					
 					});
-          			
+					saved_params = baseLayer.getJson();
           		}
           	}
           
@@ -442,7 +454,7 @@ Ext.onReady(function(){
 				    items: [
 					    {
 						    xtype: 'tbtext', 
-						    text: 'Name: '
+						    text: 'Script Name: '
 					    } ,
 				   		{
 					   		id: 'script_name',
@@ -660,9 +672,7 @@ Ext.onReady(function(){
 											params: Ext.encode(baseLayer.getJson())		            			
 										};
 										save_script(submit_params);	   		
-									
-				            		
-				            			            		
+										            		
 				            	}
 				            	else
 				            		Ext.Msg.alert('Save', 'Saving script failed, invaild name');

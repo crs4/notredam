@@ -94,15 +94,15 @@
 	 	
 	
 </head>
-<body>
-
-	<div id="logo" style="width:100%">
-	   <div style="width:30%; float:left">
-	   		<a href="/" title="Home">
-            	<img src="/files/images/logo_notredam_small_no_margin.png" style="vertical-align:middle;"/>
+<body{%block body%}{%endblock%}>
+    {%block logo%}
+        <div id="logo" style="width:100%">
+           <div style="width:30%; float:left">
+                <a href="/" title="Home">
+                    <img src="/files/images/logo_notredam_small_no_margin.png" style="vertical-align:middle;"/>
             </a>
         </div>
-	
+	{%endblock%}
 		<!--div style="width:30%; float:left">
 			<img src="/files/images/opendam.png" style="vertical-align:middle; padding-top:4px"/>
 		</div-->
