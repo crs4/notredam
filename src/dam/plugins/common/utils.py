@@ -19,7 +19,7 @@ def get_ext_by_type(type_name):
     else:
         return None
 
-def get_variants(workspace, media_type = None, auto_generated = None):
+def get_variants(workspace, media_type = None, auto_generated = None, exclude = []):
     from django.db.models import Q
     from dam.variants.models import Variant
     tmp_variants = Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True),  hidden = False)
@@ -29,6 +29,14 @@ def get_variants(workspace, media_type = None, auto_generated = None):
     if auto_generated is not None:
         tmp_variants= tmp_variants.filter(auto_generated = auto_generated)
      
+    
+    if exclude:
+        if not isinstance(exclude, list):
+            exclude = [exclude]
+        print '---------exclude ' , exclude
+        tmp_variants = tmp_variants.exclude(name__in = exclude)
+    
+    print 'tmp_variants ', tmp_variants
     return [[variant.name] for variant in tmp_variants.distinct()]
 
 def get_source_rendition(item_id, variant_name, workspace):

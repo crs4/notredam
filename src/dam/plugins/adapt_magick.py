@@ -15,7 +15,7 @@ from dam.variants.models import Variant
 from dam.workspace.models import DAMWorkspace
 from dam.plugins.common.utils import get_source_rendition, get_ext_by_type
 from dam.core.dam_repository.models import Type
-from dam.plugins.adapt_image_idl import inspect
+#from dam.plugins.adapt_magick_idl import inspect
 from dam.plugins.common.utils import splitstring
 
 from uuid import uuid4
