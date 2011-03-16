@@ -52,7 +52,7 @@ class AdaptImage:
                 source_variant,
                 output_variant,
                 output_extension,
-                actions,
+                actions = [],
                 resize_h = None,
                 resize_w = None,
                 crop_w = None,
