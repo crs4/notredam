@@ -141,5 +141,7 @@
 {%endblock%}
 
 {%block body%}
+
 onbeforeunload="if (!params_equal(baseLayer.getJson(),saved_params)) return 'Warning: script modified. Are you sure you want to close this window without saving?'; "
+
 {%endblock%}
