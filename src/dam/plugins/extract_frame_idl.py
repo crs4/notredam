@@ -9,7 +9,7 @@ from dam.plugins.common.utils import get_ext_by_type, get_variants
 def inspect(workspace):
     from django.db.models import Q
     media_types = get_ext_by_type('image')
-    source_variants = get_variants(workspace, 'video')
+    source_variants = get_variants(workspace, 'video', exclude= ['thumbnail'])
     output_variants = get_variants(workspace, 'image', auto_generated=True)
     return {
         'name': __name__,
