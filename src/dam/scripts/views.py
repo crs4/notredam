@@ -229,7 +229,7 @@ def _script_monitor(workspace):
                  }
         
             if process.end_date:
-                tmp['end_date'] = process.start_date.strftime("%d/%m/%y %I:%M:%S")
+                tmp['end_date'] = process.end_date.strftime("%d/%m/%y %I:%M:%S")
                 
             processes_info.append(tmp)
         except Exception, ex:
