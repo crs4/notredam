@@ -40,6 +40,19 @@ thumbnail = {
 }
 
 
+# this is just to test the speed of mprocessor. same graph as action_image
+action_pinger = {
+    'ping1': { 'script_name': 'test.pinger', 'params': {}, 'in': [], 'out':['a'], },
+    'ping2': { 'script_name': 'test.pinger', 'params': {}, 'in': [], 'out':['b'], },
+    'ping3': { 'script_name': 'test.pinger', 'params': {}, 'in': ['a', 'b'], 'out':['c'], },
+    'ping4': { 'script_name': 'test.pinger', 'params': {}, 'in': ['a', 'b'], 'out':['d'], },
+    'ping5': { 'script_name': 'test.pinger', 'params': {}, 'in': ['a', 'b'], 'out':['e'], },
+    'ping6': { 'script_name': 'test.pinger', 'params': {}, 'in': ['c'], 'out':[], },
+    'ping7': { 'script_name': 'test.pinger', 'params': {}, 'in': ['d'], 'out':[], },
+    'ping8': { 'script_name': 'test.pinger', 'params': {}, 'in': ['e'], 'out':[], },
+}
+
+
 action_audio = {
     'extract_original': {
         'script_name':  'extract_basic',
@@ -346,7 +359,7 @@ action_magick = {
         'params' : {
             'source_variant': 'original',
             'output_variant': 'thumbnail',
-            'output_extension' : '.jpg'        
+            'output_extension' : '.jpg',
             'cmdline': '-resize 100x100 -annotate 90x90 Notredam',
         },
         'in':[],
@@ -413,6 +426,11 @@ class DoTest:
         pipe.save
         print 'registered pipeline %s, pk=%s, trigger=%s' % (name, pipe.pk, '-'.join( [x.name for x in pipe.triggers.all()] ) )
 
+    def runmany(self, times, trigger, pk):
+        items = [Item.objects.get(pk=pk) for x in xrange(int(times))]
+        ret = _run_pipelines(items, trigger, self.user, self.ws)
+        print('Executed process %s' % ' '.join(ret))
+
     def execpipes(self, trigger, filepaths):
         items = _create_items(filepaths, 'original', self.user, self.ws)
         ret = _run_pipelines(items, trigger,  self.user, self.ws)
@@ -425,7 +443,8 @@ class DoTest:
             d = loads(p.params)
             actions = d.keys()
             actions.sort()
-            print('Pipe pk=%s name=%s length=%s actions=%s' % (p.pk, p.name, len(d), ' '.join(actions)))
+            triggers = [x.name for x in p.triggers.all()]
+            print('Pipe pk=%s name=%s triggers=%s\n  %s' % (p.pk, p.name, ', '.join(triggers), '\n  '.join(actions)))
 
     def show_process(self):
         print ("Processes:")
@@ -504,6 +523,12 @@ def main(argv):
         if not files:
             raise Exception('too few arguments')
         test.execpipes(trigger, files)
+
+    elif task == 'runmany':
+        times = argv[2]
+        trigger = argv[3]
+        pk = argv[4]
+        test.runmany(times, trigger, pk)
 
     elif task == 'clear':
         print('deleting all processes and processtargets')

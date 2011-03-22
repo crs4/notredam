@@ -210,7 +210,7 @@ class Batch:
         if action:
             item, schedule = task['item'], task['schedule']
             method, params = self.scripts[action]
-            log.debug('target %s: executing action %s, method=%s' % (item.target_id, action, method))
+            log.debug('target %s: executing action %s' % (item.target_id, action))
             try:
                 item_params = loads(item.params)
                 params.update(item_params)
@@ -218,7 +218,6 @@ class Batch:
                 log.debug('calling method with params ws=%s, id=%s, params=%s' % (self.process.workspace.pk, item.target_id, params))
                 d = method(self.process.workspace, item.target_id, **params)
             except Exception, e:
-                log.debug('Exception launching %s' % method)
                 self._handle_err(str(e), item, schedule, action, params)
             else:
                 d.addCallbacks(self._handle_ok, self._handle_err, 

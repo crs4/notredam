@@ -250,7 +250,7 @@ def _run_pipelines(items, trigger, user, workspace):
 
     unassigned = assigned_items.symmetric_difference(items)
     if unassigned:
-        logger.debug("##### The following items have no compatible %s action: %s" % list(unassigned))
+        logger.debug("##### The following items have no compatible %s action: %s" % (trigger, ' '.join([str(x.pk) for x in unassigned])))
     return ret
 
 #
