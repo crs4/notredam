@@ -89,9 +89,9 @@ def splitstring(s):
       "a 'a b', c" -> ['a', 'a b', 'c']
       'a "a b" c' -> ['a', 'a b', 'c']
     """
+    s = s.replace('\n', ' ')
     sep = ' '
     l = s.split(sep)
-    print l
     quotes = ['"', "'"]
     inside = False
     ret = []
