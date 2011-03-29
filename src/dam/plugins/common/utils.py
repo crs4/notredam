@@ -50,9 +50,7 @@ def get_source_rendition(item_id, variant_name, workspace):
 
     resource = None
     if hasattr(variant_name, 'upper'):   # it looks like a string
-        print 'a', variant_name, item.pk
         resource = Component.objects.get(workspace=workspace, variant__name=variant_name, item=item)
-        print 'b'
     elif hasattr(variant_name, 'append'):  # looks like a list
         for name in variant_name:
             try:
@@ -79,19 +77,43 @@ def get_rendition_by_url(rendition_id, workspace):
     "Returns the component corresponding to rendition_id"
     return get_rendition(parse_rendition_url(rendition_id), workspace)
 
+# Utility functions
+def resize_image(width, height, max_w, max_h, enlarge=False):
+    alfa = min(float(max_w)/width, float(max_h)/height)
+    if (alfa > 1 and enlarge) or (0 < alfa < 1):
+        return int((width * alfa)/2)*2, int((height * alfa)/2)*2
+    else:
+        return width, height
+
+class Pushlist(list):
+    "A List where we can push back values when iterating"
+    def __init__(self, *args):
+        list.__init__(self, *args)
+        self.stack = []
+        self.iterator = None
+
+    def __iter__(self):
+        self.iterator = list.__iter__(self)
+        return self
+
+    def next(self):
+        if self.stack:
+            return self.stack.pop()
+        else:
+            return self.iterator.next()
+
+    def push(self, a):
+        self.stack.append(a)
+        
 
 def splitstring(s):
     """Tokenizes a string containing command line arguments:
 
-    Valid Examples
-      "a b c" -> ['a', 'b', 'c']
-      "a   c" -> ['a, 'c']
-      "a 'a b', c" -> ['a', 'a b', 'c']
-      'a "a b" c' -> ['a', 'a b', 'c']
+    See test_splitsstring() for examples.
     """
     s = s.replace('\n', ' ')
     sep = ' '
-    l = s.split(sep)
+    l = Pushlist(s.split(sep))
     quotes = ['"', "'"]
     inside = False
     ret = []
@@ -110,14 +132,49 @@ def splitstring(s):
             if not w:
                 continue
             elif w[0] in quotes:
-                quote = w[0]
-                inside = True
-                word = w[1:]
+                if len(w) > 1 and w[-1] in quotes:   # a single word in quotes
+                    ret.append(w[1:-1])
+                    #if len(w) > 2:
+                    #else:
+                    #    ret.append('""')
+                else:
+                    quote = w[0]
+                    inside = True
+                    word = w[1:]
+            elif w.find('=') >= 0:    # further split arguments of the type key=value so that
+                i = w.find('=')       # value is a entry in the list
+                if i:
+                    ret.append(w[:i])
+                ret.append('=')
+                l.push(w[i+1:])
             else:
                 ret.append(w)
     if inside:
         raise Exception("Error: unmatched quote in string")
     return ret
 
-
+def test_splitstring():
+    cases = [
+      ( 'a b c', ['a', 'b', 'c'],),
+      ( 'a   c', ['a', 'c'],),
+      ( 'a ""  c', ['a', '', 'c'],),
+      ( 'a "  "\n  c', ['a','  ', 'c'],),
+      ( "a 'a b'  c", ['a', 'a b', 'c'],),
+      ( 'a "a b" c', ['a', 'a b', 'c'],),
+      ( 'a "a=b" c', ['a', 'a=b', 'c'],),
+      ( 'a "a=" c', ['a', 'a=', 'c'],),
+      ( 'a  a=  c', ['a', 'a', '=', 'c'],),
+      ( 'a  =a  c', ['a', '=', 'a', 'c'],),
+      ( 'a a="" c', ['a', 'a', '=', '', 'c'],),
+      ( 'a z="b" c', ['a', 'z', '=', 'b', 'c'],),
+      ( 'a z="b=c" d', ['a', 'z', '=', 'b=c', 'd'],),
+      ( 'a z="x y z" c', ['a', 'z', '=', 'x y z', 'c'],),
+    ]
+    msg = ""
+    for c in cases:
+        r = splitstring(c[0])
+        if r != c[1]:
+            msg += "ERROR: <%s> split in %s (expecting %s)" % (c[0], r, c[1])
+    print (not msg and 'OK') or msg
+test_splitstring()
 

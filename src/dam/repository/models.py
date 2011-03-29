@@ -27,8 +27,10 @@ from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_ST
 from dam.metadata.models import MetadataProperty
 
 
+
 import os
 import urlparse
+from json import loads
 from dam import logger
 from django.utils import simplejson
 import time
@@ -495,10 +497,10 @@ class Component(AbstractComponent):
     parameters = models.TextField(null = True,  blank = True)
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False) 
-    pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
-    
-    
-    
+    #pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
+
+    # a JSON object with results from extract_basic. Syntax is dependent  on media_type
+    features = models.TextField(null=True, blank=True)
     
     
     class Meta:
@@ -512,6 +514,14 @@ class Component(AbstractComponent):
         super(Component, self).save(*args, **kwargs)
         self.item.update_time = datetime.datetime.now()
         self.item.save()
+
+    def get_features(self):
+        if not hasattr(self, 'decoded_features'):
+            if self.features:
+                self.decoded_features = loads(self.features)
+            else:
+                raise Exception('no features available')
+        return self.decoded_features
          
     def set_source(self, source):
         self.source = source
