@@ -108,11 +108,11 @@ class AbstractComponent(models.Model):
     update_time = models.DateTimeField(auto_now = True)
 
     format = models.CharField(max_length=50, null = True)
-    width = models.DecimalField(decimal_places=0, max_digits=10,default = 0)
-    height = models.DecimalField(decimal_places=0, max_digits=10,default = 0)
-    bitrate = models.DecimalField(decimal_places=0, max_digits=10,default = 0)
-    duration = models.DecimalField(decimal_places=0, max_digits=10,default = 0, null = True)
-    size = models.DecimalField(decimal_places=0, max_digits=10, default = 0)
+    width = models.DecimalField(decimal_places=0, max_digits=10,default = 0)   # deprecated
+    height = models.DecimalField(decimal_places=0, max_digits=10,default = 0)  # deprecated
+    bitrate = models.DecimalField(decimal_places=0, max_digits=10,default = 0) # deprecated
+    duration = models.DecimalField(decimal_places=0, max_digits=10,default = 0, null = True) # deprecated
+    size = models.DecimalField(decimal_places=0, max_digits=10, default = 0)   # deprecated
         
     file_name = models.CharField(max_length=128, null=True, blank=True)
     

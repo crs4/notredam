@@ -23,19 +23,14 @@ from dam.variants.models import Variant
 from dam.upload.views import _create_items, _run_pipelines
 from supported_types import mime_types_by_type, supported_types
 
-thumbnail = {
-    'thumbnail_image':{
-        'script_name': 'adapt_image', 
+test = {
+    'features':{
+        'script_name': 'extract_basic', 
         'params':{
-            'actions':['resize'],
-            'resize_h':100,
-            'resize_w': 100,
             'source_variant': 'original',
-            'output_variant': 'thumbnail',
-            'output_format' : 'jpeg'        
             },
-         'in': ['fe'],
-         'out':['thumbnail']    
+         'in': [],
+         'out':[]    
     },
 }
 
@@ -413,7 +408,7 @@ class DoTest:
                 else:
                     err_msg += '### unrecognized type/subtype %s: %s\n' % (media_type, str(e))
         if err_msg:
-            raise(Exception(err_msg))
+            print err_msg
         return tbd
 
     def register(self, name, trigger, media_types, description, pipeline_definition):

@@ -1,5 +1,24 @@
+#########################################################################
+#
+# NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+# Email: labcontdigit@sardegnaricerche.it
+# Web: www.notre-dam.org
+#
+# This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#########################################################################
+
 import mimetypes
 from time import strptime
+from json import dumps
 import re
 from twisted.internet import reactor, defer
 
@@ -72,6 +91,12 @@ class ExtractBasicFeatures:
             save_type(ctype, self.component)
         except Exception, e:
             log.error("Failed to save component format as DC:Format: %s" % (str(e)))
+        try:
+            self.component.features = dumps(features)
+            self.component.save()
+            print 'saved'
+        except Exception, e:
+            log.error("Failed to save features in component object: %s" % str(e))
         if extractor_type == 'media_basic':
             for stream in features['streams']:
                 if isinstance(features['streams'][stream], dict):  # e se no?
@@ -151,3 +176,172 @@ class ExtractBasicFeatures:
 
     def _cb_error(self, failure, extractor):
         self.deferred.errback(failure)
+
+
+class AVFeatures:
+    def __init__(self, component):
+        features = component.get_features()
+        self.info = {}
+        self.info['video'] = [x for x in features['streams'].values() if x['codec_type'] == 'video']
+        self.info['audio'] = [x for x in features['streams'].values() if x['codec_type'] == 'audio']
+
+    def __get_attr(self, name, stream_type):
+        if self.info[stream_type]:
+            return self.info[stream_type][0][name]
+        else:
+            raise Exception('No video')
+
+    def get_video_width(self):
+        return self.__get_attr('width', 'video')
+
+    def get_video_height(self):
+        return self.__get_attr('height', 'video')
+
+    def get_video_codec(self):
+        return self.__get_attr('codec_name', 'video')
+
+    def get_audio_codec(self):
+        return self.__get_attr('codec_name', 'audio')
+
+    def get_video_duration(self):
+        return self.__get_attr('duration', 'video')
+
+    def get_video_frame_rate(self):
+        return '%s/%s' % (self.__get_attr('r_frame_rate_num', 'video'), self.__get_attr('r_frame_rate_den', 'video'))
+
+    def get_audio_sample_rate(self):
+        return self.__get_attr('sample_rate', 'audio')
+
+    def has_audio(self):
+        return not not self.info['audio']
+
+#class AudioFeatures:
+#    def __init__(self, features):
+#        self.features = features
+#        self.audio = [x for x in self.features['streams'].values() if x['codec_type'] == 'audio']
+#        self.has_audio = not (not self.audio)
+#
+#    def get_codec_name(self):
+#        return self.audio[0]['codec_name']
+#
+#    def get_duration(self):
+#        return self.audio[0]['duration']
+#
+#    def get_sample_rate(self):
+#        return '%s/%s' % (self.video[0]['r_frame_rate_num'], self.video[0]['r_frame_rate_den'])
+#
+
+class ImageFeatures:
+    def __init__(self, features):
+        self.features = features
+
+    def get_codec_name(self):
+        return self.features['codec']
+
+    def get_depth(self):
+        return self.features['depth']
+
+    def has_frame(self):
+        "returns True if the images contains more frames"
+        return self.features['has_frame']
+
+    def get_size(self):
+        return self.features['size']
+
+    def get_width(self):
+        return self.features['width']
+
+    def get_height(self):
+        return self.features['height']
+
+
+
+class PdfFeatures:
+    def __init__(self, features):
+        self.features = features
+
+    def get_num_pages(self):
+        return self.features['Pages']
+
+    def get_size(self):
+        return self.features['size']
+
+    def get_title(self):
+        return self.features['Title']
+
+
+
+
+########################################################################
+# Format of the produced features.
+#
+#  video/*    (streams with codec_type = audio may not be present)
+#  audio/*    (only streams with codec_type = audio are present)
+#
+# {'size': 735801344L,
+#  'streams': {
+#    '0': {
+#        'codec_long_name': 'MPEG-4 part 2',
+#        'codec_name': 'mpeg4',
+#        'codec_type': 'video',
+#        'decoder_time_base': '1/25',
+#        'display_aspect_ratio': '13/7',
+#        'duration': '6668.600000',
+#        'gop_size': '12',
+#        'has_b_frames': '1',
+#        'height': '336',
+#        'index': '0',
+#        'nb_frames': '0',
+#        'pix_fmt': 'yuv420p',
+#        'r_frame_rate': '25.000000',
+#        'r_frame_rate_den': '1',
+#        'r_frame_rate_num': '25',
+#        'sample_aspect_ratio': '1/1',
+#        'start_time': '0.000000',
+#        'time_base': '1/25',
+#        'width': '624'},
+#    '1': {
+#        'bits_per_sample': '0',
+#        'channels': '2',
+#        'codec_long_name': 'MP3 (MPEG audio layer 3)',
+#        'codec_name': 'mp3',
+#        'codec_type': 'audio',
+#        'decoder_time_base': '0/1',
+#        'duration': '6668.064000',
+#        'index': '1',
+#        'nb_frames': '0',
+#        'sample_rate': '48000.000000',
+#        'start_time': '0.000000',
+#        'time_base': '3/125'}}}
+# 
+#########################################################################
+#
+# application/pdf features
+# {'Author': 'SAngioni',
+#  'CreationDate': 'Fri Mar  4 15:36:08 2011',
+#  'Creator': 'Microsoft\xc2\xae Office Word 2007',
+#  'Encrypted': 'no',
+#  'File size': '428472 bytes',
+#  'ModDate': 'Fri Mar  4 15:36:08 2011',
+#  'Optimized': 'no',
+#  'PDF version': '1.5',
+#  'Page size': '595.32 x 841.92 pts (A4)',
+#  'Pages': '9',
+#  'Producer': 'Microsoft\xc2\xae Office Word 2007',
+#  'Tagged': 'yes',
+#  'Title': 'bollettinobandi',
+#  'size': 428472L}
+# 
+#########################################################################
+#
+# #image/* features
+#
+# {'codec': 'jpeg',
+#  'depth': '8',
+#  'depth_unit': 'bit',
+#  'has_frame': False,
+#  'has_sound': False,
+#  'height': '600',
+#  'size': 73728L,
+#  'width': '400'}
+# 

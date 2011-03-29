@@ -1,190 +1,197 @@
-import time
-from dam.plugins.common.utils import splitstring
+TBD='___undefined___'   # this is the value of parameters for which there is no default
 
-commands = {
-'MATROSKA_MPEG4_AAC' : {
-'cmdline': """
-  filesrc location="file://%(in_filename)s" 
-! decodebin name=decode 
-! queue 
-! ffmpegcolorspace 
-! video/x-raw-rgb, bpp=24 
-! watermark filename="file://%(watermark_filename)s" top="%(watermark_top)s" left="%(watermark_left)s" 
-! ffmpegcolorspace 
-! videoscale 
-! video/x-raw-rgb, width="%(video_width)s", height="%(video_height)s" 
-! videorate 
-! video/x-raw-rgb, bpp=24, framerate="%(video_framerate)s" 
-! ffmpegcolorspace 
-! queue 
-! ffenc_mpeg4 bitrate="%(video_bitrate_b)s" 
-! matroskamux name=mux 
-! progressreport name=report 
-! filesink location="outfile://%(out_filename)s" 
-  decode. 
-! queue 
-! audioconvert 
-! audioresample 
-! audio/x-raw-int, rate="%(audio_rate)s"
-! queue 
-! faac bitrate="%(audio_bitrate_b)s" 
-! mux.
-""",
+encoder = ' ! progressreport name=report ! filesink location="outfile://%(out_filename)s"'
+encoder_defaults = { 'out_filename': TBD, }
 
-'defaults': {
-'watermark_filename':'' ,
-'watermark_top':'' ,
-'watermark_left':'' ,
-'video_width':'320' ,
-'video_height':'240' ,
-'video_framerate':'30/1' ,
-'video_bitrate_b':'264000' ,
-'audio_bitrate_b':'128000' ,
-'audio_rate':'44100',
-},},
-
-'MP4_H264_AACLOW' : {
-'cmdline': """
-  filesrc location="file://%(in_filename)s" 
-! decodebin name=decode 
-! queue 
-! ffmpegcolorspace 
-! video/x-raw-rgb, bpp=24 
-! watermark filename="file://%(watermark_filename)s" top="%(watermark_top)s" left="%(watermark_left)s" 
-! ffmpegcolorspace 
-! videoscale 
-! video/x-raw-rgb, width="%(video_width)s", height="%(video_height)s" 
-! videorate 
-! video/x-raw-rgb, bpp=24, framerate="%(video_framerate)s" 
-! ffmpegcolorspace
-
-
-! x264enc bitrate=%(video_bitrate_kb)s 
-! mp4mux name=mux 
-! progressreport name=report ! filesink location="outfile://%(out_filename)s"
-
-decode. ! queue ! audioconvert ! audioresample ! audio/x-raw-int, rate="%(audio_rate)s"
-
-! faac bitrate=%(audio_bitrate_b)s profile=2 
-! mux.
-""",
-},
-
+video_decoder = """
+  filesrc location="file://%(in_filename)s" ! decodebin name=decode ! queue 
+  ! ffmpegcolorspace ! video/x-raw-rgb, bpp=24 
+  ! watermark filename="file://%(watermark_filename)s" top=%(watermark_top)s left=%(watermark_left)s 
+  ! ffmpegcolorspace ! videoscale 
+  ! video/x-raw-rgb, width=%(video_width)s, height=%(video_height)s 
+  ! videorate ! video/x-raw-rgb, bpp=24, framerate=%(video_framerate)s ! ffmpegcolorspace 
+"""
+video_decoder_defaults = {
+    'in_filename': TBD,
+    'watermark_filename':'' ,
+    'watermark_top':'0' ,
+    'watermark_left':'0' ,
+    'video_width':'320' ,
+    'video_height':'240' ,
+    'video_framerate':'30/1' ,
 }
 
+audio_decoder = ' decode. ! queue ! audioconvert ! audioresample ! audio/x-raw-int, rate=%(audio_rate)s '
+audio_decoder_defaults = { 'audio_rate':'44100', }
+
+silent_audio = """
+  audiotestsrc num-buffers=%(video_duration)s samplesperbuffer=200 wave=4 
+  ! audio/x-raw-int, rate=200 ! audioresample ! audioconvert 
+  ! audio/x-raw-int, rate=%(audio_rate)s
+"""
+# num_buffers is 
+silent_audio_defaults = { 'video_duration': TBD, 'audio_rate': '44100', }
 
 
-#encoder
-progressreport name=report ! filesink location="outfile://%(out_filename)s"
+pipelines = {
+'MATROSKA_MPEG4_AAC' : {
+    'cmdline': 
+        video_decoder + 
+        ' ! queue ! ffenc_mpeg4 bitrate=%(video_bitrate_b)s ! matroskamux name=mux ' + 
+        encoder + audio_decoder +
+        ' ! queue ! faac bitrate=%(audio_bitrate_b)s ! mux.',
 
-#video_decoder
-  filesrc location="file://%(in_filename)s" 
-! decodebin name=decode 
-! queue 
-! ffmpegcolorspace 
-! video/x-raw-rgb, bpp=24 
-! watermark filename="file://%(watermark_filename)s" top="%(watermark_top)s" left="%(watermark_left)s" 
-! ffmpegcolorspace 
-! videoscale 
-! video/x-raw-rgb, width="%(video_width)s", height="%(video_height)s" 
-! videorate 
-! video/x-raw-rgb, bpp=24, framerate="%(video_framerate)s" 
-! ffmpegcolorspace
+    'defaults': {
+        'video_bitrate_b':'264000' ,
+        'audio_bitrate_b':'128000' ,
+    },
+    'mime': 'video/x-m4v',
+    'server': 'GenericCmdline',
+},
 
-#audio_decoder audio_pipe
-decode. ! queue ! audioconvert ! audioresample ! audio/x-raw-int, rate="%(audio_rate)s"
+'MP4_H264_AACLOW' : {
+    'cmdline':
+        video_decoder + 
+        ' ! x264enc bitrate=%(video_bitrate_kb)s ! mp4mux name=mux ' +
+        encoder + audio_decoder +
+        ' ! faac bitrate=%(audio_bitrate_b)s profile=2 ! mux.',
 
-#audio_decoder no_audio_pipe
-audiotestsrc num-buffers="%(num_buffers)s" samplesperbuffer=1000 wave=4 
-! audio/x-raw-int, rate=48000 ! audioresample ! audioconvert 
-! audio/x-raw-int, rate="%(audio_rate)s"
+    'defaults': {
+        'video_bitrate_kb':'192' ,
+        'audio_bitrate_b':'128000' ,
+    },
+    'mime': 'video/mp4',
+    'server': 'GenericCmdline',
+},
+
+'FLV' : {
+    'cmdline':
+        video_decoder + 
+        ' ! ffenc_flv bitrate=%(video_bitrate_b)s ! queue ! flvmux name=mux ' +
+        encoder + audio_decoder +
+        ' ! lame bitrate=%(audio_bitrate_kb)s ! mp3parse ! mux.',
+
+    'defaults': {
+      'audio_bitrate_kb': '128',
+      'video_bitrate_b': '640000',
+    },
+    'mime': 'video/flv',
+    'server': 'GenericCmdline',
+},
+
+'AVI' : {
+    'cmdline':
+        video_decoder + 
+        ' ! xvidenc bitrate=%(video_bitrate_b)s ! queue ! avimux name=mux ' +
+        encoder + audio_decoder +
+        ' ! lame bitrate=%(audio_bitrate_kb)s ! mp3parse ! mux. ',
+
+    'defaults' : {
+      'audio_bitrate_kb': '128',
+      'video_bitrate_b': '180000',
+    },
+    'mime': 'video/x-msvideo',
+    'server': 'GenericCmdline',
+},
+
+'MPEGTS' : {
+    'cmdline':
+        video_decoder + 
+       ' ! ffenc_mpeg2video bitrate=%(video_bitrate_b)s ! mpegvideoparse ! flutsmux name=mux ' +
+        encoder + audio_decoder +
+       ' ! lame bitrate=%(audio_bitrate_kb)s ! mp3parse ! mux.' ,
+
+    'defaults' : {
+      'audio_bitrate_kb': '256',
+      'video_bitrate_b': '12000000',
+    },
+    'mime': 'video/ts',
+    'server': 'GenericCmdline',
+},
+
+'FLV_H264_AAC' : {
+    'cmdline':
+        video_decoder + 
+       ' ! x264enc bitrate=%(video_bitrate_kb)s ! queue ! flvmux name=mux ' +
+        encoder + audio_decoder +
+       ' ! faac bitrate=%(audio_bitrate_b)s ! mux.',  
+
+    'defaults' : {
+      'audio_bitrate_b': '128000',
+      'video_bitrate_kb': '2048',
+    },
+    'mime': 'video/flv',
+    'server': 'GenericCmdline',
+},
+
+
+'THEORA' : {
+    'cmdline':
+        video_decoder + 
+       ' ! theoraenc bitrate=%(video_bitrate_kb)s ! queue ! oggmux name=mux  ' +
+        encoder + audio_decoder +
+       ' ! audioconvert ! audio/x-raw-float ! vorbisenc quality=%(audio_quality)s ! mux. ',
+
+    'defaults' : {
+      'audio_quality': '0.9',
+      'video_bitrate_kb': '192',
+    },
+    'mime': 'video/ogg',
+    'server': 'GenericCmdline',
+},}
 
 
 
+def __get_standard_params():
+    "returns all defaults that do not depend on the preset"
+    params = {}
+    params.update(video_decoder_defaults)
+    params.update(encoder_defaults)
+    params.update(silent_audio_defaults)
+    params.update(silent_audio_defaults)
+    return params
 
-
-t0 = time.time()
-s = splitstring(pipe % defaults)
-#s = pipe % defaults
-t1 = time.time()
-print s
-print 'time: %f' % (t1-t0)
+def get_preset_params(preset, defaults=__get_standard_params()):
+    "return the default values for the preset"
+    ret = {}
+    ret.update(defaults)
+    ret.update(pipelines[preset]['defaults'])
+    return ret
 
 #
-#def adapt_video(in_filename, out_filename, progress_url, preset, preset_params):
-#    c = Configurator()
-#    max_attempts = c.getint('ADAPTER', 'max_discover_errors')
 #
-#    def __retry(error, attempt):
-#        log.error("discover error: %s" % str(error))
-#        if attempt < max_attempts:
-#            log.debug('discovering %s'  % in_filename)
-#            d = discover(in_filename)
-#            d.addCallbacks(__adapt, __retry, callbackArgs=[preset], errbackArgs=[attempt+1])
-#            return d
-#        else:
-#            return error
+# TEST STUFF
 #
-#    def __adapt(features, preset):
-#        global encoder, decoder, transcoder
-#        log.debug('starting video_adapt: %s' % str(features))
-#        userargs = {'in_filename':in_filename, 
-#                    'out_filename':out_filename, 
-#                    'num_buffers':int(features['video_length']/1000*48),}
-#        userargs.update(preset_params)
 #
-#        max_width = int(userargs.get('max_width', 0))
-#        max_height = int(userargs.get('max_height', 0))
-#        w_orig, h_orig = int(features['video_width']), int(features['video_height'])
-#        log.debug('dim before %sx%s %sx%s' % (w_orig, h_orig, max_width, max_height))
-#        w, h = resize_image(w_orig, h_orig, max_width, max_height)
-#        log.debug('dim after %sx%s' % (w, h))
-#
-#        userargs['video_width'] = w
-#        userargs['video_height'] = h
-#        if 'watermark_top_percent' in userargs and 'watermark_left_percent' in userargs:
-#            userargs['watermark_top'] = int(w_orig * (userargs['watermark_top_percent']/100.0))
-#            userargs['watermark_left'] = int(h_orig * (userargs['watermark_left_percent']/100.0))
-#
-#        decoder_args = {}
-#        decoder_args.update(decoder['defaults'])
-#        decoder_args.update(userargs)
-#        video_pipe = decoder['video_pipe'] % decoder_args
-#
-#        if features['has_audio']:
-#            audio_pipe = decoder['audio_pipe'] % decoder_args
-#        else:
-#            audio_pipe = decoder['no_audio_pipe'] % decoder_args
-#
-#        encoder_args = {}
-#        encoder_args.update(encoder['defaults'])
-#        encoder_args.update(userargs)
-#        encoder_pipe = encoder['pipe'] % encoder_args
-#
-#        transcoder_args = {'video_decoder': video_pipe, 'audio_decoder': audio_pipe, 
-#                           'encoder': encoder_pipe }
-#        transcoder_args.update(transcoder[preset]['defaults'])
-#        transcoder_args.update(userargs)
-#        transcoder_pipe = transcoder[preset]['pipe'] % transcoder_args
-#
-#        exe = c.get('ADAPTER', 'gstreamer_exe')
-#        argv = transcoder_pipe.split('\x00')
-#        env = {'SDL_VIDEODRIVER': 'dummy',
-#                    'GST_PLUGIN_PATH': c.get('ADAPTER', 'gst_plugin_path')}
-#        log.debug('\n\n######VIDEO PIPELINE:\ngst-launch %s\n' % ' '.join(argv))
-#        cb_func = get_progress_cb(progress_url, 'gstreamer-progressreport')
-#        r = RunProc.run(exe, argv, env, cb=cb_func, do_log=False)
-#        return r.getResult()
-#    
-#    preset = preset.upper()
-#    if preset not in transcoder.keys():
-#        raise AdapterError('Error adapting video: unknown preset %s' % preset)
-#    # checks for obsolete key
-#    assert('watermark_id' not in preset_params)
-#    if 'watermark_filename' in preset_params:
-#        storage = Storage()
-#        preset_params['watermark_filename'] = storage.abspath(preset_params['watermark_filename'])
-#    log.debug('discovering %s'  % in_filename)
-#    d = discover(in_filename)
-#    d.addCallbacks(__adapt, __retry, callbackArgs=[preset], errbackArgs=[1])
-#    return d
+import sys
+import time
+from dam.plugins.common.utils import splitstring
+def show(key, has_audio, list_output):
+    params = {}
+    params.update(video_decoder_defaults)
+    params.update(encoder_defaults)
+    if not has_audio:
+        params.update(silent_audio_defaults)
+    else:
+        params.update(audio_decoder_defaults)
+    params.update(pipelines[key]['defaults'])
+
+    t = pipelines[key]['cmdline']
+    if not has_audio:
+        t = t.replace(audio_decoder, silent_audio)
+    ret = t % params
+    if list_output:
+        ret = splitstring(ret)
+    print ret
+
+if __name__=='__main__':
+    if sys.argv[1] == '-l':
+        list_output = True
+        sys.argv.pop(1)
+    else:
+        list_output = False
+    has_audio = True
+    key = sys.argv[1].upper()
+    if len(sys.argv) > 2:
+        has_audio = False
+    show(key, has_audio, list_output)
