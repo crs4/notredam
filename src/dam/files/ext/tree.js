@@ -424,7 +424,7 @@ function create_tree(title, id){
                 
                 var root;
                 
-                if (this.title =='Keywords') {
+                if (this.title ==gettext('Keywords')) {
                     root = root_keywords;
                 }
                 else {
@@ -626,7 +626,7 @@ var treeAction = function( tree_action){
         form.submit({
             clientValidation: true,
             params: params,
-            waitMsg: 'Saving...',
+            waitMsg: gettext('Saving...'),
             success: function(form, action) {
         		
                 if(!sel_node.length) {
@@ -886,11 +886,11 @@ var treeAction = function( tree_action){
             baseParams:{node_id:node_id},
             items: fields,
             buttons: [{
-                text: 'Save',
+                text: gettext('Save'),
                 type: 'submit',
                 handler: function(){submit_tree_form(type);}
             },{
-                text: 'Cancel',
+                text: gettext('Cancel'),
                 handler: function(){
                     win.close();
                 }
@@ -926,16 +926,16 @@ var treeAction = function( tree_action){
     
 
 
-var add_keyword =  new Ext.menu.Item({id: 'addKeyword',text: 'Keyword'});
-var add_category =  new Ext.menu.Item({id: 'addCategory', text: 'Category'});
+var add_keyword =  new Ext.menu.Item({id: 'addKeyword',text: gettext('Keyword')});
+var add_category =  new Ext.menu.Item({id: 'addCategory', text: gettext('Category')});
 
-var add_collection = new Ext.menu.Item({text: 'Add'});
-var add_node = new Ext.menu.Item({text: 'Add', menu: [add_keyword, add_category]});
-var edit_node = new Ext.menu.Item({text: 'Edit'});
-var delete_node = new Ext.menu.Item({text: 'Delete'});
+var add_collection = new Ext.menu.Item({text: gettext('Add')});
+var add_node = new Ext.menu.Item({text: gettext('Add'), menu: [add_keyword, add_category]});
+var edit_node = new Ext.menu.Item({text: gettext('Edit')});
+var delete_node = new Ext.menu.Item({text: gettext('Delete')});
 
-var search_box_node = new Ext.menu.Item({text: 'Add To Search Box'});
-var show_item_node = new Ext.menu.Item({text: 'Show Associated Items'});
+var search_box_node = new Ext.menu.Item({text: gettext('Add To Search Box')});
+var show_item_node = new Ext.menu.Item({text: gettext('Show Associated Items')});
 
 
 var contextMenuKeywords = new Ext.menu.Menu({id:'mainContext'});
@@ -950,15 +950,15 @@ contextMenuKeywords.add(
 var contextMenuCollections = new Ext.menu.Menu({id:'mainContextCollections',
     items: [
     {
-        text: 'Add'
+        text: gettext('Add')
     },
     {
-        text:'Edit'
+        text:gettext('Edit')
     },
     {
-        text:'Delete'
+        text: gettext('Delete')
     },
-    {text: 'Add To Search Box'}
+    {text: gettext('Add To Search Box')}
     
     ]
 });
@@ -1084,10 +1084,10 @@ contextMenuShow = function( node_menu,e ){
 
     
     // set up the Album tree
-    var tree_collections = create_tree('Collections', 'collections_tree');
+    var tree_collections = create_tree(gettext('Collections'), 'collections_tree');
 
     var root_collections = new Ext.tree.AsyncTreeNode({
-        text: 'All items',
+        text: gettext('All items'),
         id:'fake',
         expanded:true,
         allowDrag:false,
@@ -1107,11 +1107,11 @@ contextMenuShow = function( node_menu,e ){
 
     tree_collections.on('contextmenu', contextMenuShow);
   
-    var tree_keywords =create_tree('Keywords', 'keywords_tree');
+    var tree_keywords =create_tree(gettext('Keywords'), 'keywords_tree');
 
     
         var root_keywords = new Ext.tree.AsyncTreeNode({
-            text: 'All items',
+            text: gettext('All items'),
             id:'fake',
             expanded: true,
             allowDrag:false,
@@ -1145,7 +1145,7 @@ contextMenuShow = function( node_menu,e ){
         return new Ext.tree.TreeEditor(tree, 
             new Ext.form.TextField({
                 allowBlank:false,
-                 blankText:'A name is required'
+                 blankText:gettext('A name is required')
                 })
         ,{
         selectOnFocus:true,
@@ -1184,7 +1184,7 @@ contextMenuShow = function( node_menu,e ){
         	Ext.app.SearchField.superclass.setValue.call(this, value);
         	
         	if (value == '')
-        		setTabTitle('All Items');
+        		setTabTitle(gettext('All Items'));
         	else
         		setTabTitle(value);
 
@@ -1198,7 +1198,7 @@ contextMenuShow = function( node_menu,e ){
                 clear_other_selections();
                 
                 set_query_on_store({});
-                setTabTitle('All Items');
+                setTabTitle(gettext('All Items'));
             }
             else {
                 set_query_on_store({query:v});
@@ -1234,7 +1234,7 @@ contextMenuShow = function( node_menu,e ){
 
     
     var root_inbox= new Ext.tree.AsyncTreeNode({
-            text: 'All items',
+            text: gettext('All items'),
             id:'fake',
             expanded: true,
             editable: false,
@@ -1256,7 +1256,7 @@ contextMenuShow = function( node_menu,e ){
 
 var smart_folders = new Ext.Panel({
     id:'smart_folders_panel',
-	title: 'Smart Folders',
+	title: gettext('Smart Folders'),
     autoScroll: true,
     items: [
         new Ext.ListView({
@@ -1291,7 +1291,7 @@ var smart_folders = new Ext.Panel({
                     
                     if (selected){
                         var query = selected.data.label ;
-                        search.setValue( 'SmartFolders:"' + query+ '"');
+                        search.setValue( gettext('SmartFolders:') + ' "' + query+ '"');
                         view.old_selected = selected;
                         store.load({
                             params: {
@@ -1299,7 +1299,7 @@ var smart_folders = new Ext.Panel({
                             },
                             scope: query,
                             callback: function(){
-                                sb_current_smart_folder.setText('smart folder: ' + this);
+                                sb_current_smart_folder.setText(gettext('smart folder: ') + this);
                                 bbar.show();
                                 
                             }
@@ -1321,13 +1321,13 @@ var smart_folders = new Ext.Panel({
                     var menu = new Ext.menu.Menu({
                         items: [
                         {
-                            text: 'Edit',
+                            text: gettext('Edit'),
                             handler: function(){save_smart_folder(record.data.label, record.data.pk);}
                         },
                         {
-                            text:'Delete',
+                            text:gettext('Delete'),
                             handler: function(){
-                                Ext.Msg.confirm('Delete Smart Folder', 'Are you sure you want to delete the smart folder "' + record.data.label+'" ?',
+                                Ext.Msg.confirm(gettext('Delete Smart Folder'), gettext('Are you sure you want to delete the smart folder') + ' "' + record.data.label+'" ?',
                                 function(btn){
                                     
                                     if (btn == 'yes'){

@@ -114,7 +114,7 @@ var initializeMapDropZone = function(g){
                        g.onMapMove();
                    },
                    failure: function (XMLHttpRequest, textStatus, errorThrown) {
-                       Ext.MessageBox.alert('Status', 'Saving failed!');
+                       Ext.MessageBox.alert(gettext('Status'), gettext('Saving failed!'));
                    }
               });
         }};
@@ -129,7 +129,7 @@ var initializeMapDropZone = function(g){
                 g.onMapMove();
             },
             failure: function (XMLHttpRequest, textStatus, errorThrown) {
-                Ext.MessageBox.alert('Status', 'Saving failed!');
+                Ext.MessageBox.alert(gettext('Status'), gettext('Saving failed!'));
             }            
         });
         
