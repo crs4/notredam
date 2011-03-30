@@ -1551,7 +1551,35 @@ class ItemResource(ModResource):
                 item.variants[v.name] = 'http://' + SERVER_PUBLIC_ADDRESS + url
             else:
                 item.variants[v.name] = ""
-                    
+
+    def get_type(self, request):
+        """
+        return type about a file name
+        - method: POST
+        - args:
+            - filename : filename.extention
+        - returns:
+            - JSON example:
+            {
+            'media_type': 'image/jpg',
+            }
+        
+        """        
+
+        if not request.POST.has_key('file_name'):
+            raise MissingArgs
+        
+        try:
+            logger.info(request.POST['file_name'])
+            media_type = Type.objects.get_or_create_by_filename(request.POST['file_name'])
+            resp = {'media_type': str(media_type)}
+            json_resp = json.dumps(resp)
+        except Exception, ex:
+            logger.error(ex)
+        
+        return HttpResponse(json_resp)           
+        
+                        
     @exception_handler
     @api_key_required
     def create(self,  request):
@@ -1575,7 +1603,7 @@ class ItemResource(ModResource):
             raise MissingArgs
         
         media_type = request.POST['media_type']
-        
+            
         user_id = request.POST ['user_id']
         logger.debug('user_id %s'%user_id)
         user = User.objects.get(pk = user_id)
@@ -1585,7 +1613,7 @@ class ItemResource(ModResource):
         
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
 
-
+        
         item = Item.objects.create(uploader = user,_id = new_id(),  type = Type.objects.get_or_create_by_mime(media_type))
         ws.items.add(item)
         item.add_to_uploaded_inbox(ws)        

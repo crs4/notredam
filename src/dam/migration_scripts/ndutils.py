@@ -269,6 +269,9 @@ class Importer(ImportExport):
     def _item_new(self,param):
         return self._call_server('POST','/api/item/new/', **param)
     
+    def _item_get_type(self,param):
+        return self._call_server('POST','/api/item/get_type/', **param)
+    
     def _item_upload_rendition(self,item_id,param):
         return self._call_server('POST','/api/item/%s/upload/' % item_id, **param)
         

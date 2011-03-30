@@ -30,8 +30,8 @@ from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
 from urllib_uploader import StandardUploader
 from ndutils import ImportExport, Exporter, Importer
-from dam import logger
 import time
+from dam import logger
 import string
 
 #CONFIGURATION GOES HERE
@@ -131,7 +131,8 @@ def add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_orig
         for data_children in data['children']:
             add_keywords(i,data_children, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new, returnkeywords)
     except Exception, ex:
-        logger.exception(ex)    
+        logger.exception(ex)
+           
     
 
 def add_collections(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new, returncollections = None):
@@ -632,7 +633,9 @@ def restore_rendition(current_item,id_workspace,rendition_ws,id_item,file_name,s
             logger.info("/n/n param %s" %param)
         
     except Exception, ex:
-        logger.exception(ex)    
+        logger.exception(ex) 
+        logger.info("/n/n/n/n/n/n/n")
+        raise   
     return ''
 
 def add_to_ws(ws_origTows_new,id_old_ws,id_new_item):
@@ -698,6 +701,12 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
             logger.info('%s' %current_item)
             if os.path.isdir(current_item) and itemdir != 'watermarking':#exclude folder watermarking
                 paramitem = custom_open_file(current_item, 'item.json')
+                #change media_type for compatibility with older version of NotreDAM
+                if paramitem['media_type'].find('/') == -1:
+                    fnameToType = {'file_name':paramitem['renditions']['original']['file_name']}
+                    media_type = i._item_get_type(fnameToType)
+                    paramitem['media_type'] = media_type['media_type']
+                
                 paramitem['workspace_id'] = ws_origTows_new[paramworkspace['id']]
                 rendition_ws = e._workspace_get_renditions(paramitem['workspace_id'])
                 
@@ -807,7 +816,7 @@ def add_users(i,path_extract):
     logger.debug('fusers %s'%fusers)
     users = {}
     for u in fusers['users']:
-        if u['id'] != 1:
+        if u['username'] != 'admin':
             users[u['username']] = i._api_add_user(u)
             if not 'id' in users[u['username']]:
                 raise Exception, "Error create user:%s responce:%s" %(u['username'],users[u['username']])
@@ -950,6 +959,7 @@ if __name__ == '__main__':
                     
                 except Exception, ex:
                     logger.error(ex)
+                    raise
     
             keyColl_origTokeyColl_new = {}
             try:
