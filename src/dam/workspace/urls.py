@@ -19,6 +19,11 @@
 
 from django.conf.urls.defaults import *
 
+js_info_dict = {
+  'domain':'djangojs',
+  'packages':'dam.workspace',
+}
+
 urlpatterns = patterns('',   
     (r'^admin_workspace/(?P<ws_id>\d+)/$','dam.workspace.views.admin_workspace'),
     (r'^admin_workspace/add/$','dam.workspace.views.create_workspace'),
@@ -44,6 +49,8 @@ urlpatterns = patterns('',
     (r'^get_available_users/', 'dam.workspace.views.get_available_users'),
     (r'^save_members/', 'dam.workspace.views.save_members'), 
     (r'^download_renditions/', 'dam.workspace.views.download_renditions'),    
+    (r'^i18n/', include('django.conf.urls.i18n')),
+    (r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
 )
 
 

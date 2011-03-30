@@ -10,7 +10,7 @@ def inspect(workspace):
         'params':[
             {   
                 'name': 'variant',
-                'fieldLabel': 'Source Rendition',
+                'fieldLabel': 'Input Rendition',
                 'xtype': 'select',
                 'values': variants,
                 'value': variants[0],          # The pipeline accepts a single variant

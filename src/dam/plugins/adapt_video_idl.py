@@ -2,7 +2,7 @@ from mediadart.adapter.adapt_video import transcoder
 from dam.plugins.common.utils import get_variants
 
 def inspect(workspace):
-    variants = get_variants(workspace, 'video')
+    variants = get_variants(workspace, 'video', exclude=['thumbnail'])
     video_presets = transcoder.keys()
     image_variants = get_variants(workspace, 'image') 
     output_variants = get_variants(workspace, 'video', auto_generated = True)
@@ -115,7 +115,7 @@ def inspect(workspace):
         'params':[
             {   
                 'name': 'source_variant',
-                'fieldLabel': 'Source Rendition',
+                'fieldLabel': 'Input Rendition',
                 'xtype': 'select',
                 'values': variants,
                 'value': variants[0],

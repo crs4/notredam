@@ -41,6 +41,9 @@ from mx.DateTime.Parser import DateTimeFromString
 from dam import logger
 import re
 import time
+from django.utils.translation import ugettext
+
+
 
 @login_required
 def get_cuepoint_keywords(request):
@@ -484,7 +487,7 @@ def _generate_metadata_item(group, metadatadescriptor, item_list, items_types, c
     if metadata_info:
 
         metadata_info['id'] = '%d_%d' % (group.id, metadatadescriptor.id)
-        metadata_info['name'] = metadatadescriptor.name
+        metadata_info['name'] = ugettext(metadatadescriptor.name)
         metadata_info['groupname'] = group.name
         metadata_info['editable'] = False
 

@@ -38,7 +38,7 @@ var rObjectMenuHandler = function(menu_action){
 
         Ext.getCmp('robject_form').getForm().submit({
             clientValidation: true,
-            waitMsg: 'Saving...',
+            waitMsg: gettext('Saving...'),
             success: function(form, action) {
 
                 if(menu_action.text == 'Add'){
@@ -84,7 +84,7 @@ var rObjectMenuHandler = function(menu_action){
     else if  (menu_action.text == "Add" ||  menu_action.text == "Edit"){
         
         var field = new Ext.form.TextField({
-                        fieldLabel: 'label',
+                        fieldLabel: gettext('label'),
                         name: 'label',
                         id:'node_label',                            
                         allowBlank:false,
@@ -119,11 +119,11 @@ var rObjectMenuHandler = function(menu_action){
             baseParams:{node_id:sel_node.id},
             items: [field],
             buttons: [{
-                text: 'Save',
+                text: gettext('Save'),
                 type: 'submit',
                 handler: submit_robject_form
             },{
-                text: 'Cancel',
+                text: gettext('Cancel'),
                 handler: function(){
                     win.close()
                     }
@@ -172,7 +172,7 @@ var realObjectMenuShow = function( node_menu, e ){
 
     
         var root_robjects = new Ext.tree.AsyncTreeNode({
-            text: 'Root',
+            text: gettext('Root'),
             id:'root_robj',
             expanded: true,
             allowDrag:false,

@@ -24,6 +24,7 @@ from django.utils import simplejson
 from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting, SystemSetting, WSSetting 
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage
+from dam.settings import LANGUAGE_CODE
 
 from dam import logger
 
@@ -136,10 +137,13 @@ def get_ws_settings(request):
 @login_required
 def account_prefs(request):
     from django.db import IntegrityError
+
 #    username = request.POST['username']
+    print '\n\n************************** request POST: \n\n', request.POST
     first_name = request.POST['first_name']
     last_name = request.POST['last_name']
     email = request.POST['email']
+    session_language = request.POST['session_language']
     
     current_password = request.POST.get('current_password')
     new_password = request.POST.get('new_password')
@@ -162,8 +166,9 @@ def account_prefs(request):
         request.user.first_name = first_name
         request.user.last_name = last_name
         request.user.email = email
-                
         request.user.save()
+	request.session['django_language'] = session_language
+	request.session.save()
     except IntegrityError:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'username', 'msg':'username already used'}]}))
         
@@ -171,12 +176,23 @@ def account_prefs(request):
     
 @login_required
 def get_account_info(request):
-    account_info = {
+    try:
+        account_info = {
 #        'username': request.user.username,
         'first_name': request.user.first_name,
         'last_name': request.user.last_name,
-        'email': request.user.email
-                    
-    }
+        'email': request.user.email,
+        'session_language': request.session['django_language']
+        }
+    except Exception,  ex:
+        logger.exception('ERROR IN ACCOUNT INFO: %s' % ex)
+        account_info = {
+#        'username': request.user.username,
+        'first_name': request.user.first_name,
+        'last_name': request.user.last_name,
+        'email': request.user.email,
+        'session_language': LANGUAGE_CODE,
+        }
+        request.session['django_language'] = LANGUAGE_CODE
     return HttpResponse(simplejson.dumps({'success': True, 'data': account_info}))
     

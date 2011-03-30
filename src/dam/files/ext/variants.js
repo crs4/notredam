@@ -937,7 +937,7 @@ function variants_prefs(){
                     id:'media_type_selection',
                     allowBlank: false,
                     validationEvent: 'click',
-                    fieldLabel: 'Media Type',
+                    fieldLabel: gettext('Media Type'),
                     columns: 2,
                     listeners:{
                 		invalid: function(){
@@ -949,16 +949,16 @@ function variants_prefs(){
                 	
                 	},
                     items: [
-                        {boxLabel: 'Image', name: 'image', id: 'image'},
-                        {boxLabel: 'Video', name: 'video',id: 'video'},
-                        {boxLabel: 'Audio', name: 'audio', id:'audio'},
-                        {boxLabel: 'Doc', name: 'doc', id: 'doc'}
+                        {boxLabel: gettext('Image'), name: 'image', id: 'image'},
+                        {boxLabel: gettext('Video'), name: 'video',id: 'video'},
+                        {boxLabel: gettext('Audio'), name: 'audio', id:'audio'},
+                        {boxLabel: gettext('Doc'), name: 'doc', id: 'doc'}
                     ]
                 })
                 
                 ],
                 buttons:[{
-                	text: 'Save',
+                	text: gettext('Save'),
                 	handler: function(){
                 	var params;
                 	if (variant_id)
@@ -983,7 +983,7 @@ function variants_prefs(){
                 	}
                 },
                 {
-                	text: 'Cancel',
+                	text: gettext('Cancel'),
                 	handler: function(){
                 		win.close();
                 	} 
@@ -999,7 +999,7 @@ function variants_prefs(){
     	win =new Ext.Window({
             layout      : 'fit',
             constrain: true,
-            title: '<p style="text-align:center">Add Rendition</p>',
+            title: '<p style="text-align:center">gettext(Add Rendition)</p>',
             width       : 350,
             height      : 200,
             modal: true,
@@ -1078,13 +1078,13 @@ function variants_prefs(){
     		items:[list_variant],
     		tbar:[
     		      {
-                    text: 'Add',                   
+                    text: gettext('Add'),                   
                     handler: function(){
     		    	  edit_window();
                     }
                  },
     			{
-    			text: 'Edit',
+    			text: gettext('Edit'),
     			id: 'edit_variant',
     			handler: function(){
                 	 var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
@@ -1095,18 +1095,18 @@ function variants_prefs(){
                  disabled: true
     		},
     		{
-    			text: 'Remove',
+    			text: gettext('Remove'),
     			id: 'remove_variant',
                 disabled: true,
                 handler: function(){
     			var variant_selected = Ext.getCmp('variant_grid').getSelectionModel().getSelected();
            	 	if (variant_selected)
 	           	 	Ext.Msg.confirm(
-	           	 	   'Delete Rendtion',
-	           	 	   'Are you sure you want to delete the rendition "' +variant_selected.data.name+ '"?',
+	           	 	   gettext('Delete Rendtion'),
+	           	 	   gettext('Are you sure you want to delete the rendition') + ' "' +variant_selected.data.name+ '"?',
 	           	 	   function(btn){
 	           	 			console.log(btn);
-		           	 		if (btn == 'yes')
+		           	 		if (btn == gettext('yes'))
 			           	 		Ext.Ajax.request({
 			           	 			url: '/delete_variant/',
 			           	 			params:{

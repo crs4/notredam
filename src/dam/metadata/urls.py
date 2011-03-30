@@ -18,6 +18,11 @@
 
 from django.conf.urls.defaults import *
 
+
+
+
+
+
 urlpatterns = patterns('',
 
     (r'^get_metadata/$', 'dam.metadata.views.get_metadata'),
@@ -34,6 +39,6 @@ urlpatterns = patterns('',
     (r'^ws_admin/set_default_descriptors/$', 'dam.metadata.views.wsadmin_set_default_descriptors'),
     (r'^get_cuepoint_keywords/$', 'dam.metadata.views.get_cuepoint_keywords'),
     (r'^set_cuepoint/$', 'dam.metadata.views.set_cuepoint'),
-    (r'^get_item_cuepoint/$', 'dam.metadata.views.get_item_cuepoint')
+    (r'^get_item_cuepoint/$', 'dam.metadata.views.get_item_cuepoint'),
 
 )

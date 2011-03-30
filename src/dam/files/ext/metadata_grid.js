@@ -320,10 +320,10 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
 				var b_caption;
 				
 				if (loadRecord) {
-					b_caption = 'Save changes';
+					b_caption = gettext('Save changes');
 				}
 				else {
-					b_caption = 'Add';
+					b_caption = gettext('Add');
 				}
 
 	            var form_panel = new Ext.FormPanel({
@@ -342,7 +342,7 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
 	                    handler: doAdd
 	                },
 	                {
-	                    text: 'Close',
+	                    text: gettext('Close'),
 	                    handler: function() {
 	                        this.ownerCt.ownerCt.ownerCt.close();
 	                    }
@@ -375,14 +375,14 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
 
 		    var tbar = [{
 				
-                text: 'Add',
+                text: gettext('Add'),
                 iconCls: 'add_icon',
                 handler: function() {
 					open_dynamic_form();
                 }
             },
             {
-                text: 'Clear',
+                text: gettext('Clear'),
                 iconCls: 'clear_icon',
                 handler: function() {
 						var selection = listview.getSelectionModel().getSelections();
@@ -410,7 +410,7 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
 				});
 				
 				tbar.splice(1, 0, {
-	                text: 'Edit',
+	                text: gettext('Edit'),
 	                iconCls: 'edit_icon',
 	                handler: function() {
 						edit_row();
@@ -425,7 +425,7 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
 			    items: listview,
 				title: '  ',
                 buttons: [{
-                    text: 'Save',
+                    text: gettext('Save'),
 					handler: function() {
                         var value_string = '';
                         var new_value, r, i;
@@ -468,7 +468,7 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
 					}
                 },
                 {
-                    text: 'Cancel',
+                    text: gettext('Cancel'),
                     handler: function() {
                         this.ownerCt.ownerCt.ownerCt.close();
                     }
@@ -535,7 +535,7 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
 				},
 				
                 buttons: [{
-                    text: 'Save',
+                    text: gettext('Save'),
                     handler: function() {
                         var values = this.ownerCt.ownerCt.form.getFieldValues();
 						grid_store.removeAll();
@@ -556,7 +556,7 @@ Ext.form.CustomField = Ext.extend(Ext.form.TextField, {
                     }
                 },
                 {
-                    text: 'Cancel',
+                    text: gettext('Cancel'),
                     handler: function() {
                         this.ownerCt.ownerCt.ownerCt.close();
                     }
@@ -663,8 +663,8 @@ Ext.grid.MetadataStore = function(grid, advanced) {
                 var store = this;
                     
                 Ext.MessageBox.show({
-                    title: 'Save Changes?',
-                    msg: 'You are closing the metadata tab that has unsaved changes. <br />Would you like to save your changes?',
+                    title: gettext('Save Changes?'),
+                    msg: gettext('You are closing the metadata tab that has unsaved changes. <br />Would you like to save your changes?'),
                     buttons: Ext.MessageBox.YESNO,
                     fn: function(button) {
 
@@ -1174,7 +1174,9 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
 				'<tpl for=".">',
 				'<br/>',
 				'<tpl for=".">',				
-			    '<p style="padding-left: 15px; padding-bottom: 2px;"><b>{caption}:</b>',
+			    '<p style="padding-left: 15px; padding-bottom: 2px;"><b>',
+                                '{[gettext(values.caption)]}',
+                                ':</b>',
 				'<span>{value}</span></p>',
 				'</tpl>',
 				'</tpl>'
@@ -1245,7 +1247,7 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
             success: function(data, textStatus){
                 this_grid.getStore().commitChanges();
                 this_grid.getEl().unmask();
-                Ext.MessageBox.alert('Status', 'Changes saved successfully.');
+                Ext.MessageBox.alert(gettext('Status'), gettext('Changes saved successfully.'));
                 if (new_params) {
                     this_grid.customEditors = {};
                     this_grid.getStore().load(new_params);
@@ -1253,7 +1255,7 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
             },
             failure: function (XMLHttpRequest, textStatus, errorThrown) {
                 this_grid.getEl().unmask();
-                Ext.MessageBox.alert('Status', 'Saving failed!');
+                Ext.MessageBox.alert(gettext('Status'), gettext('Saving failed!'));
             }            
          });    
     
@@ -1289,7 +1291,7 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
                 if (!e.grid.customEditors[n] || (e.grid.customEditors[n] && type == 'close_choice' && array == false) || (e.grid.customEditors[n] && type == 'lang')) {
                     Ext.MessageBox.show({
                         title: 'Save Changes?',
-                        msg: 'You are changing this value for all the items selected. <br />Would you like to save your changes?',
+                        msg: gettext('You are changing this value for all the items selected. <br />Would you like to save your changes?'),
                         buttons: Ext.MessageBox.YESNOCANCEL,
                         fn: function(button) {
                             if (button == 'no') {

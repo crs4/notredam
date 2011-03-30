@@ -438,7 +438,7 @@ var workspaces_panel = new Ext.Panel({
 function _get_general_fields(close_win_on_submit){
     var field_name = new Ext.form.TextField({
         id: 'field_name',
-        fieldLabel: 'Name',
+        fieldLabel: gettext('Name'),
         name: 'name',                       
         allowBlank:false,
         msgTarget: 'side',
@@ -456,7 +456,7 @@ function _get_general_fields(close_win_on_submit){
     
     var field_description = new Ext.form.TextArea({
         id: 'field_description',
-        fieldLabel: 'Description',        
+        fieldLabel: gettext('Description'),        
         name: 'description',
         allowBlank:true,
         height: 100
@@ -471,7 +471,7 @@ function _general_submit(close_win_on_submit, win_obj){
 
     Ext.getCmp('general_form').getForm().submit({
         clientValidation: true,
-        waitMsg: 'Saving...',
+        waitMsg: gettext('Saving...'),
         success: function(form, action) {
             ws_store.reload();
             var new_name = form.getValues().name;
@@ -524,14 +524,14 @@ function general_form(title, url,  close_win_on_submit, values){
         items:fields,
         buttons: [{
             id: 'save_button',
-            text: 'Save',
+            text: gettext('Save'),
             type: 'submit',
             handler: function(){
                 var my_win = this.findParentByType('window');                
                 _general_submit(close_win_on_submit, my_win );
                 }
         },{
-            text: 'Cancel',
+            text: gettext('Cancel'),
             handler: function(){
                 var my_win = this.findParentByType('window');
                 my_win.close();
@@ -545,13 +545,13 @@ function edit_ws(create){
    var title, url, g_form; 
     
    if(create){
-        title = 'New Workspace';
+        title = gettext('New Workspace');
         url = '/admin_workspace/add/';
         g_form = general_form(title, url, true);
    }
    else{
         current_ws = ws_store.getAt(ws_store.findBy(find_current_ws_record)).data;
-        title = 'General';
+        title = gettext('General');
         url = '/admin_workspace/' + current_ws.pk + '/';
         g_form = general_form('General',url,false, [current_ws.name, current_ws.description]);
        
@@ -687,7 +687,7 @@ function workflow(){
         }],
         
         tbar:[{
-                text:'Add a state',
+                text: gettext('Add a state'),
                 store: ws_state_store,
                 grid_id: grid_id ,
                 handler:function(){                    
