@@ -1,3 +1,4 @@
+import os
 from twisted.internet import defer, reactor
 from dam.core.dam_repository.models import Type
 from dam.variants.models import Variant
@@ -107,7 +108,7 @@ from dam.workspace.models import DAMWorkspace
 
 def test():
     print 'test'
-    item = Item.objects.get(pk=1)
+    item = Item.objects.get(pk=3)
     workspace = DAMWorkspace.objects.get(pk = 1)
     d = run(workspace,
             item.pk,
