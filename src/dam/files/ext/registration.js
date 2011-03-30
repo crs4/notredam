@@ -34,45 +34,45 @@ Ext.onReady(function() {
         id: 'registration_form',
 
         items: [{
-            fieldLabel: 'Username',
+            fieldLabel: gettext('Username'),
             name: 'username',
             allowBlank: false
         }, {
-            fieldLabel: 'First name',
+            fieldLabel: gettext('First name'),
             name: 'first_name'
         },{
-            fieldLabel: 'Last name',
+            fieldLabel: gettext('Last name'),
             name: 'last_name'
         }, {
-            fieldLabel: 'Email',
+            fieldLabel: gettext('Email'),
             name: 'email',
             allowBlank: false,
             vtype:'email'
         }, {
             inputType: 'password',
-            fieldLabel: 'Password',
+            fieldLabel: gettext('Password'),
             name: 'password1',
             allowBlank: false
         }, {
             inputType: 'password',
-            fieldLabel: 'Repeat Password',
+            fieldLabel: gettext('Repeat Password'),
             name: 'password2',
             allowBlank: false
         } 
         ],
 
         buttons: [{
-            text: 'Register', 
+            text: gettext('Register'), 
             handler: function() {
                 var f = Ext.getCmp('registration_form').form;
                 if (f.isValid()) {
-                    f.submit({waitMsg:'Saving data...', method: "POST", success: function(form, action) { document.location.href = '/'; }, failure: function(form, action) {var data = Ext.decode(action.response.responseText); Ext.MessageBox.alert('Error', 'The following errors occured: ' + data.errors);}});
+                    f.submit({waitMsg:gettext('Saving data...'), method: "POST", success: function(form, action) { document.location.href = '/'; }, failure: function(form, action) {var data = Ext.decode(action.response.responseText); Ext.MessageBox.alert(gettext('Error'), gettext('The following errors occured: ') + data.errors);}});
                 }else{
-                    Ext.MessageBox.alert('Error', 'Please fill all the fields and try again.');
+                    Ext.MessageBox.alert(gettext('Error'), gettext('Please fill all the fields and try again.'));
                 }
             }
         },{
-            text: 'Reset',
+            text: gettext('Reset'),
             handler: function() {
                 var f = Ext.getCmp('registration_form').form;
                 f.reset();

@@ -69,7 +69,6 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		            		id: 'firstname',
 		            		fieldLabel: 'first name',
 		            		name:'first_name'		            		
-		            		
 		            	}),
 		            	new Ext.form.TextField({
 		            		id: 'last_name',
@@ -83,6 +82,11 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		            		name:'email',
 		            		vtype:'email',
 		            		allowBlank: false
+		            	}),
+		            	new Ext.form.TextField({
+		            		id: 'session_language',
+		            		fieldLabel: 'default language',
+		            		name:'session_language'		            		
 		            	}),
 		            	
 		            	new Ext.form.FieldSet({

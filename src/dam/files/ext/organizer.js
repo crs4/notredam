@@ -170,7 +170,9 @@ var basicTemplate = new Ext.XTemplate(
 '<div class="details">',
 '<div class="details-info"><br/>',
 '<tpl for="descriptors">',
-    '<b>{caption}:</b><br/>',
+    '<b>',
+	'{[gettext(values.caption)]}',
+	':</b><br/>',
 	'<tpl if="value.properties === undefined">',
         '<tpl if="this.isString(value)">',
             '<span>{value}</span><br/>',
@@ -185,7 +187,9 @@ var basicTemplate = new Ext.XTemplate(
     '</tpl>',
     '<tpl if="value.properties">',
         '<tpl for="value.properties">',
-            '<b class="metadata-structure">{caption}:</b><br/>',
+            '<b class="metadata-structure">',
+		'{[gettext(values.caption)]}',
+		':</b><br/>',
             '<span class="metadata-structure">{value}</span><br/>',      
         '</tpl>',
     '</tpl>',
@@ -655,7 +659,7 @@ var createPaginator = function(config) {
           ['50', '50'],
           ['70', '70'],
           ['100', '100'],
-          ['All', '0']
+          [gettext('All'), '0']
         ]
       }),
       mode : 'local',
@@ -663,7 +667,7 @@ var createPaginator = function(config) {
 
       listWidth     : 40,
       triggerAction : 'all',
-      displayField  : 'caption',
+      displayField  : gettext('caption'),
       valueField    : 'value',
       editable      : false,
       forceSelection: true,
@@ -690,7 +694,7 @@ var createPaginator = function(config) {
         displayInfo: true,
         displayMsg: 'Displaying items {0} - {1} of {2}',
         emptyMsg: "No items to display",
-        items: ['-', 'Items per page: ', combo]
+        items: ['-', gettext('Items per page: '), combo]
         
     }, config));
 
@@ -808,7 +812,7 @@ function createMediaPanel(config, autoLoad) {
     	Ext.form.TextField.superclass.setValue.call(this, value);
     	
     	if (value == '')
-    		setTabTitle('All Items', panel_id);
+    		setTabTitle(gettext('All Items'), panel_id);
     	else
     		setTabTitle(value, panel_id);    	
     }
@@ -925,8 +929,8 @@ function createMediaPanel(config, autoLoad) {
     
     
     var order_by_menu = [
-        create_order_by_button('Creation Date', 'creation_time'),
-        create_order_by_button('Title', 'dc_title')
+        create_order_by_button(gettext('Creation date'), 'creation_time'),
+        create_order_by_button(gettext('Title'), 'dc_title')
 //        create_order_by_button('File Size', 'size'),
 //        create_order_by_button('Duration', 'notredam_duration')
     ];
@@ -965,7 +969,7 @@ function createMediaPanel(config, autoLoad) {
     });
     
 	var show_all = new Ext.Button({
-	   text: 'Show All',
+	   text: gettext('Show All'),
 		//			   icon: '/files/images/broom.png',
 		   handler: function(){
    			Ext.getCmp('media_tabs').getActiveTab().getSearch().setValue('');
@@ -989,7 +993,7 @@ function createMediaPanel(config, autoLoad) {
    			
    			set_query_on_store({query: ''});		
    			},
-   			tooltip:'Show All Objects'
+   			tooltip: gettext('Show All Objects')
 		   			
 				   	   			
   	});
@@ -1089,7 +1093,7 @@ function createMediaPanel(config, autoLoad) {
 	    	
 	    	},
 	    	items:[
-		      'Quick Search: ', 
+		      gettext('Quick Search: '), 
 		      ' ',		     
 		      search, 
 		      trigger,
@@ -1098,7 +1102,7 @@ function createMediaPanel(config, autoLoad) {
             
 		      '-',
 		      {xtype: 'tbspacer', width: 5},              
-              'Order By: ',
+              gettext('Order By: '),
               order_by,
               '-',
               {xtype: 'tbspacer', width: 5},
@@ -1112,7 +1116,7 @@ function createMediaPanel(config, autoLoad) {
 			{
 			   icon: '/files/images/icons/fam/grid.png', // icons can also be specified inline
 			   cls: 'x-btn-icon',
-			   tooltip: 'Change to Grid view',
+			   tooltip: gettext('Change to Grid view'),
 			   handler: function() {
 			       var tab = Ext.getCmp('media_tabs').getActiveTab();			       
 			       close_map();
@@ -1121,7 +1125,7 @@ function createMediaPanel(config, autoLoad) {
 			}, {
 			   icon: '/files/images/map.png', // icons can also be specified inline
 			   cls: 'x-btn-icon',
-			   tooltip: 'Change to Map view',
+			   tooltip: gettext('Change to Map view'),
 			   handler: function() {
 			       var tab = Ext.getCmp('media_tabs').getActiveTab();			       
 			       open_map();
@@ -1235,7 +1239,7 @@ Ext.onReady(function(){
         id: 'variantMenu',
         items: [
             {
-                text: 'original',
+                text: gettext('original'),
                 handler: changeVariant
             }
         ]
@@ -1252,7 +1256,7 @@ Ext.onReady(function(){
             listeners: {load: function(){
                 variant_menu.removeAll();
                 variant_menu.add({
-                        text: 'original',
+                        text: gettext('original'),
                         handler: changeVariant
                     });
                 variant_menu.store = this;
@@ -1320,13 +1324,13 @@ Ext.onReady(function(){
 
     var metadata_tbar = new Ext.Toolbar({items: [{
             id: 'metadata_language',
-            text:'English',
+            text:gettext('English'),
             menu: language_menu,
             iconCls: 'language',
             icon: '/files/images/flag_icons/us.png'
             }, {
             id: 'metadata_variant',
-            text:'Rendition: original',
+            text:gettext('Rendition: original'),
             menu: variant_menu
             }
         ]}
@@ -1549,7 +1553,7 @@ Ext.onReady(function(){
     
 var search_box = {
                
-        title: 'Search Box',
+        title: gettext('Search Box'),
         id: 'search_box_panel',
         width: 200,
         height: 100,
@@ -1567,7 +1571,7 @@ var search_box = {
             items:[
             {
                 id: 'sb_and',
-                text: 'AND',
+                text: gettext('AND'),
                 pressed: true,
                 enableToggle: true,
                 toggleHandler: function(button, state){
@@ -1584,7 +1588,7 @@ var search_box = {
                 },
                 {
                     id: 'sb_or',
-                    text: 'OR',
+                    text: gettext('OR'),
                     enableToggle: true,
                     toggleGroup: 'search_box',
                     toggleHandler: function(button, state){
@@ -1617,9 +1621,9 @@ var search_box = {
                 {xtype: 'tbfill'},
                 {
                     id: 'save_as_smart_folder',
-                    text: 'Save',
+                    text: gettext('Save'),
                     disabled: true,
-                    tooltip: 'Save query as a Smart Folder',
+                    tooltip: gettext('Save query as a Smart Folder'),
                     handler: function(){save_smart_folder();}
                 }            
             ]
@@ -1712,19 +1716,19 @@ var search_box = {
     var basketMenu = new Ext.menu.Menu({id:'basketMenu',
     items: [
     {
-        text: 'Add',
+        text: gettext('Add'),
         handler: function (data){ 
                     reload_selected_nodes();
                  }
     },
     {
-        text:'Remove', 
+        text:gettext('Remove'), 
         handler: function (data){ 
                     remove_from_basket();
                  }        
     },
     {
-        text:'Clear', 
+        text:gettext('Clear'), 
           handler: function (data){ 
                     clear_basket();
                  }              
@@ -1776,7 +1780,7 @@ var search_box = {
                     items:[{
                         id:'west-panel',
                         region:'center',
-                        title:'Catalogue',
+                        title:gettext('Catalogue'),
                         width: 200,
                         layoutConfig:{
                             animate:true
@@ -1807,7 +1811,7 @@ var search_box = {
                               
                             items: [ 
                                 {
-                                    text:"Basket",
+                                    text:gettext("Basket"),
                                     id : "panel_basket",
                                     //menu: basketMenu,
                                     enableToggle: true,
@@ -1875,7 +1879,7 @@ var search_box = {
                             },
                             
                             items:[{
-                                title: 'Summary',
+                                title: gettext('Summary'),
                                 autoScroll:true,
                                 id: 'preview_panel',
                                 hideBorders: true,
@@ -1896,7 +1900,7 @@ var search_box = {
                                         autoScroll:false
                                     },
                                     new Ext.ListView({
-                                        title:'Variants',
+                                        title:gettext('Variants'),
                                         id:'variant_summary',
                                         autoScroll: false,
                                         selectedClass: 'x-list-selected list-variant',
@@ -1942,26 +1946,35 @@ var search_box = {
                                                         '<div id="full_metadata_{pk}"  style="padding-left:20px;"  >',
                                                         	    
                                                             '<tpl for="data_basic">',
-                                                                '<p><b>{caption}:</b>',
+								// i18n
+                                                                '<p><b>',
+								'{[gettext(values.caption)]}',
+								':</b>',
                                                                 '<tpl if="value.properties === undefined">',
                                                                     '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
                                                                 '</tpl>',
                                                                 '<tpl if="value.properties"><br/>',
                                                                     '<tpl for="value.properties">',
-                                                                        '<b style="padding-left:20px;">{caption}:</b>',
+                                                                        '<b style="padding-left:20px;">',
+									'{[gettext(values.caption)]}',
+									':</b>',
                                                                         '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
                                                                     '</tpl></p>',
                                                                 '</tpl>',
                                                             '</tpl>',
                                                         
                                                             '<tpl for="data_full">',
-                                                                '<p><b>{caption}:</b>',
+                                                                '<p><b>',
+								'{[gettext(values.caption)]}',
+								':</b>',
                                                                 '<tpl if="value.properties === undefined">',
                                                                     '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
                                                                 '</tpl>',
                                                                 '<tpl if="value.properties"><br/>',
                                                                     '<tpl for="value.properties">',
-                                                                        '<b style="padding-left:20px;">{caption}:</b>',
+                                                                        '<b style="padding-left:20px;">',
+									'{[gettext(values.caption)]}',
+									':</b>',
                                                                         '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
                                                                     '</tpl></p>',
                                                                 '</tpl>',
@@ -2004,7 +2017,7 @@ var search_box = {
                                 
                                 ]
                             }, new Ext.grid.MetadataGrid({
-                    title: 'Metadata',
+                    title: gettext('Metadata'),
                     id: 'metadata_panel',
                     view: new Ext.grid.GroupingView({
                         forceFit:true,
@@ -2015,13 +2028,13 @@ var search_box = {
                     }),
  
                     buttons: [{
-                        text: 'Save',
+                        text: gettext('Save'),
                         handler: function() {
                             var my_grid = this.findParentByType('metadatagrid');
                             my_grid.saveMetadata('/save_descriptors/');
                          }
                          },{
-                             text: 'Cancel',
+                             text: gettext('Cancel'),
                              handler: function() {
                                 var my_grid = this.findParentByType('metadatagrid');
                                 my_grid.getStore().rejectChanges();
@@ -2040,13 +2053,13 @@ var search_box = {
                     }),
  
                     buttons: [{
-                        text: 'Save',
+                        text: gettext('Save'),
                         handler: function() {
                             var my_grid = this.findParentByType('metadatagrid');
                             my_grid.saveMetadata('/save_metadata/');
                         }
                          },{
-                             text: 'Cancel',
+                             text: gettext('Cancel'),
                              handler: function() {
                                 var my_grid = this.findParentByType('metadatagrid');
                                 my_grid.getStore().rejectChanges();

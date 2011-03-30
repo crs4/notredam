@@ -255,7 +255,7 @@ function setCuePoint(cuepoints, item) {
 			item: item			
 		},
 		success: function() {
-			Ext.MessageBox.alert('Success', 'CuePoints saved successfully.');
+			Ext.MessageBox.alert(gettext('Success'), gettext('CuePoints saved successfully.'));
 		}
 	});
 
@@ -453,7 +453,7 @@ function populate_menu(){
                                     
                                     },
                                     success: function() {
-                                        Ext.MessageBox.alert('Success', 'Item(s) shared successfully.');
+                                        Ext.MessageBox.alert(gettext('Success'), gettext('Item(s) shared successfully.'));
                                     }
                                 
                                 });
@@ -477,7 +477,7 @@ function populate_menu(){
                             success: function(){
                                 var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];                                        
                                 view.getStore().reload();
-                                Ext.MessageBox.alert('Success', 'Item(s) moved successfully.');
+                                Ext.MessageBox.alert(gettext('Success'), gettext('Item(s) moved successfully.'));
                             }
                         });
                     }
@@ -650,12 +650,12 @@ var save_smart_folder = function(label_value, smart_folder_id){
             items:[form],
             buttons:[
                 {
-                    text: 'Save',
+                    text: gettext('Save'),
                     type: 'submit',
                     handler: function(){submit();}
                 },
                 {
-                    text:'Cancel',
+                    text:gettext('Cancel'),
                     handler: function(){
                         win.close();
                     }
@@ -794,10 +794,10 @@ function open_variant(name, url, media_type, width, height){
 function show_variants_menu (el){
     var menu = new Ext.menu.Menu({
         items: [{
-            text: 'Generate'
+            text: gettext('Generate')
         },
         {
-            text: 'Import'
+            text: gettext('Import')
             
         }
         ]

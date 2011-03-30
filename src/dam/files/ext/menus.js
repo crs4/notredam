@@ -146,7 +146,7 @@ Ext.onReady(function(){
                 layout: 'fit',
                 items: [members_list],
                 tbar: [{				
-                    text: 'Add',
+                    text: gettext('Add'),
                     iconCls: 'add_icon',
                     handler: function() {
 
@@ -238,7 +238,7 @@ Ext.onReady(function(){
                             id: 'add_user_win',
                             items    : [list_panel, permissions_form ],
                             buttons: [{
-                                text: 'Save',
+                                text: gettext('Save'),
                                 handler: function() {
                                     var values = Ext.getCmp('new_user_permissions').getForm().getFieldValues();                                    
                                     var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_collection: 0, edit_taxonomy: 0};
@@ -270,7 +270,7 @@ Ext.onReady(function(){
                                     }
                                     var selected = Ext.getCmp('available_users').getSelectedRecords();
                                     if (selected.length == 0) {
-                                        Ext.MessageBox.alert('Error', 'Select one or more user(s) from the list');
+                                        Ext.MessageBox.alert(gettext('Error'), gettext('Select one or more user(s) from the list'));
                                     }
                                     else {
                                         for (var x=0; x < selected.length; x++) {
@@ -284,7 +284,7 @@ Ext.onReady(function(){
                                     }
                                 }                            
                             }, {
-                                text: 'Close',
+                                text: gettext('Close'),
                                 handler: function() {
                                     Ext.getCmp('add_user_win').close();    
                                 }                            
@@ -314,12 +314,12 @@ Ext.onReady(function(){
                                 win.show();                            
                             }
                             else {
-                                Ext.MessageBox.alert('Error', 'No more users available');
+                                Ext.MessageBox.alert(gettext('Error'), gettext('No more users available'));
                             }
                         });
                     }
                 }, {
-                    text: 'Remove',
+                    text: gettext('Remove'),
                     iconCls: 'clear_icon',
                     handler: function() {
 						var selection = Ext.getCmp('members_list').getSelectionModel().getSelections();
@@ -342,7 +342,7 @@ Ext.onReady(function(){
             title: 'Members configuration',
             items    : [members_panel],
             buttons: [{
-                text: 'Save',
+                text: gettext('Save'),
                 handler: function() {
                     var ws_members = Ext.getCmp('members_list').getStore();
                     var permissions = [];
@@ -353,15 +353,15 @@ Ext.onReady(function(){
 				        url: '/save_members/',
 		                params: {ws_id: current_ws, permissions: Ext.encode(permissions)},
 				        success: function(data){
-                            Ext.MessageBox.alert('OK', 'Changes saved successfully.');
+                            Ext.MessageBox.alert(gettext('OK'), gettext('Changes saved successfully.'));
 				        },
 						failure: function() {
-							Ext.MessageBox.alert('Error', 'An error occured while saving configuration.');
+							Ext.MessageBox.alert(gettext('Error'), gettext('An error occured while saving configuration.'));
 						}
 				    });                
                 }                            
             }, {
-                text: 'Close',
+                text: gettext('Close'),
                 handler: function() {
                     Ext.getCmp('members_conf').close();    
                 }                            
@@ -389,7 +389,7 @@ Ext.onReady(function(){
             }
 
 			Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload();
-            Ext.MessageBox.alert('Success', 'Object(s) deleted successfully.');
+            Ext.MessageBox.alert(gettext('Success'), gettext('Object(s) deleted successfully.'));
 
 		};
 
@@ -399,7 +399,7 @@ Ext.onReady(function(){
 
         var buttons = [
             {
-                text: 'OK',                                                           
+                text: gettext('OK'),                                                           
                 handler: function() {
                     var f = Ext.getCmp('form').form;
                     
@@ -419,16 +419,16 @@ Ext.onReady(function(){
 
                             }, 
                             failure: function() {
-                                Ext.MessageBox.alert('Error', 'An error occured while removing items.');
+                                Ext.MessageBox.alert(gettext('Error'), gettext('An error occured while removing items.'));
                             }
                         });
                         
                     } else{
-                        Ext.MessageBox.alert('Error', 'Please fill all the fields and try again.');
+                        Ext.MessageBox.alert(gettext('Error'), gettext('Please fill all the fields and try again.'));
                     }
                 }
             },{
-                text: 'Cancel',
+                text: gettext('Cancel'),
                 handler: function() {
                    Ext.getCmp('action_win').close();
                 }
@@ -437,10 +437,10 @@ Ext.onReady(function(){
         if (multiple_ws) {
             var removal_options = {
                 xtype: 'radiogroup',
-                fieldLabel: 'Delete from:',
+                fieldLabel: gettext('Delete from:'),
                 items: [
-                   {boxLabel: 'Current workspace', name: 'choose', inputValue: 'current_w', checked: true},
-                   {boxLabel: 'All workspaces', name: 'choose', inputValue: 'all_w'}
+                   {boxLabel: gettext('Current workspace'), name: 'choose', inputValue: 'current_w', checked: true},
+                   {boxLabel: gettext('All workspaces'), name: 'choose', inputValue: 'all_w'}
                 ]
             };
             
@@ -488,7 +488,7 @@ Ext.onReady(function(){
 							on_delete_success(data);
 				        },
 						failure: function() {
-							Ext.MessageBox.alert('Error', 'An error occured while removing items.');
+							Ext.MessageBox.alert(gettext('Error'), gettext('An error occured while removing items.'));
 						}
 				    });
 				}
@@ -532,23 +532,23 @@ Ext.onReady(function(){
             items: [
                 {
                     id: 'new_ws_menu',
-                    text: 'New',
+                    text: gettext('New'),
                     handler: function(){edit_ws(true);}
     
                 },
                 
                 { id: 'delete_ws_menu',
-                    text: 'Delete',
+                    text: gettext('Delete'),
                     handler: function() {
                         Ext.Ajax.request({
                             url: '/get_n_items/',
                             success: function(resp){
                                 var resp = Ext.decode(resp.responseText);
                                 if (resp.n_items) {
-                                    Ext.MessageBox.alert('Attention', 'Deletion failed. Current workspace is not empty, please move or delete the items before');
+                                    Ext.MessageBox.alert(gettext('Attention'), gettext('Deletion failed. Current workspace is not empty, please move or delete the items before'));
                                 }
                                 else {
-                                    Ext.MessageBox.confirm('Confirm', "Are you sure you remove this workspace? ", call_back_delete);
+                                    Ext.MessageBox.confirm(gettext('Confirm'), gettext("Do you really want to remove this workspace?"), call_back_delete);
                                 }
                             }
                             
@@ -564,21 +564,21 @@ Ext.onReady(function(){
                 
                  {
                     id: 'preferences_menu',
-                    text: 'Configuration',
+                    text: gettext('Configuration'),
                     menu:{
                         items:[{
-                                text: 'Descriptors',
+                                text: gettext('Descriptors'),
                                 handler: open_config_descriptors
                             
                             }, 
-                        { text: 'Members',                                                      
+                        { text: gettext('Members'),                                                      
                             handler: members_configuration                    
                             
-                            }, { text: 'Preferences',
+                            }, { text: gettext('Preferences'),
                             handler: function(){ open_ws_pref(); }
                         
                             },
-                        { text: 'Renditions',                                                      
+                        { text: gettext('Renditions'),                                                      
                             handler: variants_prefs 
                             
                             }
@@ -593,7 +593,7 @@ Ext.onReady(function(){
         id: 'editMenu',
         items: [
             {
-                text: 'Select All',
+                text: gettext('Select all'),
                 handler: function() {
                     var view = Ext.getCmp('media_tabs').getActiveTab().getComponent(0);
                     
@@ -603,7 +603,7 @@ Ext.onReady(function(){
             },
             
             {
-                text: 'Clear selection',
+                text: gettext('Clear selection'),
                 handler: function() {
                     Ext.getCmp('media_tabs').getActiveTab().getComponent(0).clearSelections();
 
@@ -619,7 +619,7 @@ Ext.onReady(function(){
         items: [
             {
                 id:'new_item_menu',
-                text: 'New',
+                text: gettext('New'),
                 handler: function() {
                     calculatePageSize();
 //                    var up = new Upload();
@@ -733,25 +733,25 @@ Ext.onReady(function(){
                     });
                 }
             }, {
-                text: 'Share with...',
+                text: gettext('Share with...'),
                 id: 'addto',
                 disabled: true,
                 menu:  cp_ws_menu
             },
             {
-                text: 'Move to...',
+                text: gettext('Move to...'),
                 id: 'mvto',
                 disabled: true,
                 menu: mv_ws_menu
             },            
             {
-                text: 'Sync XMP...',
+                text: gettext('Sync XMP...'),
                 id: 'sync_xmp',
                 disabled: true,
                 handler: function() {
 
                     var variant_store = Ext.getCmp('variantMenu').store;
-                    var variants_list = [{boxLabel: 'All', name: 'all', checked: true}, {boxLabel: 'original', name: 'original'}];
+                    var variants_list = [{boxLabel: gettext('All'), name: 'all', checked: true}, {boxLabel: gettext('original'), name: 'original'}];
 
                     variant_store.each(function(r) {
                         var variant = r.get('variant_name');
@@ -766,13 +766,13 @@ Ext.onReady(function(){
                         items: [
                             {
                                 xtype: 'checkboxgroup',
-                                fieldLabel: 'Choose renditions',
+                                fieldLabel: gettext('Choose renditions'),
                                 columns: 3,
                                 items: variants_list
                             }
                         ],
                         buttons: [{
-                            text: 'Sync',
+                            text: gettext('Sync'),
                             handler: function(){
                                if(fp.getForm().isValid()){
                                     var items = get_selected_items();
@@ -791,7 +791,7 @@ Ext.onReady(function(){
                                 }
                             }
                         },{
-                            text: 'Cancel',
+                            text: gettext('Cancel'),
                             handler: function(){
                                 this.findParentByType('window').close();
                             }
@@ -804,7 +804,7 @@ Ext.onReady(function(){
                         constrain: true,
                         width: 400,
                         height: 300,
-                        title: 'Synchronize XMP',
+                        title: gettext('Synchronize XMP'),
                         items: [fp]
                     });
 
@@ -813,7 +813,7 @@ Ext.onReady(function(){
                 }
             },
             {
-                text: 'Download',
+                text: gettext('Download'),
                 id: 'download',
                 disabled: true,
                 handler: function(){
@@ -837,10 +837,10 @@ Ext.onReady(function(){
                         layout: 'fit',
                         frame: true,
                         modal: true,
-                        title: 'Choose renditions to download',
+                        title: gettext('Choose renditions to download'),
                         buttons: [{
                         	id: 'download_rendition_button',
-                            text: 'Download',
+                            text: gettext('Download'),
                             disabled: true,
                             handler: function(){
                                 var renditions_to_download = Ext.getCmp('renditions_to_download').getSelectionModel().getSelections();
@@ -914,7 +914,7 @@ Ext.onReady(function(){
 		                            
 		                            new Ext.form.ComboBox({
 		                            	id: 'compression_type',
-		                            	fieldLabel: 'Compression',
+		                            	fieldLabel: gettext('Compression'),
 							        	width: 245,
 							        	region: 'south',
 							        	 store: new Ext.data.ArrayStore({							        	        
@@ -945,7 +945,7 @@ Ext.onReady(function(){
             
             {
                 id:'remove_from_ws',
-                text: 'Delete',
+                text: gettext('Delete'),
                 disabled: true,
                 handler: function() {
                     var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];
@@ -964,12 +964,12 @@ Ext.onReady(function(){
 
                     }
                     else {
-                        Ext.MessageBox.alert('Error', 'Be serious man... you have selected no items!');
+                        Ext.MessageBox.alert(gettext('Error'), gettext('You have selected no items!'));
                     }
                 }
             },
              {
-                text:'Set state to',
+                text:gettext('Set state to'),
                 id: 'set_state_to',
                 menu: states_menu,
                 disabled: true
@@ -1073,12 +1073,12 @@ Ext.onReady(function(){
     var help = new Ext.menu.Menu({
         id: 'helpMenu',
         items: [{
-            text: 'Tutorial',
+            text: gettext('Tutorial'),
             handler: function() {
                 window.open('http://www.opendam.org/NotreDAM/QuickGuide.html', 'tutorial');
             }
         }, {
-            text: 'Info',
+            text: gettext('Info'),
             id: 'whoami',
             handler: function() {
                 var win = new Ext.Window({
@@ -1102,18 +1102,18 @@ Ext.onReady(function(){
         
         
         tb.add({
-                text:'<span style="' + style_tb + '">Item</span>',
+                text:'<span style="' + style_tb + '">' + gettext('Item') + '</span>',
                 menu: menu, 
                 id: 'object_menu'
             }, '-',
             {
-                text:'<span style="' + style_tb + '">Edit</span>',
+                text:'<span style="' + style_tb + '">' + gettext('Edit') + '</span>',
                 menu: edit_menu,
                 style: '',
                 id: 'edit_menu'
             }, '-',
             {
-                text:'<span style="' + style_tb + '">Workspace</span>',
+                text:'<span style="' + style_tb + '">' + gettext('Workspace') + '</span>',
                 menu: ws_menu()
             }, '-',
             
@@ -1165,7 +1165,7 @@ Ext.onReady(function(){
             
             
             {
-                text:'<span style="' + style_tb + '">Help</span>',
+                text:'<span style="' + style_tb + '">' + gettext('Help') + '</span>',
                 menu: help 
             }
         );
@@ -1258,7 +1258,7 @@ Ext.onReady(function(){
                                     },
                                 success: function() {
                                 	
-                                    Ext.MessageBox.alert('Success', 'Item(s) shared successfully.');
+                                    Ext.MessageBox.alert(gettext('Success'), gettext('Item(s) shared successfully.'));
                                 }
                                 
                             });
@@ -1282,7 +1282,7 @@ Ext.onReady(function(){
                                 success: function(){
                                     var view = Ext.getCmp('media_tabs').getActiveTab().items.items[0];                                        
                                     view.getStore().reload();
-                                    Ext.MessageBox.alert('Success', 'Item(s) moved successfully.');
+                                    Ext.MessageBox.alert(gettext('Success'), gettext('Item(s) moved successfully.'));
                                 }
                             });
                         }

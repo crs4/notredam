@@ -21,9 +21,11 @@ from django.db import models
 import logger
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
+from django.utils.translation import ugettext
+
 
 from dam.core.dam_metadata.models import AbstractMetadataLanguage, XMPProperty, XMPStructure, XMPPropertyChoice
-
+from dam import logger
 import re
 
 def convert_rational(s):
@@ -115,10 +117,11 @@ class MetadataProperty(XMPProperty):
         metadataschema = self
         
         string_type_list = ['txt', 'proper_name','mimetype','agent_name','xpath' ,'date_only_year', 'rational']
-    
-        tooltip=metadataschema.namespace.prefix+':'+metadataschema.field_name + ": " + metadataschema.description
-    
-        definition = {'id': metadataschema.id, 'name': metadataschema.caption, 'groupname': metadataschema.namespace.name, 'tooltip': tooltip, 'value': '', 'type': metadataschema.type, 'editable': metadataschema.editable, 'is_variant': metadataschema.is_variant, 'is_choice': metadataschema.is_choice}
+        print 'metadataschema.description: ', metadataschema.description 
+        tooltip=unicode(metadataschema.namespace.prefix+':'+metadataschema.field_name + ": ") 
+        tooltip += ugettext((metadataschema.description).decode('utf-8'))
+   
+        definition = {'id': metadataschema.id, 'name': ugettext(metadataschema.caption), 'groupname': metadataschema.namespace.name, 'tooltip': tooltip, 'value': '', 'type': metadataschema.type, 'editable': metadataschema.editable, 'is_variant': metadataschema.is_variant, 'is_choice': metadataschema.is_choice}
     
         if metadataschema.is_choice == 'close_choice' or metadataschema.is_choice == 'open_choice':
             choices = []
