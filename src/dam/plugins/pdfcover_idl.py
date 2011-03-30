@@ -1,7 +1,7 @@
 from dam.plugins.common.utils import save_type, get_variants,get_ext_by_type
     
 def inspect(workspace):    
-    variants = get_variants(workspace, 'doc')
+    variants = get_variants(workspace, 'doc', exclude=['thumbnail', 'preview'])
     output_variants = get_variants(workspace, 'image', auto_generated = True)
     media_types = get_ext_by_type('image')
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
@@ -15,7 +15,7 @@ def inspect(workspace):
         'params':[
             {   
                 'name': 'source_variant',
-                'fieldLabel': 'Source Rendition',
+                'fieldLabel': 'Input Rendition',
                 'xtype': 'select',
                 'values': variants,
                 'value': variants[0],
