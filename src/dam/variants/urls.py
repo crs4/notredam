@@ -21,7 +21,7 @@ from django.conf.urls.defaults import *
 urlpatterns = patterns('',
     (r'^edit_variant/$', 'dam.variants.views.edit_variant'),
     (r'^delete_variant/$', 'dam.variants.views.delete_variant'),
-    (r'^force_variant_generation/(.+)/(.+)/$', 'dam.variants.views.force_variant_generation'),
+    #(r'^force_variant_generation/(.+)/(.+)/$', 'dam.variants.views.force_variant_generation'),
     (r'^get_variants/$', 'dam.variants.views.get_variants'),
     (r'^get_variant_metadata/$', 'dam.variants.views.get_variant_metadata'),
     (r'^get_variants_list/$', 'dam.variants.views.get_variants_list'),
