@@ -117,7 +117,7 @@ class MetadataProperty(XMPProperty):
         metadataschema = self
         
         string_type_list = ['txt', 'proper_name','mimetype','agent_name','xpath' ,'date_only_year', 'rational']
-        print 'metadataschema.description: ', metadataschema.description 
+        #print 'metadataschema.description: ', metadataschema.description 
         tooltip=unicode(metadataschema.namespace.prefix+':'+metadataschema.field_name + ": ") 
         tooltip += ugettext((metadataschema.description).decode('utf-8'))
    

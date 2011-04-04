@@ -1118,16 +1118,16 @@ Ext.onReady(function(){
             }, '-',
             
             {
-                text:'<span style="' + style_tb + '">Script</span>',
+                text:'<span style="' + style_tb + '">' + gettext('Script') + '</span>',
                 menu:  new Ext.menu.Menu({
                 	    id: 'preferences_scripts',
                         items:[
                         	{
-                                text    : 'New',
+                                text    : gettext('New'),
                                 handler : function(){window.open('/script_editor/?workspace='+ws.id)}
                             
                             },{ 
-                            	text    : 'Edit',                                                      
+                            	text    : gettext('Edit'),                                                      
 	                           	menu: new Ext.menu.Menu({
 								    id: 'edit_scripts_menu',
 								    items:[]
@@ -1140,7 +1140,7 @@ Ext.onReady(function(){
 //                            	handler : function(){manage_events();}
 //                            },
                             { 
-                            	text    : 'Monitor',
+                            	text    : gettext('Monitor'),
                             	handler : function(){
                             		show_monitor();
                             	
@@ -1149,7 +1149,7 @@ Ext.onReady(function(){
                             {
                             	id: 'runscript',
                             	disabled: true,
-                            	text: 'Run...',
+                            	text: gettext('Run...'),
                             	menu: new Ext.menu.Menu({
 								    id: 'run_scripts_menu',
 								    items:[]
