@@ -32,10 +32,11 @@ class TypeManager(models.Manager):
 
     def get_or_create_by_mime(self, mime_type, extension=None):
         "Returns just the type, not the tuple (type, created) and get_or_create"
-        standard_exts = supported_extensions(mime_type)
+        standard_exts = supported_extensions(mime_type)        
         if not standard_exts:
             raise MimeError("Type %s is not supported" % mime_type)
         if extension: 
+            extension = extension.lower()
             if extension[0] != '.':
                 extension = '.' + extension
             if extension not in standard_exts: 
@@ -51,6 +52,7 @@ class TypeManager(models.Manager):
         return t
 
     def get_or_create_by_filename(self, filename):
+        filename = filename.lower()
         "Return a type registered in notre dam for use. Create a type if does not exists"
         mime_type = guess_file_type(filename)
         basename, ext = os.path.splitext(filename)
