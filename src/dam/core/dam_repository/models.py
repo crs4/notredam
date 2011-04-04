@@ -56,7 +56,7 @@ class TypeManager(models.Manager):
         basename, ext = os.path.splitext(filename)
         if mime_type is None:
             raise MimeError('Unrecognized file type: %s' % filename)
-        return self.get_or_create_by_mime(mime_type, ext)
+        return self.get_or_create_by_mime(mime_type, ext.lower())
 
 class Type(models.Model):
     """

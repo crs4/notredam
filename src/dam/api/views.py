@@ -2397,6 +2397,7 @@ class Auth(ModResource):
             raise MissingArgs
                 
         user = authenticate(username = user_name, password = password)
+
         if not user:
             logger.debug('login failed')
             raise LoginFailed

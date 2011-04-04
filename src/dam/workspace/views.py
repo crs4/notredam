@@ -713,6 +713,19 @@ def workspace(request, workspace_id = None):
         workspace = _switch_workspace(request,  workspace_id)
     
     logger.info('workspace %s'%workspace)
+    # interface language setting (not for metadata editing!)
+    language_setting = None
+    try:
+        language_setting = DAMComponentSetting.objects.get(name__iexact='application_supported_languages')
+    except Exception, err:
+        logger.debug('no language set by current user')
+    if language_setting != None:
+        user_language = language_setting.get_user_setting(user)
+        request.session['django_language'] = str(user_language[:2])
+        logger.debug('user language is %s' % user_language)
+        logger.debug( '\n\n********\ninside workspace in workspace/views ... \nuser_language preferred by the current user: %s'% request.session['django_language'])
+        # end of interface language setting
+
     return render_to_response('workspace_gui.html', RequestContext(request,{'ws_id':workspace.pk,  'ws_name': workspace.get_name(user),  'ws_description': workspace.description, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
 
 @login_required
