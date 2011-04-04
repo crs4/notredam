@@ -83,11 +83,11 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
 		            		vtype:'email',
 		            		allowBlank: false
 		            	}),
-		            	new Ext.form.TextField({
+		            	/*new Ext.form.TextField({
 		            		id: 'session_language',
 		            		fieldLabel: 'default language',
 		            		name:'session_language'		            		
-		            	}),
+		            	}),*/
 		            	
 		            	new Ext.form.FieldSet({
 		            		id: 'password_fieldset',
@@ -369,7 +369,6 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
         });             
         tabs.push(new_tab);
     }
-        
     return tabs;
 
 };

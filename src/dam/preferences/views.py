@@ -67,6 +67,7 @@ def get_user_settings(request):
     user = User.objects.get(pk=request.session['_auth_user_id'])
     workspace = request.session.get('workspace')
     settings = DAMComponentSetting.objects.filter(setting_level__in=['U', 'W']).order_by('caption')
+    
     data = {'prefs':[]}
     for s in settings:
         choices = [[c.name, c.description] for c in s.choices.all()]
@@ -84,7 +85,15 @@ def save_pref(request):
         user = User.objects.get(pk=request.session['_auth_user_id'])
         
         DAMComponentSetting.objects.save_preference(request, user)
-                            
+
+        settings = DAMComponentSetting.objects.filter(setting_level__in=['U', 'W']).order_by('caption')
+        for p in request.POST:
+            for s in settings:
+                if str(p[6:]) == str(s.id) and s.name == "application_supported_languages":
+	                request.session['django_language'] = request.POST[p][:2]
+	                request.session.save()
+	                print 'in request session: ',request.session['django_language']
+
         return HttpResponse(simplejson.dumps({'success': True}))
     except Exception,  ex:
         logger.exception(ex)
@@ -139,11 +148,10 @@ def account_prefs(request):
     from django.db import IntegrityError
 
 #    username = request.POST['username']
-    print '\n\n************************** request POST: \n\n', request.POST
     first_name = request.POST['first_name']
     last_name = request.POST['last_name']
     email = request.POST['email']
-    session_language = request.POST['session_language']
+    #session_language = request.POST['session_language']
     
     current_password = request.POST.get('current_password')
     new_password = request.POST.get('new_password')
@@ -167,8 +175,8 @@ def account_prefs(request):
         request.user.last_name = last_name
         request.user.email = email
         request.user.save()
-	request.session['django_language'] = session_language
-	request.session.save()
+	#request.session['django_language'] = session_language
+	#request.session.save()
     except IntegrityError:
         return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'username', 'msg':'username already used'}]}))
         
@@ -182,7 +190,7 @@ def get_account_info(request):
         'first_name': request.user.first_name,
         'last_name': request.user.last_name,
         'email': request.user.email,
-        'session_language': request.session['django_language']
+        #'session_language': request.session['django_language']
         }
     except Exception,  ex:
         logger.exception('ERROR IN ACCOUNT INFO: %s' % ex)
@@ -191,8 +199,8 @@ def get_account_info(request):
         'first_name': request.user.first_name,
         'last_name': request.user.last_name,
         'email': request.user.email,
-        'session_language': LANGUAGE_CODE,
+        #'session_language': LANGUAGE_CODE,
         }
-        request.session['django_language'] = LANGUAGE_CODE
+        #request.session['django_language'] = LANGUAGE_CODE
     return HttpResponse(simplejson.dumps({'success': True, 'data': account_info}))
     

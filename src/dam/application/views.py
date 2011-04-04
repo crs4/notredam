@@ -33,6 +33,7 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
+from dam.preferences.models import DAMComponentSetting
 
 from dam.core.dam_workspace.decorators import permission_required
 
@@ -54,6 +55,7 @@ def do_login(request):
     """
     username = request.POST['username']
     password = request.POST['password']
+    logger.debug('\n\nusername: %s ' % username)
     user = authenticate(username=username, password=password)
     if user is not None:
         if user.is_active:
