@@ -23,6 +23,7 @@ from dam.repository.models import Item
 from dam.workspace.models import DAMWorkspace
 from dam.plugins.common.utils import save_type
 from dam.plugins.extract_xmp_idl import inspect
+from dam.geo_features.models import GeoInfo
 
 from uuid import uuid4
 
