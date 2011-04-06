@@ -385,13 +385,13 @@ Ext.onReady(function(){
 //          						console.log(action_stored = action_stored[0]);
           						var action_box = new MDAction({
 						            title: action_stored.data.name,
-						            position:[20,20],
+						           
 			//			            legend:'thumbnail',
 						           	'in': action['in'],
 						           	'out': action['out'],
 					            	inputs: ['in'],
 					            	outputs: ['out'],
-					            	position: [action.x, action.y],
+					            	position: [action.x -1, action.y - 56],
 						            params: action_stored.data.params,
 						            label: action.label
 						            
