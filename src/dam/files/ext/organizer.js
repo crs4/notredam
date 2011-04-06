@@ -631,6 +631,11 @@ var createView = function(config) {
         tpl: tpl,
         listeners: {
             selectionchange: {fn:showDetails, buffer:100},
+            
+            contextmenu: function( view,  index,  node,  e ){
+                e.preventDefault();
+                e.stopEvent();
+            },
             dblclick: {fn:showFullscreen, buffer:100},
 //            dblclick: function(){
 //            	console.log('sdsfd');
@@ -639,6 +644,7 @@ var createView = function(config) {
             render: function(){
     	    	var drag_zone = new ImageDragZone(this, {containerScroll:true,
     	            ddGroup: 'organizerDD'});
+                
     	    	
     	    	}
         }
