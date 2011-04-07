@@ -630,7 +630,7 @@ var treeAction = function( tree_action){
             success: function(form, action) {
         		
                 if(!sel_node.length) {
-                    if(tree_action.text == 'Add' ||  tree_action.text == 'Category' || tree_action.text == 'Keyword' ){
+                    if(tree_action.text == gettext('Add') ||  tree_action.text == gettext('Category') || tree_action.text == gettext('Keyword') ){
                             tree_loader.clearOnLoad = false;
                             tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label').getValue()};
                             
@@ -744,7 +744,7 @@ var treeAction = function( tree_action){
         
         }
     
-    if (tree_action.text == "Delete"){
+    if (tree_action.text == gettext("Delete")){
         var _delete_node = function(btn){
             if(btn == 'yes'){
                 Ext.Ajax.request({
@@ -762,7 +762,7 @@ var treeAction = function( tree_action){
         
     }
     
-    else if (tree_action.text == 'Add To Search Box'){
+    else if (tree_action.text == gettext('Add To Search Box')){
         var box = Ext.getCmp('search_box');
         var store = box.getStore();
         if (store.find('pk', sel_node.id) <0){
@@ -771,7 +771,7 @@ var treeAction = function( tree_action){
         }
         
     }
-    else if(tree_action.text == 'Show Associated Items'){
+    else if(tree_action.text == gettext('Show Associated Items')){
         var path = get_final_node_path(sel_node);
         var tree = Ext.getCmp('keywords_tree');
         tree.getSelectionModel().suspendEvents();
@@ -789,7 +789,7 @@ var treeAction = function( tree_action){
     else{
         var fields = []; 
         
-        if  (tree_action.text == "Add" || tree_action.text == "Category" || tree_action.text == "Keyword" ||  tree_action.text == "Edit"){
+        if  (tree_action.text == gettext("Add") || tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ||  tree_action.text == gettext("Edit")){
 	        
         	var node_id, type;
 	       
@@ -805,7 +805,7 @@ var treeAction = function( tree_action){
 	        else {
 	            node_id = sel_node.id;
 	            
-	            if(tree_action.text == "Category" || tree_action.text == "Keyword" ) {
+	            if(tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ) {
 	                type = tree_action.text.toLowerCase();        
 	            }
 	            else {
@@ -831,7 +831,7 @@ var treeAction = function( tree_action){
 	            fields.push(label);
 	        }
 	    
-	        var edit_metadata = tree_action.text == "Keyword"  || tree_action.text == "Category" || (sel_node.attributes && (sel_node.attributes.iconCls == 'keyword' || sel_node.attributes.iconCls == 'category') && tree_action.text == "Edit" );
+	        var edit_metadata = tree_action.text == gettext("Keyword")  || tree_action.text == gettext("Category") || (sel_node.attributes && (sel_node.attributes.iconCls == 'keyword' || sel_node.attributes.iconCls == 'category') && tree_action.text == gettext("Edit") );
 	            
 	        var action = (tree_action.text  == 'Add' || tree_action.text  == 'Keyword' || tree_action.text  == 'Category') ? 'Add': 'Edit' ;
 	        var title = action  + ' ' + type;
@@ -854,7 +854,7 @@ var treeAction = function( tree_action){
 	
 	        var metadata_list, add_parent_metadata;
 	                    
-	        if (tree_action.text == "Edit"){
+	        if (tree_action.text == gettext("Edit")){
 	            if(! multi_select){
 	                label.setValue(sel_node.text);
 	                if(sel_node.attributes.iconCls == 'keyword')
@@ -865,7 +865,7 @@ var treeAction = function( tree_action){
 	            }
 	        else{
 	            metadata_list = create_metadata_list(null);
-	            if(tree_action.text == "Keyword" )
+	            if(tree_action.text == gettext("Keyword") )
 	            	add_parent_metadata = create_add_parent_cb(null);
 	            
 	        }
@@ -991,14 +991,14 @@ contextMenuShow = function( node_menu,e ){
         var sel_nodes = tree.getSelectionModel().getSelectedNodes();
         var contextMenu = tree.menu;
 
-        contextMenu.find('text', 'Add To Search Box')[0].enable(); 
+        contextMenu.find('text', gettext('Add To Search Box'))[0].enable(); 
         
         
         if(sel_nodes.length > 1){
-            contextMenu.find('text', 'Add')[0].disable();
-            contextMenu.find('text', 'Delete')[0].disable();
-            contextMenu.find('text', 'Edit')[0].setHandler(treeAction, sel_nodes);
-            contextMenu.find('text', 'Show Associated Items')[0].disable();        
+            contextMenu.find('text', gettext('Add'))[0].disable();
+            contextMenu.find('text', gettext('Delete'))[0].disable();
+            contextMenu.find('text', gettext('Edit'))[0].setHandler(treeAction, sel_nodes);
+            contextMenu.find('text', gettext('Show Associated Items'))[0].disable();        
             
             
             var all_cat = true;
@@ -1027,21 +1027,21 @@ contextMenuShow = function( node_menu,e ){
             	
                 Ext.getCmp('addKeyword').setHandler(treeAction, node_menu);
                 Ext.getCmp('addCategory').setHandler(treeAction, node_menu);
-                contextMenu.find('text', 'Show Associated Items')[0].enable();
-                contextMenu.find('text', 'Show Associated Items')[0].setHandler(treeAction, node_menu);
+                contextMenu.find('text', gettext('Show Associated Items'))[0].enable();
+                contextMenu.find('text', gettext('Show Associated Items'))[0].setHandler(treeAction, node_menu);
 
             }
             else{
-                contextMenu.find('text', 'Add')[0].setHandler(treeAction, node_menu);
+                contextMenu.find('text', gettext('Add'))[0].setHandler(treeAction, node_menu);
 
             }
-            contextMenu.find('text', 'Delete')[0].setHandler(treeAction, node_menu);
-            contextMenu.find('text', 'Edit')[0].setHandler(treeAction, node_menu);
-            contextMenu.find('text', 'Add To Search Box')[0].setHandler(treeAction, node_menu);
+            contextMenu.find('text', gettext('Delete'))[0].setHandler(treeAction, node_menu);
+            contextMenu.find('text', gettext('Edit'))[0].setHandler(treeAction, node_menu);
+            contextMenu.find('text', gettext('Add To Search Box'))[0].setHandler(treeAction, node_menu);
 
             if (!node_menu.attributes.editable){
-                contextMenu.find('text', 'Delete')[0].disable();
-                contextMenu.find('text', 'Edit')[0].disable();
+                contextMenu.find('text', gettext('Delete'))[0].disable();
+                contextMenu.find('text', gettext('Edit'))[0].disable();
 //                contextMenu.find('text', 'Add To Search Box')[0].disable();
                 
                 if(!node_menu.attributes.allowDrop) //this is for new keywords node
@@ -1053,28 +1053,28 @@ contextMenuShow = function( node_menu,e ){
             
             else{
         
-                contextMenu.find('text', 'Delete')[0].enable();
-                contextMenu.find('text', 'Edit')[0].enable();
-                contextMenu.find('text', 'Add')[0].enable();
+                contextMenu.find('text', gettext('Delete'))[0].enable();
+                contextMenu.find('text', gettext('Edit'))[0].enable();
+                contextMenu.find('text', gettext('Add'))[0].enable();
             }        
         }
             
         if (node_menu.attributes.isCategory) {
-            contextMenu.find('text', 'Add To Search Box')[0].disable();
-            contextMenu.find('text', 'Show Associated Items')[0].disable();
+            contextMenu.find('text', gettext('Add To Search Box'))[0].disable();
+            contextMenu.find('text', gettext('Show Associated Items'))[0].disable();
         }
         if (tree.id == 'keywords_tree') {
             if(!admin && ! edit_taxonomy){
-                contextMenu.find('text', 'Add')[0].disable();
-                contextMenu.find('text', 'Delete')[0].disable();
-                contextMenu.find('text', 'Edit')[0].disable();
+                contextMenu.find('text', gettext('Add'))[0].disable();
+                contextMenu.find('text', gettext('Delete'))[0].disable();
+                contextMenu.find('text', gettext('Edit'))[0].disable();
             }
         }
         else if (tree.id == 'collections_tree') {
             if(!admin && ! edit_collection){
-                contextMenu.find('text', 'Add')[0].disable();
-                contextMenu.find('text', 'Delete')[0].disable();
-                contextMenu.find('text', 'Edit')[0].disable();
+                contextMenu.find('text', gettext('Add'))[0].disable();
+                contextMenu.find('text', gettext('Delete'))[0].disable();
+                contextMenu.find('text', gettext('Edit'))[0].disable();
             }        
         }
                             
