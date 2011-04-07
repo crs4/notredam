@@ -38,7 +38,7 @@ def _convert_deg_to_dms(latitude,longitude):
     
     """
     Converts coordinates from decimal degrees format to degree/minutes/seconds/ (DMS) format
-    example: 39.5388888889 ---> 39,32,20N
+    example: 39.5388888889 ---> 39,32.20N
     @param latitude: is coordinate in decimal degrees format.
     @param longitude: is coordinate in decimal degrees format.
     """
@@ -79,8 +79,8 @@ def _convert_deg_to_dms(latitude,longitude):
         lng_ss = 0
         lng_min = lng_min + 1
             
-    dms_latitude = "%d,%02d,%02d%s" % (lat_deg,lat_min,lat_ss,lat_dir)
-    dms_longitude = "%d,%02d,%02d%s" % (lng_deg,lng_min,lng_ss,lng_dir)
+    dms_latitude = "%d,%02d.%02d%s" % (lat_deg,lat_min,lat_ss,lat_dir)
+    dms_longitude = "%d,%02d.%02d%s" % (lng_deg,lng_min,lng_ss,lng_dir)
     
     return dms_latitude,dms_longitude
     
@@ -162,9 +162,23 @@ def save_geoinfo(request):
         item_object = Item.objects.get(pk=i)
         latitude = coords['lat']
         longitude = coords['lng']
-        GeoInfo.objects.save_geo_coords(item_object, latitude, longitude)
+        resp = simplejson.dumps({'success': True})
+	try:
+            GeoInfo.objects.save_decimal_coords(item_object, latitude, longitude)
+            logger.debug('latitude: %s *** longitude: %s' % (latitude, longitude))
+	except Exception, ex:
+            logger.debug('could not save decimal coords, error: %s' % ex)
+            resp = simplejson.dumps({'success': False})
+        try:
+	    gps_latitude, gps_longitude = _convert_deg_to_dms(latitude,longitude)
+            logger.debug('gps_latitude: %s *** gps_longitude: %s' % (gps_latitude, gps_longitude))
+	except Exception, ex:
+            logger.debug('could not convert decimal coords to gps, error: %s' % ex)
+        try:
+            GeoInfo.objects.save_exif_gps_coords(item_object, gps_latitude, gps_longitude)
+	except Exception, ex:
+            logger.debug('could not save gps coords, error: %s' % ex)
         
-    resp = simplejson.dumps({'success': True})
 
     return HttpResponse(resp)
     
