@@ -134,6 +134,9 @@ Ext.override(Ext.tree.TreeNodeUI, {
 
 function move_node(source, dest){
     
+    if (source.attributes.is_moving)
+        return;
+    source.attributes.is_moving = true;
     source.getOwnerTree().getSelectionModel().suspendEvents();
     var old_path = get_final_node_path(source);
     Ext.Ajax.request({
@@ -151,7 +154,7 @@ function move_node(source, dest){
             else {
                 dest.appendChild(source);
             }
-//            console.log('-------' +dest.getPath());
+            console.log('-------' +dest.getPath());
             if (dest.getDepth() > 0)
             	tree_loader.load(dest, function(){
                 
@@ -548,7 +551,7 @@ function create_tree(title, id){
                     if (nodeData.node.findChild('text', source.dragData.node.text)) {
                         return false;
                     }
-                    source.dragData.node.attributes.is_moving = true;
+                    //source.dragData.node.attributes.is_moving = true;
                     move_node(source.dragData.node,nodeData.node);
                     e.stopEvent();
                     return true;
