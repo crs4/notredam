@@ -743,7 +743,7 @@ var treeAction = function( tree_action){
             });
         
         }
-    
+   console.log('----------------tree_action.text ' + tree_action.text); 
     if (tree_action.text == gettext("Delete")){
         var _delete_node = function(btn){
             if(btn == 'yes'){
@@ -805,9 +805,11 @@ var treeAction = function( tree_action){
 	        else {
 	            node_id = sel_node.id;
 	            
-	            if(tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ) {
-	                type = tree_action.text.toLowerCase();        
-	            }
+                if(tree_action.text == gettext("Category")) 
+	                type = 'category';        
+                
+                else if(tree_action.text == gettext("Keyword"))
+		            type = 'keyword';
 	            else {
 	                type = sel_node.attributes.iconCls || sel_node.attributes.type ;
 	            }
@@ -833,8 +835,8 @@ var treeAction = function( tree_action){
 	    
 	        var edit_metadata = tree_action.text == gettext("Keyword")  || tree_action.text == gettext("Category") || (sel_node.attributes && (sel_node.attributes.iconCls == 'keyword' || sel_node.attributes.iconCls == 'category') && tree_action.text == gettext("Edit") );
 	            
-	        var action = (tree_action.text  == 'Add' || tree_action.text  == 'Keyword' || tree_action.text  == 'Category') ? 'Add': 'Edit' ;
-	        var title = action  + ' ' + type;
+	        var action = (tree_action.text  == gettext('Add') || tree_action.text  == gettext('Keyword') || tree_action.text  == gettext('Category')) ? 'Add': 'Edit' ;
+	        var title = gettext(action)  + ' ' + gettext(type);
 	        var url = '/' + action.toLowerCase() + '_node/';
 	            
 	        var height_form, height_win, width_win;    
@@ -843,7 +845,7 @@ var treeAction = function( tree_action){
 	                height_form= 100;
 	                height_win = 130;
 	                width_win = 300;
-	            if (tree_action.text == "Edit") {       
+	            if (tree_action.text == gettext("Edit")) {       
 	                label.setValue(sel_node.text);
 	            }
 	        }
@@ -1042,7 +1044,7 @@ contextMenuShow = function( node_menu,e ){
             if (!node_menu.attributes.editable){
                 contextMenu.find('text', gettext('Delete'))[0].disable();
                 contextMenu.find('text', gettext('Edit'))[0].disable();
-//                contextMenu.find('text', 'Add To Search Box')[0].disable();
+                contextMenu.find('text', gettext('Add To Search Box'))[0].disable();
                 
                 if(!node_menu.attributes.allowDrop) //this is for new keywords node
                     {
