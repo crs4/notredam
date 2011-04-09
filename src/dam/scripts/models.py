@@ -137,14 +137,14 @@ DEFAULT_PIPELINE = [{
                      'description': '',
                      'params': action_pdf, 
                      'events': ['upload'], 
-                     'media_types': ['application']                     
+                     'media_types': ['doc']                     
                      },
                      {
                      'name': 'embed xmp', 
                      'description': '',
                      'params': embed_xmp, 
                      'events': ['sync_xmp'], 
-                     'media_types': ['application', 'video', 'audio', 'image']                     
+                     'media_types': ['doc', 'video', 'audio', 'image']                     
                      }
                     ]
 
