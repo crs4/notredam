@@ -509,12 +509,6 @@ def _search(request,  items, workspace = None):
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
-    try:
-        i = media_type.index('doc')
-        media_type[i] = 'application'
-    except:
-        pass
-
     user = User.objects.get(pk=request.session['_auth_user_id'])
     logger.debug('************** searching items for user %s' % user.pk)
 
