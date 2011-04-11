@@ -1,129 +1,128 @@
-import os
-from twisted.internet import defer, reactor
-from mediadart import log
-from mediadart.mqueue.mqclient_twisted import Proxy
+#########################################################################
+#
+# NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+# Email: labcontdigit@sardegnaricerche.it
+# Web: www.notre-dam.org
+#
+# This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#########################################################################
 
-from django.core.management import setup_environ
-import dam.settings as settings
-setup_environ(settings)
-from django.db.models.loading import get_models
-
-get_models()
-
-from dam.repository.models import *
-from dam.variants.models import Variant    
-from dam.workspace.models import DAMWorkspace
-from dam.plugins.common.utils import get_source_rendition, get_ext_by_type
+from dam.plugins.common.adapter import Adapter
+from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.adapt_image_idl import inspect
+from twisted.internet import defer, reactor
+from mediadart import log
 
-from uuid import uuid4
 
-def run(*args, **kw_args):
+def run(workspace,              # workspace object
+        item_id,                # item primary key
+        source_variant_name,    # name of the source variant (a string)
+        output_variant_name,    # name of the destination variat (a string)
+        output_extension,       # desired extension (with the dot)
+        actions = [],           # ordered list of actions from resize, crop, watermark
+        resize_h = None,        # desired height (aspect ratio is preserved)
+        resize_w = None,        # desired width
+        crop_w = None,          # crop width
+        crop_h = None,          # crop height
+        crop_x = None,          # x-position of top-left corner crop area
+        crop_y = None,          # y-position of top-left corner crop area
+        crop_ratio = None,      # size centered crop area as percentage (ex. 50:80)
+                                # (used instead of crop_x etc.)
+        pos_x_percent = None,   # x-position of top-left corner of watermark placement
+        pos_y_percent = None,   # y-position of top-left corner of watermark placement
+        wm_id = None,           # repository-relative file name of watermark resource
+        ):
+
     deferred = defer.Deferred()
-    adapter = AdaptImage(deferred)
-    reactor.callLater(0, adapter.execute, *args, **kw_args)
+    adapter = AdaptImage(deferred, workspace, item_id, source_variant_name)
+    reactor.callLater(0, adapter.execute, output_variant_name, output_extension,
+        actions=actions, resize_h=resize_h, resize_w=resize_w, crop_w=crop_w,
+        crop_h=crop_h, crop_x=crop_x, crop_y=crop_y, crop_ratio=crop_ratio, 
+        pos_x_percent=pos_x_percent, pos_y_percent=pos_y_percent, wm_id=wm_id)
     return deferred
 
-class AdaptImage:
-    def __init__(self, deferred):    
-        self.deferred = deferred
-        self.adapter_proxy = Proxy('Adapter')
-    
-    def handle_result(self, result, component):
-        log.debug('handle_result %s' % str(result))
-        log.debug("[save_component] component %s" % component.pk)        
-        
-        if result:
-            directory, name = os.path.split(result)
-            
-            component.uri = name
-            component.save()
-        else:
-            log.error('Empty result passed to save_and_extract_features')
-        self.deferred.callback(result)
-        
-    def handle_error(self, result):
-        self.deferred.errback('error %s' % str(result))
-    
-    def execute(self,
-                workspace, 
-                item_id, 
-                source_variant,
-                output_variant,
-                output_extension,
-                actions = [],
-                resize_h = None,
-                resize_w = None,
-                crop_w = None,
-                crop_h = None,
-                crop_x = None,
-                crop_y = None,
-                crop_ratio = None,
-                pos_x_percent = None,
-                pos_y_percent = None,
-                wm_id = None):
 
-        log.info('AdaptImage.execute')
+class AdaptImage(Adapter):
+    remote_exe = 'convert'
+    md_server = 'MediumLoad'
+    #fake = True
+
+    def get_cmdline(self, output_variant_name, output_extension, actions, resize_h,
+                   resize_w, crop_w, crop_h, crop_x, crop_y, crop_ratio, pos_x_percent,
+                   pos_y_percent, wm_id):
         if not isinstance(actions, list):
             actions = [actions]
-        item, source = get_source_rendition(item_id, source_variant, workspace)
+
         if output_extension == 'same_as_source':
-            media_type = source.media_type
+            self.out_type = self.source.media_type
+            output_extension = self.source.media_type.ext
         else:
-            media_type = Type.objects.get_or_create_by_filename('foo%s' % output_extension)
-        output_variant = Variant.objects.get(name = output_variant)
-        output_component = item.create_variant(output_variant, workspace, media_type)
+            self.out_type = Type.objects.get_or_create_by_filename('foo%s' % output_extension)
                 
-        log.debug("[adapt_resource] from original component %s" % output_component.source)
-        
-        output_component.source = source
-        argv = [] #for calling imagemagick
-    
+        features = self.source.get_features()
+        argv = ""
         for action in actions:
             if action == 'resize':
-                argv +=  ['-resize', '%sx%s' % (resize_w, resize_h)]
+                argv +=  '-resize %sx%s' % (resize_w, resize_h)
                 
             elif action == 'crop':
                 if crop_ratio:
                     x, y = crop_ratio.split(':')
-                    argv += ['-gravity', 'center', '-crop', '%sx%s%%+0+0' % (int(100./float(x)), int(100./float(y)))]
+                    argv += ' -gravity center -crop %sx%s%%+0+0' % (x, y)
                 else:
                     crop_x = crop_x or 0   # here None means 0
                     crop_y = crop_y or 0
-                    argv += ['-gravity', 'center', '-crop', '%sx%s+%s+%s' % (int(crop_w), int(crop_h), int(crop_x), int(crop_y))]
+                    argv += ' -gravity center -crop %sx%s+%s+%s' % (
+                              int(crop_w), int(crop_h), int(crop_x), int(crop_y))
 
             elif action == 'watermark':
-                pos_x = int(pos_x_percent * source.width/100.)
-                pos_y = int(pos_y_percent * source.height/100.)
-                argv += ['cache://' + wm_id, '-geometry', '+%s+%s' % (pos_x,pos_y), '-composite']
+                pos_x = int(float(pos_x_percent) * float(features.get_width())/100.)
+                pos_y = int(float(pos_y_percent) * float(features.get_height())/100.)
+                argv +=  ' -gravity NorthWest "file://%s" -geometry +%s+%s -composite' % (wm_id, pos_x, pos_y)
         
         log.debug("calling adapter")
-        extension = media_type.ext
-        dest_res_id = get_storage_file_name(item.ID, workspace.pk, output_variant.name, extension)
-        output_component.uri = dest_res_id
-        output_component.save() 
-        
-        d = self.adapter_proxy.adapt_image_magick('%s[0]' % source.uri, dest_res_id, argv)
-        d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=[output_component])
-        return self.deferred
-    
+        self.out_file = get_storage_file_name(self.item.ID, self.workspace.pk, output_variant_name, output_extension)
+        self.cmdline = '"file://%s[0]" %s "outfile://%s"' % (self.source.uri, argv, self.out_file)
+
+
+
+#
+# Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
+#
+from twisted.internet import defer, reactor
+from dam.repository.models import Item
+from dam.workspace.models import DAMWorkspace
 
 def test():
     print 'test'
-    item = Item.objects.get(pk=1)
+    item = Item.objects.get(pk=5)
     workspace = DAMWorkspace.objects.get(pk = 1)
-    
-    d = run(item.pk,
-            workspace,
-            source_variant = 'original',
-            output_variant='fullscreen',
+    d = run(workspace,
+            item.pk,
+            source_variant_name = 'original',
+            output_variant_name =  'fullscreen',
             output_extension = '.jpg',
-            actions = ['crop', 'resize'],
-            resize_h=100,
-            resize_w=100,
-            crop_ratio="2:2",
-            )
+            actions = ['resize', 'crop', 'watermark'],
+            resize_h = 150,
+            resize_w = 150,
+            crop_w = 900,
+            crop_h = 900,
+            crop_x = 0,
+            crop_y = 0,
+            crop_ratio = None, #'50:50',
+            pos_x_percent = '0',
+            pos_y_percent = '0',
+            wm_id = 'aba2c175b12f43f39bb87948285df6ef_1_thumbnail.jpg')
     d.addBoth(print_result)
     
 def print_result(result):
@@ -135,6 +134,10 @@ if __name__ == "__main__":
     
     reactor.callWhenRunning(test)
     reactor.run()
+
+    
+    
+    
 
     
     

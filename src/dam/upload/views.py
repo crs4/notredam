@@ -253,34 +253,6 @@ def _run_pipelines(items, trigger, user, workspace):
         logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-#
-#
-#    for pipe in pipes:
-#        pipe.__process = False
-#
-#    for item in items:
-#        found = 0
-#        for pipe in pipes:
-#            if pipe.is_compatible(item.type):
-#                if not pipe.__process:
-#                    pipe.__process = Process.objects.create(pipeline=pipe, 
-#                                                            workspace=workspace, 
-#                                                            launched_by=user)
-#                pipe.__process.add_params(item_id=item.pk)
-#                found = 1
-#                logger.debug('item %s added to %s' % (item.pk, pipe.name))
-#        if not found:
-#            logger.debug( ">>>>>>>>>> No action for %s" % original_filename)
-#
-#    ret = []
-#    for pipe in pipes:
-#        if pipe.__process:
-#            logger.debug( 'Launching process %s-%s' % (str(pipe.__process.pk), pipe.name))
-#            pipe.__process.run()
-#            ret.append(str(pipe.__process.pk))
-#    return ret
-#
-
 def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     """
        Parameters:
@@ -472,9 +444,6 @@ def guess_media_type (file):
     try:
         media_type = media_type[0][:media_type[0].find("/")]
         
-#        if media_type == 'application':
-#            media_type = 'doc'        
-    
         if media_type not in [type.name for type in Type.objects.all()]:
             raise Exception
             

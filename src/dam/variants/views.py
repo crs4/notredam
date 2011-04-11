@@ -298,7 +298,7 @@ def get_variants(request):
                                  'extension':extension,  
                                  'work_in_progress':work_in_progress,  
                                  'width': str(comp.width), 
-                                  'height': str(comp.height )})
+                                 'height': str(comp.height )})
     
     return HttpResponse(simplejson.dumps(resp))
 

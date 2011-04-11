@@ -90,8 +90,8 @@ class Batch:
         self.schedule_length = len(self.pipeline)
         self.process = process
         self.scripts = self._get_scripts(self.pipeline)
-        self.targets_done = False          # True when all targets have been read
-        self.gameover = False             # True when all targets are done
+        self.all_targets_read = False      # True when all targets have been read
+        self.gameover = False              # True when all targets are done
         self.deferred = None               # used to signal end of batch job
         self.outstanding = 0               # number of not yet answered requests
         self.cur_batch = 0                 # index in batch
@@ -117,9 +117,10 @@ class Batch:
         if item.pk not in self.results:
             self.results[item.pk] = {}
         self.results[item.pk][action] = (success, result)
+        if item.actions_todo <= 0 or failure > 0:
+            item.result = dumps(self.results[item.pk])
         if item.actions_todo <= 0:
             log.debug('_update_item_stats: finalizing item %s' % item.target_id)
-            item.result = dumps(self.results[item.pk])
             del self.results[item.pk]
         
     def _get_scripts(self, pipeline):
@@ -146,7 +147,7 @@ class Batch:
 
     def _new_batch(self):
         "Loads from db the next batch of items and associate a schedule to each item"
-        if self.targets_done:
+        if self.all_targets_read:
             return []
 
         targetset = ProcessTarget.objects.filter(process=self.process.pk)[self.cur_batch:self.cur_batch + self.batch_size]
@@ -154,7 +155,7 @@ class Batch:
             self.cur_batch += self.batch_size
             ret = [{'item':x, 'schedule':Schedule(self.dag, x.target_id)} for x in targetset]   # item, index of current action, schedule
         else:
-            self.targets_done = True
+            self.all_targets_read = True
             ret = []
         return ret
 
@@ -188,10 +189,12 @@ class Batch:
         if action:
             return action, task
         else:
-            if not self.targets_done and self.outstanding < self.max_outstanding:
-                #log.debug("_get_action: extending task")
-                self.tasks.extend(self._new_batch())
-            if self.targets_done and not self.tasks:
+            if not self.all_targets_read and self.outstanding < self.max_outstanding:
+                new_tasks = self._new_batch()
+                if new_tasks:
+                    self.cur_task = len(self.tasks)
+                    self.tasks.extend(new_tasks)
+            if self.all_targets_read and not self.tasks:
                 log.debug("_get_action: gameover")
                 self.gameover = True
                 self.process.end_date = datetime.datetime.now()
@@ -210,7 +213,7 @@ class Batch:
         if action:
             item, schedule = task['item'], task['schedule']
             method, params = self.scripts[action]
-            log.debug('target %s: executing action %s, method=%s' % (item.target_id, action, method))
+            log.debug('target %s: executing action %s' % (item.target_id, action))
             try:
                 item_params = loads(item.params)
                 params.update(item_params)
@@ -218,14 +221,13 @@ class Batch:
                 log.debug('calling method with params ws=%s, id=%s, params=%s' % (self.process.workspace.pk, item.target_id, params))
                 d = method(self.process.workspace, item.target_id, **params)
             except Exception, e:
-                log.debug('Exception launching %s' % method)
                 self._handle_err(str(e), item, schedule, action, params)
             else:
                 d.addCallbacks(self._handle_ok, self._handle_err, 
                     callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
-        # If _get_action did not find anything and there are not more targets, no action
-        # will be available until an action completes and allows more action to go ready.
-        if self.outstanding < self.max_outstanding and (action or not self.targets_done):
+        # If _get_action did not find anything and there are no more targets, no action
+        # will be available until an action completes and allows more actions to go ready.
+        if self.outstanding < self.max_outstanding and (action or not self.all_targets_read):
             #log.debug('_iterate: rescheduling')
             reactor.callLater(0, self._iterate)
 
