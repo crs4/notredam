@@ -497,7 +497,7 @@ class Component(AbstractComponent):
     parameters = models.TextField(null = True,  blank = True)
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False) 
-    #pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
+    pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
 
     # a JSON object with results from extract_basic. Syntax is dependent  on media_type
     _features = models.TextField(null=True, blank=True)  # do not use directly
