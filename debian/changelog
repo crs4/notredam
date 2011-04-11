@@ -1,0 +1,143 @@
+notredam (1.0.5.1) stable; urgency=low
+
+  *  fixing some bugs
+
+ -- Mauro Del Rio <mauro@crs4.it>  Mon, 16 March 2011 16:00:20 +0100
+
+notredam (1.0.5) stable; urgency=low
+
+  *  new scripts
+
+ -- Mauro Del Rio <mauro@crs4.it>  Mon, 14 March 2011 16:00:20 +0100
+
+notredam (1.0.4.5) stable; urgency=low
+
+  *  new scripts
+
+ -- Mauro Del Rio <mauro@crs4.it>  Mon, 14 March 2011 12:00:20 +0100
+
+notredam (1.0.4) stable; urgency=low
+
+  *  mprocessor refactoring; new extjs version; some changes on metadata; changed workspace names management, now unique for user; other minor bug fixing;
+
+ -- Mauro Del Rio <mauro@crs4.it>  Wed, 09 Nov 2010 12:00:20 +0100
+
+notredam (1.0.4rc1) stable; urgency=low
+
+  *  mprocessor refactoring; new extjs version; some changes on metadata; changed workspace names management, now unique for user; other minor bug fixing;
+
+ -- Mauro Del Rio <mauro@crs4.it>  Wed, 08 Nov 2010 9:29:20 +0100
+
+notredam (1.0.3) stable; urgency=low
+
+  *  fixed bug send mail by script
+
+ -- Mauro Del Rio <mauro@crs4.it>  Wed, 06 Aug 2010 11:54:20 +0100
+
+notredam (1.0.2) stable; urgency=low
+
+  *  fixed bug script management on switch workspace
+
+ -- Mauro Del Rio <mauro@crs4.it>  Wed, 27 Jul 2010 14:34:20 +0100
+
+notredam (1.0.1) stable; urgency=low
+
+  *  fixed some bugs
+
+ -- Mauro Del Rio <mauro@crs4.it>  Wed, 27 Jul 2010 11:24:30 +0100
+
+
+notredam (1.0.0) stable; urgency=low
+
+  *  Version Bump
+
+ -- Mauro Del Rio <mauro@crs4.it>  Wed, 07 Jul 2010 15:24:37 +0100
+
+nnotredam (1.0.0-rc2) stable; urgency=low
+
+  *  Version Bump
+
+ -- Mauro Del Rio <mauro@crs4.it>  Tue, 06 Jul 2010 15:42:37 +0100
+
+nnotredam (1.0.0-rc1) stable; urgency=low
+
+  *  Version Bump
+
+ -- Mauro Del Rio <mauro@crs4.it>  Mon, 05 Jul 2010 17:16:37 +0100
+
+notredam (0.928beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:45:37 +0100
+
+
+notredam (0.927beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:35:37 +0100
+
+notredam (0.926beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:35:37 +0100
+
+notredam (0.925beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:34:37 +0100
+
+
+notredam (0.924beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:34:37 +0100
+
+notredam (0.923beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:34:37 +0100
+
+notredam (0.922beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:34:37 +0100
+
+notredam (0.921beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:33:37 +0100
+
+notredam (0.91beta-2) unstable; urgency=low
+
+notredam (0.92beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:02:37 +0100
+
+notredam (0.91beta-2) unstable; urgency=low
+
+  *  minor changes
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 04 Dec 2009 12:06:37 +0100
+
+notredam (0.9beta-2) unstable; urgency=low
+
+  *  New batch_processor
+
+ -- Mauro Del Rio <mauro@crs4.it>  Thu, 03 Dec 2009 12:06:37 +0100
+
+notredam (0.9beta-1) unstable; urgency=low
+
+  *  Initial release (Closes: #nnnn)  
+
+ -- Mauro Del Rio <mauro@crs4.it>  Fri, 27 Nov 2009 15:56:37 +0100
+
