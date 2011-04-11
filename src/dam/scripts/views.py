@@ -284,7 +284,7 @@ def get_media_types(request):
     
     resp = {'types':[], 'success':True,}
     for t in mime_types_by_type.keys():
-        resp['types'].append({'value': t, 'text':{'application':'doc'}.get(t, t), 'checked':(t in pipeline_media_types)})
+        resp['types'].append({'value': t, 'text': t, 'checked':(t in pipeline_media_types)})
     return HttpResponse(simplejson.dumps(resp))
 
 

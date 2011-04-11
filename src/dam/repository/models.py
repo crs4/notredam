@@ -27,8 +27,10 @@ from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_ST
 from dam.metadata.models import MetadataProperty
 
 
+
 import os
 import urlparse
+from json import loads
 from dam import logger
 from django.utils import simplejson
 import time
@@ -495,10 +497,10 @@ class Component(AbstractComponent):
     parameters = models.TextField(null = True,  blank = True)
     source = models.ForeignKey('self', null = True, blank = True)
     modified_metadata = models.BooleanField(default = False) 
-    pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
-    
-    
-    
+    #pipeline = models.ForeignKey('mprocessor.Pipeline', null = True, blank  = True, default = None)   
+
+    # a JSON object with results from extract_basic. Syntax is dependent  on media_type
+    _features = models.TextField(null=True, blank=True)  # do not use directly
     
     
     class Meta:
@@ -512,6 +514,15 @@ class Component(AbstractComponent):
         super(Component, self).save(*args, **kwargs)
         self.item.update_time = datetime.datetime.now()
         self.item.save()
+
+    def get_features(self):
+        klass = {'video': AVFeatures,'audio':AVFeatures, 'image': ImageFeatures, 'doc': PdfFeatures, }
+        if not hasattr(self, 'decoded_features'):
+            if self._features:
+                self.decoded_features = klass[self.media_type.name](loads(self._features))
+            else:
+                raise Exception('no features available')
+        return self.decoded_features
          
     def set_source(self, source):
         self.source = source
@@ -533,12 +544,8 @@ class Component(AbstractComponent):
         return self.type            
 
     def get_extractor(self):
-        extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'application': 'doc_basic'}
-        if self.media_type.name == 'doc':
-            search_term = 'application'
-        else:
-            search_term = self.media_type.name
-        return extractors[search_term]
+        extractors = {'image': 'image_basic', 'video': 'media_basic', 'audio': 'media_basic', 'doc': 'doc_basic'}
+        return extractors[self.media_type.name]
 
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
@@ -789,3 +796,184 @@ class Watermark(AbstractComponent):
     ID = property(fget=_get_id)     
 
     
+
+#
+#
+# Utility classes for hiding the details of the syntax of the feature dictionary
+# in a Component
+#
+#
+
+
+class AVFeatures:
+    def __init__(self, features):
+        self.info = {}
+        self.info['video'] = [features[x] for x in features.keys() if x != 'file' and features[x]['codec_type'] == 'video']
+        self.info['audio'] = [features[x] for x in features.keys() if x != 'file' and features[x]['codec_type'] == 'audio']
+
+    def __get_attr(self, name, stream_type):
+        if self.info[stream_type]:
+            return self.info[stream_type][0][name]
+        else:
+            raise Exception('No video')
+
+    def get_video_width(self):
+        return self.__get_attr('width', 'video')
+
+    def get_video_height(self):
+        return self.__get_attr('height', 'video')
+
+    def get_video_codec(self):
+        return self.__get_attr('codec_name', 'video')
+
+    def get_audio_codec(self):
+        return self.__get_attr('codec_name', 'audio')
+
+    def get_video_duration(self):
+        return self.__get_attr('duration', 'video')
+
+    def get_video_frame_rate(self):
+        return '%s/%s' % (self.__get_attr('r_frame_rate_num', 'video'), self.__get_attr('r_frame_rate_den', 'video'))
+
+    def get_audio_sample_rate(self):
+        return self.__get_attr('sample_rate', 'audio')
+
+    def has_audio(self):
+        return not not self.info['audio']
+
+    def has_video(self):
+        return not not self.info['video']
+
+#class AudioFeatures:
+#    def __init__(self, features):
+#        self.features = features
+#        self.audio = [x for x in self.features['streams'].values() if x['codec_type'] == 'audio']
+#        self.has_audio = not (not self.audio)
+#
+#    def get_codec_name(self):
+#        return self.audio[0]['codec_name']
+#
+#    def get_duration(self):
+#        return self.audio[0]['duration']
+#
+#    def get_sample_rate(self):
+#        return '%s/%s' % (self.video[0]['r_frame_rate_num'], self.video[0]['r_frame_rate_den'])
+#
+
+class ImageFeatures:
+    def __init__(self, features):
+        self.features = features
+
+    def get_codec_name(self):
+        return self.features['codec']
+
+    def get_depth(self):
+        return self.features['depth']
+
+    def has_frame(self):
+        "returns True if the images contains more frames"
+        return self.features['has_frame']
+
+    def get_size(self):
+        return self.features['size']
+
+    def get_width(self):
+        return self.features['width']
+
+    def get_height(self):
+        return self.features['height']
+
+
+
+class PdfFeatures:
+    def __init__(self, features):
+        self.features = features
+
+    def get_num_pages(self):
+        return self.features['Pages']
+
+    def get_size(self):
+        return self.features['size']
+
+    def get_title(self):
+        return self.features['Title']
+
+
+########################################################################
+# Format of the produced features.
+#
+#{'0': {'codec_long_name': 'H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10',
+#       'codec_name': 'h264',
+#       'codec_type': 'video',
+#       'decoder_time_base': '125/5994',
+#       'display_aspect_ratio': '12/5',
+#       'duration': '149.899899',
+#       'gop_size': '12',
+#       'has_b_frames': '0',
+#       'height': '800',
+#       'index': '0',
+#       'nb_frames': '0',
+#       'pix_fmt': 'yuv420p',
+#       'r_frame_rate': '23.976024',
+#       'r_frame_rate_den': '1001',
+#       'r_frame_rate_num': '24000',
+#       'sample_aspect_ratio': '1/1',
+#       'size': '140175513.000000',
+#       'start_time': '0.000000',
+#       'time_base': '1/1000',
+#       'width': '1920'},
+# '1': {'bits_per_sample': '0',
+#       'channels': '2',
+#       'codec_long_name': 'Advanced Audio Coding',
+#       'codec_name': 'aac',
+#       'codec_type': 'audio',
+#       'decoder_time_base': '0/1',
+#       'duration': '149.899899',
+#       'index': '1',
+#       'nb_frames': '0',
+#       'sample_rate': '44100.000000',
+#       'size': '140175513.000000',
+#       'start_time': '0.023000',
+#       'time_base': '1/1000'},
+# 'file': {'bit_rate': '0.000000',
+#          'demuxer_long_name': 'FLV format',
+#          'demuxer_name': 'flv',
+#          'duration': '149.899899',
+#          'filename': '/home/orlando/Videos/tron.flv',
+#          'index': 'file',
+#          'nb_streams': '2',
+#          'size': '140175513.000000',
+#          'start_time': '0.000000'}}
+#
+#########################################################################
+#
+# application/pdf features
+# {'Author': 'SAngioni',
+#  'CreationDate': 'Fri Mar  4 15:36:08 2011',
+#  'Creator': 'Microsoft\xc2\xae Office Word 2007',
+#  'Encrypted': 'no',
+#  'File size': '428472 bytes',
+#  'ModDate': 'Fri Mar  4 15:36:08 2011',
+#  'Optimized': 'no',
+#  'PDF version': '1.5',
+#  'Page size': '595.32 x 841.92 pts (A4)',
+#  'Pages': '9',
+#  'Producer': 'Microsoft\xc2\xae Office Word 2007',
+#  'Tagged': 'yes',
+#  'Title': 'bollettinobandi',
+#  'size': 428472L}
+# 
+#########################################################################
+#
+# #image/* features
+#
+# {'codec': 'jpeg',
+#  'depth': '8',
+#  'depth_unit': 'bit',
+#  'has_frame': False,
+#  'has_sound': False,
+#  'height': '600',
+#  'size': 73728L,
+#  'width': '400'}
+# 
+
