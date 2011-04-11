@@ -21,7 +21,6 @@ from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.common.adapter import Adapter
 from dam.plugins.common.utils import resize_image
-from dam.plugins.cmdlines.video_gst import synthetic_audio, TBD
 from dam.plugins.adapt_video_idl import inspect
 from twisted.internet import defer, reactor
 from mediadart import log
