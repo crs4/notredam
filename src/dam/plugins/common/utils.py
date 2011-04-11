@@ -1,4 +1,5 @@
 import mimetypes
+from struct import unpack
 from mediadart import log
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
@@ -50,9 +51,7 @@ def get_source_rendition(item_id, variant_name, workspace):
 
     resource = None
     if hasattr(variant_name, 'upper'):   # it looks like a string
-        print 'a', variant_name, item.pk
         resource = Component.objects.get(workspace=workspace, variant__name=variant_name, item=item)
-        print 'b'
     elif hasattr(variant_name, 'append'):  # looks like a list
         for name in variant_name:
             try:
@@ -79,45 +78,65 @@ def get_rendition_by_url(rendition_id, workspace):
     "Returns the component corresponding to rendition_id"
     return get_rendition(parse_rendition_url(rendition_id), workspace)
 
-
-def splitstring(s):
-    """Tokenizes a string containing command line arguments:
-
-    Valid Examples
-      "a b c" -> ['a', 'b', 'c']
-      "a   c" -> ['a, 'c']
-      "a 'a b', c" -> ['a', 'a b', 'c']
-      'a "a b" c' -> ['a', 'a b', 'c']
-    """
-    sep = ' '
-    l = s.split(sep)
-    print l
-    quotes = ['"', "'"]
-    inside = False
-    ret = []
-    for w in l:
-        if inside:
-            if not w:
-                word += sep
-            elif w[-1] == quote:
-                word += sep + w[:-1]
-                inside = False
-                quote=None
-                ret.append(word)
-            else:
-                word += sep + w
-        else:
-            if not w:
-                continue
-            elif w[0] in quotes:
-                quote = w[0]
-                inside = True
-                word = w[1:]
-            else:
-                ret.append(w)
-    if inside:
-        raise Exception("Error: unmatched quote in string")
-    return ret
+# Utility functions
+def resize_image(width, height, max_w, max_h):
+    w, h, max_w, max_h = float(width), float(height), float(max_w), float(max_h)
+    alfa = min(max_w/w, max_h/h)
+    if 0 < alfa < 1:
+        return int((w * alfa)/2)*2, int((h * alfa)/2)*2
+    else:
+        return int(w), int(h)
 
 
-
+#
+# FLV parsing
+#
+#def read_tag(f):
+#    "read timestamp from FLV file"
+#    v = f.read(4)
+#    taglen = unpack('!L', v)[0]
+#    if taglen == 0:
+#        return None, None              # start of file
+#    f.seek(-(taglen+4), 1)             # start of tag
+#    v = f.read(7)
+#    tagtype = unpack('B', v[0])[0]
+#    timestamp = unpack('!L', '\x00' + v[4:])[0]
+#    f.seek(-(4+7), 1)
+#    return tagtype, timestamp
+#
+#
+#def get_flv_duration(filename, stream_type='video'):
+#    """return the duration in seconds of an flv file
+#
+#    FLV records independent timestamps for audio and video. The difference
+#    is usually a few tens of seconds. The defaults is the right choice 
+#    unless the file contains only audio.
+#    """
+#    f = open(filename, 'r')
+#    v = f.read(5)
+#    header = unpack('!B', v[4])[0]
+#    if stream_type == 'video':
+#        if not header & 0x1:
+#            raise Exception('FLV does not contain video')
+#        else:
+#            target_type = 9
+#    elif stream_type == 'audio':
+#        if not header & 0x3:
+#            raise Exception('FLV does not contain audio')
+#        else:
+#            target_type = 8
+#    else:
+#        raise Exception('Unrecognized stream type (must be "audio" or "video")')
+#    f.seek(-4, 2)
+#    duration = 0
+#    # reads flv tags backwards. When the right one (video or audio) is found, return
+#    # its timestamp
+#    while 1:
+#        tagtype, tagtime = read_tag(f)
+#        if tagtype in (target_type, None):
+#            break
+#    if tagtime is None:
+#        return 0
+#    else:
+#        return tagtime/1000.
+#

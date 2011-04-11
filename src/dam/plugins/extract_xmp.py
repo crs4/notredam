@@ -34,9 +34,9 @@ class ExtractError(Exception):
     pass
 
 # Entry point
-def run(workspace, item_id, source_variant):
+def run(workspace, item_id, source_variant_name):
     deferred = defer.Deferred()
-    worker = ExtractXMP(deferred, workspace, item_id, source_variant)
+    worker = ExtractXMP(deferred, workspace, item_id, source_variant_name)
     reactor.callLater(0, worker.extract_xmp)
     return deferred
 
@@ -49,7 +49,7 @@ def run(workspace, item_id, source_variant):
 class ExtractXMP:
     def __init__(self, deferred, workspace, item_id, variant_name):
         self.deferred = deferred
-        self.proxy = Proxy('FeatureExtractor')
+        self.proxy = Proxy('XMPExtractor')
         self.workspace = workspace
         self.item = Item.objects.get(pk = item_id)
         self.variant_name = variant_name
@@ -99,7 +99,7 @@ class ExtractXMP:
                     if found_property[0].is_array == 'not_array':
                         delete_list.append(found_property[0])
                     if property_options['IS_QUALIFIER'] and xpath_splitted[-1][1] == 'lang':
-                        log.debug('############# setting throw away IS_QUALIFIER option')
+                        #log.debug('############# setting throw away IS_QUALIFIER option')
                         find_xpath = property_xpath.replace('/?xml:lang', '')
                         if metadata_dict[namespace_obj].has_key(find_xpath):
                             if property_value == 'x-default':
@@ -107,7 +107,8 @@ class ExtractXMP:
                             metadata_dict[namespace_obj][find_xpath].language = property_value
                         else:
                             log.debug('metadata property not found: ' + find_xpath)
-                        log.debug('###@@@@ %s: (%s)' % (find_xpath, property_value))
+                            pass
+                        #log.debug('###@@@@ %s: (%s)' % (find_xpath, property_value))
                     else:
                         if found_property[0].is_variant:
                             x = MetadataValue(schema=found_property[0], object_id=self.component.pk, content_type=ctype_component, value=property_value, xpath=property_xpath)
@@ -147,12 +148,11 @@ class ExtractXMP:
             try:
                 GeoInfo.objects.save_geo_coords(self.component.item, latitude,longitude)
             except Exception, ex:
-                logger.debug( 'ex while saving latitude and longitude in dam db: %s'% ex)
+                log.debug( 'ex while saving latitude and longitude in dam db: %s'% ex)
         self.deferred.callback('ok')
 
     def extract_xmp(self):
-        extractor_proxy = Proxy('FeatureExtractor')
-        d = extractor_proxy.extract(self.component.uri,  'xmp_extractor')
+        d = self.proxy.extract(self.component.uri)
         d.addCallbacks(self._cb_xmp_ok, self._cb_error)
         return d
         
