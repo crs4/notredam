@@ -9,7 +9,7 @@ def inspect(workspace):
         'name': __name__,
         'params':[
             {   
-                'name': 'variant',
+                'name': 'source_variant_name',
                 'fieldLabel': 'Input Rendition',
                 'xtype': 'select',
                 'values': variants,
