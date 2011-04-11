@@ -74,17 +74,18 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	getXY: function(){
 		return Ext.get(this.el).getXY();
 	},
-	get_output_label: function(){
+	_set_output_label: function(prefix){
+		this.output_label = Ext.id(null, prefix);		
+	},
+	get_output_label: function(){						
 			if (this.output_label)
 				return this.output_label;
 			
 			var values = this.form.getForm().getValues();
 			
-			//this.output_label = Ext.id(null, (values.output_variant || this.title));
-			console.log(this.label)
-			this.output_label = Ext.id(null, this.label.value);
-			console.log('this.output_label '+ this.output_label );
+			//this.output_label = Ext.id(null, (values.output_variant || this.title));			
 			
+			this._set_output_label(this.label.value)
 			return this.output_label;
 			
 	},
@@ -122,8 +123,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 		
 		var values = terminal_in.container.form.getForm().getValues();
 		
-		wire.label =terminal_in.container.get_output_label();
-		console.log('wire.label '+ wire.label);
+		wire.label =terminal_in.container.get_output_label();		
 		
 		var output_variant = values.output_variant || values.source_variant;
 		
@@ -143,7 +143,7 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	render: function(){
 		
 	 	MDAction.superclass.render.call(this);
-	 	
+	 	var action = this;
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
 	 		bodyStyle: {paddingTop: 10},
@@ -164,7 +164,19 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	 	
 	 	this.label = new Ext.form.TextField({
  			value: this.label,
- 			width: 300 			
+ 			width: 300,
+ 			listeners:{
+				change: function(field, new_value){								
+					var output_wires = action.getTerminal(action.outputs).wires;
+					action._set_output_label(new_value);
+					
+					Ext.each(output_wires, function(wire){						
+						wire.label = action.get_output_label();					
+						
+					});
+					
+				}
+			}		
  		}); 		
 	 	
  		var BUTTON_EDIT = 'Show', BUTTON_HIDE = 'Hide';
@@ -325,8 +337,7 @@ Ext.onReady(function(){
 								Ext.each(this.containers, function(action){
 									if (action){
 										
-										var posXY = action.getXY();
-										console.log('posXY '+ posXY);										
+										var posXY = action.getXY();										
 										actions_json[action.id] = {
 											params: action.getParams(),
 											'in': action.getInputs(),
