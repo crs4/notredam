@@ -18,7 +18,7 @@ function params_equal(p1, p2){
 
 
 var MDAction =  function(opts, layer) {	
-	this.id = opts.id || Ext.id();
+	this.id = opts.id || Ext.id(null, opts.title);
 	this['in'] = opts['in'];
 	opts.width = 355;
 	this.out = opts.out; 
@@ -74,14 +74,26 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	getXY: function(){
 		return Ext.get(this.el).getXY();
 	},
-	
+	get_output_label: function(){
+			if (this.output_label)
+				return this.output_label;
+			
+			var values = this.form.getForm().getValues();
+			
+			//this.output_label = Ext.id(null, (values.output_variant || this.title));
+			console.log(this.label)
+			this.output_label = Ext.id(null, this.label.value);
+			console.log('this.output_label '+ this.output_label );
+			
+			return this.output_label;
+			
+	},
 	getOutputs: function(){
 		var outputs = [];
 		var output_wires= this.getTerminal(this.outputs).wires;
-		Ext.each(output_wires, function(wire){
-			if (wire)
-				outputs.push(wire.label);
-		});
+		if (output_wires.length > 0)
+			outputs.push(this.get_output_label());
+		
 		return outputs;
 
 	},
@@ -104,10 +116,15 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 	
 	onAddWire: function(e, args){
 		var wire = args[0];
-		wire.label = Ext.id();
+		
 		var terminal_out = wire.terminal2;
 		var terminal_in = wire.terminal1;
+		
 		var values = terminal_in.container.form.getForm().getValues();
+		
+		wire.label =terminal_in.container.get_output_label();
+		console.log('wire.label '+ wire.label);
+		
 		var output_variant = values.output_variant || values.source_variant;
 		
 		if (output_variant){
@@ -309,7 +326,7 @@ Ext.onReady(function(){
 									if (action){
 										
 										var posXY = action.getXY();
-										
+										console.log('posXY '+ posXY);										
 										actions_json[action.id] = {
 											params: action.getParams(),
 											'in': action.getInputs(),
@@ -346,7 +363,7 @@ Ext.onReady(function(){
           		var fields = [];
           		
           		
-          		var drop_x = e.xy[0];
+          		var drop_x = e.xy[0] ;
           		var drop_y = e.xy[1];
           	
           		var action = new MDAction({
@@ -385,13 +402,13 @@ Ext.onReady(function(){
 //          						console.log(action_stored = action_stored[0]);
           						var action_box = new MDAction({
 						            title: action_stored.data.name,
-						            position:[20,20],
+						            //position:[20,20],
 			//			            legend:'thumbnail',
 						           	'in': action['in'],
 						           	'out': action['out'],
 					            	inputs: ['in'],
 					            	outputs: ['out'],
-					            	position: [action.x, action.y],
+					            	position: [action.x -1, action.y - 56],
 						            params: action_stored.data.params,
 						            label: action.label
 						            
