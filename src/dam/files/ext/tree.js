@@ -154,7 +154,7 @@ function move_node(source, dest){
             else {
                 dest.appendChild(source);
             }
-            console.log('-------' +dest.getPath());
+            //console.log('-------' +dest.getPath());
             if (dest.getDepth() > 0)
             	tree_loader.load(dest, function(){
                 

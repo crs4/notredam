@@ -342,6 +342,7 @@ def save_descriptors(request):
             
             logger.debug('ids %s'%ids)        
             if len(ids) == 2:
+                logger.debug(2)
                 MetadataValue.objects.save_descriptor_values(descriptor, items, metadata[m], workspace, variant_name, default_language)
             else:
                 

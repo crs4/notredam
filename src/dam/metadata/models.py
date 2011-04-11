@@ -328,13 +328,16 @@ class MetadataManager(models.Manager):
 
         ctype_item = ContentType.objects.get_for_model(Item)
         ctype_obj = ContentType.objects.get_for_model(Component)
-        
+        logger.debug('items %s'%items)
+        logger.debug('descriptor %s'%descriptor)
         for item in items:        
-
-            properties = descriptor.properties.filter(media_type=item.type)
+            logger.debug('item.type %s'%item.type)
+            properties = descriptor.properties.filter(media_type__name=item.type.name)
+            logger.debug('properties %s'%properties)
     
             for p in properties:
-        
+                logger.debug(p)
+                logger.debug('p.editable %s'%p.editable)
                 if not p.editable:
                     continue
         
