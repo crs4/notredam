@@ -234,7 +234,7 @@ def _run_pipelines(items, trigger, user, workspace):
     """
     assigned_items = set()
     ret = []
-    for pipe in Pipeline.objects.filter(triggers__name=trigger):
+    for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
         process = None
         for item in items:
             if pipe.is_compatible(item.type):
