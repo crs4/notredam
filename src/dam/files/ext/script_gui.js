@@ -252,9 +252,10 @@ function save_script(params){
 			}
 			catch(e){}
 		},
-		failure: function(){
+		failure: function(response){
 //		            			Ext.MsgBox.msg('','Save failed');
-			Ext.Msg.alert('Save', 'Saving script  failed'); 
+            msg = Ext.decode(response.responseText).errors;
+			Ext.Msg.alert('Save', 'Saving script  failed: ' + msg ); 
 		}
 		
 		

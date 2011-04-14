@@ -131,6 +131,7 @@ def _edit_script(pk, name, params,workspace, media_types, events):
 
 @login_required
 def edit_script(request):
+    from mprocessor.pipeline import DAG, DAGError
     pk = request.POST.get('pk')
     name = request.POST['name']
     params =  request.POST['params']
@@ -139,9 +140,14 @@ def edit_script(request):
     workspace = request.session['workspace']
     
     try:
+        dag = DAG(simplejson.loads(params))
+        logger.debug('params %s'%params)
+        logger.debug(dag.show())
         pipeline = _edit_script(pk, name, params, workspace, media_types, events)
     except IntegrityError:
-        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
+        return HttpResponseServerError(simplejson.dumps({'success': False, 'errors': [{'name': 'script_name', 'msg': 'script named %s already exist'%name}]}))
+    except DAGError:
+        return HttpResponseServerError(simplejson.dumps({'success': False,  'errors': 'Cyclic graph'}))
 
     return HttpResponse(simplejson.dumps({'success': True, 'pk': pipeline.pk}))  
 
