@@ -56,7 +56,8 @@ def check_db_created():
         if config.DATABASE_ENGINE== 'mysql':
             print 'INSERT MYSQL ROOT PASSWORD'
             subprocess.call(['mysql',  '-uroot',  '-p', '-e', "create user %s identified by '%s'; GRANT ALL on *.* to '%s'"%(config.DATABASE_USER, config.DATABASE_PASSWORD, config.DATABASE_USER)])
-            subprocess.call(['mysqladmin',  '-u%s'%config.DATABASE_USER,  'create', config.DATABASE_NAME , '-p%s'%config.DATABASE_PASSWORD])
+            #subprocess.call(['mysqladmin',  '-u%s'%config.DATABASE_USER,  'create', config.DATABASE_NAME , '-p%s'%config.DATABASE_PASSWORD, '--default-character-set=utf8'])
+            subprocess.call(['mysql',  '-u%s'%config.DATABASE_USER, '-p%s'%config.DATABASE_PASSWORD,  '-e', 'create database %s character set utf8;'%config.DATABASE_NAME])
             
         subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'syncdb',  '--noinput'])
         subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'loaddata',  '/opt/notredam/dam/initial_data.json'])
