@@ -9,7 +9,7 @@ supported_types  = {
    'audio/flac': ['.flac'],
    'audio/midi': ['.mid', '.midi', '.midi', '.kar', '.mid'],
    'audio/mpeg': ['.mp3', '.mpega', '.mp2', '.mpga'],       # no aac here
-   'audio/ogg': ['.spx', '.ogg', '.oga'],
+   'audio/ogg': ['.oga', '.ogg', '.spx'],
    'audio/x-m4a': ['.m4a', '.aac'],
    'audio/x-ms-wma': ['.wma'],
    'audio/x-wav': ['.wav'],
@@ -23,7 +23,7 @@ supported_types  = {
    'image/x-nikon-nef': ['.nef'],
    'image/x-portable-graymap': ['.pgm'],
    'image/x-portable-pixmap': ['.ppm'],
-   'application/pdf': ['.pdf'],
+   'doc/pdf': ['.pdf'],
    'video/flv': ['.flv'],
    'video/mp4': ['.mp4'],
    'video/mpeg': ['.m1v', '.mpa', '.mpg', '.mpe', '.mpeg'],
@@ -35,6 +35,7 @@ supported_types  = {
    'audio/x-pn-realaudio' : ['.rm'],
    'audio/x-aiff' : ['.aiff'],
    'image/x-photoshop' : ['.psd'],
+
 }
 
 

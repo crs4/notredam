@@ -27,6 +27,8 @@ class GeoManager(models.Manager):
     def save_geo_coords(self, item, lat, lng):
         """
         Save geo coordinates of the given item
+	takes in input GPS coords, translates them into decimal coords
+	and save decimal coords only
         """
         coord = re.compile(r"(\d*),(\d*.\d*)(\w)")
         lat_coord = coord.match(lat)
@@ -56,6 +58,51 @@ class GeoManager(models.Manager):
         else:
             logger.debug('Unsupported coordinates format. Latitude: %s, longitude: %s' % (lat, lng))
 
+    def save_decimal_coords(self, item, latitude, longitude):
+        """
+        Save decimal coords, latitude and longitude, 
+        in notreDAM:Latitude and notreDAM:Longitude
+	with no translations
+        """
+        try:
+            metadata_lat = MetadataProperty.objects.filter(latitude_target=True)
+            metadata_lng = MetadataProperty.objects.filter(longitude_target=True)
+            self.filter(item=item).delete()
+            geo = self.create(latitude=latitude, longitude=longitude, item=item)
+            item.metadata.filter(schema__in=metadata_lat).delete()
+            item.metadata.filter(schema__in=metadata_lng).delete()
+            for m in metadata_lat:
+                item.metadata.create(schema=m, value=latitude)
+            for m in metadata_lng:
+                item.metadata.create(schema=m, value=longitude)
+        except Exception, ex:
+            logger.debug('could not save decimal coords, error: %s' % ex)
+
+    def save_exif_gps_coords(self, item, gps_latitude, gps_longitude):
+        """
+        Save gps coords, gps_latitude and gps_longitude, 
+        in exif:GPSLatitude and exif:GPSLongitude
+	with no translations
+        """
+	logger.debug('INPUT: gps_latitude %s *** gps_longitude %s' % (gps_latitude,gps_longitude))
+        try:
+            mproperty_lat = MetadataProperty.objects.get(namespace__prefix__iexact='exif',
+					 field_name__iexact= 'GPSLatitude')    
+	    logger.debug('mproperty_lat is %s' % mproperty_lat)
+            mproperty_lng = MetadataProperty.objects.get(namespace__prefix__iexact='exif',
+					 field_name__iexact= 'GPSLongitude')    
+
+	    logger.debug('mproperty_lng is %s' % mproperty_lng)
+            #self.filter(item=item).delete()
+            #geo = self.create(latitude=gps_latitude, longitude=gps_longitude, item=item)
+            item.metadata.filter(schema=mproperty_lat).delete()
+            item.metadata.filter(schema=mproperty_lng).delete()
+            #for m in mproperty_lat:
+            item.metadata.create(schema=mproperty_lat, value=gps_latitude)
+            #for m in mproperty_lng:
+            item.metadata.create(schema=mproperty_lng, value=gps_longitude)
+        except Exception, ex:
+            logger.debug('could not save gps coords, error: %s' % ex)
 
     def search_geotagged(self, ne_lat, ne_lng, sw_lat, sw_lng, items=None):
         """

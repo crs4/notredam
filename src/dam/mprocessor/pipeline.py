@@ -17,6 +17,9 @@ class Node:
     def add_child(self, node):
         self.childs.append(node)
 
+    def __repr__(self):
+        return "<Node %s>" % self.name
+
 
 class DAG:
     def __init__(self, pipeline):
@@ -26,20 +29,21 @@ class DAG:
         self._check_cycles()
 
     def _build_dag(self):
-        outputs = {}  # dizionario 'variant': nodo produttore
+        outputs = {}  # dizionario 'output': nodo produttore
         if len(self.pipeline) == 0:
             raise DAGError('Empty pipeline')
         for name, data in self.pipeline.items():
-            #print 'processing outputs', a
+            #print 'processing node', name
             node = Node(name)
             data['__node__'] = node
             for v in data['out']:
-                #print 'adding %s<-%s to output outputs' % (v, node.name) 
+                #print 'adding %s<-%s to outputs' % (v, node.name) 
                 if v in outputs:
-                    raise DAGError('duplicated output variant %s for %s and %s' % (v, outputs[v].name, node.name))
+                    raise DAGError('duplicated output %s for %s and %s' % (v, outputs[v].name, node.name))
                 else:
                     outputs[v] = node
 
+        #print outputs
         for data in self.pipeline.values():
             node = data['__node__']
             attached = 0
@@ -51,6 +55,8 @@ class DAG:
             if not attached:
                 #print 'attaching %s to root' % node.name
                 self.root.add_child(node)
+        if not self.root.childs:
+            raise DAGError('Cycles detected')
 
 
     def _check_cycles(self):
@@ -65,6 +71,7 @@ class DAG:
         node.lowlink = index 
         index += 1
         stack.append(node)
+        #print "_tarjan: appending %s(index=%s, lowlink=%s, childs=%s)" % (node.name, node.index, node.lowlink, '-'.join([x.name for x in node.childs]))
         for n in node.childs:
             if n.index is None:
                 msg = self._tarjan(n, index, lowlink, stack, msg)
