@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 
 from django.db.models import Q
 from operator import and_, or_
+from dam import logger
 
 class PermissionManager(models.Manager):
     """
@@ -46,9 +47,13 @@ class WorkspaceManager(models.Manager):
         @param description a string containing the workspace's description
         @param creator an instance of auth.User (the creator and admin of the new workspace)
         """
-        ws = self.model(None, name=name, description=description, creator=creator)
-        ws.save()
-
+        try:
+            logger.info("name:%s,Description:%s,user:%s" %(name, description, creator))
+            ws = self.model(None, name=name, description=description, creator=creator)
+            ws.save()
+        except Exception,ex:
+            logger.error("AAAAA")
+            logger.error(ex)
         try:
             permission = WorkspacePermission.objects.get(name='admin')
             wspa = WorkspacePermissionAssociation.objects.get_or_create(workspace = ws, permission = permission)[0]

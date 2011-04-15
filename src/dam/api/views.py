@@ -674,27 +674,35 @@ class WorkspaceResource(ModResource):
                 - name 
                 - description 
         - returns: information about the new workspace, for example {"description": "", "id": 2, "name": "test_1"}
-      
-        
         """
         
         logger.debug('args %s'%request.POST)
         if not request.POST.has_key('name'):
             raise MissingArgs
         
-        user_id = request.POST .get('user_id')
+        if request.POST.has_key('creator'):
+            user = User.objects.get(username = request.POST.get('creator'))
+        else:
+            user_id = request.POST.get('user_id')
+            user = User.objects.get(pk = user_id)
         name = request.POST .get('name')
         description = request.POST .get('description', '')
 
         ws = Workspace()
         form = _update_ws(ws,  {'name': name,  'description': description})
         
-        
         if not form.is_valid():
             logger.exception('invalid form:\n %s' %form.errors)            
             raise ArgsValidationError(form.errors  )
         
-        user = User.objects.get(pk = user_id)
+        
+        logger.info("name:%s,Description:%s,user:%s" %(name, description, user))
+        if (len(DAMWorkspace.objects.filter(name = name, creator = user))>0):
+            logger.info("ESISTE GIAAAAAA!!!!")
+            raise
+        else:
+            logger.info("NON ESISTE!!!!")
+        
         ws = DAMWorkspace.objects.create_workspace(name, description, user)
 
         resp = {'id': ws.pk, 'name': ws.name,  'description': ws.description}
@@ -919,11 +927,15 @@ class ItemResource(ModResource):
             if not  request.POST.has_key('file_name'):
                 raise MissingArgs
              
+            logger.debug("request.POST: %s" %request.POST)
             variant_id = request.POST['rendition_id']
             variant =  Variant.objects.get(pk = variant_id)
             item = Item.objects.get(pk = item_id)
             workspace_id = request.POST['workspace_id']
-            media_type = Type.objects.get_or_create_by_filename(request.POST['uri'])
+            if len(request.POST['uri']) >0:
+                media_type = Type.objects.get_or_create_by_filename(request.POST['uri'])
+            else:
+                media_type = Type.objects.get_or_create_by_filename(request.POST['file_name'])
             comp = item.create_variant(variant, workspace_id, media_type)
             if variant.auto_generated:
                 comp.imported = True
@@ -934,8 +946,10 @@ class ItemResource(ModResource):
             logger.debug("\n\n res_id[] %s, len: %s" %(res_id[0], len(res_id[0])))
             comp._id = res_id[0]
             comp.uri = res_id[0]            
-            logger.debug('res_id[0] %s' %comp._id)
-            mime_type = mimetypes.guess_type(res_id[0])[0]
+            logger.debug('res_id[0] %s' %res_id[0])
+            mime_type = mimetypes.guess_type(res_id[0].lower())[0]
+            if mime_type == None:
+                mime_type = str(Type.objects.get_or_create_by_filename(res_id[0].lower()))
             logger.debug('mime_type %s' %mime_type)    
             ext = mime_type.split('/')[1]
             comp.format = ext
@@ -1571,11 +1585,12 @@ class ItemResource(ModResource):
         
         try:
             logger.info(request.POST['file_name'])
-            media_type = Type.objects.get_or_create_by_filename(request.POST['file_name'])
+            file_name = str(request.POST['file_name'].lower())
+            media_type = Type.objects.get_or_create_by_filename(file_name)
             resp = {'media_type': str(media_type)}
             json_resp = json.dumps(resp)
         except Exception, ex:
-            logger.error(ex)
+            logger.exception(ex)
         
         return HttpResponse(json_resp)           
         

@@ -1,6 +1,8 @@
 import os
 import dam
 import mimetypes
+
+from dam import logger
 # This dictionary lists all the types supported by Notredam
 
 supported_types  = {
@@ -29,8 +31,11 @@ supported_types  = {
    'video/ts': ['.ts'],
    'video/x-m4v': ['.m4v'],
    'video/x-matroska': ['.mpv', '.mkv'],
-   'video/x-msvideo': ['.avi'],
-   'video/quicktime': ['.mov'],
+   'video/x-msvideo': ['.avi', '.mov'],
+   'audio/x-pn-realaudio' : ['.rm'],
+   'audio/x-aiff' : ['.aiff'],
+   'image/x-photoshop' : ['.psd'],
+
 }
 
 
@@ -63,7 +68,10 @@ def supported_extensions(mime_type):
 
 
 def guess_file_type(filename):
+    logger.debug("guess_file_type")
     ext = os.path.splitext(os.path.normpath(filename))[1]
+    logger.debug("ext:: %s" %ext)
+    logger.debug("get_types_by_ext(supported_types)(ext, None):: %s" %get_types_by_ext(supported_types))
     return mime_types_by_ext.get(ext, None)
 
 
