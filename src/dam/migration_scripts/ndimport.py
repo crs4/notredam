@@ -344,7 +344,7 @@ def add_workspaces(i,e,users,path_extract,ws_origTows_new):
     
         return ''
     except:
-        logger.exception('Error in add_workspaces')
+        logger.exception('Error in add_workspaces current_workspace: %s' %current_workspace)
         raise Exception, 'Error in add_workspaces'     
 
 def search_id_rendition(filepath,shortname, rendition_ws):
@@ -607,7 +607,7 @@ def restore_rendition(current_item,id_workspace,rendition_ws,id_item,file_name,s
     try:
         if "item.json" in custom_listfiles(current_item) and "rendition.json" in custom_listfiles(current_item):
             
-            logger.info("\n\n\n\n\n AAAAAAAA ci sono.")
+            logger.info("\n\n AAAAAAAA ci sono.")
          
             fitem = custom_open_file(current_item, 'item.json')
             frendition = custom_open_file(current_item, 'rendition.json')
@@ -619,13 +619,14 @@ def restore_rendition(current_item,id_workspace,rendition_ws,id_item,file_name,s
                 param['file_name'] = fitem['renditions'][rendition]['file_name']
                 #file_name can be NULL
                 if not param['file_name']:
-                    param['file_name'] = rendition
+                    param['file_name'] = fitem['renditions']['original']['file_name']
+                param['file_name'].decode('latin-1')
                 param['rendition_id'] = search_id_rendition(current_item,rendition,rendition_ws)
                 if string.lower(rendition) == 'original':
                     param_orig = param
-                else:
-                    logger.info("params %s" %param)
-                    i._item_add_component(id_item,param)
+                elif len(param['uri'])>0:
+                        logger.info("params %s" %param)
+                        i._item_add_component(id_item,param)
 
             logger.info("param_orig %s" %param_orig)
             i._item_add_component(id_item,param_orig)
@@ -634,8 +635,8 @@ def restore_rendition(current_item,id_workspace,rendition_ws,id_item,file_name,s
         
     except Exception, ex:
         logger.exception(ex) 
-        logger.info("/n/n/n/n/n/n/n")
-        raise   
+        logger.info("/n/n param %s" %param)
+   
     return ''
 
 def add_to_ws(ws_origTows_new,id_old_ws,id_new_item):
@@ -649,8 +650,12 @@ def add_to_ws(ws_origTows_new,id_old_ws,id_new_item):
     return:
         empty string
     """
-    i._item_add_to_ws(id_new_item,{'workspace_id':ws_origTows_new[id_old_ws]})
-    
+    try:
+        i._item_add_to_ws(id_new_item,{'workspace_id':ws_origTows_new[id_old_ws]})
+    except Exception, ex:
+            logger.exception(ex) 
+            logger.info("/n/n/n/n/n/n/n id_old_ws : %s" %id_old_ws)    
+
     return ''
 
 def set_metadata(id_item,param):
@@ -697,13 +702,16 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
             logger.info('items %s/%s'%(custom_listdirs(current_workspace).index(itemdir), len_items))
             current_item = current_workspace + '/' +  itemdir
            
-            logger.info('\n\ncurrent_item')
-            logger.info('%s' %current_item)
+            logger.info('\ncurrent_item %s' %current_item)
             if os.path.isdir(current_item) and itemdir != 'watermarking':#exclude folder watermarking
                 paramitem = custom_open_file(current_item, 'item.json')
                 #change media_type for compatibility with older version of NotreDAM
                 if paramitem['media_type'].find('/') == -1:
-                    fnameToType = {'file_name':paramitem['renditions']['original']['file_name']}
+                    logger.debug('fnameToType: %s,/n  paramItem: %s' %(paramitem['renditions']['original']['file_name'], paramitem))
+#                    fnameToType = {'file_name':paramitem['renditions']['original']['file_name'].decode('latin-1')}
+#                    if fnameToType == None:
+                    fnameToType = {'file_name':paramitem['renditions']['original']['url']}
+                    logger.debug("fnameToType: %s" %fnameToType)
                     media_type = i._item_get_type(fnameToType)
                     paramitem['media_type'] = media_type['media_type']
                 
@@ -770,28 +778,33 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                     else:
 
                         logger.debug('---condiviso nessuna NEW itemid %s---- paramworkspace[id] %s' %(paramitem['id'],paramworkspace['id']))
-                        if int(paramitem['upload_workspace']) != int(paramworkspace['id']):
-                            add_to_ws(ws_origTows_new,paramworkspace['id'],id_orig_itemToid_new_item[paramitem['id']])
-    
-                        #upload delle renditioni
-                        if int(paramitem['workspace_id']) == int(ws_origTows_new[str(paramitem['workspaces'][len(paramitem['workspaces'])-1])]):
-                            #nell'ultimo della lista devo fare l'upload dell'original
-                            if not metadata_only:
-                                upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                        if id_orig_itemToid_new_item.has_key(paramitem['id']):
+                            if int(paramitem['upload_workspace']) != int(paramworkspace['id']):
+                                    add_to_ws(ws_origTows_new,paramworkspace['id'],id_orig_itemToid_new_item[paramitem['id']])
+                            #upload delle renditioni
+                            if int(paramitem['workspace_id']) == int(ws_origTows_new[str(paramitem['workspaces'][len(paramitem['workspaces'])-1])]) and id_orig_itemToid_new_item.has_key(paramitem['id']):
+                                #nell'ultimo della lista devo fare l'upload dell'original
+                                if not metadata_only:
+                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                                else:
+                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                                #set_metadata
+                                set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
                             else:
-                                restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                                if not metadata_only:
+                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                                else:
+                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                            
                             #set_metadata
                             set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
                         else:
-                            if not metadata_only:
-                                upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
-                            else:
-                                restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                            logger.error("item not recognized")
                         
-                        #set_metadata
-                        set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
-                        
-            time.sleep(1.5)
+            if not metadata_only:
+                time.sleep(0.5)
+            else:
+                time.sleep(0.1)
             
                         
     except Exception, ex:
@@ -976,7 +989,7 @@ if __name__ == '__main__':
                     logger.info('keywords.json for %s' % workspacedir)
                     for data in paramkeywords['keywords']:
                         add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
-        
+                    
                     logger.info('collections.json for %s' % workspacedir)
                     paramcollection = custom_open_file(current_workspace, 'collections.json')
                     for data in paramcollection['collections']:

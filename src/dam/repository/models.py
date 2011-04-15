@@ -255,6 +255,8 @@ class Item(AbstractItem):
                             desc_value['properties'].append({'caption': p.caption, 'value': v_value})
             desc_dict['value'] = desc_value
             values.append(desc_dict)
+        
+        logger.debug("values : %s" %values)
 
         return values
 

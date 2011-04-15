@@ -293,6 +293,7 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
        Returns the list of items created;
     """
     items = []
+    logger.debug("filenames : %s" %filenames)
     for original_filename in filenames:
         res_id = new_id()
         variant = Variant.objects.get(name = variant_name)

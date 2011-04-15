@@ -21,6 +21,7 @@ import mimetypes
 from django.db import models
 from django.contrib.auth.models import User
 from dam.supported_types import supported_extensions, guess_file_type
+from dam import logger
 
 class MimeError(Exception):
     pass
@@ -54,6 +55,7 @@ class TypeManager(models.Manager):
     def get_or_create_by_filename(self, filename):
         filename = filename.lower()
         "Return a type registered in notre dam for use. Create a type if does not exists"
+        logger.debug("filename %s" %filename)
         mime_type = guess_file_type(filename)
         basename, ext = os.path.splitext(filename)
         if mime_type is None:
