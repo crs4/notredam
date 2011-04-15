@@ -306,8 +306,12 @@ class Item(AbstractItem):
         Returns the file size found in the original variant
         """
 #        logger.debug('######## ITEM=%s' % self.pk)
-        orig = self.component_set.get(variant__name = 'original')
-        return float(orig.size)
+        try:
+            orig = self.component_set.get(variant__name = 'original')
+            return float(orig.size)
+        except Exception,ex:
+            logger.debug("Exception: %s" %ex)
+            return float(0)
 
     def get_states(self, workspace=None):
         from dam.workflow.models import StateItemAssociation
