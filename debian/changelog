@@ -1,3 +1,9 @@
+notredam (1.0.6rc1) stable; urgency=low
+
+  *  Internalization
+
+ -- Mauro Del Rio <mauro@crs4.it>  Mon, 18 April 2011 16:00:20 +0100
+
 notredam (1.0.5.1) stable; urgency=low
 
   *  fixing some bugs
