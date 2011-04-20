@@ -49,7 +49,7 @@ from dam.upload.views import _run_pipelines
 
 from django.utils.datastructures import SortedDict
 
-from dam import logger
+from dam.logger import logger
 import time
 from mx.DateTime.Parser import DateTimeFromString
 
@@ -278,14 +278,17 @@ def _search(request,  items, workspace = None):
     queries = []
     
     complex_query = request.POST.get('complex_query')
+    logger.debug('complex_query %s'%complex_query)
     if not workspace:
         workspace = request.session['workspace']
     if complex_query:
+        logger.debug('complex_query %s'%complex_query)
         complex_query = simplejson.loads(complex_query)
         
         items = _search_complex_query(complex_query,  items)
         
     else:
+        logger.debug('nodes_query %s'%nodes_query)
         if nodes_query:            
             for node_id  in nodes_query:
                 node = Node.objects.filter(pk = node_id)                
@@ -304,7 +307,8 @@ def _search(request,  items, workspace = None):
             
 #            items = reduce(and_,  queries)
             
-#Text query                
+#Text query        
+        logger.debug('queries %s'%queries)
         if query:
             processes =  re.findall('\s*process:(\w+):(\w+)\s*', query,  re.U)
             
@@ -327,9 +331,9 @@ def _search(request,  items, workspace = None):
     #            just put out  keywords and collections....
     #        simple_query = re.sub('(\w+:\w+)', '', query,)
             simple_query = re.compile('(\w+:/.+/)',  re.U).sub('', query)
-            logger.debug('simple_query %s' %simple_query,  )
-            simple_query = re.sub('(\w+:".+")', '', simple_query)
             
+            simple_query = re.sub('(\w+:".+")', '', simple_query)
+            logger.debug('simple_query %s' %simple_query,  )
             
             simple_query = re.sub('\s*SmartFolders:"(.+)"\s*', '', simple_query)
             simple_query = re.sub('\s*Inbox:/(\w+[/\w\-]*)/\s*', '', simple_query)
@@ -361,6 +365,7 @@ def _search(request,  items, workspace = None):
             
             
             logger.debug('metadata_query %s'%metadata_query)
+            logger.debug('queries %s'%queries)
             for metadata_q in metadata_query:
                 
                 key, value = metadata_q.split('=')
@@ -376,7 +381,9 @@ def _search(request,  items, workspace = None):
                 except MetadataProperty.DoesNotExist:
                     logger.debug(' MetadataProperty.DoesNotExist %s'%metadata_q)
                     queries.append(Item.objects.none())
-                
+            
+            logger.debug('processes %s'%processes)
+            logger.debug('queries %s'%queries)
             for process in processes:
                 process_id = process[0]
                 type = process[1]
@@ -389,13 +396,16 @@ def _search(request,  items, workspace = None):
                     q = items.filter(pk__in = [p.target_id for p in ProcessTarget.objects.filter(process__pk = process_id, actions_todo = 0)])
                 queries.append(q)
                 
-            
+            logger.debug('inbox %s'%inbox)
+            logger.debug('queries %s'%queries)
             for inbox_el in inbox:
                 logger.debug('path %s'%inbox_el)
                 node = Node.objects.get_from_path(inbox_el, workspace,   'inbox')
                 logger.debug('node found in inbox %s'%node.pk)
                 queries.append(items.filter(node = node))
                 
+            logger.debug('keywords %s'%keywords)
+            logger.debug('queries %s'%queries)
             for keyword in keywords:
                 if keyword: 
                     logger.debug('keyword: %s'%keyword)
@@ -411,6 +421,8 @@ def _search(request,  items, workspace = None):
                     break
                 
             
+            logger.debug('collections %s'%collections)
+            logger.debug('queries %s'%queries)
             for coll  in collections:
                 
     #                q = Q(node__label__iexact = collection.strip(),  node__type = 'collection')
@@ -419,12 +431,16 @@ def _search(request,  items, workspace = None):
                 node = Node.objects.get_from_path(coll, workspace,  'collection')
                 logger.debug('node found %s'%node)
                 queries.append(items.filter(node = node))
-                    
+                
+            logger.debug('smart_folder %s'%smart_folder )
+            logger.debug('queries %s'%queries)
             if smart_folder:               
                 
                 smart_folder_node = SmartFolder.objects.get(workspace = workspace,  label = smart_folder[0])
                 queries.append(search_smart_folder(smart_folder_node, items))
 
+            logger.debug('geo %s'%geo)
+            logger.debug('queries %s'%queries)
             for coords in geo:
                 ne_lat = coords[0]
                 ne_lng = coords[1]
@@ -435,6 +451,8 @@ def _search(request,  items, workspace = None):
                 else:
                     queries.append(items.filter(Q(geoinfo__longitude__gte=sw_lng) | Q(geoinfo__longitude__lte=ne_lng), geoinfo__latitude__lte=ne_lat, geoinfo__latitude__gte=sw_lat))
             
+            logger.debug('words %s'%words)
+            logger.debug('queries %s'%queries)
             for word in words:
                 logger.debug('word %s'%word)
                 if DATABASE_ENGINE == 'sqlite3':
@@ -445,9 +463,12 @@ def _search(request,  items, workspace = None):
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%word.strip())
                     queries.append(items.filter(q))
                 
-                
+            logger.debug('multi_words %s'%multi_words)
+            logger.debug('queries %s'%queries)
             for words in multi_words:
                 tmp = re.findall('\s*(.+)\s*', words,  re.U)
+                logger.debug('multi words %s'%tmp)
+                logger.debug('queries %s'%queries)
                 if DATABASE_ENGINE == 'sqlite3':
                     words_joined = '\s+'.join(tmp)
                     words_joined = words_joined.strip() 
@@ -506,6 +527,7 @@ def _search(request,  items, workspace = None):
         else:
             items = items.order_by('%s'%order_by)
 
+    logger.debug('items %s'%items)
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):

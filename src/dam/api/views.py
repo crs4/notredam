@@ -62,7 +62,7 @@ from django.contrib.auth import authenticate,  login
 #from django.contrib.sessions.backends.db import SessionStore
 
 
-from dam import logger
+from dam.logger import logger
 import os.path
 from mimetypes import guess_type
 
@@ -2040,7 +2040,7 @@ class CollectionResource(ModResource):
 class KeywordsResource(ModResource):    
     
 #    @exception_handler
-    def _read(self, user, workspace_id, node_id = None, flag = False):
+    def _read(self, user, workspace_id, node_id  = None, flag = False):
         def get_info(kw,  get_branch = False):
             kw_info = {
                 'id': kw.pk,  
@@ -2081,9 +2081,10 @@ class KeywordsResource(ModResource):
 #        user = User.objects.get(pk = user_id)
         
         
-        
+        logger.debug('workspace_id %s'%workspace_id)        
         if node_id:
             node = Node.objects.get(pk = node_id)
+            logger.debug('node %s'%node)
             if node.depth < 1:
                 raise InvalidNode
             
@@ -2147,7 +2148,10 @@ class KeywordsResource(ModResource):
                                     }                   
         """   
                 
-        return self._read(request, node_id)
+        user_id = request.GET.get('user_id')
+        logger.debug('user_id %s'%user_id)       
+        user = User.objects.get(pk = user_id)
+        return self._read(user, None, node_id)
    
     
     
@@ -2310,8 +2314,10 @@ class KeywordsResource(ModResource):
         else:
             node_dest = Node.objects.get(pk = request.POST['parent_id'])  
         
-        logger.debug('moving...')        
-        node_source.move_node(node_dest,  ws)                        
+        logger.debug('moving...')    
+        logger.debug('ws %s'%ws)    
+        node_source.move_node(node_dest,  ws)
+        logger.debug('moved')                        
         
         return HttpResponse('') 
     
