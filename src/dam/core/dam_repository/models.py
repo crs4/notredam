@@ -21,7 +21,7 @@ import mimetypes
 from django.db import models
 from django.contrib.auth.models import User
 from dam.supported_types import supported_extensions, guess_file_type
-from dam import logger
+from dam.logger import logger
 
 class MimeError(Exception):
     pass

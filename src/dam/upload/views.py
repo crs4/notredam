@@ -48,7 +48,7 @@ from dam.preferences.views import get_metadata_default_language
 
 from mediadart.storage import Storage
 
-from dam import logger
+from dam.logger import logger
 import mimetypes
 import os.path, traceback
 import time

@@ -27,7 +27,7 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.treeview.models import Node
 
-from dam import logger
+from dam.logger import logger
 import settings
 from operator import and_, or_
 

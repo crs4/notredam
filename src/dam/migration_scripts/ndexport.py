@@ -30,7 +30,7 @@ from hashlib import sha1
 from optparse import OptionParser
 
 from ndutils import ImportExport, Exporter, Importer
-from dam import logger
+from dam.logger import logger
 
 def usage():
     return '\n'.join((

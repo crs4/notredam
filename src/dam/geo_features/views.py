@@ -32,7 +32,7 @@ from dam.core.dam_workspace.decorators import permission_required
 from dam.geo_features.models import GeoInfo
 from dam.workspace.views import _search_items
 
-from dam import logger
+from dam.logger import logger
 
 def _convert_deg_to_dms(latitude,longitude):
     
