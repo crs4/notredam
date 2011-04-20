@@ -4,7 +4,7 @@ File upload handler classes
 
 from django.core.files.uploadhandler import FileUploadHandler
 from django.core.files.uploadedfile import UploadedFile
-import logger
+from dam.logger import logger
 import shutil
 import os
 

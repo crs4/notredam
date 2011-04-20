@@ -31,7 +31,7 @@ from django.utils.simplejson.encoder import JSONEncoder
 from urllib_uploader import StandardUploader
 from ndutils import ImportExport, Exporter, Importer
 import time
-from dam import logger
+from dam.logger import logger
 import string
 
 #CONFIGURATION GOES HERE

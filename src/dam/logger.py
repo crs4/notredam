@@ -27,7 +27,7 @@ from django.utils.encoding import smart_unicode
 #logging_level = logging.DEBUG
 logging_level = logging.DEBUG
 logging.basicConfig(level=logging_level,
-                    format='[%(asctime)s] %(levelname)-8s %(message)s',
+                    format='[%(asctime)s] %(levelname)-8s %(pathname)s %(lineno)s %(message)s',
                     datefmt = '%d/%b/%Y %H:%M:%S',
 #                    format='[%(asctime)s] %(levelname)-8s %(module)s %(lineno)d  %(message)s',
 #                    datefmt='%d/%b/%Y %H:%M:%S',
@@ -35,8 +35,8 @@ logging.basicConfig(level=logging_level,
                     filemode='a'
                     )
                     
-default_logger = logging.getLogger('dam')
-default_logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))
+logger = logging.getLogger('dam')
+logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))
 
 #console = logging.StreamHandler()
 ## define a Handler which writes INFO messages or higher to the sys.stderr
@@ -53,43 +53,43 @@ default_logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log'))
 #default_logger.addHandler(console)
 
 
-def set_fileoutput(filename):
-    file_handler = logging.FileHandler(filename)
-    logging.getLogger('').addHandler(file_handler )
-
-def critical(message):
-    """
-    Logs in a critical level 
-    """
-    if DEBUG: default_logger.critical(  "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
-
-def error(message):
-    """
-    Logs in a error level 
-    """
-    default_logger.error(  "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
-
-def warning(message):
-    """
-    Logs in a warning level 
-    """
-    if DEBUG: default_logger.warning( "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message ) )
-
-def debug(message):
-    """
-    Logs in a debug level 
-    """
-    if DEBUG: default_logger.debug( "[" + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
-
-def info(message):
-    """
-    Logs in a info level 
-    """
-    default_logger.info(   "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
-
-def exception(message):
-    """
-    Logs an exception 
-    """
-    default_logger.exception(  "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
-    
+#def set_fileoutput(filename):
+    #file_handler = logging.FileHandler(filename)
+    #logging.getLogger('').addHandler(file_handler )
+#
+#def critical(message):
+    #"""
+    #Logs in a critical level 
+    #"""
+    #if DEBUG: default_logger.critical(  "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
+#
+#def error(message):
+    #"""
+    #Logs in a error level 
+    #"""
+    #default_logger.error(  "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
+#
+#def warning(message):
+    #"""
+    #Logs in a warning level 
+    #"""
+    #if DEBUG: default_logger.warning( "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message ) )
+#
+#def debug(message):
+    #"""
+    #Logs in a debug level 
+    #"""
+    #if DEBUG: default_logger.debug( "[" + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
+#
+#def info(message):
+    #"""
+    #Logs in a info level 
+    #"""
+    #default_logger.info(   "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
+#
+#def exception(message):
+    #"""
+    #Logs an exception 
+    #"""
+    #default_logger.exception(  "["+ sys._getframe(1).f_code.co_filename +" " + sys._getframe(1).f_code.co_name + ":"+smart_unicode(sys._getframe(1).f_lineno)+"] " + smart_unicode( message )  )
+    #

@@ -39,7 +39,7 @@ from dam.core.dam_workspace.decorators import permission_required
 
 from mediadart.storage import Storage
 
-from dam import logger
+from dam.logger import logger
 
 NOTAVAILABLE = None
   

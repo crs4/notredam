@@ -18,14 +18,14 @@
 
 from django.db import models
 
-import logger
+from dam.logger import logger
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.utils.translation import ugettext
 
 
 from dam.core.dam_metadata.models import AbstractMetadataLanguage, XMPProperty, XMPStructure, XMPPropertyChoice
-from dam import logger
+from dam.logger import logger
 import re
 
 def convert_rational(s):
