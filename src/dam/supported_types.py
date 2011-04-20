@@ -2,7 +2,7 @@ import os
 import dam
 import mimetypes
 
-from dam import logger
+from dam.logger import logger
 # This dictionary lists all the types supported by Notredam
 
 supported_types  = {

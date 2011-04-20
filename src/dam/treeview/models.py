@@ -25,7 +25,7 @@ from django.contrib.auth.models import User
 from dam.repository.models import Item
 from dam.core.dam_tree.models import AbstractNode
 
-from dam import logger
+from dam.logger import logger
 
 class InvalidNode(Exception):
     pass
@@ -310,6 +310,7 @@ class Node(AbstractNode):
                 root = Node.objects.filter(depth= 0,  workspace = self.workspace,  type = self.type)
                 logger.debug('root %s'%root)
                 root[0].rebuild_tree(1)
+                
             except Exception,  ex:
                 logger.exception(ex)
                 raise ex

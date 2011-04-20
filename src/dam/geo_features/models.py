@@ -17,7 +17,7 @@
 #########################################################################
 import re
 from django.db import models
-from dam import logger
+from dam.logger import logger
 from dam.repository.models import Item
 from dam.metadata.models import MetadataProperty
 from django.db.models import Q

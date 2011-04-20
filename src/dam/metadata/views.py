@@ -38,7 +38,7 @@ from dam.core.dam_workspace import decorators
 from dam.core.dam_metadata.models import XMPNamespace, XMPStructure
 from dam.geo_features.models import GeoInfo
 from mx.DateTime.Parser import DateTimeFromString
-from dam import logger
+from dam.logger import logger
 import re
 import time
 from django.utils.translation import ugettext
