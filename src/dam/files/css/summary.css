@@ -1,0 +1,45 @@
+/*
+*
+* NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+* Email: labcontdigit@sardegnaricerche.it
+* Web: www.notre-dam.org
+*
+* This program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*/
+
+#preview_panel .details{
+    padding: 10px;
+    text-align: center;
+}
+#preview_panel .details-info{
+    border-top: 1px solid #cccccc;
+    border-bottom: 1px solid #cccccc;
+    font: 11px Arial, Helvetica, sans-serif;
+    margin-top: 2px;
+    padding-top: 2px;
+    text-align: left;
+}
+#preview_panel .details-info b{
+    color: #555555;
+    display: inline;
+    margin-bottom: 2px;
+}
+#preview_panel .details-info span{
+    display: block;
+    margin-bottom: 2px;
+    margin-left: 5px;
+}
+#preview_panel .metadata-structure {
+    margin-left: 5px;
+}
+
+
