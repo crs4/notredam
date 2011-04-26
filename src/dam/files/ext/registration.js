@@ -30,7 +30,8 @@ Ext.onReady(function() {
         url: '/registration/',
         bodyStyle:'padding:5px 5px 0',
         frame: true,
-        width: 300,
+        width: 400,
+        height: 400,
         id: 'registration_form',
 
         items: [{
@@ -58,15 +59,59 @@ Ext.onReady(function() {
             fieldLabel: gettext('Repeat Password'),
             name: 'password2',
             allowBlank: false
-        } 
+        },
+        new Ext.BoxComponent({autoEl: {
+        tag: 'div',
+        style: 'height:100; width: 100;',
+        id: 'captcha'
+        },
+        listeners: {
+            afterrender: function(){
+                console.log('aaaaaaaa');
+                Recaptcha.create("6LeIrcMSAAAAADFPURWv4VAh5H8V3HjNZgHB4GYA",
+                    "captcha",
+                    {
+                      theme: "white",
+                      callback: Recaptcha.focus_response_field
+                    }
+                  );
+            }
+        }
+        })        
         ],
 
         buttons: [{
             text: gettext('Register'), 
-            handler: function() {
+            handler: function() {                
+                
                 var f = Ext.getCmp('registration_form').form;
-                if (f.isValid()) {
-                    f.submit({waitMsg:gettext('Saving data...'), method: "POST", success: function(form, action) { document.location.href = '/'; }, failure: function(form, action) {var data = Ext.decode(action.response.responseText); Ext.MessageBox.alert(gettext('Error'), gettext('The following errors occured: ') + data.errors);}});
+                if (f.isValid()) {                
+                    //captcha stuff
+                    var challenge = Recaptcha.get_challenge();
+                    var response = Recaptcha.get_response();
+                    Ext.Ajax.request({
+                        url:'/captcha_check/',
+                        method: 'POST',
+                        params:{
+                            challenge: challenge,
+                            response: response
+                        },
+                        success: function(resp){
+                            console.log('captcha ok');
+                            f.submit({waitMsg:gettext('Saving data...'), method: "POST", 
+                            success: function(form, action) { 
+                                console.log('user registered');
+                                document.location.href = '/'; 
+                            }, 
+                            failure: function(form, action) {var data = Ext.decode(action.response.responseText); Ext.MessageBox.alert(gettext('Error'), gettext('The following errors occured: ') + data.errors);}});
+                        },
+                        failure: function(){
+                            Ext.MessageBox.alert(gettext('Error'), gettext('Uncorrect Captcha.'));
+                        }
+                    });
+                    
+                    
+                    
                 }else{
                     Ext.MessageBox.alert(gettext('Error'), gettext('Please fill all the fields and try again.'));
                 }
