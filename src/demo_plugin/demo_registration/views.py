@@ -31,7 +31,7 @@ from dam.application.forms import Registration
 from dam.workspace.models import Workspace
 
 import os, datetime
-import logger
+from dam.logger import logger
 
 def registration(request):
     """
