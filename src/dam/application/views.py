@@ -205,6 +205,21 @@ def activate_user(username):
         [user.email], fail_silently=False)
     
     
+def captcha_check(request):
+    from recaptcha.client import captcha
+    import settings
+    challenge = request.POST['challenge']
+    response = request.POST['response']
     
+    remoteip = request.META['REMOTE_ADDR']
+    logger.debug('remoteip %s'%remoteip)
+    logger.debug('response %s'%response)
+    captcha_resp = captcha.submit(challenge, response, settings.CAPTCHA_PRIVATE_KEY, remoteip)    
+    logger.debug('captcha_resp %s'%captcha_resp.is_valid)
+    if captcha_resp.is_valid:    
+        return HttpResponse(simplejson.dumps({'success': True}))
+    else:
+        return HttpResponseServerError()
     
+
     

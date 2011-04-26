@@ -29,5 +29,6 @@ urlpatterns = patterns('',
 #    (r'^items/(.+)/(.+)/$', 'dam.application.views.redirect_to_component'),    
     (r'^redirect_to_resource/(.+)/$','dam.application.views.redirect_to_resource'),
     (r'^registration/$','dam.application.views.registration'),
-    (r'^confirm_user/(.+)/$','dam.application.views.confirm_user')
+    (r'^confirm_user/(.+)/$','dam.application.views.confirm_user'),
+    (r'^captcha_check/$','dam.application.views.captcha_check')
 )
