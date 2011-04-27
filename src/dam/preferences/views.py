@@ -196,11 +196,12 @@ def get_account_info(request):
         logger.exception('ERROR IN ACCOUNT INFO: %s' % ex)
         account_info = {
 #        'username': request.user.username,
-        'first_name': request.user.first_name,
-        'last_name': request.user.last_name,
-        'email': request.user.email,
+        'first_name': '',
+        'last_name': '',
+        'email': '',
         #'session_language': LANGUAGE_CODE,
         }
         #request.session['django_language'] = LANGUAGE_CODE
+    logger.debug('account_info %s'%account_info)
     return HttpResponse(simplejson.dumps({'success': True, 'data': account_info}))
     
