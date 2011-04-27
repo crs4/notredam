@@ -24,16 +24,21 @@ Ext.onReady(function() {
     Ext.form.Field.prototype.invalidClass = 'invalid_field';
 
     var form = new Ext.form.FormPanel({
-        title: 'New user',
+        title: 'Registration',
         labelWidth: 100,
+        region: 'center',
         defaultType: 'textfield',
+        defaults:{
+            width: 300,
+            style: 'margin-bottom: 3px;'
+        },
         url: '/registration/',
-        bodyStyle:'padding:5px 5px 0',
+        bodyStyle:'padding:20px 5px 0; left:37%',
         frame: true,
         width: 400,
         height: 400,
-        id: 'registration_form',
-
+        
+        id: 'registration_form',        
         items: [{
             fieldLabel: gettext('Username'),
             name: 'username',
@@ -62,16 +67,16 @@ Ext.onReady(function() {
         },
         new Ext.BoxComponent({autoEl: {
         tag: 'div',
-        style: 'height:100; width: 100;',
+        style: 'height:100; width: 100; padding-top: 10px;',
         id: 'captcha'
         },
         listeners: {
             afterrender: function(){
-                console.log('aaaaaaaa');
+               
                 Recaptcha.create("6LeIrcMSAAAAADFPURWv4VAh5H8V3HjNZgHB4GYA",
                     "captcha",
                     {
-                      theme: "white",
+                      theme: "clean",
                       callback: Recaptcha.focus_response_field
                     }
                   );
@@ -126,6 +131,10 @@ Ext.onReady(function() {
 
     });
 
-    form.render(document.body);
+    //form.render(document.body);
+    new Ext.Viewport({
+        layout: 'border',
+        items: [header,form]
+    })
 
 });

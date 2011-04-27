@@ -1,10 +1,4 @@
-<html>
-<head>
-	<title>NotreDAM</title>
-	<link rel="stylesheet" type="text/css" href="/files/ext/resources/css/ext-all.css" />
-	<link rel="stylesheet" type="text/css" href="/files/css/tools_icons.css" />
-	
-	<link rel="stylesheet" type="text/css" href='{{theme_css}}'/>
+{%extends "base.html"%}
 	{%block css%}
 		
 		
@@ -29,14 +23,6 @@
 	    }
 	    </style>
 	{%endblock%}
-	
-	
-	<script type="text/javascript" src="/files/ext/adapter/ext/ext-base.js"></script>
-	<script type="text/javascript" src="/files/ext/ext-all-debug.js"></script>
-	<script type="text/javascript" src="/files/ext/header.js"></script>
-	<script type="text/javascript" src="{% url django.views.i18n.javascript_catalog %}"></script>
-	
-	
 	{%block js%}
 		<script type="text/javascript" src="/files/ext/Ext.ux.grid.ProgressColumn.js"></script>
 		<script type="text/javascript">
@@ -86,33 +72,14 @@
 		
 		<script type="text/javascript" src="/files/ext/load_store.js"></script>
 	{%endblock%}
-	
-    	<script type="text/javascript">
-    		{%block header_info%}
-    			var HEADERHEIGHT = 60;
-    		{%endblock%}
-   		</script>
-	 	
-	
-</head>
-<body{%block body%}{%endblock%}>
-    {%block logo%}
-        <div id="logo" style="width:100%">
-           <div style="width:30%; float:left">
-                <a href="/" title="Home">
-                    <img src="/files/images/logo_notredam_small_no_margin.png" style="vertical-align:middle;"/>
-            </a>
-        </div>
-	{%endblock%}
-		<!--div style="width:30%; float:left">
-			<img src="/files/images/opendam.png" style="vertical-align:middle; padding-top:4px"/>
-		</div-->
-		<!--div style="position:absolute; left:42%; float:left; margin-top:10px; font-size:13px;">Workspace:</div-->
-		
+
+    
+    
+{%block body_content%}
 		<div id="switch_ws_bar" style="width:300; position:absolute; left:42%; float:left; margin-top:3px; margin-left:26px; font-size:12 !important;" ></div>
 		
-		
 		<div style="float:right; margin-top:11px; font-size:11px; padding-right:10px;">logged as <span id="user_logged">{{user}}</span> 
+        
 		{%block prefs%}
 			| <a href='javascript:open_pref()' >preferences</a> 
 		{%endblock%}
@@ -126,5 +93,7 @@
 			<div id="toolbar"></div>
 		</div>
 	{%endblock%}
-</body>
-</html>
+{%endblock%}    
+
+   
+	
