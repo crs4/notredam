@@ -23,10 +23,11 @@ Ext.onReady(function() {
     Ext.form.Field.prototype.msgTarget = 'side';
     Ext.form.Field.prototype.invalidClass = 'invalid_field';
 
-    var form = new Ext.form.FormPanel({
+    var form = new Ext.form.FormPanel({        
         title: 'Registration',
         labelWidth: 100,
-        region: 'center',
+        border: false,        
+        //region: 'center',
         defaultType: 'textfield',
         defaults:{
             width: 300,
@@ -35,8 +36,8 @@ Ext.onReady(function() {
         url: '/registration/',
         bodyStyle:'padding:20px 5px 0; left:37%',
         frame: true,
-        width: 400,
-        height: 400,
+        //width: 400,
+        //height: 400,
         
         id: 'registration_form',        
         items: [{
@@ -84,7 +85,7 @@ Ext.onReady(function() {
         }
         })        
         ],
-
+        buttonAlign: 'center',
         buttons: [{
             text: gettext('Register'), 
             handler: function() {                
@@ -105,8 +106,14 @@ Ext.onReady(function() {
                             console.log('captcha ok');
                             f.submit({waitMsg:gettext('Saving data...'), method: "POST", 
                             success: function(form, action) { 
+                                
                                 console.log('user registered');
-                                document.location.href = '/'; 
+                                console.log(action.result);
+                                if(action.result.confirm_registration)
+                                    Ext.Msg.alert('Registration completed',
+                                    'Please check your email and click the given link to confirm.', 
+                                    function(){document.location.href = '/'; });                                
+                                    
                             }, 
                             failure: function(form, action) {var data = Ext.decode(action.response.responseText); Ext.MessageBox.alert(gettext('Error'), gettext('The following errors occured: ') + data.errors);}});
                         },
@@ -134,7 +141,15 @@ Ext.onReady(function() {
     //form.render(document.body);
     new Ext.Viewport({
         layout: 'border',
-        items: [header,form]
+        items: [
+            header,
+            new Ext.Panel({
+                region: 'center',
+                layout: 'absolute',
+                frame: true,
+                border: false,                
+                items: form})
+        ]
     })
 
 });
