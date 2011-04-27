@@ -31,7 +31,7 @@ sys.path.append(PYTHONPATH)
 sys.path.append(ROOT_PATH)
 
 REMOVE_OLD_PROCESSES= True
-
+CONFIRM_REGISTRATION = True
 from mediadart.config import Configurator
 c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')

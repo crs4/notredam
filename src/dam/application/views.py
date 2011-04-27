@@ -177,7 +177,7 @@ def registration(request):
                 user.save()
                 user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
                 login(request,  user)
-                user.save()
+              
                 ws = Workspace.objects.create_workspace(user.username, '', user)
             return HttpResponse(simplejson.dumps(resp))
             

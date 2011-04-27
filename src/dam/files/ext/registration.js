@@ -109,10 +109,18 @@ Ext.onReady(function() {
                                 
                                 console.log('user registered');
                                 console.log(action.result);
+                                var msg;
+                                
+                                
                                 if(action.result.confirm_registration)
-                                    Ext.Msg.alert('Registration completed',
-                                    'Please check your email and click the given link to confirm.', 
-                                    function(){document.location.href = '/'; });                                
+                                    msg = 'Please check your email and click the given link to confirm.';  
+                                else
+                                    msg = 'Your account has been created successfully. Click ok to login.'
+                                Ext.Msg.alert('Registration completed',
+                                    msg, 
+                                    function(){document.location.href = '/'; });  
+                                
+                                
                                     
                             }, 
                             failure: function(form, action) {var data = Ext.decode(action.response.responseText); Ext.MessageBox.alert(gettext('Error'), gettext('The following errors occured: ') + data.errors);}});
