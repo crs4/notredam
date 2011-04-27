@@ -20,10 +20,21 @@ Ext.onReady(function() {
 
     var msg = new Ext.Panel({
         title: 'New user',
-        html: 'Your account has been successfully created. <br>Now you can login and enjoy NotreDAM!',
-        width: 400
+        html: 'Your account has been successfully created. <br>Now you can login and enjoy NotreDAM, click <a href="/">here</a> to login!',
+        width: 400,
+        region: 'center',
+        border: false
+        
     });
 
-    msg.render(document.body);
+    new Ext.Viewport({
+        layout: 'border',
+        items: [
+            header,
+            msg
+        ]
+    });
 
 });
+
+

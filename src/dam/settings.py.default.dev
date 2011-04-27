@@ -33,7 +33,7 @@ from mediadart.config import Configurator
 c = Configurator()
 MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
 STORAGE_SERVER_URL= '/storage/'
-
+CONFIRM_REGISTRATION = False
 
 INSTALLATIONPATH = ROOT_PATH
 BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
