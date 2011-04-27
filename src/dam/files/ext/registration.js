@@ -23,17 +23,23 @@ Ext.onReady(function() {
     Ext.form.Field.prototype.msgTarget = 'side';
     Ext.form.Field.prototype.invalidClass = 'invalid_field';
 
-    var form = new Ext.form.FormPanel({
-        title: 'New user',
+    var form = new Ext.form.FormPanel({        
+        title: 'Registration',
         labelWidth: 100,
+        border: false,        
+        //region: 'center',
         defaultType: 'textfield',
+        defaults:{
+            width: 300,
+            style: 'margin-bottom: 3px;'
+        },
         url: '/registration/',
-        bodyStyle:'padding:5px 5px 0',
+        bodyStyle:'padding:20px 5px 0; left:37%',
         frame: true,
-        width: 400,
-        height: 400,
-        id: 'registration_form',
-
+        //width: 400,
+        //height: 400,
+        
+        id: 'registration_form',        
         items: [{
             fieldLabel: gettext('Username'),
             name: 'username',
@@ -62,16 +68,16 @@ Ext.onReady(function() {
         },
         new Ext.BoxComponent({autoEl: {
         tag: 'div',
-        style: 'height:100; width: 100;',
+        style: 'height:100; width: 100; padding-top: 10px;',
         id: 'captcha'
         },
         listeners: {
             afterrender: function(){
-                console.log('aaaaaaaa');
+               
                 Recaptcha.create("6LeIrcMSAAAAADFPURWv4VAh5H8V3HjNZgHB4GYA",
                     "captcha",
                     {
-                      theme: "white",
+                      theme: "clean",
                       callback: Recaptcha.focus_response_field
                     }
                   );
@@ -79,7 +85,7 @@ Ext.onReady(function() {
         }
         })        
         ],
-
+        buttonAlign: 'center',
         buttons: [{
             text: gettext('Register'), 
             handler: function() {                
@@ -100,8 +106,22 @@ Ext.onReady(function() {
                             console.log('captcha ok');
                             f.submit({waitMsg:gettext('Saving data...'), method: "POST", 
                             success: function(form, action) { 
+                                
                                 console.log('user registered');
-                                document.location.href = '/'; 
+                                console.log(action.result);
+                                var msg;
+                                
+                                
+                                if(action.result.confirm_registration)
+                                    msg = 'Please check your email and click the given link to confirm.';  
+                                else
+                                    msg = 'Your account has been created successfully. Click ok to login.'
+                                Ext.Msg.alert('Registration completed',
+                                    msg, 
+                                    function(){document.location.href = '/'; });  
+                                
+                                
+                                    
                             }, 
                             failure: function(form, action) {var data = Ext.decode(action.response.responseText); Ext.MessageBox.alert(gettext('Error'), gettext('The following errors occured: ') + data.errors);}});
                         },
@@ -126,6 +146,18 @@ Ext.onReady(function() {
 
     });
 
-    form.render(document.body);
+    //form.render(document.body);
+    new Ext.Viewport({
+        layout: 'border',
+        items: [
+            header,
+            new Ext.Panel({
+                region: 'center',
+                layout: 'absolute',
+                frame: true,
+                border: false,                
+                items: form})
+        ]
+    })
 
 });

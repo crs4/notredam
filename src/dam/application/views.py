@@ -30,7 +30,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 from dam.repository.models import Item, _get_resource_url, Component
 from dam.workspace.models import DAMWorkspace as Workspace
-from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS
+from dam.settings import EMAIL_SENDER, SERVER_PUBLIC_ADDRESS, CONFIRM_REGISTRATION
 from dam.application.forms import Registration
 from dam.application.models import VerificationUrl
 from dam.preferences.models import DAMComponentSetting
@@ -134,33 +134,53 @@ def redirect_to_component(request, item_id, variant_name,  ws_id = None):
     url = get_component(request, item_id, variant_name, True)    
     return url
 
+
+def auth_and_create_workspace(user, ):
+    user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
+    login(request,  user)
+    ws = Workspace.objects.create_workspace(user.username, '', user)
+    
+    
 def registration(request):
     """
     Creates registration form or saves registration info
     """
-
-    def save_user_and_login(form):
-        form.save(commit = True)
-        user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
-        login(request,  user)
-        ws = Workspace.objects.create_workspace(user.username, '', user)
-        return user
+    
+    logout(request)    
+    #def save_user_and_login(form):
+        #form.save(commit = True)
+        #user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
+        #login(request,  user)
+        #ws = Workspace.objects.create_workspace(user.username, '', user)
+        #return user
 
     if request.method == 'POST': 
         form = Registration(request.POST) 
 
         if form.is_valid():
-            user = save_user_and_login(form)
-#            user = form.save()
-#            user.is_active = True
-#            user.save()
-#            url = VerificationUrl.objects.create(user = user).url
-#            final_url = 'http://%s/confirm_user/%s/'%(SERVER_PUBLIC_ADDRESS , url)
-
-#            send_mail('Registration confirmation', 'Hi %s,\nclick at this url %s \n to confirm your registration at DAM.'%(user.username, final_url), EMAIL_SENDER, [user.email], fail_silently=False)
-
-            resp = simplejson.dumps({'success': True, 'errors': []})
-            return HttpResponse(resp)
+            #user = save_user_and_login(form)
+            user = form.save()
+            resp = {'success': True, 'errors': []}
+            
+            if CONFIRM_REGISTRATION:
+                user.is_active = False
+                user.save()
+                
+                url = VerificationUrl.objects.create(user = user).url
+                final_url = 'http://%s/confirm_user/%s/'%(SERVER_PUBLIC_ADDRESS , url)
+                logger.debug('final_url %s'%final_url)
+                send_mail('Registration confirmation', 'Hi %s,\nclick at this url %s \n to confirm your registration at DAM.'%(user.username, final_url), EMAIL_SENDER, [user.email], fail_silently=False)
+                resp['confirm_registration'] = True
+                
+            else:
+                user.is_active = True
+                user.save()
+                user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
+                login(request,  user)
+              
+                ws = Workspace.objects.create_workspace(user.username, '', user)
+            return HttpResponse(simplejson.dumps(resp))
+            
 
         else:
             from django.template.defaultfilters import striptags
@@ -186,9 +206,8 @@ def confirm_user(request, url):
     user = VerificationUrl.objects.get(url= url).user
     user.is_active = True
     user.save()
-    logout(request)
-
     ws = Workspace.objects.create_workspace(user.username, '', user)
+    logout(request)    
 
     return render_to_response('registration_completed.html', RequestContext(request,{'usr':user}))
 

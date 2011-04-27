@@ -1,15 +1,7 @@
-<html>
-<head>
-	<title>NotreDAM</title>
-	<link rel="stylesheet" type="text/css" href="/files/ext/resources/css/ext-all.css" />
-	<script type="text/javascript" src="/files/ext/adapter/ext/ext-base.js"></script>
-
-	<script type="text/javascript" src="/files/ext/ext-all.js"></script>
-	<script type="text/javascript" src="/files/ext/registration_completed.js"></script>
-
-</head>
-<body>
-
-</body>
-</html>
-
+{%extends "base.html"%}
+{%block js%}    
+    <script type="text/javascript" src="/files/ext/registration_completed.js"></script>
+{%endblock%}
+{%block header_info%}
+    var HEADERHEIGHT = 40;
+{%endblock%}
