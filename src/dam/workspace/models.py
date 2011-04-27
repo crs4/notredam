@@ -23,7 +23,7 @@ from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 from dam.core.dam_repository.models import Type
-import dam.logger as logger
+from dam.logger import logger
 from dam.mprocessor.models import Process, TriggerEvent
 import simplejson
 
@@ -44,7 +44,7 @@ class WSManager(WorkspaceManager):
         from dam.mprocessor.models import Pipeline       
         from dam.treeview.models import Node, Category
         from dam.scripts.models import DEFAULT_PIPELINE, register_pipeline
-        
+       
         ws = super(WSManager, self).create_workspace(name, description, creator)
         
         try:
