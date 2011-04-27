@@ -38,12 +38,21 @@ Ext.onReady(function() {
 
     var form = new Ext.form.FormPanel({
         title: 'Login required',
-        labelWidth: 55,
+        labelWidth: 100,
+        border: false,
+        buttonAlign: 'center',
+        //region: 'center',
         defaultType: 'textfield',
+        defaults:{
+            width: 300,
+            style: 'margin-bottom: 3px;'
+        },        
+        bodyStyle:'padding:20px 5px 0; left:37%',
+        
         url: '/login/',
-        bodyStyle:'padding:5px 5px 0',
+        
         frame: true,
-        width: 300,
+        //width: 300,
         id: 'login_form',
         keys: [{ key: Ext.EventObject.ENTER, fn: submitClick }],
 
@@ -81,6 +90,17 @@ Ext.onReady(function() {
 
     });
 
-    form.render(document.body);
+    new Ext.Viewport({
+        layout: 'border',
+        items: [
+            header,
+            new Ext.Panel({
+                region: 'center',
+                layout: 'absolute',
+                frame: true,
+                border: false,                
+                items: form})
+        ]
+    })
 
 });

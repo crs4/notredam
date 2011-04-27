@@ -147,12 +147,12 @@ def registration(request):
     """
     
     logout(request)    
-    def save_user_and_login(form):
-        form.save(commit = True)
-        user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
-        login(request,  user)
-        ws = Workspace.objects.create_workspace(user.username, '', user)
-        return user
+    #def save_user_and_login(form):
+        #form.save(commit = True)
+        #user = authenticate(username = form.cleaned_data['username'], password =  form.cleaned_data['password1'])
+        #login(request,  user)
+        #ws = Workspace.objects.create_workspace(user.username, '', user)
+        #return user
 
     if request.method == 'POST': 
         form = Registration(request.POST) 
@@ -160,7 +160,7 @@ def registration(request):
         if form.is_valid():
             #user = save_user_and_login(form)
             user = form.save()
-            
+            resp = {'success': True, 'errors': []}
             
             if CONFIRM_REGISTRATION:
                 user.is_active = False
@@ -170,7 +170,8 @@ def registration(request):
                 final_url = 'http://%s/confirm_user/%s/'%(SERVER_PUBLIC_ADDRESS , url)
                 logger.debug('final_url %s'%final_url)
                 send_mail('Registration confirmation', 'Hi %s,\nclick at this url %s \n to confirm your registration at DAM.'%(user.username, final_url), EMAIL_SENDER, [user.email], fail_silently=False)
-            
+                resp['confirm_registration'] = True
+                
             else:
                 user.is_active = True
                 user.save()
@@ -178,8 +179,8 @@ def registration(request):
                 login(request,  user)
                 user.save()
                 ws = Workspace.objects.create_workspace(user.username, '', user)
-            resp = simplejson.dumps({'success': True, 'errors': []})
-            return HttpResponse(resp)
+            return HttpResponse(simplejson.dumps(resp))
+            
 
         else:
             from django.template.defaultfilters import striptags
