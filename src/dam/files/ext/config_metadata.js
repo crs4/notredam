@@ -180,7 +180,7 @@ var open_config_descriptors = function() {
         wsadmin_open_desc_editor(my_list, basic_store, 'item');
     };
 
-    var basic_list = wsadmin_generate_config_list(['remove_basic_desc_menuitem', 'edit_basic_desc_menuitem'], basic_store, 'Basic Descriptors', summary_columns, basic_add_handler, basic_edit_handler );
+    var basic_list = wsadmin_generate_config_list(['remove_basic_desc_menuitem', 'edit_basic_desc_menuitem'], basic_store, 'Item Properties', summary_columns, basic_add_handler, basic_edit_handler );
 
     var vbasic_add_handler = function() {
         open_descriptor_win(variant_basic_store, 'variant');
@@ -194,7 +194,7 @@ var open_config_descriptors = function() {
         wsadmin_open_desc_editor(my_list, variant_basic_store, 'variant');
     };
 
-    var variant_basic_list = wsadmin_generate_config_list(['remove_variant_basic_menuitem', 'edit_variant_basic_menuitem'], variant_basic_store, 'Variant Basic Descriptors', summary_columns, vbasic_add_handler, vbasic_edit_handler );
+    var variant_basic_list = wsadmin_generate_config_list(['remove_variant_basic_menuitem', 'edit_variant_basic_menuitem'], variant_basic_store, 'Rendition Properties', summary_columns, vbasic_add_handler, vbasic_edit_handler );
 
     var vfull_add_handler = function() {
         open_descriptor_win(variant_full_store, 'variant');
@@ -229,7 +229,7 @@ var open_config_descriptors = function() {
         height: 30,
         region: 'north',
         layout: 'fit',
-        html: 'You can configure the descriptors shown in the Summary View'
+        html: 'Here you can configure the properties shown in the Summary View of the Metadata Panel'
     });
 
     var group_information_panel = new Ext.Panel({
@@ -237,7 +237,7 @@ var open_config_descriptors = function() {
         height: 30,
         region: 'north',
         layout: 'fit',
-        html: 'You can configure the descriptor groups shown in the Metadata View'
+        html: 'Here you can configure the descriptor groups shown in the Descriptors View of the Metadata Panel'
     });
         
     var panel = new Ext.TabPanel({
@@ -252,12 +252,14 @@ var open_config_descriptors = function() {
                     activeTab: 0,
                     region: 'center',
                     items    : [
-                        basic_list, variant_basic_list, variant_full_list
+                        basic_list, 
+                        variant_basic_list, 
+                        //variant_full_list
                     ]
                 })
             ]
         }, {
-            title: 'Metadata view', 
+            title: 'Descriptors view', 
             layout      : 'border',
             items: [group_information_panel, groups_list]
         }],
@@ -269,8 +271,10 @@ var open_config_descriptors = function() {
         layout: 'fit',
         constrain: true,
         plain       : true,
+        //height: 800,
+        width: 800,
         modal: true,
-        title: 'Descriptors Configuration',
+        title: 'Workspace Metadata Configuration',
         resizable: false,
         items    : [panel],
         buttons: [{

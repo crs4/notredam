@@ -40,10 +40,10 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
             
                 var win = new Ext.Window({
                     layout      : 'fit',
-                    constrain: true,
+                    //constrain: true,
                     width       : 500,
                     height      : 350,
-                    plain       : true,
+                    //plain       : true,
                     title: obj + ' Preferences',
                     modal: true,
                     items    : new Ext.TabPanel({
@@ -53,6 +53,7 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
                                 items: items
                             })
                 });
+                console.log(win);
                 win.show();               
             
             }
@@ -221,7 +222,7 @@ var pref_store = get_pref_store('/get_user_settings/', '/save_pref/', 'User', on
 var pref_ws_store = get_pref_store('/get_ws_settings/', '/save_ws_pref/', 'Workspace', on_success, get_general_form);
 
 var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_success_func) {
-
+    console.log('generate_pref_forms');
     var fields = {};
 
     pref_store.each(function(pref){
@@ -335,7 +336,9 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
                 type: 'submit',
                 handler: function(){
                 
-                    var my_form = this.findParentByType('form');                    
+                    console.log('oh')
+                    var my_form = this.findParentByType('form');  
+                    console.log(my_form);                  
                     var items = my_form.items.items;
                     
                     for (var i = 0;  i < items.length; i ++){
@@ -376,6 +379,7 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
         });             
         tabs.push(new_tab);
     }
+    console.log(tabs)
     return tabs;
 
 };

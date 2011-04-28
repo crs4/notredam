@@ -2017,7 +2017,7 @@ var search_box = {
                                 
                                 ]
                             }, new Ext.grid.MetadataGrid({
-                    title: gettext('Metadata'),
+                    title: gettext('Descriptors'),
                     id: 'metadata_panel',
                     view: new Ext.grid.GroupingView({
                         forceFit:true,
