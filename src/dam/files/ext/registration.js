@@ -154,6 +154,7 @@ Ext.onReady(function() {
             new Ext.Panel({
                 region: 'center',
                 layout: 'absolute',
+                bodyStyle: 'margin-top:-7px',
                 frame: true,
                 border: false,                
                 items: form})

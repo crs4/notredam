@@ -40,6 +40,8 @@ Ext.onReady(function() {
         title: 'Login required',
         labelWidth: 100,
         border: false,
+        bodyBorder: false,
+        region: 'center',
         buttonAlign: 'center',
         //region: 'center',
         defaultType: 'textfield',
@@ -94,11 +96,14 @@ Ext.onReady(function() {
         layout: 'border',
         items: [
             header,
+            //form
             new Ext.Panel({
                 region: 'center',
                 layout: 'absolute',
                 frame: true,
-                border: false,                
+                border: false,                 
+                bodyBorder: false,               
+                bodyStyle: 'margin-top:-7px',
                 items: form})
         ]
     })
