@@ -16,22 +16,15 @@
 *
 */
 
+var form;
 Ext.onReady(function() {
 	
-    var submitClick = function() {
-        var f = Ext.getCmp('login_form').form;
-            if (f.isValid()) {
-                f.getEl().dom.submit(); 
-//               f.submit({waitMsg:'Trying to login...', method: "POST", failure: function() {Ext.MessageBox.alert('Error', 'Wrong login');}});
-            }else{
-                Ext.MessageBox.alert('Error', 'Please fill all the fields and try again.');
-            }
-        };
+    
 
     Ext.form.Field.prototype.msgTarget = 'side';
     Ext.form.Field.prototype.invalidClass = 'invalid_field';
 
-    var form = new Ext.form.FormPanel({
+    form = new Ext.form.FormPanel({
         title: 'Login required',
         labelWidth: 100,
         border: false,
@@ -41,47 +34,45 @@ Ext.onReady(function() {
         //region: 'center',
         defaultType: 'textfield',
         defaults:{
-            width: 300,
+            //width: 300,
             style: 'margin-bottom: 3px;'
         },        
         bodyStyle:'padding:20px 5px 0; left:37%',
         
-        url: '/login/',
+        url: '/get_new_password/',
         
         frame: true,
         //width: 300,
-        id: 'login_form',
-        keys: [{ key: Ext.EventObject.ENTER, fn: submitClick }],
+        id: 'new_password_form',
+        //keys: [{ key: Ext.EventObject.ENTER, fn: submitClick }],
 
-        items: [{
+        items: [
+             new Ext.Panel({
+                 width: 400,
+                 
+                html: '<div style="padding-bottom: 30px;">Insert your username, a mail with a new password will be sent to you soon</div>'
+               }),
+            {
             fieldLabel: 'Username',
             name: 'username',
+            width: 300,
             allowBlank: false,
             listeners: {render: function() {
                 this.getEl().dom.focus();
                 }
             }
-        }, {
-            inputType: 'password',
-            fieldLabel: 'Password',
-            name: 'password',
-            allowBlank: false
-        }, new Ext.Panel({
-	    html: '<div><a href="/registration/">New user? register now!</a></div>' 
-	    		+'<div><a href="/new_password/">Have you forgotten your password?</a></div>'
-	   }) 
+        } 
         ],
 
         buttons: [{
-            text: 'Login', 
+            text: 'Ok', 
             handler: function() {
-                submitClick();
-            }
-        },{
-            text: 'Reset',
-            handler: function() {
-                var f = Ext.getCmp('login_form').form;
-                f.reset();
+                var basic_form = form.getForm();
+                if (basic_form.isValid()){
+                    basic_form.submit();
+                    Ext.Msg.alert('New Password', 'Check Your email for the new password', function(){document.location = '/'})
+                }
+                
             }
         }]
 

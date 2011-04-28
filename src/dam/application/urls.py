@@ -17,6 +17,7 @@
 #########################################################################
 
 from django.conf.urls.defaults import *
+from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',
 
@@ -30,5 +31,8 @@ urlpatterns = patterns('',
     (r'^redirect_to_resource/(.+)/$','dam.application.views.redirect_to_resource'),
     (r'^registration/$','dam.application.views.registration'),
     (r'^confirm_user/(.+)/$','dam.application.views.confirm_user'),
-    (r'^captcha_check/$','dam.application.views.captcha_check')
+    (r'^captcha_check/$','dam.application.views.captcha_check'),
+    (r'^new_password/$',direct_to_template, {'template': 'new_password.html'}),
+    (r'^get_new_password/$','dam.application.views.get_new_password'),
+   
 )
