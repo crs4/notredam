@@ -241,4 +241,21 @@ def captcha_check(request):
         return HttpResponseServerError()
     
 
+def get_new_password(request):
+    username = request.POST['username']
+    try:
+        user = User.objects.get(username = username)
+    except User.DoesNotExist:
+        return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'username', 'msg': 'No user exists with the given username'}]}))
+    
+    new_password = User.objects.make_random_password()
+    user.set_password(new_password)
+    user.save()
+    
+    send_mail('NotreDAM', 'Hi %s,\nhere is your new password %s.'%(user.username, new_password), EMAIL_SENDER, [user.email], fail_silently=False)
+    return HttpResponse(simplejson.dumps({'success': True}))
+    
+    
+    
+    
     
