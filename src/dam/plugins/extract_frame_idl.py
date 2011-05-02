@@ -17,8 +17,9 @@ def inspect(workspace):
             {   
                 'name': 'source_variant_name',
                 'fieldLabel': 'Input Rendition',
-                'xtype': 'select',
+                'xtype': 'multiselect',
                 'values': source_variants,
+                'value': [source_variants[1], source_variants[0]],
                 'description': 'input-variant',
                 'help': ''
             },
