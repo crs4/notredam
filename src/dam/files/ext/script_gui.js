@@ -125,13 +125,13 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 		
 		wire.label =terminal_in.container.get_output_label();		
 		
-		var output_variant = values.output_variant_name || values.source_variant_name;
-		
-		if (output_variant){
-			terminal_out.container.form.getForm().setValues({
-				source_variant_name: output_variant
-			});			
-		}
+		//var output_variant = values.output_variant_name || values.source_variant_name;
+		//
+		//if (output_variant){
+			//terminal_out.container.form.getForm().setValues({
+				//source_variant_name: output_variant
+			//});			
+		//}
 		
 		
 		
