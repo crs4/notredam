@@ -354,22 +354,9 @@ Ext.ux.Select = function(config) {
 }; 
 
 Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {	
-//    initComponent:function() {
-//    	
-//    	var values = this.values;
-//    	
-//    	 Ext.apply(this, {
-//    	 	store:  new Ext.data.ArrayStore({        
-//		        fields: this.fields || ['value'],
-//		        data: values
-//		    })
-////		    value: values[0]
-//    	 });
-//    	
-//    	Ext.ux.Select.superclass.initComponent.call(this);
-//    },
     allowBlank: false,
     autoSelect: true,
+   
     editable: false,
     triggerAction: 'all',
     lazyRender:true,
@@ -729,3 +716,75 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
 });
 
 Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
+
+
+//var sbs1 = new Ext.ux.form.SuperBoxSelect({
+            //allowBlank:false,
+            //id:'selector1',
+            //xtype:'superboxselect',
+            //fieldLabel: 'States',
+            //emptyText: 'Select some US States',
+            //resizable: true,
+            //name: 'states',
+            //anchor:'100%',
+            //store: states,
+            //mode: 'local',
+            //displayField: 'state',
+            //displayFieldTpl: '{state} ({abbr})',
+            //valueField: 'abbr',
+            //value: 'CA,NY',
+            //forceSelection : true,
+            //allowQueryAll : false,
+            //listeners : {
+                //render : function(sbs){
+                    //sbs.wrapEl.on('contextmenu', function(ev,h,o){
+                        //ev.stopEvent();
+                        //var rec = sbs.findSelectedRecord(h),
+                            //i = sbs.findSelectedItem(h),
+                            //n = rec.get('abbr');
+                        //var ctxMenu = new Ext.menu.Menu({
+                            //items:[{
+                                //text : 'Action 1 on ' + n 
+                            //},
+                            //{
+                                //text : 'Action 2 on ' + n
+                            //}]
+                        //});
+                        //ctxMenu.showAt([ev.getPageX(), ev.getPageY()]);
+                    //},sbs,{
+                        //delegate : 'li.x-superboxselect-item'
+                    //});     
+                //}   
+            //}
+        //});
+       // 
+
+Ext.ux.MultiSelect = function(config) {
+ 	this.values = config.values;
+     	
+ 	Ext.apply(config, {
+ 		store: new Ext.data.ArrayStore({        
+	        fields: config.fields || ['value'],
+	        data: config.values
+	    }),
+	    valueField: config.valueField || 'value',
+		displayField: config.displayField || 'value'
+		
+	    
+	    
+	    
+ 	});
+ 	
+    // call parent constructor
+    Ext.ux.MultiSelect.superclass.constructor.call(this, config);
+    
+ 
+}; 
+
+Ext.extend(Ext.ux.MultiSelect,  Ext.ux.form.SuperBoxSelect, {
+    allowBlank: false,
+    mode: 'local'
+    
+});	
+
+Ext.reg('multiselect', Ext.ux.MultiSelect);
