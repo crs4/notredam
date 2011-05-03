@@ -1437,17 +1437,35 @@ Ext.onReady(function(){
                                     	//if (key == 'url') 
                                     		//info[key] = info[key] + '?t=' + Math.floor(Math.random()*100001);
                                     	//item_data.set(key, info[key]);
+                                        
                                         if (key == 'url') {
-                                        	info[key] = info[key] + '?t=' + Math.floor(Math.random()*100001);
-                                        	
-                                            if (previous_thumb_ready == 0 && thumb_ready == 1) {
-                                                item_data.set(key, info[key]);
+                                        	//info[key] = info[key] + '?t=' + Math.floor(Math.random()*100001);
+                                        	console.log('previous_thumb_ready ' + previous_thumb_ready);
+                                            //if (!previous_thumb_ready && item_data.data.url !=  info[key]) {
+                                            if (!previous_thumb_ready) {
+                                                console.log('info[key] '+ info[key]);
+                                                var new_thumb = info[key];
+                                                var i = new Image();
+                                                i.onload = function(){
+                                                    console.log('i.width '+ i.width);
+                                                    if (i.width != 0){
+                                                        console.log('new_thumb '+ new_thumb);
+                                                        item_data.set(key, new_thumb);
+                                                        item_data.set('thumb', true);
+                                                        console.log('updating thumb');
+                                                        
+                                                    }
+                                                }   
+                                                i.src = info[key];
+                                                
+                                                
                                             }
                                         }
                                         else {
                                             item_data.set(key, info[key]);
                                             
                                         }
+                                        //item_data.set(key, info[key]);
                                     }
                                     
                                     var detail_tabs_panel = Ext.getCmp('detail_tabs');

@@ -1,4 +1,4 @@
-import os
+import os, time
 from twisted.python.failure import Failure
 from dam.core.dam_repository.models import Type
 from dam.variants.models import Variant
@@ -40,6 +40,9 @@ class Adapter:
         directory, name = os.path.split(self.out_file)
         self.out_comp.uri = name
         self.out_comp.save()
+        self.item.update_time = time.time()
+        self.item.save()
+        
         self.deferred.callback(self.out_file)
         
     def handle_error(self, result):

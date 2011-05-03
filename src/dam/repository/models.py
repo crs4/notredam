@@ -456,7 +456,7 @@ class Item(AbstractItem):
             '_id':self._id,
            
             'status': status,
-            'thumb': thumb_url is not None,
+            #'thumb': thumb_url is not None,
             'url':smart_str(thumb_url), 
             'type': smart_str(self.type.name),
             'url_preview':preview_url,
