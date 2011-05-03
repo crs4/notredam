@@ -83,7 +83,12 @@
 		{%block prefs%}
 			| <a href='javascript:open_pref()' >preferences</a> 
 		{%endblock%}
-		| <a href="/logout/">logout</a>
+        
+        {%if user.is_staff%}
+            | <a href="/admin/">admin</a>
+        {%endif%}
+        		
+        | <a href="/logout/">logout</a>
 		</div>
 
 

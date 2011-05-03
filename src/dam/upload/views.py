@@ -321,7 +321,7 @@ def upload_item(request):
     """
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-    
+    from urllib import unquote
     try:  
         workspace = request.session['workspace']
         variant_name = request.GET['variant']
@@ -330,7 +330,7 @@ def upload_item(request):
         file_counter = int(request.GET['counter'])
         total = int(request.GET['total'])
         user = request.user  
-        file_name = request.META['HTTP_X_FILE_NAME']
+        file_name = unquote(request.META['HTTP_X_FILE_NAME'])
         _upload_item(file_name,request.raw_post_data, variant, request.user, session, workspace)        
         resp = simplejson.dumps({'success': True})
         
