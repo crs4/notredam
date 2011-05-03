@@ -220,7 +220,7 @@ def _get_filepath(file_name):
     
     return fpath, res_id
 
-def _run_pipelines(items, trigger, user, workspace):
+def _run_pipelines(items, trigger, user, workspace, params = {}):
     """
        Parameters:
        <items> list of items on which to run the pipelines associated to trigger.
@@ -240,7 +240,8 @@ def _run_pipelines(items, trigger, user, workspace):
             if pipe.is_compatible(item.type):
                 if process is None:
                     process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
-                process.add_params(target_id=item.pk)
+                
+                process.add_params(target_id=item.pk, **params)
                 assigned_items.add(item)
                 logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if process:
@@ -360,10 +361,12 @@ def _upload_variant(item, variant, workspace, user, file_name, file_raw):
     uploaders = []
     if variant.name == 'original':
         triggers_name = 'upload'
+        params = {}
     else:
-        triggers_name = 'upload_variant'
-
-    _run_pipelines([item], triggers_name, user, workspace)
+        triggers_name = 'replace_rendition'
+        params = {'source_variant_name': variant.name}
+        
+    _run_pipelines([item], triggers_name, user, workspace, params)
 
 @login_required
 def upload_variant(request):  

@@ -77,6 +77,7 @@ action_video = {"extract_xmp56":{"params":{"source_variant_name":"original"},"in
 action_image = {"adapt_image56":{"params":{"source_variant_name":['edited', 'original'],"output_variant_name":"thumbnail","resize_h":"100","resize_w":"100","actions":"resize","output_extension":".jpg"},"in":["extract_xmp371","extract_basic373"],"out":["thumbnail370"],"script_name":"adapt_image","x":512,"y":195,"label":"thumbnail"},"extract_basic134":{"params":{"source_variant_name":"thumbnail"},"in":["thumbnail370"],"out":[],"script_name":"extract_basic","x":1041,"y":193,"label":"extract_basic"},"extract_xmp150":{"params":{"source_variant_name":"original"},"in":[],"out":["extract_xmp371"],"script_name":"extract_xmp","x":22,"y":476,"label":"extract_xmp"},"adapt_image166":{"params":{"source_variant_name":['edited', 'original'],"output_variant_name":"fullscreen","resize_h":"800","resize_w":"800","actions":"resize","output_extension":".jpeg"},"in":["extract_xmp371","extract_basic373"],"out":["fullscreen372"],"script_name":"adapt_image","x":520,"y":587,"label":"fullscreen"},"extract_basic244":{"params":{"source_variant_name":"original"},"in":[],"out":["extract_basic373"],"script_name":"extract_basic","x":20,"y":349,"label":"extract_basic"},"extract_basic260":{"params":{"source_variant_name":"fullscreen"},"in":["fullscreen372"],"out":[],"script_name":"extract_basic","x":1043,"y":581,"label":"extract_basic"},"extract_basic276":{"params":{"source_variant_name":"preview"},"in":["preview374"],"out":[],"script_name":"extract_basic","x":1025,"y":365,"label":"extract_basic"},"adapt_image292":{"params":{"source_variant_name":['edited', 'original'],"output_variant_name":"preview","resize_h":"300","resize_w":"300","actions":"resize","output_extension":".jpeg"},"in":["extract_xmp371","extract_basic373"],"out":["preview374"],"script_name":"adapt_image","x":509,"y":370,"label":"preview"}}
 action_pdf = {"extract_xmp56":{"params":{"source_variant_name":"original"},"in":[],"out":["extract_xmp172"],"script_name":"extract_xmp","x":15,"y":234,"label":"extract_xmp"},"extract_basic72":{"params":{"source_variant_name":"original"},"in":[],"out":["extract_basic173"],"script_name":"extract_basic","x":11,"y":498,"label":"extract_basic"},"pdfcover88":{"params":{"source_variant_name":['edited', 'original'],"output_variant_name":"thumbnail","max_size":"300","output_extension":".jpg"},"in":["extract_xmp172","extract_basic173"],"out":["thumbnail174"],"script_name":"pdfcover","x":552,"y":451,"label":"thumbnail"},"extract_basic114":{"params":{"source_variant_name":"thumbnail"},"in":["thumbnail174"],"out":[],"script_name":"extract_basic","x":1037,"y":441,"label":"extract_basic"},"pdfcover130":{"params":{"source_variant_name":['edited', 'original'],"output_variant_name":"preview","max_size":"300","output_extension":".jpg"},"in":["extract_xmp172","extract_basic173"],"out":["preview175"],"script_name":"pdfcover","x":561,"y":240,"label":"preview"},"extract_basic156":{"params":{"source_variant_name":"preview"},"in":["preview175"],"out":[],"script_name":"extract_basic","x":1018,"y":241,"label":"extract_basic"}}
 embed_xmp = {"embed_xmp57":{"params":{},"in":[],"out":[],"script_name":"embed_xmp","x":603,"y":263,"label":"embed_xmp"}}
+extract_all = {"extract_basic57":{"params":{"source_variant_name":"original"},"in":[],"out":[],"script_name":"extract_basic","x":435,"y":227,"label":"extract_basic"},"extract_xmp73":{"params":{"source_variant_name":"original"},"in":[],"out":[],"script_name":"extract_xmp","x":433,"y":376,"label":"extract_xmp"}}
 
 DEFAULT_PIPELINE = [{
                      'name': 'audio renditions', 
@@ -111,6 +112,13 @@ DEFAULT_PIPELINE = [{
                      'description': '',
                      'params': embed_xmp, 
                      'events': ['sync_xmp'], 
+                     'media_types': ['doc', 'video', 'audio', 'image']                     
+                     },
+                     {
+                     'name': 'extract features and xmp', 
+                     'description': '',
+                     'params': extract_all, 
+                     'events': ['replace_rendition'], 
                      'media_types': ['doc', 'video', 'audio', 'image']                     
                      }
                     ]
