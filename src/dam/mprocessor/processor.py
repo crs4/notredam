@@ -216,6 +216,8 @@ class Batch:
             log.debug('target %s: executing action %s' % (item.target_id, action))
             try:
                 item_params = loads(item.params)
+                log.debug('item_params %s'%item_params)
+                log.debug('params %s'%params)
                 params.update(item_params)
                 self.outstanding += 1
                 log.debug('calling method with params ws=%s, id=%s, params=%s' % (self.process.workspace.pk, item.target_id, params))
