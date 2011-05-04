@@ -174,7 +174,10 @@ class Item(AbstractItem):
 
         
         for c in self.component_set.filter(workspace__in = workspaces).exclude(variant__name = 'original'):                
-            os.remove(c.get_file_path())
+            try:
+                os.remove(c.get_file_path())
+            except:
+                pass # maybe file does not exist
             c.delete()
                 
         self.workspaces.remove(*workspaces)

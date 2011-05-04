@@ -1431,32 +1431,27 @@ Ext.onReady(function(){
                             	var i = info.pk;
                                 if (store.findExact('pk', i) != -1) {
                                     var item_data = store.getAt(store.findExact('pk', i));
+                                    console.log('i ' + i);
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = info['thumb'];
                                     for (var key in info) {
-                                    	//if (key == 'url') 
-                                    		//info[key] = info[key] + '?t=' + Math.floor(Math.random()*100001);
-                                    	//item_data.set(key, info[key]);
-                                        
                                         if (key == 'url') {
-                                        	//info[key] = info[key] + '?t=' + Math.floor(Math.random()*100001);
-                                        	console.log('previous_thumb_ready ' + previous_thumb_ready);
-                                            //if (!previous_thumb_ready && item_data.data.url !=  info[key]) {
+                                          
                                             if (!previous_thumb_ready) {
-                                                console.log('info[key] '+ info[key]);
+                                                
                                                 var new_thumb = info[key];
-                                                var i = new Image();
-                                                i.onload = function(){
-                                                    console.log('i.width '+ i.width);
-                                                    if (i.width != 0){
-                                                        console.log('new_thumb '+ new_thumb);
-                                                        item_data.set(key, new_thumb);
-                                                        item_data.set('thumb', true);
-                                                        console.log('updating thumb');
+                                                var img_to_load = new Image();
+                                                
+                                                img_to_load.onload = function(){
+                                                    
+                                                    if (img_to_load.width != 0){                                                        
                                                         
+                                                        //item_data = store.getAt(store.findExact('pk', i));                                                        
+                                                        item_data.set('url', new_thumb);
+                                                        item_data.set('thumb', true);
                                                     }
                                                 }   
-                                                i.src = info[key];
+                                                img_to_load.src = info[key];
                                                 
                                                 
                                             }
