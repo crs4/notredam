@@ -23,7 +23,7 @@ var ws_store = new Ext.data.JsonStore({
 //            totalProperty: 'totalCount',
             root: 'workspaces',
             idProperty: 'pk',
-            fields:[{name:'pk', type:'int'}, 'name', 'description', 'root_id', 'collections_root_id', 'inbox_root_id', 'media_type']
+            fields:[{name:'pk', type:'int'}, 'name', 'description', 'root_id',  'inbox_root_id', 'media_type']
         
         });
 
@@ -175,11 +175,8 @@ function cell_click(grid, rowIndex, columnIndex, e){
 
     root_keywords = tree_keywords.getRootNode();
     root_keywords.id = ws_record.data.root_id;
-    root_keywords.reload();
-    
-    root_collections = tree_collections.getRootNode();
-    root_collections.id = ws_record.data.collections_root_id;
-    root_collections.reload();
+    root_keywords.reload();  
+   
 
     root_inbox = inbox.getRootNode();
     root_inbox.id = ws_record.data.inbox_root_id;
@@ -316,12 +313,6 @@ function switch_ws(current_record, ws_id){
     root_keywords = tree_keywords.getRootNode();
     root_keywords.id = current_record.data.root_id;
     root_keywords.reload();
-    
-    
-    
-    root_collections = tree_collections.getRootNode();
-    root_collections.id = current_record.data.collections_root_id;
-    root_collections.reload();
     
     root_inbox = inbox.getRootNode();
     root_inbox.id = current_record.data.inbox_root_id;

@@ -240,9 +240,7 @@ function showFullscreen(view, index, node, e){
 	
     var data = view.store.getAt(view.store.findExact('pk', node.id)).data;
     var img = new Image();
-	var img_width, img_height;
-	console.log('aaaaaaaaaaaaaaaaaaaa');
-	console.log(data);
+	var img_width, img_height;	
 	img.onload = function(){
 		var tmp = getFullscreenSize(img);
 		
@@ -1568,13 +1566,15 @@ var search_box = {
                
         title: gettext('Search Box'),
         id: 'search_box_panel',
+      
         width: 200,
-        height: 100,
+        height: 250,
         region:'south',
         split: true,
         autoScroll: true,
-        hideCollapseTool: true,
+        //hideCollapseTool: true,
         collapsible: true,
+        collapsed: true,
         clean_up: function(){
             Ext.getCmp('search_box').getStore().removeAll();
             Ext.getCmp('search_box_current_smart_folder').setText('');
@@ -1799,9 +1799,8 @@ var search_box = {
                             animate:true
                             
                         },
-                        layout: 'accordion',
-    //                    items: [workspaces_panel, tree_keywords, tree_collections, ]
-                        items: [tree_keywords, tree_collections, inbox, smart_folders],
+                        layout: 'accordion',    
+                        items: [tree_keywords,  inbox, smart_folders],
                         bbar: { 
                             id :"basket_container",
                             listeners:{

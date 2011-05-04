@@ -200,7 +200,7 @@ function clear_other_selections(tree){
             return;
         }
     }
-    var tree_list = [tree_keywords.getSelectionModel(), tree_collections.getSelectionModel(), inbox.getSelectionModel(), Ext.getCmp('smart_folders')];
+    var tree_list = [tree_keywords.getSelectionModel(), inbox.getSelectionModel(), Ext.getCmp('smart_folders')];
     for (var i = 0; i < tree_list.length; i ++){
         
         if(tree_list[i] != tree){
@@ -1089,29 +1089,8 @@ contextMenuShow = function( node_menu,e ){
 
     
     // set up the Album tree
-    var tree_collections = create_tree(gettext('Collections'), 'collections_tree');
+    
 
-    var root_collections = new Ext.tree.AsyncTreeNode({
-        text: gettext('All items'),
-        id:'fake',
-        expanded:true,
-        allowDrag:false,
-        allowDrop:true,
-        editable: false,
-        type:'collection',
-        listeners:{
-                beforeload: function(node){
-                    if (node.id == 'fake') {
-                        return false;
-                    }
-                }
-            }
-    });
-
-    tree_collections.setRootNode(root_collections);
-
-    tree_collections.on('contextmenu', contextMenuShow);
-  
     var tree_keywords =create_tree(gettext('Keywords'), 'keywords_tree');
 
     
@@ -1141,7 +1120,7 @@ contextMenuShow = function( node_menu,e ){
     tree_keywords.on('contextmenu', contextMenuShow);    
 
     tree_keywords.menu = contextMenuKeywords;
-    tree_collections.menu = contextMenuCollections;
+    
 
     // add an inline editor for the nodes
     
