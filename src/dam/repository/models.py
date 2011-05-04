@@ -185,7 +185,10 @@ class Item(AbstractItem):
         if self.get_workspaces_count() == 0:
             #REMOVING ORIGINAL FILE
             orig = self.component_set.get(variant__name = 'original')
-            os.remove(orig.get_file_path())
+            try:
+                os.remove(orig.get_file_path())
+            except:
+                pass #file maybe does not exist
             orig.delete()
             self.delete()
             
