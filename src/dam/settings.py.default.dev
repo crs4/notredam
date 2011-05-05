@@ -27,6 +27,8 @@ ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(ROOT_PATH)
 
+CAPTCHA_PRIVATE_KEY = '6LeIrcMSAAAAAF_F3yhg0AyO65M5bpj4Kb4OW9tC'
+
 REMOVE_OLD_PROCESSES= True
 
 from mediadart.config import Configurator

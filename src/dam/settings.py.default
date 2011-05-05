@@ -24,6 +24,7 @@ import logging
 
 DEMO_STRING="Development Demo" 
 PYTHONPATH= "/opt/mediadart/"
+CAPTCHA_PRIVATE_KEY = '6LeIrcMSAAAAAF_F3yhg0AyO65M5bpj4Kb4OW9tC'
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
