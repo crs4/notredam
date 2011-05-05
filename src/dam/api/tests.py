@@ -172,20 +172,6 @@ class WSTestCase(MyTestCase):
         self.assertTrue(WorkspacePermissionAssociation.objects.filter(users = u,  workspace__pk = ws_pk,  permission__name = 'admin').count() == 0)
         
         
-        
-    def test_get_collections(self):
-        ws_pk = 1
-        params = {}        
-        params = self.get_final_parameters(params)
-        response = self.client.get('/api/workspace/%s/get_collections/'%ws_pk,  params)                
-        resp_dict = json.loads(response.content)        
-        print 'resp_dict ',  resp_dict        
-        
-        exp_resp =  {'collections': [{'items': [], 'label': 'test1', 'parent_id': None, 'workspace': 1, 'id': 17, 'children': [{'items': [], 'label': 'test1_child', 'parent_id': 17, 'workspace': 1, 'id': 21, 'children': []}]}, {'items': [1], 'label': 'test_with_item', 'parent_id': None, 'workspace': 1, 'id': 18, 'children': []}, {'items': [], 'label': 'test2', 'parent_id': None, 'workspace': 1, 'id': 20, 'children': []}]}
-
-
-        self.assertTrue(resp_dict ==  exp_resp)   
-        
     def test_get_items(self):
         ws_pk = 1
         params = {'workspace_id':ws_pk}        
@@ -237,25 +223,6 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['totalCount'] == node.items.count())
         #self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
              
-            
-    def test_search_collections(self):
-        workspace = DAMWorkspace.objects.get(pk = 1)
-        collection = Node.objects.get(label = 'test_with_item')
-        params = self.get_final_parameters({ 'collection': collection.pk, 
-            'media_type': 'image', 
-            'start':0,
-            'limit':1,
-            'metadata': 'dc_description'
-          
-        }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
-        resp_dict = json.loads(response.content)
-        
-        print resp_dict
-        self.assertTrue(len(resp_dict['items']) == params['limit'])
-        self.assertTrue(resp_dict['totalCount'] == collection.items.count())
-       
-        
     def test_search_smart_folders(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
         smart_folder = SmartFolder.objects.get(pk = 1)
@@ -295,29 +262,6 @@ class WSTestCase(MyTestCase):
         print resp_dict
         self.assertTrue(len(resp_dict['items']) == 1)
         self.assertTrue(resp_dict['totalCount'] == 1)
-    
-        
-        
-    
-    def test_search_collections_no_results(self):
-        workspace = DAMWorkspace.objects.get(pk = 1)
-        params = self.get_final_parameters({ 'collection': -1, 
-            'media_type': 'image', 
-            'start':0,
-            'limit':1,
-            'metadata': 'dc_description'
-          
-        }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
-        resp_dict = json.loads(response.content)
-        
-        print resp_dict
-        self.assertTrue(len(resp_dict['items']) == 0)
-        self.assertTrue(resp_dict['totalCount'] == 0)
-        
-        
-        
-    
     
     def test_keywords(self):
              
@@ -546,18 +490,7 @@ class ItemTest(MyTestCase):
         print resp_dict 
         self.assertTrue(resp_dict['keywords'] == keywords)
          
-        
-    def test_get_collections(self):
-        item = Item.objects.all()[0]    
-        collections = list(item.collections())            
-        
-        params = self.get_final_parameters({'workspace_id': 1})
-        response = self.client.get('/api/item/%s/get_collections/'%item.pk, params)                        
-        resp_dict = json.loads(response.content)
-        print resp_dict 
-        self.assertTrue(resp_dict['collections'] == collections)
     
-        
     def test_get(self):
         item = Item.objects.all()[0]    
         keywords = list(item.keywords())            
@@ -568,7 +501,7 @@ class ItemTest(MyTestCase):
         print resp_dict 
         self.assertTrue(resp_dict.has_key('id'))
         self.assertTrue(resp_dict.has_key('keywords'))
-        self.assertTrue(resp_dict.has_key('collections'))
+        
         self.assertTrue(resp_dict.has_key('workspaces'))
         self.assertTrue(resp_dict['media_type'] == 'image/jpeg') 
         
@@ -576,9 +509,8 @@ class ItemTest(MyTestCase):
         self.assertTrue(resp_dict['keywords'] == keywords)
         self.assertTrue(resp_dict['upload_workspace'] == 1)
         print "resp_dict %s"%resp_dict
-        print "item.node_set.filter(type = 'collection')%s"%item.node_set.filter(type = 'collection')
-        self.assertTrue(resp_dict['collections'] == list(item.collections()))
-    
+        
+        
         metadata = {'dc_subject': ['test']}
 #        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
         print("resp_dict['metadata'] %s"%resp_dict['metadata'])
@@ -727,35 +659,7 @@ class ItemTest(MyTestCase):
         response = self.client.post('/api/item/%s/remove_keywords/'%item_id, params, )  
         
         self.assertTrue(item.node_set.filter(pk = new_node.pk).count() == 0)
-        
-    def test_add_to_collection(self):
-        workspace_id = 1
-        ws = DAMWorkspace.objects.get(pk = workspace_id)
-        collection_node = Node.objects.get(label = 'test1',  type = 'collection')
-        item = Item.objects.all()[0]
-        params = self.get_final_parameters({ 'collection_id': collection_node.pk})        
-        
-        response = self.client.post('/api/item/%s/add_to_collection/'%item.pk, params, )            
-        print 'response.content',  response.content
-        self.assertTrue(response.content == '')         
-        items = collection_node.items.all()
-#        print '--------------------items ',  items 
-        self.assertTrue(items.count() == 1)
-        self.assertTrue(items[0] == item)
-        
-    def test_remove_from_collection(self):
-        workspace_id = 1
-        ws = DAMWorkspace.objects.get(pk = workspace_id)
-        collection_node = Node.objects.get(label = 'test1',  type = 'collection')        
-        item = Item.objects.all()[0]
-        params = self.get_final_parameters({ 'collection_id': collection_node.pk})        
-        
-        response = self.client.post('/api/item/%s/remove_from_collection/'%item.pk, params, )            
-        self.assertTrue(response.content == '')         
-        items = collection_node.items.all()        
-        self.assertTrue(items.count() == 0)
-        
-        
+               
     def test_add_to_ws(self):
         
         workspace = DAMWorkspace.objects.create(name = 'test', creator = self.user)
@@ -1097,178 +1001,6 @@ class KeywordsTest(MyTestCase):
         response = self.client.post('/api/keyword/%s/remove_items/'%new_node.pk, params, )  
         self.assertTrue(item.node_set.filter(label = 'test').count() == 0)
 
-class CollectionsTest(MyTestCase):
-    fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json']   
-    
-    def test_get_single(self):        
-             
-        ws_pk = 1
-        ws = DAMWorkspace.objects.get(pk = ws_pk)
-        params = self.get_final_parameters()
-        label ='test1'
-        node = Node.objects.get(label = label,  workspace = ws)
-        response = self.client.get('/api/collection/%s/get/'%node.pk, params)                
-        
-        resp_dict = json.loads(response.content)                
-        self.assertTrue(resp_dict.get('id') == node.pk)
-        self.assertTrue(resp_dict['workspace'] == node.workspace.pk)
-        self.assertTrue(resp_dict['parent_id'] == None)
-        self.assertTrue(resp_dict['label'] == label)
-        
-        items = node.items.all()
-        self.assertTrue(resp_dict['items'] == [i.pk for i in items])
-        self.assertTrue(len(resp_dict['children']) == node.children.all().count())
-        
-    def test_get_except(self):                
-        params = self.get_final_parameters()
-        node_pk = 1000
-        response = self.client.get('/api/collection/%s/get/'%node_pk, params)
-        resp_dict = json.loads(response.content)
-        self.assertTrue(resp_dict['error class'] == 'CatalogueElementDoesNotExist')         
-            
-#    def test_get(self):
-#             
-#        ws_pk = 1
-#        params = self.get_final_parameters({'workspace_id':ws_pk})
-#        response = self.client.get('/api/collection/get/', params,  )        
-#        resp_dict = json.loads(response.content)    
-#
-#        ws = DAMWorkspace.objects.get(pk = ws_pk)
-#        
-#        collections = Node.objects.filter( type = 'collection',  workspace = ws,  depth= 1)       
-#        self.assertTrue(resp_dict.has_key('collections'))
-#        self.assertTrue(isinstance(resp_dict['collections'],  list))
-#        self.assertTrue(len(resp_dict['collections']) ==  collections.count())   
-#        
-#        node_id = resp_dict['collections'][0]['id']
-#        node = Node.objects.get(pk = node_id)
-#        
-#        
-#        self.assertTrue(resp_dict['collections'][0]['workspace'] == node.workspace.pk)
-##        if node.parent.depth > 0:
-##            self.assertTrue(resp_dict['collections'][node_id]['parent_id'] == node.parent.pk)
-##        else:
-#        self.assertTrue(resp_dict['collections'][0]['parent_id'] == None)
-#        self.assertTrue(resp_dict['collections'][0]['label'] == node.label)
-#        
-#        items = node.items.all()
-#        self.assertTrue(resp_dict['collections'][0]['items'] == [i.pk for i in items])
-#        self.assertTrue(len(resp_dict['collections'][0]['children'] )== node.children.all().count())
-#        
-#        
-#    
-    def test_create(self):             
-        
-        ws = DAMWorkspace.objects.get(pk = 1)
-        label = 'collection_test'
-        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
-        response = self.client.post('/api/collection/new/', params,  )  
-        resp_dict = json.loads(response.content)        
-        
-        self.assertTrue(resp_dict.has_key('id'))
-        
-        self.assertTrue(resp_dict['workspace_id'] == ws.pk)
-        self.assertTrue(resp_dict['parent_id'] == None)
-        self.assertTrue(resp_dict['label'] == label)        
-
-
-    def test_create_except(self):             
-        
-        ws = DAMWorkspace.objects.get(pk = 1)
-        label = 'collection_test'
-        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
-        response = self.client.post('/api/collection/new/', params,  )  
-        resp_dict = json.loads(response.content)        
-        
-        self.assertTrue(resp_dict.has_key('id'))
-        
-        self.assertTrue(resp_dict['workspace_id'] == ws.pk)
-        self.assertTrue(resp_dict['parent_id'] == None)
-        self.assertTrue(resp_dict['label'] == label)        
-        
-        params = self.get_final_parameters({ 'workspace_id':ws.pk,  'label':label})     
-        response = self.client.post('/api/collection/new/', params)  
-        print response
-        
-
-
-
-
-
-    def test_rename(self):
-        "changing label"
-
-        node_id = Node.objects.get(label = 'test1',  depth = 1).pk
-        new_label = 'new_label'
-        params = self.get_final_parameters({'label':new_label})        
-        response = self.client.post('/api/collection/%s/edit/'%node_id , params,  )                
-        node = Node.objects.get(pk = node_id )
-        self.assertTrue(node.label == new_label)
-        
-    def test_move(self):
-        ws_pk = 1 
-        ws = DAMWorkspace.objects.get(pk = ws_pk)
-        
-        node_id = Node.objects.get(label = 'test1', depth = 1).pk
-        dest_id= Node.objects.get(label = 'test2', depth = 1).pk
-        params = self.get_final_parameters({ 'parent_id':dest_id,  })
-        resp = self.client.post('/api/collection/%s/move/'%node_id, params)      
-        
-        self.assertTrue(resp.content == '')
-        self.assertTrue(resp.status_code == 200)
-        node = Node.objects.get(pk = node_id)
-        self.assertTrue(node.parent.pk == dest_id)
-        
-    def test_move_to_the_top(self):
-        ws_pk = 1 
-        ws = DAMWorkspace.objects.get(pk = ws_pk)
-        
-        node_id = Node.objects.get(label = 'test1_child', ).pk
-        root_pk = Node.objects.get(workspace = ws, type ="collection",depth = 0).id
-        params = self.get_final_parameters({ })
-        resp = self.client.post('/api/collection/%s/move/'%node_id, params)      
-        
-        self.assertTrue(resp.content == '')
-        self.assertTrue(resp.status_code == 200)
-        node = Node.objects.get(pk = node_id)
-        self.assertTrue(node.parent.pk == root_pk)        
-        
-    def test_delete(self):       
-        node = Node.objects.get(label = 'test1')
-        params = self.get_final_parameters()
-        response = self.client.get('/api/collection/%s/delete/'%node.pk, params,  ) 
-        
-        self.assertTrue(response.content == '')
-        self.assertRaises(Node.DoesNotExist,  Node.objects.get, pk = node.pk)
-
-    def test_add_items(self):
-        workspace_id = 1
-        ws = DAMWorkspace.objects.get(pk = workspace_id)
-        coll= Node.objects.get(label = 'test1',  workspace = ws,  type = 'collection')
-        item = Item.objects.all()[0]        
-        
-        params = self.get_final_parameters({ 'items':[item.pk,  item.pk]})        
-        response = self.client.post('/api/collection/%s/add_items/'%coll.pk, params) 
-        self.assertTrue(response.content == '')
-        
-        items = coll.items.all()
-        
-        self.assertTrue(items.count() == 1)
-        
-    def test_remove_items(self):
-        workspace_id = 1
-        ws = DAMWorkspace.objects.get(pk = workspace_id)
-        coll = Node.objects.get(label = 'test_with_item',  workspace = ws)
-        item = Item.objects.all()[0]
-        items = coll.items.all()        
-        self.assertTrue(items.count() == 1)
-        params = self.get_final_parameters({ 'items':item.pk})        
-        response = self.client.post('/api/collection/%s/remove_items/'%coll.pk, params, ) 
-        
-        self.assertTrue(response.content == '')        
-        items = coll.items.all()        
-        self.assertTrue(items.count() == 0)
-        
 
 class TestLogin(MyTestCase):
     fixtures = ['api/fixtures/test_data.json', ]   
