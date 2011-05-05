@@ -425,14 +425,8 @@ function create_tree(title, id){
             
             render:function(){
                 
-                var root;
+                var root = root_keywords;
                 
-                if (this.title ==gettext('Keywords')) {
-                    root = root_keywords;
-                }
-                else {
-                    root = root_collections;
-                }
                 var dd_target = new Ext.dd.DropTarget(this.getEl(),
                     {ddGroup: 'organizerDD',
                     notifyOver: function( source, e, data ){
@@ -448,9 +442,7 @@ function create_tree(title, id){
                         if (this.id == 'keywords_tree') {
                             contextMenuShow(root_keywords,e);
                         }
-                        else if (this.id == 'collections_tree') {
-                            contextMenuShow(root_collections,e);
-                        }
+                        
                 });
             }
         },
@@ -503,9 +495,7 @@ function create_tree(title, id){
                     if (nodeData.node.attributes.type =='keyword'  && ws_permissions_store.find('name', 'edit_metadata') < 0  && ws_permissions_store.find('name', 'admin') < 0)  {
                         return false; //permission denied
                     }                    
-                    if (nodeData.node.attributes.type =='collection'  && ws_permissions_store.find('name', 'edit_collection') < 0  && ws_permissions_store.find('name', 'admin') < 0)  {
-                        return false; //permission denied
-                    }
+                    
                     
                     var media_tab = Ext.getCmp('media_tabs').getActiveTab();
                     var view = media_tab. getComponent(0);
@@ -576,9 +566,7 @@ function create_tree(title, id){
                     if (nodeData.node.attributes.type =='keyword'  && ws_permissions_store.find('name', 'edit_metadata') < 0  && ws_permissions_store.find('name', 'admin') < 0) {
                         return this.dropNotAllowed; //permission denied
                     }
-                    if (nodeData.node.attributes.type =='collection'  && ws_permissions_store.find('name', 'edit_collection') < 0  && ws_permissions_store.find('name', 'admin') < 0)  {
-                        return false; //permission denied
-                    }
+                   
                 }
                 
                 if(nodeData.node.attributes.allowDrop) {
@@ -934,7 +922,6 @@ var treeAction = function( tree_action){
 var add_keyword =  new Ext.menu.Item({id: 'addKeyword',text: gettext('Keyword')});
 var add_category =  new Ext.menu.Item({id: 'addCategory', text: gettext('Category')});
 
-var add_collection = new Ext.menu.Item({text: gettext('Add')});
 var add_node = new Ext.menu.Item({text: gettext('Add'), menu: [add_keyword, add_category]});
 var edit_node = new Ext.menu.Item({text: gettext('Edit')});
 var delete_node = new Ext.menu.Item({text: gettext('Delete')});
@@ -972,21 +959,9 @@ contextMenuShow = function( node_menu,e ){
 		
         var admin = ws_permissions_store.find('name', 'admin') > - 1;
         var edit_taxonomy = ws_permissions_store.find('name', 'edit_taxonomy') > - 1;
-        var edit_collection = ws_permissions_store.find('name', 'edit_collection') > - 1;
-
+      
         var tree = node_menu.getOwnerTree();
-/*        if (tree.id == 'keywords_tree') {
-            if(!admin && ! edit_taxonomy){
-                e.stopEvent();
-                return;
-            }
-        }
-        else if (tree.id == 'collections_tree') {
-            if(!admin && ! edit_collection){
-                e.stopEvent();
-                return;
-            }        
-        } */
+
         if (node_menu.attributes.iconCls && node_menu.attributes.iconCls == 'no_keyword'){
             e.stopEvent();
             return;
@@ -1075,13 +1050,7 @@ contextMenuShow = function( node_menu,e ){
                 contextMenu.find('text', gettext('Edit'))[0].disable();
             }
         }
-        else if (tree.id == 'collections_tree') {
-            if(!admin && ! edit_collection){
-                contextMenu.find('text', gettext('Add'))[0].disable();
-                contextMenu.find('text', gettext('Delete'))[0].disable();
-                contextMenu.find('text', gettext('Edit'))[0].disable();
-            }        
-        }
+        
                             
         e.stopEvent();
         contextMenu.show(node_menu.ui.getEl());

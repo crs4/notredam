@@ -25,7 +25,7 @@ Ext.onReady(function(){
         var current_ws = ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk;
 
         var members_store = new Ext.data.JsonStore({
-            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", "edit_collection", 'edit_scripts', 'run_scripts'],
+            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", 'edit_scripts', 'run_scripts'],
             root: 'elements',
             baseParams: {ws_id: current_ws},
             proxy : new Ext.data.HttpProxy({
@@ -108,16 +108,7 @@ Ext.onReady(function(){
                 trueText: 'Yes',
                 falseText: 'No',
                 editor: booleditor
-            }, {
-                header: 'Can edit collections',
-                dataIndex: 'edit_collection',
-                xtype: 'booleancolumn',
-                align: 'center',
-                trueText: 'Yes',
-                falseText: 'No',
-                editor: booleditor
-            },
-            
+            },             
              {
                 header: 'Can edit scripts',
                 dataIndex: 'edit_scripts',
@@ -200,11 +191,7 @@ Ext.onReady(function(){
                                 fieldLabel: 'Can edit catalogue',
                                 name: 'edit_taxonomy',
                                 xtype: 'checkbox'       
-                            }, {
-                                fieldLabel: 'Can edit collections',
-                                name: 'edit_collection',
-                                xtype: 'checkbox'       
-                            },
+                            }, 
                             {
                                 fieldLabel: 'Can edit scripts',
                                 name: 'edit_scripts',
@@ -241,7 +228,7 @@ Ext.onReady(function(){
                                 text: gettext('Save'),
                                 handler: function() {
                                     var values = Ext.getCmp('new_user_permissions').getForm().getFieldValues();                                    
-                                    var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_collection: 0, edit_taxonomy: 0};
+                                    var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_taxonomy: 0};
                                     if (values.admin) {
                                         perm_values.admin = 1;
                                     }
@@ -257,9 +244,7 @@ Ext.onReady(function(){
                                     if (values.edit_taxonomy) {
                                         perm_values.edit_taxonomy = 1;
                                     }
-                                    if (values.edit_collection) {
-                                        perm_values.edit_collection = 1;
-                                    }
+                                    
                                     
                                     if (values.run_scripts) {
                                         perm_values.run_scripts = 1;
