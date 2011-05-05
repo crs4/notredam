@@ -150,7 +150,7 @@ var open_user_ws_win = function(current, my_stores) {
     
     var win_title = 'Edit Membership';
     
-    var default_perms = {admin: false, edit_metadata: false, edit_collection: false, edit_taxonomy: false, add_item: false, remove_item:false };
+    var default_perms = {admin: false, edit_metadata: false,  edit_taxonomy: false, add_item: false, remove_item:false };
     
     if (current) {
         if (!current.length) {
@@ -190,11 +190,6 @@ var open_user_ws_win = function(current, my_stores) {
         name: 'edit_taxonomy',
         id: 'perm_edit_taxonomy',
         checked: default_perms['edit_taxonomy']
-    }, {
-        boxLabel: 'Can add collections?',
-        name: 'edit_collection',
-        id: 'perm_edit_collection',
-        checked: default_perms['edit_collection']                
     }];
 
     var form_height = 0;

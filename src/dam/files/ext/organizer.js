@@ -217,9 +217,7 @@ var store_nodes_checked = new Ext.data.JsonStore({
                 if (nodes[i].data.type == 'keyword') {
                     node= Ext.getCmp('keywords_tree').getNodeById(nodes[i].data.id);
                 }
-                else {
-                    node= Ext.getCmp('collections_tree').getNodeById(nodes[i].data.id);
-                }
+                
                 if (node){                        
                     cb = node.getUI().checkbox;
                     
@@ -476,7 +474,7 @@ var showDetails = function(view){
         
         var admin = ws_permissions_store.find('name', 'admin') > -1;        
         var add_item = ws_permissions_store.find('name', 'add_item') > -1;
-        var edit_collection = ws_permissions_store.find('name', 'edit_collection') > -1;            
+                
         var remove_item = ws_permissions_store.find('name', 'remove_item') > -1;
         var set_state = ws_permissions_store.find('name', 'set_state') > -1;        
         var run_scripts = ws_permissions_store.find('name', 'run_scripts') > -1;

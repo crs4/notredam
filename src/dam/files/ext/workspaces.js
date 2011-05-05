@@ -60,10 +60,7 @@ var ws_permissions_store = new Ext.data.JsonStore({
                     Ext.getCmp('preferences_menu').enable();
                     Ext.getCmp('delete_ws_menu').enable();
                     Ext.getCmp('preferences_scripts').enable();
-    //            Ext.getCmp('mvto').enable()
-    //            Ext.getCmp('removefrom').enable()
-    //            Ext.getCmp('remove_from_ws').enable()
-    //            Ext.getCmp('remove_from_collection').enable()
+
                     if(ws_state_store.getCount()) {
                         Ext.getCmp('set_state_to').show();
                     }
