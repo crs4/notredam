@@ -80,7 +80,11 @@ var get_user_list = function() {
             id: 'remove_user_menuitem',
             disabled: true,
             handler: function() {
-                remove_from_list('users_list', '/dam_admin/delete_user/', 'Remove User', 'User(s) removed successfully.');
+                Ext.Msg.confirm('User Deletion', 'User deletion cannot be undone, do you want to proceed?', 
+                function(){
+                    remove_from_list('users_list', '/dam_admin/delete_user/', 'Remove User', 'User(s) removed successfully.');
+                });
+                
             }
         }, {
             text: 'Edit',
