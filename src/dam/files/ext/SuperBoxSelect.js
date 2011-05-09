@@ -189,6 +189,7 @@ Ext.ux.form.SuperBoxSelect = Ext.extend(Ext.ux.form.SuperBoxSelect,Ext.form.Comb
      */
     valueDelimiter: ',',
     initComponent:function() {
+		
        Ext.apply(this, {
             items           : new Ext.util.MixedCollection(false),
             usedRecords     : new Ext.util.MixedCollection(false),
@@ -235,10 +236,23 @@ Ext.ux.form.SuperBoxSelect = Ext.extend(Ext.ux.form.SuperBoxSelect,Ext.form.Comb
             tag : 'ul'
         });
         
+        var width = this.width -56;
+        
         this.outerWrapEl = this.wrapEl.wrap({
             tag : 'div',
-            cls: 'x-form-text x-superboxselect ' + extraClass
+            cls: 'x-form-text x-superboxselect ' + extraClass,
+            style: 'width: ' + width +'px !important;'
+            
         });
+        
+        
+        
+        this.outerWrapEl.insertSibling({
+			tag: 'img',
+			src: '/files/images/icons/fam/delete.gif',
+			style: 'float: right',
+			onclick: ""
+		}, 'before');
        
         this.inputEl = this.el.wrap({
             tag : 'li',

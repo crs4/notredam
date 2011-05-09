@@ -1,3 +1,30 @@
+var source_variants;
+
+//Ext.Ajax.request({
+	//url: '/get_source_variants/',
+	//
+//});
+
+
+var utils_data = {'actions': [{
+	name: 'input rendition',
+	params: []
+	//[{   
+		//'name': 'source_variant_name',
+		//'fieldLabel': 'Input Rendition',
+		//'xtype': 'multiselect',
+		//'values': variants,
+		//
+		//'value': [variants[1], variants[0]],
+		//'description': 'input-variant',
+		//
+		//'help': ''
+	//}]
+	
+	
+	}
+]};
+
 function random_color(){
 	var color = '#', num;
 	for (var i = 0; i <6; i++){
@@ -15,6 +42,8 @@ function params_equal(p1, p2){
 		
 	return Ext.encode(p1) == Ext.encode(p2);
 };
+
+
 
 
 var MDAction =  function(opts, layer) {	
@@ -69,7 +98,7 @@ var MDAction =  function(opts, layer) {
 	layer.containers.push(this);
 
 }; 
-YAHOO.lang.extend(MDAction, WireIt.Container, {
+Ext.extend(MDAction, WireIt.Container, {
 		
 	getXY: function(){
 		return Ext.get(this.el).getXY();
@@ -108,13 +137,11 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 		});
 		return inputs;
 
-	},
-	
+	},	
 	getParams: function(){
 		return this.form.getForm().getValues();
 		
-	},
-	
+	},	
 	onAddWire: function(e, args){
 		var wire = args[0];
 		
@@ -125,18 +152,6 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 		
 		wire.label =terminal_in.container.get_output_label();		
 		
-		//var output_variant = values.output_variant_name || values.source_variant_name;
-		//
-		//if (output_variant){
-			//terminal_out.container.form.getForm().setValues({
-				//source_variant_name: output_variant
-			//});			
-		//}
-		
-		
-		
-		
-	
 		
 	},
 	
@@ -217,6 +232,82 @@ YAHOO.lang.extend(MDAction, WireIt.Container, {
 
 });
 
+var ScriptUtils =  function(opts, layer) {
+	this.id = opts.id || Ext.id(null, opts.title);
+	
+	opts.width = 200;
+	this.out = opts.out; 
+	this.inputs =  [];
+	this.outputs = opts.outputs || [];
+	opts.terminals = [];
+	this.params = opts.params;
+	opts.resizable = false;
+	this.label = opts.label || opts.title;
+
+	
+	for(i = 0 ; i < this.outputs.length ; i++) {
+		var output = this.outputs[i];
+		opts.terminals.push({
+			"name": output, 
+			"label": 'next',
+			"direction": [1,0], 
+			"offsetPosition": {"right": -14, "top": 3+10*(i+1+this.inputs.length) }, 
+			"ddConfig": {
+				"type": "output",
+				"allowedTypes": ["input"]
+			},
+			"alwaysSrc": true,
+			wireConfig:{
+				color: random_color()
+			}
+		});
+	}
+	
+	
+	
+	ScriptUtils.superclass.constructor.call(this, opts, layer);
+	layer.containers.push(this);
+	
+}
+
+Ext.extend(ScriptUtils, WireIt.Container, {
+		
+	getXY: function(){
+		return Ext.get(this.el).getXY();
+	},
+		render: function(){
+		
+	 	ScriptUtils.superclass.render.call(this);
+	 	var action = this;
+	 	var form = new Ext.form.FormPanel({
+//	 		renderTo: this.bodyEl,
+	 		bodyStyle: {paddingTop: 10},
+	 		autoHeight: true,
+	 		autoScroll: true,
+	 		border: false,
+	 		items: this.params,
+	 		
+//	 		collapsible: true,
+	 		listeners:{
+	 			afterrender:function(){
+	 				this.collapse();
+	 			
+	 			}
+	 		}
+	 	});
+	 	this.form = form;
+	 	
+	 	
+	 	var panel = new Ext.Panel({
+	 		renderTo: this.bodyEl,
+	 		items: [	
+	 		form
+	 		],
+	 		border: false
+	 	
+	 	});
+	}
+});
 
 var baseLayer, store, layer_el;
 
@@ -285,32 +376,120 @@ Ext.onReady(function(){
 		layout: 'border',
 		items:[
 			header,
-					
 			new Ext.grid.GridPanel({
-				region: 'east',
-				title: 'Actions',
-				layout: 'fit',
-				width: 200,
-//				autoHeight: true,
-				
-				enableDragDrop: true,
-				ddGroup: 'wireit',		
-				
+					id: 'actions_grid',					
+					title: 'Actions',
+					region: 'east',
+					width: 200,
+					layout: 'fit',						
+					enableDragDrop: true,
+					ddGroup: 'wireit',								
 					store: store,
 					columns:[{
 						name: 'Script',
 						dataIndex: 'name'
 					}],
-				hideHeaders: true,
-				sm: new Ext.grid.RowSelectionModel({
-					singleSelect: true
-				}),
-				viewConfig: {
-					forceFit: true
-				}
-		
+					hideHeaders: true,
+					sm: new Ext.grid.RowSelectionModel({
+						singleSelect: true
+					}),
+					viewConfig: {
+						forceFit: true
+					}
+			
 				
 			}),
+			
+			new Ext.grid.GridPanel({
+					id: 'dynamic_params_grid',					
+					title: 'Dynamic Parameters',
+					region: 'west',
+					collapsible: true,
+					collapsed: true,
+					width: 200,
+					layout: 'fit',						
+					enableDragDrop: true,
+					ddGroup: 'wireit',								
+					store: new Ext.data.JsonStore({
+						root: 'params',
+						fields: ['name'],
+						
+						
+					}),
+					columns:[{
+						name: 'Script',
+						dataIndex: 'name'
+					}],
+					hideHeaders: true,
+					sm: new Ext.grid.RowSelectionModel({
+						singleSelect: true
+					}),
+					viewConfig: {
+						forceFit: true
+					}
+			
+				
+			}),
+			
+				
+			//new Ext.TabPanel({
+				//region: 'east',
+				//width: 200,
+				//activeTab: 0,
+				//items: [
+					//new Ext.grid.GridPanel({
+						//id: 'actions_grid',					
+						//title: 'Actions',
+						//layout: 'fit',						
+						//enableDragDrop: true,
+						//ddGroup: 'wireit',								
+						//store: store,
+						//columns:[{
+							//name: 'Script',
+							//dataIndex: 'name'
+						//}],
+						//hideHeaders: true,
+						//sm: new Ext.grid.RowSelectionModel({
+							//singleSelect: true
+						//}),
+						//viewConfig: {
+							//forceFit: true
+						//}
+				//
+					//
+				//}),
+				//new Ext.grid.GridPanel({
+					//id: 'utils_grid',					
+					//title: 'Utils',
+					//layout: 'fit',					
+					//
+					//enableDragDrop: true,
+					//ddGroup: 'wireit',		
+					//
+					//store: new Ext.data.JsonStore({
+						//fields: ['name', 'params'],
+						//root: 'actions',
+						//data: utils_data,
+						//autoLoad: true
+					//}),
+					//columns:[{
+						//name: 'utils',
+						//dataIndex: 'name'
+					//}],
+					//hideHeaders: true,
+					//sm: new Ext.grid.RowSelectionModel({
+						//singleSelect: true
+					//}),
+					//viewConfig: {
+						//forceFit: true
+					//}
+			//
+					//
+				//})
+				//
+				//]
+			//}),
+			
 			
 			new Ext.Panel({
 				region: 'center',
@@ -367,28 +546,42 @@ Ext.onReady(function(){
           	onContainerOver: function(){
           		return this.dropAllowed;
           	},
-          	onContainerDrop: function( source, e, data ){
-          		
-          		
-          		var params = data.selections[0].data.params;
-          		var script_name = data.selections[0].data.name;
-          		var fields = [];
-          		
+          	onContainerDrop: function( source, e, data ){          		
           		
           		var drop_x = e.xy[0] ;
-          		var drop_y = e.xy[1];
-          	
-          		var action = new MDAction({
-			            title: script_name,
-			            label: params.label,
-			            position:[drop_x,drop_y],
-//			            legend:'thumbnail',
-			           
-		            	inputs: ['in'],
-		            	outputs: ['out'],
-			            params: params
-			            
-			    }, baseLayer);
+				var drop_y = e.xy[1];
+				var name = data.selections[0].data.name;
+				var params = data.selections[0].data.params;						
+          		if (data.grid.id == 'actions_grid'){
+							
+					var fields = [];
+					var action = new MDAction({
+							title: name,
+							label: params.label,
+							position:[drop_x,drop_y],
+	//			            legend:'thumbnail',
+						   
+							inputs: ['in'],
+							outputs: ['out'],
+							params: params
+							
+					}, baseLayer);
+				}
+				
+				else if(data.grid.id == 'utils_grid'){
+					var action = new ScriptUtils({
+						title: name,						
+						position:[drop_x,drop_y],
+					   
+						inputs: ['in'],
+						outputs: ['out'],
+						params: params
+						
+				}, baseLayer);
+					
+				}
+          		
+          		
 			   
           	} 
           	
@@ -493,25 +686,7 @@ Ext.onReady(function(){
 			//	            emptyText: 'new script'
 			        	},
                         {xtype: 'tbseparator'},
-                        //~ {
-                            //~ text:'Events',
-                            //~ menu: new Ext.ux.StoreMenu({
-                                //~ store_cfg: {
-                                    //~ url: '/get_events/',
-                                    //~ root:'events',
-                                    //~ fields: ['id', 'text', 'checked'],
-                                    //~ baseParams:{
-                                        //~ script_id: script_pk
-                                    //~ }
-                                //~ },                                
-                                //~ item_text_field: 'name',
-                                //~ item_cfg: {
-                                        //~ hideOnClick: true,
-                                        //~ xtype: 'menucheckitem'
-                                //~ },                               
-                            //~ })
-                            //~ 
-                        //~ },
+                       
                         {                           
                             text:'Events',                            
                             menu: new Ext.ux.StoreMenu({
@@ -586,102 +761,11 @@ Ext.onReady(function(){
                                      return values;
                                  }
                              })
-/*                            handler: function(){
-                                
-                                var reader = new Ext.data.ArrayReader({}, [
-                                   {name: 'name'},
-                                   {name: 'type'},
-                                   {name: 'checked'},
-                                   
-                                ]);
 
-                                var store = new Ext.data.GroupingStore({
-                                        reader: reader,
-                                        //~ data: [{name: 'jpeg', type:'image', checked: true}],                                        
-                                        data: [['jpeg', 'image', true], ['png', 'image', false], ['mp3', 'audio', true]],                                        
-                                        groupField:'type'
-                                    });
-    
-                                var grid_id = 'media_grid';
-                                var grid = new Ext.grid.GridPanel({
-                                    id: grid_id,
-                                    store: store,                                    
-                                    columns: [
-                                        {id:'name',header: "name", width: 260, dataIndex: 'name',
-                                        renderer: function(value, metaData, record, rowIndex, colIndex, store) {
-                                                var tmp = String.format('<input type="checkbox" name={0} ', record.data.name);
-                                                tmp += String.format('onclick="var record = Ext.getCmp(\'{0}\').getStore().query(\'name\', \'{1}\').items[0]; record.set(\'checked\', this.checked); record.commit();"', grid_id, record.data.name);
-                                                tmp += " "
-                                                if(record.data.checked)
-                                                    tmp+='checked';
-                                                tmp += '/>';
-                                                tmp += String.format('<span>{0}</span>', record.data.name);
-                                                return tmp;
-                                                
-                                        }
-                                        },
-                                        {id:'type',header: "type", width: 260, dataIndex: 'type', hidden: true}
-                                        
-                                        ],
-
-                                    view: new Ext.grid.GroupingView({
-                                        forceFit:true,
-                                        groupTextTpl: '{text}'
-                                    }),
-                                    
-                                    border:false,
-                                    width: 600,
-                                    height: 300,                                    
-                                    title: 'Media Types'
-                            });
-
-                                
-                                var win = new Ext.Window({
-                                    width: 600,
-                                    height: 300,
-                                    modal: true,
-                                    items: grid
-                                        });
-                                win.show();
-                                
-                            }
-                            
-*/
                             
                             
                         },
-                        
-                        
-                        
-                        
-			        	//~ {
-						    //~ xtype: 'tbtext', 
-						    //~ text: 'Event: '
-					    //~ } ,
-			        	//~ 
-			        	//~ {
-					   		//~ id: 'script_type',
-					   		//~ 
-				            //~ xtype: 'combo',
-				            //~ name: 'type',
-				            //~ allowBlank: true,	             
-						    //~ autoSelect: true,
-						    //~ editable: false,
-						    //~ triggerAction: 'all',
-						    //~ lazyRender:true,
-						    //~ mode: 'local',
-						    //~ store:  new Ext.data.ArrayStore({        
-					        	//~ fields: ['pk', 'name'],
-					        	//~ data: types_available
-				    		//~ }),		
-					    //~ 
-						    //~ value: script_type,
-							    //~ 
-						    //~ valueField: 'pk',
-						    //~ displayField: 'name'
-					            //~ 
-				//~ 
-				        	//~ },
+			        	
 				        	
 				        	{xtype: 'tbseparator'},
 				        	
