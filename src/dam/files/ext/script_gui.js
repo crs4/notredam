@@ -399,38 +399,6 @@ Ext.onReady(function(){
 			
 				
 			}),
-			
-			new Ext.grid.GridPanel({
-					id: 'dynamic_params_grid',					
-					title: 'Dynamic Parameters',
-					region: 'west',
-					collapsible: true,
-					collapsed: true,
-					width: 200,
-					layout: 'fit',						
-					enableDragDrop: true,
-					ddGroup: 'wireit',								
-					store: new Ext.data.JsonStore({
-						root: 'params',
-						fields: ['name'],
-						
-						
-					}),
-					columns:[{
-						name: 'Script',
-						dataIndex: 'name'
-					}],
-					hideHeaders: true,
-					sm: new Ext.grid.RowSelectionModel({
-						singleSelect: true
-					}),
-					viewConfig: {
-						forceFit: true
-					}
-			
-				
-			}),
-			
 				
 			//new Ext.TabPanel({
 				//region: 'east',
@@ -687,8 +655,16 @@ Ext.onReady(function(){
 			        	},
                         {xtype: 'tbseparator'},
                        
-                        {                           
-                            text:'Events',                            
+                        {    
+							id: 'events_container',                       
+                            text:'Events',   
+                            handler: function(){
+								if (Ext.query('.dynamic_input_selected').length >0)
+									Ext.each(Ext.getCmp('events').items.items, function(i){i.disable()});
+								else
+									Ext.each(Ext.getCmp('events').items.items, function(i){i.enable()});
+							},
+                            
                             menu: new Ext.ux.StoreMenu({
                                 id: 'events',
                                 store_cfg: {

@@ -720,7 +720,7 @@ Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
 
 
 Ext.ux.MultiSelect = function(config) {
- 	this.values = config.values;
+ 	this.values = config.values; 	
      	
  	Ext.apply(config, {
  		store: new Ext.data.ArrayStore({        
