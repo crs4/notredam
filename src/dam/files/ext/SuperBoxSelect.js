@@ -12,6 +12,8 @@ Ext.namespace('Ext.ux.form');
  * @license TBA (To be announced)
  * 
  */
+
+
 Ext.ux.form.SuperBoxSelect = function(config) {
     Ext.ux.form.SuperBoxSelect.superclass.constructor.call(this,config);
     this.addEvents(
@@ -247,11 +249,27 @@ Ext.ux.form.SuperBoxSelect = Ext.extend(Ext.ux.form.SuperBoxSelect,Ext.form.Comb
         
         
         
-        this.outerWrapEl.insertSibling({
+        
+        
+        
+        this.dynamic = this.outerWrapEl.parent().insertSibling({
 			tag: 'img',
-			src: '/files/images/icons/fam/delete.gif',
-			style: 'float: right',
-			onclick: ""
+			cls: 'dynamic_input dynamic_input_unselected',
+			src: '/files/images/icons/fam/application_xp_terminal.png',
+			style: 'float: right; padding-right:5px;',
+			title: 'Dynamic Input: value will be set run time',
+			onclick: String.format(
+			'if (Ext.get(this).hasClass(\'{1}\')) \
+				{Ext.getCmp(\'{0}\').enable();\
+				Ext.get(this).toggleClass(\'{1}\');\
+				Ext.get(this).addClass(\'{2}\');	\
+				} \
+			else {Ext.getCmp(\'{0}\').disable();\
+				Ext.get(this).toggleClass(\'{2}\');\
+				Ext.get(this).addClass(\'{1}\');	\
+			}\
+				', this.id, 'dynamic_input_selected','dynamic_input_unselected')
+			
 		}, 'before');
        
         this.inputEl = this.el.wrap({
@@ -734,8 +752,9 @@ Ext.ux.form.SuperBoxSelect = Ext.extend(Ext.ux.form.SuperBoxSelect,Ext.form.Comb
         Ext.ux.form.SuperBoxSelect.superclass.onResize.call(this, w, h, rw, rh);
         this.autoSize();
     },
-    onEnable: function(){
+    onEnable: function(){		
         Ext.ux.form.SuperBoxSelect.superclass.onEnable.call(this);
+        
         this.items.each(function(item){
             item.enable();
         });
@@ -745,7 +764,8 @@ Ext.ux.form.SuperBoxSelect = Ext.extend(Ext.ux.form.SuperBoxSelect,Ext.form.Comb
     },
     onDisable: function(){
         Ext.ux.form.SuperBoxSelect.superclass.onDisable.call(this);
-        this.items.each(function(item){
+       
+        this.items.each(function(item){			
             item.disable();
         });
         if(this.renderFieldBtns){
