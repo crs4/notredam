@@ -719,13 +719,38 @@ Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
 
 
 
-Ext.ux.MultiSelect = function(config) {
- 	this.values = config.values; 	
-     	
+Ext.ux.MultiRenditions = function(config) {
+	config.storeId =config.storeId || 'renditions';
+	this.dynamic = config.dynamic || false;
+	
+	this.store = Ext.StoreMgr.get(config.storeId);
+	console.log('this.store');
+	console.log(this.store);
+	renditions = this.store.queryBy(function(record){
+		var media_type_check = false, auto_generated = false;
+		if (record.data.media_type == config.media_type )
+			media_type_check = true;
+		if (record.data.auto_generated == config.auto_generated)
+			auto_generated = true;
+		if (media_type_check && auto_generated)
+			return true;
+		return true;
+	});
+	
+	
+		
+ 	values = [];
+ 	console.log(renditions);
+ 	Ext.each(renditions.items, function(r){		
+		values.push([r.data.name]);
+	}); 	
+    this.values = values;
+    
+    
  	Ext.apply(config, {
  		store: new Ext.data.ArrayStore({        
 	        fields: config.fields || ['value'],
-	        data: config.values
+	        data: this.values
 	    }),
 	    valueField: config.valueField || 'value',
 		displayField: config.displayField || 'value'
@@ -736,16 +761,107 @@ Ext.ux.MultiSelect = function(config) {
  	});
  	
     // call parent constructor
-    Ext.ux.MultiSelect.superclass.constructor.call(this, config);
+    Ext.ux.MultiRenditions.superclass.constructor.call(this, config);
     
  
 }; 
 
-Ext.extend(Ext.ux.MultiSelect,  Ext.ux.form.SuperBoxSelect, {
+Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
     allowBlank: false,
     mode: 'local',
-    width: 220
+    width: 220,
+    
+    toggleDynamize: function(){
+		if (this.dynamic_icon.hasClass('x-item-disabled'))
+			return;
+		
+		if (this.dynamic){
+			this.enable();
+			this.dynamic_icon.removeClass('dynamic_input_selected');
+			this.dynamic_icon.addClass('dynamic_input_unselected');	
+			
+			this.dynamic = false;
+		} 
+		
+		else{
+			this.disable();
+			this.dynamic_icon.removeClass('dynamic_input_unselected');
+			this.dynamic_icon.addClass('dynamic_input_selected');	
+			
+			this.dynamic = true;
+		}
+		
+		
+	},
+	
+    
+    disableAll: function(){
+        Ext.ux.MultiRenditions.superclass.disable.call(this);
+        this.dynamic_icon.addClass('x-item-disabled');
+       
+        
+    },
+     enableAll: function(){
+        Ext.ux.MultiRenditions.superclass.enable.call(this);
+        this.dynamic_icon.removeClass('x-item-disabled');
+       
+        
+    },
+    onRender:function(ct, position) {
+    	var h = this.hiddenName;
+    	this.hiddenName = null;
+        Ext.ux.form.SuperBoxSelect.superclass.onRender.call(this, ct, position);
+        this.hiddenName = h;
+        this.manageNameAttribute();
+       
+        var extraClass = (this.stackItems === true) ? 'x-superboxselect-stacked' : '';
+        if(this.renderFieldBtns){
+            extraClass += ' x-superboxselect-display-btns';
+        }
+        this.el.removeClass('x-form-text').addClass('x-superboxselect-input-field');
+        
+        this.wrapEl = this.el.wrap({
+            tag : 'ul'
+        });
+        
+        var width = this.width -56;
+        
+        this.outerWrapEl = this.wrapEl.wrap({
+            tag : 'div',
+            cls: 'x-form-text x-superboxselect ' + extraClass,
+            style: 'width: ' + width +'px !important;'
+            
+        });
+        
+        this.dynamic_icon = this.outerWrapEl.parent().insertSibling({
+			tag: 'img',
+			cls: 'dynamic_input dynamic_input_unselected',
+			src: '/files/images/icons/fam/application_xp_terminal.png',
+			style: 'float: right; padding-right:5px;',
+			title: 'Dynamic Input: value will be set run time',
+			onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
+			
+		}, 'before');
+				
+		if (!this.fieldLabel){
+			this.dynamic_icon.parent().setStyle({paddingLeft:0});
+		}
+       
+        this.inputEl = this.el.wrap({
+            tag : 'li',
+            cls : 'x-superboxselect-input'
+        });
+        
+        if(this.renderFieldBtns){
+            this.setupFieldButtons().manageClearBtn();
+        }
+        
+        this.setupFormInterception();
+    }
+    
     
 });	
 
-Ext.reg('multiselect', Ext.ux.MultiSelect);
+Ext.reg('multiselect', Ext.ux.MultiRenditions);
+
+

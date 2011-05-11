@@ -11,9 +11,8 @@ def inspect(workspace):
             {   
                 'name': 'source_variant_name',
                 'fieldLabel': 'Input Rendition',
-                'xtype': 'select',
-                'values': variants,
-                'value': variants[0],          # The pipeline accepts a single variant
+                'xtype': 'multiselect',
+                
                 'description': 'input-variant',
                 'help': ''
             },
