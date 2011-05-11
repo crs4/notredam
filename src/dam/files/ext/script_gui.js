@@ -64,6 +64,8 @@ var MDAction =  function(opts, layer) {
 	this.id = opts.id || Ext.id(null, opts.title);
 	this['in'] = opts['in'];
 	//opts.width = 355;
+	this.no_label = opts.create_label || false;
+	
 	opts.inputs = opts.inputs || [];
 	this.out = opts.out; 
 	this.inputs = opts.inputs || [];
@@ -173,7 +175,7 @@ Ext.extend(MDAction, WireIt.Container, {
 	render: function(){
 		
 	 	MDAction.superclass.render.call(this);
-	 	var create_label = this.create_label;
+	 	var create_label = !this.no_label;
 	 	var action = this;
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
@@ -216,7 +218,7 @@ Ext.extend(MDAction, WireIt.Container, {
 			});
 			
 			var BUTTON_EDIT = 'Show', BUTTON_HIDE = 'Hide';
-			var label = new Ext.form.CompositeField({
+			var composite_label = new Ext.form.CompositeField({
 				items:[
 					this.label,
 					new Ext.Button({
@@ -238,7 +240,7 @@ Ext.extend(MDAction, WireIt.Container, {
 				]
 	 		
 	 		});
-			items.push(label);
+			items.push(composite_label);
 		}
  		
  		items.push(form);
@@ -255,12 +257,10 @@ Ext.extend(MDAction, WireIt.Container, {
 var InputRendition =  function(opts, layer) {
 		
 	InputRendition.superclass.constructor.call(this, opts, layer);
-	
-	
 }
 
 Ext.extend(InputRendition, MDAction, {
-	
+	no_label: true,
 	onAddWire: function(e, args){
 		
 		var wire = args[0];
@@ -468,7 +468,8 @@ Ext.onReady(function(){
 											script_name: action.options.title,
 											x: posXY[0],
 											y: posXY[1],
-											label: action.label.getValue()
+											//label: action.label.getValue()
+											label: 'lol'
 										}					
 									
 									}
@@ -504,8 +505,7 @@ Ext.onReady(function(){
 							title: name,
 							label: params.label,
 							position:[drop_x,drop_y],
-	//			            legend:'thumbnail',
-							create_label: true,
+	//			            legend:'thumbnail',							
 							inputs: ['in'],
 							outputs: ['out'],
 							params: params
