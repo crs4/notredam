@@ -1,4 +1,18 @@
-var source_variants;
+var renditions = new Ext.data.JsonStore({
+	storeId: 'renditions',
+	root: 'renditions',
+	fields: ['name', 'media_type', 'auto_generated'],
+	data: {renditions:[{
+		name: 'original',
+		media_type: 'image',
+		auto_generated: false
+	},{
+		name: 'thumbnail',
+		media_type: 'image',
+		auto_generated: true
+	}]
+	}
+});
 
 //Ext.Ajax.request({
 	//url: '/get_source_variants/',
@@ -8,19 +22,18 @@ var source_variants;
 
 var utils_data = {'actions': [{
 	name: 'input rendition',
-	params: []
-	//[{   
-		//'name': 'source_variant_name',
-		//'fieldLabel': 'Input Rendition',
-		//'xtype': 'multiselect',
-		//'values': variants,
-		//
-		//'value': [variants[1], variants[0]],
-		//'description': 'input-variant',
-		//
-		//'help': ''
-	//}]
-	
+	params:	[{   
+		name: 'source_variant_name',
+		
+		xtype: 'multiselect',
+		width: 200,
+		media_type: 'image',		
+		description: 'input-variant',		
+		help: '',
+		
+		
+	}]
+	//
 	
 	}
 ]};
@@ -235,7 +248,7 @@ Ext.extend(MDAction, WireIt.Container, {
 var ScriptUtils =  function(opts, layer) {
 	this.id = opts.id || Ext.id(null, opts.title);
 	
-	opts.width = 200;
+	opts.width = 250;
 	this.out = opts.out; 
 	this.inputs =  [];
 	this.outputs = opts.outputs || [];
@@ -275,7 +288,7 @@ Ext.extend(ScriptUtils, WireIt.Container, {
 	getXY: function(){
 		return Ext.get(this.el).getXY();
 	},
-		render: function(){
+	render: function(){
 		
 	 	ScriptUtils.superclass.render.call(this);
 	 	var action = this;
@@ -285,15 +298,8 @@ Ext.extend(ScriptUtils, WireIt.Container, {
 	 		autoHeight: true,
 	 		autoScroll: true,
 	 		border: false,
-	 		items: this.params,
-	 		
-//	 		collapsible: true,
-	 		listeners:{
-	 			afterrender:function(){
-	 				this.collapse();
-	 			
-	 			}
-	 		}
+	 		items: this.params
+
 	 	});
 	 	this.form = form;
 	 	
@@ -306,6 +312,27 @@ Ext.extend(ScriptUtils, WireIt.Container, {
 	 		border: false
 	 	
 	 	});
+	},
+	onAddWire: function(e, args){
+		
+		var wire = args[0];
+		
+		var terminal_out = wire.terminal2;
+		var terminal_in = wire.terminal1;
+		
+		var values = terminal_in.container.form.getForm().getValues();
+		
+		var field = terminal_out.container.form.getForm().findField('source_variant_name')
+		if (field){
+			field.setValue(values.source_variant_name);
+			field.disableAll();
+		}
+		
+		
+		
+		wire.label =terminal_in.container.get_output_label();		
+		
+		
 	}
 });
 
@@ -376,72 +403,17 @@ Ext.onReady(function(){
 		layout: 'border',
 		items:[
 			header,
-			new Ext.grid.GridPanel({
-					id: 'actions_grid',					
-					title: 'Actions',
-					region: 'east',
-					width: 200,
-					layout: 'fit',						
-					enableDragDrop: true,
-					ddGroup: 'wireit',								
-					store: store,
-					columns:[{
-						name: 'Script',
-						dataIndex: 'name'
-					}],
-					hideHeaders: true,
-					sm: new Ext.grid.RowSelectionModel({
-						singleSelect: true
-					}),
-					viewConfig: {
-						forceFit: true
-					}
-			
-				
-			}),
-				
-			//new Ext.TabPanel({
-				//region: 'east',
-				//width: 200,
-				//activeTab: 0,
-				//items: [
-					//new Ext.grid.GridPanel({
-						//id: 'actions_grid',					
-						//title: 'Actions',
-						//layout: 'fit',						
-						//enableDragDrop: true,
-						//ddGroup: 'wireit',								
-						//store: store,
-						//columns:[{
-							//name: 'Script',
-							//dataIndex: 'name'
-						//}],
-						//hideHeaders: true,
-						//sm: new Ext.grid.RowSelectionModel({
-							//singleSelect: true
-						//}),
-						//viewConfig: {
-							//forceFit: true
-						//}
-				//
-					//
-				//}),
-				//new Ext.grid.GridPanel({
-					//id: 'utils_grid',					
-					//title: 'Utils',
-					//layout: 'fit',					
-					//
+			//new Ext.grid.GridPanel({
+					//id: 'actions_grid',					
+					//title: 'Actions',
+					//region: 'east',
+					//width: 200,
+					//layout: 'fit',						
 					//enableDragDrop: true,
-					//ddGroup: 'wireit',		
-					//
-					//store: new Ext.data.JsonStore({
-						//fields: ['name', 'params'],
-						//root: 'actions',
-						//data: utils_data,
-						//autoLoad: true
-					//}),
+					//ddGroup: 'wireit',								
+					//store: store,
 					//columns:[{
-						//name: 'utils',
+						//name: 'Script',
 						//dataIndex: 'name'
 					//}],
 					//hideHeaders: true,
@@ -452,13 +424,66 @@ Ext.onReady(function(){
 						//forceFit: true
 					//}
 			//
-					//
-				//})
 				//
-				//]
 			//}),
+				//
+			new Ext.TabPanel({
+				region: 'east',
+				width: 200,
+				activeTab: 0,
+				items: [
+					new Ext.grid.GridPanel({
+						id: 'actions_grid',					
+						title: 'Actions',
+						layout: 'fit',						
+						enableDragDrop: true,
+						ddGroup: 'wireit',								
+						store: store,
+						columns:[{
+							name: 'Script',
+							dataIndex: 'name'
+						}],
+						hideHeaders: true,
+						sm: new Ext.grid.RowSelectionModel({
+							singleSelect: true
+						}),
+						viewConfig: {
+							forceFit: true
+						}
+				
+					
+				}),
+				new Ext.grid.GridPanel({
+					id: 'utils_grid',					
+					title: 'Utils',
+					layout: 'fit',					
+					
+					enableDragDrop: true,
+					ddGroup: 'wireit',		
+					
+					store: new Ext.data.JsonStore({
+						fields: ['name', 'params'],
+						root: 'actions',
+						data: utils_data,
+						autoLoad: true
+					}),
+					columns:[{
+						name: 'utils',
+						dataIndex: 'name'
+					}],
+					hideHeaders: true,
+					sm: new Ext.grid.RowSelectionModel({
+						singleSelect: true
+					}),
+					viewConfig: {
+						forceFit: true
+					}
 			
-			
+					
+				})
+				
+				]
+			}),
 			new Ext.Panel({
 				region: 'center',
 				items: new Ext.BoxComponent({
@@ -519,7 +544,9 @@ Ext.onReady(function(){
           		var drop_x = e.xy[0] ;
 				var drop_y = e.xy[1];
 				var name = data.selections[0].data.name;
-				var params = data.selections[0].data.params;						
+				var params = data.selections[0].data.params;	
+				console.log('data.grid.id ' + data.grid.id);				
+				console.log(params);				
           		if (data.grid.id == 'actions_grid'){
 							
 					var fields = [];

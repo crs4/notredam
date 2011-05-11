@@ -238,39 +238,10 @@ Ext.ux.form.SuperBoxSelect = Ext.extend(Ext.ux.form.SuperBoxSelect,Ext.form.Comb
             tag : 'ul'
         });
         
-        var width = this.width -56;
-        
         this.outerWrapEl = this.wrapEl.wrap({
             tag : 'div',
-            cls: 'x-form-text x-superboxselect ' + extraClass,
-            style: 'width: ' + width +'px !important;'
-            
+            cls: 'x-form-text x-superboxselect ' + extraClass
         });
-        
-        
-        
-        
-        
-        
-        this.dynamic = this.outerWrapEl.parent().insertSibling({
-			tag: 'img',
-			cls: 'dynamic_input dynamic_input_unselected',
-			src: '/files/images/icons/fam/application_xp_terminal.png',
-			style: 'float: right; padding-right:5px;',
-			title: 'Dynamic Input: value will be set run time',
-			onclick: String.format(
-			'if (Ext.get(this).hasClass(\'{1}\')) \
-				{Ext.getCmp(\'{0}\').enable();\
-				Ext.get(this).toggleClass(\'{1}\');\
-				Ext.get(this).addClass(\'{2}\');	\
-				} \
-			else {Ext.getCmp(\'{0}\').disable();\
-				Ext.get(this).toggleClass(\'{2}\');\
-				Ext.get(this).addClass(\'{1}\');	\
-			}\
-				', this.id, 'dynamic_input_selected','dynamic_input_unselected')
-			
-		}, 'before');
        
         this.inputEl = this.el.wrap({
             tag : 'li',
