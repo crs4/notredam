@@ -21,7 +21,9 @@ var renditions = new Ext.data.JsonStore({
 
 
 var utils_data = {'actions': [{
-	name: 'input rendition',
+	name: 'input rendition',	
+	xtype: 'inputrendition',
+	
 	params:	[{   
 		name: 'source_variant_name',
 		
@@ -57,12 +59,12 @@ function params_equal(p1, p2){
 };
 
 
-
-
 var MDAction =  function(opts, layer) {	
+	
 	this.id = opts.id || Ext.id(null, opts.title);
 	this['in'] = opts['in'];
-	opts.width = 355;
+	//opts.width = 355;
+	opts.inputs = opts.inputs || [];
 	this.out = opts.out; 
 	this.inputs = opts.inputs || [];
 	this.outputs = opts.outputs || [];
@@ -70,7 +72,7 @@ var MDAction =  function(opts, layer) {
 	this.params = opts.params;
 	opts.resizable = false;
 	this.label = opts.label || opts.title;
-
+	
 	for(var i = 0 ; i < opts.inputs.length ; i++) {
 		var input = this.inputs[i];
 		opts.terminals.push({
@@ -171,6 +173,7 @@ Ext.extend(MDAction, WireIt.Container, {
 	render: function(){
 		
 	 	MDAction.superclass.render.call(this);
+	 	var create_label = this.create_label;
 	 	var action = this;
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
@@ -183,61 +186,65 @@ Ext.extend(MDAction, WireIt.Container, {
 //	 		collapsible: true,
 	 		listeners:{
 	 			afterrender:function(){
-	 				this.collapse();
+					if (create_label)
+						this.collapse();
 	 			
 	 			}
 	 		}
 	 	});
 	 	this.form = form;
 	 	
-	 	this.label = new Ext.form.TextField({
- 			value: this.label,
- 			width: 300,
- 			listeners:{
-				change: function(field, new_value){								
-					var output_wires = action.getTerminal(action.outputs).wires;
-					action._set_output_label(new_value);
-					
-					Ext.each(output_wires, function(wire){						
-						wire.label = action.get_output_label();					
-						
-					});
-					
-				}
-			}		
- 		}); 		
+	 	 		
 	 	
- 		var BUTTON_EDIT = 'Show', BUTTON_HIDE = 'Hide';
+	 	items = [];
+	 	if (create_label){
+			this.label = new Ext.form.TextField({
+				value: this.label,
+				width: 300,
+				listeners:{
+					change: function(field, new_value){								
+						var output_wires = action.getTerminal(action.outputs).wires;
+						action._set_output_label(new_value);
+						
+						Ext.each(output_wires, function(wire){						
+							wire.label = action.get_output_label();					
+							
+						});
+						
+					}
+				}		
+			});
+			
+			var BUTTON_EDIT = 'Show', BUTTON_HIDE = 'Hide';
+			var label = new Ext.form.CompositeField({
+				items:[
+					this.label,
+					new Ext.Button({
+						text: BUTTON_EDIT,
+						
+						handler: function(){
+							if (this.getText() == BUTTON_EDIT){
+								this.setText(BUTTON_HIDE);
+								form.expand();	
+							}
+							else{
+								this.setText(BUTTON_EDIT);
+								form.collapse();	
+							
+							}
+							
+						}
+					})
+				]
+	 		
+	 		});
+			items.push(label);
+		}
+ 		
+ 		items.push(form);
 	 	var panel = new Ext.Panel({
 	 		renderTo: this.bodyEl,
-	 		items: [
-	 		
-	 		
-	 		new Ext.form.CompositeField({
-	 			items:[
-	 				this.label,
-			 		new Ext.Button({
-			 			text: BUTTON_EDIT,
-			 			
-			 			handler: function(){
-			 				if (this.getText() == BUTTON_EDIT){
-			 					this.setText(BUTTON_HIDE);
-			 					form.expand();	
-			 				}
-			 				else{
-			 					this.setText(BUTTON_EDIT);
-			 					form.collapse();	
-			 				
-			 				}
-			 				
-			 			}
-			 		})
-	 			]
-	 		
-	 		}),
-	 		
-	 		form
-	 		],
+	 		items: items,
 	 		border: false
 	 	
 	 	});
@@ -245,74 +252,15 @@ Ext.extend(MDAction, WireIt.Container, {
 
 });
 
-var ScriptUtils =  function(opts, layer) {
-	this.id = opts.id || Ext.id(null, opts.title);
+var InputRendition =  function(opts, layer) {
+		
+	InputRendition.superclass.constructor.call(this, opts, layer);
 	
-	opts.width = 250;
-	this.out = opts.out; 
-	this.inputs =  [];
-	this.outputs = opts.outputs || [];
-	opts.terminals = [];
-	this.params = opts.params;
-	opts.resizable = false;
-	this.label = opts.label || opts.title;
-
-	
-	for(i = 0 ; i < this.outputs.length ; i++) {
-		var output = this.outputs[i];
-		opts.terminals.push({
-			"name": output, 
-			"label": 'next',
-			"direction": [1,0], 
-			"offsetPosition": {"right": -14, "top": 3+10*(i+1+this.inputs.length) }, 
-			"ddConfig": {
-				"type": "output",
-				"allowedTypes": ["input"]
-			},
-			"alwaysSrc": true,
-			wireConfig:{
-				color: random_color()
-			}
-		});
-	}
-	
-	
-	
-	ScriptUtils.superclass.constructor.call(this, opts, layer);
-	layer.containers.push(this);
 	
 }
 
-Ext.extend(ScriptUtils, WireIt.Container, {
-		
-	getXY: function(){
-		return Ext.get(this.el).getXY();
-	},
-	render: function(){
-		
-	 	ScriptUtils.superclass.render.call(this);
-	 	var action = this;
-	 	var form = new Ext.form.FormPanel({
-//	 		renderTo: this.bodyEl,
-	 		bodyStyle: {paddingTop: 10},
-	 		autoHeight: true,
-	 		autoScroll: true,
-	 		border: false,
-	 		items: this.params
-
-	 	});
-	 	this.form = form;
-	 	
-	 	
-	 	var panel = new Ext.Panel({
-	 		renderTo: this.bodyEl,
-	 		items: [	
-	 		form
-	 		],
-	 		border: false
-	 	
-	 	});
-	},
+Ext.extend(InputRendition, MDAction, {
+	
 	onAddWire: function(e, args){
 		
 		var wire = args[0];
@@ -335,6 +283,8 @@ Ext.extend(ScriptUtils, WireIt.Container, {
 		
 	}
 });
+
+Ext.reg('inputrendition',InputRendition)
 
 var baseLayer, store, layer_el;
 
@@ -462,7 +412,7 @@ Ext.onReady(function(){
 					ddGroup: 'wireit',		
 					
 					store: new Ext.data.JsonStore({
-						fields: ['name', 'params'],
+						fields: ['name', 'params' ,'xtype'],
 						root: 'actions',
 						data: utils_data,
 						autoLoad: true
@@ -555,7 +505,7 @@ Ext.onReady(function(){
 							label: params.label,
 							position:[drop_x,drop_y],
 	//			            legend:'thumbnail',
-						   
+							create_label: true,
 							inputs: ['in'],
 							outputs: ['out'],
 							params: params
@@ -564,11 +514,11 @@ Ext.onReady(function(){
 				}
 				
 				else if(data.grid.id == 'utils_grid'){
-					var action = new ScriptUtils({
+					console.log(data.selections[0]);
+					var action = new Ext.ComponentMgr.types[data.selections[0].data.xtype]({
 						title: name,						
-						position:[drop_x,drop_y],
-					   
-						inputs: ['in'],
+						position:[drop_x,drop_y],					   
+						width: 250,
 						outputs: ['out'],
 						params: params
 						
