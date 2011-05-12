@@ -43,7 +43,7 @@ var MDAction =  function(opts, layer) {
 	
 	this.id = opts.id || Ext.id(null, opts.title);
 	this['in'] = opts['in'];
-	//opts.width = 355;
+	opts.width = opts.width || 200;
 	console.log('opts.no_label');
 	console.log(opts.no_label);
 	this.no_label = opts.no_label || false;
@@ -99,7 +99,7 @@ var MDAction =  function(opts, layer) {
 
 }; 
 Ext.extend(MDAction, WireIt.Container, {
-		
+	
 	getXY: function(){
 		return Ext.get(this.el).getXY();
 	},
@@ -168,14 +168,14 @@ Ext.extend(MDAction, WireIt.Container, {
 	 		border: false,
 	 		items: this.params,
 	 		
-//	 		collapsible: true,
-	 		listeners:{
-	 			afterrender:function(){
-					if (create_label)
-						this.collapse();
-	 			
-	 			}
-	 		}
+	 		//collapsible: true,
+	 		//listeners:{
+	 			//afterrender:function(){
+					//if (create_label)
+						//this.collapse();
+	 			//
+	 			//}
+	 		//}
 	 	});
 	 	this.form = form;
 	 	
@@ -185,7 +185,7 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	if (create_label){
 			this.label = new Ext.form.TextField({
 				value: this.label,
-				width: 300,
+				width: 150,
 				listeners:{
 					change: function(field, new_value){								
 						var output_wires = action.getTerminal(action.outputs).wires;
@@ -210,11 +210,39 @@ Ext.extend(MDAction, WireIt.Container, {
 						handler: function(){
 							if (this.getText() == BUTTON_EDIT){
 								this.setText(BUTTON_HIDE);
-								form.expand();	
+								var panel_body = this.getEl().parent('.x-panel-body');
+								if (!this.form_container){
+									
+									this.form_container = Ext.Element(document.body).createChild({
+									//var form_container = panel_body.createChild({
+										tag: 'div',
+										style: String.format('z-index: 100;\
+										 border: 1px solid black; \
+										 width: 350px; \
+										 position: relative; \
+										 top: {0}px; left: {1}px;', this.getEl().getY() + 25,this.getEl().getX() -150)
+										
+									});
+									form.render(this.form_container);
+								}
+								else{
+									this.form_container.setStyle({
+										top:this.getEl().getY() + 22,  
+										left: this.getEl().getX() -50
+									});
+									this.form_container.removeClass('dynamic_input_hidden');
+								}
+									
+									
+									
+								
+								//form.expand();	
 							}
 							else{
 								this.setText(BUTTON_EDIT);
-								form.collapse();	
+								if (this.form_container)
+									
+									this.form_container.addClass('dynamic_input_hidden');
 							
 							}
 							
@@ -226,7 +254,7 @@ Ext.extend(MDAction, WireIt.Container, {
 			items.push(composite_label);
 		}
  		
- 		items.push(form);
+ 		//items.push(form);
 	 	var panel = new Ext.Panel({
 	 		renderTo: this.bodyEl,
 	 		items: items,
