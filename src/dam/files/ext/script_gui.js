@@ -14,29 +14,9 @@ var renditions = new Ext.data.JsonStore({
 	}
 });
 
-//Ext.Ajax.request({
-	//url: '/get_source_variants/',
-	//
-//});
-
-
 var utils_data = {'actions': [{
 	name: 'input rendition',	
-	xtype: 'inputrendition',
-	
-	params:	[{   
-		name: 'source_variant_name',
-		
-		xtype: 'multiselect',
-		width: 200,
-		media_type: 'image',		
-		description: 'input-variant',		
-		help: '',
-		
-		
-	}]
-	//
-	
+	xtype: 'inputrendition'
 	}
 ]};
 
@@ -64,7 +44,10 @@ var MDAction =  function(opts, layer) {
 	this.id = opts.id || Ext.id(null, opts.title);
 	this['in'] = opts['in'];
 	//opts.width = 355;
-	this.no_label = opts.create_label || false;
+	console.log('opts.no_label');
+	console.log(opts.no_label);
+	this.no_label = opts.no_label || false;
+	
 	
 	opts.inputs = opts.inputs || [];
 	this.out = opts.out; 
@@ -254,13 +237,67 @@ Ext.extend(MDAction, WireIt.Container, {
 
 });
 
-var InputRendition =  function(opts, layer) {
-		
+var InputRendition =  function(opts, layer) {	
 	InputRendition.superclass.constructor.call(this, opts, layer);
 }
 
 Ext.extend(InputRendition, MDAction, {
-	no_label: true,
+		
+		update_connected_actions: function(){
+			console.log(this.terminals[0].wires);
+			var value = this.source_rendition.getValue();
+			Ext.each(this.terminals[0].wires, function(wire){
+				if (wire.terminal2){
+					var field = wire.terminal2.container.form.getForm().findField('source_variant_name')
+					if (field){
+						field.setValue(value);
+						
+					}
+				}
+				
+			});
+		},
+		
+		render: function(){
+		
+	 	MDAction.superclass.render.call(this);
+	 	
+	 	var action = this;
+	 	console.log('action');
+	 	console.log(action);
+	 	this.source_rendition = new Ext.ux.MultiRenditions({   
+			name: 'source_variant_name',
+			
+			width: 200,
+			media_type: 'image',		
+			description: 'input-variant',		
+			listeners: {
+				change: function(combo, new_value, old_value){
+					action.update_connected_actions();
+				}
+			}
+			
+		});
+		
+		
+		
+	 	var form = new Ext.form.FormPanel({
+//	 		renderTo: this.bodyEl,
+	 		bodyStyle: {paddingTop: 10},
+	 		autoHeight: true,
+	 		autoScroll: true,
+	 		border: false,
+	 		items: this.source_rendition
+	 	});
+	 	this.form = form;
+	 	var panel = new Ext.Panel({
+	 		renderTo: this.bodyEl,
+	 		items: form,
+	 		border: false
+	 	
+	 	});
+	},
+	
 	onAddWire: function(e, args){
 		
 		var wire = args[0];
@@ -276,9 +313,21 @@ Ext.extend(InputRendition, MDAction, {
 			field.disableAll();
 		}
 		
-		
-		
 		wire.label =terminal_in.container.get_output_label();		
+		
+		
+	},
+	onRemoveWire: function(e, args){
+		var wire = args[0];
+		
+		var terminal_out = wire.terminal2;
+		var terminal_in = wire.terminal1;
+		
+		var field = terminal_out.container.form.getForm().findField('source_variant_name')
+		if (field){
+			
+			field.enableAll();
+		}
 		
 		
 	}
@@ -521,7 +570,6 @@ Ext.onReady(function(){
 						width: 250,
 						outputs: ['out'],
 						params: params
-						
 				}, baseLayer);
 					
 				}
