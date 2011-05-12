@@ -779,6 +779,7 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
 			this.enable();
 			this.dynamic_icon.removeClass('dynamic_input_selected');
 			this.dynamic_icon.addClass('dynamic_input_unselected');	
+			this.dynamic_icon.addClass('dynamic_input_hidden');
 			
 			this.dynamic = false;
 		} 
@@ -807,6 +808,9 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
        
         
     },
+    
+    
+    
     onRender:function(ct, position) {
     	var h = this.hiddenName;
     	this.hiddenName = null;
@@ -835,13 +839,25 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
         
         this.dynamic_icon = this.outerWrapEl.parent().insertSibling({
 			tag: 'img',
-			cls: 'dynamic_input dynamic_input_unselected',
+			cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
 			src: '/files/images/icons/fam/application_xp_terminal.png',
 			style: 'float: right; padding-right:5px;',
 			title: 'Dynamic Input: value will be set run time',
 			onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
 			
 		}, 'before');
+		
+		var dynamic_icon = this.dynamic_icon;
+		this.getEl().parent('.x-form-item').on('mouseenter', function(){
+			
+			dynamic_icon.removeClass('dynamic_input_hidden');
+			
+		});
+		this.getEl().parent('.x-form-item').on('mouseleave', function(){
+			if (dynamic_icon.hasClass('dynamic_input_unselected'))
+				dynamic_icon.addClass('dynamic_input_hidden');
+			
+		});
 				
 		if (!this.fieldLabel){
 			this.dynamic_icon.parent().setStyle({paddingLeft:0});
