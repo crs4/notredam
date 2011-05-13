@@ -116,14 +116,12 @@ class MultiPurposeTestCase(TestCase):
         1 - login as self.user
         2 - self.user adds a new workspace ws_user_test_1
         3 - self.user adds new_item in ws_user_test_1
-        4 - self.user adds new_metadata to new_item
-        5 - self.user adds new_keyword to new_item
-        6 - self.user copies new_item in the othe workspace
+        4 - self.user upload the content of new_item in ws_user_test_1
+        5 - self.user adds new_metadata to new_item
         The following are restoring steps:
-        7 - delete new_keyword from new_item
-        8 - delete new_metadata from new_item
-        9 - remove new_item from all workspaces
-        10 - remove ws_user_test_1
+        6 - delete new_metadata from new_item
+        7 - remove new_item from all workspaces (this should be a complete removal)
+        8 - remove ws_user_test_1
         """
         import os.path
         #params = {'username': 'user_test_1',  'email': 'u_test1@crs4.it',  'password': 'sha1$d345c$3861b4f1caa14a266b1b8e53143121529a86a272'}
@@ -217,6 +215,18 @@ class MultiPurposeTestCase(TestCase):
         except Exception, err:
             print 'error in api item upload : ', err
 
+        # now wait until uploading processes have completed
+        processes = ws.get_active_processes()
+        print ' processes: ', processes
+        counter = 0
+        for i,p in enumerate(processes):
+            print 'p.pipeline = ', p.pipeline, ' p.pipeline.params = ', p.pipeline.params
+            print 'p.processtarget_set = ', p.processtarget_set
+            while p.is_completed() == 0 and counter < 10:
+                print '\n\n',counter,'********** i= ',i,'***********\np: ', p, ' is completed?', p.is_completed()
+                counter += 1
+                sleep(5)
+        
         # 5 - add metadata to newly uploaded item 
         
         metadata_dict = {'dc_title':{'en-US':'A muffin'}, 'dc_subject': ['muffin','topping', 'cake', 'good']}
@@ -237,8 +247,6 @@ class MultiPurposeTestCase(TestCase):
         #self.assertTrue(subject[2].value == 'cake')
         #self.assertTrue(subject[3].value == 'good')
 
-        # 6 - self.user adds new_keyword to new_item
-        # 7 - self.user copies new_item in the othe workspace
 
         print '<====== END. Now come back ======>\n'
         """
@@ -252,26 +260,12 @@ class MultiPurposeTestCase(TestCase):
         original_file_path = original_file.get_file_path()
         list_of_files.append(original_file_path)
         #  for the other variants, it is necessary to ask if their creation has finished
-        processes = ws.get_active_processes()
-        print ' processes: ', processes
-        counter = 0
-        for i,p in enumerate(processes):
-            p_id = p[0]
-            p_type = process[1]
-            print ' p_id = ', p_id, ' p_type = ', p_type
-            if p_type == 'failed' or p_type == 'completed':
-                continue
-            while p.is_completed() == 0 and counter < 10:
-                print '\n\n',counter,'********** i= ',i,'***********\np: ', p, ' is completed?', p.is_completed()
-                counter += 1
-                sleep(5)
+
         """
                 
         
         #  The following steps are intended to have an application db restoring:
-        # 8 - delete new_keyword from new_item
-
-        # 9 - delete new_metadata from new_item
+        # 6 - delete new_metadata from new_item
         title_to_remove = {'namespace':'dc',  'name':'title'}
         params = self.get_final_parameters({ 'metadata':json.dumps([title_to_remove])})        
         ir_response = self.client.post('/api/item/%s/remove_metadata/' % new_item_id, params, )        
@@ -284,7 +278,7 @@ class MultiPurposeTestCase(TestCase):
         
 
         
-        # 10 - remove new_item from workspace (item and content)
+        # 7 - remove new_item from workspace (item and content)
         params = self.get_final_parameters({'workspace_id':ws_pk})
         id_response = self.client.get('/api/item/%s/delete_from_workspace/'%new_item_id, params,  ) 
         self.assertTrue(id_response.content == '')               
@@ -292,12 +286,12 @@ class MultiPurposeTestCase(TestCase):
         # now check if files have been removed from repository
         
 
-        # 11 - remove ws_user_test_1
+        # 8 - remove ws_user_test_1
         ws_params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/delete/' % ws_pk, params)
         self.assertTrue(response.content == '')
         self.assertRaises(DAMWorkspace.DoesNotExist, DAMWorkspace.objects.get, pk = ws_pk)
-        # 12 - user logout (the api method does not exist!)
+        # 9 - user logout (the api method does not exist!)
 
 
 
