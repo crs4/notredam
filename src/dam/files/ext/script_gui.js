@@ -16,7 +16,8 @@ var renditions = new Ext.data.JsonStore({
 
 var utils_data = {'actions': [{
 	name: 'input rendition',	
-	xtype: 'inputrendition'
+	xtype: 'inputrendition',
+	width:200
 	}
 ]};
 
@@ -47,8 +48,7 @@ var MDAction =  function(opts, layer) {
 	console.log('opts.no_label');
 	console.log(opts.no_label);
 	this.no_label = opts.no_label || false;
-	
-	
+		
 	opts.inputs = opts.inputs || [];
 	this.out = opts.out; 
 	this.inputs = opts.inputs || [];
@@ -210,26 +210,20 @@ Ext.extend(MDAction, WireIt.Container, {
 						handler: function(){
 							if (this.getText() == BUTTON_EDIT){
 								this.setText(BUTTON_HIDE);
-								var panel_body = this.getEl().parent('.x-panel-body');
+								var panel_body = this.getEl().parent('.WireIt-Container');
 								if (!this.form_container){
 									
-									this.form_container = Ext.Element(document.body).createChild({
+									this.form_container = Ext.Element(panel_body).createChild({
 									//var form_container = panel_body.createChild({
 										tag: 'div',
-										style: String.format('z-index: 100;\
+										style: 'z-index: 100;\
 										 border: 1px solid black; \
-										 width: 350px; \
-										 position: relative; \
-										 top: {0}px; left: {1}px;', this.getEl().getY() + 25,this.getEl().getX() -150)
-										
+										 width: 350px;'										
 									});
 									form.render(this.form_container);
 								}
 								else{
-									this.form_container.setStyle({
-										top:this.getEl().getY() + 22,  
-										left: this.getEl().getX() -50
-									});
+									
 									this.form_container.removeClass('dynamic_input_hidden');
 								}
 									
@@ -265,14 +259,15 @@ Ext.extend(MDAction, WireIt.Container, {
 
 });
 
-var InputRendition =  function(opts, layer) {	
+var InputRendition =  function(opts, layer) {
+	opts.width = 200;	
 	InputRendition.superclass.constructor.call(this, opts, layer);
 }
 
 Ext.extend(InputRendition, MDAction, {
 		
 		update_connected_actions: function(){
-			console.log(this.terminals[0].wires);
+			
 			var value = this.source_rendition.getValue();
 			Ext.each(this.terminals[0].wires, function(wire){
 				if (wire.terminal2){
@@ -295,8 +290,8 @@ Ext.extend(InputRendition, MDAction, {
 	 	console.log(action);
 	 	this.source_rendition = new Ext.ux.MultiRenditions({   
 			name: 'source_variant_name',
-			
-			width: 200,
+			width:150,
+			//width: 200,
 			media_type: 'image',		
 			description: 'input-variant',		
 			listeners: {
@@ -311,7 +306,7 @@ Ext.extend(InputRendition, MDAction, {
 		
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
-	 		bodyStyle: {paddingTop: 10},
+	 		//bodyStyle: {paddingTop: 10},
 	 		autoHeight: true,
 	 		autoScroll: true,
 	 		border: false,
