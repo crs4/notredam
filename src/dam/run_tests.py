@@ -38,15 +38,15 @@ if __name__ == "__main__":
         print 'sys.argv[1]: ', sys.argv[1]
         if sys.argv[1].find('MultiPurpose') == -1:
             print 'Run all the tests in a class or one test only!'
-            os.system('python manage.py test %s' % sys.argv[1])
+            os.system('python manage.py test %s' % sys.argv[1][4:])
         else:
             howmany = sys.argv[1].split('.')
-            if len(howmany) > 1: # classname.methodname, 1 test only
+            if len(howmany) > 2: # api.classname.methodname, 1 test only
                 print 'Run one test only!'
-                os.system('python api/uploading_testcases.py %s' % sys.argv[1])
-            elif len(howmany) == 1: # classname, all tests in the class
+                os.system('python api/uploading_testcases.py %s' % sys.argv[1][4:])
+            elif len(howmany) == 2: # api.classname, all tests in the class
                 print 'Run all the tests in a class!'
-                mytests = get_classes_and_methods('api/uploading_testcases.py', sys.argv[1])
+                mytests = get_classes_and_methods('api/uploading_testcases.py', sys.argv[1][4:])
                 for t in mytests:
                     os.system('python api/uploading_testcases.py %s' % t)
             
