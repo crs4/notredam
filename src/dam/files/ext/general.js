@@ -918,7 +918,7 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 	url: '/get_scripts/',
 	root: 'scripts',
 	storeId: 'scripts_store',
-	fields: ['id', 'name'],
+	fields: ['id', 'name', 'params'],
 	listeners:{
 		load: function(store, records){			
 			var run_scripts_menu = Ext.getCmp('run_scripts_menu');
@@ -931,7 +931,9 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 					
 					text: record.data.name,
 					handler: function(){
-						var items = []
+						
+						function _run_script(dynamic_input){
+							var items = []
 						var tab = Ext.getCmp('media_tabs').getActiveTab();                    
                         var view = tab.getComponent(0);
                         var items_selected = view.getSelectedRecords();
@@ -960,6 +962,47 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                         });	
                         
                         }
+							
+						};
+						
+						var dynamic_params = [], actions;
+						actions = {"extract_basic85":{"params":{"source_variant_name":"original", dynamic: true},"in":[],"out":[],"script_name":"extract_basic","x":435,"y":227,"label":"lol"}};
+						for (action in actions){
+									if (actions[action].params.dynamic)
+										dynamic_params.push(actions[action].params);
+						}
+						console.log('dynamic_params');
+						console.log(dynamic_params);
+						if (dynamic_params){
+							
+							var win = new Ext.Window({
+								title: 'Dynamic Inputs',
+								width: 300,
+								height: 300,
+								items: new Ext.form.FormPanel({
+									id: 'dynamic_input_form',
+									buttons: [
+										{
+											text: 'Run',
+											handler: function(){
+												_run_script();
+												
+											}
+											
+										},
+										{
+											text: 'Cancel'
+											
+										}
+									]
+								})
+							});
+							win.show();
+						}
+						else
+							_run_script();
+						
+						
                        
                        
 						
