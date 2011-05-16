@@ -160,6 +160,9 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	MDAction.superclass.render.call(this);
 	 	var create_label = !this.no_label;
 	 	var action = this;
+	 	
+	 	
+	 
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
 	 		bodyStyle: {paddingTop: 10},
@@ -169,16 +172,25 @@ Ext.extend(MDAction, WireIt.Container, {
 	 		items: this.params,
 	 		
 	 		//collapsible: true,
-	 		//listeners:{
-	 			//afterrender:function(){
-					//if (create_label)
-						//this.collapse();
-	 			//
-	 			//}
-	 		//}
+	 		listeners:{
+	 			afterrender:function(){
+				
+	 			}
+	 		}
 	 	});
 	 	this.form = form;
 	 	
+	 	var panel_body = Ext.get(this.bodyEl).parent('.WireIt-Container');	
+			
+		this.form_container = Ext.Element(panel_body).createChild({
+		//var form_container = panel_body.createChild({
+			tag: 'div',
+			cls: 'dynamic_input_hidden',
+			style: 'z-index: 100;\
+			 border: 1px solid black; \
+			 width: 350px;'										
+		});
+		this.form.render(this.form_container);
 	 	 		
 	 	
 	 	items = [];
@@ -209,34 +221,17 @@ Ext.extend(MDAction, WireIt.Container, {
 						
 						handler: function(){
 							if (this.getText() == BUTTON_EDIT){
-								this.setText(BUTTON_HIDE);
-								var panel_body = this.getEl().parent('.WireIt-Container');
-								if (!this.form_container){
-									
-									this.form_container = Ext.Element(panel_body).createChild({
-									//var form_container = panel_body.createChild({
-										tag: 'div',
-										style: 'z-index: 100;\
-										 border: 1px solid black; \
-										 width: 350px;'										
-									});
-									form.render(this.form_container);
-								}
-								else{
-									
-									this.form_container.removeClass('dynamic_input_hidden');
-								}
-									
-									
-									
+								if (action.form_container){
+									action.form_container.removeClass('dynamic_input_hidden');
+								}								
+								this.setText(BUTTON_HIDE);								
 								
-								//form.expand();	
 							}
 							else{
+								
+								if (action.form_container)									
+									action.form_container.addClass('dynamic_input_hidden');
 								this.setText(BUTTON_EDIT);
-								if (this.form_container)
-									
-									this.form_container.addClass('dynamic_input_hidden');
 							
 							}
 							
