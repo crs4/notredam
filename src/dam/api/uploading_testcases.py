@@ -11,6 +11,7 @@ from dam.api.models import *
 from dam.workspace.models import DAMWorkspace
 from dam.repository.models import Item,  Component
 from dam.variants.models import Variant
+from dam.mprocessor.models import Process
 from dam.core.dam_repository.models import Type
 
 # This separate module of tests was necessary in order to have
@@ -217,15 +218,11 @@ class MultiPurposeTestCase(TestCase):
 
         # now wait until uploading processes have completed
         processes = ws.get_active_processes()
-        print ' processes: ', processes
-        counter = 0
         for i,p in enumerate(processes):
-            print 'p.pipeline = ', p.pipeline, ' p.pipeline.params = ', p.pipeline.params
-            print 'p.processtarget_set = ', p.processtarget_set
-            while p.is_completed() == 0 and counter < 10:
-                print '\n\n',counter,'********** i= ',i,'***********\np: ', p, ' is completed?', p.is_completed()
-                counter += 1
-                sleep(5)
+            while p.is_completed() == 0:
+                p = Process.objects.get(pk = p.pk)
+                print '\n\n********* i= ',i,'***********\np: ', p, ' is completed?', p.is_completed(), ' pk ', p.pk
+                sleep(2)
         
         # 5 - add metadata to newly uploaded item 
         
@@ -241,11 +238,10 @@ class MultiPurposeTestCase(TestCase):
         self.assertTrue(title.value == 'A muffin')
         subject = new_item.metadata.filter(schema__field_name = 'subject')
         
-        #sleep(20)
-        #self.assertTrue(subject[0].value == 'muffin')
-        #self.assertTrue(subject[1].value == 'topping')
-        #self.assertTrue(subject[2].value == 'cake')
-        #self.assertTrue(subject[3].value == 'good')
+        self.assertTrue(subject[0].value == 'muffin')
+        self.assertTrue(subject[1].value == 'topping')
+        self.assertTrue(subject[2].value == 'cake')
+        self.assertTrue(subject[3].value == 'good')
 
 
         print '<====== END. Now come back ======>\n'
