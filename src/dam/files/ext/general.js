@@ -978,8 +978,11 @@ var open_dynamic_params_window = function(dynamic_params){
 					console.log('param.name' + param.name);
 					console.log(action.dynamic);
 					console.log('param.name in action.dynamic '+ param.name in action.dynamic);
-					if (action.dynamic.indexOf(param.name) >=0)
+					if (action.dynamic.indexOf(param.name) >=0){
+						param.allow_dynamic = false;
+						param.fieldLabel += String.format(' ({0})', action.label );
 						params_to_show.push(param);
+					}
 				});
 			});
 			console.log('params_to_show');
@@ -988,7 +991,7 @@ var open_dynamic_params_window = function(dynamic_params){
 			
 			var win = new Ext.Window({
 				title: 'Dynamic Inputs',
-				width: 500,
+				width: 400,
 				height: 300,
 				items: new Ext.form.FormPanel({
 					id: 'dynamic_input_form',
