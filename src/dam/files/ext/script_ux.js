@@ -1,3 +1,26 @@
+var renditions = new Ext.data.JsonStore({
+	storeId: 'renditions',
+	root: 'renditions',
+	fields: ['name', 'media_type', 'auto_generated'],
+	data: {renditions:[{
+		name: 'original',
+		media_type: 'image',
+		auto_generated: false
+	},{
+		name: 'thumbnail',
+		media_type: 'image',
+		auto_generated: true
+	}]
+	}
+});
+
+var utils_data = {'actions': [{
+	name: 'input rendition',	
+	xtype: 'inputrendition',
+	width:200
+	}
+]};
+
 Ext.ux.StoreMenu = function(config){
     
     Ext.ux.StoreMenu.superclass.constructor.call(this, config);    
