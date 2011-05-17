@@ -745,6 +745,7 @@ Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
 Ext.ux.MultiRenditions = function(config) {
 	config.storeId =config.storeId || 'renditions';
 	this.dynamic = config.dynamic || false;
+	this.allow_dynamic = config.allow_dynamic || true;
 	
 	this.store = Ext.StoreMgr.get(config.storeId);
 	console.log('this.store');
@@ -793,6 +794,7 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
     allowBlank: false,
     mode: 'local',
     width: 220,
+    
     
     toggleDynamize: function(){
 		if (this.dynamic_icon.hasClass('x-item-disabled'))
@@ -860,31 +862,34 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
             
         });
         
-        this.dynamic_icon = this.outerWrapEl.parent().insertSibling({
-			tag: 'img',
-			cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
-			src: '/files/images/icons/fam/application_xp_terminal.png',
-			style: 'float: right; padding-right:5px;',
-			title: 'Dynamic Input: value will be set run time',
-			onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
-			
-		}, 'before');
-		
-		var dynamic_icon = this.dynamic_icon;
-		this.getEl().parent('.x-form-item').on('mouseenter', function(){
-			
-			dynamic_icon.removeClass('dynamic_input_hidden');
-			
-		});
-		this.getEl().parent('.x-form-item').on('mouseleave', function(){
-			if (dynamic_icon.hasClass('dynamic_input_unselected'))
-				dynamic_icon.addClass('dynamic_input_hidden');
-			
-		});
+        if (this.allow_dynamic){
+			this.dynamic_icon = this.outerWrapEl.parent().insertSibling({
+				tag: 'img',
+				cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
+				src: '/files/images/icons/fam/application_xp_terminal.png',
+				style: 'float: right; padding-right:5px;',
+				title: 'Dynamic Input: value will be set run time',
+				onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
 				
-		if (!this.fieldLabel){
-			this.dynamic_icon.parent().setStyle({paddingLeft:0});
+			}, 'before');
+			
+			var dynamic_icon = this.dynamic_icon;
+			this.getEl().parent('.x-form-item').on('mouseenter', function(){
+				
+				dynamic_icon.removeClass('dynamic_input_hidden');
+				
+			});
+			this.getEl().parent('.x-form-item').on('mouseleave', function(){
+				if (dynamic_icon.hasClass('dynamic_input_unselected'))
+					dynamic_icon.addClass('dynamic_input_hidden');
+				
+			});
+					
+			if (!this.fieldLabel){
+				this.dynamic_icon.parent().setStyle({paddingLeft:0});
+			}
 		}
+        
        
         this.inputEl = this.el.wrap({
             tag : 'li',
