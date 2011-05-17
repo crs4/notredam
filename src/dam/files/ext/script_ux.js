@@ -1,18 +1,11 @@
-var renditions = new Ext.data.JsonStore({
-	storeId: 'renditions',
-	root: 'renditions',
+renditions_store = new Ext.data.JsonStore({
+	storeId: 'renditions_store',
+	root: 'variants',
 	fields: ['name', 'media_type', 'auto_generated'],
-	data: {renditions:[{
-		name: 'original',
-		media_type: 'image',
-		auto_generated: false
-	},{
-		name: 'thumbnail',
-		media_type: 'image',
-		auto_generated: true
-	}]
-	}
+	url: '/get_variants_list/'
 });
+console.log('aaaaaaaa');
+console.log(renditions_store);
 
 var utils_data = {'actions': [{
 	name: 'input rendition',	
@@ -483,16 +476,10 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 //			this field is hidden and readonly, it is used to hold the ordered list of the actions [resize, crop, watermark]
 		setValue: function(new_value){
 			
-//			
+		
 			if (config.name == new_value)
 				this.setRawValue(new_value);
-//			else if(new_value instanceof Array){
-//				
-//				var container = this.ownerCt;
-//				var index = new_value.indexOf(config.name);
-////				if (container.get_position() != index)
-//					container.move(index);
-//			}
+
 		}
 	});
 	
@@ -592,14 +579,6 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 //		console.log(this.position_field.getValue());
 		this.move(this.get_position()  + 1);
 	}
-//	 
-//	 onRender : function(ct, position){
-//        Ext.ux.MovableCBFieldSet.superclass.onRender.call(this, ct, position);
-////        
-//		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -7px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
-//		this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
-//     }
-
 	
 });
 
@@ -743,7 +722,7 @@ Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
 
 
 Ext.ux.MultiRenditions = function(config) {
-	config.storeId =config.storeId || 'renditions';
+	config.storeId =config.storeId || 'renditions_store';
 	this.dynamic = config.dynamic || false;
 	this.allow_dynamic = config.allow_dynamic || true;
 	

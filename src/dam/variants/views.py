@@ -187,7 +187,7 @@ def get_variants_list(request):
     
     resp = {'variants':[]}
     for variant in vas:
-        resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.workspace is None })
+        resp['variants'].append({'pk':variant.pk,  'name': variant.name, 'is_global': variant.workspace is None, 'media_type': [m.name for m in variant.media_type.all()] })
     
     return HttpResponse(simplejson.dumps(resp))
 

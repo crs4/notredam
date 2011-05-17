@@ -397,31 +397,7 @@ Ext.onReady(function(){
 	new Ext.Viewport({
 		layout: 'border',
 		items:[
-			header,
-			//new Ext.grid.GridPanel({
-					//id: 'actions_grid',					
-					//title: 'Actions',
-					//region: 'east',
-					//width: 200,
-					//layout: 'fit',						
-					//enableDragDrop: true,
-					//ddGroup: 'wireit',								
-					//store: store,
-					//columns:[{
-						//name: 'Script',
-						//dataIndex: 'name'
-					//}],
-					//hideHeaders: true,
-					//sm: new Ext.grid.RowSelectionModel({
-						//singleSelect: true
-					//}),
-					//viewConfig: {
-						//forceFit: true
-					//}
-			//
-				//
-			//}),
-				//
+			header,			
 			new Ext.TabPanel({
 				region: 'east',
 				width: 200,
@@ -525,11 +501,8 @@ Ext.onReady(function(){
 								return actions_json;
 						
 						};
-		
+	
 
-
-						
-						
           new Ext.dd.DropZone(Ext.get('wire-layer'),{
           	ddGroup: 'wireit',
           	onContainerOver: function(){
@@ -541,8 +514,7 @@ Ext.onReady(function(){
 				var drop_y = e.xy[1];
 				var name = data.selections[0].data.name;
 				var params = data.selections[0].data.params;	
-				console.log('data.grid.id ' + data.grid.id);				
-				console.log(params);				
+
           		if (data.grid.id == 'actions_grid'){
 							
 					var fields = [];
@@ -576,81 +548,86 @@ Ext.onReady(function(){
           	
           });
            
-          store.load({
-          	callback:function(){
-          		if (script_name)
-          			Ext.getCmp('script_name').setValue(script_name);
-          		
-          		if (params){
-          			
-          			var action;
-          			for (action_name in params){
-          				if (action_name){
-
-          					action = params[action_name];
-          					
-          					var action_stored = store.query('name', action.script_name).items;
-          					
-          					if(action_stored.length > 0){
-          						action_stored = action_stored[0];
-//          						console.log(action_stored = action_stored[0]);
-          						var action_box = new MDAction({
-						            title: action_stored.data.name,
-						            //position:[20,20],
-			//			            legend:'thumbnail',
-						           	'in': action['in'],
-						           	'out': action['out'],
-					            	inputs: ['in'],
-					            	outputs: ['out'],
-					            	position: [action.x -1, action.y - 56],
-						            params: action_stored.data.params,
-						            label: action.label
-						            
-						    	}, baseLayer); 
-						    	action_box.form.getForm().setValues(action.params);
-          						
-          						Ext.each(action_box.form.items.items, function(field){          						
-          							if (field.data_loaded)
-          								field.data_loaded(action.params);
-          								
-          						});
-          						
-          					}
-          					
-          					
-          				}
-          			}
-          			var w;
-          			Ext.each(baseLayer.containers, function(action){
-          			
-						Ext.each(baseLayer.containers, function(inner_action){
+          renditions_store.load({ //before loading actions, we need to load the renditions, in this way we have the values ready for the renditions input/ouput
+			callback: function(){
+				store.load({
+					callback:function(){
+						if (script_name)
+							Ext.getCmp('script_name').setValue(script_name);
+						
+						if (params){
 							
-							Ext.each(action['out'], function(out){
-								Ext.each(inner_action['in'], function(_in){
+							var action;
+							for (action_name in params){
+								if (action_name){
+
+									action = params[action_name];
 									
-									if (out && out == _in){
-										w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom.childNodes[0], {color: action.getTerminal('out').options.wireConfig.color});
-//								
-										w.drawBezierCurve();	
+									var action_stored = store.query('name', action.script_name).items;
+									
+									if(action_stored.length > 0){
+										action_stored = action_stored[0];
+		//          						console.log(action_stored = action_stored[0]);
+										var action_box = new MDAction({
+											title: action_stored.data.name,
+											//position:[20,20],
+					//			            legend:'thumbnail',
+											'in': action['in'],
+											'out': action['out'],
+											inputs: ['in'],
+											outputs: ['out'],
+											position: [action.x -1, action.y - 56],
+											params: action_stored.data.params,
+											label: action.label
+											
+										}, baseLayer); 
+										action_box.form.getForm().setValues(action.params);
+										
+										Ext.each(action_box.form.items.items, function(field){          						
+											if (field.data_loaded)
+												field.data_loaded(action.params);
+												
+										});
+										
 									}
 									
+									
+								}
+							}
+							var w;
+							Ext.each(baseLayer.containers, function(action){
+							
+								Ext.each(baseLayer.containers, function(inner_action){
+									
+									Ext.each(action['out'], function(out){
+										Ext.each(inner_action['in'], function(_in){
+											
+											if (out && out == _in){
+												w = new WireIt.Wire(action.getTerminal('out'), inner_action.getTerminal('in'), layer_el.dom.childNodes[0], {color: action.getTerminal('out').options.wireConfig.color});
+		//								
+												w.drawBezierCurve();	
+											}
+											
+										});
+										
+									});
+									if(action['out'][0] &&  action['out'][0] == inner_action['in'][0] ){
+										
+										
+										
+									}	
 								});
-								
+							
+							
 							});
-							if(action['out'][0] &&  action['out'][0] == inner_action['in'][0] ){
-								
-								
-								
-							}	
-						});
-					
-					
-					});
-					saved_params = baseLayer.getJson();
-          		}
-          	}
+							saved_params = baseLayer.getJson();
+						}
+					}
+				  
+				  });
+			}
+			});
           
-          });
 						
 						
 						

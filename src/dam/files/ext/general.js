@@ -965,57 +965,62 @@ var open_dynamic_params_window = function(dynamic_params){
 		}
 	});
 	
-	action_store.load({
+	renditions_store.load({
 		callback: function(){
-			var params_to_show = [];
-			Ext.each(dynamic_params, function(action){
-				
-				
-				script = action_store.query('name', action.name).items[0];	
-				
-				Ext.each(script.data.params, function(param){
-					
-					console.log('param.name' + param.name);
-					console.log(action.dynamic);
-					console.log('param.name in action.dynamic '+ param.name in action.dynamic);
-					if (action.dynamic.indexOf(param.name) >=0){
-						param.allow_dynamic = false;
-						param.fieldLabel += String.format(' ({0})', action.label );
-						params_to_show.push(param);
-					}
-				});
-			});
-			console.log('params_to_show');
-			console.log(params_to_show);
-			
-			
-			var win = new Ext.Window({
-				title: 'Dynamic Inputs',
-				width: 400,
-				height: 300,
-				items: new Ext.form.FormPanel({
-					id: 'dynamic_input_form',
-					items: params_to_show,
-					buttons: [
-						{
-							text: 'Run',
-							handler: function(){
-								_run_script();
-								
+			action_store.load({
+				callback: function(){
+					var params_to_show = [];
+					Ext.each(dynamic_params, function(action){
+						
+						
+						script = action_store.query('name', action.name).items[0];	
+						
+						Ext.each(script.data.params, function(param){
+							
+							console.log('param.name' + param.name);
+							console.log(action.dynamic);
+							console.log('param.name in action.dynamic '+ param.name in action.dynamic);
+							if (action.dynamic.indexOf(param.name) >=0){
+								param.allow_dynamic = false;
+								param.fieldLabel += String.format(' ({0})', action.label );
+								params_to_show.push(param);
 							}
-							
-						},
-						{
-							text: 'Cancel'
-							
-						}
-					]
-				})
-			});
-			win.show();
+						});
+					});
+					console.log('params_to_show');
+					console.log(params_to_show);
+					
+					
+					var win = new Ext.Window({
+						title: 'Dynamic Inputs',
+						width: 400,
+						height: 300,
+						items: new Ext.form.FormPanel({
+							id: 'dynamic_input_form',
+							items: params_to_show,
+							buttons: [
+								{
+									text: 'Run',
+									handler: function(){
+										_run_script();
+										
+									}
+									
+								},
+								{
+									text: 'Cancel'
+									
+								}
+							]
+						})
+					});
+					win.show();
+				}
+				
+			})
 		}
-		
 	});
+	;
 	
 };
 
@@ -1092,19 +1097,9 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 							else
 								open_dynamic_params_window(dynamic_params);
 							
-							
-							
-							
-							
-							
 						}
 						else
 							_run_script();
-						
-						
-                       
-                       
-						
 					}
 				});
 				
@@ -1112,7 +1107,7 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 					
 					text: record.data.name,
 					handler: function(){
-						window.open('/script_editor/' + record.data.id + '/')
+						window.open('/script_editor/' + record.data.id + '/');
                        
                        
 						
