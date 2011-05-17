@@ -20,6 +20,46 @@
 
 //for load checkboxgroup by ajax, from http://www.extjs.com/forum/showthread.php?47243-Load-data-in-checkboxgroup/page2, used in variant.js
 
+var script_ux_loaded = false;
+function import_external_file(filename, type){
+	var el;
+	if(type == 'script'){
+		el = document.createElement(type);
+		el.type = 'text/javascript'; 
+		el.src = filename; 			
+	}
+	else if (type == 'css'){
+		el = document.createElement('link');
+		el.type = 'text/css'; 
+		el.rel = 'stylesheet';
+		el.href = filename; 	
+	}
+	
+	
+	document.getElementsByTagName('head')[0].appendChild(el);  	
+};
+
+var import_external_js_via_ajax = function(filename_list, callback,  counter){
+	if (!counter)
+		counter = 0;
+		if (counter < filename_list.length)
+		Ext.Ajax.request({
+			url: filename_list[counter],
+			success: function(response){
+				eval(response.responseText);
+				if (counter == filename_list.length -1){
+					console.log('calling callback');
+					callback();
+				}
+				else
+					import_external_js_via_ajax(filename_list, callback, counter +1);
+				
+			}
+			
+		});
+	
+};
+
 Ext.form.CheckboxGroup.prototype.initComponent = function(){
     Ext.form.CheckboxGroup.superclass.initComponent.call(this);
     var panelCfg = {
@@ -914,6 +954,68 @@ function createTemplate(panel_id, media_type){
 	
 };
 
+var open_dynamic_params_window = function(dynamic_params){
+	var action_store = new Ext.data.JsonStore({
+		url:'/get_actions/',
+		fields:['name', 'params'],					
+		root: 'scripts'	,
+		sortInfo: {
+			field: 'name',
+			direction: 'ASC'
+		}
+	});
+	
+	action_store.load({
+		callback: function(){
+			var params_to_show = [];
+			Ext.each(dynamic_params, function(action){
+				
+				
+				script = action_store.query('name', action.name).items[0];	
+				
+				Ext.each(script.data.params, function(param){
+					
+					console.log('param.name' + param.name);
+					console.log(action.dynamic);
+					console.log('param.name in action.dynamic '+ param.name in action.dynamic);
+					if (action.dynamic.indexOf(param.name) >=0)
+						params_to_show.push(param);
+				});
+			});
+			console.log('params_to_show');
+			console.log(params_to_show);
+			
+			
+			var win = new Ext.Window({
+				title: 'Dynamic Inputs',
+				width: 500,
+				height: 300,
+				items: new Ext.form.FormPanel({
+					id: 'dynamic_input_form',
+					items: params_to_show,
+					buttons: [
+						{
+							text: 'Run',
+							handler: function(){
+								_run_script();
+								
+							}
+							
+						},
+						{
+							text: 'Cancel'
+							
+						}
+					]
+				})
+			});
+			win.show();
+		}
+		
+	});
+	
+};
+
 var scripts_jsonstore = new Ext.data.JsonStore({
 	url: '/get_scripts/',
 	root: 'scripts',
@@ -966,38 +1068,32 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 						};
 						
 						var dynamic_params = [], actions;
-						actions = {"extract_basic85":{"params":{"source_variant_name":"original", dynamic: true},"in":[],"out":[],"script_name":"extract_basic","x":435,"y":227,"label":"lol"}};
+						actions = {"extract_basic85":{"params":{"source_variant_name":"original"}, dynamic: ["source_variant_name"],"in":[],"out":[],"script_name":"extract_basic","x":435,"y":227,"label":"lol", }};
 						for (action in actions){
-									if (actions[action].params.dynamic)
-										dynamic_params.push(actions[action].params);
+									if (actions[action].dynamic)
+										dynamic_params.push({name: actions[action].script_name, label: actions[action].label, dynamic: actions[action].dynamic });
 						}
 						console.log('dynamic_params');
 						console.log(dynamic_params);
 						if (dynamic_params){
+							if (!script_ux_loaded){
+								var script_to_load, css_to_load;																
+								import_external_file('/files/css/superboxselect.css', 'css');
+								import_external_js_via_ajax(['/files/ext/SuperBoxSelect.js', '/files/ext/script_ux.js'], function(){open_dynamic_params_window(dynamic_params);})
+								
+								//import_external_file('/files/ext/SuperBoxSelect.js', 'script');
+								//import_external_file('/files/ext/script_ux.js', 'script');
+								
+								script_ux_loaded = true;
+							}
+							else
+								open_dynamic_params_window(dynamic_params);
 							
-							var win = new Ext.Window({
-								title: 'Dynamic Inputs',
-								width: 300,
-								height: 300,
-								items: new Ext.form.FormPanel({
-									id: 'dynamic_input_form',
-									buttons: [
-										{
-											text: 'Run',
-											handler: function(){
-												_run_script();
-												
-											}
-											
-										},
-										{
-											text: 'Cancel'
-											
-										}
-									]
-								})
-							});
-							win.show();
+							
+							
+							
+							
+							
 						}
 						else
 							_run_script();
