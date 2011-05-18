@@ -800,6 +800,10 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
             
         });
         
+        if (!this.fieldLabel){		
+				this.outerWrapEl.parent().parent().setStyle({paddingLeft:0});		
+			}
+        
         this.inputEl = this.el.wrap({
             tag : 'li',
             cls : 'x-superboxselect-input'
