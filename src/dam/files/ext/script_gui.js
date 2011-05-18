@@ -216,7 +216,9 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	
 	 	Ext.each(this.params, function(param){
 			param.allow_dynamic = true;
-			param.plugins = [plugin_dynamic_field]
+			if (param.xtype != 'fieldsetcontainer'){
+				param.plugins = [plugin_dynamic_field]
+			}
 		});
 	 	
 	 	console.log('--------params');

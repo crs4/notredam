@@ -520,6 +520,21 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
 		}
+		if(true){
+		//if(this.allow_dynamic){
+			this.getEl().createChild({
+					tag: 'img',
+					//cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
+					src: '/files/images/icons/fam/application_xp_terminal.png',
+					style: 'float: right; z-index:2000; position: relative; top: -40px',
+					//style: 'float: right; padding-right:5px; z-index:2000;',
+					//style: 'z-index:2000; position: absolute; top:40%; left:92%',
+					
+					title: 'Dynamic Input: value will be set run time',
+					onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
+					
+				});
+		}
         var o = typeof this.checkboxToggle == 'object' ?
                 this.checkboxToggle :
                 {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
