@@ -233,7 +233,8 @@ Ext.extend(MDAction, WireIt.Container, {
 	 		//collapsible: true,
 	 		listeners:{
 	 			afterrender:function(){
-					action.form_container.addClass('dynamic_input_hidden');
+					//action.form_container.addClass('dynamic_input_hidden');
+					action.form.doLayout();
 	 			}
 	 		}
 	 	});
@@ -246,7 +247,7 @@ Ext.extend(MDAction, WireIt.Container, {
 		this.form_container = Ext.Element(panel_body).createChild({
 		//var form_container = panel_body.createChild({
 			tag: 'div',
-			//cls: 'dynamic_input_hidden',
+			cls: 'dynamic_input_hidden',
 			style: 'z-index: 100;\
 			 border: 1px solid black; \
 			 width: 350px;'										
@@ -287,6 +288,7 @@ Ext.extend(MDAction, WireIt.Container, {
 							if (this.getText() == BUTTON_EDIT){
 								if (action.form_container){
 									action.form_container.removeClass('dynamic_input_hidden');
+									action.form.doLayout();
 								}								
 								this.setText(BUTTON_HIDE);								
 								
