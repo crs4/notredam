@@ -4,7 +4,7 @@ renditions_store = new Ext.data.JsonStore({
 	fields: ['name', 'media_type', 'auto_generated'],
 	url: '/get_variants_list/'
 });
-console.log('aaaaaaaa');
+
 console.log(renditions_store);
 
 var utils_data = {'actions': [{
@@ -774,47 +774,6 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
     mode: 'local',
     width: 220,
     
-    
-    toggleDynamize: function(){
-		if (this.dynamic_icon.hasClass('x-item-disabled'))
-			return;
-		
-		if (this.dynamic){
-			this.enable();
-			this.dynamic_icon.removeClass('dynamic_input_selected');
-			this.dynamic_icon.addClass('dynamic_input_unselected');	
-			this.dynamic_icon.addClass('dynamic_input_hidden');
-			
-			this.dynamic = false;
-		} 
-		
-		else{
-			this.disable();
-			this.dynamic_icon.removeClass('dynamic_input_unselected');
-			this.dynamic_icon.addClass('dynamic_input_selected');	
-			
-			this.dynamic = true;
-		}
-		
-		
-	},
-	
-    
-    disableAll: function(){
-        Ext.ux.MultiRenditions.superclass.disable.call(this);
-        this.dynamic_icon.addClass('x-item-disabled');
-       
-        
-    },
-     enableAll: function(){
-        Ext.ux.MultiRenditions.superclass.enable.call(this);
-        this.dynamic_icon.removeClass('x-item-disabled');
-       
-        
-    },
-    
-    
-    
     onRender:function(ct, position) {
     	var h = this.hiddenName;
     	this.hiddenName = null;
@@ -841,35 +800,6 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
             
         });
         
-        if (this.allow_dynamic){
-			this.dynamic_icon = this.outerWrapEl.parent().insertSibling({
-				tag: 'img',
-				cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
-				src: '/files/images/icons/fam/application_xp_terminal.png',
-				style: 'float: right; padding-right:5px;',
-				title: 'Dynamic Input: value will be set run time',
-				onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
-				
-			}, 'before');
-			
-			var dynamic_icon = this.dynamic_icon;
-			this.getEl().parent('.x-form-item').on('mouseenter', function(){
-				
-				dynamic_icon.removeClass('dynamic_input_hidden');
-				
-			});
-			this.getEl().parent('.x-form-item').on('mouseleave', function(){
-				if (dynamic_icon.hasClass('dynamic_input_unselected'))
-					dynamic_icon.addClass('dynamic_input_hidden');
-				
-			});
-					
-			if (!this.fieldLabel){
-				this.dynamic_icon.parent().setStyle({paddingLeft:0});
-			}
-		}
-        
-       
         this.inputEl = this.el.wrap({
             tag : 'li',
             cls : 'x-superboxselect-input'
