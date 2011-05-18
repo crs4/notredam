@@ -20,7 +20,7 @@ function params_equal(p1, p2){
 var plugin_dynamic_field = {
 	init: function(field){
 		field.toggleDynamize = function(){
-			console.log('aaaaa');
+			
 			if (this.dynamic_icon.hasClass('x-item-disabled'))
 				return;
 			
@@ -45,12 +45,13 @@ var plugin_dynamic_field = {
 		field.disableAll = function(){
 			Ext.ux.MultiRenditions.superclass.disable.call(this);
 			this.dynamic_icon.addClass('x-item-disabled');
+			this.dynamic_icon.addClass('dynamic_input_hidden');					
 		   
 			
 		};
 		field.enableAll = function(){
 			Ext.ux.MultiRenditions.superclass.enable.call(this);
-			this.dynamic_icon.removeClass('x-item-disabled');
+			this.dynamic_icon.removeClass('x-item-disabled');			
 		   
 			
 		};
@@ -60,8 +61,9 @@ var plugin_dynamic_field = {
 			field.on('render', function(){
 				console.log(field.getEl());
 				
-				field.getEl().parent('.x-form-item').on('mouseenter', function(){			
-					field.dynamic_icon.removeClass('dynamic_input_hidden');					
+				field.getEl().parent('.x-form-item').on('mouseenter', function(){	
+					if(!field.dynamic_icon.hasClass('x-item-disabled'))		
+						field.dynamic_icon.removeClass('dynamic_input_hidden');					
 				});
 				
 				field.getEl().parent('.x-form-item').on('mouseleave', function(){
@@ -69,15 +71,19 @@ var plugin_dynamic_field = {
 						field.dynamic_icon.addClass('dynamic_input_hidden');					
 				});
 				
-				field.dynamic_icon = field.getEl().parent('.x-form-item').insertSibling({
+				
+				field.dynamic_icon = field.getEl().parent('.x-form-element').insertSibling({
 					tag: 'img',
-					//cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
+					cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
 					src: '/files/images/icons/fam/application_xp_terminal.png',
-					//style: 'float: right; padding-right:5px;',
+					style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+					//style: 'float: right; padding-right:5px; z-index:2000;',
+					//style: 'z-index:2000; position: absolute; top:40%; left:92%',
+					
 					title: 'Dynamic Input: value will be set run time',
 					onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
 					
-				}, 'after');
+				}, 'before');
 				
 				
 			});
@@ -346,7 +352,8 @@ Ext.extend(InputRendition, MDAction, {
 			width:150,
 			//width: 200,
 			media_type: 'image',		
-			description: 'input-variant',		
+			description: 'input-variant',
+			plugins: [plugin_dynamic_field],
 			listeners: {
 				change: function(combo, new_value, old_value){
 					action.update_connected_actions();
