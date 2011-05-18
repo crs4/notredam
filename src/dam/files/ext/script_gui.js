@@ -17,6 +17,75 @@ function params_equal(p1, p2){
 	return Ext.encode(p1) == Ext.encode(p2);
 };
 
+var plugin_dynamic_field = {
+	init: function(field){
+		field.toggleDynamize = function(){
+			console.log('aaaaa');
+			if (this.dynamic_icon.hasClass('x-item-disabled'))
+				return;
+			
+			if (this.dynamic){
+				this.enable();
+				this.dynamic_icon.removeClass('dynamic_input_selected');
+				this.dynamic_icon.addClass('dynamic_input_unselected');	
+				this.dynamic_icon.addClass('dynamic_input_hidden');
+				
+				this.dynamic = false;
+			} 
+			
+			else{
+				this.disable();
+				this.dynamic_icon.removeClass('dynamic_input_unselected');
+				this.dynamic_icon.addClass('dynamic_input_selected');	
+				
+				this.dynamic = true;
+			}
+		};
+		
+		field.disableAll = function(){
+			Ext.ux.MultiRenditions.superclass.disable.call(this);
+			this.dynamic_icon.addClass('x-item-disabled');
+		   
+			
+		};
+		field.enableAll = function(){
+			Ext.ux.MultiRenditions.superclass.enable.call(this);
+			this.dynamic_icon.removeClass('x-item-disabled');
+		   
+			
+		};
+		
+		
+		if (field.allow_dynamic){
+			field.on('render', function(){
+				console.log(field.getEl());
+				
+				field.getEl().parent('.x-form-item').on('mouseenter', function(){			
+					field.dynamic_icon.removeClass('dynamic_input_hidden');					
+				});
+				
+				field.getEl().parent('.x-form-item').on('mouseleave', function(){
+					if (field.dynamic_icon.hasClass('dynamic_input_unselected'))
+						field.dynamic_icon.addClass('dynamic_input_hidden');					
+				});
+				
+				field.dynamic_icon = field.getEl().parent('.x-form-item').insertSibling({
+					tag: 'img',
+					//cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
+					src: '/files/images/icons/fam/application_xp_terminal.png',
+					//style: 'float: right; padding-right:5px;',
+					title: 'Dynamic Input: value will be set run time',
+					onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
+					
+				}, 'after');
+				
+				
+			});
+		}
+		
+		
+	}
+};
 
 var MDAction =  function(opts, layer) {	
 	
@@ -139,8 +208,14 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	var create_label = !this.no_label;
 	 	var action = this;
 	 	
+	 	Ext.each(this.params, function(param){
+			param.allow_dynamic = true;
+			param.plugins = [plugin_dynamic_field]
+		});
 	 	
-	 
+	 	console.log('--------params');
+	 	console.log(this.params);
+	 	
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
 	 		bodyStyle: {paddingTop: 10},
@@ -152,22 +227,27 @@ Ext.extend(MDAction, WireIt.Container, {
 	 		//collapsible: true,
 	 		listeners:{
 	 			afterrender:function(){
-				
+					action.form_container.addClass('dynamic_input_hidden');
 	 			}
 	 		}
 	 	});
 	 	this.form = form;
+	 	
+	 	
 	 	
 	 	var panel_body = Ext.get(this.bodyEl).parent('.WireIt-Container');	
 			
 		this.form_container = Ext.Element(panel_body).createChild({
 		//var form_container = panel_body.createChild({
 			tag: 'div',
-			cls: 'dynamic_input_hidden',
+			//cls: 'dynamic_input_hidden',
 			style: 'z-index: 100;\
 			 border: 1px solid black; \
 			 width: 350px;'										
 		});
+		
+		
+		
 		this.form.render(this.form_container);
 	 	 		
 	 	
