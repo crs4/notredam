@@ -19,26 +19,37 @@ function params_equal(p1, p2){
 
 var plugin_dynamic_field = {
 	init: function(field){
-		field.toggleDynamize = function(){
+		field.setDynamic = function(dynamic){
+			if (dynamic){
+				this.disable();
+				this.dynamic_icon.removeClass('dynamic_input_unselected');
+				this.dynamic_icon.addClass('dynamic_input_selected');	
+				
+				this.dynamic = true;
+			}
 			
-			if (this.dynamic_icon.hasClass('x-item-disabled'))
-				return;
-			
-			if (this.dynamic){
+			else{
 				this.enable();
 				this.dynamic_icon.removeClass('dynamic_input_selected');
 				this.dynamic_icon.addClass('dynamic_input_unselected');	
 				this.dynamic_icon.addClass('dynamic_input_hidden');
 				
 				this.dynamic = false;
+				
+			}
+		};
+		
+		field.toggleDynamize = function(){
+			
+			if (this.dynamic_icon.hasClass('x-item-disabled'))
+				return;
+			
+			if (this.dynamic){
+				this.setDynamic(false);
 			} 
 			
 			else{
-				this.disable();
-				this.dynamic_icon.removeClass('dynamic_input_unselected');
-				this.dynamic_icon.addClass('dynamic_input_selected');	
-				
-				this.dynamic = true;
+				this.setDynamic(true);
 			}
 		};
 		
@@ -59,7 +70,7 @@ var plugin_dynamic_field = {
 		
 		if (field.allow_dynamic){
 			field.on('render', function(){
-				console.log(field.getEl());
+			
 				try{
 						field.getEl().parent('.x-form-item').on('mouseenter', function(){	
 						if(!field.dynamic_icon.hasClass('x-item-disabled'))		
@@ -74,7 +85,7 @@ var plugin_dynamic_field = {
 					
 					field.dynamic_icon = field.getEl().parent('.x-form-element').insertSibling({
 						tag: 'img',
-						cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
+						cls: 'dynamic_input ' + (field.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
 						src: '/files/images/icons/fam/application_xp_terminal.png',
 						style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
 						//style: 'float: right; padding-right:5px; z-index:2000;',
@@ -84,6 +95,10 @@ var plugin_dynamic_field = {
 						onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
 						
 					}, 'before');
+					
+					if (field.dynamic){
+						field.setDynamic(true);
+					}
 				}
 				catch(e){
 					console.log(e)
@@ -104,8 +119,7 @@ var MDAction =  function(opts, layer) {
 	this.id = opts.id || Ext.id(null, opts.title);
 	this['in'] = opts['in'];
 	opts.width = opts.width || 200;
-	console.log('opts.no_label');
-	console.log(opts.no_label);
+	
 	this.no_label = opts.no_label || false;
 		
 	opts.inputs = opts.inputs || [];
@@ -116,6 +130,7 @@ var MDAction =  function(opts, layer) {
 	this.params = opts.params;
 	opts.resizable = false;
 	this.label = opts.label || opts.title;
+	this.dynamic = opts.dynamic || [];
 	
 	for(var i = 0 ; i < opts.inputs.length ; i++) {
 		var input = this.inputs[i];
@@ -177,6 +192,15 @@ Ext.extend(MDAction, WireIt.Container, {
 			return this.output_label;
 			
 	},
+	get_dynamic_fields: function(){
+		var dynamic = [];
+		Ext.each(this.form.items.items, function(item){
+			if (item.dynamic)
+				dynamic.push(item.name);
+			
+		});
+		return dynamic;
+	},
 	getOutputs: function(){
 		var outputs = [];
 		var output_wires= this.getTerminal(this.outputs).wires;
@@ -222,13 +246,12 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	
 	 	Ext.each(this.params, function(param){
 			param.allow_dynamic = true;
+			if (action.dynamic.indexOf(param.name) >=0)
+				param.dynamic = true;
 			if (param.xtype != 'fieldsetcontainer'){
 				param.plugins = [plugin_dynamic_field]
 			}
 		});
-	 	
-	 	console.log('--------params');
-	 	console.log(this.params);
 	 	
 	 	var form = new Ext.form.FormPanel({
 //	 		renderTo: this.bodyEl,
@@ -243,6 +266,11 @@ Ext.extend(MDAction, WireIt.Container, {
 	 			afterrender:function(){
 					//action.form_container.addClass('dynamic_input_hidden');
 					action.form.doLayout();
+					//Ext.each(this.items.items, function(field){
+						//if (action.dynamic.indexOf(field.name) >=0 && field.toggleDynamize)
+							//field.toggleDynamize();
+							//
+					//});
 	 			}
 	 		}
 	 	});
@@ -583,11 +611,13 @@ Ext.onReady(function(){
 											params: action.getParams(),
 											'in': action.getInputs(),
 											out: action.getOutputs(),
+											dynamic: action.get_dynamic_fields(),
+											//dynamic: [],
 											script_name: action.options.title,
 											x: posXY[0],
 											y: posXY[1],
-											//label: action.label.getValue()
-											label: 'lol'
+											label: action.label.getValue()
+											
 										}					
 									
 									}
@@ -622,7 +652,8 @@ Ext.onReady(function(){
 	//			            legend:'thumbnail',							
 							inputs: ['in'],
 							outputs: ['out'],
-							params: params
+							params: params,
+							
 							
 					}, baseLayer);
 				}
@@ -652,6 +683,8 @@ Ext.onReady(function(){
 						if (script_name)
 							Ext.getCmp('script_name').setValue(script_name);
 						
+						console.log('----+++++++++params ');
+						console.log(params);
 						if (params){
 							
 							var action;
@@ -664,7 +697,6 @@ Ext.onReady(function(){
 									
 									if(action_stored.length > 0){
 										action_stored = action_stored[0];
-		//          						console.log(action_stored = action_stored[0]);
 										var action_box = new MDAction({
 											title: action_stored.data.name,
 											//position:[20,20],
@@ -675,7 +707,9 @@ Ext.onReady(function(){
 											outputs: ['out'],
 											position: [action.x -1, action.y - 56],
 											params: action_stored.data.params,
-											label: action.label
+											label: action.label,
+											dynamic: action.dynamic
+											
 											
 										}, baseLayer); 
 										action_box.form.getForm().setValues(action.params);

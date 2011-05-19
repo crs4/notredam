@@ -977,9 +977,6 @@ var open_dynamic_params_window = function(dynamic_params){
 						
 						Ext.each(script.data.params, function(param){
 							
-							console.log('param.name' + param.name);
-							console.log(action.dynamic);
-							console.log('param.name in action.dynamic '+ param.name in action.dynamic);
 							if (action.dynamic.indexOf(param.name) >=0){
 								param.allow_dynamic = false;
 								param.fieldLabel += String.format(' ({0})', action.label );
@@ -1076,10 +1073,10 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 						};
 						
 						var dynamic_params = [], actions;
-						actions = {"extract_basic85":{"params":{"source_variant_name":"original"}, dynamic: ["source_variant_name"],"in":[],"out":[],"script_name":"extract_basic","x":435,"y":227,"label":"lol", }};
+						actions = Ext.decode(record.data.params);						
 						for (action in actions){
-									if (actions[action].dynamic)
-										dynamic_params.push({name: actions[action].script_name, label: actions[action].label, dynamic: actions[action].dynamic });
+								if (actions[action].dynamic)
+									dynamic_params.push({name: actions[action].script_name, label: actions[action].label, dynamic: actions[action].dynamic });
 						}
 						console.log('dynamic_params');
 						console.log(dynamic_params);
