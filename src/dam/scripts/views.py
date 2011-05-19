@@ -35,7 +35,7 @@ def _get_scripts_info(script):
             'name': script.name, 
             'description': script.description, 
 #            'is_global': script.is_global,  
-             
+             'params': script.params,
             'already_run': script.component_set.all().count() > 0,
             'workspace_id': script.workspace.pk
             
