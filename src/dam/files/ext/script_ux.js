@@ -483,13 +483,23 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		}
 	});
 	
+	},
 	
-	
-		
+	collapse: function(){
+		Ext.ux.MovableCBFieldSet.superclass.collapse.call(this);
+		if(this.dynamic)
+			this.toggleDynamize();
 	},
 	
 	check_expand: function(){
+		console.log('this.dynamic '+ this.dynamic);
+		if(this.dynamic){
+				this.expand();
+				return;
+		}
+		
 		var expand = false;
+						
 		Ext.each(this.items.items, function(item){
 			
 	//			if (item.name != cbf.initialConfig.order_field_name && item.getValue())
@@ -506,6 +516,50 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	data_loaded: function(values){	
 		this.check_expand();
 	},
+	
+	toggleDynamize: function(){
+			
+			if (this.dynamic_icon.hasClass('x-item-disabled'))
+				return;
+			
+			if (this.dynamic){
+				Ext.each(this.items.items, function(item){
+					this.enable();
+				});
+				
+				this.dynamic_icon.removeClass('dynamic_input_selected');
+				this.dynamic_icon.addClass('dynamic_input_unselected');	
+				this.dynamic_icon.addClass('dynamic_input_hidden');
+				
+				this.dynamic = false;
+			} 
+			
+			else{
+				
+				Ext.each(this.items.items, function(item){
+					this.disable();
+				});
+				
+				this.dynamic_icon.removeClass('dynamic_input_unselected');
+				this.dynamic_icon.addClass('dynamic_input_selected');	
+				
+				this.dynamic = true;
+			}
+		},		
+		disableAll: function(){
+			
+			this.dynamic_icon.addClass('x-item-disabled');
+			this.dynamic_icon.addClass('dynamic_input_hidden');					
+		   
+			
+		},
+		enableAll: function(){
+			
+			this.dynamic_icon.removeClass('x-item-disabled');			
+		   
+			
+		},
+	
 	onRender : function(ct, position){
         if(!this.el){
             this.el = document.createElement('fieldset');
@@ -520,21 +574,33 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
 		}
-		if(true){
-		//if(this.allow_dynamic){
-			this.getEl().createChild({
-					tag: 'img',
-					//cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
-					src: '/files/images/icons/fam/application_xp_terminal.png',
-					style: 'float: right; z-index:2000; position: relative; top: -40px',
-					//style: 'float: right; padding-right:5px; z-index:2000;',
-					//style: 'z-index:2000; position: absolute; top:40%; left:92%',
+		
+		
+		this.dynamic_icon = this.getEl().createChild({
+				tag: 'img',
+				cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
+				src: '/files/images/icons/fam/application_xp_terminal.png',
+				style: 'float: right; z-index:2000; position: relative; top: -40px',
+				//style: 'float: right; padding-right:5px; z-index:2000;',
+				//style: 'z-index:2000; position: absolute; top:40%; left:92%',
+				
+				title: 'Dynamic Input: value will be set run time',
+				onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
+				
+			});
+			var dynamic_icon = this.dynamic_icon;
+			this.getEl().on('mouseenter', function(){	
 					
-					title: 'Dynamic Input: value will be set run time',
-					onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
-					
+					if(dynamic_icon && !dynamic_icon.hasClass('x-item-disabled'))		
+						dynamic_icon.removeClass('dynamic_input_hidden');					
 				});
-		}
+				
+				this.getEl().on('mouseleave', function(){
+					if (dynamic_icon && dynamic_icon.hasClass('dynamic_input_unselected'))
+						dynamic_icon.addClass('dynamic_input_hidden');					
+				});
+				
+		
         var o = typeof this.checkboxToggle == 'object' ?
                 this.checkboxToggle :
                 {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
@@ -550,7 +616,6 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	
 	},
 	 
-	 
 	 move: function(position){
 	 	if (! this.movable)
 	 		return;
@@ -563,8 +628,6 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	 		return;
 	 	var copy = this.initialConfig;
  		
-	 	
- 		
  		var values = {};
  		Ext.each(this.items.items, function(item){                              
                 var value = item.getValue(); 
@@ -576,12 +639,18 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
  		
  		container.remove(this); 	
  		new_obj = container.insert(position, copy);
+ 		new_obj.dynamic = this.dynamic;
+ 		
+ 		console.log('new_obj.dynamic '+ new_obj.dynamic);
  		
  		container.doLayout();
  		
  		
  		container.form.getForm().setValues(values);
- 		new_obj.check_expand();
+ 		if (new_obj.dynamic)
+			new_obj.expand();
+		else
+			new_obj.check_expand();
 // 		this.position.setValue(position);
  		
  		
