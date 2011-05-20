@@ -110,7 +110,12 @@ var plugin_dynamic_field = {
 			});
 		}
 		
-		
+		field.get_dynamic_field = function(){
+			if (this.dynamic)
+				return [this.name];
+			else
+				return [];
+		};
 	}
 };
 
@@ -193,12 +198,13 @@ Ext.extend(MDAction, WireIt.Container, {
 			
 	},
 	get_dynamic_fields: function(){
+		console.log('get_dynamic_fields');
 		var dynamic = [];
 		Ext.each(this.form.items.items, function(item){
-			if (item.dynamic)
-				dynamic.push(item.name);
+			dynamic = dynamic.concat(item.get_dynamic_field());
 			
 		});
+		
 		return dynamic;
 	},
 	getOutputs: function(){
@@ -245,12 +251,15 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	var action = this;
 	 	
 	 	Ext.each(this.params, function(param){
+			
 			param.allow_dynamic = true;
 			if (action.dynamic.indexOf(param.name) >=0)
 				param.dynamic = true;
 			if (param.xtype != 'fieldsetcontainer'){
 				param.plugins = [plugin_dynamic_field]
 			}
+			console.log('param')
+			console.log(param)
 		});
 	 	
 	 	var form = new Ext.form.FormPanel({

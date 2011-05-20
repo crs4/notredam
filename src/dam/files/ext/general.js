@@ -1075,7 +1075,7 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 						var dynamic_params = [], actions;
 						actions = Ext.decode(record.data.params);						
 						for (action in actions){
-								if (actions[action].dynamic)
+								if (actions[action].dynamic.length >0)
 									dynamic_params.push({name: actions[action].script_name, label: actions[action].label, dynamic: actions[action].dynamic });
 						}
 						console.log('dynamic_params');

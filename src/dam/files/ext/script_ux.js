@@ -44,6 +44,9 @@ Ext.extend(Ext.ux.StoreMenu, Ext.menu.Menu, {
 
 
 Ext.ux.FieldSetContainer = function(config) {
+	console.log('FieldSetContainer');
+	console.log(config);
+	
     Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);    
  	this.form = this.ownerCt;
 }; 
@@ -51,6 +54,22 @@ Ext.ux.FieldSetContainer = function(config) {
 Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	border: false,
 	layout: 'form',
+	get_dynamic_field: function(){
+		console.log('FieldSetContainer.get_dynamic_field')
+		var dynamic_fields = [];
+		Ext.each(this.items.items, function(item){
+			
+			dynamic_fields = dynamic_fields.concat(item.get_dynamic_field());
+			
+			console.log(dynamic_fields);
+			
+		});
+		
+		console.log('---dynamic_fields');
+			console.log(dynamic_fields);
+		return dynamic_fields;
+		
+	},
 	data_loaded: function(values){
 		
         var actions = values[this.order_field_name];
@@ -568,6 +587,13 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 		Ext.ux.MovableCBFieldSet.superclass.collapse.call(this);
 		if(this.dynamic)
 			this.toggleDynamize();
+	},
+	
+	get_dynamic_field: function(){
+		if (this.dynamic)
+			return [this.name];
+		else
+			return [];
 	},
 	
 	check_expand: function(){
