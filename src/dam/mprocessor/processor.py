@@ -109,7 +109,7 @@ class Batch:
         return self.deferred
 
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
-        log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled)) #d
+        #log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled)) #d
         item.actions_passed += success
         item.actions_failed += failure
         item.actions_cancelled += cancelled
@@ -120,7 +120,7 @@ class Batch:
         if item.actions_todo <= 0 or failure > 0:
             item.result = dumps(self.results[item.pk])
         if item.actions_todo <= 0:
-            log.debug('_update_item_stats: finalizing item %s' % item.target_id)
+            #log.debug('_update_item_stats: finalizing item %s' % item.target_id) #d
             del self.results[item.pk]
         
     def _get_scripts(self, pipeline):
@@ -169,10 +169,11 @@ class Batch:
             idx = (self.cur_task + n) % len(self.tasks)
             task = self.tasks[idx]
             action = task['schedule'].action_to_run()
-            #log.debug('111111112 -%s- %s' % (action, len(action))) #d
             if action is None:
+                #log.debug('111111113 - deleting task %s' % task) #d
                 to_delete.append(task)
             elif action:
+                #log.debug('111111112 -%s- %s' % (action, len(action))) #d
                 break
 
         #log.debug('to_delete %s' % to_delete) #d
@@ -222,11 +223,11 @@ class Batch:
         if action:
             item, schedule = task['item'], task['schedule']
             method, params = self.scripts[action]
-            log.debug('target %s: executing action %s' % (item.target_id, action))
+            #log.debug('target %s: executing action %s' % (item.target_id, action))
             try:
                 item_params = loads(item.params)
-                log.debug('item_params %s'%item_params)
-                log.debug('params %s'%params)
+                #log.debug('item_params %s'%item_params)
+                #log.debug('params %s'%params)
                 params.update(item_params.get('*', {}))
                 params.update(item_params.get(action, {}))
                 self.outstanding += 1
@@ -244,11 +245,11 @@ class Batch:
             reactor.callLater(0, self._iterate)
 
     def _handle_ok(self, result, item, schedule, action, params):
-        log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result))
+        #log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result)) #d
         self.outstanding -= 1
         schedule.done(action)
         if self.outstanding < self.max_outstanding:
-            #log.debug('_handle_ok: rescheduling') #d
+            ##log.debug('_handle_ok: rescheduling') #d
             reactor.callLater(0, self._iterate)
         self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
@@ -262,7 +263,7 @@ class Batch:
         for a in cancelled:
             self._update_item_stats(item, a, "cancelled on failed %s" % action, 0, 0, 1)
         if self.outstanding < self.max_outstanding:
-            #log.debug('_handle_err: rescheduling') #d
+            ##log.debug('_handle_err: rescheduling') #d
             reactor.callLater(0, self._iterate)
         item.save()
 
