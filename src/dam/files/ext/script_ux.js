@@ -434,7 +434,7 @@ Ext.reg('select', Ext.ux.Select);
 
 Ext.ux.CBFieldSet = function(config) {
 	
-	if (!config.dynamic)
+	if (!config.dynamic && config.allow_dynamic)
 		config.collapsed = true;		
 	else
 		config.collapsed = false;
@@ -516,7 +516,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
        if(this.allow_dynamic) 
 			Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);		
 		else
-			Ext.ux.FieldSet.superclass.onRender.call(this, ct, position);		
+			Ext.form.FieldSet.superclass.onRender.call(this, ct, position);		
         this._add_dynamic_icon();		
        
         console.log('disabling...');
