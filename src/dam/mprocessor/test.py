@@ -48,7 +48,7 @@ def main():
     p.add_params(16)
     p.add_params(17)
     b = Batch(p)
-    b.run().addCallback(stop)
+    b.run().addBoth(stop)
 
 if __name__=='__main__':
     reactor.callWhenRunning(main)

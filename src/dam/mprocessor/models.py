@@ -63,7 +63,7 @@ class Process(models.Model):
         """
         for x in params.values():
             if type(x) != type({}):
-                raise ValueError('parameters params must be a dictionary of dictionaries')
+                raise ValueError('params must be a dictionary of dictionaries')
         s = dumps(params)
         ProcessTarget.objects.create(process = self, target_id = target_id, params=s, actions_todo=self.pipeline.num_actions())
 
