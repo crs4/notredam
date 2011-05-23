@@ -972,6 +972,11 @@ var open_dynamic_params_window = function(dynamic_params){
 				callback: function(){
 					var params_to_show = [];
 					Ext.each(dynamic_params, function(action){
+						var fieldset = {
+							xtype: 'fieldset',
+							items: [],
+							title: action.name
+						};
 						console.log('action');
 						console.log(action);
 						
@@ -995,15 +1000,16 @@ var open_dynamic_params_window = function(dynamic_params){
 							console.log(params);
 							Ext.each(params, function(param2){
 								if (action.dynamic.indexOf(param2.name) >=0){
-									param2.allow_dynamic = false;
-									param2.fieldLabel += String.format(' ({0})', action.label );
-									params_to_show.push(param2);
+									param2.allow_dynamic = false;									
+									
+									fieldset.items.push(param2);
 								}
 								
 							});
 							
-							
+						
 						});
+						params_to_show.push(fieldset);
 					});
 					console.log('params_to_show');
 					console.log(params_to_show);
@@ -1011,8 +1017,9 @@ var open_dynamic_params_window = function(dynamic_params){
 					
 					var win = new Ext.Window({
 						title: 'Dynamic Inputs',
-						width: 400,
-						height: 300,
+						width: 600,
+						height: 400,
+						modal: true,
 						items: new Ext.form.FormPanel({
 							id: 'dynamic_input_form',
 							items: params_to_show,
