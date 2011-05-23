@@ -5,8 +5,6 @@ renditions_store = new Ext.data.JsonStore({
 	url: '/get_variants_list/'
 });
 
-console.log(renditions_store);
-
 var utils_data = {'actions': [{
 	name: 'input rendition',	
 	xtype: 'inputrendition',
@@ -24,7 +22,7 @@ Ext.ux.StoreMenu = function(config){
         listeners: {
             load: function(store, records){               
                 menu.removeAll();
-                console.log(menu);
+              
                 Ext.each(records, function(record){
                     var cfg = record.data;            
                     Ext.apply(cfg, config.item_cfg);                    
@@ -44,31 +42,57 @@ Ext.extend(Ext.ux.StoreMenu, Ext.menu.Menu, {
 
 
 Ext.ux.FieldSetContainer = function(config) {
-	console.log('FieldSetContainer');
-	console.log(config);
 	
-    Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);    
+	console.log('FieldSetContainer.config');
+ 	console.log(config);
+ 	if(config.dynamic)
+		Ext.each(config.items, function(item){
+			item.dynamic = true;
+		});
+ 	
+    Ext.ux.FieldSetContainer.superclass.constructor.call(this, config);     	
+ 	
  	this.form = this.ownerCt;
+ 	
+ 	//Ext.apply(config, this);
+ 	
 }; 
 
 Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	border: false,
 	layout: 'form',
+	//initComponent: function(){
+		//console.log('initComponent1');
+		//if (this.dynamic)
+			//this._set_dynamic();
+		//Ext.ux.FieldSetContainer.superclass.initComponent.call(this);     	
+		//console.log('initComponent2');
+	//},
+	 onRender:function(ct, position) {
+		
+		console.log('---------- _set_dynamic CONTAINER');
+		console.log('this.dynamic '+ this.dynamic );
+		//if(this.dynamic)
+			this._set_dynamic();
+		Ext.ux.FieldSetContainer.superclass.onRender.call(this, ct, position);    
+	},
 	get_dynamic_field: function(){
-		console.log('FieldSetContainer.get_dynamic_field')
+		
 		var dynamic_fields = [];
 		Ext.each(this.items.items, function(item){
 			
 			dynamic_fields = dynamic_fields.concat(item.get_dynamic_field());
 			
-			console.log(dynamic_fields);
-			
 		});
-		
-		console.log('---dynamic_fields');
-			console.log(dynamic_fields);
+				
 		return dynamic_fields;
 		
+	},
+	_set_dynamic: function(){
+		console.log('FieldSetContainer._set_dynamic');
+		Ext.each(this.items.items, function(item){
+			item._set_dynamic();
+		});
 	},
 	data_loaded: function(values){
 		
@@ -112,11 +136,9 @@ Ext.ux.SelectFieldSet = function(config) {
 		name: config.select_name,
 		fieldLabel: fieldLabel,
 		_select : function(value){
-			console.log('value');
-			console.log(this.ownerCt.values);
+			
 			var new_values = this.ownerCt.values[value];	
-			console.log('new_values');
-			console.log(new_values);
+			
 			fieldset.removeAll();
 			fieldset.add(new_values);
 			this.ownerCt.doLayout();
@@ -147,15 +169,14 @@ Ext.ux.SelectFieldSet = function(config) {
 Ext.extend(Ext.ux.SelectFieldSet, Ext.form.FieldSet, {
 	data_loaded: function(data){
 //		Ext.ux.SelectFieldSet.superclass.data_loaded.call(this, data);
-		console.log('data_loaded');
-		console.log(data);
+		
 		this.select_field._select(data.output_preset);
 		this.ownerCt.getForm().setValues(data); //temporary, since form items are deleted and new ones are added, i have to reload the data 
 		Ext.each(this.items.items, function(item){
 		if (item.data_loaded)
 			item.data_loaded(data);
 		});
-		console.log('end loaded');
+		
 	}
 	
 	
@@ -321,8 +342,7 @@ Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
 Ext.reg('watermarkbrowsebutton', Ext.ux.WatermarkBrowseButton);
 
 
-Ext.ux.WatermarkPosition = function(config){
-    console.log('WatermarkPosition constructor');
+Ext.ux.WatermarkPosition = function(config){   
     
 	Ext.ux.WatermarkPosition.superclass.constructor.call(this, config);
 }; 
@@ -331,7 +351,7 @@ Ext.extend(Ext.ux.WatermarkPosition, Ext.form.Field, {
 //	height: 160,
 	name: 'watermarking_position',
     initComponent: function(){
-        console.log('WatermarkPosition constructor');
+       
         var i, j, box_id;
             var children_box_position = [];
             for(i=1; i<= 9; i++){
@@ -406,8 +426,12 @@ Ext.reg('select', Ext.ux.Select);
 
 
 Ext.ux.CBFieldSet = function(config) {
-	config.collapsed = true;
-			
+	console.log('----+++config.dynamic '+ config.dynamic);
+	if (!config.dynamic)
+		config.collapsed = true;		
+	else
+		config.collapsed = false;
+		
 	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
 	
 	
@@ -446,15 +470,11 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 		
 	},
 	
-	
-	onRender : function(ct, position){
-        
-        Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);
-		
-		
+	_add_dynamic_icon: function(){
+		console.log('------------------this.dynamic ' + this.dynamic);
 		this.dynamic_icon = this.getEl().createChild({
 				tag: 'img',
-				cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
+				cls: 'dynamic_input ' + (this.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
 				src: '/files/images/icons/fam/application_xp_terminal.png',
 				style: 'float: right; z-index:2000; position: relative; top: -40px',
 				//style: 'float: right; padding-right:5px; z-index:2000;',
@@ -464,22 +484,36 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 				onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
 				
 			});
-			var dynamic_icon = this.dynamic_icon;
-			this.getEl().on('mouseenter', function(){	
-					
-					if(dynamic_icon && !dynamic_icon.hasClass('x-item-disabled'))		
-						dynamic_icon.removeClass('dynamic_input_hidden');					
-				});
+		
+		var dynamic_icon = this.dynamic_icon;
+		this.getEl().on('mouseenter', function(){	
 				
-				this.getEl().on('mouseleave', function(){
-					if (dynamic_icon && dynamic_icon.hasClass('dynamic_input_unselected'))
-						dynamic_icon.addClass('dynamic_input_hidden');					
-				});
+			if(dynamic_icon && !dynamic_icon.hasClass('x-item-disabled'))		
+					dynamic_icon.removeClass('dynamic_input_hidden');					
+			});
+			
+			this.getEl().on('mouseleave', function(){
+				if (dynamic_icon && dynamic_icon.hasClass('dynamic_input_unselected'))
+					dynamic_icon.addClass('dynamic_input_hidden');					
+			});
         
+		
+		
+	},
+	
+	onRender : function(ct, position){
+        
+        Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);		
+        this._add_dynamic_icon();		
     },
+    
+    _set_dynamic: function(){
+		console.log('---------- _set_dynamic');
+		this.dynamic = true;
+	},
 	
 	toggleDynamize: function(){
-			
+			console.log('---toggleDynamize');
 			if (this.dynamic_icon.hasClass('x-item-disabled'))
 				return;
 			
@@ -522,10 +556,12 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 		},
 	
 	collapse: function(){
-		Ext.ux.CBFieldSet.superclass.collapse.call(this);
+		console.log('collapse');
 		if(this.dynamic){
 			this.toggleDynamize();
 		}
+		Ext.ux.CBFieldSet.superclass.collapse.call(this);
+		
 		
 		Ext.each(this.items.items, function(item){
 	 			item.disable();
@@ -561,9 +597,9 @@ Ext.ux.MovableCBFieldSet = function(config) {
 
 
 Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
-	collapsed: true,
-	initComponent: function(){
-		Ext.ux.MovableCBFieldSet.superclass.initComponent.call(this, config);
+	
+	initComponent: function(){		
+		Ext.ux.MovableCBFieldSet.superclass.initComponent.call(this);
 		var config = this.initialConfig; 
 		
 		this.add({
@@ -583,12 +619,6 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	
 	},
 	
-	collapse: function(){
-		Ext.ux.MovableCBFieldSet.superclass.collapse.call(this);
-		if(this.dynamic)
-			this.toggleDynamize();
-	},
-	
 	get_dynamic_field: function(){
 		if (this.dynamic)
 			return [this.name];
@@ -597,7 +627,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	},
 	
 	check_expand: function(){
-		console.log('this.dynamic '+ this.dynamic);
+		
 		if(this.dynamic){
 				this.expand();
 				return;
@@ -639,31 +669,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
 		}
 		
-		
-		this.dynamic_icon = this.getEl().createChild({
-				tag: 'img',
-				cls: 'dynamic_input dynamic_input_unselected dynamic_input_hidden',
-				src: '/files/images/icons/fam/application_xp_terminal.png',
-				style: 'float: right; z-index:2000; position: relative; top: -40px',
-				//style: 'float: right; padding-right:5px; z-index:2000;',
-				//style: 'z-index:2000; position: absolute; top:40%; left:92%',
-				
-				title: 'Dynamic Input: value will be set run time',
-				onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
-				
-			});
-			var dynamic_icon = this.dynamic_icon;
-			this.getEl().on('mouseenter', function(){	
-					
-					if(dynamic_icon && !dynamic_icon.hasClass('x-item-disabled'))		
-						dynamic_icon.removeClass('dynamic_input_hidden');					
-				});
-				
-				this.getEl().on('mouseleave', function(){
-					if (dynamic_icon && dynamic_icon.hasClass('dynamic_input_unselected'))
-						dynamic_icon.addClass('dynamic_input_hidden');					
-				});
-				
+		this._add_dynamic_icon();			
 		
         var o = typeof this.checkboxToggle == 'object' ?
                 this.checkboxToggle :
@@ -695,7 +701,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
  		var values = {};
  		Ext.each(this.items.items, function(item){                              
                 var value = item.getValue(); 
-//                      console.log(item.name);
+
                 if(value && item.name != cbf.initialConfig.order_field_name && item != cbf.position)
                 
                         values[item.name] = value;
@@ -704,9 +710,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
  		container.remove(this); 	
  		new_obj = container.insert(position, copy);
  		new_obj.dynamic = this.dynamic;
- 		
- 		console.log('new_obj.dynamic '+ new_obj.dynamic);
- 		
+ 	
  		container.doLayout();
  		
  		
@@ -720,7 +724,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
  		
 	 },
 	move_up: function(){
-//		console.log(this.position_field.getValue());
+
 		this.move(this.get_position()  - 1);
 	},
 	move_down: function(){
@@ -817,10 +821,10 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
     },
 	
 	data_loaded: function(values){        
-		console.log('data_loaded');
+		
 		if(this.pos_x_percent && this.pos_y_percent){
 			this.watermarking(this._get_square(this.pos_x_percent.getValue(), this.pos_y_percent.getValue()));
-            console.log('data_loaded end')
+          
         }
 			
 		Ext.ux.WatermarkFieldSet.superclass.data_loaded.call(this, values);
@@ -844,11 +848,10 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
 	watermarking: function(id){    
         if(!id)
             return;
-        console.log('watermarking ' + id);  
 	    this._reset_watermarking();
 	    this._set_hidden_position_percent(id);
 	    try{
-            console.log('this.position.boxes[id -1].id '+ this.position.boxes[id -1].id);
+          
 	    	Ext.get(this.position.boxes[id -1].id).setStyle({
 	        background: 'green',
 	        opacity: 0.6
@@ -875,8 +878,7 @@ Ext.ux.MultiRenditions = function(config) {
 	this.allow_dynamic = config.allow_dynamic || true;
 	
 	this.store = Ext.StoreMgr.get(config.storeId);
-	console.log('this.store');
-	console.log(this.store);
+	
 	renditions = this.store.queryBy(function(record){
 		var media_type_check = false, auto_generated = false;
 		if (record.data.media_type == config.media_type )
@@ -891,7 +893,7 @@ Ext.ux.MultiRenditions = function(config) {
 	
 		
  	values = [];
- 	console.log(renditions);
+ 	
  	Ext.each(renditions.items, function(r){		
 		values.push([r.data.name]);
 	}); 	

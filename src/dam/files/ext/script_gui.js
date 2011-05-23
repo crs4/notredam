@@ -39,6 +39,10 @@ var plugin_dynamic_field = {
 			}
 		};
 		
+		field._set_dynamic = function(){
+			this.dynamic = true;			
+		};
+		
 		field.toggleDynamize = function(){
 			
 			if (this.dynamic_icon.hasClass('x-item-disabled'))
@@ -251,15 +255,14 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	var action = this;
 	 	
 	 	Ext.each(this.params, function(param){
-			
+			console.log('param.name '+ param.name);
 			param.allow_dynamic = true;
 			if (action.dynamic.indexOf(param.name) >=0)
 				param.dynamic = true;
-			if (param.xtype != 'fieldsetcontainer'){
+				if (param.xtype != 'fieldsetcontainer'){
 				param.plugins = [plugin_dynamic_field]
 			}
-			console.log('param')
-			console.log(param)
+			
 		});
 	 	
 	 	var form = new Ext.form.FormPanel({
@@ -392,8 +395,7 @@ Ext.extend(InputRendition, MDAction, {
 	 	MDAction.superclass.render.call(this);
 	 	
 	 	var action = this;
-	 	console.log('action');
-	 	console.log(action);
+
 	 	this.source_rendition = new Ext.ux.MultiRenditions({   
 			name: 'source_variant_name',
 			width:150,
@@ -668,7 +670,7 @@ Ext.onReady(function(){
 				}
 				
 				else if(data.grid.id == 'utils_grid'){
-					console.log(data.selections[0]);
+				
 					var action = new Ext.ComponentMgr.types[data.selections[0].data.xtype]({
 						title: name,						
 						position:[drop_x,drop_y],					   
@@ -692,8 +694,6 @@ Ext.onReady(function(){
 						if (script_name)
 							Ext.getCmp('script_name').setValue(script_name);
 						
-						console.log('----+++++++++params ');
-						console.log(params);
 						if (params){
 							
 							var action;
@@ -821,7 +821,7 @@ Ext.onReady(function(){
                                             
                                             (function(){
                                                 var record = event.ownerCt.store.getById(event.id);
-                                                console.log('event.checked '+ event.checked);
+                                               
                                                 record.set('checked', event.checked);
                                                 record.commit();
                                             }).defer(100);
@@ -860,7 +860,7 @@ Ext.onReady(function(){
                                              
                                              (function(){
                                                  var record = obj.ownerCt.store.getById(obj.text);
-                                                 console.log('obj.checked '+ obj.checked);
+                                              
                                                  record.set('checked', obj.checked);
                                                  record.commit();
                                              }).defer(100);
