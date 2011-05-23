@@ -202,7 +202,7 @@ Ext.extend(MDAction, WireIt.Container, {
 			
 	},
 	get_dynamic_fields: function(){
-		console.log('get_dynamic_fields');
+		
 		var dynamic = [];
 		Ext.each(this.form.items.items, function(item){
 			dynamic = dynamic.concat(item.get_dynamic_field());
@@ -255,14 +255,21 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	var action = this;
 	 	
 	 	Ext.each(this.params, function(param){
-			console.log('param.name '+ param.name);
-			param.allow_dynamic = true;
-			if (action.dynamic.indexOf(param.name) >=0)
-				param.dynamic = true;
-				if (param.xtype != 'fieldsetcontainer'){
-				param.plugins = [plugin_dynamic_field]
+			
+			param.allow_dynamic = true;			
+				
+			if (param.xtype == 'fieldsetcontainer'){
+				Ext.each(param.items, function(item){
+					if (action.dynamic.indexOf(item.name) >=0)
+						item.dynamic = true;
+				});
 			}
 			
+			else{
+				param.plugins = [plugin_dynamic_field]
+				if (action.dynamic.indexOf(param.name) >=0)
+					param.dynamic = true;
+			}
 		});
 	 	
 	 	var form = new Ext.form.FormPanel({
