@@ -42,9 +42,7 @@ Ext.extend(Ext.ux.StoreMenu, Ext.menu.Menu, {
 
 
 Ext.ux.FieldSetContainer = function(config) {
-	
-	console.log('FieldSetContainer.config');
- 	console.log(config);
+		
  	if(config.dynamic)
 		Ext.each(config.items, function(item){
 			item.dynamic = true;
@@ -70,8 +68,6 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	//},
 	 onRender:function(ct, position) {
 		
-		console.log('---------- _set_dynamic CONTAINER');
-		console.log('this.dynamic '+ this.dynamic );
 		//if(this.dynamic)
 			this._set_dynamic();
 		Ext.ux.FieldSetContainer.superclass.onRender.call(this, ct, position);    
@@ -89,7 +85,7 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 		
 	},
 	_set_dynamic: function(){
-		console.log('FieldSetContainer._set_dynamic');
+		
 		Ext.each(this.items.items, function(item){
 			item._set_dynamic();
 		});
@@ -426,7 +422,7 @@ Ext.reg('select', Ext.ux.Select);
 
 
 Ext.ux.CBFieldSet = function(config) {
-	console.log('----+++config.dynamic '+ config.dynamic);
+	
 	if (!config.dynamic)
 		config.collapsed = true;		
 	else
@@ -464,14 +460,15 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	expand: function(){
 	
 		Ext.ux.CBFieldSet.superclass.expand.call(this);
-		Ext.each(this.items.items, function(item){
+		if (!this.dynamic)
+			Ext.each(this.items.items, function(item){			
 	 			item.enable();
 	 	});
 		
 	},
 	
 	_add_dynamic_icon: function(){
-		console.log('------------------this.dynamic ' + this.dynamic);
+		
 		this.dynamic_icon = this.getEl().createChild({
 				tag: 'img',
 				cls: 'dynamic_input ' + (this.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
@@ -505,15 +502,19 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
         
         Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);		
         this._add_dynamic_icon();		
+        //if (this.dynamic)
+        console.log('disabling...');
+			Ext.each(this.items.items, function(item){			
+				console.log('disabling...');
+	 			item.disable();
+	 	});
     },
     
-    _set_dynamic: function(){
-		console.log('---------- _set_dynamic');
+    _set_dynamic: function(){		
 		this.dynamic = true;
 	},
 	
-	toggleDynamize: function(){
-			console.log('---toggleDynamize');
+	toggleDynamize: function(){			
 			if (this.dynamic_icon.hasClass('x-item-disabled'))
 				return;
 			
@@ -556,7 +557,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 		},
 	
 	collapse: function(){
-		console.log('collapse');
+		
 		if(this.dynamic){
 			this.toggleDynamize();
 		}
@@ -663,21 +664,21 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
             }
         }
 
-        Ext.form.FieldSet.superclass.onRender.call(this, ct, position);
+        Ext.ux.MovableCBFieldSet.superclass.onRender.call(this, ct, position);
 		if (this.movable){
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
 		}
 		
-		this._add_dynamic_icon();			
+		//this._add_dynamic_icon();			
 		
-        var o = typeof this.checkboxToggle == 'object' ?
-                this.checkboxToggle :
-                {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
-        this.checkbox = this.header.insertFirst(o);
-        this.checkbox.dom.checked = !this.collapsed;
-        this.mon(this.checkbox, 'click', this.onCheckClick, this);
-    
+        //var o = typeof this.checkboxToggle == 'object' ?
+                //this.checkboxToggle :
+                //{tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
+        //this.checkbox = this.header.insertFirst(o);
+        //this.checkbox.dom.checked = !this.collapsed;
+        //this.mon(this.checkbox, 'click', this.onCheckClick, this);
+    //
         
     },
 
