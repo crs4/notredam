@@ -955,6 +955,7 @@ function createTemplate(panel_id, media_type){
 };
 
 var open_dynamic_params_window = function(dynamic_params){
+	
 	var action_store = new Ext.data.JsonStore({
 		url:'/get_actions/',
 		fields:['name', 'params'],					
@@ -971,17 +972,37 @@ var open_dynamic_params_window = function(dynamic_params){
 				callback: function(){
 					var params_to_show = [];
 					Ext.each(dynamic_params, function(action){
+						console.log('action');
+						console.log(action);
 						
 						
 						script = action_store.query('name', action.name).items[0];	
 						
+						var params;
+						
 						Ext.each(script.data.params, function(param){
+							console.log('param');
+							console.log(param);
+							param_obj = new Ext.ComponentMgr.types[param.xtype](param);
+							if (param.items)
+								Ext.each(param.items, function(p){
+									params.push(p);
+								});
+							else
+								params = [param]
 							
-							if (action.dynamic.indexOf(param.name) >=0){
-								param.allow_dynamic = false;
-								param.fieldLabel += String.format(' ({0})', action.label );
-								params_to_show.push(param);
-							}
+							console.log('params');
+							console.log(params);
+							Ext.each(params, function(param2){
+								if (action.dynamic.indexOf(param2.name) >=0){
+									param2.allow_dynamic = false;
+									param2.fieldLabel += String.format(' ({0})', action.label );
+									params_to_show.push(param2);
+								}
+								
+							});
+							
+							
 						});
 					});
 					console.log('params_to_show');
@@ -1073,10 +1094,12 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 						};
 						
 						var dynamic_params = [], actions;
-						actions = Ext.decode(record.data.params);						
-						for (action in actions){
-								if (actions[action].dynamic.length >0)
-									dynamic_params.push({name: actions[action].script_name, label: actions[action].label, dynamic: actions[action].dynamic });
+						actions = Ext.decode(record.data.params);	
+						
+						for (action in actions){														
+							action = actions[action];
+							if (action.dynamic.length >0)
+								dynamic_params.push({name: action.script_name, label: action.label, dynamic: action.dynamic });
 						}
 						console.log('dynamic_params');
 						console.log(dynamic_params);

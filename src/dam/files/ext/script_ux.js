@@ -42,7 +42,7 @@ Ext.extend(Ext.ux.StoreMenu, Ext.menu.Menu, {
 
 
 Ext.ux.FieldSetContainer = function(config) {
-		
+			
  	if(config.dynamic)
 		Ext.each(config.items, function(item){
 			item.dynamic = true;
@@ -72,6 +72,17 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 			this._set_dynamic();
 		Ext.ux.FieldSetContainer.superclass.onRender.call(this, ct, position);    
 	},
+	
+	get_name: function(){
+		var names = [];
+		Ext.each(this.items.items, function(item){			
+			names.push(item.name);		
+		});
+		console.log('names');
+		console.log(names);
+		return names;
+		
+	},	
 	get_dynamic_field: function(){
 		
 		var dynamic_fields = [];
@@ -468,8 +479,8 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 	},
 	
 	_add_dynamic_icon: function(){
-		
-		this.dynamic_icon = this.getEl().createChild({
+		if (this.allow_dynamic){
+			this.dynamic_icon = this.getEl().createChild({
 				tag: 'img',
 				cls: 'dynamic_input ' + (this.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
 				src: '/files/images/icons/fam/application_xp_terminal.png',
@@ -481,28 +492,33 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.form.FieldSet, {
 				onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
 				
 			});
-		
-		var dynamic_icon = this.dynamic_icon;
-		this.getEl().on('mouseenter', function(){	
-				
-			if(dynamic_icon && !dynamic_icon.hasClass('x-item-disabled'))		
-					dynamic_icon.removeClass('dynamic_input_hidden');					
-			});
 			
-			this.getEl().on('mouseleave', function(){
-				if (dynamic_icon && dynamic_icon.hasClass('dynamic_input_unselected'))
-					dynamic_icon.addClass('dynamic_input_hidden');					
-			});
+			var dynamic_icon = this.dynamic_icon;
+			this.getEl().on('mouseenter', function(){	
+					
+				if(dynamic_icon && !dynamic_icon.hasClass('x-item-disabled'))		
+						dynamic_icon.removeClass('dynamic_input_hidden');					
+				});
+				
+				this.getEl().on('mouseleave', function(){
+					if (dynamic_icon && dynamic_icon.hasClass('dynamic_input_unselected'))
+						dynamic_icon.addClass('dynamic_input_hidden');					
+				});
+		}
+		
         
 		
 		
 	},
 	
 	onRender : function(ct, position){
-        
-        Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);		
+       
+       if(this.allow_dynamic) 
+			Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);		
+		else
+			Ext.ux.FieldSet.superclass.onRender.call(this, ct, position);		
         this._add_dynamic_icon();		
-        //if (this.dynamic)
+       
         console.log('disabling...');
 			Ext.each(this.items.items, function(item){			
 				console.log('disabling...');
@@ -665,7 +681,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
         }
 
         Ext.ux.MovableCBFieldSet.superclass.onRender.call(this, ct, position);
-		if (this.movable){
+		if (this.movable && this.allow_dynamic){
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
 		}
