@@ -9,13 +9,11 @@ def run(workspace,            # workspace object
         **preset_params):     # additional parameters (see pipeline for explanation)
 
     print
-    print '  ****  Script a1:'
-    print '  ****  item_id            ',  item_id
-    print '  ****  source_variant_name',  source_variant_name
-    print '  ****  output_variant_name',  output_variant_name
-    print '  ****  output_preset      ',  output_preset
-    print '  ****  preset_params      ',  preset_params          
-    print '  ****  '
+    print '  ****  a1 on %s: source_variant_name' % item_id,  source_variant_name
+    print '  ****  a1 on %s: output_variant_name' % item_id,  output_variant_name
+    print '  ****  a1 on %s: output_preset      ' % item_id,  output_preset
+    print '  ****  a1 on %s: preset_params      ' % item_id,  preset_params          
+    print ' '
     deferred = defer.Deferred()
     deferred.callback('done')
     return deferred
