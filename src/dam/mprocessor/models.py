@@ -47,16 +47,24 @@ class Process(models.Model):
     last_show_date = models.DateTimeField(null = True, blank = True)
 
     def add_params(self, target_id, params={}):
-        """create a record in ProcessTarget for an item
+        """add_params: create a record in ProcessTarget list 
+
+        This function adds "target"  to the list of targets that will be processed by Process. 
+        Its common use it to add an item id.
 
         @param target_id: a string that identifies a target for the actions in the pipeline.
-                          usually the id of an item.
+                          usually the id of an item
+.
         @param params: a dictionary of the form 
-                   {'*':{<dictionary of parameters for all actions>},
+                   { 
+                    '*':{<dictionary of parameters for all actions>},
                     '<action_name>': {dictionary of key:value for the action <action_name>},
                    }
+
         For example if the pipeline has an action "adapt_preview", then calling
-        add_params(34, {'*':{'width':324, 'height':256}, 'adapt_preview':{'width':100}})
+
+        add_params(34, params = {'*':{'width':324, 'height':256}, 'adapt_preview':{'width':100}})
+
         will invoke the pipeline on item 34, passing to all actions the parameters
         width=324 and height=256, and will invoke the action adapt_preview with parameters
         width=100 and height=256.
