@@ -139,6 +139,19 @@ Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 		
 		Ext.ux.DynamicFieldSet.superclass.initComponent.call(this);    
 	},
+	
+	check_dynamic: function(dynamics){
+		if (dynamics.indexOf(this.name) >=0)
+			this.toggleDynamize();
+	},
+	get_dynamic_field: function(){
+		
+		if (this.dynamic)
+			return [this.name];
+		else
+			return [];
+	},
+	
 	_add_dynamic_icon: function(){
 		if (this.allow_dynamic){
 			this.dynamic_icon = this.getEl().createChild({
@@ -173,15 +186,15 @@ Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 		   if(this.allow_dynamic) 
 				this._add_dynamic_icon();	
 		},
-		toggleDynamize: function(){		
+		toggleDynamize: function(){	
+			console.log('toggleDynamize');
 			
 			if (this.dynamic_icon.hasClass('x-item-disabled'))
 				return;
 			
 			if (this.dynamic){
 				Ext.each(this.items.items, function(item){
-					console.log('item');
-					console.log(item);
+					
 					this.enable();
 				});
 				
@@ -203,6 +216,7 @@ Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 				
 				this.dynamic = true;
 			}
+			console.log('this.dynamic '+ this.dynamic);
 		},		
 		disableAll: function(){
 			
@@ -245,9 +259,13 @@ Ext.ux.SelectFieldSet = function(config) {
 		_select : function(value){
 			
 			var new_values = this.ownerCt.values[value];	
-			
-			fieldset.removeAll();
+			console.log('new_values');
+			console.log(new_values);
+			if (new_values){
+				fieldset.removeAll();
 			fieldset.add(new_values);
+			
+			}
 			this.ownerCt.doLayout();
 			
 		},
@@ -267,7 +285,19 @@ Ext.ux.SelectFieldSet = function(config) {
 	];
 		
     Ext.ux.SelectFieldSet.superclass.constructor.call(this, config);    
+    this.select_field = select_field;
+    
     this.fieldset = fieldset;
+    this.fieldset.disable = function(){
+		Ext.each(this.items.items, function(item){
+			item.disable()
+		});
+	};
+	this.fieldset.enable = function(){
+		Ext.each(this.items.items, function(item){
+			item.enable()
+		});
+	};
     this.select_field = select_field;
     this.values = config.values;
 	
@@ -285,6 +315,22 @@ Ext.extend(Ext.ux.SelectFieldSet, Ext.ux.DynamicFieldSet, {
 		});
 		
 	},
+	check_dynamic: function(dynamics){
+		if(dynamics.indexOf(this.select_field.name) >=0)
+			if (this.dynamic_icon)
+				this.toggleDynamize();
+			else
+				this.dynamic = true;
+
+			
+	},
+	get_dynamic_field: function(){
+		
+		if (this.dynamic)
+			return [this.select_field.name];
+		else
+			return [];
+	}
 	
 	
 });

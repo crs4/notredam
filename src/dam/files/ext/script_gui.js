@@ -43,19 +43,19 @@ var plugin_dynamic_field = {
 			this.dynamic = true;			
 		};
 		
-		field.toggleDynamize = function(){
-			
-			if (this.dynamic_icon.hasClass('x-item-disabled'))
-				return;
-			
-			if (this.dynamic){
-				this.setDynamic(false);
-			} 
-			
-			else{
-				this.setDynamic(true);
-			}
-		};
+		if (!field.toggleDynamize)
+			field.toggleDynamize = function(){				
+				if (this.dynamic_icon.hasClass('x-item-disabled'))
+					return;
+				
+				if (this.dynamic){
+					this.setDynamic(false);
+				} 
+				
+				else{
+					this.setDynamic(true);
+				}
+			};
 		
 		field.disableAll = function(){
 			Ext.ux.MultiRenditions.superclass.disable.call(this);
@@ -71,10 +71,24 @@ var plugin_dynamic_field = {
 			
 		};
 		
+		if (!field.check_dynamic)
+			field.check_dynamic = function(dynamics){
+				console.log('---check_dynamic');
+				console.log(this);
+				if (dynamics.indexOf(this.name) >=0)
+					if (this.dynamic_icon)
+						this.toggleDynamize();
+					else
+						this.dynamic = true;
+					
+			};
 		
 		if (field.allow_dynamic){
 			field.on('render', function(){
-			
+				
+				console.log('--------------------------this.dynamic');
+				console.log(this.dynamic);
+				console.log(this);
 				try{
 						field.getEl().parent('.x-form-item').on('mouseenter', function(){	
 						if(!field.dynamic_icon.hasClass('x-item-disabled'))		
@@ -114,12 +128,14 @@ var plugin_dynamic_field = {
 			});
 		}
 		
-		field.get_dynamic_field = function(){
-			if (this.dynamic)
-				return [this.name];
-			else
-				return [];
-		};
+		if(!field.get_dynamic_field)
+			field.get_dynamic_field = function(){
+				console.log('get_dynamic_field plugin');
+				if (this.dynamic)
+					return [this.name];
+				else
+					return [];
+			};
 	}
 };
 
@@ -202,9 +218,12 @@ Ext.extend(MDAction, WireIt.Container, {
 			
 	},
 	get_dynamic_fields: function(){
-		
+		console.log('get_dynamic_fields action');
 		var dynamic = [];
 		Ext.each(this.form.items.items, function(item){
+			console.log('item.get_dynamic_field()');
+			console.log(item.get_dynamic_field());
+			console.log('aaa');
 			dynamic = dynamic.concat(item.get_dynamic_field());
 			
 		});
@@ -253,25 +272,32 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	MDAction.superclass.render.call(this);
 	 	var create_label = !this.no_label;
 	 	var action = this;
-	 	
+	 	var params_objs = []
 	 	Ext.each(this.params, function(param){
 			
 			param.allow_dynamic = true;			
-				
-			if (param.xtype == 'fieldsetcontainer'){
-				Ext.each(param.items, function(item){
-					if (action.dynamic.indexOf(item.name) >=0)
-						item.dynamic = true;
-				});
-			}
+			param.plugins = [plugin_dynamic_field];
 			
-			else{
-				param.plugins = [plugin_dynamic_field]
-				console.log('action.dynamic');
-				console.log(action.dynamic);
-				if (action.dynamic.indexOf(param.name) >=0)
-					param.dynamic = true;
-			}
+			var param_obj = new Ext.ComponentMgr.types[param.xtype](param);
+			console.log('param_obj');
+			console.log(param_obj);
+			param_obj.check_dynamic(action.dynamic);
+			params_objs.push(param_obj);
+			
+			//if (param.xtype == 'fieldsetcontainer'){
+				//Ext.each(param.items, function(item){
+					//if (action.dynamic.indexOf(item.name) >=0)
+						//item.dynamic = true;
+				//});
+			//}
+			//
+			//else{
+				//param.plugins = [plugin_dynamic_field];
+				//console.log('action.dynamic');
+				//console.log(action.dynamic);
+				//if (action.dynamic.indexOf(param.name) >=0)
+					//param.dynamic = true;
+			//}
 		});
 	 	
 	 	var form = new Ext.form.FormPanel({
@@ -280,7 +306,7 @@ Ext.extend(MDAction, WireIt.Container, {
 	 		autoHeight: true,
 	 		autoScroll: true,
 	 		border: false,
-	 		items: this.params,
+	 		items: params_objs,
 	 		
 	 		//collapsible: true,
 	 		listeners:{
