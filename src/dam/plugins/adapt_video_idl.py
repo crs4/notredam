@@ -143,19 +143,7 @@ def inspect(workspace):
                     'FLV':[       
                         video_bit_rate_b,                         
                         bit_rate_kb,
-                       {
-                        'xtype': 'cbfieldset',
-                        'title': 'Sampling',
-                        'items': [
-                          frame_rate,
-                          audio_rate
-                        ]
-                        
-                        }, 
                        
-                        
-                        resize,
-                        wm
                     
                     ],
                     'FLV_H264_AAC':[                            
@@ -163,83 +151,32 @@ def inspect(workspace):
                         video_bit_rate_b,
                         bit_rate_b,
                         
-                        {
-                        'xtype': 'cbfieldset',
-                        'title': 'Sampling',
-                        'items': [
-                          frame_rate,
-                          audio_rate
-                        ]
                         
-                        },
-                        resize,
-                        wm
                     
                     ],
                     'MPGETS':[
                        
                         video_bit_rate_b,
                         bit_rate_kb,
-                        {
-                        'xtype': 'cbfieldset',
-                        'title': 'Sampling',
-                        'items': [
-                          frame_rate,
-                          audio_rate
-                        ]
                         
-                        },
-                        resize,
-                        wm
                     
                     ],
                     'MATROSKA_MPEG4_AAC':[
                         video_bit_rate_b,
                         bit_rate_b,
-                        {
-                        'xtype': 'cbfieldset',
-                        'title': 'Sampling',
-                        'items': [
-                          frame_rate,
-                          audio_rate
-                        ]
                         
-                        },
-                        resize,
-                        wm
                     
                     ],
                     'MP4_H264_AACLOW':[
                        video_bit_rate_kb,
                        bit_rate_b,
-                        {
-                        'xtype': 'cbfieldset',
-                        'title': 'Sampling',
-                        'items': [
-                          frame_rate,
-                          audio_rate
-                        ]
                         
-                        },
-                        
-                        resize,
-                        wm
                     
                     ],
                     'AVI':[                      
                         video_bit_rate_b,                      
                         bit_rate_kb,
-                        {
-                        'xtype': 'cbfieldset',
-                        'title': 'Sampling',
-                        'items': [
-                          frame_rate,
-                          audio_rate
-                        ]
-                        
-                        },
-                        resize,
-                        wm
+                       
                     
                     ],
                      
@@ -257,17 +194,7 @@ def inspect(workspace):
                             'maxValue':1,
                             'allowDecimals':True
                         },
-                        {
-                        'xtype': 'cbfieldset',
-                        'title': 'Sampling',
-                        'items': [
-                          frame_rate,
-                          audio_rate
-                        ]
                         
-                        },
-                        resize,
-                        wm
                                
                     
                     ]
@@ -275,7 +202,21 @@ def inspect(workspace):
                       
                 }
                  
-             }
+             },
+             {
+				'xtype': 'cbfieldset',
+				'title': 'Sampling',
+				'items': [
+				  frame_rate,
+				  audio_rate
+				]
+			
+			}, 
+		   
+			
+			resize,
+			wm
+             
                       
             
         ]
