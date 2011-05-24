@@ -133,6 +133,12 @@ Ext.ux.DynamicFieldSet = function(config) {
 	
 };
 Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
+	initComponent: function(){
+		if (this.allow_dynamic == undefined)
+		this.allow_dynamic = true;
+		
+		Ext.ux.DynamicFieldSet.superclass.initComponent.call(this);    
+	},
 	_add_dynamic_icon: function(){
 		if (this.allow_dynamic){
 			this.dynamic_icon = this.getEl().createChild({
@@ -167,12 +173,15 @@ Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 		   if(this.allow_dynamic) 
 				this._add_dynamic_icon();	
 		},
-		toggleDynamize: function(){			
+		toggleDynamize: function(){		
+			
 			if (this.dynamic_icon.hasClass('x-item-disabled'))
 				return;
 			
 			if (this.dynamic){
 				Ext.each(this.items.items, function(item){
+					console.log('item');
+					console.log(item);
 					this.enable();
 				});
 				
@@ -527,6 +536,9 @@ Ext.reg('select', Ext.ux.Select);
 
 
 Ext.ux.CBFieldSet = function(config) {		
+	if (config.allow_dynamic == undefined)
+		config.allow_dynamic = true;
+		
 	if (!config.dynamic && config.allow_dynamic)
 		config.collapsed = true;		
 	else
@@ -536,6 +548,18 @@ Ext.ux.CBFieldSet = function(config) {
 };
 
 Ext.extend(Ext.ux.CBFieldSet, Ext.ux.DynamicFieldSet, {	
+	
+	initComponent: function(){
+		console.log('aaaaaaaa');
+		Ext.ux.CBFieldSet.superclass.initComponent.call(this);
+		console.log('this.dynamic ' +this.dynamic);
+		console.log('this.allow_dynamic ' +this.allow_dynamic);
+		if (!this.dynamic && this.allow_dynamic)
+			this.collapsed = true;		
+		else
+			this.collapsed = false;
+		
+	},
 	
 	data_loaded: function(){
 		var expand = false;
@@ -574,7 +598,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.ux.DynamicFieldSet, {
 			Ext.ux.CBFieldSet.superclass.onRender.call(this, ct, position);		
 		else
 			Ext.form.FieldSet.superclass.onRender.call(this, ct, position);		
-        this._add_dynamic_icon();		
+        //this._add_dynamic_icon();		
        
         console.log('disabling...');
 		if (this.collapsed)

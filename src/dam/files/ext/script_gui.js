@@ -136,7 +136,7 @@ var MDAction =  function(opts, layer) {
 	this.inputs = opts.inputs || [];
 	this.outputs = opts.outputs || [];
 	opts.terminals = [];
-	this.params = opts.params;
+	this.params = Ext.decode(Ext.encode(opts.params)); //just for working on a copy of params
 	opts.resizable = false;
 	this.label = opts.label || opts.title;
 	this.dynamic = opts.dynamic || [];
@@ -267,6 +267,8 @@ Ext.extend(MDAction, WireIt.Container, {
 			
 			else{
 				param.plugins = [plugin_dynamic_field]
+				console.log('action.dynamic');
+				console.log(action.dynamic);
 				if (action.dynamic.indexOf(param.name) >=0)
 					param.dynamic = true;
 			}
@@ -654,23 +656,26 @@ Ext.onReady(function(){
           		return this.dropAllowed;
           	},
           	onContainerDrop: function( source, e, data ){          		
-          		
+          		console.log('data');
+          		console.log(data);
           		var drop_x = e.xy[0] ;
 				var drop_y = e.xy[1];
 				var name = data.selections[0].data.name;
-				var params = data.selections[0].data.params;	
+				var params_to_load = data.selections[0].data.params;	
+				console.log('params_to_load');
+				console.log(params_to_load);
 
           		if (data.grid.id == 'actions_grid'){
 							
 					var fields = [];
 					var action = new MDAction({
 							title: name,
-							label: params.label,
+							label: params_to_load.label,
 							position:[drop_x,drop_y],
 	//			            legend:'thumbnail',							
 							inputs: ['in'],
 							outputs: ['out'],
-							params: params,
+							params: params_to_load,
 							
 							
 					}, baseLayer);
@@ -683,7 +688,7 @@ Ext.onReady(function(){
 						position:[drop_x,drop_y],					   
 						width: 250,
 						outputs: ['out'],
-						params: params
+						params: params_to_load
 				}, baseLayer);
 					
 				}
