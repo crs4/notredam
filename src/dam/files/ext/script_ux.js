@@ -12,6 +12,148 @@ var utils_data = {'actions': [{
 	}
 ]};
 
+Ext.ux.plugin_dynamic_field = {
+	
+	init: function(field){
+		if (!field.setDynamic)
+			field.setDynamic = function(dynamic){
+				if (dynamic){
+					this.disable();
+					this.dynamic_icon.removeClass('dynamic_input_unselected');
+					this.dynamic_icon.addClass('dynamic_input_selected');	
+					
+					this.dynamic = true;
+				}
+				
+				else{
+					this.enable();
+					this.dynamic_icon.removeClass('dynamic_input_selected');
+					this.dynamic_icon.addClass('dynamic_input_unselected');	
+					this.dynamic_icon.addClass('dynamic_input_hidden');
+					
+					this.dynamic = false;
+					
+				}
+			};
+		
+		field._set_dynamic = function(){
+			this.dynamic = true;			
+		};
+		
+		if (!field.toggleDynamize)
+			field.toggleDynamize = function(){				
+				if (this.dynamic_icon.hasClass('x-item-disabled'))
+					return;
+				
+				if (this.dynamic){
+					this.setDynamic(false);
+				} 
+				
+				else{
+					this.setDynamic(true);
+				}
+			};
+		
+		
+		field._disableAll = function(){
+			this.dynamic_icon.addClass('x-item-disabled');
+			this.dynamic_icon.addClass('dynamic_input_hidden');	
+							
+		};
+		
+		field._enableAll = function(){
+			this.dynamic_icon.removeClass('x-item-disabled');			
+		};
+		
+		if (!field.disableAll)
+			field.disableAll = function(){
+				field.disable();
+				//Ext.ux.MultiRenditions.superclass.disable.call(this);
+				field._disableAll();
+			   
+				
+			};
+		if (!field.enableAll)
+			field.enableAll = function(){
+				field.enable();
+				//Ext.ux.MultiRenditions.superclass.enable.call(this);
+				field._enableAll();
+			  
+			};
+					
+		if (!field.check_dynamic)
+			field.check_dynamic = function(dynamics){
+				
+				if (dynamics.indexOf(this.name) >=0){
+					if (this.dynamic_icon)
+						this.toggleDynamize();
+					else
+						this.dynamic = true;
+					return [this];
+				}
+				else
+					return false;
+					
+					
+			};
+		
+		if (field.allow_dynamic && !field._add_dynamic_icon){
+			field.on('render', function(){
+				
+				
+				
+				try{
+						field.getEl().parent('.x-form-item').on('mouseenter', function(){	
+						if(!field.dynamic_icon.hasClass('x-item-disabled'))		
+							field.dynamic_icon.removeClass('dynamic_input_hidden');					
+					});
+					
+					field.getEl().parent('.x-form-item').on('mouseleave', function(){
+						if (field.dynamic_icon.hasClass('dynamic_input_unselected'))
+							field.dynamic_icon.addClass('dynamic_input_hidden');					
+					});
+					
+					
+					field.dynamic_icon = field.getEl().parent('.x-form-element').insertSibling({
+						tag: 'img',
+						cls: 'dynamic_input ' + (field.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
+						src: '/files/images/icons/fam/application_xp_terminal.png',
+						style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+						//style: 'float: right; padding-right:5px; z-index:2000;',
+						//style: 'z-index:2000; position: absolute; top:40%; left:92%',
+						
+						title: 'Dynamic Input: value will be set run time',
+						onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
+						
+					}, 'before');
+					
+					if (field.dynamic){
+						field.setDynamic(true);
+					}
+				}
+				catch(e){
+					console.log('error with ');
+					console.log(field);
+					console.log(e)
+				}
+				
+				
+				
+				
+			});
+		}
+		
+		if(!field.get_dynamic_field)
+			field.get_dynamic_field = function(){
+				
+				if (this.dynamic)
+					return [this.name];
+				else
+					return [];
+			};
+	}
+};
+
 Ext.ux.StoreMenu = function(config){
     
     Ext.ux.StoreMenu.superclass.constructor.call(this, config);    
