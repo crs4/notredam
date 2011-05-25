@@ -89,11 +89,14 @@ var plugin_dynamic_field = {
 		if (!field.check_dynamic)
 			field.check_dynamic = function(dynamics){
 				
-				if (dynamics.indexOf(this.name) >=0)
+				if (dynamics.indexOf(this.name) >=0){
 					if (this.dynamic_icon)
 						this.toggleDynamize();
 					else
 						this.dynamic = true;
+					return this;
+				}
+					
 					
 			};
 		
