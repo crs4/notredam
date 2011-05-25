@@ -955,8 +955,7 @@ function createTemplate(panel_id, media_type){
 };
 
 var open_dynamic_params_window = function(dynamic_params){
-	console.log('dynamic_params');
-	console.log(dynamic_params);
+	
 	var action_store = new Ext.data.JsonStore({
 		url:'/get_actions/',
 		fields:['name', 'params'],					
@@ -986,14 +985,17 @@ var open_dynamic_params_window = function(dynamic_params){
 						var params;
 						
 						Ext.each(script.data.params, function(param){
-							
+							param.plugins = [Ext.ux.plugin_dynamic_field];
 							param_obj = new Ext.ComponentMgr.types[param.xtype](param);
-							console.log('param_obj');
-							console.log(param_obj);
+							
 							if (param_obj.check_dynamic ){
 								var param_to_add = param_obj.check_dynamic(action.dynamic);
+								console.log('param_to_add');
+								console.log(param_to_add);
 								if (param_to_add){
+									
 									Ext.each(param_to_add, function(p){
+									
 									p.allow_dynamic = false;
 									p.collapsed = false;
 									p.dynamic = false;																								
