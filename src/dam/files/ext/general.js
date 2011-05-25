@@ -955,7 +955,8 @@ function createTemplate(panel_id, media_type){
 };
 
 var open_dynamic_params_window = function(dynamic_params){
-	
+	console.log('dynamic_params');
+	console.log(dynamic_params);
 	var action_store = new Ext.data.JsonStore({
 		url:'/get_actions/',
 		fields:['name', 'params'],					
@@ -977,8 +978,7 @@ var open_dynamic_params_window = function(dynamic_params){
 							items: [],
 							title: action.name
 						};
-						console.log('action');
-						console.log(action);
+						
 						
 						
 						script = action_store.query('name', action.name).items[0];	
@@ -986,26 +986,43 @@ var open_dynamic_params_window = function(dynamic_params){
 						var params;
 						
 						Ext.each(script.data.params, function(param){
-							console.log('param');
-							console.log(param);
-							param_obj = new Ext.ComponentMgr.types[param.xtype](param);
-							if (param.items)
-								Ext.each(param.items, function(p){
-									params.push(p);
-								});
-							else
-								params = [param]
 							
-							console.log('params');
-							console.log(params);
-							Ext.each(params, function(param2){
-								if (action.dynamic.indexOf(param2.name) >=0){
-									param2.allow_dynamic = false;									
-									
-									fieldset.items.push(param2);
+							param_obj = new Ext.ComponentMgr.types[param.xtype](param);
+							console.log('param_obj');
+							console.log(param_obj);
+							if (param_obj.check_dynamic ){
+								var param_to_add = param_obj.check_dynamic(action.dynamic);
+								if (param_to_add){
+									Ext.each(param_to_add, function(p){
+									p.allow_dynamic = false;
+									p.collapsed = false;
+									p.dynamic = false;																								
+									fieldset.items.push(p);
+									});
 								}
 								
-							});
+								//param.allow_dynamic = false;																		
+								//fieldset.items.push(param);						
+							}
+							
+							//if (param.items)
+								//Ext.each(param.items, function(p){
+									//params.push(p);
+								//});
+							//else
+								//params = [param]
+							
+							
+							//Ext.each(params, function(param2){
+								//console.log('param2.name');
+								//console.log(param2);
+								//if (action.dynamic.indexOf(param2.name) >=0){
+									//param2.allow_dynamic = false;																		
+									//fieldset.items.push(param2);
+									//
+								//}
+								//
+							//});
 							
 						
 						});
@@ -1020,10 +1037,13 @@ var open_dynamic_params_window = function(dynamic_params){
 						width: 600,
 						height: 400,
 						modal: true,
+						autoScroll: true,
 						items: new Ext.form.FormPanel({
 							id: 'dynamic_input_form',
-							items: params_to_show,
-							buttons: [
+							items: params_to_show
+							
+						}),
+						buttons: [
 								{
 									text: 'Run',
 									handler: function(){
@@ -1037,7 +1057,6 @@ var open_dynamic_params_window = function(dynamic_params){
 									
 								}
 							]
-						})
 					});
 					win.show();
 				}

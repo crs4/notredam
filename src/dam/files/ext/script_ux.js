@@ -60,29 +60,25 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 	border: false,
 	layout: 'form',
 	check_dynamic: function(dynamics){
-		console.log('dynamics');
-		console.log(dynamics);
-		Ext.each(this.items.items, function(item){
+		var tmp = [];
+		Ext.each(this.items.items, function(item){			
 			
-			console.log('item.name ' + item.name);
 			if (dynamics.indexOf(item.name) >=0){
 				console.log('item.dynamic_icon ' + item.dynamic_icon);
 				if (item.dynamic_icon)
 					item.toggleDynamize();
 				else
 					item.dynamic = true;
-			}
+				tmp.push(item);
+			}			
 			
 		});
-		
-	},
-	//initComponent: function(){
-		//console.log('initComponent1');
-		//if (this.dynamic)
-			//this._set_dynamic();
-		//Ext.ux.FieldSetContainer.superclass.initComponent.call(this);     	
-		//console.log('initComponent2');
-	//},
+		if (tmp.length > 0)
+			return tmp;
+		else
+			return false;
+		},
+	
 	 onRender:function(ct, position) {
 		
 		//if(this.dynamic)
@@ -175,8 +171,12 @@ Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 	},
 	
 	check_dynamic: function(dynamics){
-		if (dynamics.indexOf(this.name) >=0)
+		if (dynamics.indexOf(this.name) >=0){
 			this.toggleDynamize();
+			return [this];
+		}
+		else
+			return false;
 	},
 	get_dynamic_field: function(){
 		
@@ -296,7 +296,7 @@ Ext.ux.SelectFieldSet = function(config) {
 		
 		values: select_values,
 		value: config.select_value,
-		name: config.select_name,
+		name: config.name,
 		fieldLabel: fieldLabel,
 		_select : function(value){
 			
@@ -357,13 +357,16 @@ Ext.extend(Ext.ux.SelectFieldSet, Ext.ux.DynamicFieldSet, {
 		
 	},
 	check_dynamic: function(dynamics){
-		if(dynamics.indexOf(this.select_field.name) >=0)
+		if(dynamics.indexOf(this.select_field.name) >=0){
 			if (this.dynamic_icon)
 				this.toggleDynamize();
 			else
 				this.dynamic = true;
-
 			
+			return [this];
+			}
+		else
+			return false;
 	},
 	get_dynamic_field: function(){
 		
@@ -1070,7 +1073,17 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
     allowBlank: false,
     mode: 'local',
     width: 220,
-    
+    check_dynamic: function(dynamics){
+		if (dynamics.indexOf(this.name) >=0){
+			if (this.dynamic_icon)
+				this.toggleDynamize();
+			else
+				this.dynamic = true;
+			return this;
+		}
+		else
+			return false;
+	},
     onRender:function(ct, position) {
     	var h = this.hiddenName;
     	this.hiddenName = null;
