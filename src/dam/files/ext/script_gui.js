@@ -18,26 +18,28 @@ function params_equal(p1, p2){
 };
 
 var plugin_dynamic_field = {
+	
 	init: function(field){
-		field.setDynamic = function(dynamic){
-			if (dynamic){
-				this.disable();
-				this.dynamic_icon.removeClass('dynamic_input_unselected');
-				this.dynamic_icon.addClass('dynamic_input_selected');	
+		if (!field.setDynamic)
+			field.setDynamic = function(dynamic){
+				if (dynamic){
+					this.disable();
+					this.dynamic_icon.removeClass('dynamic_input_unselected');
+					this.dynamic_icon.addClass('dynamic_input_selected');	
+					
+					this.dynamic = true;
+				}
 				
-				this.dynamic = true;
-			}
-			
-			else{
-				this.enable();
-				this.dynamic_icon.removeClass('dynamic_input_selected');
-				this.dynamic_icon.addClass('dynamic_input_unselected');	
-				this.dynamic_icon.addClass('dynamic_input_hidden');
-				
-				this.dynamic = false;
-				
-			}
-		};
+				else{
+					this.enable();
+					this.dynamic_icon.removeClass('dynamic_input_selected');
+					this.dynamic_icon.addClass('dynamic_input_unselected');	
+					this.dynamic_icon.addClass('dynamic_input_hidden');
+					
+					this.dynamic = false;
+					
+				}
+			};
 		
 		field._set_dynamic = function(){
 			this.dynamic = true;			
@@ -57,24 +59,36 @@ var plugin_dynamic_field = {
 				}
 			};
 		
-		field.disableAll = function(){
-			Ext.ux.MultiRenditions.superclass.disable.call(this);
+		
+		field._disableAll = function(){
 			this.dynamic_icon.addClass('x-item-disabled');
-			this.dynamic_icon.addClass('dynamic_input_hidden');					
-		   
-			
-		};
-		field.enableAll = function(){
-			Ext.ux.MultiRenditions.superclass.enable.call(this);
-			this.dynamic_icon.removeClass('x-item-disabled');			
-		   
-			
+			this.dynamic_icon.addClass('dynamic_input_hidden');	
+							
 		};
 		
+		field._enableAll = function(){
+			this.dynamic_icon.removeClass('x-item-disabled');			
+		};
+		
+		if (!field.disableAll)
+			field.disableAll = function(){
+				field.disable();
+				//Ext.ux.MultiRenditions.superclass.disable.call(this);
+				field._disableAll();
+			   
+				
+			};
+		if (!field.enableAll)
+			field.enableAll = function(){
+				field.enable();
+				//Ext.ux.MultiRenditions.superclass.enable.call(this);
+				field._enableAll();
+			  
+			};
+					
 		if (!field.check_dynamic)
 			field.check_dynamic = function(dynamics){
-				console.log('---check_dynamic');
-				console.log(this);
+				
 				if (dynamics.indexOf(this.name) >=0)
 					if (this.dynamic_icon)
 						this.toggleDynamize();
@@ -83,12 +97,11 @@ var plugin_dynamic_field = {
 					
 			};
 		
-		if (field.allow_dynamic){
+		if (field.allow_dynamic && !field._add_dynamic_icon){
 			field.on('render', function(){
 				
-				console.log('--------------------------this.dynamic');
-				console.log(this.dynamic);
-				console.log(this);
+				
+				
 				try{
 						field.getEl().parent('.x-form-item').on('mouseenter', function(){	
 						if(!field.dynamic_icon.hasClass('x-item-disabled'))		
@@ -119,6 +132,8 @@ var plugin_dynamic_field = {
 					}
 				}
 				catch(e){
+					console.log('error with ');
+					console.log(field);
 					console.log(e)
 				}
 				
@@ -130,7 +145,7 @@ var plugin_dynamic_field = {
 		
 		if(!field.get_dynamic_field)
 			field.get_dynamic_field = function(){
-				console.log('get_dynamic_field plugin');
+				
 				if (this.dynamic)
 					return [this.name];
 				else
@@ -218,12 +233,10 @@ Ext.extend(MDAction, WireIt.Container, {
 			
 	},
 	get_dynamic_fields: function(){
-		console.log('get_dynamic_fields action');
+		
 		var dynamic = [];
 		Ext.each(this.form.items.items, function(item){
-			console.log('item.get_dynamic_field()');
-			console.log(item.get_dynamic_field());
-			console.log('aaa');
+			
 			dynamic = dynamic.concat(item.get_dynamic_field());
 			
 		});
@@ -279,8 +292,7 @@ Ext.extend(MDAction, WireIt.Container, {
 			param.plugins = [plugin_dynamic_field];
 			
 			var param_obj = new Ext.ComponentMgr.types[param.xtype](param);
-			console.log('param_obj');
-			console.log(param_obj);
+			
 			param_obj.check_dynamic(action.dynamic);
 			params_objs.push(param_obj);
 			
@@ -682,15 +694,12 @@ Ext.onReady(function(){
           		return this.dropAllowed;
           	},
           	onContainerDrop: function( source, e, data ){          		
-          		console.log('data');
-          		console.log(data);
+          		
           		var drop_x = e.xy[0] ;
 				var drop_y = e.xy[1];
 				var name = data.selections[0].data.name;
 				var params_to_load = data.selections[0].data.params;	
-				console.log('params_to_load');
-				console.log(params_to_load);
-
+			
           		if (data.grid.id == 'actions_grid'){
 							
 					var fields = [];
