@@ -970,14 +970,17 @@ var open_dynamic_params_window = function(dynamic_params){
 		callback: function(){
 			action_store.load({
 				callback: function(){
-					var params_to_show = [];
+					var actions_to_show = [];
 					Ext.each(dynamic_params, function(action){
-						var fieldset = {
-							xtype: 'fieldset',
-							items: [],
-							title: action.name
+						//var fieldset = {
+							//xtype: 'fieldset',
+							//items: [],
+							//title: action.name
+						//};
+						var action_data = {
+							name: action.name, 
+							params: []
 						};
-						
 						
 						
 						script = action_store.query('name', action.name).items[0];	
@@ -999,57 +1002,104 @@ var open_dynamic_params_window = function(dynamic_params){
 									p.allow_dynamic = false;
 									p.collapsed = false;
 									p.dynamic = false;																								
-									fieldset.items.push(p);
+									//fieldset.items.push(p);
+									action_data.params.push(p);
 									});
 								}
 								
-								//param.allow_dynamic = false;																		
-								//fieldset.items.push(param);						
+													
 							}
 							
-							//if (param.items)
-								//Ext.each(param.items, function(p){
-									//params.push(p);
-								//});
-							//else
-								//params = [param]
 							
-							
-							//Ext.each(params, function(param2){
-								//console.log('param2.name');
-								//console.log(param2);
-								//if (action.dynamic.indexOf(param2.name) >=0){
-									//param2.allow_dynamic = false;																		
-									//fieldset.items.push(param2);
-									//
-								//}
-								//
-							//});
 							
 						
 						});
-						params_to_show.push(fieldset);
+						actions_to_show.push(action_data);
 					});
-					console.log('params_to_show');
-					console.log(params_to_show);
+							
 					
 					
 					var win = new Ext.Window({
 						title: 'Dynamic Inputs',
 						width: 600,
-						height: 400,
+						height: 600,
 						modal: true,
 						autoScroll: true,
-						items: new Ext.form.FormPanel({
-							id: 'dynamic_input_form',
-							items: params_to_show
-							
+						layout: 'fit',
+						items: new Ext.Panel({
+							layout: 'border',
+							items: [
+								new Ext.grid.GridPanel({
+									region: 'center',
+									store: new Ext.data.JsonStore({
+										data: {'actions': actions_to_show},
+										root: 'actions',
+										fields:['name', 'params', 'values']
+									
+									}),
+									columns: [
+										{id: 'name', header: 'Actions', width: 200, dataIndex: 'name'}										
+									 ],
+									viewConfig: {
+										forceFit: true,
+										height: 100,
+										autoScroll: true
+									},
+									sm: new Ext.grid.RowSelectionModel({
+										singleSelect: true,
+										listeners:{
+											selectionchange: function(){
+												var form_panel = Ext.getCmp('params_container');
+												form_panel.removeAll();
+												if (this.hasSelection()){
+													var action = this.getSelected();
+													console.log('action.data.params');
+													console.log(action.data.params);
+													Ext.each(action.data.params, function(param_list){
+														
+														Ext.each(param_list, function(param){
+															var tmp = new Ext.ComponentMgr.types[param.xtype](param);
+															form_panel.add(tmp);
+														});
+														
+													});
+													
+													form_panel.doLayout();
+												}
+												
+												
+												
+											} 
+										}
+									})
+								}),
+								new Ext.form.FormPanel({
+									id: 'params_container',
+									title: 'Params',
+									layout: 'form',
+									height: 400,
+									region: 'south',
+									items: []
+								})
+							]
 						}),
+						//items: new Ext.form.FormPanel({
+							//id: 'dynamic_input_form',
+							//items: params_to_show,
+							//layout: 'fit',
+							//
+						//}),
 						buttons: [
 								{
 									text: 'Run',
 									handler: function(){
-										_run_script();
+										//var form = Ext.getCmp('dynamic_input_form');
+										//var values = form.getForm().getValues();
+										//
+										//console.log('values');
+										//console.log(values);
+										
+										//_run_script();
 										
 									}
 									
