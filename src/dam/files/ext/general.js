@@ -1046,15 +1046,43 @@ var open_dynamic_params_window = function(dynamic_params){
 										autoScroll: true
 									},
 									sm: new Ext.grid.RowSelectionModel({
-										singleSelect: true,
+										singleSelect: true,										
 										listeners:{
-											selectionchange: function(){
+											rowdeselect : function(sm, rowIndex, record ){
+												console.log('beforerowselect ' );
+												console.log(record);
 												var form_panel = Ext.getCmp('params_container');
+												if(record && form_panel.items.items.length > 0){
+													
+													console.log(record.data.name);
+													var values = {};
+													Ext.each(form_panel.items.items, function(item){//error with getForm().getValues()
+														console.log('item');
+														console.log(item);
+														if(item)
+															values[item.name] = item.getValue()
+													});
+													
+													record.data.values = values;
+													record.commit();
+													console.log('record.data');
+													console.log(record.data);
+													
+												}
 												form_panel.removeAll();
+												
+												
+											},
+											
+											selectionchange: function(){
+												console.log('selectionchange');
+												var form_panel = Ext.getCmp('params_container');
+													
+												
 												if (this.hasSelection()){
+													
 													var action = this.getSelected();
-													console.log('action.data.params');
-													console.log(action.data.params);
+												
 													Ext.each(action.data.params, function(param_list){
 														
 														Ext.each(param_list, function(param){
@@ -1063,7 +1091,8 @@ var open_dynamic_params_window = function(dynamic_params){
 														});
 														
 													});
-													
+													if (action.data.values)
+														form_panel.getForm().setValues(action.data.values);
 													form_panel.doLayout();
 												}
 												
