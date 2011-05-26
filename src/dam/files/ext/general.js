@@ -1019,6 +1019,8 @@ var open_dynamic_params_window = function(dynamic_params){
 							
 					
 					
+					
+					
 					var win = new Ext.Window({
 						title: 'Dynamic Inputs',
 						width: 600,
@@ -1030,6 +1032,7 @@ var open_dynamic_params_window = function(dynamic_params){
 							layout: 'border',
 							items: [
 								new Ext.grid.GridPanel({
+									id: 'actions_grid',
 									region: 'center',
 									store: new Ext.data.JsonStore({
 										data: {'actions': actions_to_show},
@@ -1059,8 +1062,14 @@ var open_dynamic_params_window = function(dynamic_params){
 													Ext.each(form_panel.items.items, function(item){//error with getForm().getValues()
 														console.log('item');
 														console.log(item);
-														if(item)
-															values[item.name] = item.getValue()
+														if(item){
+															var tmp = item.getValue()
+															//if (tmp.length)
+																//tmp = tmp[0];
+
+															values[item.name] = tmp;
+														}
+															
 													});
 													
 													record.data.values = values;
@@ -1122,12 +1131,18 @@ var open_dynamic_params_window = function(dynamic_params){
 								{
 									text: 'Run',
 									handler: function(){
-										//var form = Ext.getCmp('dynamic_input_form');
-										//var values = form.getForm().getValues();
-										//
-										//console.log('values');
-										//console.log(values);
+										var actions_grid = Ext.getCmp('actions_grid');
+										console.log('actions_grid.getStore().data');
+										console.log(actions_grid.getStore().data);
+										var dynamic_params = {};
+										actions_grid.getStore().each(function(action){
+											
+											dynamic_params[action.data.name] = action.data.values;
+										});
 										
+										console.log('dynamic_params');
+										console.log(dynamic_params);
+										//
 										//_run_script();
 										
 									}

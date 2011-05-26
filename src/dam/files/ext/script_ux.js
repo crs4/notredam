@@ -759,6 +759,10 @@ Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {
     _set_dynamic: function(){
 		this.dynamic = true;
 	}
+	//,
+	//getValue: function(){
+		//var tmp = Ext.ux.Select.superclass.getValue.call(this);
+	//}
     
     
  
