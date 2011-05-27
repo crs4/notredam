@@ -15,6 +15,7 @@ var utils_data = {'actions': [{
 Ext.ux.plugin_dynamic_field = {
 	
 	init: function(field){
+		console.log('-------------PLUGIN');
 		if (!field.setDynamic)
 			field.setDynamic = function(dynamic){
 				if (dynamic){
@@ -287,9 +288,13 @@ Ext.reg('fieldsetcontainer', Ext.ux.FieldSetContainer);
 Ext.ux.DynamicFieldSet = function(config) {
 	if (config.allow_dynamic == undefined)
 		config.allow_dynamic = true;
-		
-	Ext.ux.DynamicFieldSet.superclass.constructor.call(this, config);    
 	
+	Ext.ux.DynamicFieldSet.superclass.constructor.call(this, config);    
+	this.movable = config.movable;
+	this.allow_dynamic = config.allow_dynamic;
+	
+	console.log('this.movable ' + this.movable);
+	console.log('this.allow_dynamic ' + this.allow_dynamic);
 };
 Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 	initComponent: function(){
@@ -360,8 +365,7 @@ Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 						dynamic_icon.addClass('dynamic_input_hidden');					
 				});
 			}
-			if (this.dynamic){		
-						console.log('-------setDynamic0000000');
+			if (this.dynamic){								
 						this.setDynamic(true);
 					}
 		},
@@ -772,15 +776,22 @@ Ext.reg('select', Ext.ux.Select);
 
 
 Ext.ux.CBFieldSet = function(config) {	
-
+	
+	
 	if (config.allow_dynamic == undefined)
 		config.allow_dynamic = true;
 		
+	
+	
 	if (!config.dynamic && config.allow_dynamic)
 		config.collapsed = true;		
 	else
 		config.collapsed = false;
+	
+	
 	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
+	this.collapsed = config.collapsed
+	
 	
 };
 
@@ -840,9 +851,7 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.ux.DynamicFieldSet, {
 			
 		else
 			Ext.form.FieldSet.superclass.onRender.call(this, ct, position);		
-        //this._add_dynamic_icon();		
-       
-       
+        
 		if (this.collapsed)
 			Ext.each(this.items.items, function(item){			
 				
@@ -884,9 +893,19 @@ Ext.ux.MovableCBFieldSet = function(config) {
 	config.id = config.id || Ext.id();
 	config.items = config.items || [];
 	if (config.movable == undefined)
-		config.movable = true;		
-		
+		config.movable = true;
+	else if(!config.allow_dynamic){
+		config.movable = false;
+		config.collapsed = false;
+		config.dynamic = false;
+	}	
+	
+	console.log('MovableCBFieldSet.constructor');
+	console.log('config.movable ' + config.movable);
+	console.log('config.allow_dynamic ' + config.allow_dynamic);	
+	
 	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
+	
 };
 
 
@@ -950,7 +969,9 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	
 	
 	onRender : function(ct, position){
-	
+		console.log('onRender');
+		console.log('this.movable ' + this.movable);
+		console.log('this.allow_dynamic ' + this.allow_dynamic);
         if(!this.el){
             this.el = document.createElement('fieldset');
             this.el.id = this.id;
@@ -964,16 +985,6 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-down.gif', style: 'margin-bottom: -4px; margin-left: -3px', onclick: String.format('Ext.getCmp(\'{0}\').move_down();', this.id)});
 			this.header.insertFirst({tag: 'img', src: '/files/images/icons/arrow-up.gif', style: 'margin-bottom: -4px; margin-left: -2px',onclick: String.format('Ext.getCmp(\'{0}\').move_up();', this.id)});
 		}
-		
-		//this._add_dynamic_icon();			
-		
-        //var o = typeof this.checkboxToggle == 'object' ?
-                //this.checkboxToggle :
-                //{tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'};
-        //this.checkbox = this.header.insertFirst(o);
-        //this.checkbox.dom.checked = !this.collapsed;
-        //this.mon(this.checkbox, 'click', this.onCheckClick, this);
-    //
         
     },
 
