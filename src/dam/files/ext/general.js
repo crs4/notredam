@@ -1066,20 +1066,21 @@ var open_dynamic_params_window = function(dynamic_params){
 												if(record && form_panel.items.items.length > 0){
 													
 													console.log(record.data.name);
-													var values = {};
-													Ext.each(form_panel.items.items, function(item){//error with getForm().getValues()
-														console.log('item');
-														console.log(item);
-														if(item){
-															var tmp = item.getValue()
+													//var values = {};
+													//Ext.each(form_panel.items.items, function(item){//error with getForm().getValues()
+														//console.log('item');
+														//console.log(item);
+														//if(item){
+															//var tmp = item.getValue()
 															//if (tmp.length)
 																//tmp = tmp[0];
-
-															values[item.name] = tmp;
-														}
-															
-													});
-													
+//
+															//values[item.name] = tmp;
+														//}
+															//
+													//});
+													//
+													values = form_panel.getForm().getValues();
 													record.data.values = values;
 													record.commit();
 													console.log('record.data');
