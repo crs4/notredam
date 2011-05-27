@@ -1023,10 +1023,7 @@ var open_dynamic_params_window = function(dynamic_params){
 						});
 						actions_to_show.push(action_data);
 					});
-							
-					
-					console.log('----------actions_to_show');
-					console.log(actions_to_show);
+				
 					var tabs = [];
 					Ext.each(actions_to_show, function(action){
 						var form_panel = new Ext.form.FormPanel({
@@ -1059,6 +1056,7 @@ var open_dynamic_params_window = function(dynamic_params){
 							id: 'actions_tab_panel',
 							//layout: 'fit',
 							activeTab: 0,
+							deferredRender: false,
 							items: tabs
 						}),
 						
@@ -1068,19 +1066,28 @@ var open_dynamic_params_window = function(dynamic_params){
 									handler: function(){
 										
 										var dynamic_params = {};
-										
+										var invalid = false;
 										var actions_tab_panel = Ext.getCmp('actions_tab_panel');
-										Ext.each(actions_tab_panel.items.items, function(action){
-											console.log('action');
-											console.log(action);
-											var form_panel = action.form;
-											console.log('form_panel');
-											console.log(form_panel);
+										Ext.each(actions_tab_panel.items.items, function(action){											
+											var form_panel = action.form;											
 											dynamic_params[action.title] = form_panel.getForm().getValues();
-											console.log(dynamic_params);
+											if(!form_panel.getForm().isValid()){
+												console.log('invalid');
+												action.setTitle(action.title, 'abort_icon');
+												invalid = true;
+											}												
+											else{
+												console.log('valid');
+												action.setTitle(action.title, '.dummy_icon');
+											}
+												
 										});
-										console.log('dynamic_params');
-										console.log(dynamic_params);
+										//if (!invalid){
+										//}
+										//else{
+											//
+										//}
+										
 										//_run_script();
 										
 									}
@@ -1167,6 +1174,7 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 							if (!script_ux_loaded){
 								var script_to_load, css_to_load;																
 								import_external_file('/files/css/superboxselect.css', 'css');
+								import_external_file('/files/css/tools_icons.css', 'css');
 								import_external_js_via_ajax(['/files/ext/SuperBoxSelect.js', '/files/ext/script_ux.js'], function(){open_dynamic_params_window(dynamic_params);})
 								
 								//import_external_file('/files/ext/SuperBoxSelect.js', 'script');
