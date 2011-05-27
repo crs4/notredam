@@ -1027,131 +1027,60 @@ var open_dynamic_params_window = function(dynamic_params){
 					
 					console.log('----------actions_to_show');
 					console.log(actions_to_show);
+					var tabs = [];
+					Ext.each(actions_to_show, function(action){
+						var form_panel = new Ext.form.FormPanel({
+							items: action.params,
+							border: false
+						});
+						
+						tabs.push({
+							title: action.name,
+							form: form_panel,
+							items: new Ext.Panel({
+								style: 'padding-top: 15px; padding-left: 5px',
+								layout: 'fit',
+								border: false,
+								items: form_panel
+							}),
+							
+						});
+					});
 					
 					
 					var win = new Ext.Window({
 						title: 'Dynamic Inputs',
-						width: 600,
-						height: 600,
+						width: 550,
+						height: 500,
 						modal: true,
 						autoScroll: true,
 						layout: 'fit',
-						items: new Ext.Panel({
-							layout: 'border',
-							items: [
-								new Ext.grid.GridPanel({
-									id: 'actions_grid',
-									region: 'center',
-									store: new Ext.data.JsonStore({
-										data: {'actions': actions_to_show},
-										root: 'actions',
-										fields:['name', 'params', 'values']
-									
-									}),
-									columns: [
-										{id: 'name', header: 'Actions', width: 200, dataIndex: 'name'}										
-									 ],
-									viewConfig: {
-										forceFit: true,
-										height: 100,
-										autoScroll: true
-									},
-									sm: new Ext.grid.RowSelectionModel({
-										singleSelect: true,										
-										listeners:{
-											rowdeselect : function(sm, rowIndex, record ){
-												console.log('beforerowselect ' );
-												console.log(record);
-												var form_panel = Ext.getCmp('params_container');
-												if(record && form_panel.items.items.length > 0){
-													
-													console.log(record.data.name);
-													//var values = {};
-													//Ext.each(form_panel.items.items, function(item){//error with getForm().getValues()
-														//console.log('item');
-														//console.log(item);
-														//if(item){
-															//var tmp = item.getValue()
-															//if (tmp.length)
-																//tmp = tmp[0];
-//
-															//values[item.name] = tmp;
-														//}
-															//
-													//});
-													//
-													values = form_panel.getForm().getValues();
-													record.data.values = values;
-													record.commit();
-													console.log('record.data');
-													console.log(record.data);
-													
-												}
-												form_panel.removeAll();
-												
-												
-											},
-											
-											selectionchange: function(){
-												console.log('selectionchange');
-												var form_panel = Ext.getCmp('params_container');
-													
-												
-												if (this.hasSelection()){
-													
-													var action = this.getSelected();
-												
-													Ext.each(action.data.params, function(param_list){
-														
-														Ext.each(param_list, function(param){
-															var tmp = new Ext.ComponentMgr.types[param.xtype](param);
-															form_panel.add(tmp);
-														});
-														
-													});
-													if (action.data.values)
-														form_panel.getForm().setValues(action.data.values);
-													form_panel.doLayout();
-												}
-												
-												
-												
-											} 
-										}
-									})
-								}),
-								new Ext.form.FormPanel({
-									id: 'params_container',
-									title: 'Params',
-									layout: 'form',
-									height: 400,
-									region: 'south',
-									items: []
-								})
-							]
-						}),
-						//items: new Ext.form.FormPanel({
-							//id: 'dynamic_input_form',
-							//items: params_to_show,
+						items: new Ext.TabPanel({
+							id: 'actions_tab_panel',
 							//layout: 'fit',
-							//
-						//}),
+							activeTab: 0,
+							items: tabs
+						}),
+						
 						buttons: [
 								{
 									text: 'Run',
 									handler: function(){
-										var actions_grid = Ext.getCmp('actions_grid');
-										console.log('actions_grid.getStore().data');
-										console.log(actions_grid.getStore().data);
-										var dynamic_params = {};
-										actions_grid.getStore().each(function(action){
-											
-											dynamic_params[action.data.name] = action.data.values;
-										});
 										
+										var dynamic_params = {};
+										
+										var actions_tab_panel = Ext.getCmp('actions_tab_panel');
+										Ext.each(actions_tab_panel.items.items, function(action){
+											console.log('action');
+											console.log(action);
+											var form_panel = action.form;
+											console.log('form_panel');
+											console.log(form_panel);
+											dynamic_params[action.title] = form_panel.getForm().getValues();
+											console.log(dynamic_params);
+										});
 										console.log('dynamic_params');
 										console.log(dynamic_params);
-										//
 										//_run_script();
 										
 									}
