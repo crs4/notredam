@@ -986,19 +986,26 @@ var open_dynamic_params_window = function(dynamic_params){
 						script = action_store.query('name', action.name).items[0];	
 						
 						var params;
-						
+						console.log('script.data.params');
+						console.log(script.data.params);
 						Ext.each(script.data.params, function(param){
 							param.plugins = [Ext.ux.plugin_dynamic_field];
+							
+							param.allow_dynamic = false;
+							param.collapsed = false;
+							param.dynamic = false;		
+							
 							param_obj = new Ext.ComponentMgr.types[param.xtype](param);
 							
-							if (param_obj.check_dynamic ){
+							if (param_obj.check_dynamic ){									
 								var param_to_add = param_obj.check_dynamic(action.dynamic);
 								console.log('param_to_add');
 								console.log(param_to_add);
 								if (param_to_add){
 									
 									Ext.each(param_to_add, function(p){
-									
+									console.log('----------p');
+									console.log(p);
 									p.allow_dynamic = false;
 									p.collapsed = false;
 									p.dynamic = false;																								
@@ -1018,7 +1025,8 @@ var open_dynamic_params_window = function(dynamic_params){
 					});
 							
 					
-					
+					console.log('----------actions_to_show');
+					console.log(actions_to_show);
 					
 					
 					var win = new Ext.Window({
