@@ -45,4 +45,7 @@ background:transparent url(/files/images/icons/fam/application_view_list.png) no
 visibility: hidden;
 }
 
+.dummy_icon:{
+	background: transparent;
+}
 
