@@ -1165,12 +1165,12 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 						
 						for (action in actions){														
 							action = actions[action];
-							if (action.dynamic.length >0)
+							if (action.dynamic && action.dynamic.length >0)
 								dynamic_params.push({name: action.script_name, label: action.label, dynamic: action.dynamic });
 						}
 						console.log('dynamic_params');
 						console.log(dynamic_params);
-						if (dynamic_params){
+						if (dynamic_params.length > 0){
 							if (!script_ux_loaded){
 								var script_to_load, css_to_load;																
 								import_external_file('/files/css/superboxselect.css', 'css');
