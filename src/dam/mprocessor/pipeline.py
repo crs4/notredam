@@ -34,6 +34,8 @@ class DAG:
             raise DAGError('Empty pipeline')
         for name, data in self.pipeline.items():
             #print 'processing node', name
+            if not set(['in', 'out']).issubset(data.keys()):
+                raise DAGError('action %s misses "in" or "out" parameters' % name)
             node = Node(name)
             data['__node__'] = node
             for v in data['out']:

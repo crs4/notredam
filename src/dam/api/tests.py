@@ -1,3 +1,36 @@
+"""
+NotreDAM API tests use the django standard library django.test and are collected in a file in the same api code directory: dam/api/tests.py.
+All the tests in this module run without MediaDART. So here is not an uploading test. Uploading test are in another module test_upload.py, which requires both MediaDART and NotreDAM up and running.
+While System tests are in a further module, system_tests.py, which also requires MediaDART and NotreDAM up and running.
+
+It is possible to choose between different levels of verbosity for the tests execution: the stdout is the same of the dam code, so it is possible to change the verbosity level of the logging changing it in file dam/logger.py. Possible text logging level for the messages are: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'. For further information about this topic, consult the logging python library documentation at:
+http://docs.python.org/library/logging.html#module-level-functions
+
+In the dam/settings.py file, sqlite3 should be chosen as application database because when the tests are running, a test db is created which is kept in the memory, so this way the tests will run faster (sqlite3 is a light db).
+The django.test library uses a virtual server which is faster then the http server.
+
+About the structure of the tests.py file:
+there is an abstract class MyTestCase from which inherit all the other classes in the same module. This class define the setup and the structure of the test final parameters.
+The tests related to a single application of NotreDAM are collected in a class; for example, the tests related to workspaces are collected in WSTestCase, and the unit tests related to workspaces are all the methods of this class.
+
+It is possible to run all the tests with the following command:
+python manage.py test api
+
+It is also possible to run a single class test with the following command (where the class WSTestCase, related to the workspace, is used as example):
+python manage.py test api.WSTestCase
+Moreover, It is possible to specify a single method test (the example is related to the method  test_get_list of the class WSTestCase):
+python manage.py test api.WSTestCase.test_get_list
+
+Instructions about how to add new tests.
+Please group in a single class all the tests related to the same part of NotreDAM and keep on using the following name convention:
+The class name must end with the string Test.
+The name of each method in the class must starts with the string test_ 
+
+It is important to remember that if more than one api method call is necessary to complete the same test, all the api methods must be called inside the same test method.  The reason of this is that after each single method test all the information are deleted. It seems to be a good idea to group each test of this kind in the only method of a class.
+
+NB. test_add_user uses an api method, /api/add_user/ which has been implemented for particular purposes: it is needed during demo updating. For this reason it requires the criptated user password instead of the clear version of it. Moreover, this operation does not add any default workspace for the new user (actually this should not be correct).
+
+"""
 #########################################################################
 #
 # NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
@@ -40,7 +73,6 @@ from dam.workflow.views import _set_state
 from dam.mprocessor.models import Pipeline
 import hashlib
 
-
 def _get_final_parameters(api_key, secret, user_id, kwargs = None):
     if  not kwargs:
         kwargs = {}
@@ -67,6 +99,9 @@ def _get_final_parameters(api_key, secret, user_id, kwargs = None):
 
 
 class MyTestCase(TestCase):
+    """
+    Abstract class from which all the other TestCase must inherit
+    """
 #    fixtures = ['test_data.json', ]   
 
     def setUp(self):
@@ -78,11 +113,15 @@ class MyTestCase(TestCase):
 #        print '--------- api_key ',  self.api_key
         
     def get_final_parameters(self, kwargs = None):
-        "add api_key user_id and secret"
+        "add api_key user_id and secret (required by check sum)"
         return _get_final_parameters(self.api_key, self.secret, self.user_id, kwargs)
         
         
 class WSTestCase(MyTestCase):
+    """
+    Tests related to workspaces
+    """
+
 #    fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json', 'workspace/fixtures/test_data.json' ,  'variants/fixtures/test_data.json', ]   
     fixtures = ['api/fixtures/test_data.json', 
                 'treeview/fixtures/test_data.json', 
@@ -91,7 +130,10 @@ class WSTestCase(MyTestCase):
                  'workspace/fixtures/test_data.json' , 
                   'metadata/fixtures/test_data.json' ]    
     
-    def test_get_list(self):
+    def test_0000_get_list(self):
+        """
+        checks the list of workspaces returned by api method /api/workspace/get against the list of them in django db 
+        """
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/get/',  params)        
         
@@ -107,7 +149,10 @@ class WSTestCase(MyTestCase):
             wss_list.append(tmp)
         self.assertTrue(resp_dict ==  wss_list)   
         
-    def test_get_members(self):
+    def test_0001_get_members(self):
+        """
+        checks the list of members of the first returned by api method /api/workspace/ws_name/get_members against the list of them in django db 
+        """
         ws_pk = 1
         
         params = self.get_final_parameters({})
@@ -117,7 +162,11 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict == {'members': [{'username': 'admin', 'permissions': ['admin']}]})
         
         
-    def test_add_members(self):
+    def test_0002_add_members(self):
+        """
+        1 - creates a new user test in db, tries to add test user as a new member using the api method /api/workspace/ws_name/add_members/ of the first ws
+        2 - checks if the new user is in the member list of the workspace in the django db 
+        """
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         u = User.objects.create(username = 'test')
@@ -130,7 +179,11 @@ class WSTestCase(MyTestCase):
         self.assertTrue(WorkspacePermissionAssociation.objects.filter(users = u,  workspace__pk = ws_pk,  permission__name = 'admin').count() == 1)
 
 
-    def test_set_permissions(self):
+    def test_0003_set_permissions(self):
+        """
+        1 - adds a new admin member to the first workspace using the api method /api/workspace/ws_name/add_members/
+        2 - checks if the new admin user is in workspace member list (in the django db)
+        """
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         u = User.objects.create(username = 'test')
@@ -152,7 +205,12 @@ class WSTestCase(MyTestCase):
 
 
         
-    def test_remove_members(self):
+    def test_0004_remove_members(self):
+        """
+        1 - adds a new admin member to the first workspace using the api method /api/workspace/ws_name/add_members/, 
+        2 - removes him using the api method /api/workspace/ws_name/remove_memmbers/
+        3 - checks if it was really removed from the django db
+        """
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         u = User.objects.create(username = 'test')
@@ -172,7 +230,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(WorkspacePermissionAssociation.objects.filter(users = u,  workspace__pk = ws_pk,  permission__name = 'admin').count() == 0)
         
         
-    def test_get_items(self):
+    def test_0005_get_items(self):
+        """
+        Gets all the items in the first workspace using the api method /api/workspace/ws_name/get_items/ and checks it against the list of them in django db 
+        """
         ws_pk = 1
         params = {'workspace_id':ws_pk}        
         params = self.get_final_parameters(params)
@@ -184,7 +245,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict ==  [i.pk for i in Item.objects.filter(workspaces__pk = ws_pk)] )   
        
       
-    def test_search(self):
+    def test_0006_search(self):
+        """
+        Search an image with a query list 'test' as dc description value using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
+        """
         workspace = DAMWorkspace.objects.get(pk = 1)
         print 'MetadataValue.objects.all() %s'%MetadataValue.objects.all()
         params = self.get_final_parameters({ 'query': 'test', 
@@ -204,7 +268,10 @@ class WSTestCase(MyTestCase):
         
         
     
-    def test_search_keywords(self):
+    def test_0007_search_keywords(self):
+        """
+        Search an image with a given keyword  using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
+        """
         workspace = DAMWorkspace.objects.get(pk = 1)
         node = Node.objects.get(label = 'test_remove_1')
         
@@ -223,7 +290,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['totalCount'] == node.items.count())
         #self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
              
-    def test_search_smart_folders(self):
+    def test_0008_search_smart_folders(self):
+        """
+        Search an image with a given smart folder  using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
+        """
         workspace = DAMWorkspace.objects.get(pk = 1)
         smart_folder = SmartFolder.objects.get(pk = 1)
         
@@ -245,7 +315,10 @@ class WSTestCase(MyTestCase):
     
 
 
-    def test_search_complex(self):
+    def test_0009_search_complex(self):
+        """
+        not clear
+        """
         workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({ 
             'keyword': 18,
@@ -263,8 +336,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(len(resp_dict['items']) == 1)
         self.assertTrue(resp_dict['totalCount'] == 1)
     
-    def test_keywords(self):
-             
+    def test_0010_keywords(self):
+        """
+        Search images with some given keywords using the api method /api/workspace/ws_name/get_keywords/. An image with the given keywords is found and it is checked that also the node children have the same keywords.
+        """
         ws_pk = 1
         params = {}        
         params = self.get_final_parameters(params)
@@ -296,8 +371,10 @@ class WSTestCase(MyTestCase):
        
         print resp_dict['keywords']
    
-    def test_no_api_key(self):
-             
+    def test_0011_no_api_key(self):
+        """
+        Checks that an error 25 arises when an image with no api_key is looked for using api command /api/workspace/ws_name/get.
+        """
         ws_pk = 1
         params = {'workspace_id':ws_pk,  'user_id': self.user_id}        
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params,  )        
@@ -305,8 +382,10 @@ class WSTestCase(MyTestCase):
         
         self.assertTrue(resp_dict.get('error code') == 25)
         
-    def test_wrong_secret(self):
-             
+    def test_0012_wrong_secret(self):
+        """
+        Checks that an error 30 arises when an image with wrong secret is looked for using api command /api/workspace/ws_name/get.
+        """
         ws_pk = 1
         params = {'workspace_id':ws_pk,  'user_id': self.user_id,  'api_key': self.api_key,  'checksum': 'lalala'}        
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params,  )        
@@ -316,7 +395,10 @@ class WSTestCase(MyTestCase):
     
         
     
-    def test_edit(self):             
+    def test_0013_edit(self):             
+        """
+        edit the first workspace (just name and description) using api command /api/workspace/ws_name/edit/ and checks a workspace like this actually is present in django db
+        """
         ws_pk = 1        
         params = self.get_final_parameters({'name':'test_', 'description': 'test description' })
         
@@ -327,7 +409,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(ws.name == params['name'])
         self.assertTrue(ws.description == params['description'])
         
-    def test_get_states(self):
+    def test_0014_get_states(self):
+        """
+        Creates an object with a given state in the first ws using the api method /api/workspace/ws_name/get_states/ and checks a ws with that state actually is present in django db
+        """
         
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -345,12 +430,14 @@ class WSTestCase(MyTestCase):
         
 
         
-    def test_get(self):
-             
+    def test_0015_get(self):
+        """ 
+        Call api method /api/workspace/ws_pk/get to get the first workspace with no parameters and checks that the return workspace actually is the first onewith same id, name and description.
+        """ 
         ws_pk = 1
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params,  )      
-        
+         
         resp_dict = json.loads(response.content)    
 
         ws = DAMWorkspace.objects.get(pk = ws_pk)        
@@ -358,7 +445,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['name'] == ws.name)
         self.assertTrue(resp_dict['description'] == ws.description)        
         
-    def test_get_except(self):             
+    def test_0016_get_except(self):            
+        """ 
+        Tries to get a non existent workspace using api method /api/workspace/ws_name/get/ and checks if a WorkspaceDoesNotExist Exception arises.
+        """ 
         ws_pk = 1000
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params)      
@@ -370,8 +460,12 @@ class WSTestCase(MyTestCase):
         
 
         
-    def test_delete(self):
-             
+    def test_0017_delete(self):
+        """ 
+        1 - Creates a new workspace with api method /api/workspace/new/
+        2 - Deletes the new workspace with api method /api/workspace/ws_pk/delete
+        3 - Checks that in django db the deleted workspace does not exist any more and that a DAMWorkspace exception arises
+        """ 
         name = 'test_2'        
         params = self.get_final_parameters({'name':name, })
         response = self.client.post('/api/workspace/new/', params)        
@@ -383,8 +477,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(response.content == '')
         self.assertRaises(DAMWorkspace.DoesNotExist,  DAMWorkspace.objects.get,  pk = ws_pk)
 
-    def test_create(self):
-             
+    def test_0018_create(self):
+        """ 
+        Creates a new workspace using api method /api/workspace/new/ and checks it is really in django db
+        """ 
         name = 'test_1'
         
         params = self.get_final_parameters({'name':name,  })
@@ -397,7 +493,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict.get('name') == name)
         
         
-    def test_set_creator(self):
+    def test_0019_set_creator(self):
+        """
+        Set workspace creator name using api method /api/workspace/ws_id/set_creator/ and checks if it was actually set in django db
+        """
         u = User.objects.create(username = 'test')
         ws_id = 1
 
@@ -410,7 +509,10 @@ class WSTestCase(MyTestCase):
 
         self.assertTrue(ws.creator == u)
 
-    def test_get_smartfolders(self):
+    def test_0020_get_smartfolders(self):
+        """
+        Gets all the smart folders of the first workspace calling api method /api/workspace/ws_id/get_smartfolders/ and checks if in django db that workspace actually has that smartfolder.
+        """
         ws_id = 1
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/get_smartfolders/'%ws_id, params, )        
@@ -422,7 +524,10 @@ class WSTestCase(MyTestCase):
         self.assertTrue(len(resp_dict['smartfolders']) == 1)
         
         
-    def test_get_renditions(self):
+    def test_0021_get_renditions(self):
+        """
+        Gets all the renditions of the first workspace calling api method /api/workspace/ws_id/get_renditions/ and checks if in django db that workspace actually has that rendition.
+        """
         ws_id = 1
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/get_renditions/'%ws_id, params, )        
@@ -435,6 +540,9 @@ class WSTestCase(MyTestCase):
         
         
 class ItemTest(MyTestCase):  
+    """
+    Tests on items
+    """
     fixtures = ['api/fixtures/test_data.json', 
                 'treeview/fixtures/test_data.json', 
                  'repository/fixtures/test_data.json',  
@@ -443,7 +551,7 @@ class ItemTest(MyTestCase):
                    'metadata/fixtures/test_data.json' 
                    ]    
     
-    def test_create(self):
+    def test_0022_create(self):
         workspace_id = 1
         metadata_dict = {'namespace':'dc',  'name':'title',  'value': 'test',  'lang': 'en', }
         params = {'workspace_id':workspace_id, 'media_type': 'image/jpeg' }
@@ -470,17 +578,8 @@ class ItemTest(MyTestCase):
     
         
         
-    #def test_create_media_type_exception(self):
-        #workspace_id = 1
-        #media_type = 'movieeee'
-        #params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': media_type})
-        #
-        #response = self.client.post('/api/item/new/', params,)                
-        #resp_dict = json.loads(response.content)        
-        #self.assertTrue(resp_dict['error code'] == InvalidMediaType.error_code) 
-        
     
-    def test_get_keywords(self):
+    def test_0023_get_keywords(self):
         item = Item.objects.all()[0]    
         keywords = list(item.keywords())            
         
@@ -491,7 +590,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(resp_dict['keywords'] == keywords)
          
     
-    def test_get(self):
+    def test_0024_get(self):
         item = Item.objects.all()[0]    
         keywords = list(item.keywords())            
         ws_pk = 1
@@ -517,7 +616,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(resp_dict['metadata'] == metadata)
         
         
-    def test_get_except(self):
+    def test_0025_get_except(self):
         item_pk = 1000    
                     
         ws_pk = 1
@@ -527,7 +626,7 @@ class ItemTest(MyTestCase):
         print resp_dict 
         self.assertTrue(resp_dict['error class'] == 'ItemDoesNotExist')
         
-    def test_move(self):
+    def test_0026_move(self):
         workspace_id = 1
        
         item_id = Item.objects.all()[0].pk
@@ -543,7 +642,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(wss.filter(Q(pk = workspace_id)| Q(pk = ws_new.pk)).count() == 2)
         
         
-    def test_delete(self):
+    def test_0027_delete(self):
         workspace_id = 1
        
         item_id = item_id = Item.objects.all()[0].pk
@@ -555,7 +654,7 @@ class ItemTest(MyTestCase):
         self.assertRaises(Item.DoesNotExist,  Item.objects.get,  pk = item_id)
         
 
-    def test_metadata(self):
+    def test_0028_metadata(self):
         
         item = Item.objects.all()[0]
         item_id = item.pk
@@ -581,7 +680,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(sub[1].value == 'test2')
        
      
-    def test_remove_metadata_single(self):
+    def test_0029_remove_metadata_single(self):
         workspace_id = 1
         params = self.get_final_parameters({'workspace_id':workspace_id,  'media_type': 'image/jpeg'})        
         response = self.client.post('/api/item/new/', params,  )                
@@ -611,7 +710,7 @@ class ItemTest(MyTestCase):
         print 'metadata_dict.items()[0] ',  metadata_dict.values()[0]
         self.assertTrue(m_0.value == metadata_dict.values()[0][0])        
         
-    def test_remove_metadata_all(self):
+    def test_0030_remove_metadata_all(self):
         workspace_id = 1
         params = self.get_final_parameters({ 'workspace_id':workspace_id,  'media_type': 'image/jpeg'})        
         response = self.client.post('/api/item/new/', params,  )                
@@ -633,7 +732,7 @@ class ItemTest(MyTestCase):
         
         self.assertTrue(m.count() == 0)        
         
-    def test_add_keywords(self):
+    def test_0031_add_keywords(self):
         workspace_id = 1
         ws = DAMWorkspace.objects.get(pk = workspace_id)
         new_node = Node.objects.get(label = 'test',  type = 'keyword', workspace = ws)
@@ -646,7 +745,7 @@ class ItemTest(MyTestCase):
         self.assertTrue(item.node_set.filter(pk = new_node.pk).count() == 1)
         
         
-    def test_remove_keywords(self):
+    def test_0032_remove_keywords(self):
         workspace_id = 1
         ws = DAMWorkspace.objects.get(pk = workspace_id)
         new_node = Node.objects.get(label = 'test_remove_1',  type = 'keyword', workspace = ws)
@@ -660,7 +759,7 @@ class ItemTest(MyTestCase):
         
         self.assertTrue(item.node_set.filter(pk = new_node.pk).count() == 0)
                
-    def test_add_to_ws(self):
+    def test_0033_add_to_ws(self):
         
         workspace = DAMWorkspace.objects.create(name = 'test', creator = self.user)
         workspace_id = workspace.pk
@@ -675,28 +774,8 @@ class ItemTest(MyTestCase):
 
         
         
-    #def test_upload(self):
-        #from django.test import client 
-        #from mprocessor.models import Task
-        #workspace = DAMWorkspace.objects.all()[0]
-        #image = Type.objects.get(name = 'image')
-        #item = Item.objects.create(type = image)
-        #item.workspaces.add(workspace)
-        #
-        #file = open('files/images/logo_blue.jpg')
-        #params = self.get_final_parameters({ 'workspace_id': 1,  'rendition_id':1})                
-        #params['Filedata'] = file
-        #
-        #response = self.client.post('/api/item/%s/upload/'%item.pk, params, )            
-        #file.close()
-        #
-        #print response.content 
-        #self.assertTrue(response.content == '')
-        #self.assertTrue(item.component_set.filter(variant__id = 1).count() == 1)
-        #self.assertTrue(Task.objects.filter(component__in = item.component_set.all()).count()) #(adapt + extract feat)*3 + extract feat orig
-                 
         
-    def test_get_state(self):
+    def test_0034_get_state(self):
         
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
@@ -708,7 +787,7 @@ class ItemTest(MyTestCase):
         print '-------------------------',  resp_dict
         self.assertTrue(resp_dict == {'name': 'test', 'id': state.pk})
         
-    def test_get_keywords(self):
+    def test_0035_get_keywords(self):
         
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
@@ -721,7 +800,7 @@ class ItemTest(MyTestCase):
     
         
     
-    def test_set_state(self): 
+    def test_0036_set_state(self): 
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
         state = State.objects.create(name = 'test',  workspace = workspace)
@@ -735,10 +814,13 @@ class ItemTest(MyTestCase):
         
 
 class KeywordsTest(MyTestCase):
+    """
+    Tests about keywords
+    """
     fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json']   
     
 
-    def test_get_single(self):        
+    def test_0037_get_single(self):        
              
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -761,7 +843,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(len(resp_dict['children']) == node.children.all().count())
         
         
-    def test_get_except(self):        
+    def test_0038_get_except(self):        
              
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -771,7 +853,7 @@ class KeywordsTest(MyTestCase):
         resp_dict = json.loads(response.content)
         self.assertTrue(resp_dict['error class'] == 'CatalogueElementDoesNotExist')
         
-    def test_get_single_category(self):        
+    def test_0039_get_single_category(self):        
              
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -791,7 +873,7 @@ class KeywordsTest(MyTestCase):
         
         
     
-    def test_create(self):             
+    def test_0040_create(self):             
         parent_node = Node.objects.get(pk = 3)
         label = 'test_create'
         params = self.get_final_parameters({ 'parent_id':parent_node.pk,  'label':label, 'type': 'keyword' })     
@@ -808,7 +890,7 @@ class KeywordsTest(MyTestCase):
         
 
 
-    def test_create_2(self):             
+    def test_0041_create_2(self):             
         parent_node = Node.objects.get(pk = 3)
         label = 'test_create'
         params = self.get_final_parameters({ 'parent_id':parent_node.pk,  'label':label, 'associate_ancestors': 'true',  'type': 'keyword' })     
@@ -823,7 +905,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(new_node.metadata_schema.all().count()== 0)
         
         
-    def test_create_no_parent(self):             
+    def test_0042_create_no_parent(self):             
         parent_node = Node.objects.get(pk = 3)
         label = 'test_create'
         params = self.get_final_parameters({ 'workspace_id':1,  'label':label, 'type': 'keyword' })     
@@ -837,7 +919,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(new_node.metadata_schema.all().count()== 0)
         self.assertTrue(new_node.cls == 'keyword')
 
-    def test_create_metadata(self):             
+    def test_0043_create_metadata(self):             
         parent_node = Node.objects.get(pk = 3)
         label = 'test_create'
         metadata_schema = MetadataProperty.objects.get(field_name = 'title')
@@ -862,7 +944,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(NodeMetadataAssociation.objects.get(node = new_node,  metadata_schema = metadata_schema).value == label)
 
         
-    def test_create_category(self):
+    def test_0044_create_category(self):
             
         ws = DAMWorkspace.objects.get(pk = 1)
         label = 'test_category'
@@ -878,7 +960,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(new_node.cls== 'category')        
             
         
-    def test_edit(self):
+    def test_0045_edit(self):
 
         ws_pk = 1 
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -892,7 +974,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(node.label == 'test')
         self.assertTrue(node.associate_ancestors == False)
     
-    def test_edit_1(self):
+    def test_0046_edit_1(self):
 
         ws_pk = 1 
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -904,7 +986,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(node.associate_ancestors == True)
         
     
-    def test_edit_metadata(self):
+    def test_0047_edit_metadata(self):
 
         ws_pk = 1 
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -930,7 +1012,7 @@ class KeywordsTest(MyTestCase):
 
     
 
-    def test_move(self):
+    def test_0048_move(self):
         ws_pk = 1 
         ws = DAMWorkspace.objects.get(pk = ws_pk)        
         node_id = Node.objects.get(label = 'test').pk
@@ -947,7 +1029,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(parent_id == new_parent_node_pk)        
         
         
-    def test_move_on_top(self):
+    def test_0049_move_on_top(self):
         ws_pk = 1 
         ws = DAMWorkspace.objects.get(pk = ws_pk)        
         node_id = Node.objects.get(label = 'test').pk
@@ -963,7 +1045,7 @@ class KeywordsTest(MyTestCase):
         parent_id = resp_dict['parent_id']        
         self.assertTrue(parent_id == None)        
         
-    def test_delete(self):
+    def test_0050_delete(self):
         ws_pk = 1 
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         node_id = Node.objects.get(label = 'test').pk
@@ -974,7 +1056,7 @@ class KeywordsTest(MyTestCase):
         self.assertTrue(response.content == '')
         self.assertRaises(Node.DoesNotExist,  Node.objects.get, pk = node_id )
         
-    def test_add_items(self):
+    def test_0051_add_items(self):
         workspace_id = 1
         ws = DAMWorkspace.objects.get(pk = workspace_id)
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
@@ -986,7 +1068,7 @@ class KeywordsTest(MyTestCase):
         response = self.client.post('/api/keyword/%s/add_items/'%new_node.pk, params, )            
         self.assertTrue(item.node_set.filter(label = 'test').count() == 1)
       
-    def test_remove_items(self):
+    def test_0052_remove_items(self):
         workspace_id = 1
         ws = DAMWorkspace.objects.get(pk = workspace_id)
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
@@ -1003,8 +1085,11 @@ class KeywordsTest(MyTestCase):
 
 
 class TestLogin(MyTestCase):
+    """
+    Tests about login operation
+    """
     fixtures = ['api/fixtures/test_data.json', ]   
-    def test_login(self):
+    def test_0053_login(self):
         user = User.objects.get(pk = self.user_id)
         
         password = 'notredam'
@@ -1016,7 +1101,7 @@ class TestLogin(MyTestCase):
         self.assertTrue(json_resp['workspaces'] == [1])
         self.assertTrue(json_resp.has_key('session_id'))
         
-    def test_login_wrong(self):
+    def test_0054_login_wrong(self):
         user = User.objects.get(pk = self.user_id)
         
         password = 'demoooo'
@@ -1026,7 +1111,7 @@ class TestLogin(MyTestCase):
         print 'json_resp  %s' %json_resp 
         self.assertTrue(json_resp['error code'] == 31)
         
-    def test_get_users(self):
+    def test_0055_get_users(self):
         user = User.objects.get(pk =1)
         
         params = self.get_final_parameters({})
@@ -1039,7 +1124,7 @@ class TestLogin(MyTestCase):
         self.assertTrue(json_resp== expected_resp)
     
 
-    def test_add_user(self):
+    def test_0056_add_user(self):
         
         params = {'username': 'test',  'email': 't@t.it',  'password': 'sha1$fa34f$1b63507b88b494bb58d466d7f669a1670fe838fb'}
         params = self.get_final_parameters(params)
@@ -1057,9 +1142,12 @@ class TestLogin(MyTestCase):
 
 
 class VariantsTest(MyTestCase):
+    """
+    Tests related to Variants
+    """
     fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   
     
-    def test_get_single(self):
+    def test_0057_get_single(self):
         variant_pk = 1
         variant = Variant.objects.get(pk = variant_pk)
         workspace = DAMWorkspace.objects.get(pk = 1)
@@ -1076,7 +1164,7 @@ class VariantsTest(MyTestCase):
         self.assertTrue(resp_dict['auto_generated'] == variant.auto_generated)
         
         
-    def test_get_except(self):
+    def test_0058_get_except(self):
         variant_pk = 1000
         workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({'workspace_id': workspace.pk})    
@@ -1084,7 +1172,7 @@ class VariantsTest(MyTestCase):
         resp_dict = json.loads(response.content)
         self.assertTrue(resp_dict['error class'] == 'RenditionDoesNotExist')
           
-    def test_edit(self):
+    def test_0059_edit(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
         variant = Variant.objects.create(name = 'test', caption= 'test', auto_generated = True, workspace = workspace)
         variant.media_type.add(*Type.objects.all())
@@ -1109,7 +1197,7 @@ class VariantsTest(MyTestCase):
         
         
         
-    def test_create(self):
+    def test_0060_create(self):
         
         workspace = DAMWorkspace.objects.get(pk = 1)
         params = {'name': 'test', 'media_type': ['image'], 'workspace_id': 1, 'caption':'test'}
@@ -1123,7 +1211,7 @@ class VariantsTest(MyTestCase):
         self.assertTrue(Variant.objects.get(pk = resp_dict['id']).workspace.pk == params['workspace_id'])
         
         
-    def test_delete(self):
+    def test_0061_delete(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({})
         variant = Variant.objects.create(name = 'test', auto_generated = True, workspace = workspace)
@@ -1133,9 +1221,12 @@ class VariantsTest(MyTestCase):
     
 
 class SmartFolderTest(MyTestCase):
+    """
+    Tests related to SmartFolders
+    """
     fixtures = ['api/fixtures/test_data.json', 'treeview/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   
     
-    def test_get_single(self):
+    def test_0062_get_single(self):
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         params = self.get_final_parameters({})        
@@ -1156,7 +1247,7 @@ class SmartFolderTest(MyTestCase):
             })
         self.assertTrue(resp_dict['queries'] == queries)
         
-    def test_get_except(self):
+    def test_0063_get_except(self):
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         params = self.get_final_parameters({})        
@@ -1167,35 +1258,8 @@ class SmartFolderTest(MyTestCase):
         
     
     
-#    def test_get(self):
-#        ws_pk = 1
-#        ws = DAMWorkspace.objects.get(pk = ws_pk)
-#        params = self.get_final_parameters({'workspace_id': ws.pk})        
-#        sm = SmartFolder.objects.get(label = 'test',  workspace = ws)
-#        response = self.client.get('/api/smartfolder/get/', params)        
-#        resp_dict = json.loads(response.content)        
-#        print resp_dict 
-#        self.assertTrue(len(resp_dict) == ws.smartfolder_set.all().count())       
-#       
-#       
-#        sm_id = '1'
-#        sm = SmartFolder.objects.get(pk = sm_id)
-#        
-#        self.assertTrue(resp_dict['smart_folders'][0]['workspace_id'] == sm.workspace.pk)
-#        self.assertTrue(resp_dict['smart_folders'][0]['label'] == sm.label)
-#        self.assertTrue(resp_dict['smart_folders'][0]['and_condition'] == sm.and_condition)
-#        queries = []
-#        for node in sm.nodes.all():
-#            queries.append({
-#                'id': node.pk, 
-#                'type': node.type, 
-#                'negated': SmartFolderNodeAssociation.objects.get(node = node, smart_folder = sm).negated
-#            })
-#            
-#        self.assertTrue(resp_dict['smart_folders'][0]['queries'] == queries)
-        
     
-    def test_create(self):
+    def test_0064_create(self):
         workspace_id = 1
         
         node = Node.objects.get(label = 'test')
@@ -1214,7 +1278,7 @@ class SmartFolderTest(MyTestCase):
         
         
         
-    def test_delete(self):
+    def test_0065_delete(self):
         
         params = self.get_final_parameters()        
         sm = SmartFolder.objects.get(pk = 1)
@@ -1224,7 +1288,7 @@ class SmartFolderTest(MyTestCase):
         self.assertTrue(response.content == '')       
 
     
-    def test_edit(self):
+    def test_0066_edit(self):
         workspace_id = 1
         
         node = Node.objects.get(label = 'test_remove_1')
@@ -1247,7 +1311,7 @@ class SmartFolderTest(MyTestCase):
     
     
     
-    def test_get_items(self):
+    def test_0067_get_items(self):
        
         sm_id = 1
         params = self.get_final_parameters({})                
@@ -1260,11 +1324,14 @@ class SmartFolderTest(MyTestCase):
         
 
 class ScriptsTest(MyTestCase):
+    """
+    Tests related to Scripts
+    """
     fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json', 'core/dam_repository/fixtures/test_data.json',  
 #                'scripts/fixtures/test_data.json'
                 ]   
    
-    def test_create(self):
+    def test_0068_create(self):
         ws = DAMWorkspace.objects.get(pk = 1)
         name = 'test'
         description = 'test'
@@ -1310,7 +1377,7 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(resp_dict['description'] == description)
         
         
-    def test_edit(self):
+    def test_0069_edit(self):
         ws = DAMWorkspace.objects.get(pk = 1)
         name = 'test_edit'
         description = 'test_edit'
@@ -1328,30 +1395,11 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(script.name == params['name'])
                
        
-    def test_run(self):
+    def test_0070_run(self):
         script = Pipeline.objects.get(pk = 1)
-        params = self.get_final_parameters({ 'items': [i.pk for i in Item.objects.all()]})     
-        response = self.client.post('/api/script/%s/run/'%script.pk, params)  
         self.assertTrue(response.content == '')
-        
-        
-#    def test_run_again(self):
-#        script = Pipeline.objects.get(name = 'pipe_image')
-#        params = self.get_final_parameters({})    
-#        
-#        response = self.client.post('/api/script/%s/run_again/'%script.pk, params,  )  
-#        self.assertTrue(response.content == '')
-#        
 
-#TODO: generate new fixtures for testing delete script
-#    def test_delete(self):
-#        script = Pipeline.objects.get(name = 'thumb_generation')
-#        params = self.get_final_parameters({ })     
-#        response = self.client.post('/api/script/%s/delete/'%script.pk, params,  )  
-#        self.assertTrue(response.content == '')
-#        self.assertTrue(Pipeline.objects.filter(pk = script.pk).count() == 0)
-       
-    def test_get(self):
+    def test_0071_get(self):
         script = Pipeline.objects.get(pk = 1)
         params = self.get_final_parameters({ })     
         response = self.client.post('/api/script/%s/get/'%script.pk, params,  )  
@@ -1362,7 +1410,7 @@ class ScriptsTest(MyTestCase):
         self.assertTrue(resp_dict['description'] == script.description)
         self.assertTrue(resp_dict['workspace_id'] == script.workspace.pk)
         
-    def test_get_except(self):
+    def test_0072_get_except(self):
         script_pk = 1000
         params = self.get_final_parameters({ })     
         response = self.client.post('/api/script/%s/get/'%script_pk, params)  
@@ -1370,7 +1418,7 @@ class ScriptsTest(MyTestCase):
    
         self.assertTrue(resp_dict['error class'] == 'ScriptDoesNotExist')
         
-    def test_get_scripts(self):
+    def test_0073_get_scripts(self):
 
         ws = DAMWorkspace.objects.get(pk = 1)
         params = self.get_final_parameters({ })     
@@ -1384,9 +1432,12 @@ class ScriptsTest(MyTestCase):
         
         
 class StatesTest(MyTestCase):
+    """
+    Tests related to States
+    """
     fixtures = ['api/fixtures/test_data.json',  'repository/fixtures/test_data.json',  'workspace/fixtures/test_data.json']   
         
-    def test_delete(self):
+    def test_0074_delete(self):
         
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -1400,7 +1451,7 @@ class StatesTest(MyTestCase):
         self.assertTrue(State.objects.filter(workspace__pk = ws_pk).count() == 0)
         
         
-    def test_create(self):
+    def test_0075_create(self):
         
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -1411,7 +1462,7 @@ class StatesTest(MyTestCase):
         self.assertTrue(State.objects.filter(workspace__pk = ws_pk).count() == 1)
         
         
-    def test_edit(self):
+    def test_0076_edit(self):
         
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -1422,7 +1473,7 @@ class StatesTest(MyTestCase):
         self.assertTrue(response.content == '')        
         self.assertTrue(State.objects.filter(workspace__pk = ws_pk, name = 'test_edit').count() == 1)
         
-    def test_get(self):
+    def test_0077_get(self):
         
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
@@ -1437,7 +1488,7 @@ class StatesTest(MyTestCase):
                 
         self.assertTrue(resp_dict['items'] == [i.pk])
         
-    def test_add_items(self):
+    def test_0078_add_items(self):
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         s = State.objects.create(name = 'test', workspace = ws)
@@ -1450,7 +1501,7 @@ class StatesTest(MyTestCase):
         self.assertTrue(StateItemAssociation.objects.get(state = s).item == i)
         
         
-    def test_remove_items(self):
+    def test_0079_remove_items(self):
         ws_pk = 1
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         s = State.objects.create(name = 'test', workspace = ws)
@@ -1462,4 +1513,5 @@ class StatesTest(MyTestCase):
         
         self.assertTrue(response.content == '')
         self.assertTrue(StateItemAssociation.objects.filter(state = s).count() == 0)
-                
+
+
