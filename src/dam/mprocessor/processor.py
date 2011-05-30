@@ -131,7 +131,7 @@ class Batch:
            Throws an exception if not all scripts can be loaded.
         """
         plugins_module = self.cfg.get("MPROCESSOR", "plugins")
-        print plugins_module
+      
         scripts = {}
         for script_key, script_dict in pipeline.items():
             script_name = script_dict['script_name']

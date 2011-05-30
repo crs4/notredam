@@ -954,7 +954,7 @@ function createTemplate(panel_id, media_type){
 	
 };
 
-var open_dynamic_params_window = function(dynamic_params){
+var open_dynamic_params_window = function(dynamic_params, _run_script){
 	
 	var action_store = new Ext.data.JsonStore({
 		url:'/get_actions/',
@@ -971,19 +971,18 @@ var open_dynamic_params_window = function(dynamic_params){
 			action_store.load({
 				callback: function(){
 					var actions_to_show = [];
+                    console.log('-------------dynamic_params');
+                    console.log(dynamic_params);
 					Ext.each(dynamic_params, function(action){
-						//var fieldset = {
-							//xtype: 'fieldset',
-							//items: [],
-							//title: action.name
-						//};
+						
 						var action_data = {
-							name: action.name, 
+							label: action.label, 
+                            id: action.id,
 							params: []
 						};
 						
 						
-						script = action_store.query('name', action.name).items[0];	
+						script = action_store.query('name', action.script_name).items[0];	
 						
 						var params;
 						console.log('script.data.params');
@@ -1004,8 +1003,7 @@ var open_dynamic_params_window = function(dynamic_params){
 								if (param_to_add){
 									
 									Ext.each(param_to_add, function(p){
-									console.log('----------p');
-									console.log(p);
+									
 									p.allow_dynamic = false;
 									p.collapsed = false;
 									p.dynamic = false;																								
@@ -1022,8 +1020,12 @@ var open_dynamic_params_window = function(dynamic_params){
 						
 						});
 						actions_to_show.push(action_data);
+                        
 					});
 				
+                    console.log('actions_to_show');
+                    console.log(actions_to_show);
+                    
 					var tabs = [];
 					Ext.each(actions_to_show, function(action){
 						var form_panel = new Ext.form.FormPanel({
@@ -1032,7 +1034,8 @@ var open_dynamic_params_window = function(dynamic_params){
 						});
 						
 						tabs.push({
-							title: action.name,
+                            id: action.id,
+							title: action.label,
 							form: form_panel,
 							items: new Ext.Panel({
 								style: 'padding-top: 15px; padding-left: 5px',
@@ -1070,7 +1073,7 @@ var open_dynamic_params_window = function(dynamic_params){
 										var actions_tab_panel = Ext.getCmp('actions_tab_panel');
 										Ext.each(actions_tab_panel.items.items, function(action){											
 											var form_panel = action.form;											
-											dynamic_params[action.title] = form_panel.getForm().getValues();
+											dynamic_params[action.id] = form_panel.getForm().getValues();
 											if(!form_panel.getForm().isValid()){
 												console.log('invalid');
 												action.setTitle(action.title, 'abort_icon');
@@ -1082,13 +1085,14 @@ var open_dynamic_params_window = function(dynamic_params){
 											}
 												
 										});
-										//if (!invalid){
-										//}
-										//else{
-											//
-										//}
+										if (!invalid){
+                                            _run_script(dynamic_params);
+										}
+										else{
+											
+										}
 										
-										//_run_script();
+										
 										
 									}
 									
@@ -1127,7 +1131,7 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 					text: record.data.name,
 					handler: function(){
 						
-						function _run_script(dynamic_input){
+						function _run_script(dynamic_params){
 							var items = []
 						var tab = Ext.getCmp('media_tabs').getActiveTab();                    
                         var view = tab.getComponent(0);
@@ -1137,12 +1141,17 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                         	Ext.each(items_selected, function(i){
                         		items.push(i.data.pk);
                         	});
+                        
+                        var ajax_params = {
+                            items: items,
+                            script_id: record.data.id
+                        };    
+                        if (dynamic_params)
+                            ajax_params.dynamic_params = Ext.encode(dynamic_params);
+                        
                         Ext.Ajax.request({
                         	url: '/run_script/',
-                        	params:{
-                        		items: items,
-                        		script_id: record.data.id
-                        	},
+                        	params:ajax_params,
                         	success: function(){
                         		Ext.Msg.alert('','Script started successfully.');
                         		var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
@@ -1163,10 +1172,10 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 						var dynamic_params = [], actions;
 						actions = Ext.decode(record.data.params);	
 						
-						for (action in actions){														
-							action = actions[action];
+						for (action_id in actions){														
+							action = actions[action_id];
 							if (action.dynamic && action.dynamic.length >0)
-								dynamic_params.push({name: action.script_name, label: action.label, dynamic: action.dynamic });
+								dynamic_params.push({id: action_id , script_name: action.script_name, label: action.label, dynamic: action.dynamic });
 						}
 						console.log('dynamic_params');
 						console.log(dynamic_params);
@@ -1175,7 +1184,7 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 								var script_to_load, css_to_load;																
 								import_external_file('/files/css/superboxselect.css', 'css');
 								import_external_file('/files/css/tools_icons.css', 'css');
-								import_external_js_via_ajax(['/files/ext/SuperBoxSelect.js', '/files/ext/script_ux.js'], function(){open_dynamic_params_window(dynamic_params);})
+								import_external_js_via_ajax(['/files/ext/SuperBoxSelect.js', '/files/ext/script_ux.js'], function(){open_dynamic_params_window(dynamic_params, _run_script);})
 								
 								//import_external_file('/files/ext/SuperBoxSelect.js', 'script');
 								//import_external_file('/files/ext/script_ux.js', 'script');
@@ -1183,7 +1192,7 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 								script_ux_loaded = true;
 							}
 							else
-								open_dynamic_params_window(dynamic_params);
+								open_dynamic_params_window(dynamic_params, _run_script);
 							
 						}
 						else

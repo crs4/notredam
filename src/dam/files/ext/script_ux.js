@@ -15,7 +15,7 @@ var utils_data = {'actions': [{
 Ext.ux.plugin_dynamic_field = {
 	
 	init: function(field){
-		console.log('-------------PLUGIN');
+		
 		if (!field.setDynamic)
 			field.setDynamic = function(dynamic){
 				if (dynamic){
@@ -207,7 +207,7 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 		Ext.each(this.items.items, function(item){			
 			
 			if (dynamics.indexOf(item.name) >=0){
-				console.log('item.dynamic_icon ' + item.dynamic_icon);
+				
 				if (item.dynamic_icon)
 					item.toggleDynamize();
 				else
@@ -234,8 +234,7 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 		Ext.each(this.items.items, function(item){			
 			names.push(item.name);		
 		});
-		console.log('names');
-		console.log(names);
+	
 		return names;
 		
 	},	
@@ -293,8 +292,7 @@ Ext.ux.DynamicFieldSet = function(config) {
 	this.movable = config.movable;
 	this.allow_dynamic = config.allow_dynamic;
 	
-	console.log('this.movable ' + this.movable);
-	console.log('this.allow_dynamic ' + this.allow_dynamic);
+
 };
 Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 	initComponent: function(){
@@ -336,10 +334,7 @@ Ext.extend(Ext.ux.DynamicFieldSet, Ext.form.FieldSet, {
 	_add_dynamic_icon: function(){
 		
 		if (this.allow_dynamic){
-			console.log('add_dynamic_icon');
-			console.log(this);
-			console.log('this.dynamic '+ this.dynamic);
-			
+						
 			this.dynamic_icon = this.getEl().createChild({
 				tag: 'img',
 				cls: 'dynamic_input ' + (this.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
@@ -839,9 +834,8 @@ Ext.extend(Ext.ux.CBFieldSet, Ext.ux.DynamicFieldSet, {
 		
 	},
 	
-	onRender : function(ct, position){
-	
-       console.log('this.collapsed '+ this.collapsed);
+	onRender : function(ct, position){	
+     
        if(this.allow_dynamic){
 		 if(this.dynamic)
 			this.collapsed = false;
@@ -900,9 +894,6 @@ Ext.ux.MovableCBFieldSet = function(config) {
 		config.dynamic = false;
 	}	
 	
-	console.log('MovableCBFieldSet.constructor');
-	console.log('config.movable ' + config.movable);
-	console.log('config.allow_dynamic ' + config.allow_dynamic);	
 	
 	Ext.ux.MovableCBFieldSet.superclass.constructor.call(this, config);
 	
@@ -969,9 +960,7 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
 	
 	
 	onRender : function(ct, position){
-		console.log('onRender');
-		console.log('this.movable ' + this.movable);
-		console.log('this.allow_dynamic ' + this.allow_dynamic);
+	
         if(!this.el){
             this.el = document.createElement('fieldset');
             this.el.id = this.id;
