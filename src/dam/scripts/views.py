@@ -160,7 +160,7 @@ def delete_script(request):
 
 
 
-def _run_script(pipe, user, workspace, items = None, run_again = False):
+def _run_script(pipe, user, workspace, items = None, run_again = False, dynamic_params = []):
     if run_again:
         pass
     process = None
@@ -180,6 +180,7 @@ def run_script(request):
     from dam.repository.models import Item
     script_id = request.POST['script_id']
     script = Pipeline.objects.get(pk = script_id)
+    dynamic_params = request.POST.getlist('dynamic_params')
     
     run_again = request.POST.get('run_again')
    
@@ -189,7 +190,7 @@ def run_script(request):
     else:
         items = []
         
-    _run_script(script, request.user, request.session['workspace'], items,  run_again)
+    _run_script(script, request.user, request.session['workspace'], items,  run_again, dynamic_params)
    
     return HttpResponse(simplejson.dumps({'success': True}))
 
