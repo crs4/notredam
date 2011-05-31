@@ -133,12 +133,23 @@ Ext.extend(MDAction, WireIt.Container, {
 	onAddWire: function(e, args){
 		var wire = args[0];
 		
-		var terminal_out = wire.terminal2;
-		var terminal_in = wire.terminal1;
+		var terminal_next = wire.terminal2;
+		var terminal_prev = wire.terminal1;
 		
-		var values = terminal_in.container.form.getForm().getValues();
+		var field_prev = terminal_prev.container.form.getForm().findField('output_variant_name') || terminal_prev.container.form.getForm().findField('source_variant_name');
+		var field_next = terminal_next.container.form.getForm().findField('source_variant_name');
 		
-		wire.label =terminal_in.container.get_output_label();		
+		if (field_prev && field_next){
+			if (field_prev.dynamic && field_next.toggleDynamize)
+				field_next.setDynamic(true);				
+			
+			else
+				field_next.setValue(field_prev.getValue());
+			
+		}
+		
+		
+		wire.label =terminal_prev.container.get_output_label();		
 		
 		
 	},
@@ -159,20 +170,6 @@ Ext.extend(MDAction, WireIt.Container, {
 			param_obj.check_dynamic(action.dynamic);
 			params_objs.push(param_obj);
 			
-			//if (param.xtype == 'fieldsetcontainer'){
-				//Ext.each(param.items, function(item){
-					//if (action.dynamic.indexOf(item.name) >=0)
-						//item.dynamic = true;
-				//});
-			//}
-			//
-			//else{
-				//param.plugins = [plugin_dynamic_field];
-				//console.log('action.dynamic');
-				//console.log(action.dynamic);
-				//if (action.dynamic.indexOf(param.name) >=0)
-					//param.dynamic = true;
-			//}
 		});
 	 	
 	 	var form = new Ext.form.FormPanel({
@@ -186,13 +183,9 @@ Ext.extend(MDAction, WireIt.Container, {
 	 		//collapsible: true,
 	 		listeners:{
 	 			afterrender:function(){
-					//action.form_container.addClass('dynamic_input_hidden');
+					
 					action.form.doLayout();
-					//Ext.each(this.items.items, function(field){
-						//if (action.dynamic.indexOf(field.name) >=0 && field.toggleDynamize)
-							//field.toggleDynamize();
-							//
-					//});
+				
 	 			}
 	 		}
 	 	});
@@ -344,28 +337,28 @@ Ext.extend(InputRendition, MDAction, {
 		
 		var wire = args[0];
 		
-		var terminal_out = wire.terminal2;
-		var terminal_in = wire.terminal1;
+		var terminal_next = wire.terminal2;
+		var terminal_prev = wire.terminal1;
 		
-		var values = terminal_in.container.form.getForm().getValues();
+		var values = terminal_prev.container.form.getForm().getValues();
 		
-		var field = terminal_out.container.form.getForm().findField('source_variant_name')
+		var field = terminal_next.container.form.getForm().findField('source_variant_name')
 		if (field){
 			field.setValue(values.source_variant_name);
 			field.disableAll();
 		}
 		
-		wire.label =terminal_in.container.get_output_label();		
+		wire.label =terminal_prev.container.get_output_label();		
 		
 		
 	},
 	onRemoveWire: function(e, args){
 		var wire = args[0];
 		
-		var terminal_out = wire.terminal2;
-		var terminal_in = wire.terminal1;
+		var terminal_next = wire.terminal2;
+		var terminal_prev = wire.terminal1;
 		
-		var field = terminal_out.container.form.getForm().findField('source_variant_name')
+		var field = terminal_next.container.form.getForm().findField('source_variant_name')
 		if (field){
 			
 			field.enableAll();
