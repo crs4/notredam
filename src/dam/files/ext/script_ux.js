@@ -21,7 +21,8 @@ Ext.ux.plugin_dynamic_field = {
 				if (dynamic){
 					this.disable();
 					this.dynamic_icon.removeClass('dynamic_input_unselected');
-					this.dynamic_icon.addClass('dynamic_input_selected');	
+					this.dynamic_icon.addClass('dynamic_input_selected');
+					this.dynamic_icon.removeClass('dynamic_input_hidden');	
 					
 					this.dynamic = true;
 				}
