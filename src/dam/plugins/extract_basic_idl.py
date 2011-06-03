@@ -5,7 +5,7 @@
 from dam.plugins.common.utils import get_variants
 
 def inspect(workspace):
-    variants = get_variants(workspace)
+    #variants = get_variants(workspace)
     return {
         'name': __name__,
         'params':[
