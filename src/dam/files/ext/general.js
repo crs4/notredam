@@ -1049,8 +1049,9 @@ var open_dynamic_params_window = function(dynamic_params, _run_script){
 					
 					
 					var win = new Ext.Window({
-						title: 'Dynamic Inputs',
-						width: 550,
+						id: 'dynamic_input_window',
+						title: 'Dynamic Fields',
+						width: 450,
 						height: 500,
 						modal: true,
 						autoScroll: true,
@@ -1063,8 +1064,7 @@ var open_dynamic_params_window = function(dynamic_params, _run_script){
 							items: tabs
 						}),
 						
-						buttons: [
-								{
+						buttons: [{
 									text: 'Run',
 									handler: function(){
 										
@@ -1098,7 +1098,10 @@ var open_dynamic_params_window = function(dynamic_params, _run_script){
 									
 								},
 								{
-									text: 'Cancel'
+									text: 'Cancel',
+									handler: function(){
+										win.close();
+									}
 									
 								}
 							]
@@ -1153,7 +1156,9 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                         	url: '/run_script/',
                         	params:ajax_params,
                         	success: function(){
-                        		Ext.Msg.alert('','Script started successfully.');
+                        		Ext.Msg.alert('','Script started successfully.', function(){
+									Ext.getCmp('dynamic_input_window').close();
+								});
                         		var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
                         		var view = media_tabs.getComponent(0);
                         		view.getStore().reload();

@@ -241,7 +241,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
                 if process is None:
                     process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
                 
-                process.add_params(target_id=item.pk, **params)
+                process.add_params(item.pk, params)
                 assigned_items.add(item)
                 logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if process:
