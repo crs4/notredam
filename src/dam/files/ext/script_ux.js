@@ -99,35 +99,48 @@ Ext.ux.plugin_dynamic_field = {
 					
 			};
 		
-		if (field.allow_dynamic && !field._add_dynamic_icon){
 			field.on('render', function(){
 				
 				
 				
 				try{
 						field.getEl().parent('.x-form-item').on('mouseenter', function(){	
-						if(!field.dynamic_icon.hasClass('x-item-disabled'))		
+						if(field.dynamic_icon && !field.dynamic_icon.hasClass('x-item-disabled'))		
 							field.dynamic_icon.removeClass('dynamic_input_hidden');					
+						
+						if(field.help_icon)
+							field.help_icon.removeClass('dynamic_input_hidden');					
 					});
 					
 					field.getEl().parent('.x-form-item').on('mouseleave', function(){
-						if (field.dynamic_icon.hasClass('dynamic_input_unselected'))
+						if (field.dynamic_icon && field.dynamic_icon.hasClass('dynamic_input_unselected'))
 							field.dynamic_icon.addClass('dynamic_input_hidden');					
+						if(field.help_icon)
+								field.help_icon.addClass('dynamic_input_hidden');					
 					});
 					
+					if (field.allow_dynamic && !field._add_dynamic_icon)
+						field.dynamic_icon = field.getEl().parent('.x-form-element').insertSibling({
+							tag: 'img',
+							cls: 'dynamic_input ' + (field.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
+							src: '/files/images/icons/fam/application_xp_terminal.png',
+							style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+							
+							
+							title: 'Dynamic Input: value will be set run time',
+							onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
+							
+						}, 'before');
 					
-					field.dynamic_icon = field.getEl().parent('.x-form-element').insertSibling({
-						tag: 'img',
-						cls: 'dynamic_input ' + (field.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
-						src: '/files/images/icons/fam/application_xp_terminal.png',
-						style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
-						//style: 'float: right; padding-right:5px; z-index:2000;',
-						//style: 'z-index:2000; position: absolute; top:40%; left:92%',
-						
-						title: 'Dynamic Input: value will be set run time',
-						onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
-						
-					}, 'before');
+					if(field.help)
+						field.help_icon = field.getEl().parent('.x-form-element').insertSibling({
+							tag:'img',
+							cls: 'dynamic_input_hidden',
+							src: '/files/images/icons/fam/information.png',
+							style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+							title: field.help
+							
+							});
 					
 					if (field.dynamic){
 						field.setDynamic(true);
@@ -143,7 +156,7 @@ Ext.ux.plugin_dynamic_field = {
 				
 				
 			});
-		}
+		
 		
 		if(!field.get_dynamic_field)
 			field.get_dynamic_field = function(){
@@ -726,20 +739,21 @@ Ext.reg('watermarkposition', Ext.ux.WatermarkPosition);
     
 
 Ext.ux.Select = function(config) {
- 	this.values = config.values;
+ 	set_rendition_store(config);
+ 	//this.values = config.values;
      	
- 	Ext.apply(config, {
- 		store: new Ext.data.ArrayStore({        
-	        fields: config.fields || ['value'],
-	        data: config.values
-	    }),
-	    valueField: config.valueField || 'value',
-		displayField: config.displayField || 'value'
-		
-	    
-	    
-	    
- 	});
+ 	//Ext.apply(config, {
+ 		//store: new Ext.data.ArrayStore({        
+	        //fields: config.fields || ['value'],
+	        //data: config.values
+	    //}),
+	    //valueField: config.valueField || 'value',
+		//displayField: config.displayField || 'value'
+		//
+	    //
+	    //
+	    //
+ 	//});
  	
     // call parent constructor
     Ext.ux.Select.superclass.constructor.call(this, config);
@@ -1169,14 +1183,12 @@ Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
 
 
 
-Ext.ux.MultiRenditions = function(config) {
+function set_rendition_store(config){
 	config.storeId =config.storeId || 'renditions_store';
-	this.dynamic = config.dynamic || false;
-	this.allow_dynamic = config.allow_dynamic || true;
 	
-	this.store = Ext.StoreMgr.get(config.storeId);
+	var store = Ext.StoreMgr.get(config.storeId);
 	
-	renditions = this.store.queryBy(function(record){
+	renditions = store.queryBy(function(record){
 		var media_type_check = false, auto_generated = false;
 		if (record.data.media_type == config.media_type )
 			media_type_check = true;
@@ -1186,40 +1198,48 @@ Ext.ux.MultiRenditions = function(config) {
 			return true;
 		return true;
 	});
-	
-	
-		
- 	values = [];
- 	
+ 	var values = [];
  	Ext.each(renditions.items, function(r){		
 		values.push([r.data.name]);
 	}); 	
-    this.values = values;
+    values = values;
     
     
  	Ext.apply(config, {
  		store: new Ext.data.ArrayStore({        
 	        fields: config.fields || ['value'],
-	        data: this.values
+	        data: values
 	    }),
 	    valueField: config.valueField || 'value',
-		displayField: config.displayField || 'value'
+		displayField: config.displayField || 'value',
+		help: 'choose a list of renditions, the first one that exists will be used'
 		
 	    
 	    
 	    
  	});
+};
+
+
+Ext.ux.MultiRenditions = function(config) {
+	
+	this.dynamic = config.dynamic || false;
+	this.allow_dynamic = config.allow_dynamic || true;	
+	set_rendition_store(config);
+ 	
+ 	
  	
     // call parent constructor
     Ext.ux.MultiRenditions.superclass.constructor.call(this, config);
-    
+    console.log('this.values');
+    console.log(this.values);
  
 }; 
 
 Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
     allowBlank: false,
     mode: 'local',
-    width: 220,
+    width: 220,    
     check_dynamic: function(dynamics){
 		if (dynamics.indexOf(this.name) >=0){
 			if (this.dynamic_icon)
@@ -1265,6 +1285,8 @@ Ext.extend(Ext.ux.MultiRenditions,  Ext.ux.form.SuperBoxSelect, {
             tag : 'li',
             cls : 'x-superboxselect-input'
         });
+        
+        
         
         if(this.renderFieldBtns){
             this.setupFieldButtons().manageClearBtn();

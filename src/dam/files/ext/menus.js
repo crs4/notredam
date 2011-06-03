@@ -731,6 +731,7 @@ Ext.onReady(function(){
             },            
             {
                 text: gettext('Sync XMP...'),
+                hidden: true,
                 id: 'sync_xmp',
                 disabled: true,
                 handler: function() {

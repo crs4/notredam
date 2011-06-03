@@ -33,8 +33,8 @@ def inspect(workspace):
                 'name': 'output_variant_name',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': output_variants,
-                'value': output_variants[0],
+                #'values': output_variants,
+                #'value': output_variants[0],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
