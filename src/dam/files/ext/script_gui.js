@@ -305,7 +305,7 @@ Ext.extend(InputRendition, MDAction, {
 			//width: 200,
 			media_type: 'image',		
 			description: 'input-variant',
-			plugins: [plugin_dynamic_field],
+			plugins: [Ext.ux.plugin_dynamic_field],
 			listeners: {
 				change: function(combo, new_value, old_value){
 					action.update_connected_actions();
@@ -433,67 +433,78 @@ Ext.onReady(function(){
 		}
 	});
 	
+	
+	var actions_grid = new Ext.grid.GridPanel({
+			id: 'actions_grid',					
+			title: 'Actions',
+			layout: 'fit',						
+			enableDragDrop: true,
+			ddGroup: 'wireit',		
+			
+			region: 'east',
+			width: 200,						
+			
+			store: store,
+			columns:[{
+				name: 'Script',
+				dataIndex: 'name'
+			}],
+			hideHeaders: true,
+			sm: new Ext.grid.RowSelectionModel({
+				singleSelect: true
+			}),
+			viewConfig: {
+				forceFit: true
+			}
+	
+		
+	});
+	
+	var utils_grid = new Ext.grid.GridPanel({
+		id: 'utils_grid',					
+		title: 'Utils',
+		layout: 'fit',	
+						
+		
+		enableDragDrop: true,
+		ddGroup: 'wireit',		
+		
+		store: new Ext.data.JsonStore({
+			fields: ['name', 'params' ,'xtype'],
+			root: 'actions',
+			data: utils_data,
+			autoLoad: true
+		}),
+		columns:[{
+			name: 'utils',
+			dataIndex: 'name'
+		}],
+		hideHeaders: true,
+		sm: new Ext.grid.RowSelectionModel({
+			singleSelect: true
+		}),
+		viewConfig: {
+			forceFit: true
+		}
+
+		
+	});
+	
 	new Ext.Viewport({
 		layout: 'border',
 		items:[
 			header,			
-			new Ext.TabPanel({
-				region: 'east',
-				width: 200,
-				activeTab: 0,
-				items: [
-					new Ext.grid.GridPanel({
-						id: 'actions_grid',					
-						title: 'Actions',
-						layout: 'fit',						
-						enableDragDrop: true,
-						ddGroup: 'wireit',								
-						store: store,
-						columns:[{
-							name: 'Script',
-							dataIndex: 'name'
-						}],
-						hideHeaders: true,
-						sm: new Ext.grid.RowSelectionModel({
-							singleSelect: true
-						}),
-						viewConfig: {
-							forceFit: true
-						}
-				
-					
-				}),
-				new Ext.grid.GridPanel({
-					id: 'utils_grid',					
-					title: 'Utils',
-					layout: 'fit',					
-					
-					enableDragDrop: true,
-					ddGroup: 'wireit',		
-					
-					store: new Ext.data.JsonStore({
-						fields: ['name', 'params' ,'xtype'],
-						root: 'actions',
-						data: utils_data,
-						autoLoad: true
-					}),
-					columns:[{
-						name: 'utils',
-						dataIndex: 'name'
-					}],
-					hideHeaders: true,
-					sm: new Ext.grid.RowSelectionModel({
-						singleSelect: true
-					}),
-					viewConfig: {
-						forceFit: true
-					}
-			
-					
-				})
-				
-				]
-			}),
+			//new Ext.TabPanel({
+				//region: 'east',
+				//width: 200,
+				//activeTab: 0,
+				//items: [
+					//actions_grid,
+				//utils_grid
+				//
+				//]
+			//}),
+			actions_grid,
 			new Ext.Panel({
 				region: 'center',
 				items: new Ext.BoxComponent({

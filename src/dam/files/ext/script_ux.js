@@ -750,7 +750,7 @@ Ext.ux.Select = function(config) {
 Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {	
     allowBlank: false,
     autoSelect: true,
-   
+	width: 200,
     editable: false,
     triggerAction: 'all',
     lazyRender:true,
