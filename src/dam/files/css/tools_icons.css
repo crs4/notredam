@@ -49,3 +49,6 @@ visibility: hidden;
 	background: transparent;
 }
 
+.form_container_hidden{
+	display: none;
+}
