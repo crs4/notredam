@@ -198,10 +198,10 @@ Ext.extend(MDAction, WireIt.Container, {
 		this.form_container = Ext.Element(panel_body).createChild({
 		//var form_container = panel_body.createChild({
 			tag: 'div',
-			cls: 'dynamic_input_hidden',
-			style: 'z-index: 100;\
+			cls: 'form_container_hidden',
+			style: 'z-index: 3000;\
 			 border: 1px solid black; \
-			 width: 350px;'										
+			 width: 350px; padding-left: 5px;'										
 		});
 		
 		
@@ -238,7 +238,7 @@ Ext.extend(MDAction, WireIt.Container, {
 						handler: function(){
 							if (this.getText() == BUTTON_EDIT){
 								if (action.form_container){
-									action.form_container.removeClass('dynamic_input_hidden');
+									action.form_container.removeClass('form_container_hidden');
 									action.form.doLayout();
 								}								
 								this.setText(BUTTON_HIDE);								
@@ -247,7 +247,7 @@ Ext.extend(MDAction, WireIt.Container, {
 							else{
 								
 								if (action.form_container)									
-									action.form_container.addClass('dynamic_input_hidden');
+									action.form_container.addClass('form_container_hidden');
 								this.setText(BUTTON_EDIT);
 							
 							}

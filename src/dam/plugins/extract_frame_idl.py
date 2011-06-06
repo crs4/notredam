@@ -30,7 +30,7 @@ def inspect(workspace):
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
                 #'values': output_variants,
-                'value': ['edited', 'original'],
+                
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''

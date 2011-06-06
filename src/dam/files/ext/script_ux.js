@@ -104,52 +104,56 @@ Ext.ux.plugin_dynamic_field = {
 				
 				
 				try{
-						field.getEl().parent('.x-form-item').on('mouseenter', function(){	
+					if (field.getEl().parent('.x-form-item')){
+							field.getEl().parent('.x-form-item').on('mouseenter', function(){	
 						if(field.dynamic_icon && !field.dynamic_icon.hasClass('x-item-disabled'))		
 							field.dynamic_icon.removeClass('dynamic_input_hidden');					
 						
 						if(field.help_icon)
 							field.help_icon.removeClass('dynamic_input_hidden');					
-					});
-					
-					field.getEl().parent('.x-form-item').on('mouseleave', function(){
-						if (field.dynamic_icon && field.dynamic_icon.hasClass('dynamic_input_unselected'))
-							field.dynamic_icon.addClass('dynamic_input_hidden');					
-						if(field.help_icon)
-								field.help_icon.addClass('dynamic_input_hidden');					
-					});
-					
-					if (field.allow_dynamic && !field._add_dynamic_icon)
-						field.dynamic_icon = field.getEl().parent('.x-form-element').insertSibling({
-							tag: 'img',
-							cls: 'dynamic_input ' + (field.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
-							src: '/files/images/icons/fam/application_xp_terminal.png',
-							style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+						});
+						
+						field.getEl().parent('.x-form-item').on('mouseleave', function(){
+							if (field.dynamic_icon && field.dynamic_icon.hasClass('dynamic_input_unselected'))
+								field.dynamic_icon.addClass('dynamic_input_hidden');					
+							if(field.help_icon)
+									field.help_icon.addClass('dynamic_input_hidden');					
+						});
+						
+						if (field.allow_dynamic && !field._add_dynamic_icon)
+							field.dynamic_icon = field.getEl().parent('.x-form-element').insertSibling({
+								tag: 'img',
+								cls: 'dynamic_input ' + (field.dynamic? '' :' dynamic_input_unselected dynamic_input_hidden'),
+								src: '/files/images/icons/fam/application_xp_terminal.png',
+								style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+								
+								
+								title: 'Dynamic Input: value will be set run time',
+								onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
+								
+							}, 'before');
+						
+						if(field.help)
+							field.help_icon = field.getEl().parent('.x-form-element').insertSibling({
+								tag:'img',
+								cls: 'dynamic_input_hidden',
+								src: '/files/images/icons/fam/information.png',
+								style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+								title: field.help
+								
+								});
+						
+						if (field.dynamic){
+							field.setDynamic(true);
+						}
 							
-							
-							title: 'Dynamic Input: value will be set run time',
-							onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
-							
-						}, 'before');
-					
-					if(field.help)
-						field.help_icon = field.getEl().parent('.x-form-element').insertSibling({
-							tag:'img',
-							cls: 'dynamic_input_hidden',
-							src: '/files/images/icons/fam/information.png',
-							style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
-							title: field.help
-							
-							});
-					
-					if (field.dynamic){
-						field.setDynamic(true);
 					}
+						
 				}
 				catch(e){
 					console.log('error with ');
 					console.log(field);
-					console.log(e)
+					console.error(e)
 				}
 				
 				
@@ -1214,7 +1218,7 @@ function set_rendition_store(config){
  	Ext.each(renditions.items, function(r){		
 		values.push([r.data.name]);
 	}); 	
-    values = values;
+    config.values = values;
     
     
  	Ext.apply(config, {
@@ -1237,12 +1241,8 @@ Ext.ux.MultiRenditions = function(config) {
 	//config.help = 'choose a list of renditions, the first one that exists will be used. ' ;
 	set_rendition_store(config);
  	
- 	
- 	
     // call parent constructor
-    Ext.ux.MultiRenditions.superclass.constructor.call(this, config);
-    console.log('this.values');
-    console.log(this.values);
+    Ext.ux.MultiRenditions.superclass.constructor.call(this, config);    
  
 }; 
 
