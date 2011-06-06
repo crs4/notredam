@@ -21,9 +21,7 @@ def inspect(workspace):
                 'fieldLabel': 'Input Rendition',
                 'xtype': 'multiselect',
                 'media_type': 'image',
-                #'values': variants,
-                #
-                #'value': [variants[1], variants[0]],
+                'value': ['edited', 'original'],
                 'description': 'input-variant',
                 
                 'help': ''

@@ -18,6 +18,7 @@ def inspect(workspace):
                 'name': 'source_variant_name',
                 'fieldLabel': 'Input Rendition',
                 'xtype': 'multiselect',
+                'value': ['edited', 'original'],
                 #'values': source_variants,
                 #'value': [source_variants[1], source_variants[0]],
                 'description': 'input-variant',
@@ -29,6 +30,7 @@ def inspect(workspace):
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
                 #'values': output_variants,
+                'value': ['edited', 'original'],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''
