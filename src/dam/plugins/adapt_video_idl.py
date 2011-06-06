@@ -117,7 +117,7 @@ def inspect(workspace):
                 'xtype': 'multiselect',
                 'media_type': 'video',
                 'exclude_rendition': ['thumbnail'],
-               #
+				'value': ['edited', 'original'],
                 'description': 'input-variant',
                 
                 'help': ''
