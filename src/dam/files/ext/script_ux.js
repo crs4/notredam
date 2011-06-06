@@ -1184,19 +1184,31 @@ Ext.reg('watermarkfieldset', Ext.ux.WatermarkFieldSet);
 
 
 function set_rendition_store(config){
+	
+	
 	config.storeId =config.storeId || 'renditions_store';
 	
 	var store = Ext.StoreMgr.get(config.storeId);
 	
-	renditions = store.queryBy(function(record){
-		var media_type_check = false, auto_generated = false;
-		if (record.data.media_type == config.media_type )
+	renditions = store.queryBy(function(record){		
+		if(config.exclude_rendition)
+			if (config.exclude_rendition.indexOf(record.data.name) >= 0)
+				return false;
+		
+		var media_type_check = false, auto_generated_check = false;
+		
+		if(!config.media_type)
+			media_type_check =  true;
+		else if (record.data.media_type.indexOf(config.media_type) >= 0)
 			media_type_check = true;
-		if (record.data.auto_generated == config.auto_generated)
-			auto_generated = true;
-		if (media_type_check && auto_generated)
-			return true;
-		return true;
+			
+		if (config.auto_generated == undefined)
+			auto_generated_check = true;
+		else if(record.data.auto_generated == config.auto_generated)
+			auto_generated_check = true;
+		
+		return auto_generated_check && media_type_check;
+		
 	});
  	var values = [];
  	Ext.each(renditions.items, function(r){		
@@ -1211,11 +1223,7 @@ function set_rendition_store(config){
 	        data: values
 	    }),
 	    valueField: config.valueField || 'value',
-		displayField: config.displayField || 'value',
-		help: 'choose a list of renditions, the first one that exists will be used'
-		
-	    
-	    
+		displayField: config.displayField || 'value'
 	    
  	});
 };
@@ -1225,6 +1233,8 @@ Ext.ux.MultiRenditions = function(config) {
 	
 	this.dynamic = config.dynamic || false;
 	this.allow_dynamic = config.allow_dynamic || true;	
+	config.help = 'choose a list of renditions, the first one that exists will be used. ' + (config.help ? config.help: '');
+	//config.help = 'choose a list of renditions, the first one that exists will be used. ' ;
 	set_rendition_store(config);
  	
  	

@@ -7,7 +7,7 @@ def inspect(workspace):
    
     media_types = get_ext_by_type('image')
     variants = get_variants(workspace, 'image')
-    output_variants = get_variants(workspace, 'image', auto_generated = True)
+    #output_variants = get_variants(workspace, 'image', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      

@@ -5,8 +5,8 @@
 from dam.plugins.common.utils import get_variants
 
 def inspect(workspace):
-    variants = get_variants(workspace, 'audio')
-    output_variants = get_variants(workspace, 'audio', auto_generated = True)
+    #variants = get_variants(workspace, 'audio')
+    #output_variants = get_variants(workspace, 'audio', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
     
@@ -55,8 +55,8 @@ def inspect(workspace):
                 'name': 'source_variant_name',
                 'fieldLabel': 'Input Rendition',
                 'xtype': 'multiselect',
-                'values': variants,
-                'value': [variants[1],variants[0]],
+                #'values': variants,
+                #'value': [variants[1],variants[0]],
                 'description': 'input-variant',
                 
                 'help': ''
@@ -66,8 +66,8 @@ def inspect(workspace):
                 'name': 'output_variant_name',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': output_variants,
-                'value': output_variants[0],
+                #'values': output_variants,
+                #'value': output_variants[0],
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''

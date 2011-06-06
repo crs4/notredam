@@ -9,8 +9,8 @@ from dam.plugins.common.utils import get_ext_by_type, get_variants
 def inspect(workspace):
     from django.db.models import Q
     media_types = get_ext_by_type('image')
-    source_variants = get_variants(workspace, 'video', exclude= ['thumbnail'])
-    output_variants = get_variants(workspace, 'image', auto_generated=True)
+    #source_variants = get_variants(workspace, 'video', exclude= ['thumbnail'])
+    #output_variants = get_variants(workspace, 'image', auto_generated=True)
     return {
         'name': __name__,
         'params':[
@@ -18,8 +18,8 @@ def inspect(workspace):
                 'name': 'source_variant_name',
                 'fieldLabel': 'Input Rendition',
                 'xtype': 'multiselect',
-                'values': source_variants,
-                'value': [source_variants[1], source_variants[0]],
+                #'values': source_variants,
+                #'value': [source_variants[1], source_variants[0]],
                 'description': 'input-variant',
                 'help': ''
             },
@@ -28,7 +28,7 @@ def inspect(workspace):
                 'name': 'output_variant_name',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': output_variants,
+                #'values': output_variants,
                 'description': 'output-variant',
                 'default': 0,
                 'help': ''

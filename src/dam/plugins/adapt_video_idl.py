@@ -2,8 +2,8 @@ from dam.plugins.common.utils import get_variants
 
 def inspect(workspace):
     variants = get_variants(workspace, 'video', exclude=['thumbnail'])
-    image_variants = get_variants(workspace, 'image') 
-    output_variants = get_variants(workspace, 'video', auto_generated = True)
+    #image_variants = get_variants(workspace, 'image') 
+    #output_variants = get_variants(workspace, 'video', auto_generated = True)
      
     audio_rate = {
                   'xtype': 'numberfield',
@@ -115,8 +115,9 @@ def inspect(workspace):
                 'name': 'source_variant_name',
                 'fieldLabel': 'Input Rendition',
                 'xtype': 'multiselect',
-                'values': variants,
-                'value': [variants[1], variants[0]],
+                'media_type': 'video',
+                'exclude_rendition': ['thumbnail'],
+               #
                 'description': 'input-variant',
                 
                 'help': ''
@@ -126,9 +127,12 @@ def inspect(workspace):
                 'name': 'output_variant_name',
                 'fieldLabel': 'Output Rendition',
                 'xtype': 'select',
-                'values': output_variants,
-                'value': output_variants[0],
+                #'values': output_variants,
+                #'value': output_variants[0],
                 'description': 'output-variant',
+                'media_type': 'video',
+                'exclude_rendition': ['thumbnail'],
+                'auto_generated': True,
                 'default': 0,
                 'help': ''
             },

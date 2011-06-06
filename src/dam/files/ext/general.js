@@ -1051,8 +1051,8 @@ var open_dynamic_params_window = function(dynamic_params, _run_script){
 					var win = new Ext.Window({
 						id: 'dynamic_input_window',
 						title: 'Dynamic Fields',
-						width: 450,
-						height: 500,
+						width: 400,
+						height: 400,
 						modal: true,
 						autoScroll: true,
 						layout: 'fit',
