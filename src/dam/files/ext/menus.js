@@ -607,8 +607,7 @@ Ext.onReady(function(){
                 text: gettext('New'),
                 handler: function() {
                     calculatePageSize();
-//                    var up = new Upload();
-//                    up.openUpload();
+
                     upload_dialog({
                     	url: '/upload_resource/',
                     	after_upload: function(session_id){
@@ -650,13 +649,7 @@ Ext.onReady(function(){
 										uploads_success += 1;
 									}
 									var buttons = []
-//					                
-//					                if (uploads_failed > 0) 
-//					                	buttons.push({
-//							            	text: 'Retry failed upload',							            	
-//							            	handler: function(){							            		
-//							            	}							            
-//							            });
+
 							        buttons.push({
 							            	text: 'Upload more files',
 							            	handler: function(){

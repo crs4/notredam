@@ -13,8 +13,8 @@ def inspect(workspace):
             'name': 'source_variant_name',
             'fieldLabel': 'Input Rendition',
             'xtype': 'multiselect',
-            'values': variants,
-            'value': [variants[1],variants[0]],
+            #'values': variants,
+            #'value': [variants[1],variants[0]],
             'description': 'input-variant',                
             'help': ''
         }]
