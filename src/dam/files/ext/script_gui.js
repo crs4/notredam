@@ -201,7 +201,7 @@ Ext.extend(MDAction, WireIt.Container, {
 			cls: 'form_container_hidden',
 			style: 'z-index: 3000;\
 			 border: 1px solid black; \
-			 width: 350px; padding-left: 5px;'										
+			 width: 400px; padding-left: 5px;'										
 		});
 		
 		
@@ -711,10 +711,10 @@ Ext.onReady(function(){
 							id: 'events_container',                       
                             text:'Events',   
                             handler: function(){
-								if (Ext.query('.dynamic_input_selected').length >0)
-									Ext.each(Ext.getCmp('events').items.items, function(i){i.disable()});
-								else
-									Ext.each(Ext.getCmp('events').items.items, function(i){i.enable()});
+								//if (Ext.query('.dynamic_input_selected').length >0)
+									//Ext.each(Ext.getCmp('events').items.items, function(i){i.disable()});
+								//else
+									//Ext.each(Ext.getCmp('events').items.items, function(i){i.enable()});
 							},
                             
                             menu: new Ext.ux.StoreMenu({

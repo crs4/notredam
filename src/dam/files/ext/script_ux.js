@@ -55,6 +55,20 @@ Ext.ux.plugin_dynamic_field = {
 					this.setDynamic(true);
 				}
 			};
+			
+		if (!field.toggleEventRelated)
+			field.toggleEventRelated = function(){				
+				//if (this.event_related_input_icon.hasClass('x-item-disabled'))
+					//return;
+				//
+				//if (this.event_related){
+					//this.setDynamic(false);
+				//} 
+				//
+				//else{
+					//this.setDynamic(true);
+				//}
+			};
 		
 		
 		field._disableAll = function(){
@@ -110,14 +124,21 @@ Ext.ux.plugin_dynamic_field = {
 							field.dynamic_icon.removeClass('dynamic_input_hidden');					
 						
 						if(field.help_icon)
-							field.help_icon.removeClass('dynamic_input_hidden');					
+							field.help_icon.removeClass('dynamic_input_hidden');	
+							
+						if(field.event_related_input_icon)
+							field.event_related_input_icon.removeClass('dynamic_input_hidden');	
 						});
 						
 						field.getEl().parent('.x-form-item').on('mouseleave', function(){
 							if (field.dynamic_icon && field.dynamic_icon.hasClass('dynamic_input_unselected'))
 								field.dynamic_icon.addClass('dynamic_input_hidden');					
 							if(field.help_icon)
-									field.help_icon.addClass('dynamic_input_hidden');					
+									field.help_icon.addClass('dynamic_input_hidden');	
+							
+							if(field.event_related_input_icon)
+								field.event_related_input_icon.addClass('dynamic_input_hidden');	
+													
 						});
 						
 						if (field.allow_dynamic && !field._add_dynamic_icon)
@@ -128,11 +149,22 @@ Ext.ux.plugin_dynamic_field = {
 								style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
 								
 								
-								title: 'Dynamic Input: value will be set run time',
+								title: 'Dynamic Input: value will be set at run time',
 								onclick: String.format('Ext.getCmp(\'{0}\').toggleDynamize();', this.id)
 								
 							}, 'before');
 						
+						//if(field.event_related_input)
+							//field.event_related_input_icon = field.getEl().parent('.x-form-element').insertSibling({
+								//tag:'img',
+								//cls: 'dynamic_input_hidden',
+								//src: '/files/images/icons/fam/link.png',
+								//style: 'float: right; padding-right:5px; z-index:2000; position: relative;',
+								//title: 'Event related rendition',
+								//onclick: String.format('Ext.getCmp(\'{0}\').toggleEventRelated();', this.id)
+								//
+								//});
+												//
 						if(field.help)
 							field.help_icon = field.getEl().parent('.x-form-element').insertSibling({
 								tag:'img',
@@ -142,6 +174,8 @@ Ext.ux.plugin_dynamic_field = {
 								title: field.help
 								
 								});
+						
+						
 						
 						if (field.dynamic){
 							field.setDynamic(true);
@@ -1238,7 +1272,8 @@ Ext.ux.MultiRenditions = function(config) {
 	this.dynamic = config.dynamic || false;
 	this.allow_dynamic = config.allow_dynamic || true;	
 	config.help = 'choose a list of renditions, the first one that exists will be used. ' + (config.help ? config.help: '');
-	//config.help = 'choose a list of renditions, the first one that exists will be used. ' ;
+	//this.event_related_input = true;
+	
 	set_rendition_store(config);
  	
     // call parent constructor
