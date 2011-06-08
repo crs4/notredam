@@ -17,6 +17,7 @@
 #########################################################################
 
 from django.conf.urls.defaults import *
+from dam.settings import STORAGE_SERVER_URL
 
 urlpatterns = patterns('',
 
