@@ -54,26 +54,27 @@ class Schedule:
            If all actions are done, failed, or cancelled, returns None
            If no action is ready to run returns ''
         """
-        #log.debug("action_to_run item=%s, ready=%s" % (self.target, len(self.ready)))
+        #log.debug("action_to_run item=%s, actions=%s ready=%s" % (self.target, len(self.actions), len(self.ready))) #d 
         if not self.actions:
+            #log.debug('action_to_run: no actions') #d
             return None
         if not self.ready:
-            #log.debug('nothing ready')
+            #log.debug('action_to_run: nothing ready') #d
             return ''
         else:
             r = min(self.ready)
             action = self.action_list[r]
-            log.info('#### %s: run %s' % (self.target, action))
+            log.info('### target %s: run %s' % (self.target, action))
             self.ready.remove(r)
             self.dag.visit(action, self._cb_set_to_wait, action)
-            #self.show()
+            #self.show() #d
             return action
 
     def done(self, action):
-        log.debug('#### %s: done %s' % (self.target, action))
+        log.debug('#### target %s: done %s' % (self.target, action))
         del self.actions[action]
         self.dag.visit(action, self._cb_set_to_ready, action)
-        #self.show()
+        #self.show() #d
 
     def fail(self, action):
         "delete action and all actions dependent on it. Returns the number of actions deleted"
