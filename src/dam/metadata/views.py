@@ -163,7 +163,7 @@ def _run_sync_pipes(items, original_name, variants, workspace, user):
                                              workspace=workspace, 
                                              launched_by=user)
             for pk in items:
-                process.add_params(target_id = pk, source_variant=source_variant)
+                process.add_params(target_id = pk, params={'*': {'source_variant_name':'source_variant'}})
             process.run()
             
 

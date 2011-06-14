@@ -399,8 +399,7 @@ def _upload_variant(item, variant, workspace, user, file_name, file_raw):
         params = {}
     else:
         triggers_name = 'replace_rendition'
-        params = {'source_variant_name': variant.name}
-        
+        params = {'*':{'source_variant_name': variant.name}}
     _run_pipelines([item], triggers_name, user, workspace, params)
 
 @login_required
