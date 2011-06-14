@@ -53,6 +53,23 @@ import mimetypes
 import os.path, traceback
 import time
 import tempfile
+from django.core.files.uploadedfile import TemporaryUploadedFile
+from  django.core.files.uploadhandler import TemporaryFileUploadHandler
+
+class NDUploadedFile(TemporaryUploadedFile):
+    def __init__(self, dir, name, content_type, size, charset):
+        file = open(os.path.join(dir, name), 'wb+')
+        self.dir = dir
+        super(TemporaryUploadedFile, self).__init__(file, name, content_type, size, charset)
+        
+class NDTemporaryFileUploadHandler(TemporaryFileUploadHandler):
+    def __init__(self, dir, *args, **kwargs):
+        self.dir = dir
+        super(NDTemporaryFileUploadHandler, self).__init__(*args, **kwargs)
+    
+    def new_file(self, file_name, *args, **kwargs):
+        super(TemporaryFileUploadHandler, self).new_file(file_name, *args, **kwargs)
+        self.file = NDUploadedFile(self.dir, self.file_name, self.content_type, 0, self.charset)
 
 def _get_upload_url(user, workspace, number):
 
@@ -295,23 +312,24 @@ def import_dir(dir_name, user, workspace, session):
     #logger.debug('Launched %s' % ' '.join(ret))
 
 def _upload_item(file_name, file_raw,  variant, user, session, workspace, session_finished = False):
-    if not isinstance(file_name, unicode):
-            file_name = unicode(file_name, 'utf-8')        
-    tmp_dir = '/tmp/'+ session
-    if not os.path.exists(tmp_dir):
-        os.mkdir(tmp_dir)
-        
-    #~ if file_counter == 1:
-        #~ if os.path.exists(tmp_dir):
-            #~ os.rmdir(tmp_dir)
-        #~ 
-        #~ os.mkdir(tmp_dir)
-        
-    logger.debug('_upload_item: using %s'%tmp_dir)	
-    file_name = new_id() + '_' + file_name
-    file = open(os.path.join(tmp_dir, file_name), 'wb')
-    file.write(file_raw)
-    file.close() 
+    #if not isinstance(file_name, unicode):
+            #file_name = unicode(file_name, 'utf-8')        
+    #tmp_dir = '/tmp/'+ session
+    #if not os.path.exists(tmp_dir):
+        #os.mkdir(tmp_dir)
+		#
+    #logger.debug('_upload_item: using %s'%tmp_dir)	
+    #file_name = new_id() + '_' + file_name
+    #file = open(os.path.join(tmp_dir, file_name), 'wb+')
+    logger.debug('file_raw.file.name %s'%file_raw.file.name)
+    #shutil.move(file_raw.file.name, )
+    
+    #for chunk in file_raw.chunks():
+        #file.write(chunk)
+    #
+	#
+	#file.close() 
+	
     if session_finished:  
         import_dir(tmp_dir, user, workspace, session)
         os.rmdir(tmp_dir)	
@@ -323,16 +341,33 @@ def upload_item(request):
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
     from urllib import unquote
-    try:  
+    
+    
+    
+    
+    logger.debug('aaaaasd')
+    try:
+        session = request.GET['session']
+        tmp_dir = '/tmp/'+ session
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)  
+        request.upload_handlers = [NDTemporaryFileUploadHandler(dir = tmp_dir)]
+        logger.debug('--------------request.FILES %s'%request.FILES) 
+        logger.debug('--------------request.POST %s'%request.POST) 
         workspace = request.session['workspace']
         variant_name = request.GET['variant']
         variant = Variant.objects.get(name = variant_name)
-        session = request.GET['session']
+        
         file_counter = int(request.GET['counter'])
         total = int(request.GET['total'])
         user = request.user  
         file_name = unquote(request.META['HTTP_X_FILE_NAME'])
-        _upload_item(file_name,request.raw_post_data, variant, request.user, session, workspace)        
+        
+    
+        #_upload_item(file_name,request.FILES['pics'], variant, request.user, session, workspace)     
+        if file_counter == total:
+            import_dir(tmp_dir, user, workspace, session)
+        #_upload_item(file_name, request.environ['wsgi.input'], variant, request.user, session, workspace)        
         resp = simplejson.dumps({'success': True})
         
     except Exception, ex:
