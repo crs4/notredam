@@ -104,14 +104,44 @@ function upload_dialog(cfg){
 			xhr.open("POST", this.url + '?'+ final_params, true);
 	        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 	        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
-	        xhr.setRequestHeader("Content-Type", "application/octet-stream");
+	        //xhr.setRequestHeader("Content-Type", "application/octet-stream");
+	        //var sepcode ="gc0p4Jq0M2Yt08jU534c0p";
+	        /*xhr.setRequestHeader("Content-Type", "multipart/form-data; boundary=" + sepcode);
+	        var sep = '--' + sepcode;
+	        var crlf="\r\n";
 	        
-	        var file_record = Ext.getCmp('files_list').getStore().getAt(i);
+	        //var fbody = crlf + sep + 'Content-Disposition: form-data; name="lol"\r\n10' +  sep + '--';
+	        var fbody =sep+crlf;
+	        fbody+="Content-Disposition: form-data; name=\"field1\""+crlf+crlf;
+	        fbody+="test field 1"+crlf;
 	        
-//	        file_record.set('status', 'inprogress');
-//	        file_record.commit();
+	        fbody+=sep;
+			//file binario, un gif per esempio
+			fbody+=crlf;
+			// name = file2 nome del file smile.gif
+			
+			fbody += 'content-disposition: attachment; name="pics"; filename="file1.jpeg"' + crlf;
+			fbody+="Content-Transfer-Encoding: base64"+crlf;
+			// tipo del contenuto del file
+			fbody+="Content-Type: image/gif"+crlf+crlf;
+			//fbody += 'Content-Type: application/octet-stream' ;
+			console.log(file);
+			fbody += file.toString();
+			
+			//fbody+=crlf;
+			// end del body
 	        
-	        xhr.send(file);
+	        
+	        
+	        fbody += sep + '--';
+	        xhr.send(fbody);*/
+	        var formData = new FormData();
+			formData.append("username", "Groucho");
+			formData.append("accountnum", 123456);
+			formData.append("pics", file);
+			xhr.send(formData);
+
+	        //xhr.send('\r\n--gc0p4Jq0M2Yt08jU534c0p' + 'Content-Disposition: form-data; name="paramname"; filename="foo.txt" Content-Type: text/plain\r\n ... file contents here ...' + '--gc0p4Jq0M2Yt08jU534c0p--');
 	
 		};
 		
