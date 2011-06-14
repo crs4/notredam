@@ -492,6 +492,9 @@ Ext.onReady(function(){
                 success: function(){
                     ws.deleted = true;
                     ws_store.load();
+                },
+                failure: function(response){
+                   Ext.Msg.alert('Deletion failed', response.responseText);
                 }
             });
         }
@@ -540,12 +543,6 @@ Ext.onReady(function(){
                         });
                     }
                 },
-//                {
-//                    id:'set_current_menu',
-//                    text: 'Set current',
-//                    
-////                    menu: switch_menu
-//                },
                 
                  {
                     id: 'preferences_menu',

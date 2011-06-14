@@ -19,7 +19,7 @@
 from django.utils.encoding import smart_str
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -70,12 +70,13 @@ def create_workspace(request):
     """
     Creates a new workspace
     """
-    user = User.objects.get(pk=request.session['_auth_user_id'])
-    if not user.has_perm('dam_workspace.add_workspace'):
-        resp = simplejson.dumps({'failure': True})
-        return HttpResponse(resp)
-    else: 
-    	return _admin_workspace(request,  None)
+    
+    #if not request.user.has_perm('dam_workspace.add_workspace'):
+        #
+        #return HttpResponseServerError('Permission Denied')
+    #else: 
+    	#return _admin_workspace(request,  None)
+    return _admin_workspace(request,  None)
 
 def _admin_workspace(request,  ws):
     from django.db import IntegrityError
@@ -166,9 +167,11 @@ def add_items_to_ws(request):
 @permission_required('admin')
 def delete_ws(request,  ws_id):
     ws = Workspace.objects.get(pk = ws_id)
-    user = User.objects.get(pk=request.session['_auth_user_id'])
-    ws.delete()
-    return HttpResponse(simplejson.dumps({'success': True}))
+    if request.user.workspaces.all().count() > 1:
+        ws.delete()
+        return HttpResponse(simplejson.dumps({'success': True}))
+    else:
+        return HttpResponseServerError('You must have at least one workspace.')
     
 @login_required
 def get_workspaces(request):
