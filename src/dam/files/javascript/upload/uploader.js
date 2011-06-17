@@ -1,4 +1,11 @@
 function use_ajax_upload(){
+	try{
+		var xhrupload = XMLHttpRequestUpload;		
+	}
+	
+	catch(e){
+		return false;
+	}
 	
 	var files_to_upload = Ext.getCmp('files_to_upload').fileInput.dom.files;
 	var files_too_big = false;
