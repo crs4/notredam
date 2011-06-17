@@ -304,35 +304,23 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     return items
 
 
-def import_dir(dir_name, user, workspace, session):
-    #logger.debug('########### INSIDE import_dir: %s' % dir_name)
+def import_dir(dir_name, user, workspace):
+    logger.debug('########### INSIDE import_dir: %s' % dir_name)
     files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
+    logger.debug('files %s'%files)
     items = _create_items(files, 'original', user, workspace, False)
     ret = _run_pipelines(items, 'upload',  user, workspace)
+    logger.debug('items %s'%items)
+    return items
     #logger.debug('Launched %s' % ' '.join(ret))
 
-def _upload_item(file_name, file_raw,  variant, user, session, workspace, session_finished = False):
-    #if not isinstance(file_name, unicode):
-            #file_name = unicode(file_name, 'utf-8')        
-    #tmp_dir = '/tmp/'+ session
-    #if not os.path.exists(tmp_dir):
-        #os.mkdir(tmp_dir)
-		#
-    #logger.debug('_upload_item: using %s'%tmp_dir)	
-    #file_name = new_id() + '_' + file_name
-    #file = open(os.path.join(tmp_dir, file_name), 'wb+')
-    logger.debug('file_raw.file.name %s'%file_raw.file.name)
-    #shutil.move(file_raw.file.name, )
-    
-    #for chunk in file_raw.chunks():
-        #file.write(chunk)
-    #
-	#
-	#file.close() 
+def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
+    logger.debug('_upload_item %s in %s'%(file_name, tmp_dir))
+    file_name = new_id() + '_' + file_name
+    file = open(os.path.join(tmp_dir, file_name), 'wb+')
+    file.write(file_raw)
+    file.close() 
 	
-    if session_finished:  
-        import_dir(tmp_dir, user, workspace, session)
-        os.rmdir(tmp_dir)	
 
 @login_required
 def upload_item(request):
@@ -342,32 +330,52 @@ def upload_item(request):
     """
     from urllib import unquote
     
+    def get_tmp_dir(session):
+        return '/tmp/'+ session
     
-    
-    
-    logger.debug('aaaaasd')
-    try:
-        session = request.GET['session']
-        tmp_dir = '/tmp/'+ session
+    def check_dir_session(session):
+        tmp_dir = get_tmp_dir(session)
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)  
-        request.upload_handlers = [NDTemporaryFileUploadHandler(dir = tmp_dir)]
-        logger.debug('--------------request.FILES %s'%request.FILES) 
-        logger.debug('--------------request.POST %s'%request.POST) 
-        workspace = request.session['workspace']
-        variant_name = request.GET['variant']
-        variant = Variant.objects.get(name = variant_name)
-        
-        file_counter = int(request.GET['counter'])
-        total = int(request.GET['total'])
-        user = request.user  
-        file_name = unquote(request.META['HTTP_X_FILE_NAME'])
-        
+        return tmp_dir
     
-        #_upload_item(file_name,request.FILES['pics'], variant, request.user, session, workspace)     
-        if file_counter == total:
-            import_dir(tmp_dir, user, workspace, session)
-        #_upload_item(file_name, request.environ['wsgi.input'], variant, request.user, session, workspace)        
+    try:
+            
+        workspace = request.session['workspace']
+        
+        user = request.user  
+        
+        if request.GET: #passing file in request.raw_post_data, other params in GET
+            file_name = unquote(request.META['HTTP_X_FILE_NAME'])
+            session = request.GET['session']
+            check_dir_session(session)
+            variant_name = request.GET['variant']
+            variant = Variant.objects.get(name = variant_name)
+            
+            file_counter = int(request.GET['counter'])
+            total = int(request.GET['total'])
+            tmp_dir = check_dir_session(session)
+            _upload_item(file_name, request.raw_post_data, variant, request.user, tmp_dir, workspace)        
+            #if file_counter == total:                
+                #import_dir(tmp_dir, user, workspace)
+               
+            
+        else: # files in request.FILES
+            
+            
+            #session = request.POST['session']
+            import tempfile
+            
+            tmp_dir = tempfile.mkdtemp()
+            request.upload_handlers = [NDTemporaryFileUploadHandler(dir = tmp_dir)]
+            logger.debug('request.FILES %s'%request.FILES)
+            session = request.POST['session']
+            real_tmp_dir = get_tmp_dir(session) #since i cant acces to request before settings upload handler
+            os.rename(tmp_dir, real_tmp_dir)
+            #import_dir(tmp_dir, user, workspace)
+            #os.rmdir(tmp_dir)
+        
+        
         resp = simplejson.dumps({'success': True})
         
     except Exception, ex:
@@ -501,9 +509,9 @@ def upload_session_finished(request):
     logger.debug('tmp_dir %s'%tmp_dir)
     
     if os.path.exists(tmp_dir):
-        import_dir(tmp_dir, user, workspace, session)
+        uploads_success = import_dir(tmp_dir, user, workspace)
         os.rmdir(tmp_dir)
-        return HttpResponse(simplejson.dumps({'success': True}))
+        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': len(uploads_success)}))
     else:
         return HttpResponse(simplejson.dumps({'success': False}))
     

@@ -604,8 +604,7 @@ Ext.onReady(function(){
                 text: gettext('New'),
                 handler: function() {
                     calculatePageSize();
-//                    var up = new Upload();
-//                    up.openUpload();
+
                     upload_dialog({
                     	url: '/upload_resource/',
                     	after_upload: function(session_id){
@@ -617,35 +616,46 @@ Ext.onReady(function(){
                                 modal: true
                             });
                             tmp_win.show();
+                            
+                            var files_num = Ext.getCmp('files_list').getStore().getCount();
                     		Ext.Ajax.request({
 				            	url: '/upload_session_finished/',
-				            	params: {session: session_id},
+				            	params: {session: session_id,
+                                
+                                },
 				            	failure: function(){
                                     tmp_win.close();
 				            		Ext.Msg.alert('Error', 'An upload error occurs server side, sorry.');
 //				            		Ext.getCmp('files_list').getStore().removeAll();
-				            		var files_num = Ext.getCmp('files_list').getStore().getCount();
+				            		
 				            		for (var i = 0; i < files_num; i++){
 				            			Ext.getCmp('progress_' + i).updateProgress(1,'failed');
 				            		
 				            		}
 				            		
 				            	},
-				            	success: function(){
+				            	success: function(response){
+                                    
+                                    response_obj = Ext.decode(response.responseText);
+                                    var uploads_failed, uploads_success;
+                                    uploads_success = response_obj.uploads_success;
+                                    uploads_failed = files_num - parseInt(uploads_success);
+                                    
+                                    
                                     tmp_win.close();
 				            		var tab = Ext.getCmp('media_tabs').getActiveTab();
 					                var view = tab.getComponent(0);
 					                var selecteds = view.getSelectedRecords();
 					                var store = view.getStore();
-									var uploads_failed = 0, uploads_success = 0, progressbar;
-									var files_num = Ext.getCmp('files_list').getStore().getCount();
-									for(var i = 0; i<files_num; i++){
-										progressbar = Ext.getCmp('progress_' + i);
-										if(progressbar.text == 'failed')
-											uploads_failed += 1;
-										else if (progressbar.text == 'completed')
-										uploads_success += 1;
-									}
+									//var uploads_failed = 0, uploads_success = 0, progressbar;
+									//var files_num = Ext.getCmp('files_list').getStore().getCount();
+									//for(var i = 0; i<files_num; i++){
+										//progressbar = Ext.getCmp('progress_' + i);
+										//if(progressbar.text == 'failed')
+											//uploads_failed += 1;
+										//else if (progressbar.text == 'completed')
+										//uploads_success += 1;
+									//}
 									var buttons = []
 //					                
 //					                if (uploads_failed > 0) 
