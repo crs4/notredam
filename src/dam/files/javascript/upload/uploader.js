@@ -1,3 +1,31 @@
+function use_ajax_upload(){
+	try{
+		var xhrupload = XMLHttpRequestUpload;		
+	}
+	
+	catch(e){
+		return false;
+	}
+	
+	var files_to_upload = Ext.getCmp('files_to_upload').fileInput.dom.files;
+	var files_too_big = false;
+	var max_limit_file_size = 300*(1024*1024);
+	Ext.each(files_to_upload, function(file){
+		if(file.fileSize > max_limit_file_size)
+			files_too_big = true;
+			
+	});
+	console.log('use_ajax_upload ' + !files_too_big)
+	return !files_too_big;
+	 //try{
+			//var tmp = FormData;
+			//return true;
+		//}
+		//catch(e){
+			//return false;
+		//}
+};
+
 function upload_dialog(cfg){
 	var uploader = this;
 	
@@ -12,6 +40,49 @@ function upload_dialog(cfg){
 	Ext.apply(this, config);
 	
 	this.upload_file = function(){
+		var files_store = Ext.getCmp('files_list').getStore();
+		var files_num = files_store.getCount();
+		if (files_num == 0)
+			return;
+		files = files_store.data.items;
+	
+		
+		var session_id = user + '_' + new Date().getTime();
+		
+		var files_length = files.length;
+		var file;
+		
+		var params = {
+			variant: uploader.variant,
+			session: session_id,
+			total: files_length,
+			item: uploader.item
+		};       
+		
+		if(!use_ajax_upload()){
+			params.all_togheter = true;			
+			var form_panel = Ext.getCmp('form_upload');
+			var base_form = form_panel.getForm();
+			var grid_container = Ext.getCmp('files_list_container');
+			
+			base_form.baseParams = params;
+			 var files_num = Ext.getCmp('files_list').getStore().getCount();
+			 for (var i = 0; i < files_num; i++){
+				Ext.getCmp('progress_' + i).updateProgress(1,'disabled progress');
+			
+			}
+			grid_container.getEl().mask('Upload in progress...');
+			base_form.on('actioncomplete', function(){
+				grid_container.getEl().unmask();
+				uploader.after_upload(session_id);
+				
+			});
+			
+			base_form.submit();
+			return;
+		}
+		
+		
 		var _show_monitor =  function (){
 			_close_upload();
 			show_monitor();
@@ -25,29 +96,7 @@ function upload_dialog(cfg){
 		var	_upload_more = function(){
 			Ext.getCmp('files_list').getStore().removeAll();
 		};
-		
-		var files_store = Ext.getCmp('files_list').getStore();
-		var files_num = files_store.getCount();
-		if (files_num == 0)
-			return;
-		files = files_store.data.items;
-//		files_store.filterBy(function(r){
-//			return (r.data.status == 'to_upload')
-//		});
-		
-		var session_id = user + '_' + new Date().getTime();
-		
-		var files_length = files.length;
-		var file;
-		var params = {
-			variant: uploader.variant,
-			session: session_id,
-			total: files_length,
-			item: uploader.item
-		};            		
-		
-		
-		
+		  
 		function _upload_file(i, files, session_id, params){
     		if (i >= files.length){
     			uploader.after_upload(session_id);
@@ -105,13 +154,46 @@ function upload_dialog(cfg){
 	        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 	        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
 	        xhr.setRequestHeader("Content-Type", "application/octet-stream");
+	        //xhr.setRequestHeader("Content-Length", file.size);
+	        //var sepcode ="gc0p4Jq0M2Yt08jU534c0p";
+            
+	        /*xhr.setRequestHeader("Content-Type", "multipart/form-data; boundary=" + sepcode);
+	        var sep = '--' + sepcode;
+	        var crlf="\r\n";
 	        
-	        var file_record = Ext.getCmp('files_list').getStore().getAt(i);
+	        //var fbody = crlf + sep + 'Content-Disposition: form-data; name="lol"\r\n10' +  sep + '--';
+	        var fbody =sep+crlf;
+	        fbody+="Content-Disposition: form-data; name=\"field1\""+crlf+crlf;
+	        fbody+="test field 1"+crlf;
 	        
-//	        file_record.set('status', 'inprogress');
-//	        file_record.commit();
+	        fbody+=sep;
+			//file binario, un gif per esempio
+			fbody+=crlf;
+			// name = file2 nome del file smile.gif
+			
+			fbody += 'content-disposition: attachment; name="pics"; filename="file1.jpeg"' + crlf;
+			fbody+="Content-Transfer-Encoding: base64"+crlf;
+			// tipo del contenuto del file
+			fbody+="Content-Type: image/gif"+crlf+crlf;
+			//fbody += 'Content-Type: application/octet-stream' ;
+			console.log(file);
+			fbody += file.toString();
+			
+			//fbody+=crlf;
+			// end del body
 	        
-	        xhr.send(file);
+	        
+	        
+	        fbody += sep + '--';
+	        xhr.send(fbody);*/
+	        //var formData = new FormData();
+			//formData.append("username", "Groucho");
+			//formData.append("accountnum", 123456);
+			//formData.append("pics", file);
+			//xhr.send(formData);
+            xhr.send(file);
+
+	        //xhr.send('\r\n--gc0p4Jq0M2Yt08jU534c0p' + 'Content-Disposition: form-data; name="paramname"; filename="foo.txt" Content-Type: text/plain\r\n ... file contents here ...' + '--gc0p4Jq0M2Yt08jU534c0p--');
 	
 		};
 		
@@ -182,40 +264,54 @@ function upload_dialog(cfg){
 				    },
 				    listeners:{
 				    	afterrender: function(){
-				    		new Ext.ux.form.FileUploadField({			        
-				        	id: 'files_to_upload',
-				        	buttonOnly: true,
-				        	renderTo: 'upload',
-				        	singleSelect: config.singleSelect,
-				        	
-				        	buttonCfg: {
-				        		icon: '/files/images/icons/fam/add.gif',
-				        		text: 'Browse'
-				        	},
-				        	listeners:{
-				        		fileselected: function(fb, v){
-				        			
-				        			var files = [];
-				        			var size;
-				        			Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
-				        				size = parseInt(file.size/1024) + ' KB';
-				        				files.push({
-				        					id: file_counter,
-				        					file: file,
-				        					filename: file.name,
-				        					size: size,
-				        					status: 'to_upload',
-											progress: 0
-				        				});
-				        				file_counter += 1;				        				
-				        			});
-				        			
-				        			Ext.getCmp('files_list').getStore().loadData({
-				        				files: files
-				        			}, true);
-				        		}
-				        	}
-	            			});    
+                            new Ext.form.FormPanel({
+                                id: 'form_upload',
+                                url: '/upload_resource/',
+                                renderTo: 'upload',
+                                fileUpload: true,
+                                //width:100,
+                                layout:'fit',
+                                //frame: true,
+                                //cls: 'x-toolbar',
+                                bodyStyle : 'background-color:#D0DEF0; border-width:0;',
+                                //baseClass: 'x-toolbar',
+                                //frame: true,
+                                items:
+                                new Ext.ux.form.FileUploadField({			        
+                                id: 'files_to_upload',
+                                buttonOnly: true,
+                                
+                                singleSelect: config.singleSelect,
+                                
+                                buttonCfg: {
+                                    icon: '/files/images/icons/fam/add.gif',
+                                    text: 'Browse'
+                                },
+                                listeners:{
+                                    fileselected: function(fb, v){
+                                        
+                                        var files = [];
+                                        var size;
+                                        Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
+                                            size = parseInt(file.size/1024) + ' KB';
+                                            files.push({
+                                                id: file_counter,
+                                                file: file,
+                                                filename: file.name,
+                                                size: size,
+                                                status: 'to_upload',
+                                                progress: 0
+                                            });
+                                            file_counter += 1;				        				
+                                        });
+                                        
+                                        Ext.getCmp('files_list').getStore().loadData({
+                                            files: files
+                                        }, true);
+                                    }
+                                }
+                                })
+                            })
 				    			
 				    	}				    
 				    }
@@ -224,11 +320,9 @@ function upload_dialog(cfg){
             	text: 'Upload',
             	icon:'/files/images/icons/arrow-up.gif',
             	handler: function(){
-					uploader.upload_file();
-				    	
-            	}
-            	
-            },
+                     uploader.upload_file();
+				}
+			},
             {
             	text: 'Abort',
             	icon: '/files/images/icons/fam/delete.gif',
