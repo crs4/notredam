@@ -77,6 +77,7 @@ class DAMWorkspace(Workspace):
     items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
 #    states = models.ManyToManyField(State)
     objects = WSManager()
+        
 
     def remove_item(self, item):
         """

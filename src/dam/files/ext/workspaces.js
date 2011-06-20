@@ -474,14 +474,13 @@ function _general_submit(close_win_on_submit, win_obj){
                 ws.name = new_name
                 win_obj.close();
             }
+        },
+        
+        failure: function(form, action) {
+            Ext.Msg.alert('Creation failed', action.response.responseText);
+            
         }
         
-//        failure: function(form, action) {
-//            console.log('failure :(');
-//            console.log('form.isValid() ' + form.isValid());
-//            
-//        }
-//        
         
     });
                         

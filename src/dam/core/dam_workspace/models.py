@@ -87,7 +87,7 @@ class Workspace(models.Model):
 
     class Meta:
         unique_together  = (('name', 'creator' ), )
-    
+     
     def get_name(self,  user):
         if self.creator != user:
                 name = self.name + ' (%s)'%self.creator
