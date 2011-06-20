@@ -24,6 +24,7 @@ from dam.workspace.models import DAMWorkspace
 from dam.plugins.common.utils import save_type
 from dam.plugins.extract_xmp_idl import inspect
 from dam.geo_features.models import GeoInfo
+from dam.plugins.common.utils import get_source_rendition
 
 from uuid import uuid4
 
@@ -52,9 +53,8 @@ class ExtractXMP:
         self.proxy = Proxy('XMPExtractor')
         self.workspace = workspace
         self.item = Item.objects.get(pk = item_id)
-        self.variant_name = variant_name
-        self.source_variant = Variant.objects.get(name = variant_name)
-        self.component = self.item.get_variant(workspace, self.source_variant)
+        self.item, self.component = get_source_rendition(item_id, variant_name, workspace)
+
         self.ctype = None
         self.result = []
 
@@ -163,8 +163,8 @@ def test():
     workspace = DAMWorkspace.objects.get(pk = 1)
     
     d = run(4,
-            workspace,
-            source_variant = 'original',
+            workspace.pk,
+            source_variant_name = ['original'],
             )
     print 'addBoth'
     d.addBoth(print_result)

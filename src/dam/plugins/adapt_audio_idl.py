@@ -76,7 +76,7 @@ def inspect(workspace):
                  'xtype':'selectfieldset',
                  'fieldLabel': 'Name',
                  'title': 'Preset',
-                 'select_name': 'output_preset',
+                 'name': 'output_preset',
                  'select_value': 'MP3',
                  'values':{
                     'MP3':[
