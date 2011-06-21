@@ -46,7 +46,7 @@ from dam.mprocessor.models import Pipeline
 from dam.workspace.views import _add_items_to_ws, _search
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
-from dam.upload.views import _upload_variant
+from dam.upload.views import _upload_variant, _upload_resource_via_raw_post_data, _upload_resource_via_post
 from dam.workflow.views import _set_state 
 from dam.scripts.views import _edit_script, _get_scripts_info
 from dam.settings import SERVER_PUBLIC_ADDRESS
@@ -877,9 +877,14 @@ class ItemResource(ModResource):
         - returns: empty string
 
         """       
-        from dam.upload.views import _upload_item_via_post
+       
         try:
-            tmp_dir = _upload_item_via_post(request) #item saved in a tmp dir
+            file = _upload_resource_via_post(request, False)
+            logger.debug('file %s'%file)
+            logger.debug('request.FILES %s'%request.FILES)
+            file = request.FILES['files_to_upload']
+            file_name = file.name
+            
             
             
             ws_id = request.POST.get('workspace_id')
@@ -893,11 +898,9 @@ class ItemResource(ModResource):
             variant_id = request.POST['rendition_id']
             variant = Variant.objects.get(id = variant_id)
             logger.debug('item_id %s'%item_id)
-            item = Item.objects.get(pk = item_id)           
-            
-            _upload_variant(item, variant, ws, user, file_name, upload_file.read())
-            uploads_success = import_dir(tmp_dir, user, workspace)            
-            os.rmdir(tmp_dir)
+            item = Item.objects.get(pk = item_id)                       
+            _upload_variant(item, variant, ws, user, file_name, file)            
+            os.rmdir(file.dir)
             
         except Exception,ex:
             logger.exception(ex)
