@@ -55,6 +55,7 @@
 //}
 //
 function import_variant(variant_id){
+   
     var variant = Ext.getCmp('variant_summary').getStore().query('pk', variant_id).items[0].data;
 //    var up = new Upload('/upload_variant/', true,
 //        {rendition_id:variant.pk, item_id:variant.item_id}

@@ -58,13 +58,15 @@ from  django.core.files.uploadhandler import TemporaryFileUploadHandler
 
 class NDUploadedFile(TemporaryUploadedFile):
     def __init__(self, dir, name, content_type, size, charset):
-        file = open(os.path.join(dir, name), 'wb+')
-        self.dir = dir
+        self.file_name = os.path.join(dir, name)
+        file = open(self.file_name, 'wb+')
+        self.dir = dir        
         super(TemporaryUploadedFile, self).__init__(file, name, content_type, size, charset)
         
 class NDTemporaryFileUploadHandler(TemporaryFileUploadHandler):
     def __init__(self, dir, *args, **kwargs):
-        self.dir = dir
+        
+        self.dir = dir            
         super(NDTemporaryFileUploadHandler, self).__init__(*args, **kwargs)
     
     def new_file(self, file_name, *args, **kwargs):
@@ -271,7 +273,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
         logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-def _create_items(filenames, variant_name, user, workspace, make_copy=True):
+def _import_dir(filenames, variant_name, user, workspace, make_copy=True):
     """
        Parameters:
        <filenames> is a list of tuples (filename, original_filename, res_id).
@@ -284,15 +286,17 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     """
     items = []
     logger.debug("filenames : %s" %filenames)
-    for original_filename in filenames:
+    for original_filename in filenames:        
+        
         res_id = new_id()
         variant = Variant.objects.get(name = variant_name)
-        media_type = Type.objects.get_or_create_by_filename(original_filename)
-        item = _create_item(user, workspace, res_id, media_type)
+        media_type = Type.objects.get_or_create_by_filename(original_filename)        
         final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
         final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
         upload_filename = os.path.basename(original_filename)
+        
         tmp = upload_filename.split('_')
+        item = _create_item(user, workspace, res_id, media_type)
         if len(tmp) > 1:
             upload_filename = '_'.join(tmp[1:])
         _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
@@ -304,12 +308,13 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     return items
 
 
-def import_dir(dir_name, user, workspace):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload'):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
-    logger.debug('files %s'%files)
-    items = _create_items(files, 'original', user, workspace, False)
-    ret = _run_pipelines(items, 'upload',  user, workspace)
+    logger.debug('files %s'%files)    
+    items = _import_dir(files, variant_name, user, workspace, False)
+    if trigger:
+        ret = _run_pipelines(items, trigger,  user, workspace)
     logger.debug('items %s'%items)
     return items
     #logger.debug('Launched %s' % ' '.join(ret))
@@ -321,7 +326,24 @@ def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, sessio
     file.write(file_raw)
     file.close() 
 	
-
+def _upload_resource_via_post(request, use_session = True):
+    import tempfile
+            
+    tmp_dir = tempfile.mkdtemp()
+    request.upload_handlers = [NDTemporaryFileUploadHandler(dir = tmp_dir)]
+    logger.debug('request.FILES %s'%request.FILES)
+    logger.debug('request.POST %s'%request.POST)
+    
+    if use_session:
+        session = request.POST['session']
+        real_tmp_dir = get_tmp_dir(session) #since i cant acces to request before settings upload handler
+        os.rename(tmp_dir, real_tmp_dir)
+        tmp_dir = real_tmp_dir
+    #return request.FILES['files_to_upload']
+    
+def get_tmp_dir(session):
+    return '/tmp/'+ session
+        
 @login_required
 def upload_item(request):
 
@@ -329,9 +351,6 @@ def upload_item(request):
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
     from urllib import unquote
-    
-    def get_tmp_dir(session):
-        return '/tmp/'+ session
     
     def check_dir_session(session):
         tmp_dir = get_tmp_dir(session)
@@ -361,17 +380,9 @@ def upload_item(request):
                
             
         else: # files in request.FILES
-            
-            
+            logger.debug('upload item via post multipart/form')            
             #session = request.POST['session']
-            import tempfile
-            
-            tmp_dir = tempfile.mkdtemp()
-            request.upload_handlers = [NDTemporaryFileUploadHandler(dir = tmp_dir)]
-            logger.debug('request.FILES %s'%request.FILES)
-            session = request.POST['session']
-            real_tmp_dir = get_tmp_dir(session) #since i cant acces to request before settings upload handler
-            os.rename(tmp_dir, real_tmp_dir)
+            _upload_resource_via_post(request)
             #import_dir(tmp_dir, user, workspace)
             #os.rmdir(tmp_dir)
         
@@ -384,44 +395,93 @@ def upload_item(request):
     
     return HttpResponse(resp)
 
-def _upload_variant(item, variant, workspace, user, file_name, file_raw):   
-    logger.debug('user %s'%user)
-    #TODO: refresh url in gui, otherwise old variant will be shown
-    if not isinstance(file_name, unicode):
-        file_name = unicode(file_name, 'utf-8')
-        
-    ext = os.path.splitext(file_name)[1]
-    res_id = item.ID
+def _upload_resource_via_raw_post_data(request):
+    import tempfile
+    file_h, path  = tempfile.mkstemp()
+    file_obj = open(path, 'wb')
+    file_obj.write(request.raw_post_data)
+    file_obj.close()
+    logger.debug('file_obj.name %s'% file_obj.name)
     
-    final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)
-    final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
-    file = open(final_path, 'wb')
-    file.write(file_raw)
-    file.close()
-    media_type = Type.objects.get_or_create_by_filename(file_name)
-     
-    _create_variant(file_name, final_file_name,media_type, item, workspace, variant)    
-    uploaders = []
-    if variant.name == 'original':
-        triggers_name = 'upload'
-        params = {}
-    else:
-        triggers_name = 'replace_rendition'
-        params = {'*':{'source_variant_name': variant.name}}
-    _run_pipelines([item], triggers_name, user, workspace, params)
+    return file_obj
+    
 
+def _upload_variant(item, variant, workspace, user, file_name, file):
+    """ 
+    
+    """   
+    try:
+        logger.debug('user %s'%user)
+        #TODO: refresh url in gui, otherwise old variant will be shown
+        if not isinstance(file_name, unicode):
+            file_name = unicode(file_name, 'utf-8')
+            
+        ext = os.path.splitext(file_name)[1]
+        res_id = item.ID
+        
+        final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)    
+        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+        logger.debug('before move')
+        
+        if hasattr(file, 'file_name'):
+            tmp_file_name = file.file_name
+        else:
+            tmp_file_name = file.name
+            
+        shutil.move(tmp_file_name , final_path)
+        
+        
+        media_type = Type.objects.get_or_create_by_filename(file_name)
+         
+        _create_variant(file_name, final_file_name,media_type, item, workspace, variant)    
+        uploaders = []
+        if variant.name == 'original':
+            triggers_name = 'upload'
+            params = {}
+        else:
+            triggers_name = 'replace_rendition'
+            params = {'*':{'source_variant_name': variant.name}}
+        _run_pipelines([item], triggers_name, user, workspace, params)
+    except Exception, ex:
+        logger.exception(ex)
+        raise ex
+        
 @login_required
 def upload_variant(request):  
+    logger.debug('UPLOAD VARIANT')
     workspace = request.session['workspace']
-    variant_name = request.GET['variant']
-    logger.debug('--- variant_name %s'%variant_name)
-    
-    variant = Variant.objects.get(name = variant_name)
-    item_id = request.GET.get('item')        
     user = request.user  
+    if request.GET:    
+        variant_name = request.GET['variant']
+        logger.debug('--- variant_name %s'%variant_name)
+        
+        variant = Variant.objects.get(name = variant_name)
+        item_id = request.GET.get('item')        
+        
+        
+        file_name = request.META['HTTP_X_FILE_NAME']
+        file = _upload_resource_via_raw_post_data(request)
+        
+    else:
+        
+        file = _upload_resource_via_post(request, False)
+        logger.debug('file %s'%file)
+        logger.debug('request.FILES %s'%request.FILES)
+        file = request.FILES['files_to_upload']
+        
+        
+        variant_name = request.POST['variant']
+        logger.debug('variant_name %s'%variant_name)
+        variant = Variant.objects.get(name = variant_name)
+        
+        item_id = request.POST.get('item')
+        file_name = 'lol.jpg'
+    
     item = Item.objects.get(pk = item_id)
-    file_name = request.META['HTTP_X_FILE_NAME']
-    _upload_variant(item, variant, workspace, request.user, file_name, request.raw_post_data)
+       
+    logger.debug('before _upload_variant')
+    _upload_variant(item, variant, workspace, request.user, file_name, file)
+    
 
     
     resp = simplejson.dumps({'success': True})        

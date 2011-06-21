@@ -877,11 +877,10 @@ class ItemResource(ModResource):
         - returns: empty string
 
         """       
-
+        from dam.upload.views import _upload_item_via_post
         try:
-            #~ request.upload_handlers = [StorageHandler()]
-            file_name = request.FILES.keys()[0]
-            upload_file = request.FILES[file_name]
+            tmp_dir = _upload_item_via_post(request) #item saved in a tmp dir
+            
             
             ws_id = request.POST.get('workspace_id')
             if not ws_id:
@@ -895,8 +894,11 @@ class ItemResource(ModResource):
             variant = Variant.objects.get(id = variant_id)
             logger.debug('item_id %s'%item_id)
             item = Item.objects.get(pk = item_id)           
-            logger.debug('file_name %s'%file_name) 
+            
             _upload_variant(item, variant, ws, user, file_name, upload_file.read())
+            uploads_success = import_dir(tmp_dir, user, workspace)            
+            os.rmdir(tmp_dir)
+            
         except Exception,ex:
             logger.exception(ex)
             raise ex  

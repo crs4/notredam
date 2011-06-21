@@ -1,5 +1,6 @@
 function use_ajax_upload(){
-	try{
+	
+    try{
 		var xhrupload = XMLHttpRequestUpload;		
 	}
 	
@@ -17,13 +18,7 @@ function use_ajax_upload(){
 	});
 	console.log('use_ajax_upload ' + !files_too_big)
 	return !files_too_big;
-	 //try{
-			//var tmp = FormData;
-			//return true;
-		//}
-		//catch(e){
-			//return false;
-		//}
+	
 };
 
 function upload_dialog(cfg){
@@ -37,6 +32,7 @@ function upload_dialog(cfg){
 		item: null
 	}, cfg);
 	
+    console.log('config.url '+ config.url);
 	Ext.apply(this, config);
 	
 	this.upload_file = function(){
@@ -266,7 +262,7 @@ function upload_dialog(cfg){
 				    	afterrender: function(){
                             new Ext.form.FormPanel({
                                 id: 'form_upload',
-                                url: '/upload_resource/',
+                                url: config.url,
                                 renderTo: 'upload',
                                 fileUpload: true,
                                 //width:100,
