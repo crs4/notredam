@@ -339,7 +339,7 @@ def _upload_resource_via_post(request, use_session = True):
         real_tmp_dir = get_tmp_dir(session) #since i cant acces to request before settings upload handler
         os.rename(tmp_dir, real_tmp_dir)
         tmp_dir = real_tmp_dir
-    #return request.FILES['files_to_upload']
+    return tmp_dir
     
 def get_tmp_dir(session):
     return '/tmp/'+ session
@@ -374,19 +374,14 @@ def upload_item(request):
             file_counter = int(request.GET['counter'])
             total = int(request.GET['total'])
             tmp_dir = check_dir_session(session)
-            _upload_item(file_name, request.raw_post_data, variant, request.user, tmp_dir, workspace)        
-            #if file_counter == total:                
-                #import_dir(tmp_dir, user, workspace)
-               
+            _upload_item(file_name, request.raw_post_data, variant, request.user, tmp_dir, workspace)
+                    
+            
             
         else: # files in request.FILES
-            logger.debug('upload item via post multipart/form')            
-            #session = request.POST['session']
-            _upload_resource_via_post(request)
-            #import_dir(tmp_dir, user, workspace)
-            #os.rmdir(tmp_dir)
-        
-        
+            logger.debug('upload item via post multipart/form')                     
+            _upload_resource_via_post(request)     
+            
         resp = simplejson.dumps({'success': True})
         
     except Exception, ex:
