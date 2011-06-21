@@ -475,11 +475,11 @@ def upload_variant(request):
         variant = Variant.objects.get(name = variant_name)
         
         item_id = request.POST.get('item')
-        file_name = 'lol.jpg'
+        file_name = file.name
     
     item = Item.objects.get(pk = item_id)
        
-    logger.debug('before _upload_variant')
+    logger.debug('before _upload_variant, file_name %s'%file_name)
     _upload_variant(item, variant, workspace, request.user, file_name, file)
     
 
