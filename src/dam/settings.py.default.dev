@@ -115,9 +115,19 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.transaction.TransactionMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.middleware.doc.XViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 )
+
+
+#### DECOMMENT TO USE LDAP AUTHENTICATION. NOTE THAT IT NEEDS ldap PACKAGE INSTALLED
+#AUTHENTICATION_BACKENDS = (
+    #'django.contrib.auth.backends.ModelBackend',
+    #'dam.ldapBackend.LDAPBackend',
+ #
+#)
+
 
 ROOT_URLCONF = 'dam.urls'
 
