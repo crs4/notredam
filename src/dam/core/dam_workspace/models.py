@@ -66,9 +66,15 @@ class WorkspaceManager(models.Manager):
         
     def get_default_by_user(self,  user):
         try:
-            workspace = self.filter(creator = user).order_by('creation_date').distinct()[0]                
+            workspaces = self.filter(creator = user).order_by('creation_date').distinct()
+                
         except:
-            workspace = self.filter(members = user).order_by('name').distinct()[0]
+            workspaces = self.filter(members = user).order_by('name').distinct()
+        
+        if workspaces.count() > 0:
+            workspace = workspaces[0]
+        else:
+            workspace = self.create_workspace(user.username, '', user)
         return workspace
                 
 
