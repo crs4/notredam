@@ -273,7 +273,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
         logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-def _import_dir(filenames, variant_name, user, workspace, make_copy=True):
+def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     """
        Parameters:
        <filenames> is a list of tuples (filename, original_filename, res_id).
@@ -312,7 +312,7 @@ def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = '
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
     logger.debug('files %s'%files)    
-    items = _import_dir(files, variant_name, user, workspace, False)
+    items = _create_items(files, variant_name, user, workspace, False)
     if trigger:
         ret = _run_pipelines(items, trigger,  user, workspace)
     logger.debug('items %s'%items)

@@ -1,5 +1,5 @@
 function use_ajax_upload(){
-	return false;
+	
     try{
 		var xhrupload = XMLHttpRequestUpload;		
 	}
