@@ -121,13 +121,23 @@ MIDDLEWARE_CLASSES = (
 )
 
 
+
 #### DECOMMENT TO USE LDAP AUTHENTICATION. NOTE THAT IT NEEDS ldap PACKAGE INSTALLED
 #AUTHENTICATION_BACKENDS = (
-    #'django.contrib.auth.backends.ModelBackend',
-    #'dam.ldapBackend.LDAPBackend',
- #
+#    'django.contrib.auth.backends.ModelBackend',
+#    'dam.ldapBackend.LDAPBackend', 
 #)
 
+
+################LDAP CONFIG,  see http://packages.python.org/django-auth-ldap/
+#import ldap
+#from django_auth_ldap.config import LDAPSearch
+#
+#AUTH_LDAP_SERVER_URI = ""
+#AUTH_LDAP_BIND_PASSWORD = ""
+#AUTH_LDAP_USER_SEARCH = LDAPSearch("dc=com",ldap.SCOPE_SUBTREE, "(uid=%(user)s)") #just an example
+#AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName", "last_name": "sn", "email": "mail"}
+############################
 
 ROOT_URLCONF = 'dam.urls'
 
