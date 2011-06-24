@@ -3,8 +3,10 @@ import dam.settings as settings
 setup_environ(settings)
 from django.db.models.loading import get_models
 get_models()
+from django.contrib.auth import authenticate
 
 import os
+import getpass
 import sys
 import getopt
 from django.contrib.auth.models import User
@@ -69,7 +71,13 @@ if __name__ == "__main__":
         print 'workspace %s does not exist'%opts['-w']
         sys.exit(2)
     
-    import_dir(dir_path, user, ws)
+    password = getpass.getpass()
+    user = authenticate(username=user.username, password=password)
+    if user is not None:
+        import_dir(dir_path, user, ws, make_copy = True)
+    else:
+        print 'login failed'
+        sys.exit(2)
 
     
     
