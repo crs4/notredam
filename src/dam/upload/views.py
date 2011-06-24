@@ -308,11 +308,11 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     return items
 
 
-def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload'):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
     logger.debug('files %s'%files)    
-    items = _create_items(files, variant_name, user, workspace, False)
+    items = _create_items(files, variant_name, user, workspace, make_copy)
     if trigger:
         ret = _run_pipelines(items, trigger,  user, workspace)
     logger.debug('items %s'%items)
