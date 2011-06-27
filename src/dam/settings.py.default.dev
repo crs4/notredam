@@ -124,8 +124,8 @@ MIDDLEWARE_CLASSES = (
 
 #### DECOMMENT TO USE LDAP AUTHENTICATION. NOTE THAT IT NEEDS ldap PACKAGE INSTALLED
 #AUTHENTICATION_BACKENDS = (
-#    'django.contrib.auth.backends.ModelBackend',
-#    'dam.ldapBackend.LDAPBackend', 
+#    'django_auth_ldap.backend.LDAPBackend',
+#    'django.contrib.auth.backends.ModelBackend',    
 #)
 
 
