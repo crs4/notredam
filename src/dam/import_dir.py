@@ -71,10 +71,21 @@ if __name__ == "__main__":
         print 'workspace %s does not exist'%opts['-w']
         sys.exit(2)
     
+    
+    if not ws.has_member(user):
+        print 'You are not a member of workspace "%s"'%ws.name
+        sys.exit(2)
+        
+    if not ws.has_permission(user, 'add_item'):
+        print 'You have insufficient permissions'
+        sys.exit(2)
+    
     password = getpass.getpass()
     user = authenticate(username=user.username, password=password)
     if user is not None:
         import_dir(dir_path, user, ws, make_copy = True)
+        
+            
     else:
         print 'login failed'
         sys.exit(2)
