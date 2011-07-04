@@ -98,7 +98,7 @@ def resources(request, component_id, workspace_id):
     try:
         component = Component.objects.get(pk = component_id)
         workspace = component.workspace.get(pk = workspace_id)
-    except:
+    except (Component.DoesNotExist, Workspace.DoesNotExist):
         return HttpResponseNotFound()    
     
     
