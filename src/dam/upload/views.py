@@ -308,7 +308,7 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
     return items
 
 
-def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     #files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
     items = []
@@ -316,7 +316,9 @@ def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = '
         root_dir, sub_dirs, files = entry
         files = [os.path.join(root_dir, x) for x in files]
         items.extend(_create_items(files, variant_name, user, workspace, make_copy))    
-    
+        if not recursive:
+            break
+        
     if trigger:
         ret = _run_pipelines(items, trigger,  user, workspace)
     logger.debug('items %s'%items)

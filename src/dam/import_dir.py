@@ -95,7 +95,7 @@ if __name__ == "__main__":
     password = getpass.getpass()
     user = authenticate(username=user.username, password=password)
     if user is not None:
-        import_dir(dir_path, user, ws, make_copy = True)
+        import_dir(dir_path, user, ws, make_copy = True, recursive = False)
         
             
     else:
