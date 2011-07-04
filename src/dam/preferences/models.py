@@ -184,7 +184,7 @@ class DAMComponentSetting(models.Model):
     def get_system_preference(self):
         try:
             pref = SystemSetting.objects.get(component_setting=self)
-        except:
+        except SystemSetting.DoesNotExist:
             pref = None
 
         return pref
@@ -195,7 +195,7 @@ class DAMComponentSetting(models.Model):
                 pref = UserSetting.objects.get(component_setting=self, user=obj)
             else:
                 pref = None
-        except:
+        except UserSetting.DoesNotExist:
             pref = None
 
         return pref
@@ -206,7 +206,7 @@ class DAMComponentSetting(models.Model):
                 pref = WSSetting.objects.get(component_setting=self, user=obj)
             else:
                 pref = None
-        except:
+        except WSSetting.DoesNotExist:
             pref = None
 
         return pref
