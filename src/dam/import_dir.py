@@ -1,3 +1,15 @@
+""" 
+This script allows to import a directory into NotreDAM. An item will be created for each media files contained in the given directory. 
+Typical usage:
+
+python import_dir.py -d /home/user/import_dir/ -u admin -w 1 
+
+Options:
+    -d: the directory to import
+    -u: user that will be used as items' creator. He/She must be member of the workspace specified with option w and have "add items" permission.
+    -w: workspace id on which items will be created
+
+"""
 from django.core.management import setup_environ
 import dam.settings as settings
 setup_environ(settings)
@@ -14,14 +26,14 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.upload.views import import_dir
 
 def usage():
-    pass
+    print __doc__
 
 if __name__ == "__main__":
     help_message = "for help use -h, --help"
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hw:d:u:",["help"])
-        print 'opts', opts
-        print 'args', args
+        #print 'opts', opts
+        #print 'args', args
     except getopt.error, msg:
         print msg
         print help_message
@@ -29,7 +41,7 @@ if __name__ == "__main__":
      
     for o, a in opts:
         if o in ("-h", "--help"):
-            print __doc__
+            usage()
             sys.exit(0)
         
     if len(opts) < 1: 
