@@ -2,12 +2,7 @@
 This script allows to import a directory into NotreDAM. An item will be created for each media files contained in the given directory. 
 Typical usage:
 
-python import_dir.py -d /home/user/import_dir/ -u admin -w 1 
-
-Options:
-    -d: the directory to import
-    -u: user that will be used as items' creator. He/She must be member of the workspace specified with option w and have "add items" permission.
-    -w: workspace id on which items will be created
+python import_dir.py /home/user/import_dir/ -u admin -w 1 
 
 """
 from django.core.management import setup_environ
@@ -20,72 +15,55 @@ from django.contrib.auth import authenticate
 import os
 import getpass
 import sys
-import getopt
+
 from django.contrib.auth.models import User
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.upload.views import import_dir
-
-def usage():
-    print __doc__
+from optparse import OptionParser
 
 if __name__ == "__main__":
-    help_message = "for help use -h, --help"
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hrw:d:u:",["help"])
-        #print 'opts', opts
-        #print 'args', args
-    except getopt.error, msg:
-        print msg
-        print help_message
-        sys.exit(2)
-     
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            usage()
-            sys.exit(0)
-        
-    if len(opts) < 1: 
-        print 'no args passed'
-        print help_message
-        sys.exit(2)
-        
-    opts = dict(opts)
+    help_message = "For help use -h, --help"
+    parser = OptionParser(usage = __doc__)
+    parser.add_option("-w", "--workspace", dest="workspace_id", help="workspace id on which items will be created")
     
-    if not opts.has_key('-d'):
-        print 'no dir specified'
-        print help_message
-        sys.exit(2)
+    parser.add_option("-u", "--user", dest="username", help='user that will be used as items\' creator. He/She must be member of the workspace specified with option w and have "add items" permission.')
+    parser.add_option("-r", help="recursively add files in subdirectories", default= False, dest='recursive', action = 'store_true')
     
-    if not opts.has_key('-u'):
-        print 'no user specified'
-        print help_message
-        sys.exit(2)
 
-    if not opts.has_key('-w'):
-        print 'no workspace specified'
-        print help_message
+    
+    (opts, args) = parser.parse_args()
+    #print 'opts', opts
+    #print 'args', args
+    
+    if len(args) < 1:
+        print 'no directory passed. ' + help_message
+        sys.exit(2)
+    dir_path = args[0]
+    
+    if not opts.workspace_id:
+        print 'No workspace passed. ' + help_message
         sys.exit(2)
     
-    dir_path = opts['-d']
+    if not opts.username:
+        print 'No user passed. ' + help_message
+        sys.exit(2)
+    
+    if not os.path.isabs(dir_path):
+        dir_path = os.path.join(os.getcwd(), dir_path)
+        
     if not os.path.exists(dir_path):
         print 'dir %s does not exist'%dir_path
         sys.exit(2)
-    
-    if opts.has_key('-r'):
-        recursive = True
-    else:
-        recursive = False
-    
     try:
-        user = User.objects.get(username = opts['-u'])
+        user = User.objects.get(username = opts.username)
     except User.DoesNotExist:
-        print 'user %s does not exist'%opts['-u']
+        print 'user %s does not exist'%opts.username
         sys.exit(2)
 
     try:
-        ws = Workspace.objects.get(pk = opts['-w'])
+        ws = Workspace.objects.get(pk = opts.workspace_id)
     except Workspace.DoesNotExist:
-        print 'workspace %s does not exist'%opts['-w']
+        print 'workspace %s does not exist'%opts.workspace_id
         sys.exit(2)
     
     
@@ -100,14 +78,9 @@ if __name__ == "__main__":
     
     password = getpass.getpass()
     user = authenticate(username=user.username, password=password)
-    if user is not None:
-        
-        import_dir(dir_path, user, ws, make_copy = True, recursive = recursive)
-        
-            
+    
+    if user is not None:        
+        import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive)
     else:
         print 'login failed'
         sys.exit(2)
-
-    
-    
