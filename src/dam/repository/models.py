@@ -440,12 +440,9 @@ class Item(AbstractItem):
 
     def uploaded_by(self):
         """
-        Return the uploader username (or unknown)
+        Return the uploader user object
         """
-        try:
-            return self.uploader.username
-        except:
-            return 'unknown'
+        return self.uploader
         
     def get_variant_url(self, variant_name, workspace):
         url = None       
