@@ -31,7 +31,7 @@ def usage():
 if __name__ == "__main__":
     help_message = "for help use -h, --help"
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hw:d:u:",["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "hrw:d:u:",["help"])
         #print 'opts', opts
         #print 'args', args
     except getopt.error, msg:
@@ -71,6 +71,11 @@ if __name__ == "__main__":
         print 'dir %s does not exist'%dir_path
         sys.exit(2)
     
+    if opts.has_key('-r'):
+        recursive = True
+    else:
+        recursive = False
+    
     try:
         user = User.objects.get(username = opts['-u'])
     except User.DoesNotExist:
@@ -92,10 +97,12 @@ if __name__ == "__main__":
         print 'You have insufficient permissions'
         sys.exit(2)
     
+    
     password = getpass.getpass()
     user = authenticate(username=user.username, password=password)
     if user is not None:
-        import_dir(dir_path, user, ws, make_copy = True, recursive = False)
+        
+        import_dir(dir_path, user, ws, make_copy = True, recursive = recursive)
         
             
     else:
