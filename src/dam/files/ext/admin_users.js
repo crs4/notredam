@@ -765,7 +765,11 @@ var open_user_win = function(current, custom_store) {
                             Ext.getCmp('users_list').getStore().reload();
                             Ext.MessageBox.alert(win_title, success_msg);
                             close_my_win(my_obj);
-                        }                        
+                        },
+                        failure: function(data){ 
+                            Ext.getCmp('users_list').getStore().reload();
+                            Ext.MessageBox.alert(win_title, 'Duplicate User. Impossibible add the new user.');
+                        } 
                     });
 
                 }
