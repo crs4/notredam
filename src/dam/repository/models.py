@@ -76,7 +76,9 @@ class Item(AbstractItem):
     """
     _id = models.CharField(max_length=40,  db_column = 'md_id')    
     metadata = generic.GenericRelation('metadata.MetadataValue')
-        
+    source_file_path = models.TextField() #path from whom the item was imported(/tmp/somedir/somefile in case of upload)
+    
+    
     def _get_id(self):
         return self._id
     

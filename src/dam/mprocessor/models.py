@@ -45,6 +45,16 @@ class Process(models.Model):
     end_date = models.DateTimeField(null = True, blank = True)    # Set on completion
     launched_by = models.ForeignKey(User)
     last_show_date = models.DateTimeField(null = True, blank = True)
+    
+    def get_progress(self):
+        items_completed =  self.get_num_target_completed()
+        items_failed =  self.get_num_target_failed()
+        total_items = self.processtarget_set.all().count()
+        if total_items == 0:
+            progress = 0
+        else:
+            progress =  round(float(items_completed)/float(total_items)*100)
+        return items_completed, items_failed, total_items, progress
 
     def add_params(self, target_id, params={}):
         """add_params: create a record in ProcessTarget list 

@@ -20,8 +20,56 @@ from django.contrib.auth.models import User
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.upload.views import import_dir
 from optparse import OptionParser
+import time
+import logging
+from dam.logger import logger
+
+## {{{ http://code.activestate.com/recipes/168639/ (r1)
+class progressBar:
+	def __init__(self, minValue = 0, maxValue = 10, totalWidth=12):
+		self.progBar = "[]"   # This holds the progress bar string
+		self.min = minValue
+		self.max = maxValue
+		self.span = maxValue - minValue
+		self.width = totalWidth
+		self.amount = 0       # When amount == max, we are 100% done 
+		self.updateAmount(0)  # Build progress bar string
+
+	def updateAmount(self, newAmount = 0):
+		if newAmount < self.min: newAmount = self.min
+		if newAmount > self.max: newAmount = self.max
+		self.amount = newAmount
+
+		# Figure out the new percent done, round to an integer
+		diffFromMin = float(self.amount - self.min)
+		percentDone = (diffFromMin / float(self.span)) * 100.0
+		percentDone = round(percentDone)
+		percentDone = int(percentDone)
+
+		# Figure out how many hash bars the percentage should be
+		allFull = self.width - 2
+		numHashes = (percentDone / 100.0) * allFull
+		numHashes = int(round(numHashes))
+
+		# build a progress bar with hashes and spaces
+		self.progBar = "[" + '#'*numHashes + ' '*(allFull-numHashes) + "]"
+
+		# figure out where to put the percentage, roughly centered
+		percentPlace = (len(self.progBar) / 2) - len(str(percentDone)) 
+		percentString = str(percentDone) + "%"
+
+		# slice the percentage into the bar
+		self.progBar = self.progBar[0:percentPlace] + percentString + self.progBar[percentPlace+len(percentString):]
+
+	def __str__(self):
+		return str(self.progBar)
+## end of http://code.activestate.com/recipes/168639/ }}}
+
+
+
 
 if __name__ == "__main__":
+    logger.setLevel(logging.ERROR)
     help_message = "For help use -h, --help"
     parser = OptionParser(usage = __doc__)
     parser.add_option("-w", "--workspace", dest="workspace_id", help="workspace id on which items will be created")
@@ -80,7 +128,27 @@ if __name__ == "__main__":
     user = authenticate(username=user.username, password=password)
     
     if user is not None:        
-        import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive)
+        processes, items = import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive)
+        total_progress = 0
+        
+        prog = progressBar(0, 100, 100)
+        print '\nProcessing %s item(s)...\n'%items.count()
+        while total_progress <=100:
+            total_progress = 0
+            for process in processes:   
+                items_completed, items_failed, total_items, progress = process.get_progress()
+                total_progress += progress
+                
+            total_progress = float(total_progress)/len(processes)
+            prog.updateAmount(total_progress)
+            #print total_progress
+            print prog, "\r",
+            time.sleep(.05)
+            if total_progress >=100:
+                break
+        print ''
+      
+            
     else:
         print 'login failed'
         sys.exit(2)

@@ -210,21 +210,15 @@ def _script_monitor(workspace):
                 process.save()
     #                status = 'in progress'
                 
-            elif settings.REMOVE_OLD_PROCESSES and process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
-                
-                process.delete()
-                logger.debug('process %s deleted'%process.pk)
-                continue
+            #elif settings.REMOVE_OLD_PROCESSES and process.is_completed() and (datetime.datetime.now() - process.last_show_date).days > 0:
+                #
+                #process.delete()
+                #logger.debug('process %s deleted'%process.pk)
+                #continue
     #            else:
     #                status = 'in progress'
             
-            items_completed =  process.get_num_target_completed()
-            items_failed =  process.get_num_target_failed()
-            total_items = process.processtarget_set.all().count()
-            if total_items == 0:
-                progress = 0
-            else:
-                progress =  round(float(items_completed)/float(total_items)*100)
+            items_completed, items_failed, total_items, progress = process.get_progress()
                             
             tmp = {
                 'id': process.pk,
