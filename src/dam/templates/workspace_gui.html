@@ -1,0 +1,104 @@
+{%extends "base.html"%}
+	{%block css%}
+		
+		
+		<link rel="stylesheet" type="text/css" href="/files/css/workspace.css" />
+	
+		
+		<link rel="stylesheet" type="text/css" href="/files/css/languages.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/status.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/forms.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/itemview.css" />
+		<link rel="stylesheet" type="text/css" href="/files/css/summary.css" />
+	  	<link rel="stylesheet" type="text/css" href="/files/css/fileuploadfield.css" />
+	  	<link rel="stylesheet" type="text/css" href="/files/css/Ext.ux.grid.ProgressColumn.css" />
+	  	<!--link rel="stylesheet" type="text/css" href="/files/css/upload_icons.css" /-->
+	  	<!--link rel="stylesheet" type="text/css" href="/files/css/fileuploader.css" /-->
+	
+	
+	    <style type="text/css">
+	    .swfupload {
+	        position: absolute;
+	        z-index: 1;
+	    }
+	    </style>
+	{%endblock%}
+	{%block js%}
+		<script type="text/javascript" src="/files/ext/Ext.ux.grid.ProgressColumn.js"></script>
+		<script type="text/javascript">
+	
+		var ws = {id:{{ws_id}}, name:'{{ws_name}}', description: '{{ws_description}}'};
+		var user = "{{user.username}}";
+		
+		</script>
+			   
+	    <script type="text/javascript" src="/files/ext/addTabButton.js"></script>
+		<script type="text/javascript" src="/files/ext/general.js"></script>
+		<script type="text/javascript" src="/files/ext/workspaces.js"></script>
+		<script type="text/javascript" src="/files/ext/tree.js"></script>
+		<script type="text/javascript" src="/files/ext/menus.js"></script>
+		<script type="text/javascript" src="/files/ext/preferences.js"></script>
+	
+		<script type="text/javascript" src="/files/ext/data-view-plugins.js"></script>
+		<script type="text/javascript" src="/files/ext/StatusBar.js"></script>
+		<script type="text/javascript" src="/files/ext/RowExpander.js"></script>
+		<script type="text/javascript" src="/files/ext/datetime.js"></script>
+		<script type="text/javascript" src="/files/ext/metadata_grid.js"></script>
+		<script type="text/javascript" src="/files/ext/variants.js"></script>
+		<script type="text/javascript" src="/files/ext/config_metadata.js"></script>
+	        <script type="text/javascript" src="/files/ext/scripts.js"></script>
+		<script type="text/javascript" src="/files/ext/organizer.js"></script>
+	
+		<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={{GOOGLE_KEY}}" type="text/javascript"></script>
+		<script type="text/javascript" src="/files/javascript/maps/mapiconmaker.js"></script>
+		<script type="text/javascript" src="/files/javascript/maps/dragzoom.js"></script>
+		<script type="text/javascript" src="/files/javascript/maps/ClusterMarker.js"></script>
+		<script type="text/javascript" src="/files/ext/GmapPanel.js"></script>
+		<script type="text/javascript" src="/files/ext/gmap.js"></script>
+		<script src="/files/flowplayer/flowplayer-3.1.4.min.js"></script>
+	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.js"></script-->
+	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.queue.js"></script-->
+	    <script type="text/javascript" src="/files/ext/FileUploadField.js"></script>
+	    <!--script type="text/javascript" src="/files/ext/sendFile.js"></script-->
+	    
+	    <!--script type="text/javascript" src="/files/ext/Ext.ux.form.BrowseButton.js"></script>
+	    <script type="text/javascript" src="/files/ext/Ext.ux.FileUploader.js"></script>
+	   	
+	    
+	    	    
+	    <script type="text/javascript" src="/files/ext/Ext.ux.UploadPanel.js"></script>
+	    <script type="text/javascript" src="/files/ext/fileuploader.js "></script-->
+	    <script type="text/javascript" src="/files/javascript/upload/uploader.js"></script>
+		
+		<script type="text/javascript" src="/files/ext/load_store.js"></script>
+	{%endblock%}
+
+    
+    
+{%block body_content%}
+		<div id="switch_ws_bar" style="width:300; position:absolute; left:42%; float:left; margin-top:3px; margin-left:26px; font-size:12 !important;" ></div>
+		
+		<div style="float:right; margin-top:11px; font-size:11px; padding-right:10px;">logged as <span id="user_logged">{{user}}</span> 
+        
+		{%block prefs%}
+			| <a href='javascript:open_pref()' >preferences</a> 
+		{%endblock%}
+        
+        {%if user.is_staff%}
+            | <a href="/dam_admin/">admin</a>
+        {%endif%}
+        		
+        | <a href="/logout/">logout</a>
+		</div>
+
+
+	</div>
+	{%block toolbar%}
+		<div id="toolbar_container">
+			<div id="toolbar"></div>
+		</div>
+	{%endblock%}
+{%endblock%}    
+
+   
+	
