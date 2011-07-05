@@ -202,11 +202,20 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
         
 
 
-def _create_item(user, workspace, res_id, media_type):
-    item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type)    
-    item.add_to_uploaded_inbox(workspace)    
-    item.workspaces.add(workspace)
-    return item
+def _create_item(user, workspace, res_id, media_type, original_filename):
+    try:
+        #cannot use get_or_create since _res_id is random, so the item will be always created
+        
+        item = Item.objects.get(type=media_type, source_file_path = original_filename) 
+        created = False
+    except Item.DoesNotExist:
+        item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
+        created = True
+    
+    if created:        
+        item.add_to_uploaded_inbox(workspace)    
+        item.workspaces.add(workspace)
+    return (item, created)
 
 #def _get_media_type(file_name):
 #    type = guess_media_type(file_name)
@@ -265,7 +274,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
                 logger.debug('item %s added to %s' % (item.pk, pipe.name))
         if process:
             logger.debug( 'Launching process %s-%s' % (str(process.pk), pipe.name))
-            ret.append(str(process.pk))
+            ret.append(process)
             process.run()
 
     unassigned = assigned_items.symmetric_difference(items)
@@ -282,30 +291,33 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
 
        Creates a new item for each filename;
        Create a component with variant = variant_name;
-       Returns the list of items created;
+      
     """
-    items = []
-    logger.debug("filenames : %s" %filenames)
+   
+    
+    variant = Variant.objects.get(name = variant_name)
     for original_filename in filenames:        
         
         res_id = new_id()
-        variant = Variant.objects.get(name = variant_name)
+        
         media_type = Type.objects.get_or_create_by_filename(original_filename)        
         final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
         final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
         upload_filename = os.path.basename(original_filename)
         
         tmp = upload_filename.split('_')
-        item = _create_item(user, workspace, res_id, media_type)
-        if len(tmp) > 1:
-            upload_filename = '_'.join(tmp[1:])
-        _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
-        if make_copy:
-            shutil.copyfile(original_filename, final_path)
-        else:
-            shutil.move(original_filename, final_path)
-        items.append(item)
-    return items
+        item, created = _create_item(user, workspace, res_id, media_type, original_filename)
+        if created:
+            if len(tmp) > 1:
+                upload_filename = '_'.join(tmp[1:])
+            _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
+            if make_copy:
+                shutil.copyfile(original_filename, final_path)
+            else:
+                shutil.move(original_filename, final_path)
+        #yield item
+        
+    
 
 
 def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True):
@@ -315,14 +327,15 @@ def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = '
     for entry in os.walk(dir_name):
         root_dir, sub_dirs, files = entry
         files = [os.path.join(root_dir, x) for x in files]
-        items.extend(_create_items(files, variant_name, user, workspace, make_copy))    
+        _create_items(files, variant_name, user, workspace, make_copy)
         if not recursive:
             break
-        
+    
+    items = Item.objects.filter(source_file_path__startswith=dir_name)
     if trigger:
-        ret = _run_pipelines(items, trigger,  user, workspace)
-    logger.debug('items %s'%items)
-    return items
+        processes = _run_pipelines(items, trigger,  user, workspace)
+        
+    return (processes, items)
     #logger.debug('Launched %s' % ' '.join(ret))
 
 def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
@@ -570,9 +583,9 @@ def upload_session_finished(request):
     logger.debug('tmp_dir %s'%tmp_dir)
     
     if os.path.exists(tmp_dir):
-        uploads_success = import_dir(tmp_dir, user, workspace)
+        processess, uploads_success = import_dir(tmp_dir, user, workspace)
         os.rmdir(tmp_dir)
-        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': len(uploads_success)}))
+        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': uploads_success.count()}))
     else:
         return HttpResponse(simplejson.dumps({'success': False}))
     
