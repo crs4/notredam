@@ -564,7 +564,6 @@ class Component(AbstractComponent):
     ID = property(fget=_get_id)     
     media_type = property(fget=_get_media_type)
     
-    
     def get_file_path(self):
         return os.path.join(MEDIADART_STORAGE, self.uri)
     
