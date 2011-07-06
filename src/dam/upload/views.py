@@ -307,7 +307,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
         #logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True, force_generation = False):
+def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True, force_generation = False, symlink = False):
     """
        Parameters:
        <filenames> is a list of tuples (filename, original_filename, res_id).
@@ -342,7 +342,11 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
                 if len(tmp) > 1:
                     upload_filename = '_'.join(tmp[1:])
                 _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
-                if make_copy:
+                
+                if symlink:
+                    os.symlink(original_filename, final_path)                
+                    
+                elif make_copy:
                     shutil.copyfile(original_filename, final_path)
                 else:
                     shutil.move(original_filename, final_path)
@@ -365,12 +369,12 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
     
 
 
-def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False, symlink = False):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     #files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
     
     
-    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive, force_generation)   
+    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive, force_generation, symlink)   
 
     #items = Item.objects.filter(source_file_path__startswith=dir_name)
     if trigger:

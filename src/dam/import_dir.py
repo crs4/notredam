@@ -77,6 +77,7 @@ if __name__ == "__main__":
     parser.add_option("-u", "--user", dest="username", help='user that will be used as items\' creator. He/She must be member of the workspace specified with option w and have "add items" permission.')
     parser.add_option("-r", help="recursively add files in subdirectories", default= False, dest='recursive', action = 'store_true')
     parser.add_option("-f", help="force creation of items, even if there is already an item associated to a file", default= False, dest='force_generation', action = 'store_true')
+    parser.add_option("-s", help="create symbolic link inside notredam storage, instead of copy the file", default= False, dest='symlink', action = 'store_true')
     
 
     
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     user = authenticate(username=user.username, password=password)
     
     if user is not None:        
-        processes = import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive, force_generation = opts.force_generation)
+        processes = import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive, force_generation = opts.force_generation, symlink = opts.symlink)
         
         total_progress = 0
         
