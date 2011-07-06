@@ -45,7 +45,7 @@ from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
 #from dam.mprocessor.models import MAction
-
+from md5sum import md5
 from mediadart.storage import Storage
 
 from dam.logger import logger
@@ -260,29 +260,50 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
        Launches all pipes;
        Returns the list of process_id launched;
     """
+    logger.debug('############### run pipelines')
     assigned_items = set()
     ret = []
-    for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
-        process = None
-        for item in items:
+    process_pipe = {}
+    for item in items:
+        for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
             if pipe.is_compatible(item.type):
-                if process is None:
-                    process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
-                
-                process.add_params(item.pk, params)
-                assigned_items.add(item)
-                logger.debug('item %s added to %s' % (item.pk, pipe.name))
-        if process:
-            logger.debug( 'Launching process %s-%s' % (str(process.pk), pipe.name))
-            ret.append(process)
-            process.run()
+                if not process_pipe.has_key(pipe):
+                    process_pipe[pipe] = process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
 
-    unassigned = assigned_items.symmetric_difference(items)
-    if unassigned:
-        logger.debug("##### The following items have no compatible  action: " )
+                process_pipe[pipe].add_params(item.pk, params)
+                #assigned_items.add(item)
+                logger.debug('item %s added to %s' % (item.pk, pipe.name))
+    
+    for process in process_pipe.values():
+        ret.append(process)
+        process.run()
+    
+    #for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
+        #process = None
+        #logger.debug('pipe %s'%pipe.name)
+        #
+        #for item in items:
+            #logger.debug('----------item %s'%item)
+            #
+            #if pipe.is_compatible(item.type):
+                #if process is None:
+                    #process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
+                #logger.debug('process %s'%process)
+                #process.add_params(item.pk, params)
+                #assigned_items.add(item)
+                #logger.debug('item %s added to %s' % (item.pk, pipe.name))
+            #
+        #if process:
+            #logger.debug( 'Launching process %s-%s' % (str(process.pk), pipe.name))
+            #ret.append(process)
+            #process.run()
+#
+    #unassigned = assigned_items.symmetric_difference(items)
+    #if unassigned:
+        #logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-def _create_items(filenames, variant_name, user, workspace, make_copy=True):
+def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True):
     """
        Parameters:
        <filenames> is a list of tuples (filename, original_filename, res_id).
@@ -293,49 +314,66 @@ def _create_items(filenames, variant_name, user, workspace, make_copy=True):
        Create a component with variant = variant_name;
       
     """
-   
+    logger.debug('########## _create_items')
     
     variant = Variant.objects.get(name = variant_name)
-    for original_filename in filenames:        
-        
-        res_id = new_id()
-        
-        media_type = Type.objects.get_or_create_by_filename(original_filename)        
-        final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
-        upload_filename = os.path.basename(original_filename)
-        
-        tmp = upload_filename.split('_')
-        item, created = _create_item(user, workspace, res_id, media_type, original_filename)
-        if created:
-            if len(tmp) > 1:
-                upload_filename = '_'.join(tmp[1:])
-            _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
-            if make_copy:
-                shutil.copyfile(original_filename, final_path)
+    for entry in os.walk(dir_name):
+        root_dir, sub_dirs, files = entry
+        files = [os.path.join(root_dir, x) for x in files]
+    
+        for original_filename in files:        
+            
+            res_id = new_id()
+            
+            media_type = Type.objects.get_or_create_by_filename(original_filename)        
+            final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
+            final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
+            upload_filename = os.path.basename(original_filename)
+            
+            tmp = upload_filename.split('_')
+            item, created = _create_item(user, workspace, res_id, media_type, original_filename)
+             
+            if created:
+                logger.debug('file created')
+                if len(tmp) > 1:
+                    upload_filename = '_'.join(tmp[1:])
+                _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
+                if make_copy:
+                    shutil.copyfile(original_filename, final_path)
+                else:
+                    shutil.move(original_filename, final_path)
+                logger.debug('yielding item %s'%item)
+                yield item
+                
             else:
-                shutil.move(original_filename, final_path)
-        #yield item
-        
+                component = variant.get_component(workspace, item)
+                dam_hash = md5(component.get_file_path())
+                dir_hash = md5(original_filename)
+                if dir_hash != dam_hash:
+                    yield item
+        if not recursive:
+            break
+                
+                
+            
+            #yield item
+            
     
 
 
 def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     #files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
-    items = []
-    for entry in os.walk(dir_name):
-        root_dir, sub_dirs, files = entry
-        files = [os.path.join(root_dir, x) for x in files]
-        _create_items(files, variant_name, user, workspace, make_copy)
-        if not recursive:
-            break
     
-    items = Item.objects.filter(source_file_path__startswith=dir_name)
+    
+    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive)
+   
+
+    #items = Item.objects.filter(source_file_path__startswith=dir_name)
     if trigger:
         processes = _run_pipelines(items, trigger,  user, workspace)
         
-    return (processes, items)
+    return processes
     #logger.debug('Launched %s' % ' '.join(ret))
 
 def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
@@ -583,9 +621,12 @@ def upload_session_finished(request):
     logger.debug('tmp_dir %s'%tmp_dir)
     
     if os.path.exists(tmp_dir):
-        processess, uploads_success = import_dir(tmp_dir, user, workspace)
+        processes = import_dir(tmp_dir, user, workspace)
+        item_in_progress = 0
+        for process in processes:
+            item_in_progress += process.processtarget_set.all().count()
         os.rmdir(tmp_dir)
-        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': uploads_success.count()}))
+        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress}))
     else:
         return HttpResponse(simplejson.dumps({'success': False}))
     

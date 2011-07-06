@@ -69,7 +69,7 @@ class progressBar:
 
 
 if __name__ == "__main__":
-    logger.setLevel(logging.ERROR)
+    #logger.setLevel(logging.ERROR)
     help_message = "For help use -h, --help"
     parser = OptionParser(usage = __doc__)
     parser.add_option("-w", "--workspace", dest="workspace_id", help="workspace id on which items will be created")
@@ -128,18 +128,23 @@ if __name__ == "__main__":
     user = authenticate(username=user.username, password=password)
     
     if user is not None:        
-        processes, items = import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive)
+        processes = import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive)
+        
         total_progress = 0
         
         prog = progressBar(0, 100, 100)
-        print '\nProcessing %s item(s)...\n'%items.count()
+        #print '\nProcessing %s item(s)...\n'%items.count()
         while total_progress <=100:
             total_progress = 0
+           
             for process in processes:   
                 items_completed, items_failed, total_items, progress = process.get_progress()
                 total_progress += progress
                 
-            total_progress = float(total_progress)/len(processes)
+            if processes:
+                total_progress = float(total_progress)/len(processes)
+            else: 
+                total_progress = 100
             prog.updateAmount(total_progress)
             #print total_progress
             print prog, "\r",
