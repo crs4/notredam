@@ -202,15 +202,19 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
         
 
 
-def _create_item(user, workspace, res_id, media_type, original_filename):
-    try:
-        #cannot use get_or_create since _res_id is random, so the item will be always created
+def _create_item(user, workspace, res_id, media_type, original_filename, force_generation = False):
+            #cannot use get_or_create since _res_id is random, so the item will be always created
         
-        item = Item.objects.get(type=media_type, source_file_path = original_filename) 
-        created = False
-    except Item.DoesNotExist:
-        item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
+    if force_generation:
+        item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)
         created = True
+    else:
+        try:
+            item = Item.objects.get(type=media_type, source_file_path = original_filename) 
+            created = False
+        except Item.DoesNotExist:
+            item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
+            created = True
     
     if created:        
         item.add_to_uploaded_inbox(workspace)    
@@ -303,7 +307,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
         #logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True):
+def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True, force_generation = False):
     """
        Parameters:
        <filenames> is a list of tuples (filename, original_filename, res_id).
@@ -331,7 +335,7 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
             upload_filename = os.path.basename(original_filename)
             
             tmp = upload_filename.split('_')
-            item, created = _create_item(user, workspace, res_id, media_type, original_filename)
+            item, created = _create_item(user, workspace, res_id, media_type, original_filename, force_generation)
              
             if created:
                 logger.debug('file created')
@@ -361,13 +365,12 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
     
 
 
-def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     #files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
     
     
-    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive)
-   
+    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive, force_generation)   
 
     #items = Item.objects.filter(source_file_path__startswith=dir_name)
     if trigger:
