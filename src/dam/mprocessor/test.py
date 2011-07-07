@@ -54,7 +54,7 @@ pipeline = {
 def stop(result):
     reactor.stop()
 
-def main():
+def main1():
     ws = Workspace.objects.get(id=1)  
     pipe = Pipeline.objects.filter(name='for-p-1')
     if pipe:
@@ -79,6 +79,55 @@ def main():
                     })
     b = Batch(p)
     b.run().addBoth(stop)
+
+
+
+#
+#  Test for MProcessor.mq_run
+#
+# In order to run
+# 1. add an empty __init__ to MProcessor, to disable MQServer initialization
+# 2. Substitute the call to Batch.run() with Batch_test.run()
+# 3. execute main2  (with or without twisted)
+
+from dam.mprocessor.processor import MProcessor, Batch_test
+from dam.mprocessor.models import Process, Pipeline, ProcessTarget
+
+args = {'stop':2}
+
+def main2():
+    mp = MProcessor()
+    pipe = Pipeline.objects.all()[0]
+    w = pipe.workspace
+    u = w.creator
+
+    if args['stop']:
+        p = Process.objects.get(pk=args['stop'])
+        b = Batch_test(p)
+        b.stop()
+
+    p1 = Process(pipeline=pipe, workspace=w, launched_by=u)
+    p1.save()
+
+    p2 = Process(pipeline=pipe, workspace=w, launched_by=u)
+    p2.save()
+
+    p3 = Process(pipeline=pipe, workspace=w, launched_by=u)
+    p3.save()
+
+    p4 = Process(pipeline=pipe, workspace=w, launched_by=u)
+    p4.save()
+
+
+    m1=mp.mq_run(p1.pk, 1)
+    m2=mp.mq_run(p2.pk, 1)
+    m3=mp.mq_run(p3.pk)
+    m4=mp.mq_run(p4.pk)
+
+    print '%s' % p1
+    print p1.start_date
+
+
 
 if __name__=='__main__':
     reactor.callWhenRunning(main)
