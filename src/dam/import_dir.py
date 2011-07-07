@@ -2,7 +2,7 @@
 This script allows to import a directory into NotreDAM. An item will be created for each media files contained in the given directory. 
 Typical usage:
 
-python import_dir.py /home/user/import_dir/ -u admin -w 1 
+python import_dir.py /home/user/import_dir/ -u admin -w 1 -r
 
 """
 from django.core.management import setup_environ
@@ -23,6 +23,19 @@ from optparse import OptionParser
 import time
 import logging
 from dam.logger import logger
+
+class NoItemToProcess(Exception):
+    pass
+
+class LoginFailed(Exception):
+    pass
+
+class NotMember(Exception):
+    pass
+    
+class InsufficientPermissions(Exception):
+    pass
+
 
 ## {{{ http://code.activestate.com/recipes/168639/ (r1)
 class progressBar:
@@ -65,69 +78,58 @@ class progressBar:
 		return str(self.progBar)
 ## end of http://code.activestate.com/recipes/168639/ }}}
 
-
-def _import_dir(username, password, workspace_id, dir_path, recursive, force_generation, symlink):
-    try:
-        user = User.objects.get(username = opts.username)
-    except User.DoesNotExist:
-        print 'user %s does not exist'%opts.username
-        sys.exit(2)
-
-    try:
-        ws = Workspace.objects.get(pk = opts.workspace_id)
-    except Workspace.DoesNotExist:
-        print 'workspace %s does not exist'%opts.workspace_id
-        sys.exit(2)
-    
-    
+def check_user(username, password, workspace_id):    
+    user = authenticate(username=username, password=password)
+    if user is None:        
+        raise LoginFailed
+    ws = Workspace.objects.get(pk = opts.workspace_id)
     if not ws.has_member(user):
-        print 'You are not a member of workspace "%s"'%ws.name
-        sys.exit(2)
-        
+        raise NotMember
     if not ws.has_permission(user, 'add_item'):
-        print 'You have insufficient permissions'
-        sys.exit(2)
+        raise InsufficientPermissions
+    return user, ws
+
+def _import_dir(user, ws, dir_path, recursive, force_generation, symlink):
     
+    processes = import_dir(dir_path, user, ws, make_copy = True, recursive = recursive, force_generation = force_generation, symlink = symlink)
+    return processes
     
-    password = getpass.getpass()
-    user = authenticate(username=user.username, password=password)
-    
-    if user is not None:        
+
+def print_progress(processes):
+    if not processes:
+        raise NoItemToProcess
         
-        processes = import_dir(dir_path, user, ws, make_copy = True, recursive = recursive, force_generation = force_generation, symlink = symlink)
-        
+    total_items = 0
+    for process in processes:        
+        total_items += process.processtarget_set.all().count()
+    
+    print '\nProcessing %s item(s)...\n'%total_items
+    total_progress = 0
+    
+    prog = progressBar(0, 100, 100)
+    #print '\nProcessing %s item(s)...\n'%items.count()
+    while total_progress <=100:
         total_progress = 0
         
-        prog = progressBar(0, 100, 100)
-        #print '\nProcessing %s item(s)...\n'%items.count()
-        while total_progress <=100:
-            total_progress = 0
-           
-            for process in processes:   
-                items_completed, items_failed, total_items, progress = process.get_progress()
-                total_progress += progress
-                
-            if processes:
-                total_progress = float(total_progress)/len(processes)
-            else: 
-                total_progress = 100
-            prog.updateAmount(total_progress)
-            #print total_progress
-            print prog, "\r",
-            time.sleep(.05)
-            if total_progress >=100:
-                break
-        print ''
-      
+        for process in processes:   
+            items_completed, items_failed, total_items, progress = process.get_progress()
+            total_progress += progress
             
-    else:
-        print 'login failed'
-        sys.exit(2)
-
-    
+        if processes:
+            total_progress = float(total_progress)/len(processes)
+        else: 
+            total_progress = 100
+        prog.updateAmount(total_progress)
+        #print total_progress
+        print prog, "\r",
+        time.sleep(.05)
+        if total_progress >=100:
+            break
+    print ''
+      
 
 if __name__ == "__main__":
-    #logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.ERROR)
     help_message = "For help use -h, --help"
     parser = OptionParser(usage = __doc__)
     parser.add_option("-w", "--workspace", dest="workspace_id", help="workspace id on which items will be created")
@@ -135,7 +137,7 @@ if __name__ == "__main__":
     parser.add_option("-u", "--user", dest="username", help='user that will be used as items\' creator. He/She must be member of the workspace specified with option w and have "add items" permission.')
     parser.add_option("-r", help="recursively add files in subdirectories", default= False, dest='recursive', action = 'store_true')
     parser.add_option("-f", help="force creation of items, even if there is already an item associated to a file", default= False, dest='force_generation', action = 'store_true')
-    parser.add_option("-s", help="create symbolic link inside notredam storage, instead of copy the file", default= False, dest='symlink', action = 'store_true')
+    parser.add_option("-s", help="create symbolic link inside NotreDAM storage, instead of copying the files", default= False, dest='symlink', action = 'store_true')
     
 
     
@@ -162,6 +164,40 @@ if __name__ == "__main__":
     if not os.path.exists(dir_path):
         print 'dir %s does not exist'%dir_path
         sys.exit(2)
+    
+    password = getpass.getpass()
+    try:
+        user, ws = check_user(opts.username, password, opts.workspace_id)
+        processes = _import_dir(user, ws, dir_path, opts.recursive, opts.force_generation, opts.symlink)
+        print_progress(processes)
         
-    processes = _import_dir(username, password, workspace_id, dir_path, opts.recursive, opts.force_generation, opts.symlink)
+    except LoginFailed:
+        print 'Login failed'
+        sys.exit(2)
+    
+    except Workspace.DoesNotExist:
+        print 'workspace %s does not exist'%opts.workspace_id
+        sys.exit(2)
+        
+    except NotMember:
+        print 'You are not member of workspace %s'%ws
+        sys.exit(2)
+    
+    except InsufficientPermissions:
+        print 'You have insufficient permissions on workspace %s'%ws
+    
+    except NoItemToProcess:
+        print """No item to process. It happens when:
+        - the directory is empty or does not contain media files supported by NotreDAM.
+        - all files are already inside NotreDAM and up to date. Note that you can use the option -f to force the creation of new items.
+        """
+        sys.exit(2)
+    
+    except Exception, ex:
+        print 'Internal Error.'
+        print ex
+        sys.exit(2)
+
+    
+
     
