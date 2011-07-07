@@ -33,7 +33,7 @@ from django.conf import settings
 #from dam.scripts.models import Pipeline
 from dam.mprocessor.models import Pipeline, Process
 from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
-from dam.core.dam_repository.models import Type
+from dam.core.dam_repository.models import Type, MimeError
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
 from dam.treeview.models import Node
@@ -328,8 +328,12 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
         for original_filename in files:        
             
             res_id = new_id()
-            
-            media_type = Type.objects.get_or_create_by_filename(original_filename)        
+            try:
+                media_type = Type.objects.get_or_create_by_filename(original_filename)        
+            except MimeError, ex:
+                logger.error(ex)
+                continue
+                
             final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
             final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
             upload_filename = os.path.basename(original_filename)
