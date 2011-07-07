@@ -36,6 +36,7 @@ from twisted.internet import reactor, defer
 from mediadart.utils import default_start_mqueue
 
 
+from django.db.models import Q
 from json import loads
 from mediadart.mqueue.mqserver import MQServer
 from mediadart.config import Configurator
@@ -52,27 +53,42 @@ class BatchError(Exception):
 # only one process is active in mediadart at the same time.
 #
 class MProcessor(MQServer):
-    def wake_process(self):
-        waiting_processes = Process.objects.filter(start_date=None)
-        if waiting_processes:
-            return waiting_processes[0]
+    def wake_process(self, restarting):
+        running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
+        log.info("Running processes: %d" % len(running_processes))
+        if running_processes:
+            if restarting:
+                log.info("Restarting process %s" % (running_processes[0].pk))
+                return running_processes[0]    # rerun a running process, some actions
+                                               # will be repeated
+            else:
+                log.info("Process %s already running, doing nothing" % (running_processes[0].pk))
+                return None                    # a process is already running, do nothing
         else:
-            return None
+            waiting_processes = Process.objects.filter(start_date=None)
+            log.info("Waiting processes: %d" % len(waiting_processes))
+            if waiting_processes:
+                log.info("running the waiting process %s" % (waiting_processes[0].pk))
+                return waiting_processes[0]
+            else:
+                log.info("No waiting process: doing nothing")
+                return None
 
-    def mq_run(self, process_id=None):
+    def mq_run(self, process_id="", restarting=False):
         """Run a waiting process.
         
            This method tries to run a waiting process and schedules itself to run again
            when the process ends so that the queue of waiting processes can be emptied
            """
 
-        process = self.wake_process()
+        log.info("Adding process %s to run queue" % process_id)
+        process = self.wake_process(restarting)
         if not process:
             msg = ""
         elif str(process.pk) != str(process_id):
-            msg = "request put on execution queue"
+            msg = "process %s put on execution queue" % process_id
         else:
-            msg = "request running"
+            msg = "starting process %s" % process_id
         if process:
             d = Batch(process).run()
             d.addCallback(self.mq_run)
@@ -131,7 +147,6 @@ class Batch:
            Throws an exception if not all scripts can be loaded.
         """
         plugins_module = self.cfg.get("MPROCESSOR", "plugins")
-      
         scripts = {}
         for script_key, script_dict in pipeline.items():
             script_name = script_dict['script_name']
@@ -170,10 +185,8 @@ class Batch:
             task = self.tasks[idx]
             action = task['schedule'].action_to_run()
             if action is None:
-                #log.debug('111111113 - deleting task %s' % task) #d
                 to_delete.append(task)
             elif action:
-                #log.debug('111111112 -%s- %s' % (action, len(action))) #d
                 break
 
         #log.debug('to_delete %s' % to_delete) #d
@@ -182,7 +195,6 @@ class Batch:
             #log.debug('deleting done target %s' % t['item'].target_id) #d
             self.tasks.remove(t)
 
-        #log.debug('111111111') #d
         # update cur_task so that we do not always start querying the same task for new actions
         if action:
             idx = self.tasks.index(task)
@@ -190,26 +202,19 @@ class Batch:
         else:
             self.cur_task = 0
 
-        #log.debug('2222222') #d
         # if action is None or empy there is no action ready to run
         # if there are new targets available try to read some and find some new action
         if action:
             return action, task
         else:
-            #log.debug('33333') #d
             if not self.all_targets_read and self.outstanding < self.max_outstanding:
                 new_tasks = self._new_batch()
-                #log.debug('4444 %s' % self.tasks) #d
                 if new_tasks:
-                    #log.debug('5555') #d
                     self.cur_task = len(self.tasks)
                     self.tasks.extend(new_tasks)
             if self.all_targets_read and not self.tasks:
                 log.debug("_get_action: gameover")
-                self.gameover = True
-                self.process.end_date = datetime.datetime.now()
-                self.process.save()
-                self.deferred.callback('done')
+                self.stop()
             return  None, None
 
 
@@ -249,11 +254,10 @@ class Batch:
         self.outstanding -= 1
         schedule.done(action)
         if self.outstanding < self.max_outstanding:
-            ##log.debug('_handle_ok: rescheduling') #d
+            #log.debug('_handle_ok: rescheduling') #d
             reactor.callLater(0, self._iterate)
         self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
-
 
     def _handle_err(self, result, item, schedule, action, params):
         log.error('_handle_err action %s on target_id=%s: %s' % (action, item.target_id, str(result)))
@@ -263,7 +267,7 @@ class Batch:
         for a in cancelled:
             self._update_item_stats(item, a, "cancelled on failed %s" % action, 0, 0, 1)
         if self.outstanding < self.max_outstanding:
-            ##log.debug('_handle_err: rescheduling') #d
+            #log.debug('_handle_err: rescheduling') #d
             reactor.callLater(0, self._iterate)
         item.save()
 
@@ -282,6 +286,29 @@ from dam.mprocessor.make_plugins import simple_pipe as test_pipe2
 from dam.mprocessor.models import Pipeline, TriggerEvent
 from dam.workspace.models import DAMWorkspace
 from json import dumps
+
+##
+## Class used to test MProcessor.mq_run 
+##
+class Batch_test:
+    def __init__(self, process):
+        self.process = process
+
+    def run(self, seconds_offset = 0):
+        log.info('starting process %s' % self.process.pk)
+        when = datetime.datetime.now() + datetime.timedelta(seconds=seconds_offset)
+        self.process.start_date = when
+        self.process.save()
+        return defer.Deferred()   # never used
+
+    def stop(self, seconds_offset=0):
+        log.info('stopping process %s' % self.process.pk)
+        when = datetime.datetime.now() + datetime.timedelta(seconds=seconds_offset)
+        self.process.end_date = when
+        self.process.save()
+        self.gameover = True
+        #self.deferred.callback('done')
+
 
 class fake_config:
     dictionary = {
