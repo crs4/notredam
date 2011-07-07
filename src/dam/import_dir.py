@@ -103,7 +103,7 @@ def print_progress(processes):
     for process in processes:        
         total_items += process.processtarget_set.all().count()
     
-    print '\nProcessing %s item(s)...\n'%total_items
+    print '\nProcessing %s item(s)... \nNote that closing the shell will not interrupt the processing.\n'%total_items
     total_progress = 0
     
     prog = progressBar(0, 100, 100)
@@ -187,7 +187,7 @@ if __name__ == "__main__":
         print 'You have insufficient permissions on workspace %s'%ws
     
     except NoItemToProcess:
-        print """No item to process. It happens when:
+        print """\nNo item to process. It happens when:
         - the directory is empty or does not contain media files supported by NotreDAM.
         - all files are already inside NotreDAM and up to date. Note that you can use the option -f to force the creation of new items.
         """
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     
     except Exception, ex:
         print 'Internal Error.'
-        print ex
+        logger.exception(ex)
         sys.exit(2)
 
     
