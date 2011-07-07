@@ -66,7 +66,65 @@ class progressBar:
 ## end of http://code.activestate.com/recipes/168639/ }}}
 
 
+def _import_dir(username, password, workspace_id, dir_path, recursive, force_generation, symlink):
+    try:
+        user = User.objects.get(username = opts.username)
+    except User.DoesNotExist:
+        print 'user %s does not exist'%opts.username
+        sys.exit(2)
 
+    try:
+        ws = Workspace.objects.get(pk = opts.workspace_id)
+    except Workspace.DoesNotExist:
+        print 'workspace %s does not exist'%opts.workspace_id
+        sys.exit(2)
+    
+    
+    if not ws.has_member(user):
+        print 'You are not a member of workspace "%s"'%ws.name
+        sys.exit(2)
+        
+    if not ws.has_permission(user, 'add_item'):
+        print 'You have insufficient permissions'
+        sys.exit(2)
+    
+    
+    password = getpass.getpass()
+    user = authenticate(username=user.username, password=password)
+    
+    if user is not None:        
+        
+        processes = import_dir(dir_path, user, ws, make_copy = True, recursive = recursive, force_generation = force_generation, symlink = symlink)
+        
+        total_progress = 0
+        
+        prog = progressBar(0, 100, 100)
+        #print '\nProcessing %s item(s)...\n'%items.count()
+        while total_progress <=100:
+            total_progress = 0
+           
+            for process in processes:   
+                items_completed, items_failed, total_items, progress = process.get_progress()
+                total_progress += progress
+                
+            if processes:
+                total_progress = float(total_progress)/len(processes)
+            else: 
+                total_progress = 100
+            prog.updateAmount(total_progress)
+            #print total_progress
+            print prog, "\r",
+            time.sleep(.05)
+            if total_progress >=100:
+                break
+        print ''
+      
+            
+    else:
+        print 'login failed'
+        sys.exit(2)
+
+    
 
 if __name__ == "__main__":
     #logger.setLevel(logging.ERROR)
@@ -104,58 +162,6 @@ if __name__ == "__main__":
     if not os.path.exists(dir_path):
         print 'dir %s does not exist'%dir_path
         sys.exit(2)
-    try:
-        user = User.objects.get(username = opts.username)
-    except User.DoesNotExist:
-        print 'user %s does not exist'%opts.username
-        sys.exit(2)
-
-    try:
-        ws = Workspace.objects.get(pk = opts.workspace_id)
-    except Workspace.DoesNotExist:
-        print 'workspace %s does not exist'%opts.workspace_id
-        sys.exit(2)
-    
-    
-    if not ws.has_member(user):
-        print 'You are not a member of workspace "%s"'%ws.name
-        sys.exit(2)
         
-    if not ws.has_permission(user, 'add_item'):
-        print 'You have insufficient permissions'
-        sys.exit(2)
+    processes = _import_dir(username, password, workspace_id, dir_path, opts.recursive, opts.force_generation, opts.symlink)
     
-    
-    password = getpass.getpass()
-    user = authenticate(username=user.username, password=password)
-    
-    if user is not None:        
-        processes = import_dir(dir_path, user, ws, make_copy = True, recursive = opts.recursive, force_generation = opts.force_generation, symlink = opts.symlink)
-        
-        total_progress = 0
-        
-        prog = progressBar(0, 100, 100)
-        #print '\nProcessing %s item(s)...\n'%items.count()
-        while total_progress <=100:
-            total_progress = 0
-           
-            for process in processes:   
-                items_completed, items_failed, total_items, progress = process.get_progress()
-                total_progress += progress
-                
-            if processes:
-                total_progress = float(total_progress)/len(processes)
-            else: 
-                total_progress = 100
-            prog.updateAmount(total_progress)
-            #print total_progress
-            print prog, "\r",
-            time.sleep(.05)
-            if total_progress >=100:
-                break
-        print ''
-      
-            
-    else:
-        print 'login failed'
-        sys.exit(2)
