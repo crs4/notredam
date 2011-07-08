@@ -202,19 +202,19 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
         
 
 
-def _create_item(user, workspace, res_id, media_type, original_filename, force_generation = False):
+def _create_item(user, workspace, res_id, media_type, original_filename):
             #cannot use get_or_create since _res_id is random, so the item will be always created
         
-    if force_generation:
-        item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)
+    #if force_generation:
+        #item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)
+        #created = True
+    #else:
+    try:
+        item = Item.objects.get(type=media_type, source_file_path = original_filename, workspaces = workspace) 
+        created = False
+    except Item.DoesNotExist:
+        item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
         created = True
-    else:
-        try:
-            item = Item.objects.get(type=media_type, source_file_path = original_filename) 
-            created = False
-        except Item.DoesNotExist:
-            item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
-            created = True
     
     if created:        
         item.add_to_uploaded_inbox(workspace)    
@@ -307,18 +307,28 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
         #logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True, force_generation = False, symlink = False):
+def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True, force_generation = False, link = False):
     """
-       Parameters:
-       <filenames> is a list of tuples (filename, original_filename, res_id).
-       <variant_name> is the name of a registered variant
-       <user> and <workspace> are two objects as usual.
-
-       Creates a new item for each filename;
-       Create a component with variant = variant_name;
+      
       
     """
     logger.debug('########## _create_items')
+    
+    def copy_file(original_filename, final_path, link, make_copy):
+        logger.debug('original_filename %s'%original_filename)
+        logger.debug('final_path %s'%final_path)
+        if link:
+            logger.debug('link')
+            #os.symlink(original_filename, final_path)    
+            if os.path.exists(final_path):
+                os.remove(final_path)            
+            os.link(original_filename, final_path)                
+            
+        elif make_copy:
+            shutil.copyfile(original_filename, final_path)
+        else:
+            shutil.move(original_filename, final_path)
+        
     
     variant = Variant.objects.get(name = variant_name)
     for entry in os.walk(dir_name):
@@ -339,29 +349,33 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
             upload_filename = os.path.basename(original_filename)
             
             tmp = upload_filename.split('_')
-            item, created = _create_item(user, workspace, res_id, media_type, original_filename, force_generation)
-             
+            item, created = _create_item(user, workspace, res_id, media_type, original_filename)
+            logger.debug('created %s'%created)
+            logger.debug('+++++++++++++ force_generation %s'%force_generation)
             if created:
                 logger.debug('file created')
                 if len(tmp) > 1:
                     upload_filename = '_'.join(tmp[1:])
                 _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
                 
-                if symlink:
-                    os.symlink(original_filename, final_path)                
-                    
-                elif make_copy:
-                    shutil.copyfile(original_filename, final_path)
-                else:
-                    shutil.move(original_filename, final_path)
+                
                 logger.debug('yielding item %s'%item)
+                copy_file(original_filename, final_path, link, make_copy)
                 yield item
                 
-            else:
+            elif force_generation:
+                logger.debug('force_generation')
                 component = variant.get_component(workspace, item)
                 dam_hash = md5(component.get_file_path())
                 dir_hash = md5(original_filename)
+                #if force_generation or dir_hash != dam_hash:
+                logger.debug('component.get_file_path() %s'%component.get_file_path())
+                logger.debug('original_filename %s'%original_filename)
+                
+                logger.debug('dir_hash != dam_hash %s'%(dir_hash != dam_hash))
                 if dir_hash != dam_hash:
+                    
+                    copy_file(original_filename, component.get_file_path(), link, make_copy)
                     yield item
         if not recursive:
             break
@@ -373,12 +387,12 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
     
 
 
-def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False, symlink = False):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False, link = False):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     #files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
     
     
-    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive, force_generation, symlink)   
+    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive, force_generation, link)   
 
     #items = Item.objects.filter(source_file_path__startswith=dir_name)
     if trigger:
