@@ -386,19 +386,29 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
             
     
 
+def _remove_orphan_items(dir_path):
+    items_deleted = 0
+    for item in Item.objects.filter(source_file_path__startswith = dir_path):
+        if not os.path.exists(item.source_file_path):
+            item.delete()
+            items_deleted += 1
+    return items_deleted
 
-def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False, link = False):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False, link = False, remove_orphans = False):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
     #files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
-    
-    
+
+    items_deleted = 0
+    if remove_orphans:
+        items_deleted = _remove_orphan_items(dir_name)
+        
     items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive, force_generation, link)   
 
     #items = Item.objects.filter(source_file_path__startswith=dir_name)
     if trigger:
         processes = _run_pipelines(items, trigger,  user, workspace)
         
-    return processes
+    return (items_deleted ,processes)
     #logger.debug('Launched %s' % ' '.join(ret))
 
 def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
@@ -646,7 +656,7 @@ def upload_session_finished(request):
     logger.debug('tmp_dir %s'%tmp_dir)
     
     if os.path.exists(tmp_dir):
-        processes = import_dir(tmp_dir, user, workspace)
+        items_deleted ,processes = import_dir(tmp_dir, user, workspace)
         item_in_progress = 0
         for process in processes:
             item_in_progress += process.processtarget_set.all().count()

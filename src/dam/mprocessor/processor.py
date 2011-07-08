@@ -124,6 +124,14 @@ class Batch:
         reactor.callLater(0, self._iterate)
         return self.deferred
 
+    def stop(self, seconds_offset=0):
+        log.info('stopping process %s' % self.process.pk)
+        when = datetime.datetime.now() + datetime.timedelta(seconds=seconds_offset)
+        self.process.end_date = when
+        self.process.save()
+        self.gameover = True
+        #self.deferred.callback('done')
+
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
         #log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled)) #d
         item.actions_passed += success
