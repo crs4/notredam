@@ -1,9 +1,9 @@
 """ 
 This script allows to import a directory and its subdirectories into NotreDAM.
 An item will be created for each media files contained in the given directory.\
- If an item already exists for a given file and it is up to date, it will be skipped (you can use -f option to force the creation of a new item).\
- In this way you can add new files in a directory simply re-importing it, since old files will be ignored.  
-
+ If an item already exists for a given file, it will be skipped .\
+ If the file has been modified since the item has been created, it is possibile to update the item (see option -U)
+ 
 Typical usage:
 
 python import_dir.py /home/user/import_dir/ -u admin -w 1 -r
@@ -92,9 +92,9 @@ def check_user(username, password, workspace_id):
         raise InsufficientPermissions
     return user, ws
 
-def _import_dir(user, ws, dir_path, recursive, force_generation, symlink):
-    
-    processes = import_dir(dir_path, user, ws, make_copy = True, recursive = recursive, force_generation = force_generation, symlink = symlink)
+def _import_dir(user, ws, dir_path, recursive, force_generation, link):
+
+    processes = import_dir(dir_path, user, ws, make_copy = True, recursive = recursive, force_generation = force_generation, link = link)
     return processes
     
 
@@ -132,15 +132,16 @@ def print_progress(processes):
       
 
 if __name__ == "__main__":
-    logger.setLevel(logging.ERROR)
+    #logger.setLevel(logging.ERROR)
     help_message = "For help use -h, --help"
     parser = OptionParser(usage = __doc__)
     parser.add_option("-w", "--workspace", dest="workspace_id", help="workspace id on which items will be created")
     
     parser.add_option("-u", "--user", dest="username", help='user that will be used as items\' creator. He/She must be member of the workspace specified with option w and have "add items" permission.')
     parser.add_option("-r", help="recursively add files in subdirectories", default= False, dest='recursive', action = 'store_true')
-    parser.add_option("-f", help="force creation of items, even if there is already an item associated to a file", default= False, dest='force_generation', action = 'store_true')
-    parser.add_option("-s", help="create symbolic links inside NotreDAM storage, instead of copying the files", default= False, dest='symlink', action = 'store_true')
+    #parser.add_option("-f", help="force creation of items, even if there is already an item associated to a file", default= False, dest='force_generation', action = 'store_true')
+    parser.add_option("-l", help="create links inside NotreDAM storage, instead of copying the files", default= False, dest='link', action = 'store_true')
+    parser.add_option("-U", help="update modified files. The original rendition will be replaced and new renditions will be generated", default= False, dest='force_generation', action = 'store_true')
     
 
     
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     password = getpass.getpass()
     try:
         user, ws = check_user(opts.username, password, opts.workspace_id)
-        processes = _import_dir(user, ws, dir_path, opts.recursive, opts.force_generation, opts.symlink)
+        processes = _import_dir(user, ws, dir_path, opts.recursive, opts.force_generation, opts.link)
         print_progress(processes)
         
     except LoginFailed:
