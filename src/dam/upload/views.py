@@ -33,7 +33,7 @@ from django.conf import settings
 #from dam.scripts.models import Pipeline
 from dam.mprocessor.models import Pipeline, Process
 from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
-from dam.core.dam_repository.models import Type
+from dam.core.dam_repository.models import Type, MimeError
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
 from dam.variants.models import Variant
 from dam.treeview.models import Node
@@ -45,7 +45,7 @@ from dam.upload.uploadhandler import StorageHandler
 from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
 #from dam.mprocessor.models import MAction
-
+from md5sum import md5
 from mediadart.storage import Storage
 
 from dam.logger import logger
@@ -202,11 +202,24 @@ def _save_uploaded_variant(request, upload_file, user, workspace):
         
 
 
-def _create_item(user, workspace, res_id, media_type):
-    item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type)    
-    item.add_to_uploaded_inbox(workspace)    
-    item.workspaces.add(workspace)
-    return item
+def _create_item(user, workspace, res_id, media_type, original_filename):
+            #cannot use get_or_create since _res_id is random, so the item will be always created
+        
+    #if force_generation:
+        #item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)
+        #created = True
+    #else:
+    try:
+        item = Item.objects.get(type=media_type, source_file_path = original_filename, workspaces = workspace) 
+        created = False
+    except Item.DoesNotExist:
+        item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
+        created = True
+    
+    if created:        
+        item.add_to_uploaded_inbox(workspace)    
+        item.workspaces.add(workspace)
+    return (item, created)
 
 #def _get_media_type(file_name):
 #    type = guess_media_type(file_name)
@@ -251,72 +264,141 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
        Launches all pipes;
        Returns the list of process_id launched;
     """
+    logger.debug('############### run pipelines')
     assigned_items = set()
     ret = []
-    for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
-        process = None
-        for item in items:
+    process_pipe = {}
+    for item in items:
+        for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
             if pipe.is_compatible(item.type):
-                if process is None:
-                    process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
-                
-                process.add_params(item.pk, params)
-                assigned_items.add(item)
-                logger.debug('item %s added to %s' % (item.pk, pipe.name))
-        if process:
-            logger.debug( 'Launching process %s-%s' % (str(process.pk), pipe.name))
-            ret.append(str(process.pk))
-            process.run()
+                if not process_pipe.has_key(pipe):
+                    process_pipe[pipe] = process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
 
-    unassigned = assigned_items.symmetric_difference(items)
-    if unassigned:
-        logger.debug("##### The following items have no compatible  action: " )
+                process_pipe[pipe].add_params(item.pk, params)
+                #assigned_items.add(item)
+                logger.debug('item %s added to %s' % (item.pk, pipe.name))
+    
+    for process in process_pipe.values():
+        ret.append(process)
+        process.run()
+    
+    #for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
+        #process = None
+        #logger.debug('pipe %s'%pipe.name)
+        #
+        #for item in items:
+            #logger.debug('----------item %s'%item)
+            #
+            #if pipe.is_compatible(item.type):
+                #if process is None:
+                    #process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
+                #logger.debug('process %s'%process)
+                #process.add_params(item.pk, params)
+                #assigned_items.add(item)
+                #logger.debug('item %s added to %s' % (item.pk, pipe.name))
+            #
+        #if process:
+            #logger.debug( 'Launching process %s-%s' % (str(process.pk), pipe.name))
+            #ret.append(process)
+            #process.run()
+#
+    #unassigned = assigned_items.symmetric_difference(items)
+    #if unassigned:
+        #logger.debug("##### The following items have no compatible  action: " )
     return ret
 
-def _create_items(filenames, variant_name, user, workspace, make_copy=True):
+def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recursive = True, force_generation = False, link = False):
     """
-       Parameters:
-       <filenames> is a list of tuples (filename, original_filename, res_id).
-       <variant_name> is the name of a registered variant
-       <user> and <workspace> are two objects as usual.
-
-       Creates a new item for each filename;
-       Create a component with variant = variant_name;
-       Returns the list of items created;
+      
+      
     """
-    items = []
-    logger.debug("filenames : %s" %filenames)
-    for original_filename in filenames:        
-        
-        res_id = new_id()
-        variant = Variant.objects.get(name = variant_name)
-        media_type = Type.objects.get_or_create_by_filename(original_filename)        
-        final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
-        upload_filename = os.path.basename(original_filename)
-        
-        tmp = upload_filename.split('_')
-        item = _create_item(user, workspace, res_id, media_type)
-        if len(tmp) > 1:
-            upload_filename = '_'.join(tmp[1:])
-        _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
-        if make_copy:
+    logger.debug('########## _create_items')
+    
+    def copy_file(original_filename, final_path, link, make_copy):
+        logger.debug('original_filename %s'%original_filename)
+        logger.debug('final_path %s'%final_path)
+        if link:
+            logger.debug('link')
+            #os.symlink(original_filename, final_path)    
+            if os.path.exists(final_path):
+                os.remove(final_path)            
+            os.link(original_filename, final_path)                
+            
+        elif make_copy:
             shutil.copyfile(original_filename, final_path)
         else:
             shutil.move(original_filename, final_path)
-        items.append(item)
-    return items
+        
+    
+    variant = Variant.objects.get(name = variant_name)
+    for entry in os.walk(dir_name):
+        root_dir, sub_dirs, files = entry
+        files = [os.path.join(root_dir, x) for x in files]
+    
+        for original_filename in files:        
+            
+            res_id = new_id()
+            try:
+                media_type = Type.objects.get_or_create_by_filename(original_filename)        
+            except MimeError, ex:
+                logger.error(ex)
+                continue
+                
+            final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
+            final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
+            upload_filename = os.path.basename(original_filename)
+            
+            tmp = upload_filename.split('_')
+            item, created = _create_item(user, workspace, res_id, media_type, original_filename)
+            logger.debug('created %s'%created)
+            logger.debug('+++++++++++++ force_generation %s'%force_generation)
+            if created:
+                logger.debug('file created')
+                if len(tmp) > 1:
+                    upload_filename = '_'.join(tmp[1:])
+                _create_variant(upload_filename, final_filename, media_type, item, workspace, variant)
+                
+                
+                logger.debug('yielding item %s'%item)
+                copy_file(original_filename, final_path, link, make_copy)
+                yield item
+                
+            elif force_generation:
+                logger.debug('force_generation')
+                component = variant.get_component(workspace, item)
+                dam_hash = md5(component.get_file_path())
+                dir_hash = md5(original_filename)
+                #if force_generation or dir_hash != dam_hash:
+                logger.debug('component.get_file_path() %s'%component.get_file_path())
+                logger.debug('original_filename %s'%original_filename)
+                
+                logger.debug('dir_hash != dam_hash %s'%(dir_hash != dam_hash))
+                if dir_hash != dam_hash:
+                    
+                    copy_file(original_filename, component.get_file_path(), link, make_copy)
+                    yield item
+        if not recursive:
+            break
+                
+                
+            
+            #yield item
+            
+    
 
 
-def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload'):
+def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = 'upload', make_copy = False, recursive = True, force_generation = False, link = False):
     logger.debug('########### INSIDE import_dir: %s' % dir_name)
-    files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
-    logger.debug('files %s'%files)    
-    items = _create_items(files, variant_name, user, workspace, False)
+    #files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
+    
+    
+    items = _create_items(dir_name, variant_name, user, workspace, make_copy, recursive, force_generation, link)   
+
+    #items = Item.objects.filter(source_file_path__startswith=dir_name)
     if trigger:
-        ret = _run_pipelines(items, trigger,  user, workspace)
-    logger.debug('items %s'%items)
-    return items
+        processes = _run_pipelines(items, trigger,  user, workspace)
+        
+    return processes
     #logger.debug('Launched %s' % ' '.join(ret))
 
 def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
@@ -564,9 +646,12 @@ def upload_session_finished(request):
     logger.debug('tmp_dir %s'%tmp_dir)
     
     if os.path.exists(tmp_dir):
-        uploads_success = import_dir(tmp_dir, user, workspace)
+        processes = import_dir(tmp_dir, user, workspace)
+        item_in_progress = 0
+        for process in processes:
+            item_in_progress += process.processtarget_set.all().count()
         os.rmdir(tmp_dir)
-        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': len(uploads_success)}))
+        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress}))
     else:
         return HttpResponse(simplejson.dumps({'success': False}))
     
