@@ -92,16 +92,19 @@ def check_user(username, password, workspace_id):
         raise InsufficientPermissions
     return user, ws
 
-def _import_dir(user, ws, dir_path, recursive, force_generation, link):
+def _import_dir(user, ws, dir_path, recursive, force_generation, link, remove_orphans):
 
-    processes = import_dir(dir_path, user, ws, make_copy = True, recursive = recursive, force_generation = force_generation, link = link)
-    return processes
+    items_deleted ,processes = import_dir(dir_path, user, ws, make_copy = True, recursive = recursive, force_generation = force_generation, link = link, remove_orphans=remove_orphans)
+    return items_deleted, processes
     
 
-def print_progress(processes):
+def print_progress(items_deleted, processes):
+    if items_deleted:
+        print 'Orphan items deleted:', items_deleted
+
     if not processes:
         raise NoItemToProcess
-        
+
     total_items = 0
     for process in processes:        
         total_items += process.processtarget_set.all().count()
@@ -142,12 +145,13 @@ if __name__ == "__main__":
     #parser.add_option("-f", help="force creation of items, even if there is already an item associated to a file", default= False, dest='force_generation', action = 'store_true')
     parser.add_option("-l", help="create links inside NotreDAM storage, instead of copying the files", default= False, dest='link', action = 'store_true')
     parser.add_option("-U", help="update modified files. The original rendition will be replaced and new renditions will be generated", default= False, dest='force_generation', action = 'store_true')
-    
+    parser.add_option("-R", help="remove orphan items, ie items whose relative file has been deleted", default= False, dest='remove_orphans', action = 'store_true')
+
 
     
     (opts, args) = parser.parse_args()
-    #print 'opts', opts
-    #print 'args', args
+    print 'opts', opts
+    print 'args', args
     
     if len(args) < 1:
         print 'no directory passed. ' + help_message
@@ -172,9 +176,9 @@ if __name__ == "__main__":
     password = getpass.getpass()
     try:
         user, ws = check_user(opts.username, password, opts.workspace_id)
-        processes = _import_dir(user, ws, dir_path, opts.recursive, opts.force_generation, opts.link)
-        print_progress(processes)
-        
+        items_deleted, processes = _import_dir(user, ws, dir_path, opts.recursive, opts.force_generation, opts.link, opts.remove_orphans)
+        print_progress(items_deleted, processes)
+
     except LoginFailed:
         print 'Login failed'
         sys.exit(2)
@@ -182,7 +186,7 @@ if __name__ == "__main__":
     except Workspace.DoesNotExist:
         print 'workspace %s does not exist'%opts.workspace_id
         sys.exit(2)
-        
+
     except NotMember:
         print 'You are not member of workspace %s'%ws
         sys.exit(2)
@@ -201,7 +205,3 @@ if __name__ == "__main__":
         print 'Internal Error.'
         logger.exception(ex)
         sys.exit(2)
-
-    
-
-    
