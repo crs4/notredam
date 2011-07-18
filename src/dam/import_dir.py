@@ -147,8 +147,6 @@ if __name__ == "__main__":
     parser.add_option("-U", help="update modified files. The original rendition will be replaced and new renditions will be generated", default= False, dest='force_generation', action = 'store_true')
     parser.add_option("-R", help="remove orphan items, ie items whose relative file has been deleted", default= False, dest='remove_orphans', action = 'store_true')
 
-
-    
     (opts, args) = parser.parse_args()
     print 'opts', opts
     print 'args', args

@@ -656,6 +656,28 @@ Ext.onReady(function(){
 										//else if (progressbar.text == 'completed')
 										//uploads_success += 1;
 									//}
+
+
+//                                    store_tabs.loadData({'tabs':create_tabs(ws.id)}, true);
+                                    var media_tabs = Ext.getCmp('media_tabs');
+                                    
+                                    var query;
+                                    if (response_obj.inbox)
+                                        query = 'Inbox:/Uploaded/' + response_obj.inbox + '/';
+                                    else
+                                        query = '';
+                                        
+                                    var tab = createMediaPanel({
+                                        title: query || 'All Items',
+                                        query: query,
+                                        media_type: ['image', 'audio', 'video', 'doc'],
+                                        closable: true
+                        //                closable: count > 0
+                        //                search_value: this.data.query || ''
+                                    }, true);
+                                    media_tabs.add(tab);
+                                    media_tabs.setActiveTab(tab.id);
+
 									var buttons = []
 
 							        buttons.push({

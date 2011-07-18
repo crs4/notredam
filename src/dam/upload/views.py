@@ -219,6 +219,7 @@ def _create_item(user, workspace, res_id, media_type, original_filename):
     if created:        
         item.add_to_uploaded_inbox(workspace)    
         item.workspaces.add(workspace)
+        
     return (item, created)
 
 #def _get_media_type(file_name):
@@ -648,20 +649,37 @@ def guess_media_type (file):
     return media_type
 
 def upload_session_finished(request):
+    from treeview.models import Node
     session = request.POST['session']
     workspace = request.session.get('workspace')
     user = User.objects.get(pk = request.session['_auth_user_id'])
     
     tmp_dir = '/tmp/'+ session
     logger.debug('tmp_dir %s'%tmp_dir)
-    
+
+
+    inbox_label = None
     if os.path.exists(tmp_dir):
         items_deleted ,processes = import_dir(tmp_dir, user, workspace)
+
+        #uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
+        #try:
+            #inbox = Node.objects.get(parent = uploaded, items__in = processes[0].processtarget_set.all()).distinct()
+            #
+            #logger.debug('----------inbox %s'%inbox)
+            #inbox_label = inbox.label
+        #
+        #except Exception, ex:
+            #logger.exception(ex)
+            #inbox_label = None
+            #something strange, no inbox found
+        
+
         item_in_progress = 0
         for process in processes:
             item_in_progress += process.processtarget_set.all().count()
         os.rmdir(tmp_dir)
-        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress}))
+        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress, 'inbox': inbox_label}))
     else:
         return HttpResponse(simplejson.dumps({'success': False}))
     
