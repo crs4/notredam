@@ -159,6 +159,7 @@ class Item(AbstractItem):
         time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
         node = workspace.tree_nodes.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  depth = 2)[0]
         node.items.add(self)
+        return node
 
     def delete_from_ws(self, user, workspaces=None):
         """
