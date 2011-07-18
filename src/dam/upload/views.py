@@ -662,16 +662,16 @@ def upload_session_finished(request):
     if os.path.exists(tmp_dir):
         items_deleted ,processes = import_dir(tmp_dir, user, workspace)
 
-        #uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
-        #try:
-            #inbox = Node.objects.get(parent = uploaded, items__in = processes[0].processtarget_set.all()).distinct()
-            #
-            #logger.debug('----------inbox %s'%inbox)
-            #inbox_label = inbox.label
-        #
-        #except Exception, ex:
-            #logger.exception(ex)
-            #inbox_label = None
+        uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
+        try:
+            inbox = Node.objects.get(parent = uploaded, items = processes[0].processtarget_set.all()[0].target_id)
+            
+            logger.debug('----------------------inbox %s'%inbox)
+            inbox_label = inbox.label
+        
+        except Exception, ex:
+            logger.exception(ex)
+            inbox_label = None
             #something strange, no inbox found
         
 
