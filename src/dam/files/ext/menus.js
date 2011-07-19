@@ -662,8 +662,12 @@ Ext.onReady(function(){
                                     var media_tabs = Ext.getCmp('media_tabs');
                                     
                                     var query;
-                                    if (response_obj.inbox)
+                                    if (response_obj.inbox){
                                         query = 'Inbox:/Uploaded/' + response_obj.inbox + '/';
+                                         var inbox = Ext.getCmp('inbox_tree').getRootNode();
+                                         inbox.reload();
+                                         
+                                    }
                                     else
                                         query = '';
                                         
