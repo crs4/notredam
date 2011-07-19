@@ -10,7 +10,7 @@ function use_ajax_upload(){
 	
 	var files_to_upload = Ext.getCmp('files_to_upload').fileInput.dom.files;
 	var files_too_big = false;
-	var max_limit_file_size = 300*(1024*1024);
+	var max_limit_file_size = 30*(1024*1024);
 	Ext.each(files_to_upload, function(file){
 		if(file.fileSize > max_limit_file_size)
 			files_too_big = true;
