@@ -1,4 +1,5 @@
 """ 
+
 This script allows to import a directory and its subdirectories into NotreDAM.
 An item will be created for each media files contained in the given directory.\
  If an item already exists for a given file, it will be skipped .\
@@ -9,7 +10,7 @@ Typical usage:
 python import_dir.py /home/user/import_dir/ -u admin -w 1 -r
 """
 from django.core.management import setup_environ
-import dam.settings as settings
+import settings
 setup_environ(settings)
 from django.db.models.loading import get_models
 get_models()
@@ -135,7 +136,7 @@ def print_progress(items_deleted, processes):
       
 
 if __name__ == "__main__":
-    #logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.ERROR)
     help_message = "For help use -h, --help"
     parser = OptionParser(usage = __doc__)
     parser.add_option("-w", "--workspace", dest="workspace_id", help="workspace id on which items will be created")
@@ -148,9 +149,7 @@ if __name__ == "__main__":
     parser.add_option("-R", help="remove orphan items, ie items whose relative file has been deleted", default= False, dest='remove_orphans', action = 'store_true')
 
     (opts, args) = parser.parse_args()
-    print 'opts', opts
-    print 'args', args
-    
+   
     if len(args) < 1:
         print 'no directory passed. ' + help_message
         sys.exit(2)
@@ -195,7 +194,7 @@ if __name__ == "__main__":
     except NoItemToProcess:
         print """\nNo item to process. It happens when:
         - the directory is empty or does not contain media files supported by NotreDAM.
-        - all files are already inside NotreDAM and up to date. Note that you can use the option -f to force the creation of new items.
+        - all files are already inside NotreDAM workspace and up to date.
         """
         sys.exit(2)
     
