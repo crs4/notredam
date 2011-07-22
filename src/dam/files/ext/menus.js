@@ -670,17 +670,36 @@ Ext.onReady(function(){
                                     }
                                     else
                                         query = '';
-                                        
-                                    var tab = createMediaPanel({
-                                        title: query || 'All Items',
+                                    
+                                    var title = query || 'All Items';
+                                    console.log('title: ' + title);
+                                    var tab_to_open;
+                                    Ext.each(media_tabs.items.items, function(panel){
+                                        console.log('panel.title ' + panel.title);
+                                        if (panel.title == title) 
+                                            tab_to_open = panel;
+                                    });
+                                    console.log('tab_to_open');
+                                    console.log(tab_to_open);
+                                    if (tab_to_open){
+                                        media_tabs.setActiveTab(tab_to_open.id);
+                                        tab_to_open.reload();
+                                    }
+                                    else{
+                                        tab = createMediaPanel({
+                                        title: title,
                                         query: query,
                                         media_type: ['image', 'audio', 'video', 'doc'],
-                                        closable: true
-                        //                closable: count > 0
-                        //                search_value: this.data.query || ''
-                                    }, true);
-                                    media_tabs.add(tab);
-                                    media_tabs.setActiveTab(tab.id);
+                                            closable: true
+                            //                closable: count > 0
+                            //                search_value: this.data.query || ''
+                                        }, true);
+                                        media_tabs.add(tab);
+                                        media_tabs.setActiveTab(tab.id);
+                                    
+                                    }
+                                    
+                                    
 
 									var buttons = []
 

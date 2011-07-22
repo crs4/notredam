@@ -1017,6 +1017,9 @@ function createMediaPanel(config, autoLoad) {
 			});					
 		return media_type;
 		},
+        reload: function(){
+            view.getStore().reload();
+        },
 		setMediaTypes:function(media_types){
 			var query = this.media_type_query;
 			Ext.each(media_types, function(){
