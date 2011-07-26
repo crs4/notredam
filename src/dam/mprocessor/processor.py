@@ -315,7 +315,7 @@ class Batch_test:
         self.process.end_date = when
         self.process.save()
         self.gameover = True
-        #self.deferred.callback('done')
+        self.deferred.callback('done')
 
 
 class fake_config:
