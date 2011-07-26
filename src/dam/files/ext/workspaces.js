@@ -103,10 +103,16 @@ var ws_permissions_store = new Ext.data.JsonStore({
                     Ext.getCmp('xmp_panel').buttons[1].hide();           
                 }
                 
-                if(edit_scripts)
-                    Ext.getCmp('preferences_scripts').enable();
-                else
-                    Ext.getCmp('preferences_scripts').disable();
+                if(edit_scripts){
+                    Ext.getCmp('new_script').enable();
+                    Ext.getCmp('edit_script').enable();
+                }
+                    
+                else{
+                    Ext.getCmp('new_script').disable();
+                    Ext.getCmp('edit_script').disable();
+                }
+                    
                 
 //                 if(run_scripts)
 //                    Ext.getCmp('runscript').enable();

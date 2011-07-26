@@ -1063,10 +1063,12 @@ Ext.onReady(function(){
                 	    id: 'preferences_scripts',
                         items:[
                         	{
+                                id: 'new_script',
                                 text    : gettext('New'),
                                 handler : function(){window.open('/script_editor/?workspace='+ws.id)}
                             
                             },{ 
+                                id: 'edit_script',
                             	text    : gettext('Edit'),                                                      
 	                           	menu: new Ext.menu.Menu({
 								    id: 'edit_scripts_menu',
