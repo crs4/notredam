@@ -746,6 +746,7 @@ def workspace(request, workspace_id = None):
         # end of interface language setting
 
     return render_to_response('workspace_gui.html', RequestContext(request,{'ws_id':workspace.pk,  'ws_name': workspace.get_name(user),  'ws_description': workspace.description, 'theme_css':theme.css_file, 'GOOGLE_KEY': GOOGLE_KEY}))
+    #return HttpResponse('')
 
 @login_required
 def upload_status(request):
