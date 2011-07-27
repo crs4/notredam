@@ -84,7 +84,7 @@ class MProcessor(MQServer):
         if process:
             d = Batch(process).run()
             d.addCallback(self.mq_run)
-        return msg
+        return 'OK'
 
 class Batch:
     def __init__(self, process):
