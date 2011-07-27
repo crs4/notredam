@@ -1,0 +1,45 @@
+.x-grid3-progresscol .x-grid3-cell-inner {
+  padding: 0px 0px 0px 5px;
+}
+
+.x-grid3-progresscol .x-progress-bar {
+  height: 16px;
+}
+
+.x-grid3-progresscol .x-progress-inner {
+  height: 16px;
+}
+
+.x-grid3-progresscol .x-progress-text-front-ie6 {
+  padding: 2.5px 5px;
+}
+
+.x-grid3-progresscol .x-progress-text-front {
+  padding: 2px 5px;
+}
+
+.x-progress-bar-red,.x-progress-bar-orange,.x-progress-bar-green {
+  border-bottom: 1px solid #7fa9e4;
+  float: left;
+  height: 16px;
+}
+
+.x-progress-bar-red {
+  background: #ff0000 url(images/progress-bg-red.gif) repeat-x scroll left
+    center;
+  border-top: 1px solid #ecb7ad;
+}
+
+.x-progress-bar-orange {
+  background: #9cbfee url(images/progress-bg-orange.gif) repeat-x scroll
+    left center;
+  border-right: 1px solid #deab7e;
+  border-top: 1px solid #d7b290;
+}
+
+.x-progress-bar-green {
+  background: #00ff00 url(images/progress-bg-green.gif) repeat-x scroll
+    left center;
+  border-right: 1px solid #5bd976;
+  border-top: 1px solid #79e18f;
+}
