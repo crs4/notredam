@@ -129,10 +129,10 @@ class ImportExport(object):
         params = urllib.urlencode({'api_key':self.api_key, 
                                    'user_name':self.username, 
                                    'password':self.password})
-        logger.debug("params %s" %params)
+        logger.error("params %s" %params)
         self.conn.request('POST', '/api/login/',params)
         response = self.conn.getresponse()
-        logger.debug("response %s" %response)
+        logger.error("response %s" %response)
         json_data = response.read()
         data = JSONDecoder().decode(json_data)
         try:

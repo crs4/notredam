@@ -582,8 +582,7 @@ Ext.onReady(function(){
                     view.selectRange(view.getStore().lastOptions['start'], view.getStore().lastOptions.params['start']+view.getStore().lastOptions.params['limit']);
                     
                 }
-            },
-            
+            },            
             {
                 text: gettext('Clear selection'),
                 handler: function() {

@@ -277,10 +277,11 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
 
                 process_pipe[pipe].add_params(item.pk, params)
                 #assigned_items.add(item)
-                logger.debug('item %s added to %s' % (item.pk, pipe.name))
+                logger.debug('item %s added to %s' % (item, pipe.name))
     
     for process in process_pipe.values():
         ret.append(process)
+        logger.debug('*****************running process %s'%process.pk)
         process.run()
     
     #for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
