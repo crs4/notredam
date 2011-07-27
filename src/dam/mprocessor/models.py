@@ -95,7 +95,7 @@ class Process(models.Model):
         return self.end_date is not None
 
     def run(self):
-        Proxy('MProcessor').run(self.pk)        
+        Proxy('MProcessor').run()        
 
 def new_processor(pipeline_name, user, workspace):
     "utility function to create a process associated to a given pipeline"

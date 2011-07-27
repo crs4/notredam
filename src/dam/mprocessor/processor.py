@@ -66,7 +66,7 @@ class MProcessor(MQServer):
                 return None                    # a process is already running, do nothing
         else:
             waiting_processes = Process.objects.filter(start_date=None)
-            log.info("Waiting processes: %d" % len(waiting_processes))
+            log.info("Number of waiting processes: %d" % len(waiting_processes))
             if waiting_processes:
                 log.info("running the waiting process %s" % (waiting_processes[0].pk))
                 return waiting_processes[0]
@@ -80,15 +80,7 @@ class MProcessor(MQServer):
            This method tries to run a waiting process and schedules itself to run again
            when the process ends so that the queue of waiting processes can be emptied
            """
-
-        log.info("Adding process %s to run queue" % process_id)
         process = self.wake_process(restarting)
-        if not process:
-            msg = ""
-        elif str(process.pk) != str(process_id):
-            msg = "process %s put on execution queue" % process_id
-        else:
-            msg = "starting process %s" % process_id
         if process:
             d = Batch(process).run()
             d.addCallback(self.mq_run)
@@ -130,7 +122,7 @@ class Batch:
         self.process.end_date = when
         self.process.save()
         self.gameover = True
-        #self.deferred.callback('done')
+        self.deferred.callback(None)
 
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
         #log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled)) #d
@@ -315,7 +307,7 @@ class Batch_test:
         self.process.end_date = when
         self.process.save()
         self.gameover = True
-        self.deferred.callback('done')
+        #self.deferred.callback('done')
 
 
 class fake_config:
