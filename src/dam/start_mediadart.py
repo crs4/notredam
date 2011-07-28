@@ -45,7 +45,7 @@ def check_notredam_config():
         print 'ERROR: no option for starting mprocessor'
         sys.exit(1)
 
-msg = '\n## Notredam settings:\n * settings module: %s\n * database: %s' % (settings.__file__, settings.DATABASE_NAME)
+msg = '\n## Notredam settings:\n * settings module: %s\n * database: %s' % (settings.__file__, settings.DATABASES['default']['ENGINE'])
 
 # XXX: (Temporary) workaround for ticket #1796: force early loading of all
 # models from installed apps.
