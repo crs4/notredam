@@ -21,7 +21,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect, HttpResponse,  Http404
 from django.shortcuts import render_to_response
 from django.core import serializers
-from django.db import transaction
+
 from django.utils import simplejson as json
 from django.db.models.query import QuerySet
 from django.db.models import Q
@@ -1640,7 +1640,7 @@ class ItemResource(ModResource):
         
         resp = {'id': item.pk,   'workspace_id':ws_id}
         json_resp = json.dumps(resp)
-#        transaction.commit()
+
         return HttpResponse(json_resp)   
 
 

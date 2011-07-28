@@ -20,7 +20,7 @@
 from django.conf.urls.defaults import *
 
 js_info_dict = {
-  'domain':'djangojs',
+  #'domain':'djangojs',
   'packages':'dam.workspace',
 }
 

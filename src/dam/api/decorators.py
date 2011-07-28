@@ -79,12 +79,14 @@ def exception_handler(func):
             
             inner_ex = InnerException(ex)
             resp =  error_response(inner_ex.error_code,  inner_ex.error_message, inner_ex.error_class())
+        else:
+            transaction.commit()
             
             
             
         logger.debug('resp %s' %resp.content)
         return resp
-            
+    transaction.commit()
     return _exception_handler
     
 def api_key_required(func):
