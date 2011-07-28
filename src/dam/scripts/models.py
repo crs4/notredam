@@ -125,7 +125,7 @@ DEFAULT_PIPELINE = [{
 
 def register_pipeline(ws,name, description, params, events, media_types): 
     from mprocessor.models import Pipeline   
-    from dam.logger import logger
+    
     
     p = Pipeline.objects.create(name=name,  description = description, params = params, workspace = ws)
     p.triggers.add(*events)

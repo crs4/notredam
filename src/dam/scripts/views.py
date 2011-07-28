@@ -27,7 +27,10 @@ from httplib import HTTP
 from django.db import IntegrityError
 from dam.mprocessor.models import Pipeline, TriggerEvent
 from dam.supported_types import mime_types_by_type
-from dam.logger import logger
+
+import logging
+logger = logging.getLogger('dam')
+
 
 def _get_scripts_info(script):
         

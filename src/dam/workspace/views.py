@@ -49,12 +49,16 @@ from dam.upload.views import _run_pipelines
 
 from django.utils.datastructures import SortedDict
 
-from dam.logger import logger
+
 import time
 from mx.DateTime.Parser import DateTimeFromString
 
 import operator
 import re
+
+import logging
+logger = logging.getLogger('dam')
+
 
 @login_required 
 @permission_required('admin', False)

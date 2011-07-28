@@ -21,7 +21,9 @@ from django.contrib.auth.models import User
 
 from django.db.models import Q
 from operator import and_, or_
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 class PermissionManager(models.Manager):
     """

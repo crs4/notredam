@@ -2,7 +2,9 @@ import os
 from json import loads
 from dam.mprocessor.models import Task
 from django.http import Http404, HttpResponse, HttpResponseServerError
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 #import logging
 #logger = logging.getLogger('mprocessor')

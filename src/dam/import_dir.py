@@ -26,7 +26,8 @@ from dam.upload.views import import_dir
 from optparse import OptionParser
 import time
 import logging
-from dam.logger import logger
+logger = logging.getLogger('dam')
+
 
 class NoItemToProcess(Exception):
     pass

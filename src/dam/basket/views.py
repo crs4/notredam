@@ -29,7 +29,9 @@ from django.contrib.auth.models import User
 from dam.basket.models import Basket
 from dam.repository.models import Item
 
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 @login_required
 def reload_item(request):

@@ -21,7 +21,9 @@ import urllib
 from hashlib import sha1 
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 class ImportExport(object):
     """

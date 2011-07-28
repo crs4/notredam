@@ -62,7 +62,9 @@ from django.contrib.auth import authenticate,  login
 #from django.contrib.sessions.backends.db import SessionStore
 
 
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 import os.path
 from mimetypes import guess_type
 
