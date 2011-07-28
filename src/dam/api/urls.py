@@ -78,7 +78,7 @@ urlpatterns = patterns('',
     
    url(r'^api/workspace/(\d+)/get_smartfolders/$', WorkspaceResource(permitted_methods=('GET'), ).get_smartfolders),
    url(r'^api/workspace/(\d+)/get_scripts/$', WorkspaceResource(permitted_methods=('GET'), ).get_scripts),
-   #url(r'^api/workspace/(\d+)/set_creator/$', WorkspaceResource(permitted_methods=('POST',), ).set_creator),  
+   url(r'^api/workspace/(\d+)/set_creator/$', WorkspaceResource(permitted_methods=('POST',), ).set_creator),  
    url(r'^api/workspace/(\d+)/get_items_complete/$', WorkspaceResource(permitted_methods=('GET',), ).get_items_complete),  
    url(r'^api/workspace/(\d+)/search/$', WorkspaceResource(permitted_methods=('POST',), ).search),
    

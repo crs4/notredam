@@ -53,10 +53,10 @@ def error_response( error_code, error_message, error_class,  error_dict = None):
     return response
 
 
-@transaction.commit_manually
+
 def exception_handler(func):
-    #logger.debug('---------------------')
     
+    @transaction.commit_manually
     def _exception_handler(self,  request, *args, **kwargs):
        
         try:           
@@ -86,7 +86,7 @@ def exception_handler(func):
             
         logger.debug('resp %s' %resp.content)
         return resp
-    transaction.commit()
+    
     return _exception_handler
     
 def api_key_required(func):
