@@ -25,15 +25,6 @@ from django.utils.encoding import smart_unicode
 
 
 #logging_level = logging.DEBUG
-logging_level = logging.DEBUG
-logging.basicConfig(level=logging_level,
-                    format='[%(asctime)s] %(levelname)-8s %(pathname)s %(lineno)s %(message)s',
-                    datefmt = '%d/%b/%Y %H:%M:%S',
-#                    format='[%(asctime)s] %(levelname)-8s %(module)s %(lineno)d  %(message)s',
-#                    datefmt='%d/%b/%Y %H:%M:%S',
-#                    filename=dir_log + '/dam.log',
-                    filemode='a'
-                    )
                     
 logger = logging.getLogger('dam')
 logger.addHandler(logging.FileHandler(os.path.join(dir_log,  'dam.log')))

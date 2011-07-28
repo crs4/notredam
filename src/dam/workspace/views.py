@@ -37,7 +37,7 @@ from dam.workspace.forms import AdminWorkspaceForm
 from dam.core.dam_repository.models import Type
 #from dam.geo_features.models import GeoInfo
 #from dam.mprocessor.models import Task
-from dam.settings import GOOGLE_KEY, DATABASE_ENGINE
+from dam.settings import GOOGLE_KEY, DATABASES
 from dam.application.views import NOTAVAILABLE
 from dam.preferences.models import DAMComponentSetting
 from dam.metadata.models import MetadataProperty
@@ -458,11 +458,11 @@ def _search(request,  items, workspace = None):
             logger.debug('queries %s'%queries)
             for word in words:
                 logger.debug('word %s'%word)
-                if DATABASE_ENGINE == 'sqlite3':
+                if DATABASES['default']['ENGINE'] == 'sqlite3':
                     q = Q(metadata__value__iregex = u'(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%word.strip())                
                     queries.append(items.filter(q))
                     logger.debug('items.filter(q) %s'%items.filter(q))
-                elif DATABASE_ENGINE == 'mysql':
+                elif DATABASES['default']['ENGINE'] == 'mysql':
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%word.strip())
                     queries.append(items.filter(q))
                 
@@ -472,7 +472,7 @@ def _search(request,  items, workspace = None):
                 tmp = re.findall('\s*(.+)\s*', words,  re.U)
                 logger.debug('multi words %s'%tmp)
                 logger.debug('queries %s'%queries)
-                if DATABASE_ENGINE == 'sqlite3':
+                if DATABASES['default']['ENGINE'] == 'sqlite3':
                     words_joined = '\s+'.join(tmp)
                     words_joined = words_joined.strip() 
 #                    q = Q(metadata__value__iregex = '(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%words_joined)
@@ -481,7 +481,7 @@ def _search(request,  items, workspace = None):
 
                     queries.append(items.filter(q))
                 
-                elif DATABASE_ENGINE == 'mysql':
+                elif DATABASES['default']['ENGINE'] == 'mysql':
                     words_joined = '[[:blank:]]+'.join(tmp)
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%words_joined)
                     queries.append(items.filter(q))
