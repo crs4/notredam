@@ -23,7 +23,10 @@ from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 from dam.core.dam_repository.models import Type
-from dam.logger import logger
+
+import logging
+logger = logging.getLogger('dam')
+
 from dam.mprocessor.models import Process, TriggerEvent
 import simplejson
 

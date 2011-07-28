@@ -39,7 +39,9 @@ from dam.metadata.views import _get_ws_groups
 #from dam.mprocessor.models import Task
 
 import os
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 import os, time
 
 class MediaTypeNotFound(Exception):

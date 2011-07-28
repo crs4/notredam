@@ -20,7 +20,9 @@ from exceptions import *
 from django.db import models
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 
 class Event(models.Model):

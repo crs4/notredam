@@ -5,7 +5,9 @@ from django.db import models
 from mediadart.storage import new_id
 from mediadart.mqueue.mqclient_async import Proxy
 from dam.repository.models import Component
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 #
 # example of use

@@ -5,7 +5,9 @@ from django.contrib.auth.models import User
 from mediadart.mqueue.mqclient_async import Proxy
 from django.utils import simplejson
 from dam.core.dam_repository.models import Type
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 import datetime
 
 

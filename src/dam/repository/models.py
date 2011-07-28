@@ -31,13 +31,15 @@ from dam.metadata.models import MetadataProperty
 import os
 import urlparse
 from json import loads
-from dam.logger import logger
 from django.utils import simplejson
 import time
 from django.utils.encoding import smart_str
 import re
 import settings
-from dam.logger import logger
+
+import logging
+logger = logging.getLogger('dam')
+
 from mediadart.storage import Storage
 
 from uuid import uuid4

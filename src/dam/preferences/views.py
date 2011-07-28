@@ -26,7 +26,9 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.metadata.models import MetadataLanguage
 from dam.settings import LANGUAGE_CODE
 
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 def get_metadata_default_language(user, workspace=None):
     """

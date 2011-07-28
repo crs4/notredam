@@ -25,7 +25,9 @@ from django.contrib.auth.models import User
 from dam.repository.models import Item
 from dam.core.dam_tree.models import AbstractNode
 
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 
 class InvalidNode(Exception):
     pass

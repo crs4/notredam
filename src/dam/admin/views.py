@@ -19,7 +19,9 @@ from dam.core.dam_workspace.models import WorkspacePermissionAssociation, Worksp
 from dam.workspace.views import _get_theme
 
 from settings import BACKUP_PATH, INSTALLATIONPATH
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 import os
 import time
 

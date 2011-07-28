@@ -28,7 +28,9 @@ from dam.metadata.models import RightsValue
 
 from dam.core.dam_repository.models import Type
 
-from dam.logger import logger
+import logging
+logger = logging.getLogger('dam')
+
 import time
 
 class Variant(models.Model):    
