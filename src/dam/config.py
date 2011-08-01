@@ -17,12 +17,24 @@ GOOGLE_KEY="ABQIAAAAo28WphcXpYaxZbMn79s0VRRETiP29whtXF2gCnIqeoPY9fJFzxSVzP1SJSa_
 
 
 
-DATABASE_ENGINE = 'mysql'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'dam_db'	         # Or path to database file if using sqlite3.
-DATABASE_USER = 'dam'	         # Not used with sqlite3.
-DATABASE_PASSWORD = 'dam'	     # Not used with sqlite3.
-
-DATABASE_HOST = ''	         # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = ''	         # Set to empty string for default. Not used with sqlite3.
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'dam_db',                      # Or path to database file if using sqlite3.
+        'USER': 'dam',                      # Not used with sqlite3.
+        'PASSWORD': 'dam',                  # Not used with sqlite3.
+        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+    },
+    #'default': {
+        #'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        #'NAME': 'dam_db',                      # Or path to database file if using sqlite3.
+        #'USER': 'dam',                      # Not used with sqlite3.
+        #'PASSWORD': 'dam',                  # Not used with sqlite3.
+        #'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
+        #'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+    #}
+    
+}
 
 SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
