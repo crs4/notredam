@@ -47,6 +47,7 @@ from dam.preferences.views import get_metadata_default_language
 #from dam.mprocessor.models import MAction
 from md5sum import md5
 from mediadart.storage import Storage
+from urllib import unquote
 
 import logging
 logger = logging.getLogger('dam')
@@ -415,30 +416,31 @@ def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = '
     return (items_deleted ,processes)
     #logger.debug('Launched %s' % ' '.join(ret))
 
-def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
-    logger.debug('_upload_item %s in %s'%(file_name, tmp_dir))
-    file_name = new_id() + '_' + file_name
-    file = open(os.path.join(tmp_dir, file_name), 'wb+')
-    
+def _write_file(input_file, output_file_path):
     from io import FileIO, BufferedWriter
     try:
         
-        with BufferedWriter( FileIO( os.path.join(tmp_dir, file_name), "wb" ) ) as dest:
-           
-    
+        with BufferedWriter( FileIO( output_file_path, "wb" ) ) as dest:
             
-            buffer = file_raw.read(1024)
+            buffer = input_file.read(1024)
             logger.debug('reading')
             while buffer:
                 dest.write(buffer)
                
-                buffer = file_raw.read( 1024 )
+                buffer = input_file.read( 1024 )
                 
             logger.debug('END reading')
             dest.close()
     except Exception, ex:
         logger.exception(ex)
         raise ex
+    
+
+def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
+    logger.debug('_upload_item %s in %s'%(file_name, tmp_dir))
+    file_name = new_id() + '_' + file_name    
+    _write_file(file_raw, os.path.join(tmp_dir, file_name))
+    
 
     
 	
@@ -466,7 +468,7 @@ def upload_item(request):
     """
     Used for uploading a new item. Save the uploaded file using the custom handler dam.upload.uploadhandler.StorageHandler
     """
-    from urllib import unquote
+   
     
     def check_dir_session(session):
         tmp_dir = get_tmp_dir(session)
@@ -707,3 +709,32 @@ def upload_session_finished(request):
         return HttpResponse(simplejson.dumps({'success': False}))
     
         
+@login_required
+def upload_archive(request):
+    try:
+        import tempfile
+        
+        file_name = unquote(request.META['HTTP_X_FILE_NAME'])
+        output_file_path = os.path.join('/tmp/', new_id())
+        
+        _write_file(request, output_file_path)
+        if file_name.endswith('.zip'):
+            import zipfile
+            archive = zipfile.ZipFile(output_file_path, 'r')
+        elif file_name.endswith('.tar') or file_name.endswith('.gz'):
+            import tarfile
+            archive = tarfile.TarFile(output_file_path, 'r')
+        
+        
+        extracting_dir = tempfile.mkdtemp()
+        
+        logger.debug('extracting into %s...'%extracting_dir)
+        archive.extractall(extracting_dir)
+        logger.debug('extracted')
+        import_dir(extracting_dir, request.user, request.session['workspace'], make_copy = True, recursive = True, force_generation = False, link = False, remove_orphans=False)
+        shutil.rmtree(extracting_dir, True)
+        return HttpResponse(simplejson.dumps({'success': True}))
+
+    except Exception, ex:
+        logger.exception(ex)
+        raise ex

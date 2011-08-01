@@ -7,7 +7,8 @@ function upload_dialog(cfg){
 		url: '/upload_resource/',
 		after_upload: function(session_id){},
 		variant:'original',
-		item: null
+		item: null,
+        accept: []
 	}, cfg);
 	
     console.log('config.url '+ config.url);
@@ -242,7 +243,34 @@ function upload_dialog(cfg){
                                         
                                         var files = [];
                                         var size;
+                                        if (self.accept.length > 0){
+                                            var accepted = true;
+                                             Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
+                                                var inner_accepted = false;
+                                                Ext.each(self.accept, function (ext){
+                                                    var regexp = new RegExp('\.'+ ext+'$');
+                                                    console.log(' file.name ' + file.name);
+                                                    console.log(' regexp.test(file.name) ' + regexp.test(file.name));
+                                                    if (regexp.test(file.name)){
+                                                        
+                                                        inner_accepted = true;
+                                                        return false;
+                                                    }   
+                                                });
+                                                if (!inner_accepted){
+                                                    accepted = false;
+                                                    return false;
+                                                }
+                                                 
+                                               });
+                                            if(!accepted){
+                                                Ext.Msg.alert('Error', 'Please choose an archive file');
+                                                return;
+                                            }
+                                                
+                                        }    
                                         Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
+                                            
                                             size = parseInt(file.size/1024) + ' KB';
                                             files.push({
                                                 id: file_counter,
