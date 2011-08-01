@@ -27,8 +27,6 @@ ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(ROOT_PATH)
 
-CAPTCHA_PRIVATE_KEY = '6LeIrcMSAAAAAF_F3yhg0AyO65M5bpj4Kb4OW9tC'
-
 REMOVE_OLD_PROCESSES= True
 
 from mediadart.config import Configurator
@@ -42,13 +40,33 @@ BACKUP_PATH = os.path.join(INSTALLATIONPATH, 'file_backup')
 THUMBS_DIR = os.path.join(INSTALLATIONPATH, 'files', 'thumbs')
 dir_log = os.path.join(INSTALLATIONPATH, 'log')
 
-DATABASE_ENGINE = 'mysql'	       # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'dam_db'	         # Or path to database file if using sqlite3.
-DATABASE_USER = 'root'	         # Not used with sqlite3.
-DATABASE_PASSWORD = 'root'	     # Not used with sqlite3.
-if DATABASE_ENGINE == 'sqlite3':
-    DATABASE_NAME = os.path.join(ROOT_PATH,  DATABASE_NAME)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'dam_db',                      # Or path to database file if using sqlite3.
+        'USER': 'dam',                      # Not used with sqlite3.
+        'PASSWORD': 'dam',                  # Not used with sqlite3.
+        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+    },
+    #'default': {
+        #'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        #'NAME': 'dam_db',                      # Or path to database file if using sqlite3.
+        #'USER': 'dam',                      # Not used with sqlite3.
+        #'PASSWORD': 'dam',                  # Not used with sqlite3.
+        #'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
+        #'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+    #}
+    
+}
 
+
+
+
+#if DATABASE_ENGINE == 'sqlite3':
+    #DATABASE_NAME = os.path.join(ROOT_PATH,  DATABASE_NAME)
+
+CAPTCHA_PRIVATE_KEY = '6LeIrcMSAAAAAF_F3yhg0AyO65M5bpj4Kb4OW9tC'
 EMAIL_HOST = "mail.crs4.it"
 EMAIL_SENDER = "dam@crs4.it"
 SERVER_PUBLIC_ADDRESS = '127.0.0.1:8000'
@@ -114,30 +132,53 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
+     'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.middleware.doc.XViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    
+)
+
+# Additional locations of static files
+STATICFILES_DIRS = (
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+)
+
+# List of finder classes that know how to find static files in
+# various locations.
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+)
+
+#### DECOMMENT TO USE LDAP AUTHENTICATION. NOTE THAT IT NEEDS ldap PACKAGE INSTALLED
+AUTHENTICATION_BACKENDS = (
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend',    
+  
 )
 
 
+import ldap
+from django_auth_ldap.config import LDAPSearch
 
-#### DECOMMENT TO USE LDAP AUTHENTICATION. NOTE THAT IT NEEDS ldap PACKAGE INSTALLED
-#AUTHENTICATION_BACKENDS = (
-#    'django_auth_ldap.backend.LDAPBackend',
-#    'django.contrib.auth.backends.ModelBackend',    
-#)
+AUTH_LDAP_SERVER_URI = "ldap://ldapcluster.crs4.it"
+AUTH_LDAP_BIND_PASSWORD = ""
+AUTH_LDAP_USER_SEARCH = LDAPSearch("dc=crs4",ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail"
+}
 
 
-################LDAP CONFIG,  see http://packages.python.org/django-auth-ldap/
-#import ldap
-#from django_auth_ldap.config import LDAPSearch
-#
-#AUTH_LDAP_SERVER_URI = ""
-#AUTH_LDAP_BIND_PASSWORD = ""
-#AUTH_LDAP_USER_SEARCH = LDAPSearch("dc=com",ldap.SCOPE_SUBTREE, "(uid=%(user)s)") #just an example
-#AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName", "last_name": "sn", "email": "mail"}
-############################
+
 
 ROOT_URLCONF = 'dam.urls'
 
@@ -180,7 +221,65 @@ INSTALLED_APPS = (
     'dam.mprocessor',
 )
 
-INSTALLED_ACTIONS=[
-    'dam.scripts.actions.adapt_image'
-                   
-]
+# A sample logging configuration. The only tangible logging
+# performed by this configuration is to send an email to
+# the site admins on every HTTP 500 error.
+# See http://docs.djangoproject.com/en/dev/topics/logging for
+# more details on how to customize your logging configuration.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s %(levelname)-8s %(pathname)s %(lineno)s %(message)s',
+            'datefmt': '%d/%b/%Y %H:%M:%S',
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'filters': {
+        
+    },
+    'handlers': {
+        'null': {
+            'level':'DEBUG',
+            'class':'django.utils.log.NullHandler',
+        },
+        'console':{
+            'level':'DEBUG',
+            'class':'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'file':{
+            'level':'DEBUG',
+            'class':'logging.FileHandler',
+            'formatter': 'verbose',
+            'filename': os.path.join(dir_log,  'dam.log')
+
+        
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            #'filters': ['special']
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers':['null'],
+            'propagate': True,
+            'level':'INFO',
+        },
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'dam': {
+            'handlers': ['console', 'mail_admins', 'file'],
+            'level': 'INFO',
+            #'filters': ['special']
+        }
+    }
+}
