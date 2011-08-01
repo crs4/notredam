@@ -762,7 +762,30 @@ Ext.onReady(function(){
                     	
                     });
                 }
-            }, {
+            },
+            //{
+                //text: gettext('Upload archive'),
+                //id: 'upload_archive',   
+                //handler: function() {
+                    //calculatePageSize();
+//
+                    //upload_dialog({
+                    	//url: '/upload_archive/',
+                        //singleSelect: true,
+                         //accept: ['zip', 'tar', 'gz'],
+                    	//after_upload: function(){
+                            
+                            //
+                         //
+                    	//}
+                    	//
+                    //});
+                //}             
+                //
+            //},
+            
+            
+             {
                 text: gettext('Share with...'),
                 id: 'addto',
                 disabled: true,

@@ -24,5 +24,6 @@ urlpatterns = patterns('',
     (r'^upload_resource/$', 'dam.upload.views.upload_item'),
     (r'^upload_variant/$', 'dam.upload.views.upload_variant'),
     (r'^upload_watermark/$', 'dam.upload.views.upload_watermark'),
-    (r'^upload_session_finished/$', 'dam.upload.views.upload_session_finished')
+    (r'^upload_session_finished/$', 'dam.upload.views.upload_session_finished'),
+    (r'^upload_archive/$', 'dam.upload.views.upload_archive'),
 )
