@@ -419,8 +419,28 @@ def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, sessio
     logger.debug('_upload_item %s in %s'%(file_name, tmp_dir))
     file_name = new_id() + '_' + file_name
     file = open(os.path.join(tmp_dir, file_name), 'wb+')
-    file.write(file_raw)
-    file.close() 
+    
+    from io import FileIO, BufferedWriter
+    try:
+        
+        with BufferedWriter( FileIO( os.path.join(tmp_dir, file_name), "wb" ) ) as dest:
+           
+    
+            
+            buffer = file_raw.read(1024)
+            logger.debug('reading')
+            while buffer:
+                dest.write(buffer)
+               
+                buffer = file_raw.read( 1024 )
+                
+            logger.debug('END reading')
+            dest.close()
+    except Exception, ex:
+        logger.exception(ex)
+        raise ex
+
+    
 	
 def _upload_resource_via_post(request, use_session = True):
     import tempfile
@@ -470,7 +490,7 @@ def upload_item(request):
             file_counter = int(request.GET['counter'])
             total = int(request.GET['total'])
             tmp_dir = check_dir_session(session)
-            _upload_item(file_name, request.raw_post_data, variant, request.user, tmp_dir, workspace)
+            _upload_item(file_name, request, variant, request.user, tmp_dir, workspace)
                     
             
             
