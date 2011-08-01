@@ -1,25 +1,3 @@
-function use_ajax_upload(){
-	
-    try{
-		var xhrupload = XMLHttpRequestUpload;		
-	}
-	
-	catch(e){
-		return false;
-	}
-	
-	var files_to_upload = Ext.getCmp('files_to_upload').fileInput.dom.files;
-	var files_too_big = false;
-	var max_limit_file_size = 30*(1024*1024);
-	Ext.each(files_to_upload, function(file){
-		if(file.fileSize > max_limit_file_size)
-			files_too_big = true;
-			
-	});
-	console.log('use_ajax_upload ' + !files_too_big)
-	return !files_too_big;
-	
-};
 
 function upload_dialog(cfg){
 	var uploader = this;
@@ -54,30 +32,6 @@ function upload_dialog(cfg){
 			total: files_length,
 			item: uploader.item
 		};       
-		
-		if(!use_ajax_upload()){
-			params.all_togheter = true;			
-			var form_panel = Ext.getCmp('form_upload');
-			var base_form = form_panel.getForm();
-			var grid_container = Ext.getCmp('files_list_container');
-			
-			base_form.baseParams = params;
-			 var files_num = Ext.getCmp('files_list').getStore().getCount();
-			 for (var i = 0; i < files_num; i++){
-				Ext.getCmp('progress_' + i).updateProgress(1,'disabled progress');
-			
-			}
-			grid_container.getEl().mask('Upload in progress...');
-			base_form.on('actioncomplete', function(){
-				grid_container.getEl().unmask();
-				uploader.after_upload(session_id);
-				
-			});
-			
-			base_form.submit();
-			return;
-		}
-		
 		
 		var _show_monitor =  function (){
 			_close_upload();
