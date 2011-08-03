@@ -24,8 +24,7 @@ from django.contrib.auth.models import User
 from dam.mprocessor.models import ProcessTarget
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
-from dam.metadata.models import MetadataProperty
-
+from dam.metadata.models import *
 
 
 import os
@@ -96,6 +95,79 @@ class Item(AbstractItem):
 
     def __unicode__(self):
         return self.get_file_name()
+	
+    def set_metadata(self,property_namespace, property_name, value):
+        property = MetadataProperty.objects.get(field_name = property_name, namespace__name = property_namespace)
+    
+        new_metadata = {}
+
+        if property.type == 'lang':
+            if not isinstance(value,  dict):
+                raise Exception('format of metadata %s is invalid; it must be a dictionary (ex: {"en-US":"value"})')
+            
+            new_metadata[str(property.pk)]  = []
+            for lang in value.keys():
+                
+                if lang not in MetadataLanguage.objects.all().values_list('code',  flat = True):
+                    raise Exception('invalid language %s for metadata %s' % (lang, data))
+                
+                new_metadata[str(property.pk)] .append([value[lang],  lang])
+            
+#                dict
+
+        elif property.type in XMPStructure.objects.all().values_list('name',  flat = True):
+#                list of dict
+            
+            if not isinstance(value,  list):
+                raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+            
+            structure = XMPStructure.objects.get(name = property.type)
+            structure_list = []
+            
+            for _structure in value:
+                if not isinstance(_structure ,  dict):
+                    raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+                
+                tmp_dict = {}
+                for el in _structure.keys():
+                    property_namespace,   property_field_name = el.split('_')
+                    try:
+                        el_property = MetadataProperty.objects.get(namespace__prefix = property_namespace,  field_name = property_field_name)
+                    except MetadataProperty.DoesNotExist:
+                        raise Exception('metadata schema %s unknown' % el)
+                    logger.debug('structure %s'%structure)
+                    if el_property not in structure.properties.all():
+                        raise Exception('unexpected property %s' % el)
+                    
+                    tmp_dict[str(el_property.pk)] = _structure[el]
+                
+                structure_list.append(tmp_dict)                    
+                    
+            new_metadata[str(property.pk)] = structure_list
+
+        elif property.is_array != 'not_array':                
+#                list of str
+            
+            if not isinstance(value,  list):
+                raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+            for el in value:
+                if not isinstance(el,  basestring):
+                    raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+            
+            new_metadata[str(property.pk)] = value
+        else:
+#                str
+            if not isinstance(value,  basestring) and not isinstance(value,  int) and not isinstance(value,  float):
+#                    logger.debug('value %s'%value)
+#                    logger.debug('-------------------------------------value.__class__ %s'%value.__class__)
+                raise Exception('format of metadata %s is invalid; it must be a string' % data)
+            
+            new_metadata[str(property.pk)] = value
+        
+        logger.debug('new_metadata %s' %new_metadata)
+        MetadataValue.objects.save_metadata_value([self], new_metadata,  'original', self.workspaces.all()[0]) #workspace for variant metadata, not supported yet
+
+
 
     def get_workspaces_count(self):
         """
