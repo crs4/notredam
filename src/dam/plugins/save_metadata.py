@@ -22,24 +22,27 @@ setup_environ(settings)
 from django.db.models.loading import get_models
 get_models()
 
+
 from twisted.internet import defer, reactor
 from dam.repository.models import Item
 
-def run(workspace,              # workspace object
-        item_id,                # item primary key
-        metadata_namespace,
-        metadata_name,
-        metadata_value
-        ):
+def save_metadata(deferred, item, metadata_namespace, metadata_name, metadata_value):
+    try:
+        item.set_metadata(metadata_namespace, metadata_name, metadata_value)
+        deferred.callback('ok')
+    except Exception, ex:
+        deferred.errback('error: %s'%ex)
+    finally:
+        return deferred
+        
 
-    deferred = defer.Deferred()
+def run(workspace, item_id, metadata_namespace, metadata_name, metadata_value):
+
     item = Item.objects.get(pk = item_id)
-    
-    reactor.callLater(0, item.set_metadata,  metadata_namespace,
-        metadata_name,
-        metadata_value)
+    deferred = defer.Deferred()
+    reactor.callLater(0, save_metadata, deferred, item, metadata_namespace, metadata_name, metadata_value)
     return deferred
-    
+
 def test():
     print 'test'
     item = Item.objects.all()[0]
