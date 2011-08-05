@@ -27,7 +27,9 @@ from django.db import IntegrityError
 
 
 
-class CodeErrorException(Exception):
+class CodeErrorException(Exception): #abstract
+    error_code = None
+    error_message = None
     
     def error_class(self):
         return self.__class__.__name__
@@ -39,103 +41,90 @@ class VerboseCodeErrorException(CodeErrorException):
         self.error_dict = error_dict
         
 
-class MalformedJSON(CodeErrorException):
-    error_code = 13
+class BadRequest(CodeErrorException):
+    error_code = 400
+
+class Forbidden(CodeErrorException):
+    error_code = 403
+
+class NotFound(CodeErrorException):
+    error_code = 404
+
+
+
+class MalformedJSON(BadRequest):
+    
     error_message = 'malformed json request'
 
-class TooManyArgsPassed(CodeErrorException):
+class TooManyArgsPassed(BadRequest):
     error_code = 23
     error_message = 'too many arguments passed'
     
 
-class MissingArgs(VerboseCodeErrorException):
-    error_code = 15
+class MissingArgs(BadRequest):    
     error_message = 'missing required arguments'
     
 
-class SmartFolderError(VerboseCodeErrorException):
-    error_code = 45
+class SmartFolderError(BadRequest):    
     error_message = 'missing required arguments'
     
-class ArgsValidationError(VerboseCodeErrorException):
-    error_code = 14
+class ArgsValidationError(BadRequest):   
     error_message = 'arguments validation error'
     
+class MissingAPIKey(BadRequest):
     
-    
-class MissingAPIKey(CodeErrorException):
-    error_code = 25
     error_message = 'missing api key'
     
-class MissingUserId(CodeErrorException):
-    error_code = 27
+class MissingUserId(BadRequest):    
     error_message = 'missing user id'
 
-class MissingSecret(CodeErrorException):
-    error_code = 28
+class MissingSecret(BadRequest):    
     error_message = 'missing secret'
 
-class InvalidAPIKey(CodeErrorException):
-    error_code = 11
+class InvalidAPIKey(BadRequest):    
     error_message = 'invalid api key'    
     
-class InvalidAPIKeyOrUserId(CodeErrorException):
-    error_code = 29
+class InvalidAPIKeyOrUserId(BadRequest):
+    
     error_message = 'invalid api_key or user id'    
     
-class AuthenticationFailed(CodeErrorException):
-    error_code = 30
+class AuthenticationFailed(Forbidden):    
     error_message = 'authentication failed, check your secret key'    
 
-
-    
-class InsufficientPermissions(CodeErrorException):
-    error_code = 24
+class InsufficientPermissions(Forbidden):    
     error_message = 'insufficient permissions'
     
     
-class InvalidKeyword(CodeErrorException):
-    error_code = 19
+class InvalidKeyword(BadRequest):
     error_message = 'invalid keyword'
 
 
-class SmartFolderDoesNotExist(CodeErrorException):
-	error_code = 1139
+class SmartFolderDoesNotExist(NotFound):	
 	error_message = 'the smarfolder does not exist'
 
-
-class InvalidMediaType(CodeErrorException):
-    error_code = 32
+class InvalidMediaType(BadRequest):
     error_message = 'invalid media type'
 
-class ImportedVariant(CodeErrorException):
-    error_code = 33
+class ImportedVariant(BadRequest):
     error_message = 'the variant has no preferences to set, since it is imported'
 
-class InvalidPreferences(CodeErrorException):
-    error_code = 34
+class InvalidPreferences(BadRequest):
     error_message = 'invalid variant preferences'
 
-
-class LoginFailed(CodeErrorException):
-    error_code = 31
+class LoginFailed(Forbidden):
     error_message = 'invalid username or password'
     
-class InvalidArg(VerboseCodeErrorException):
-    error_code = 50
+class InvalidArg(BadRequest):
     error_message = 'invalid argument'
     
     
-class GlobalVariantDeletion(CodeErrorException):
-    error_code = 78
+class GlobalVariantDeletion(Forbidden):    
     error_message = 'global variant cannot be deleted, sorry'
     
-class WorkspaceAdminDeletion(CodeErrorException):
-    error_code = 89
+class WorkspaceAdminDeletion(Forbidden):    
     error_message = 'Workspace admin cannot be deleted'
 
-class GlobalScriptDeletion(CodeErrorException):
-    error_code = 211
+class GlobalScriptDeletion(Forbidden):    
     error_message = 'global script cannot be deleted'
     
 class InnerException(VerboseCodeErrorException):
@@ -156,34 +145,34 @@ class InnerException(VerboseCodeErrorException):
             
         
         elif isinstance(ex, Node.DoesNotExist):     
-            self.error_code = 20
+            self.error_code = NotFound.error_code
             self.error_message =  'keyword or collection does not exist'
             self.__error_class = 'CatalogueElement' + ex.__class__.__name__
         
         elif isinstance(ex, State.DoesNotExist):   
             
-            self.error_code = 65
+            self.error_code = NotFound.error_code
             self.error_message = 'state does not exist'
             self.__error_class = 'State' + ex.__class__.__name__
         
         
         elif isinstance(ex, Variant.DoesNotExist):
-            self.error_code = 26
+            self.error_code = NotFound.error_code
             self.error_message = 'rendition does not exist'
             self.__error_class = 'Rendition' + ex.__class__.__name__
             
         elif isinstance(ex, SmartFolder.DoesNotExist):
-            self.error_code = 26
+            self.error_code = NotFound.error_code
             self.error_message = 'smartfolder does not exist'
             self.__error_class = 'SmartFolder' + ex.__class__.__name__
 
         elif isinstance(ex, InvalidNode):
             
-            self.error_code = 19
+            self.error_code = BadRequest.error_code
             self.error_message = 'invalid keywords'
                     
         elif  isinstance(ex, WrongWorkspace):
-            self.error_code = 21
+            self.error_code = BadRequest.error_code
             self.error_message = 'keywords does not belong to the same workspace'
                 
 #        except NotEditableNode,  ex:
@@ -193,26 +182,25 @@ class InnerException(VerboseCodeErrorException):
             
         elif isinstance(ex, Workspace.DoesNotExist):
             
-            self.error_code = 18
+            self.error_code = NotFound.error_code
             self.error_message = 'workspace does not exist'
             self.__error_class = 'Workspace' + ex.__class__.__name__
                
            
         elif isinstance(ex, Item.DoesNotExist):
-            self.error_code = 12
+            self.error_code = NotFound.error_code
             self.error_message = 'item does not exist'
             self.__error_class = 'Item' + ex.__class__.__name__
             
         elif isinstance(ex, Pipeline.DoesNotExist):
-            self.error_code = 12
+            self.error_code = NotFound.error_code
             self.error_message = 'script does not exist'
             self.__error_class = 'Script' + ex.__class__.__name__
             
-        elif isinstance(ex, MetadataProperty.DoesNotExist):
-             
+        elif isinstance(ex, MetadataProperty.DoesNotExist):             
             self.error_message = 'metadata schema does not exist'
             if ex.__dict__.has_key('error_dict'):
-                self.error_code = 16
+                self.error_code = NotFound.error_code
                 self.error_dict =   ex.error_dict
             self.__error_class = 'MetadataSchema' + ex.__class__.__name__
             
@@ -221,7 +209,7 @@ class InnerException(VerboseCodeErrorException):
             self.error_message = 'metadata does not exist'
             self.__error_class = 'Metadata' + ex.__class__.__name__
             if ex.__dict__.has_key('error_dict'):
-                self.error_code = 17
+                self.error_code = NotFound.error_code
                 self.error_dict = ex.error_dict 
         
         elif isinstance(ex, IntegrityError) or isinstance(ex, WrongItemWorkspace): 
@@ -236,45 +224,7 @@ class InnerException(VerboseCodeErrorException):
                     
         
         
-#        except MissingArgs,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(15)
-#            
-#        except ArgsValidationError,  ex:
-#            transaction.rollback()            
-#            resp =  error_response(14, ex.error_dict)
-#            
-#        except MalformedJSON,  ex:
-#            if ex.__dict__.has_key('error_dict'):
-#                resp =  error_response(13,  ex.error_dict )
-#            else:
-#                resp =  error_response(13,)
-#            
-#        except TooManyArgsPassed,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(23)
-#            
-#        except InsufficientPermissions,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(24)
-#            
-#        except MissingAPIKey,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(ex.error_code,  ex.error_message)
-#            
-#        except InvalidAPIKey,  ex:
-#            logger.exception(ex)
-#            transaction.rollback() 
-#            resp =  error_response(11)
-#   
-        
-        
-        
-        
+
     
     
     

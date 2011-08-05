@@ -373,25 +373,25 @@ class WSTestCase(MyTestCase):
    
     def test_0011_no_api_key(self):
         """
-        Checks that an error 25 arises when an image with no api_key is looked for using api command /api/workspace/ws_name/get.
+        Checks that an error 400 arises when an image with no api_key is looked for using api command /api/workspace/ws_name/get.
         """
         ws_pk = 1
         params = {'workspace_id':ws_pk,  'user_id': self.user_id}        
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params,  )        
         resp_dict = json.loads(response.content)             
         
-        self.assertTrue(resp_dict.get('error code') == 25)
+        self.assertTrue(resp_dict.get('error code') == 400)
         
     def test_0012_wrong_secret(self):
         """
-        Checks that an error 30 arises when an image with wrong secret is looked for using api command /api/workspace/ws_name/get.
+        Checks that an error 403 arises when an image with wrong secret is looked for using api command /api/workspace/ws_name/get.
         """
         ws_pk = 1
         params = {'workspace_id':ws_pk,  'user_id': self.user_id,  'api_key': self.api_key,  'checksum': 'lalala'}        
         response = self.client.get('/api/workspace/%s/get/'%ws_pk, params,  )        
         resp_dict = json.loads(response.content)             
         
-        self.assertTrue(resp_dict.get('error code') == 30)
+        self.assertTrue(resp_dict.get('error code') == 403)
     
         
     
@@ -1109,7 +1109,7 @@ class TestLogin(MyTestCase):
         response = self.client.post('/api/login/', params)        
         json_resp = json.loads(response.content)
         print 'json_resp  %s' %json_resp 
-        self.assertTrue(json_resp['error code'] == 31)
+        self.assertTrue(json_resp['error code'] == 403)
         
     def test_0055_get_users(self):
         user = User.objects.get(pk =1)
