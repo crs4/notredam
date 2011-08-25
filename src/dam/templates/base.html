@@ -1,0 +1,61 @@
+<html>
+<head>
+	<title>NotreDAM</title>
+	<link rel="stylesheet" type="text/css" href="/files/ext/resources/css/ext-all.css" />
+	<link rel="stylesheet" type="text/css" href="/files/css/tools_icons.css" />
+	
+	<link rel="stylesheet" type="text/css" href='{{theme_css}}'/>
+	{%block css%}
+		
+	{%endblock%}
+	
+	
+	<script type="text/javascript" src="/files/ext/adapter/ext/ext-base.js"></script>
+	<script type="text/javascript" src="/files/ext/ext-all-debug.js"></script>
+	<script type="text/javascript" src="/files/ext/header.js"></script>
+    
+    <script type="text/javascript" src="{% url django.views.i18n.javascript_catalog %}"></script>
+    {%comment%}
+    <script type="text/javascript">
+        console.log("{% url django.views.i18n.javascript_catalog %}");
+        function gettext(str){
+            return str;
+        }
+    </script>
+    <script type="text/javascript" src="/jsi18n/"></script>
+    {%endcomment%}
+    
+    
+    
+    
+	
+    
+
+	
+	{%block js%}
+	
+	{%endblock%}
+	
+    	<script type="text/javascript">
+    		{%block header_info%}
+    			var HEADERHEIGHT = 60;
+    		{%endblock%}
+   		</script>
+	 	
+	
+</head>
+<body{%block body%}{%endblock%}>
+ {%block logo%}
+        <div id="logo" style="width:100%">
+           <div style="width:30%; float:left">
+                <a href="/" title="Home">
+                    <img src="/files/images/logo_notredam_small_no_margin.png" style="vertical-align:middle;"/>
+            </a>
+        </div>
+	{%endblock%}
+{%block body_content%}
+   
+		
+{%endblock%}
+</body>
+</html>
