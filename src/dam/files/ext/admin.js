@@ -159,7 +159,7 @@ Ext.onReady(function() {
                     style: 'padding: 10px;'
                 }, {
                     layout: 'fit',
-                    title: 'General',
+                    title: 'Options',
                     iconCls: 'x-icon-configuration',
                     style: 'padding: 10px;',
                     id: 'configuration_panel'
