@@ -524,7 +524,7 @@ def damadmin_get_user_list(request):
     data = {'elements':[]}
     users = User.objects.all()
     for s in users: 
-        data['elements'].append({'id':s.id, 'name':s.username, 'is_staff': s.is_staff, 'is_active': s.is_active, 'email': s.email, 'first_name': s.first_name, 'last_name': s.last_name })
+        data['elements'].append({'id':s.id, 'name':s.username, 'is_staff': s.is_staff, 'is_active': s.is_active, 'email': s.email, 'first_name': s.first_name, 'last_name': s.last_name, 'last_login': s.last_login.strftime("%d/%m/%y %H:%m:%S"), 'date_joined': s.date_joined.strftime("%d/%m/%y %H:%m:%S")})
         
     return HttpResponse(simplejson.dumps(data))    
 
