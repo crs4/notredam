@@ -20,7 +20,7 @@ var get_user_list = function() {
     var store = new Ext.data.JsonStore({
         autoDestroy: true,
         url: '/dam_admin/get_user_list/',
-        fields: ["id", "name", 'is_staff', 'is_active', 'email', 'first_name', 'last_name'],
+        fields: ["id", "name", 'is_staff', 'is_superuser', 'last_login', 'date_joined', 'is_active', 'email', 'first_name', 'last_name'],
         root: 'elements',
         autoLoad: true,
         sortInfo: {
@@ -50,11 +50,11 @@ var get_user_list = function() {
             header: 'UserName',
             dataIndex: 'name'
         }, {
-            header: 'Active member',
+            header: 'Active account',
             dataIndex: 'is_active',
             renderer: bool_renderer
         },{
-            header: 'Staff member',
+            header: 'Administrator',
             dataIndex: 'is_staff',
             renderer: bool_renderer
         }, {
@@ -63,10 +63,21 @@ var get_user_list = function() {
         }, {
             header: 'Last name',
             dataIndex: 'last_name'
-        }, {
+        }, 
+        {
             header: 'Email',
             dataIndex: 'email'
-        }],
+        },
+        {
+            header: 'Created on',
+            dataIndex: 'date_joined'
+        },
+        {
+            header: 'Last login',
+            dataIndex: 'last_login'
+        }
+        
+        ],
         bbar: [{
             text: 'Add',
             iconCls: 'add_icon',
@@ -569,7 +580,7 @@ var open_user_win = function(current, custom_store) {
         success_msg = 'User added successfully.';
     }
     else {
-        win_title = 'Edit User';
+        win_title = 'User account editor';
         submit_url = '/dam_admin/save_user/';
         id = current.get('id');
         name = current.get('name');
@@ -581,9 +592,10 @@ var open_user_win = function(current, custom_store) {
     }
     
     var form_items = [{
-            fieldLabel: 'UserName',
+            fieldLabel: 'Username',
             xtype: 'textfield',
             id: 'username',
+            allowBlank: false,
             value: name,
             width: 300
         }, {
@@ -603,7 +615,7 @@ var open_user_win = function(current, custom_store) {
         }, {
             fieldLabel: 'Email',
             xtype: 'textfield',
-
+            allowBlank: false,
             name: 'email',
             vtype:'email',
             value: email,
