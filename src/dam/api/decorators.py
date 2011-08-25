@@ -122,7 +122,7 @@ def api_key_required(func):
             
         try:
             secret_obj = Secret.objects.get(application__api_key = api_key,  user__pk = user_id)
-        except:
+        except Secret.DoesNotExist:
             raise invalidAPIKeyOrUserId
         
         

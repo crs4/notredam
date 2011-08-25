@@ -32,7 +32,7 @@ def _set_state(items,state):
             sa = StateItemAssociation.objects.get(item=item)
             sa.state = state
             sa.save()
-        except:
+        except StateItemAssociation.DoesNotExist:
             sa = StateItemAssociation.objects.create(state=state, item=item)
 
 @login_required

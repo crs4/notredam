@@ -1016,12 +1016,12 @@ def save_members(request):
                     try:
                         ws_permission = WorkspacePermission.objects.get(codename=k)
                         user_perms.append(ws_permission)
-                    except:
+                    except WorkspacePermission.DoesNotExist:
                         pass
 
             ws.add_member(user, user_perms)
 
-        except:
+        except User.DoesNotExist:
             continue
 
     removed_users = ws.members.exclude(pk__in=current_users)

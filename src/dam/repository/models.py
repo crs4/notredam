@@ -75,7 +75,7 @@ class Item(AbstractItem):
     Concrete class that inherits from the abstract class AbstractItem found in core/dam_repository/models.py     
     Base model describing items. They can contain components only.
     """
-    _id = models.CharField(max_length=40,  db_column = 'md_id')    
+    _id = models.CharField(max_length=40,  db_column = 'md_id')
     metadata = generic.GenericRelation('metadata.MetadataValue')
     source_file_path = models.TextField() #path from whom the item was imported(/tmp/somedir/somefile in case of upload)
     
@@ -440,12 +440,9 @@ class Item(AbstractItem):
 
     def uploaded_by(self):
         """
-        Return the uploader username (or unknown)
+        Return the uploader user object
         """
-        try:
-            return self.uploader.username
-        except:
-            return 'unknown'
+        return self.uploader
         
     def get_variant_url(self, variant_name, workspace):
         url = None       
@@ -514,7 +511,7 @@ class Item(AbstractItem):
         thumb_url = '/item/%s/%s/?t=%s'%(self.ID, 'thumbnail', t);
         preview_url = '/item/%s/%s/?t=%s'%(self.ID, 'preview', t);
         fullscreen_url = '/item/%s/%s/?t=%s'%(self.ID, 'fullscreen', t);
-        in_progress = ProcessTarget.objects.filter(target_id = self.pk,actions_todo__gt = 0, process__workspace = workspace).count() > 0;
+        in_progress = ProcessTarget.objects.filter(target_id = str(self.pk),actions_todo__gt = 0, process__workspace = workspace).count() > 0;
         
         if in_progress:
             status = 'in_progress';
