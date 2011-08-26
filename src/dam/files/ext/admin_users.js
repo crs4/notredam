@@ -46,7 +46,9 @@ var get_user_list = function() {
                 open_admin_editor(this.getId(), 'User', open_user_win);
             }
         },
-        columns: [sm, {
+        columns: [
+            //sm, 
+            {
             header: 'UserName',
             dataIndex: 'name'
         }, {
@@ -92,8 +94,9 @@ var get_user_list = function() {
             disabled: true,
             handler: function() {
                 Ext.Msg.confirm('User Deletion', 'User deletion cannot be undone, do you want to proceed?', 
-                function(){
-                    remove_from_list('users_list', '/dam_admin/delete_user/', 'Remove User', 'User(s) removed successfully.');
+                function(btn){
+                    if (btn == 'yes')
+                        remove_from_list('users_list', '/dam_admin/delete_user/', 'Remove User', 'User(s) removed successfully.');
                 });
                 
             }
@@ -381,7 +384,9 @@ var open_user_ws_win = function(current, my_stores) {
                         }
                     }, 
                     sm: group_sm, 
-                    columns: [group_sm, {
+                    columns: [
+                        group_sm, 
+                        {
                         header: 'Group',
                         dataIndex: 'group'
                     }, {
@@ -576,6 +581,7 @@ var open_user_win = function(current, custom_store) {
         pwd = '';
         first_name = '';
         last_name = '';
+        is_staff = false;
         email = 'email@domain.com';
         success_msg = 'User added successfully.';
     }
@@ -584,6 +590,7 @@ var open_user_win = function(current, custom_store) {
         submit_url = '/dam_admin/save_user/';
         id = current.get('id');
         name = current.get('name');
+        is_staff = current.get('is_staff');
         pwd = '';
         first_name = current.get('first_name');
         last_name = current.get('last_name');
@@ -620,9 +627,19 @@ var open_user_win = function(current, custom_store) {
             vtype:'email',
             value: email,
             width: 300    
-        }];
-
-    if (!current) {
+        },
+        
+        ];
+        
+        if (name != user)
+            form_items.push({
+                fieldLabel: 'Admin',
+                xtype: 'checkbox',
+                allowBlank: false,
+                name: 'is_staff',
+                value: is_staff
+            });
+    
         form_items.push({
             fieldLabel: 'New Password',
             xtype: 'textfield',
@@ -647,7 +664,7 @@ var open_user_win = function(current, custom_store) {
 //             id: 'create_ws',
 //             checked: true
 //         });        
-    }
+    
         
     var store = new Ext.data.JsonStore({
         autoDestroy: true,

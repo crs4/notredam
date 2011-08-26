@@ -169,13 +169,15 @@ Ext.onReady(function() {
                     iconCls: 'x-icon-configuration',
                     style: 'padding: 10px;',
                     items: [user_panel]
-                }, {
-                    layout: 'fit',
-                    title: 'Workspaces',
-                    iconCls: 'x-icon-configuration',
-                    style: 'padding: 10px;',
-                    items: [ws_panel]
-                },{
+                }, 
+                //{
+                    //layout: 'fit',
+                    //title: 'Workspaces',
+                    //iconCls: 'x-icon-configuration',
+                    //style: 'padding: 10px;',
+                    //items: [ws_panel]
+                //},
+                {
                     layout: 'fit',
                     title: 'Backup',
                     iconCls: 'x-icon-configuration',

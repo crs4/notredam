@@ -15,28 +15,14 @@
 	<script type="text/javascript" src="/files/ext/header.js"></script>
     
     <script type="text/javascript" src="{% url django.views.i18n.javascript_catalog %}"></script>
-    {%comment%}
-    <script type="text/javascript">
-        console.log("{% url django.views.i18n.javascript_catalog %}");
-        function gettext(str){
-            return str;
-        }
-    </script>
-    <script type="text/javascript" src="/jsi18n/"></script>
-    {%endcomment%}
     
-    
-    
-    
-	
-    
-
 	
 	{%block js%}
 	
 	{%endblock%}
 	
     	<script type="text/javascript">
+            var user = "{{user.username}}";
     		{%block header_info%}
     			var HEADERHEIGHT = 60;
     		{%endblock%}
