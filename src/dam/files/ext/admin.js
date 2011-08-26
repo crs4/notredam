@@ -142,7 +142,7 @@ Ext.onReady(function() {
         layout:'border',
         items:[
         	header,
-        	{        	
+        	{    
             xtype: 'grouptabpanel',
             region: 'center',
             tabWidth: 150,
