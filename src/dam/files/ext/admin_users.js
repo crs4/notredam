@@ -30,6 +30,7 @@ var get_user_list = function() {
     });
 
     var sm = get_list_selectionmodel(['remove_user_menuitem', 'edit_user_menuitem']);
+    sm.singleSelect = true;
 
     var list = new Ext.grid.GridPanel({
         title: 'Users',
