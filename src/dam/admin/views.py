@@ -524,7 +524,7 @@ def damadmin_get_user_list(request):
     data = {'elements':[]}
     users = User.objects.all()
     for s in users: 
-        data['elements'].append({'id':s.id, 'name':s.username, 'is_staff': s.is_staff, 'is_active': s.is_active, 'email': s.email, 'first_name': s.first_name, 'last_name': s.last_name, 'last_login': s.last_login.strftime("%d/%m/%y %H:%m:%S"), 'date_joined': s.date_joined.strftime("%d/%m/%y %H:%m:%S")})
+        data['elements'].append({'id':s.id, 'name':s.username, 'is_superuser': s.is_superuser,'is_staff': s.is_staff, 'is_active': s.is_active, 'email': s.email, 'first_name': s.first_name, 'last_name': s.last_name, 'last_login': s.last_login.strftime("%d/%m/%y %H:%m:%S"), 'date_joined': s.date_joined.strftime("%d/%m/%y %H:%m:%S")})
         
     return HttpResponse(simplejson.dumps(data))    
 
@@ -569,6 +569,9 @@ def damadmin_save_user(request):
     password = request.POST.get('pwd', None)
     first_name = request.POST.get('first_name', '')
     last_name = request.POST.get('last_name', '')
+    is_staff = request.POST.get('is_staff', False)
+    is_superuser = request.POST.get('is_superuser', False)
+    is_active = request.POST.get('is_active', False)
 
     permissions = simplejson.loads(request.POST.get('permissions'))
 
@@ -589,7 +592,10 @@ def damadmin_save_user(request):
         wss = Workspace.objects.filter(members=user)
         
         for ws in wss:        
-            ws.members.remove(user)    
+            ws.members.remove(user)  
+    
+        if password:
+            user.set_password(password)
 
     else:
 
@@ -608,7 +614,15 @@ def damadmin_save_user(request):
     user.first_name = first_name
     user.last_name = last_name
     user.email = email
-
+    
+    if user != request.user: #to avoid removing ourself from administration
+        logger.info('is_superuser %s'%is_superuser)
+        logger.info('is_staff %s'%is_staff)
+        user.is_staff = is_staff is not False
+        user.is_superuser = is_superuser is not False
+        user.is_active = is_active is not False
+        
+        logger.info('user.is_superuser %s'%user.is_superuser)
     user.save()
     
     for p in permissions:

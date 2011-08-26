@@ -57,7 +57,7 @@ var get_user_list = function() {
             renderer: bool_renderer
         },{
             header: 'Administrator',
-            dataIndex: 'is_staff',
+            dataIndex: 'is_superuser',
             renderer: bool_renderer
         }, {
             header: 'First name',
@@ -581,7 +581,8 @@ var open_user_win = function(current, custom_store) {
         pwd = '';
         first_name = '';
         last_name = '';
-        is_staff = false;
+        is_superuser = false;
+        is_active = true;
         email = 'email@domain.com';
         success_msg = 'User added successfully.';
     }
@@ -590,7 +591,8 @@ var open_user_win = function(current, custom_store) {
         submit_url = '/dam_admin/save_user/';
         id = current.get('id');
         name = current.get('name');
-        is_staff = current.get('is_staff');
+        is_superuser = current.get('is_superuser');
+        is_active = current.get('is_active');
         pwd = '';
         first_name = current.get('first_name');
         last_name = current.get('last_name');
@@ -631,16 +633,25 @@ var open_user_win = function(current, custom_store) {
         
         ];
         
-        if (name != user)
+        console.log('is_superuser ' + is_superuser);
+        if (name != user){
             form_items.push({
                 fieldLabel: 'Admin',
-                xtype: 'checkbox',
-                allowBlank: false,
-                name: 'is_staff',
-                value: is_staff
+                xtype: 'checkbox',                
+                name: 'is_superuser',
+                checked: is_superuser
             });
-    
-        form_items.push({
+            
+            form_items.push({
+                fieldLabel: 'Active',
+                xtype: 'checkbox',
+                
+                name: 'is_active',
+                checked: is_active
+            });
+        }
+            
+        new_password = {
             fieldLabel: 'New Password',
             xtype: 'textfield',
             id: 'pwd',
@@ -648,8 +659,8 @@ var open_user_win = function(current, custom_store) {
             inputType: 'password',
             vtype: 'password',
             width: 300
-        });
-        form_items.push({
+        };
+        confirm_password = {
             fieldLabel: 'Confirm Password',
             xtype: 'textfield',
             id: 'pass-cfrm',
@@ -657,7 +668,29 @@ var open_user_win = function(current, custom_store) {
             initialPassField: 'pwd',
             inputType: 'password',
             width: 300       
-        });
+        };
+        
+        if (current)
+            form_items.push({
+                xtype: 'fieldset',
+                title: 'Set Password',
+                checkboxToggle: true,
+                collapsed: true,
+                items: [new_password, confirm_password]
+            });
+            
+        else{
+            new_password.allowBlank = false;
+            new_password.listeners = {
+                afterrender: function(){
+                    this.clearInvalid();
+                }
+            };
+            form_items.push(new_password);
+            form_items.push(confirm_password);
+        }        
+            
+
 //         form_items.push({
 //             fieldLabel: 'Create workspace',
 //             xtype: 'checkbox',
