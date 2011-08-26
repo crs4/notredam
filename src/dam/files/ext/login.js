@@ -21,9 +21,14 @@ Ext.onReady(function() {
     var submitClick = function() {
         var f = Ext.getCmp('login_form').form;
             if (f.isValid()) {
-                //f.getEl().dom.submit(); 
-                f.submit(); 
-//               f.submit({waitMsg:'Trying to login...', method: "POST", failure: function() {Ext.MessageBox.alert('Error', 'Wrong login');}});
+                f.getEl().dom.submit(); 
+                //f.submit(); 
+               //f.submit({waitMsg:'Trying to login...', method: "POST", failure: function() {Ext.MessageBox.alert('Error', 'Wrong login');}});
+               
+               //Ext.Ajax.request({
+                   //url: f.url,
+                   //params: f.getValues()
+               //});
             }else{
                 Ext.MessageBox.alert('Error', 'Please fill all the fields and try again.');
             }
@@ -37,7 +42,7 @@ Ext.onReady(function() {
         labelWidth: 100,
         border: false,
         bodyBorder: false,
-        standardSubmit: true,
+        //standardSubmit: true,
         region: 'center',
         buttonAlign: 'center',
         //region: 'center',
@@ -55,7 +60,13 @@ Ext.onReady(function() {
         id: 'login_form',
         keys: [{ key: Ext.EventObject.ENTER, fn: submitClick }],
 
-        items: [{
+        items: [
+            {
+                hidden: true,
+                contentEl: "hidden-csrf"
+            },
+        
+            {
             fieldLabel: 'Username',
             name: 'username',
             allowBlank: false,
