@@ -116,11 +116,12 @@ Ext.onReady(function() {
             load: function(r) {
 
                 var tabs = generate_pref_forms(this, '/save_system_pref/');
-
+                tabs[0].title = Ext.getCmp('configuration_panel').title;
                 Ext.getCmp('configuration_panel').add({
-                        xtype: 'tabpanel',
-                        activeTab: 0,
+                        xtype: 'panel',                        
+
                         defaults: {autoScroll:true},
+                        layout: 'fit',
                         items: tabs
                     });
                 Ext.getCmp('configuration_panel').doLayout();

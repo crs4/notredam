@@ -39,12 +39,12 @@ def get_admin_settings(request):
     """
     Get system settings (dam admin)
     """
-    settings = DAMComponentSetting.objects.all()
+    settings = DAMComponentSetting.objects.all()    
     data = {'prefs':[]}
     for s in settings:
         choices = [[c.name, c.description] for c in s.choices.all()]
         value = s.get_user_setting_by_level()
-        data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': s.component.name,  'type': s.type,  'value': value,  'choices':choices})
+        data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': None,  'type': s.type,  'value': value,  'choices':choices})
     return HttpResponse(simplejson.dumps(data))    
 
 @staff_member_required
