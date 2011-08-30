@@ -216,7 +216,7 @@ Ext.onReady(function() {
                     }]
                 },
                 {
-                    title: 'Licencies',
+                    title: 'Licences',
                     iconCls: 'x-icon-rights',
                     style: 'padding: 10px;',
                     layout: 'fit',
