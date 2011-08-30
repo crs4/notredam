@@ -739,11 +739,13 @@ var open_user_win = function(current, custom_store) {
             header: 'Permissions',
             dataIndex: 'permissions',
             renderer: list_renderer
-        }, {
-            header: 'Groups',
-            dataIndex: 'groups',
-            renderer: list_renderer
-        }],
+        }, 
+        //{
+            //header: 'Groups',
+            //dataIndex: 'groups',
+            //renderer: list_renderer
+        //}
+        ],
         bbar: [{
             text: 'Add',
             iconCls: 'add_icon',
