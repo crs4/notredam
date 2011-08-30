@@ -29,8 +29,23 @@ var get_user_list = function() {
         }
     });
 
-    var sm = get_list_selectionmodel(['remove_user_menuitem', 'edit_user_menuitem']);
-    sm.singleSelect = true;
+    var sm = new Ext.grid.RowSelectionModel({
+        singleSelect: true,
+        listeners: {
+            selectionchange: function() {
+                if (this.getCount() === 0) {
+                    Ext.getCmp('remove_user_menuitem').disable();
+                    Ext.getCmp('edit_user_menuitem').disable();
+                }                
+                else {
+                    if(this.getSelected().data.name != user)
+                        Ext.getCmp('remove_user_menuitem').enable();
+                    Ext.getCmp('edit_user_menuitem').enable();
+
+                }
+            }
+        }
+    });
 
     var list = new Ext.grid.GridPanel({
         title: 'Users',
@@ -714,6 +729,8 @@ var open_user_win = function(current, custom_store) {
     });
 
     var sm = get_list_selectionmodel(['remove_ws_menuitem', 'edit_ws_menuitem']);
+    
+    
 
     var list = new Ext.grid.GridPanel({
         title: 'Workspaces and permissions',
