@@ -115,14 +115,237 @@ Ext.onReady(function() {
         listeners: {
             load: function(r) {
 
-                var tabs = generate_pref_forms(this, '/save_system_pref/');
-                tabs[0].title = Ext.getCmp('configuration_panel').title;
+        //var tabs = generate_pref_forms(this, '/save_system_pref/');
+        var sm = new Ext.grid.CheckboxSelectionModel({
+            checkOnly: true,
+            listeners: {
+                    selectionchange: function(){
+                    var languages_selected = this.getSelections();                     
+                    Ext.getCmp('default_language').loadLanguages(languages_selected);
+                    },
+                    rowdeselect: function(sm, rowindex, record){
+                        if (this.getCount() == 0)
+                            this.selectRow(rowindex);
+                        
+                        
+                    }
+            }
+        });
+        
+        var default_language;
+        var languages_selected_list = settings_store.query('name', 'supported_languages').items[0].data.value.split(',');
+       
+        console.log('languages_selected_list '+ languages_selected_list);
+        
+        var supported_languages_grid = new Ext.grid.GridPanel({
+            id: 'supported_languages_grid',
+            title: 'Supported Languages', 
+            padding: 'padding-bottom:5px;',           
+            store: new Ext.data.ArrayStore({
+                
+                fields: ["id", "desc"],
+                editable: false,
+                data: settings_store.query('name', 'supported_languages').items[0].data.choices,                
+                listeners: {
+                    load: function(r){
+                        store = this;
+                        default_language_value = this.query('id', settings_store.query('name', 'default_metadata_language').items[0].data.value).items[0].data.id;
+                        data_default_language = [];
+                        Ext.each(languages_selected_list, function(lang_id){
+                            
+                            data_default_language.push([lang_id, store.query('id', lang_id).items[0].data.desc]);
+                        });
+                        console.log('data_default_language');
+                        console.log(data_default_language);
+                        default_language = new Ext.form.ComboBox({
+                            id: 'default_language',
+                            triggerAction: 'all',
+                            fieldLabel: 'Default Language',
+                            mode: 'local',
+                            value: default_language_value,
+                            name: settings_store.query('name', 'default_metadata_language').items[0].data.id,
+                            loadLanguages: function(languages_records){
+                                var tmp = [];
+                                //Ext.each([settings_store.query('name', 'supported_languages').items[0].data.value], function(el){                          
+                                Ext.each(languages_records, function(el){                                                            
+                                    tmp.push([el.data.id, el.data.desc]);                                   
+                                    
+                                });
+                                console.log('tmp');
+                                console.log(tmp);
+                                Ext.getCmp('default_language').getStore().loadData(tmp);
+                            },
+                            forceSelection: true,
+                            store: new Ext.data.ArrayStore({
+                                 fields: ["id", "desc"],
+                                 data: data_default_language
+                            }),
+                            valueField: 'id',
+                            displayField: 'desc',
+                            hiddenName: settings_store.query('name', 'default_metadata_language').items[0].data.id,
+                            listeners: {
+                                afterrender: function(){
+                                    
+                                    //var languages_to_show = [];
+                                    //var languages_selected_id = settings_store.query('name', 'supported_languages').items[0].data.value;
+                                    //Ext.each(settings_store.query('name', 'supported_languages').items[0].data.choices, function(lang){
+                                        //if (lang[0] == languages_selected_id)
+                                            //languages_to_show.push(lang);
+                                    //});
+                                    //
+                                    //this.loadLanguages(languages_to_show);
+                            }
+                            },
+                        });
+                        
+                        
+                    }
+                }
+            }),
+            sm: sm,
+             columns: [
+                sm,                   
+                {id: 'desc', header: 'desc', width: 200, dataIndex: 'desc'},
+               
+            ],
+            hideHeaders: true,
+            viewConfig: {
+            forceFit: true
+            },
+            height: 120,
+            width: 500,
+            listeners: {               
+                viewready: function(){
+                    
+                    var languages_selected = this.getStore().queryBy(function(record){
+                            console.log(record.data.id);
+                            console.log(languages_selected_list.indexOf(record.data.id) >= 0);
+                            return languages_selected_list.indexOf(record.data.id) >= 0;
+                    });
+                    
+                    console.log('languages_selected');
+                    console.log(languages_selected);
+                    //var languages_selected = this.getStore().query('id', settings_store.query('name', 'supported_languages').items[0].data.value).items;
+                    this.getSelectionModel().selectRecords(languages_selected.items);
+                    //this.getSelectionModel().selectAll();
+                    //
+                    //Ext.getCmp('default_language').setValue(languages_selected[0].data.desc);
+                    
+                    
+                }
+            }
+            
+        });
+        
+        date_format = new Ext.form.ComboBox({
+            id: 'date_format',
+            triggerAction: 'all',
+            fieldLabel: 'Date Format',
+            mode: 'local',
+            value: settings_store.query('name', 'date_format').items[0].data.value,
+            name: settings_store.query('name', 'date_format').items[0].data.id,
+            hiddenName: settings_store.query('name', 'date_format').items[0].data.id,
+            forceSelection: true,
+            store: new Ext.data.ArrayStore({
+                 fields: ["id", "desc"],
+                 data: settings_store.query('name', 'date_format').items[0].data.choices
+            }),
+            valueField: 'id',
+            displayField: 'desc',
+            editable: false
+          
+        });
+
+         thumb_caption = new Ext.form.ComboBox({
+            id: 'thumbnail_caption',
+            triggerAction: 'all',
+            fieldLabel: 'Thumbnail Caption',
+            mode: 'local',
+            value: settings_store.query('name', 'thumbnail_caption').items[0].data.value,
+            name: settings_store.query('name', 'thumbnail_caption').items[0].data.id,   
+            hiddenName: settings_store.query('name', 'thumbnail_caption').items[0].data.id,        
+            
+            forceSelection: true,
+            store: new Ext.data.ArrayStore({
+                 fields: ["id", "desc"],
+                 data: settings_store.query('name', 'thumbnail_caption').items[0].data.choices
+            }),
+            valueField: 'id',
+            displayField: 'desc',
+            editable: false
+          
+        });
+        
+        
+        var new_tab = new Ext.FormPanel({
+            frame: true,
+            title: 'Options',
+            id: 'options_form',
+            labelWidth: 200, // label settings here cascade unless overridden
+            items: [supported_languages_grid, default_language, date_format, thumb_caption],
+            url: '/save_system_pref/',
+            buttons: [{
+                text: 'Save',
+                type: 'submit',
+                handler: function(){
+                    //var my_form = Ext.getCmp('options_form').getForm();
+                    var my_form = this.findParentByType('form');  
+                    //console.log(my_form);                  
+                    //var items = my_form.items.items;
+                    //
+                    //for (var i = 0;  i < items.length; i ++){
+                        //if (items[i].getXType() == 'checkboxgroup'){
+                            //var ckboxes = items[i].items.items;
+                            //var values = [];
+                            //for(var j = 0; j< ckboxes.length; j++){
+                                //if(ckboxes[j].getValue()) {
+                                    //values.push(ckboxes[j].getRawValue()) ;
+                                //}
+                            //}
+                            //
+                            //my_form.getForm().baseParams = {};                            
+                            //my_form.getForm().baseParams[items[i].name] = values;
+                        //}
+                            //
+                    //}
+                    
+                    var supported_languages = [];
+                    Ext.each(Ext.getCmp('supported_languages_grid').getSelectionModel().getSelections(), function(lang){
+                        supported_languages.push(lang.data.id);
+                    });
+                    var params = {};
+                    //params[settings_store.query('name', 'supported_languages').items[0].data.id] = supported_languages.join(',');
+                    params[settings_store.query('name', 'supported_languages').items[0].data.id] = supported_languages;
+                     my_form.getForm().submit({
+                         params: params,
+                        
+                        clientValidation: true,
+                        waitMsg: 'Saving...',
+                        success: function(){
+                             Ext.MessageBox.alert('Save', 'Preferences saved successfully.');
+                        }
+                    });
+                
+                }
+            },{
+                text: 'Cancel',
+                handler: function() {
+                
+                    if (on_cancel_func) {
+                        on_cancel_func();
+                    }
+                    var my_win = this.findParentByType('window');
+                    my_win.close();  
+                }
+            }]
+        });             
+                //tabs[0].title = Ext.getCmp('configuration_panel').title;
                 Ext.getCmp('configuration_panel').add({
                         xtype: 'panel',                        
 
                         defaults: {autoScroll:true},
                         layout: 'fit',
-                        items: tabs
+                        items: new_tab
                     });
                 Ext.getCmp('configuration_panel').doLayout();
             }
