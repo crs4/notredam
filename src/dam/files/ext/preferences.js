@@ -295,30 +295,58 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
             }));
         }                    
         else if (pref.data.type == 'multiple_choice'){
-            choices = pref.data.choices;
-            var checkboxes = [];
-            for (var j = 0; j < choices.length; j++){
-                checkboxes.push(
-                    new Ext.form.Checkbox({
-                    checked: pref.data.value.search(choices[j][0]) >= 0,
-                    name: choices[j][1],
-                    boxLabel: choices[j][1],
-                    inputValue: choices[j][0]
-                    })
-                );
-            }
-            var chkboxgroup = new Ext.form.CheckboxGroup({
-                allowBlank: false,
-                fieldLabel :pref.data.caption,
-                items: checkboxes,
-                vertical: true,   
-                name: pref.data.id,
-                msgTarget:'under',
-                columns: 3
-
+            //choices = pref.data.choices;
+            //var checkboxes = [];
+            //for (var j = 0; j < choices.length; j++){
+                //checkboxes.push(
+                    //new Ext.form.Checkbox({
+                    //checked: pref.data.value.search(choices[j][0]) >= 0,
+                    //name: choices[j][1],
+                    //boxLabel: choices[j][1],
+                    //inputValue: choices[j][0]
+                    //})
+                //);
+            //}
+            //var chkboxgroup = new Ext.form.CheckboxGroup({
+                //allowBlank: false,
+                //fieldLabel :pref.data.caption,
+                //items: checkboxes,
+                //vertical: true,   
+                //name: pref.data.id,
+                //msgTarget:'under',
+                //columns: 3
+//
+            //});
+//
+            //fields[component].push(chkboxgroup);
+            var sm = new Ext.grid.CheckboxSelectionModel({
+                checkOnly: true
             });
-
-            fields[component].push(chkboxgroup);
+            var default_value = new Ext.grid.CheckboxSelectionModel({
+                
+            });
+            
+            var grid = new Ext.grid.GridPanel({
+                title: pref.data.caption,
+                store: new Ext.data.ArrayStore({
+                    fields: ["id", "desc"],
+                    data: pref.data.choices
+                }),
+                sm: sm,
+                 columns: [
+                    sm,                   
+                    {id: 'desc', header: 'desc', width: 200, dataIndex: 'desc'},
+                    default_value
+                ],
+                hideHeaders: true,
+                viewConfig: {
+                forceFit: true
+                },
+                height: 120,
+                width: 500
+                
+            });
+            fields[component].push(grid);
         }
     });    
 
