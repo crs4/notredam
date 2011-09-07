@@ -191,19 +191,6 @@ var cls_audio = 'loadPlayer';
 
 var cue_point_list = [];
 
-if (window['loadFirebugConsole']) {
-    window.loadFirebugConsole();
-} else {
-    if (!window['console']) {
-        window.console = {};
-        var f = function func(arg){};
-        window.console.info = f;
-        window.console.log = f;
-        window.console.warn = f;
-        window.console.error = f;
-    }
-}
-
 Ext.BLANK_IMAGE_URL = '/files/images/s.gif';
 
 function openCuePointEditor() {
