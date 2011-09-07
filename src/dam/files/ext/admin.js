@@ -120,8 +120,9 @@ Ext.onReady(function() {
             checkOnly: true,
             listeners: {
                     selectionchange: function(){
-                    var languages_selected = this.getSelections();                     
-                    Ext.getCmp('default_language').loadLanguages(languages_selected);
+                        console.log('selectionchange');
+                        var languages_selected = this.getSelections();                     
+                        Ext.getCmp('default_language').loadLanguages(languages_selected);
                     },
                     rowdeselect: function(sm, rowindex, record){
                         if (this.getCount() == 0)
@@ -134,8 +135,6 @@ Ext.onReady(function() {
         
         var default_language;
         var languages_selected_list = settings_store.query('name', 'supported_languages').items[0].data.value.split(',');
-       
-        console.log('languages_selected_list '+ languages_selected_list);
         
         var supported_languages_grid = new Ext.grid.GridPanel({
             id: 'supported_languages_grid',
@@ -155,8 +154,7 @@ Ext.onReady(function() {
                             
                             data_default_language.push([lang_id, store.query('id', lang_id).items[0].data.desc]);
                         });
-                        console.log('data_default_language');
-                        console.log(data_default_language);
+                       
                         default_language = new Ext.form.ComboBox({
                             id: 'default_language',
                             triggerAction: 'all',
@@ -165,15 +163,25 @@ Ext.onReady(function() {
                             value: default_language_value,
                             name: settings_store.query('name', 'default_metadata_language').items[0].data.id,
                             loadLanguages: function(languages_records){
+                                console.log('languages_records');
+                                console.log(languages_records);
                                 var tmp = [];
                                 //Ext.each([settings_store.query('name', 'supported_languages').items[0].data.value], function(el){                          
                                 Ext.each(languages_records, function(el){                                                            
                                     tmp.push([el.data.id, el.data.desc]);                                   
                                     
                                 });
-                                console.log('tmp');
-                                console.log(tmp);
-                                Ext.getCmp('default_language').getStore().loadData(tmp);
+                              
+                                this.getStore().loadData(tmp);
+                                console.log('tmp ' + tmp);
+                                console.log('this.getValue() ' + this.getValue());
+                               var current_record =  this.getStore().query('id', this.getValue()).items;
+                               console.log('current_record.length');
+                               console.log(current_record.length);
+                              
+                               
+                               if (current_record.length == 0)
+                                    this.setValue(tmp[0][0]);
                             },
                             forceSelection: true,
                             store: new Ext.data.ArrayStore({
@@ -217,20 +225,13 @@ Ext.onReady(function() {
             listeners: {               
                 viewready: function(){
                     
-                    var languages_selected = this.getStore().queryBy(function(record){
-                            console.log(record.data.id);
-                            console.log(languages_selected_list.indexOf(record.data.id) >= 0);
+                    var languages_selected = this.getStore().queryBy(function(record){                            
                             return languages_selected_list.indexOf(record.data.id) >= 0;
-                    });
-                    
-                    console.log('languages_selected');
-                    console.log(languages_selected);
-                    //var languages_selected = this.getStore().query('id', settings_store.query('name', 'supported_languages').items[0].data.value).items;
+                    });                    
+                   
+                    this.getSelectionModel().suspendEvents();
                     this.getSelectionModel().selectRecords(languages_selected.items);
-                    //this.getSelectionModel().selectAll();
-                    //
-                    //Ext.getCmp('default_language').setValue(languages_selected[0].data.desc);
-                    
+                    this.getSelectionModel().resumeEvents();
                     
                 }
             }
