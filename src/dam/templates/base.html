@@ -20,7 +20,22 @@
 	{%block js%}
 	
 	{%endblock%}
-	
+        
+        <script type="text/javascript">
+            if (window['loadFirebugConsole']) {
+                window.loadFirebugConsole();
+            } else {
+                if (!window['console']) {
+                    window.console = {};
+                    var f = function func(arg){};
+                    window.console.info = f;
+                    window.console.log = f;
+                    window.console.warn = f;
+                    window.console.error = f;
+                }
+            }
+        </script>
+        
     	<script type="text/javascript">
             var user = "{{user.username}}";
     		{%block header_info%}
