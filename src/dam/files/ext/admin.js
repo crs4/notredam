@@ -361,7 +361,6 @@ Ext.onReady(function() {
 
     var user_panel = get_user_list();
     var ws_panel = get_ws_list();
-    var bk_panel = get_bk_panel();
             
     var viewport = new Ext.Viewport({
         layout:'border',
@@ -394,7 +393,7 @@ Ext.onReady(function() {
                     iconCls: 'x-icon-configuration',
                     style: 'padding: 10px;',
                     items: [user_panel]
-                }, 
+                } 
                 //{
                     //layout: 'fit',
                     //title: 'Workspaces',
@@ -402,13 +401,7 @@ Ext.onReady(function() {
                     //style: 'padding: 10px;',
                     //items: [ws_panel]
                 //},
-                {
-                    layout: 'fit',
-                    title: 'Backup',
-                    iconCls: 'x-icon-configuration',
-                    style: 'padding: 10px;',
-                    items: [bk_panel]
-                }]
+                ]
             }, {
                 listeners: {
                     tabchange: move_to_first_tab
