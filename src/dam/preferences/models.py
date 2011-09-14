@@ -26,6 +26,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from dam.workspace.models import DAMWorkspace as Workspace
 
+import logging
+logger = logging.getLogger('dam')
+
 class SettingValue(models.Model):
     """
     Setting available choices (used only if the setting type is one between choice and multiple_choice)
@@ -95,7 +98,9 @@ class SettingManager(models.Manager):
                 if setting.type == 'choice': 
                     setting_value = request.POST.get(key)
                     if setting_value :
-                        choice = setting.choices.get(name = setting_value)
+                        logger.debug('setting_value %s'%setting_value)
+                        #choice = setting.choices.get(name = setting_value)
+                        choice = SettingValue.objects.get(name = setting_value)
                         choices.append(choice)
                         value = choice.name
     

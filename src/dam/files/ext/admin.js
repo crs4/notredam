@@ -291,6 +291,26 @@ Ext.onReady(function() {
           
         });
         
+        thumb_caption = new Ext.form.ComboBox({
+            id: 'app_lang',
+            triggerAction: 'all',
+            fieldLabel: 'Application_language',
+            mode: 'local',
+            value: settings_store.query('name', 'application_supported_languages').items[0].data.value,
+            name: settings_store.query('name', 'application_supported_languages').items[0].data.id,   
+            hiddenName: settings_store.query('name', 'application_supported_languages').items[0].data.id,        
+            
+            forceSelection: true,
+            store: new Ext.data.ArrayStore({
+                 fields: ["id", "desc"],
+                 data: settings_store.query('name', 'application_supported_languages').items[0].data.choices
+            }),
+            valueField: 'id',
+            displayField: 'desc',
+            editable: false
+          
+        });
+        
         
         var new_tab = new Ext.FormPanel({
             frame: true,
