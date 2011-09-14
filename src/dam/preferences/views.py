@@ -107,7 +107,16 @@ def save_system_pref(request):
     Save system preference (dam admin)
     """
     try:
-
+        try:
+            supported_languages = DAMComponentSetting.objects.get(name = 'supported_languages')
+            default_language = DAMComponentSetting.objects.get(name = 'default_metadata_language')
+            new_supported_languages = SettingValue.objects.filter(name__in = request.POST.getlist('pref__' + str(supported_languages.pk)))
+            default_language.choices.remove(*default_language.choices.all())
+            default_language.choices.add(*new_supported_languages)
+            
+        except DAMComponentSetting.DoesNotExist:
+            pass
+            
         DAMComponentSetting.objects.save_preference(request, None)
                             
         return HttpResponse(simplejson.dumps({'success': True}))
