@@ -49,10 +49,5 @@ urlpatterns = patterns('',
     (r'^dam_admin/get_ws_groups/$', 'dam.admin.views.damadmin_get_ws_groups'),
     (r'^dam_admin/save_ws/$', 'dam.admin.views.damadmin_save_ws'),
     (r'^dam_admin/delete_ws/$', 'dam.admin.views.damadmin_delete_ws'),
-    (r'^dam_admin/get_list_file_backup/$', 'dam.admin.views.damadmin_get_list_file_backup'),
-    (r'^dam_admin/download_file_backup/(.+)/$', 'dam.admin.views.damadmin_download_file_backup'),
-    (r'^dam_admin/delete_file_backup/$', 'dam.admin.views.damadmin_delete_file_backup'),
-    (r'^dam_admin/create_file_backup/$', 'dam.admin.views.damadmin_create_file_backup'),
-    
 
 )

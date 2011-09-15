@@ -20,7 +20,7 @@ var get_user_list = function() {
     var store = new Ext.data.JsonStore({
         autoDestroy: true,
         url: '/dam_admin/get_user_list/',
-        fields: ["id", "name", 'is_staff', 'is_active', 'email', 'first_name', 'last_name'],
+        fields: ["id", "name", 'is_staff', 'is_superuser', 'last_login', 'date_joined', 'is_active', 'email', 'first_name', 'last_name'],
         root: 'elements',
         autoLoad: true,
         sortInfo: {
@@ -29,7 +29,23 @@ var get_user_list = function() {
         }
     });
 
-    var sm = get_list_selectionmodel(['remove_user_menuitem', 'edit_user_menuitem']);
+    var sm = new Ext.grid.RowSelectionModel({
+        singleSelect: true,
+        listeners: {
+            selectionchange: function() {
+                if (this.getCount() === 0) {
+                    Ext.getCmp('remove_user_menuitem').disable();
+                    Ext.getCmp('edit_user_menuitem').disable();
+                }                
+                else {
+                    if(this.getSelected().data.name != user)
+                        Ext.getCmp('remove_user_menuitem').enable();
+                    Ext.getCmp('edit_user_menuitem').enable();
+
+                }
+            }
+        }
+    });
 
     var list = new Ext.grid.GridPanel({
         title: 'Users',
@@ -46,16 +62,18 @@ var get_user_list = function() {
                 open_admin_editor(this.getId(), 'User', open_user_win);
             }
         },
-        columns: [sm, {
+        columns: [
+            //sm, 
+            {
             header: 'UserName',
             dataIndex: 'name'
         }, {
-            header: 'Active member',
+            header: 'Active account',
             dataIndex: 'is_active',
             renderer: bool_renderer
         },{
-            header: 'Staff member',
-            dataIndex: 'is_staff',
+            header: 'Administrator',
+            dataIndex: 'is_superuser',
             renderer: bool_renderer
         }, {
             header: 'First name',
@@ -63,10 +81,21 @@ var get_user_list = function() {
         }, {
             header: 'Last name',
             dataIndex: 'last_name'
-        }, {
+        }, 
+        {
             header: 'Email',
             dataIndex: 'email'
-        }],
+        },
+        {
+            header: 'Created on',
+            dataIndex: 'date_joined'
+        },
+        {
+            header: 'Last login',
+            dataIndex: 'last_login'
+        }
+        
+        ],
         bbar: [{
             text: 'Add',
             iconCls: 'add_icon',
@@ -81,8 +110,9 @@ var get_user_list = function() {
             disabled: true,
             handler: function() {
                 Ext.Msg.confirm('User Deletion', 'User deletion cannot be undone, do you want to proceed?', 
-                function(){
-                    remove_from_list('users_list', '/dam_admin/delete_user/', 'Remove User', 'User(s) removed successfully.');
+                function(btn){
+                    if (btn == 'yes')
+                        remove_from_list('users_list', '/dam_admin/delete_user/', 'Remove User', 'User(s) removed successfully.');
                 });
                 
             }
@@ -370,7 +400,9 @@ var open_user_ws_win = function(current, my_stores) {
                         }
                     }, 
                     sm: group_sm, 
-                    columns: [group_sm, {
+                    columns: [
+                        group_sm, 
+                        {
                         header: 'Group',
                         dataIndex: 'group'
                     }, {
@@ -565,14 +597,18 @@ var open_user_win = function(current, custom_store) {
         pwd = '';
         first_name = '';
         last_name = '';
+        is_superuser = false;
+        is_active = true;
         email = 'email@domain.com';
         success_msg = 'User added successfully.';
     }
     else {
-        win_title = 'Edit User';
+        win_title = 'User account editor';
         submit_url = '/dam_admin/save_user/';
         id = current.get('id');
         name = current.get('name');
+        is_superuser = current.get('is_superuser');
+        is_active = current.get('is_active');
         pwd = '';
         first_name = current.get('first_name');
         last_name = current.get('last_name');
@@ -581,9 +617,10 @@ var open_user_win = function(current, custom_store) {
     }
     
     var form_items = [{
-            fieldLabel: 'UserName',
+            fieldLabel: 'Username',
             xtype: 'textfield',
             id: 'username',
+            allowBlank: false,
             value: name,
             width: 300
         }, {
@@ -603,15 +640,34 @@ var open_user_win = function(current, custom_store) {
         }, {
             fieldLabel: 'Email',
             xtype: 'textfield',
-
+            allowBlank: false,
             name: 'email',
             vtype:'email',
             value: email,
             width: 300    
-        }];
-
-    if (!current) {
-        form_items.push({
+        },
+        
+        ];
+        
+        console.log('is_superuser ' + is_superuser);
+        if (name != user){
+            form_items.push({
+                fieldLabel: 'Admin',
+                xtype: 'checkbox',                
+                name: 'is_superuser',
+                checked: is_superuser
+            });
+            
+            form_items.push({
+                fieldLabel: 'Active',
+                xtype: 'checkbox',
+                
+                name: 'is_active',
+                checked: is_active
+            });
+        }
+            
+        new_password = {
             fieldLabel: 'New Password',
             xtype: 'textfield',
             id: 'pwd',
@@ -619,8 +675,8 @@ var open_user_win = function(current, custom_store) {
             inputType: 'password',
             vtype: 'password',
             width: 300
-        });
-        form_items.push({
+        };
+        confirm_password = {
             fieldLabel: 'Confirm Password',
             xtype: 'textfield',
             id: 'pass-cfrm',
@@ -628,14 +684,36 @@ var open_user_win = function(current, custom_store) {
             initialPassField: 'pwd',
             inputType: 'password',
             width: 300       
-        });
+        };
+        
+        if (current)
+            form_items.push({
+                xtype: 'fieldset',
+                title: 'Set Password',
+                checkboxToggle: true,
+                collapsed: true,
+                items: [new_password, confirm_password]
+            });
+            
+        else{
+            new_password.allowBlank = false;
+            new_password.listeners = {
+                afterrender: function(){
+                    this.clearInvalid();
+                }
+            };
+            form_items.push(new_password);
+            form_items.push(confirm_password);
+        }        
+            
+
 //         form_items.push({
 //             fieldLabel: 'Create workspace',
 //             xtype: 'checkbox',
 //             id: 'create_ws',
 //             checked: true
 //         });        
-    }
+    
         
     var store = new Ext.data.JsonStore({
         autoDestroy: true,
@@ -651,6 +729,8 @@ var open_user_win = function(current, custom_store) {
     });
 
     var sm = get_list_selectionmodel(['remove_ws_menuitem', 'edit_ws_menuitem']);
+    
+    
 
     var list = new Ext.grid.GridPanel({
         title: 'Workspaces and permissions',
@@ -676,11 +756,13 @@ var open_user_win = function(current, custom_store) {
             header: 'Permissions',
             dataIndex: 'permissions',
             renderer: list_renderer
-        }, {
-            header: 'Groups',
-            dataIndex: 'groups',
-            renderer: list_renderer
-        }],
+        }, 
+        //{
+            //header: 'Groups',
+            //dataIndex: 'groups',
+            //renderer: list_renderer
+        //}
+        ],
         bbar: [{
             text: 'Add',
             iconCls: 'add_icon',

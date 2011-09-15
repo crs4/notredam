@@ -39,12 +39,12 @@ def get_admin_settings(request):
     """
     Get system settings (dam admin)
     """
-    settings = DAMComponentSetting.objects.all()
+    settings = DAMComponentSetting.objects.all()    
     data = {'prefs':[]}
     for s in settings:
         choices = [[c.name, c.description] for c in s.choices.all()]
         value = s.get_user_setting_by_level()
-        data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': s.component.name,  'type': s.type,  'value': value,  'choices':choices})
+        data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': None,  'type': s.type,  'value': value,  'choices':choices})
     return HttpResponse(simplejson.dumps(data))    
 
 @staff_member_required
@@ -524,7 +524,7 @@ def damadmin_get_user_list(request):
     data = {'elements':[]}
     users = User.objects.all()
     for s in users: 
-        data['elements'].append({'id':s.id, 'name':s.username, 'is_staff': s.is_staff, 'is_active': s.is_active, 'email': s.email, 'first_name': s.first_name, 'last_name': s.last_name })
+        data['elements'].append({'id':s.id, 'name':s.username, 'is_superuser': s.is_superuser,'is_staff': s.is_staff, 'is_active': s.is_active, 'email': s.email, 'first_name': s.first_name, 'last_name': s.last_name, 'last_login': s.last_login.strftime("%d/%m/%y %H:%m:%S"), 'date_joined': s.date_joined.strftime("%d/%m/%y %H:%m:%S")})
         
     return HttpResponse(simplejson.dumps(data))    
 
@@ -569,6 +569,9 @@ def damadmin_save_user(request):
     password = request.POST.get('pwd', None)
     first_name = request.POST.get('first_name', '')
     last_name = request.POST.get('last_name', '')
+    is_staff = request.POST.get('is_staff', False)
+    is_superuser = request.POST.get('is_superuser', False)
+    is_active = request.POST.get('is_active', False)
 
     permissions = simplejson.loads(request.POST.get('permissions'))
 
@@ -589,7 +592,10 @@ def damadmin_save_user(request):
         wss = Workspace.objects.filter(members=user)
         
         for ws in wss:        
-            ws.members.remove(user)    
+            ws.members.remove(user)  
+    
+        if password:
+            user.set_password(password)
 
     else:
 
@@ -608,7 +614,15 @@ def damadmin_save_user(request):
     user.first_name = first_name
     user.last_name = last_name
     user.email = email
-
+    
+    if user != request.user: #to avoid removing ourself from administration
+        logger.info('is_superuser %s'%is_superuser)
+        logger.info('is_staff %s'%is_staff)
+        user.is_staff = is_staff is not False
+        user.is_superuser = is_superuser is not False
+        user.is_active = is_active is not False
+        
+        logger.info('user.is_superuser %s'%user.is_superuser)
     user.save()
     
     for p in permissions:
@@ -794,202 +808,3 @@ def damadmin_save_ws(request):
                 continue
 
     return HttpResponse(simplejson.dumps({'success': True}))     
-
-@staff_member_required
-def damadmin_get_list_file_backup(request):
-
-    resp = {'file_backup':[]}
-    if (os.path.exists(BACKUP_PATH)):
-        files = []
-        for f in os.listdir(BACKUP_PATH):
-            if os.path.isfile(BACKUP_PATH + os.path.sep + f):
-                data = time.ctime(os.path.getctime(BACKUP_PATH + os.path.sep + f))
-                files.append({'file_name' : f, 'data' : data})
-        for f in files:
-            (shortname, extension) = os.path.splitext(f['file_name'])
-            if extension == '.tar':
-                resp['file_backup'].append(f)
-    else:
-        resp['file_backup'].append({})
-
-    return HttpResponse(simplejson.dumps(resp))
-
-@staff_member_required
-def damadmin_download_file_backup(request, filename):
-    from django.views.static import serve
-    
-
-    response = serve(request, filename, document_root = BACKUP_PATH)
-    
-    response['Content-Disposition'] = 'attachment; filename=%s'%filename
-
-    logger.info("\n Filename: %s\n" %filename)
-    
-    return response
-
-@staff_member_required
-def damadmin_delete_file_backup(request):
-    
-    try:
-        filename = request.POST.get('filename')
-        filename_path = os.path.join(BACKUP_PATH, filename)
-        os.remove(filename_path)
-        return HttpResponse(simplejson.dumps({'success': True}))
-    except Exception, ex:
-        logger.exception(ex)
-        return HttpResponse(simplejson.dumps({'success': False}))
-
-
-@staff_member_required
-def damadmin_create_file_backup(request):
-    from api.views import Auth, WorkspaceResource, ItemResource, KeywordsResource
-    import tempfile
-    import tarfile
-    from django.utils.simplejson.decoder import JSONDecoder
-    from django.utils.simplejson.encoder import JSONEncoder    
-
-    try:
-        json_enc = JSONEncoder()
-         
-        name = request.POST.get('name')
-        if not os.path.exists(BACKUP_PATH):
-            os.mkdir(BACKUP_PATH)
-        
-        archive_name = name + '.tar'
-        backup_file = os.path.join(BACKUP_PATH,archive_name)
-        
-        basedir = tempfile.mkdtemp()
-        f = file(os.path.join(basedir, 'users.json'), 'w')
-#User
-        resp = Auth()._get_users()
-        logger.info(resp)
-        f.write(json_enc.encode(resp))
-        f.close()
-
-        for w in WorkspaceResource()._get_list(Workspace.objects.all()):
-            #Backup workspace
-            logger.info("Export workspace %s" % w['id'])
-            workspacedir = os.path.join(basedir,'w_' + str(w['id']))
-            os.mkdir(workspacedir)
-            
-            items = WorkspaceResource()._get_items(w['id'])
-    
-    
-            logger.info("workspace.json")
-            f = file(os.path.join(workspacedir, 'workspace.json'), 'w')
-            f.write(json_enc.encode(WorkspaceResource()._read(w['id'])))
-            f.close()
-    
-            #Backup collections
-            logger.info("collections.json")
-            f = file(os.path.join(workspacedir, 'collections.json'),'w')
-            f.write(json_enc.encode(WorkspaceResource()._get_collections(w['id'])))    
-            f.close()
-    
-            #Backup keywords
-            logger.info("keywords.json")
-            f = file(os.path.join(workspacedir, 'keywords.json'),'w')
-#            logger.info("\n\n\n %s " %KeywordsResource()._read(User.objects.get(pk = request.session['_auth_user_id']), w['id'], None, True))
-            f.write(json_enc.encode(KeywordsResource()._read(User.objects.get(pk = request.session['_auth_user_id']), w['id'], None, True)))
-            f.close()
-            
-            #Backup renditions configuration
-            logger.info( "renditions.json")
-            f = file(os.path.join(workspacedir, 'renditions.json'),'w')
-            f.write(json_enc.encode(WorkspaceResource()._get_variants(w['id'])))
-            f.close()
-
-            #Backup smartfolder configuration
-            logger.info("smartfolders.json")
-            f = file(os.path.join(workspacedir, 'smartfolders.json'),'w')
-            f.write(json_enc.encode(WorkspaceResource()._get_smartfolders(w['id'])))
-            f.close()
-    
-            #_workspace_get_members
-            logger.info("members.json")
-            f = file(os.path.join(workspacedir, 'members.json'),'w')
-            f.write(json_enc.encode(WorkspaceResource()._get_members((w['id']))))
-            f.close()
-    
-            
-            #Backup items
-            logger.info("items %s" %items)
-            for i in items:
-                #Backup item's metadata
-                item = ItemResource()._read(User.objects.get(pk = request.session['_auth_user_id']), i, True, w['id'], [])
-               
-                logger.debug("===========")
-                logger.debug("%s" %item['id'])
-    
-
-                itemdir = os.path.join(workspacedir, 'i_' + str(item['id']))
-                os.mkdir(itemdir)    
-                itemjson = json_enc.encode(item)
-                f = file(os.path.join(itemdir,'item.json'),'w')
-                f.write(itemjson)
-                f.close()
-
-                #read item's rendition
-                f = file(os.path.join(itemdir,'rendition.json'),'w')
-                f.write(json_enc.encode(WorkspaceResource()._get_variants(w['id'])))
-                f.close()        
-               
-        logger.debug('backup_file %s'%backup_file)
-        t = tarfile.open(backup_file, 'w')
-        t.add(basedir,arcname='backup')
-        t.close()
-
-        return HttpResponse(simplejson.dumps({'success': True}))
-
-    except Exception, ex:
-        logger.exception(ex)
-        return HttpResponse(simplejson.dumps({'success': False}))  
-    
-
-#@staff_member_required
-#def damadmin_create_file_backup(request):      
-#    import subprocess
-#    
-#    try:
-#        name = request.POST.get('name')
-#        #test if exist folder BACKUP_PATH
-#        if not os.path.exists(BACKUP_PATH):
-#            os.mkdir(BACKUP_PATH)
-#    except Exception, ex:
-#        logger.exception(ex)
-#        return HttpResponse(simplejson.dumps({'success': False}))  
-#
-#    try:
-##        mycmd = os.path.join(INSTALLATIONPATH,'api/fixtures/test_data.json')
-##        arg = []
-##        arg.append("python ")
-##        arg.append("%s/manage.py loaddata"%INSTALLATIONPATH)
-##        arg.append("%s"%mycmd)
-##        logger.info('arg %s' %arg)
-##        retcode = subprocess.call(arg)
-#        mycmd = os.path.join(INSTALLATIONPATH,'migration_scripts/ndexport.py')
-#        if os.path.exists(BACKUP_PATH) and os.path.exists(mycmd):
-#            arg = []
-#            arg.append("python")
-#            arg.append("%s"%mycmd)
-#            arg.append('-a')
-#            arg.append("%s" %BACKUP_PATH)
-#            arg.append('-f')
-#            arg.append(name)
-#            arg.append('-u')
-#            arg.append('admin')
-#            arg.append('-p')
-#            arg.append('notredam')
-#            arg.append('-m')
-#            logger.info('arg %s' %arg)
-#            retcode = subprocess.call(arg)
-#            if retcode < 0:
-#                logger.info("Child was terminated by signal %s" %retcode)
-#            else:
-#                logger.info("Child returned %s" %retcode)
-#            return HttpResponse(simplejson.dumps({'success': True}))
-#        else:
-#            return HttpResponse(simplejson.dumps({'success': False}))               
-#    except OSError, e:
-#        logger.exception( "Execution failed: %s" %e)
-#        return HttpResponse(simplejson.dumps({'success': False}))  
