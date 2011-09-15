@@ -66,7 +66,7 @@ def class_get(request, class_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
-    return HttpResponse(_kbclass_to_json(cls))
+    return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls)))
 
 
 @login_required
@@ -81,7 +81,7 @@ def object_get(request, object_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
-    return HttpResponse(_kbobject_to_json(cls))
+    return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
 
 
 ###############################################################################
@@ -141,13 +141,13 @@ def _kb_session():
     return kb_ses.Session(connstr)
     
 
-def _kbclass_to_json(cls):
+def _kbclass_to_dict(cls):
     '''
-    Create a JSON representation of the given KB class
+    Create a JSON'able dictionary representation of the given KB class
     '''
     clsattrs = {}
     for a in cls.attributes:
-        clsattrs[a.id] = _kbattr_to_json(a)
+        clsattrs[a.id] = _kbattr_to_dict(a)
 
     clsdict = {'id'          : cls.id,
                'name'        : cls.name,
@@ -156,12 +156,12 @@ def _kbclass_to_json(cls):
                'notes'       : cls.notes,
                'attributes'  : clsattrs}
 
-    return simplejson.dumps(clsdict)
+    return clsdict
 
 
-# Mapping between attribute type and functions returning a JSON
-# representation of the attribute itself
-_kb_attrs_json_map = {kb_attrs.Boolean : lambda a:
+# Mapping between attribute type and functions returning a JSON'able
+# dictionary representation of the attribute itself
+_kb_attrs_dict_map = {kb_attrs.Boolean : lambda a:
                           dict([['type',   'bool'],
                                 ['default', a.default]]
                                + _std_attr_fields(a)),
@@ -213,11 +213,11 @@ _kb_attrs_json_map = {kb_attrs.Boolean : lambda a:
                                + _std_attr_fields(a))                         
                       }
 
-def _kbattr_to_json(attr):
+def _kbattr_to_dict(attr):
     '''
     Create a string representation of a KB class attribute descriptor
     '''
-    return _kb_attrs_json_map[type(attr)](attr)
+    return _kb_attrs_dict_map[type(attr)](attr)
 
 
 def _std_attr_fields(a):
@@ -230,13 +230,13 @@ def _std_attr_fields(a):
             ['notes',       a.notes]] 
 
 
-def _kbobject_to_json(obj):
+def _kbobject_to_dict(obj):
     '''
-    Create a JSON representation of the given KB object
+    Create a JSON'able dictionary representation of the given KB object
     '''
     objattrs = {}
     for a in getattr(obj, 'class').attributes:
-        objattrs[a.id] = _kbobjattr_to_json(a, getattr(obj, a.id))
+        objattrs[a.id] = _kbobjattr_to_dict(a, getattr(obj, a.id))
 
     objdict = {'id'          : obj.id,
                'name'        : obj.name,
@@ -244,12 +244,12 @@ def _kbobject_to_json(obj):
                'notes'       : obj.notes,
                'attributes'  : objattrs}
 
-    return simplejson.dumps(objdict)
+    return objdict
 
 
-# Mapping between object attribute type and functions returning a JSON
-# representation of the attribute value
-_kb_objattrs_json_map = {kb_attrs.Boolean : lambda a, v: v,
+# Mapping between object attribute type and functions returning a
+# JSON'able dictionary representation of the attribute value
+_kb_objattrs_dict_map = {kb_attrs.Boolean : lambda a, v: v,
                          kb_attrs.Integer : lambda a, v: v,
                          kb_attrs.Real    : lambda a, v: v,
                          kb_attrs.String  : lambda a, v: v,
@@ -262,8 +262,8 @@ _kb_objattrs_json_map = {kb_attrs.Boolean : lambda a, v: v,
                              [o.id for o in v]
                          }
 
-def _kbobjattr_to_json(attr, val):
+def _kbobjattr_to_dict(attr, val):
     '''
     Create a string representation of a KB class attribute descriptor
     '''
-    return _kb_objattrs_json_map[type(attr)](attr, val)
+    return _kb_objattrs_dict_map[type(attr)](attr, val)
