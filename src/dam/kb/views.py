@@ -84,6 +84,25 @@ def object_get(request, object_id):
     return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
 
 
+@login_required
+def class_objects(request, class_id):
+    return _dispatch(request, {'GET' : class_objects_get},
+                     {'class_id' : class_id})
+
+
+def class_objects_get(request, class_id):
+    ses = _kb_session()
+    try:
+        cls = ses.class_(class_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    objs = ses.objects(class_=cls.make_python_class())
+    obj_dicts = [_kbobject_to_dict(o) for o in objs]
+
+    return HttpResponse(simplejson.dumps(obj_dicts))
+
+
 ###############################################################################
 # Internal helper functions
 ###############################################################################
