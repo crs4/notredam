@@ -26,7 +26,7 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('kb',
-    #(r'class/$', 'views.class_index'),
+    (r'class/$', 'views.class_index'),
     (r'class/(?P<class_id>\w+)$', 'views.class_'),
     (r'class/(?P<class_id>\w+)/objects$', 'views.class_objects'),
     #(r'object/$', 'kb.views.objects_index'),

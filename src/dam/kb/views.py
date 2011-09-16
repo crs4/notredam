@@ -55,6 +55,18 @@ def index_put(request):
 
 
 @login_required
+def class_index(request):
+    return _dispatch(request, {'GET' : class_index_get})
+
+
+def class_index_get(request):
+    ses = _kb_session()
+    cls_dicts = [_kbclass_to_dict(c) for c in ses.classes()]
+
+    return HttpResponse(simplejson.dumps(cls_dicts))
+
+
+@login_required
 def class_(request, **kwargs):
     return _dispatch(request, {'GET' : class_get}, kwargs)
 
