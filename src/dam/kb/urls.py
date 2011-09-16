@@ -31,5 +31,4 @@ urlpatterns = patterns('kb',
     (r'class/(?P<class_id>\w+)/objects/?$', 'views.class_objects'),
     (r'object/?$', 'views.object_index'),
     (r'object/(?P<object_id>\w+)/?$', 'views.object_'),
-    (r'$', 'views.index'),
 )
