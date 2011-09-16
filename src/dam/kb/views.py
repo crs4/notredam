@@ -82,6 +82,18 @@ def class_get(request, class_id):
 
 
 @login_required
+def object_index(request):
+    return _dispatch(request, {'GET' : object_index_get})
+
+
+def object_index_get(request):
+    ses = _kb_session()
+    obj_dicts = [_kbobject_to_dict(o) for o in ses.objects()]
+
+    return HttpResponse(simplejson.dumps(obj_dicts))
+
+
+@login_required
 def object_(request, **kwargs):
     return _dispatch(request, {'GET' : object_get}, kwargs)
 

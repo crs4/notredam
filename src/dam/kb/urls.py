@@ -29,7 +29,7 @@ urlpatterns = patterns('kb',
     (r'class/?$', 'views.class_index'),
     (r'class/(?P<class_id>\w+)/?$', 'views.class_'),
     (r'class/(?P<class_id>\w+)/objects/?$', 'views.class_objects'),
-    #(r'object/$', 'kb.views.objects_index'),
+    (r'object/?$', 'views.object_index'),
     (r'object/(?P<object_id>\w+)/?$', 'views.object_'),
     (r'$', 'views.index'),
 )
