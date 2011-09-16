@@ -135,6 +135,10 @@ def _dispatch(request, method_fun_dict, kwargs=None):
     argument (kwargs) is not None, it is assumed to be a dictionary
     which will be expanded into additional keyword arguments for the
     function being called.
+
+    The Django request passed to the function being invoked will also
+    be enriched with an additional _vars attribute, containing the
+    method-related variables (GET, POST, etc.)
     '''
     (method, mvars) = _infer_method(request)
     if (method not in method_fun_dict):
