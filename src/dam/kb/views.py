@@ -33,28 +33,6 @@ import tinykb.attributes as kb_attrs
 import util
 
 @login_required
-def index(request):
-    '''
-    Main URL, supporting 
-    '''
-    return _dispatch(request, {'PUT': index_put})
-
-
-def index_get(request):
-    '''
-    Just a debugging function
-    '''
-    return HttpResponse(simplejson.dumps({'hello': 'world'}))
-
-
-def index_put(request):
-    '''
-    Insert a new class definition in the knowledge base
-    '''
-    raise NotImplementedError
-
-
-@login_required
 def class_index(request):
     return _dispatch(request, {'GET' : class_index_get})
 
