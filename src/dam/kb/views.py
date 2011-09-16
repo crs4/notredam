@@ -149,9 +149,14 @@ def _kbclass_to_dict(cls):
     for a in cls.attributes:
         clsattrs[a.id] = _kbattr_to_dict(a)
 
+    if (cls.superclass.id == cls.id):
+        superclass = None
+    else:
+        superclass = cls.superclass.id
+
     clsdict = {'id'          : cls.id,
                'name'        : cls.name,
-               'superclass'  : cls.superclass.id,
+               'superclass'  : superclass,
                'can_catalog' : cls.can_catalog,
                'notes'       : cls.notes,
                'attributes'  : clsattrs}
