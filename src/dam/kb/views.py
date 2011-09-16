@@ -34,6 +34,9 @@ import util
 
 @login_required
 def class_index(request):
+    '''
+    GET: return the list of classes defined in the knowledge base.
+    '''
     return _dispatch(request, {'GET' : class_index_get})
 
 
@@ -46,6 +49,11 @@ def class_index_get(request):
 
 @login_required
 def class_(request, **kwargs):
+    '''
+    GET: return a specific class from the knowledge base.
+    POST: update an existing class in the knowledge base.
+    DELETE: delete and existing class from the knowledge base.
+    '''
     return _dispatch(request, {'GET' : class_get}, kwargs)
 
 
@@ -61,6 +69,9 @@ def class_get(request, class_id):
 
 @login_required
 def object_index(request):
+    '''
+    GET: return the list of objects defined in the knowledge base.
+    '''
     return _dispatch(request, {'GET' : object_index_get})
 
 
@@ -73,6 +84,11 @@ def object_index_get(request):
 
 @login_required
 def object_(request, **kwargs):
+    '''
+    GET: return a specific object from the knowledge base.
+    POST: update an existing object in the knowledge base.
+    DELETE: delete and existing object from the knowledge base.
+    '''
     return _dispatch(request, {'GET' : object_get}, kwargs)
 
 
@@ -88,6 +104,9 @@ def object_get(request, object_id):
 
 @login_required
 def class_objects(request, class_id):
+    '''
+    GET: return the list of objects belonging to a given KB class.
+    '''
     return _dispatch(request, {'GET' : class_objects_get},
                      {'class_id' : class_id})
 
