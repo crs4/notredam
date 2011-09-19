@@ -24,7 +24,7 @@
 
 from django.contrib.auth.decorators import login_required
 from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
-                         HttpResponseNotAllowed)
+                         HttpResponseNotAllowed, HttpResponseBadRequest)
 from django.utils import simplejson
 
 import tinykb.session as kb_ses
@@ -54,7 +54,8 @@ def class_(request, **kwargs):
     POST: update an existing class in the knowledge base.
     DELETE: delete and existing class from the knowledge base.
     '''
-    return _dispatch(request, {'GET' : class_get}, kwargs)
+    return _dispatch(request, {'GET'  : class_get,
+                               'POST' : class_post}, kwargs)
 
 
 def class_get(request, class_id):
@@ -65,6 +66,33 @@ def class_get(request, class_id):
         return HttpResponseNotFound()
 
     return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls)))
+
+
+def class_post(request, class_id):
+    try:
+        cls_dict = _assert_return_json_data(request)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses = _kb_session()
+    try:
+        cls = ses.class_(class_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    # FIXME: right now, we only support updating a few fields
+    updatable_fields = {'name'        : str,
+                        'notes'       : str,
+                        'can_catalog' : bool}
+    try:
+        _assert_update_object_fields(cls, cls_dict, updatable_fields)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses.add(cls)
+    ses.commit()
+
+    return HttpResponse('ok')
 
 
 @login_required
@@ -89,7 +117,8 @@ def object_(request, **kwargs):
     POST: update an existing object in the knowledge base.
     DELETE: delete and existing object from the knowledge base.
     '''
-    return _dispatch(request, {'GET' : object_get}, kwargs)
+    return _dispatch(request, {'GET' :  object_get,
+                               'POST' : object_post}, kwargs)
 
 
 def object_get(request, object_id):
@@ -100,6 +129,32 @@ def object_get(request, object_id):
         return HttpResponseNotFound()
 
     return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
+
+
+def object_post(request, object_id):
+    try:
+        obj_dict = _assert_return_json_data(request)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses = _kb_session()
+    try:
+        obj = ses.object(object_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    # FIXME: right now, we only support updating a few fields
+    updatable_fields = {'name'        : str,
+                        'notes'       : str}
+    try:
+        _assert_update_object_fields(obj, obj_dict, updatable_fields)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses.add(obj)
+    ses.commit()
+
+    return HttpResponse('ok')
 
 
 @login_required
@@ -318,3 +373,36 @@ def _kbobjattr_to_dict(attr, val):
     Create a string representation of a KB class attribute descriptor
     '''
     return _kb_objattrs_dict_map[type(attr)](attr, val)
+
+
+def _assert_return_json_data(request):
+    '''
+    Ensure that a Django request contains JSON data, and return it
+    (taking care of its encoding).  Raise a ValueError if the content
+    type is not supported.
+    '''
+    if ('application/json; charset=UTF-8' == request.META['CONTENT_TYPE']):
+        print type(request.raw_post_data)
+        return simplejson.loads(request.raw_post_data)
+    else:
+        # FIXME: we should support other charset encodings here
+        raise ValueError('Unsupported content type: ' + request.CONTENT_TYPE)
+
+
+def _assert_update_object_fields(obj, obj_dict, updatable_fields):
+    '''
+    Update the fields (Python attributes) of an object, using the
+    given dictionaries: one containing the new field/values, and
+    another which associates field names with their expected type.
+    In case of error, a ValueError is raised (with an informative
+    message).
+    '''
+    for f in updatable_fields:
+        val = obj_dict.get(f, getattr(obj, f))
+        expected_type = updatable_fields[f]
+        if not isinstance(val, expected_type):
+            raise ValueError(('Invalid type for attribute %s: '
+                              + 'expected %s, got %s')
+                             % (f, str(expected_type),
+                                str(type(val))))
+        setattr(obj, f, val)
