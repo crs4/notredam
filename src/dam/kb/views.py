@@ -170,6 +170,8 @@ def _infer_method(req):
         enc_method = req.POST[encoding_post_var]
         assert(enc_method in encodable_methods)
         return (enc_method, req.POST)
+    elif ('POST' == req.method):
+        return ('POST', req.POST)
     elif ('GET' == req.method):
         return ('GET', req.GET)
     else:
