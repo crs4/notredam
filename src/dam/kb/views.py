@@ -81,9 +81,9 @@ def class_post(request, class_id):
         return HttpResponseNotFound()
 
     # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : str,
-                        'notes'       : str,
-                        'can_catalog' : bool}
+    updatable_fields = {'name'        : set([unicode, str]),
+                        'notes'       : set([unicode, str]),
+                        'can_catalog' : set([bool])}
     try:
         _assert_update_object_fields(cls, cls_dict, updatable_fields)
     except ValueError as e:
@@ -144,10 +144,11 @@ def object_post(request, object_id):
         return HttpResponseNotFound()
 
     # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : str,
-                        'notes'       : str}
+    updatable_fields = {'name'        : set([unicode, str]),
+                        'notes'       : set([unicode, str])}
     try:
         _assert_update_object_fields(obj, obj_dict, updatable_fields)
+        _assert_update_object_attrs(obj, obj_dict.get('attributes', {}), ses)
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
@@ -386,23 +387,94 @@ def _assert_return_json_data(request):
         return simplejson.loads(request.raw_post_data)
     else:
         # FIXME: we should support other charset encodings here
-        raise ValueError('Unsupported content type: ' + request.CONTENT_TYPE)
+        raise ValueError('Unsupported content type: '
+                         + request.META['CONTENT_TYPE'])
 
 
 def _assert_update_object_fields(obj, obj_dict, updatable_fields):
     '''
     Update the fields (Python attributes) of an object, using the
     given dictionaries: one containing the new field/values, and
-    another which associates field names with their expected type.
-    In case of error, a ValueError is raised (with an informative
-    message).
+    another which associates each field name with the set of their
+    expected type.  In case of error, a ValueError is raised (with an
+    informative message).
     '''
     for f in updatable_fields:
         val = obj_dict.get(f, getattr(obj, f))
-        expected_type = updatable_fields[f]
-        if not isinstance(val, expected_type):
+        expected_types = updatable_fields[f]
+        if not type(val) in expected_types:
             raise ValueError(('Invalid type for attribute %s: '
-                              + 'expected %s, got %s')
-                             % (f, str(expected_type),
+                              + 'expected one of %s, got %s')
+                             % (f, str(expected_types),
                                 str(type(val))))
         setattr(obj, f, val)
+
+
+def _assert_update_object_attrs(obj, obj_dict, sa_session):
+    '''
+    Almost like _assert_update_object_fields(), but applied to KB
+    object attribute (i.e. with special care for object references and
+    other "complex" types).
+    '''
+    obj_class_attrs = getattr(obj, 'class').attributes
+    for a in obj_class_attrs:
+        val = obj_dict.get(a.id, getattr(obj, a.id))
+        print '*** ', obj, a.id, type(getattr(obj, a.id)), val
+        expected_types = a.python_types()
+        if not type(val) in expected_types:
+            raise ValueError(('Invalid type for attribute %s: '
+                              + 'expected one of %s, got %s')
+                             % (a.id, str(expected_types),
+                                str(type(val))))
+
+        # Let's now perform validation checks on each possible
+        # attribute type
+        if (type(a) == kb_attrs.Choice):
+            # Before updating, check whether the provided value is a
+            # valid choice
+            if val not in a.get_choices():
+                raise ValueError(('Invalid value for attribute %s: '
+                                  + 'expected one of %s, got \'%s\'')
+                                 % (a.id, str(a.get_choices()), str(val)))
+            setattr(obj, a.id, val)
+        elif (type(a) == kb_attrs.ObjectReference):
+            # We can't simply update the attribute: we need to
+            # retrieve the referred object by its ID
+            curr_obj = getattr(obj, a.id)
+            if (val == curr_obj.id):
+                # Nothing to be done here
+                break
+            else:
+                try:
+                    new_obj = sa_session.object(val)
+                except kb_exc.NotFound:
+                    raise ValueError('Unknown object id reference: %s'
+                                     % val)
+                # Actually perform the assignment
+                setattr(obj, a.id, new_obj)
+        elif (type(a) == kb_attrs.ObjectReferencesList):
+            # We can't simply update the attribute: we need to
+            # retrieve the referred objects by their ID, and
+            # add/remove them from the list
+            obj_lst = getattr(obj, a.id)
+            # Objects to be removed (i.e. whose ID is not present in
+            # the list provided by the client)
+            rm_objects = [o for o in obj_lst if o.id not in val]
+            # Objects to be added
+            curr_oids = [o.id for o in obj_lst]
+            add_oids = [x for x in val if x not in curr_oids]
+            add_objects = []
+            for x in add_oids:
+                try:
+                    add_objects.append(sa_session.object(x))
+                except kb_exc.NotFound:
+                    raise ValueError('Unknown object id reference: %s'
+                                     % x)
+            # Actually perform removals/additions
+            for o in rm_objects:
+                obj_lst.remove(o)
+            for o in add_objects:
+                obj_lst.append(o)
+        else:
+            # Simple case: just update the attribute
+            setattr(obj, a.id, val)
