@@ -331,8 +331,8 @@ class ObjectReferencesList(Attribute):
                                  ForeignKey('%s.id' % (owner_table.name, ))),
                           Column('reference', sa.types.String(128),
                                  ForeignKey('%s.id' % (self._target_table, ))),
-                          Column('order', sa.types.Integer, default=0,
-                                 nullable=False),
+                          #Column('order', sa.types.Integer, default=0,
+                          #       nullable=False),
                           **kwargs)
 
             # When the constructor is executed, update the object
