@@ -170,6 +170,8 @@ class Node(AbstractNode):
         items = Item.objects.filter(pk__in = items)
         self.items.remove(*items)
         self.remove_metadata(items)
+        for item in items:            
+            item.update_last_modified(workspaces = [self.workspace])
 
     def remove_collection_association(self, items):
         logger.debug('items %s'%items)
@@ -179,12 +181,15 @@ class Node(AbstractNode):
             logger.debug('self.items %s'%self.items.all())
             self.items.remove(*items)
             logger.debug('self.items %s'%self.items.all())
+            for item in items:            
+                item.update_last_modified(workspaces = [self.workspace])
         except Exception, ex:
             logger.exception(ex)
             raise ex    
 
     def save_keyword_association(self, items):
         items = Item.objects.filter(pk__in = items)
+        
         if self.associate_ancestors:
             nodes = self.get_ancestors().filter(depth__gt = 0)
         else:
@@ -196,10 +201,15 @@ class Node(AbstractNode):
                 n.items.add(*items)
     
             n.save_metadata(items)
+        
+        for item in items:            
+            item.update_last_modified(workspaces = [self.workspace])
 
     def save_collection_association(self, items):
         items = Item.objects.filter(pk__in = items)
         self.items.add(*items)
+        for item in items:
+            item.update_last_modified(workspaces = [self.workspace])
 
     def save_metadata_mapping(self, metadata_schemas):
         from dam.metadata.models import MetadataProperty
