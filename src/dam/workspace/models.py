@@ -82,29 +82,29 @@ class DAMWorkspace(Workspace):
     objects = WSManager()
         
 
-    def remove_item(self, item):
-        """
-        Removes the given item from the current workspace and its inbox node
-        Also deletes item's component bound to the current workspace
-        @param item item to remove (an instance of repository.Item)
-        """
-        from dam.treeview.models import Node
-        
-        try:
-            
-            inbox_nodes = Node.objects.filter(type = 'inbox', workspace = self, items = item) #just to be sure, filter instead of get
-            for inbox_node in inbox_nodes:
-                inbox_node.items.remove(item)
-                if inbox_node.items.all().count() == 0:
-                    inbox_node.delete()
-            
-            logger.debug('item.workspaces %s'%item.workspaces.all())
-            item.workspaceitem_set.filter(workspace = self).delete()
-            item.component_set.all().filter(workspace = self).exclude(Q(variant__auto_generated = False)| Q(variant__shared = True)).delete()
-            
-        except Exception, ex:
-            logger.exception(ex)
-            raise ex        
+    #def remove_item(self, item):
+        #"""
+        #Removes the given item from the current workspace and its inbox node
+        #Also deletes item's component bound to the current workspace
+        #@param item item to remove (an instance of repository.Item)
+        #"""
+        #from dam.treeview.models import Node
+        #
+        #try:
+            #
+            #inbox_nodes = Node.objects.filter(type = 'inbox', workspace = self, items = item) #just to be sure, filter instead of get
+            #for inbox_node in inbox_nodes:
+                #inbox_node.items.remove(item)
+                #if inbox_node.items.all().count() == 0:
+                    #inbox_node.delete()
+            #
+            #logger.debug('item.workspaces %s'%item.workspaces.all())
+            #item.workspaceitem_set.filter(workspace = self).delete()
+            #item.component_set.all().filter(workspace = self).exclude(Q(variant__auto_generated = False)| Q(variant__shared = True)).delete()
+            #
+        #except Exception, ex:
+            #logger.exception(ex)
+            #raise ex        
     
     def get_variants(self):
         """

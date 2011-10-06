@@ -200,7 +200,7 @@ class Item(AbstractItem):
         """
         Number of workspaces where the current item has been added
         """
-        return self.workspaceitem_set.all().count()
+        return self.workspaceitem_set.filter(deleted = False).count()
         
     def create_variant(self, variant, ws,  media_type):  # no default for media_type
         """
@@ -284,7 +284,10 @@ class Item(AbstractItem):
                 pass # maybe file does not exist
             c.delete()
               
-        self.workspaceitem_set.filter(workspace__in = workspaces).delete()
+        ws_items = self.workspaceitem_set.filter(workspace__in = workspaces)
+        for ws_item in ws_items:
+            ws_item.deleted = True
+            ws_item.save()
             
         if self.get_workspaces_count() == 0:
             #REMOVING ORIGINAL FILE
