@@ -113,8 +113,9 @@ def _admin_workspace(request,  ws):
     return HttpResponse(resp)
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
-    if ws not in item.workspaces.all():
-        item.workspaces.add(ws)
+    from workspace.models import WorkspaceItem
+    ws_item, created = WorkspaceItem.objects.get_or_create(item = item, workspace = ws)
+    if created:
         orig_variant = Variant.objects.get(name = 'original')
         original = item.get_variant(current_ws, orig_variant)
         original.workspace.add(ws)
@@ -534,7 +535,7 @@ def _search(request,  items, workspace = None):
         else:
             items = items.order_by('%s'%order_by)
 
-    logger.debug('items %s'%items)
+
     return items
 
 def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):

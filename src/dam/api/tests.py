@@ -687,10 +687,12 @@ class ItemTest(MyTestCase):
         
         resp_dict = json.loads(response.content)        
         item_id = resp_dict.get('id')
+        print 'item_id',  item_id
         item = Item.objects.get(pk = item_id)
        
         
 #        metadata_dict = {'namespace':'dc',  'name':'subject',  'value': ['test',  'test2']}
+        item.metadata.clear()
         metadata_dict = {'dc_subject': ['test', 'test2']}
         params = self.get_final_parameters({ 'metadata':json.dumps(metadata_dict),  'workspace_id':1})        
         self.client.post('/api/item/%s/set_metadata/'%item_id, params, )         
@@ -699,7 +701,8 @@ class ItemTest(MyTestCase):
         params = self.get_final_parameters({ 'metadata':json.dumps([metadata_dict_to_remove]), 'workspace_id':1})        
         response = self.client.post('/api/item/%s/remove_metadata/'%item_id, params, )        
         self.assertTrue(response.content == '')        
-        m = item.metadata.all()        
+        m = item.metadata.all() 
+        print '----m',m       
         self.assertTrue(m.count() == 1)
         m_0 = m[0]      
 #        self.assertTrue(m_0.schema.namespace == metadata_dict['namespace'])
@@ -720,6 +723,7 @@ class ItemTest(MyTestCase):
         item_id = resp_dict.get('id')
         item = Item.objects.get(pk = item_id)
         
+        item.metadata.clear()
         metadata_dict = {'namespace':'dc',  'name':'subject',  'value': ['test',  'test2']}
         params = self.get_final_parameters({ 'metadata':json.dumps([metadata_dict])})        
         self.client.post('/api/item/%s/set_metadata/'%item_id, params, )         
@@ -1072,7 +1076,7 @@ class KeywordsTest(MyTestCase):
         workspace_id = 1
         ws = DAMWorkspace.objects.get(pk = workspace_id)
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
-        item = Item.objects.create(uploader = User.objects.get(pk = 1),  type = Type.objects.get_by_mime('image/jpeg')[0],)
+        item = Item.objects.create(ws, uploader = User.objects.get(pk = 1),  type = Type.objects.get_by_mime('image/jpeg')[0],)
         
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
         item = Item.objects.all()[0]

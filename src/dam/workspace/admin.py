@@ -20,7 +20,7 @@ from django.contrib import admin
 from dam.workspace.models import DAMWorkspace
 
 class WorkspaceAdmin(admin.ModelAdmin):
-    filter_horizontal = ('members','items',)
+    filter_horizontal = ('members',)
     label = 'main'
     fieldsets = (
         (None, {
@@ -28,7 +28,7 @@ class WorkspaceAdmin(admin.ModelAdmin):
         }),
         ('Advanced options', {
             'classes': ('collapse',),
-            'fields': ('members','items')
+            'fields': ('members',)
         }),
     )
 

@@ -27,16 +27,12 @@ from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_ST
 from dam.metadata.models import *
 
 
-import os
-import urlparse
+
+import os, datetime, urlparse, time, re, settings, logging
 from json import loads
 from django.utils import simplejson
-import time
 from django.utils.encoding import smart_str
-import re
-import settings
 
-import logging
 logger = logging.getLogger('dam')
 
 from mediadart.storage import Storage
@@ -69,6 +65,14 @@ def _get_resource_url(id):
         url = None
     return url
 
+class ItemManager(models.Manager):
+    def create(self, workspace, **kwargs):
+        from workspace.models import WorkspaceItem
+        item = super(ItemManager, self).create(**kwargs)
+        WorkspaceItem.objects.create(item = item, workspace = workspace)
+        item.add_to_uploaded_inbox(workspace)       
+        return item
+        
 class Item(AbstractItem):
 
     """
@@ -78,7 +82,25 @@ class Item(AbstractItem):
     _id = models.CharField(max_length=40,  db_column = 'md_id')
     metadata = generic.GenericRelation('metadata.MetadataValue')
     source_file_path = models.TextField() #path from whom the item was imported(/tmp/somedir/somefile in case of upload)
+    objects = ItemManager()
     
+    def get_last_update(self, ws):
+        ws_item = self.workspaceitem_set.get(item = self, workspace = ws)
+        return ws_item.last_update
+    
+    def update_last_modified(self, time = datetime.datetime.now(), workspaces = []):
+        from dam.workspace.models import WorkspaceItem
+        logger.debug('workspaces %s'%workspaces)
+        
+        if not workspaces:
+            ws_items = WorkspaceItem.objects.filter(item = self)
+        else:
+            ws_items = WorkspaceItem.objects.filter(item = self, workspace__in = workspaces)
+        
+        logger.debug('ws_items %s'%ws_items)
+        for ws_item in ws_items:
+            ws_item.last_update = time
+            ws_item.save()
     
     def _get_id(self):
         return self._id
@@ -96,6 +118,11 @@ class Item(AbstractItem):
     def __unicode__(self):
         return self.get_file_name()
 	
+    def save(self, *args, **kwargs):
+        super(Item, self).save(*args, **kwargs)
+        self.update_last_modified()
+
+        
     def set_metadata(self,property_namespace, property_name, value):
         property = MetadataProperty.objects.get(field_name = property_name, namespace__name = property_namespace)
     
@@ -173,7 +200,7 @@ class Item(AbstractItem):
         """
         Number of workspaces where the current item has been added
         """
-        return self.workspaces.all().count()
+        return self.workspaceitem_set.all().count()
         
     def create_variant(self, variant, ws,  media_type):  # no default for media_type
         """
@@ -256,9 +283,9 @@ class Item(AbstractItem):
             except:
                 pass # maybe file does not exist
             c.delete()
-                
-        self.workspaces.remove(*workspaces)
-        
+              
+        self.workspaceitem_set.filter(workspace__in = workspaces).delete()
+            
         if self.get_workspaces_count() == 0:
             #REMOVING ORIGINAL FILE
             orig = self.component_set.get(variant__name = 'original')
@@ -507,7 +534,7 @@ class Item(AbstractItem):
 
 
 #        now = '?t=' + str(time.time());
-        t = time.mktime(self.update_time.utctimetuple())
+        t = time.mktime(self.get_last_update(workspace).utctimetuple())
         thumb_url = '/item/%s/%s/?t=%s'%(self.ID, 'thumbnail', t);
         preview_url = '/item/%s/%s/?t=%s'%(self.ID, 'preview', t);
         fullscreen_url = '/item/%s/%s/?t=%s'%(self.ID, 'fullscreen', t);
@@ -598,8 +625,10 @@ class Component(AbstractComponent):
     def save(self, *args, **kwargs):
         import datetime
         super(Component, self).save(*args, **kwargs)
-        self.item.update_time = datetime.datetime.now()
-        self.item.save()
+        self.item.update_last_modified(workspaces = self.workspace.all())
+            
+        #self.item.update_time = datetime.datetime.now()
+        #self.item.save()
 
     def get_features(self):
         klass = {'video': AVFeatures,'audio':AVFeatures, 'image': ImageFeatures, 'doc': PdfFeatures, }

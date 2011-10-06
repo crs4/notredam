@@ -70,14 +70,14 @@ class WSManager(WorkspaceManager):
             logger.exception(ex)
             raise ex        
         
-        return ws
+        return ws 
 
 class DAMWorkspace(Workspace):
     """
     Subclass of dam_workspace.Workspace,
     adds a many-to-many reference to the Item and State model 
     """
-    items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
+    items = models.ManyToManyField(Item, related_name="workspaces",  through='WorkspaceItem')
 #    states = models.ManyToManyField(State)
     objects = WSManager()
         
@@ -99,8 +99,7 @@ class DAMWorkspace(Workspace):
                     inbox_node.delete()
             
             logger.debug('item.workspaces %s'%item.workspaces.all())
-            item.workspaces.remove(self)
-            logger.debug('item.workspaces %s'%item.workspaces.all())
+            item.workspaceitem_set.filter(workspace = self).delete()
             item.component_set.all().filter(workspace = self).exclude(Q(variant__auto_generated = False)| Q(variant__shared = True)).delete()
             
         except Exception, ex:
@@ -117,4 +116,9 @@ class DAMWorkspace(Workspace):
     def get_active_processes(self, ):
         return Process.objects.filter(pipeline__workspace = self).order_by('-start_date')
         
-    
+        
+class WorkspaceItem(models.Model):
+    item = models.ForeignKey(Item)
+    workspace = models.ForeignKey(DAMWorkspace)
+    last_update = models.DateTimeField(auto_now = True)
+    deleted = models.BooleanField(default= False)

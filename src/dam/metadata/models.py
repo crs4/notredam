@@ -450,6 +450,7 @@ class MetadataManager(models.Manager):
                     value = metadata[m]
                     new_metadata = self.get_or_create(schema=metadataschema, object_id=obj.pk, content_type=ctype, value=value)
                     set_modified_flag(new_metadata[0],obj)
+                item.update_last_modified()
 
 class MetadataValue(models.Model):
     """
@@ -467,6 +468,10 @@ class MetadataValue(models.Model):
     
     def __str__(self):
         return "%s (%s)" % (self.schema.namespace, self.schema.field_name)
+    
+    #def save(self, *args, **kwargs):
+        #super(MetadataValue, self).save(*args, **kwargs)
+        
 
 class MetadataDescriptorGroup(models.Model):
     """
