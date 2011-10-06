@@ -121,12 +121,13 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
         original.workspace.add(ws)
         return True
     return False
-        
+        #
 @permission_required('remove_item')
 def _remove_items(request, ws, items):
 
     for item in items:
-        ws.remove_item(item)
+        item.delete_from_ws(request.user, [ws])
+        
         
 @login_required
 @permission_required('add_item', False)
@@ -545,7 +546,8 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
     logger.debug('************** searching only_basket %s' % only_basket)
     
-    items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
+    
+    items = workspace.items.filter(type__name__in = media_type, workspaceitem__deleted = False).distinct().order_by('-creation_time')
     logger.debug('******************8 found %d items' % len(items))
 
     user_basket = Basket.get_basket(user, workspace)
