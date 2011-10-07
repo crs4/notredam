@@ -72,8 +72,13 @@ class EmbedXMP:
         return failure
 
     def execute(self, item_id, variant_name):
-        self.item = Item.objects.get(pk = item_id)
-        source_variant = Variant.objects.get(name = variant_name)
+        try:
+            self.item = Item.objects.get(pk = item_id)
+            source_variant = Variant.objects.get(name = variant_name)
+        except Exception, e:
+            e.message = '%s: %s' % (self.__class__.__name__, e.message)
+            self.deferred.errback(e)
+
         try:
             self.component = self.item.get_variant(self.workspace, source_variant)
         except Exception, e:

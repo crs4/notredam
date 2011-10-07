@@ -929,15 +929,13 @@ class Watermark(AbstractComponent):
 
 class AVFeatures:
     def __init__(self, features):
-        self.info = {}
-        self.info['video'] = [features[x] for x in features.keys() if x != 'file' and features[x]['codec_type'] == 'video']
-        self.info['audio'] = [features[x] for x in features.keys() if x != 'file' and features[x]['codec_type'] == 'audio']
+        self.info = features   # if there are multiple video streams only one is retained
 
     def __get_attr(self, name, stream_type):
         if self.info[stream_type]:
-            return self.info[stream_type][0][name]
+            return self.info[stream_type][name]
         else:
-            raise Exception('No video')
+            raise Exception('No %s' % stream_type)
 
     def get_video_width(self):
         return self.__get_attr('width', 'video')
@@ -946,25 +944,25 @@ class AVFeatures:
         return self.__get_attr('height', 'video')
 
     def get_video_codec(self):
-        return self.__get_attr('codec_name', 'video')
+        return self.__get_attr('codec', 'video')
 
     def get_audio_codec(self):
-        return self.__get_attr('codec_name', 'audio')
+        return self.__get_attr('codec', 'audio')
 
     def get_video_duration(self):
         return self.__get_attr('duration', 'video')
 
     def get_video_frame_rate(self):
-        return '%s/%s' % (self.__get_attr('r_frame_rate_num', 'video'), self.__get_attr('r_frame_rate_den', 'video'))
+        return self.__get_attr('frame_rate', 'video')
 
     def get_audio_sample_rate(self):
-        return self.__get_attr('sample_rate', 'audio')
+        return self.__get_attr('sampling_rate', 'audio')
 
     def has_audio(self):
-        return not not self.info['audio']
+        return 'audio' in self.info
 
     def has_video(self):
-        return not not self.info['video']
+        return 'video' in self.info
 
 #class AudioFeatures:
 #    def __init__(self, features):
@@ -1024,48 +1022,109 @@ class PdfFeatures:
 ########################################################################
 # Format of the produced features.
 #
-#{'0': {'codec_long_name': 'H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10',
-#       'codec_name': 'h264',
-#       'codec_type': 'video',
-#       'decoder_time_base': '125/5994',
-#       'display_aspect_ratio': '12/5',
-#       'duration': '149.899899',
-#       'gop_size': '12',
-#       'has_b_frames': '0',
-#       'height': '800',
-#       'index': '0',
-#       'nb_frames': '0',
-#       'pix_fmt': 'yuv420p',
-#       'r_frame_rate': '23.976024',
-#       'r_frame_rate_den': '1001',
-#       'r_frame_rate_num': '24000',
-#       'sample_aspect_ratio': '1/1',
-#       'size': '140175513.000000',
-#       'start_time': '0.000000',
-#       'time_base': '1/1000',
-#       'width': '1920'},
-# '1': {'bits_per_sample': '0',
-#       'channels': '2',
-#       'codec_long_name': 'Advanced Audio Coding',
-#       'codec_name': 'aac',
-#       'codec_type': 'audio',
-#       'decoder_time_base': '0/1',
-#       'duration': '149.899899',
-#       'index': '1',
-#       'nb_frames': '0',
-#       'sample_rate': '44100.000000',
-#       'size': '140175513.000000',
-#       'start_time': '0.023000',
-#       'time_base': '1/1000'},
-# 'file': {'bit_rate': '0.000000',
-#          'demuxer_long_name': 'FLV format',
-#          'demuxer_name': 'flv',
-#          'duration': '149.899899',
-#          'filename': '/home/orlando/Videos/tron.flv',
-#          'index': 'file',
-#          'nb_streams': '2',
-#          'size': '140175513.000000',
-#          'start_time': '0.000000'}}
+#{u'audio': {u'bit_rate': u'192000',
+#            u'bit_rate_mode': u'CBR',
+#            u'channel_s_': u'2',
+#            u'codec': u'MPA1L2',
+#            u'commercial_name': u'MPEG Audio',
+#            u'compression_mode': u'Lossy',
+#            u'count': u'169',
+#            u'count_of_stream_of_this_kind': u'1',
+#            u'delay': u'220.000',
+#            u'delay__origin': u'Container',
+#            u'delay_relative_to_video': u'-80',
+#            u'duration': u'176208',
+#            u'file': u'',
+#            u'format': u'MPEG Audio',
+#            u'format_profile': u'Layer 2',
+#            u'format_version': u'Version 1',
+#            u'frame_count': u'7342',
+#            u'id': u'192',
+#            u'internet_media_type': u'audio/mpeg',
+#            u'kind_of_stream': u'Audio',
+#            u'mediainfo': u'',
+#            u'proportion_of_this_stream': u'0.00539',
+#            u'samples_count': u'8457984',
+#            u'sampling_rate': u'48000',
+#            u'stream_identifier': u'0',
+#            u'stream_size': u'4228992',
+#            u'video0_delay': u'-80'},
+# u'general': {u'audio_codecs': u'MPEG-1 Audio layer 2',
+#              u'audio_format_list': u'MPEG Audio',
+#              u'audio_format_withhint_list': u'MPEG Audio',
+#              u'codec': u'MPEG-PS',
+#              u'codec_extensions_usually_used': u'mpeg mpg m2p vob pss',
+#              u'codecs_video': u'MPEG-2 Video',
+#              u'commercial_name': u'MPEG-PS',
+#              u'complete_name': u'09.mpg',
+#              u'count': u'278',
+#              u'count_of_audio_streams': u'1',
+#              u'count_of_stream_of_this_kind': u'1',
+#              u'count_of_video_streams': u'1',
+#              u'duration': u'176208',
+#              u'file_extension': u'mpg',
+#              u'file_last_modification_date': u'UTC 2011-09-19 17:09:55',
+#              u'file_last_modification_date__local_': u'2011-09-19 19:09:55',
+#              u'file_name': u'09.mpg',
+#              u'file_size': u'784926724',
+#              u'format': u'MPEG-PS',
+#              u'format_extensions_usually_used': u'mpeg mpg m2p vob pss',
+#              u'internet_media_type': u'video/MP2P',
+#              u'kind_of_stream': u'General',
+#              u'overall_bit_rate': u'35636371',
+#              u'overall_bit_rate_mode': u'VBR',
+#              u'proportion_of_this_stream': u'0.02061',
+#              u'stream_identifier': u'0',
+#              u'stream_size': u'16175821',
+#              u'video_format_list': u'MPEG Video',
+#              u'video_format_withhint_list': u'MPEG Video'},
+# u'video': {u'bit_depth': u'8',
+#            u'bit_rate': u'34735207',
+#            u'bit_rate_mode': u'VBR',
+#            u'bits__pixel_frame_': u'0.670',
+#            u'buffer_size': u'458752',
+#            u'chroma_subsampling': u'4:2:0',
+#            u'codec': u'MPEG-2V',
+#            u'codec_family': u'MPEG-V',
+#            u'codec_profile': u'High@High',
+#            u'codec_settings__matrix': u'Default',
+#            u'color_space': u'YUV',
+#            u'colorimetry': u'4:2:0',
+#            u'commercial_name': u'MPEG-2 Video',
+#            u'compression_mode': u'Lossy',
+#            u'count': u'202',
+#            u'count_of_stream_of_this_kind': u'1',
+#            u'delay': u'300.000',
+#            u'delay__origin': u'Container',
+#            u'delay_original': u'0',
+#            u'delay_original_settings': u'drop_frame_flag=0 / closed_gop=1 / broken_link=0',
+#            u'delay_original_source': u'Stream',
+#            u'display_aspect_ratio': u'1.778',
+#            u'duration': u'176080',
+#            u'format': u'MPEG Video',
+#            u'format_profile': u'High@High',
+#            u'format_settings': u'BVOP',
+#            u'format_settings__bvop': u'Yes',
+#            u'format_settings__gop': u'M=3, N=12',
+#            u'format_settings__matrix': u'Default',
+#            u'format_version': u'Version 2',
+#            u'frame_count': u'4402',
+#            u'frame_rate': u'25.000',
+#            u'height': u'1080',
+#            u'id': u'224 (0xE0)',
+#            u'interlacement': u'PPF',
+#            u'internet_media_type': u'video/MPV',
+#            u'intra_dc_precision': u'9',
+#            u'kind_of_stream': u'Video',
+#            u'maximum_bit_rate': u'35000000',
+#            u'pixel_aspect_ratio': u'1.000',
+#            u'proportion_of_this_stream': u'0.97400',
+#            u'resolution': u'8',
+#            u'scan_type': u'Progressive',
+#            u'standard': u'PAL',
+#            u'stream_identifier': u'0',
+#            u'stream_size': u'764521911',
+#            u'width': u'1920'}}
 #
 #########################################################################
 #
