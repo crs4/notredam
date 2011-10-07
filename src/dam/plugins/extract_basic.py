@@ -18,7 +18,6 @@
 
 import os
 import re
-import codecs                                          # OLM
 from xml.sax import ContentHandler, parseString
 from json import dumps
 from django.contrib.contenttypes.models import ContentType
@@ -93,8 +92,6 @@ class ExtractBasic(Analyzer):
         parser = Parser()
         parseString(result.encode('utf-8'), parser)
         features = parser.parsed
-        #import pprint                                             # OLM
-        #log.debug('PARSED:\n%s' % pprint.pformat(features))       # OLM
         self._save_features(features, 'media_basic')
         return 'ok'
 
