@@ -122,3 +122,6 @@ class WorkspaceItem(models.Model):
     workspace = models.ForeignKey(DAMWorkspace)
     last_update = models.DateTimeField(auto_now = True)
     deleted = models.BooleanField(default= False)
+    
+    class Meta:
+        unique_together = (('item', 'workspace'),)
