@@ -30,7 +30,7 @@ from dam.repository.models import Item, Component
 from dam.core.dam_workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
-from dam.workspace.models import DAMWorkspace as Workspace
+from dam.workspace.models import DAMWorkspace as Workspace, WorkspaceItem
 from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.variants.models import Variant      
 from dam.workspace.forms import AdminWorkspaceForm
@@ -120,7 +120,9 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
         original = item.get_variant(current_ws, orig_variant)
         original.workspace.add(ws)
         return True
-    return False
+    ws_item.deleted = False
+    ws_item.save()
+    return True
         #
 @permission_required('remove_item')
 def _remove_items(request, ws, items):
@@ -275,6 +277,8 @@ def _search(request,  items, workspace = None):
     query = request.POST.get('query')
     order_by = request.POST.get('order_by',  'creation_time')
     order_mode = request.POST.get('order_mode',  'decrescent')
+    show_deleted = request.POST.has_key('show_deleted')
+
     
     show_associated_items = request.POST.get('show_associated_items')
     nodes_query = []
@@ -288,6 +292,12 @@ def _search(request,  items, workspace = None):
     
     complex_query = request.POST.get('complex_query')
     logger.debug('complex_query %s'%complex_query)
+    
+    if not show_deleted:        
+        items = items.exclude(workspaceitem__in = WorkspaceItem.objects.filter(deleted = True, workspace = workspace))
+
+    logger.debug('----------------items %s in workspace %s'%(items, workspace))
+    
     if not workspace:
         workspace = request.session['workspace']
     if complex_query:
@@ -547,8 +557,8 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     logger.debug('************** searching only_basket %s' % only_basket)
     
     
-    items = workspace.items.filter(type__name__in = media_type, workspaceitem__deleted = False).distinct().order_by('-creation_time')
-    logger.debug('******************8 found %d items' % len(items))
+    items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
+    logger.debug('****************** found %d items' % len(items))
 
     user_basket = Basket.get_basket(user, workspace)
     basket_items = user_basket.items.all().values_list('pk', flat=True)
@@ -557,7 +567,7 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-    items = _search(request,  items)
+    items = _search(request,  items, workspace)
 
     total_count = items.count()
 
@@ -589,11 +599,7 @@ def load_items(request, view_type=None, unlimited=False):
     from datetime import datetime
     try:
         user = request.user
-        workspace_id = request.POST.get('workspace_id')
-
-#        if  workspace_id:
-#            workspace = Workspace.objects.get(pk = workspace_id)
-#        else:
+        
         workspace = request.session['workspace']        
 
         media_type = request.POST.getlist('media_type')
@@ -636,8 +642,11 @@ def load_items(request, view_type=None, unlimited=False):
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
         default_language = get_metadata_default_language(user, workspace)    
         
+        
+        check_deleted = request.POST.has_key('show_deleted')
+
         for item in items:
-            tmp = item.get_info(workspace, thumb_caption, default_language)
+            tmp = item.get_info(workspace, thumb_caption, default_language, check_deleted = check_deleted)
             if item.pk in basket_items:
                 tmp['item_in_basket'] = 1
             else:
