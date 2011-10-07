@@ -297,7 +297,7 @@ class Item(AbstractItem):
             except:
                 pass #file maybe does not exist
             orig.delete()
-            self.delete()
+            #self.delete()
             
            
         else:
@@ -528,7 +528,7 @@ class Item(AbstractItem):
     
         return caption
         
-    def get_info(self, workspace,  caption = None, default_language = None):        
+    def get_info(self, workspace,  caption = None, default_language = None, check_deleted = False):        
         from dam.geo_features.models import GeoInfo
         if caption and default_language: 
            caption = self._get_caption(caption, default_language)
@@ -559,12 +559,13 @@ class Item(AbstractItem):
         else:
             geotagged = 0
         
+        
+        
         info = {
             'name': caption,
             'size':self.get_file_size(), 
             'pk': smart_str(self.pk), 
             '_id':self._id,
-           
             'status': status,
             #'thumb': thumb_url is not None,
             'url':smart_str(thumb_url), 
@@ -574,7 +575,11 @@ class Item(AbstractItem):
 #            'preview_available': False,
             'geotagged': geotagged
             }
-            
+        
+        if check_deleted: #performance can be improved here
+            deleted = self.workspaceitem_set.get(workspace = workspace).deleted            
+            info['deleted'] = deleted
+         
         states = self.stateitemassociation_set.all()
         if states.count():
             state_association = states[0]
