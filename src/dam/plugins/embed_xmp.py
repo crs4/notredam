@@ -85,8 +85,12 @@ class EmbedXMP:
             self.deferred.callback('variant %s not present in item %s' % item_id)
             return
 
-        metadata_dict = self._synchronize_metadata()
-        d = self.proxy.metadata_synch(self.component.uri, metadata_dict)
-        d.addCallback(self._cb_embed_reset_xmp)
-        d.addErrback(self._cb_error)
+        try:
+            metadata_dict = self._synchronize_metadata()
+            d = self.proxy.metadata_synch(self.component.uri, metadata_dict)
+            d.addCallback(self._cb_embed_reset_xmp)
+            d.addErrback(self._cb_error)
+        except Exception, e:
+            e.message = '%s: %s' % (self.__class__.__name__, e.message)
+            self.deferred.errback(e)
         

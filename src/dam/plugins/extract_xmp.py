@@ -122,28 +122,39 @@ class ExtractXMP:
         self.deferred.errback(failure)
 
     def _cb_xmp_ok(self, features):
-        ctype_component = ContentType.objects.get_for_model(self.component)
-        ctype = ContentType.objects.get_for_model(self.item)
-        xpath = re.compile(r'(?P<prefix>\w+):(?P<property>\w+)(?P<array_index>\[\d+\]){,1}')
-        user = self.item.uploaded_by()
-        metadata_default_language = get_metadata_default_language(user)
+        try:
+            ctype_component = ContentType.objects.get_for_model(self.component)
+            ctype = ContentType.objects.get_for_model(self.item)
+            xpath = re.compile(r'(?P<prefix>\w+):(?P<property>\w+)(?P<array_index>\[\d+\]){,1}')
+            user = self.item.uploaded_by()
+            metadata_default_language = get_metadata_default_language(user)
+        except Exception, e:
+            log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
+            self.deferred.errback(e)
+            return
+
         try:
             save_type(ctype, self.component)
         except Exception, e:
             log.error("Failed to save component format as DC:Format: %s" % (str(e)))
 
-        xmp_metadata_list, xmp_delete_list = self._read_xmp_features(features)
+        try:
+            xmp_metadata_list, xmp_delete_list = self._read_xmp_features(features)
+            MetadataValue.objects.filter(schema__in=xmp_delete_list, object_id=self.component.pk, content_type=ctype_component).delete()
 
-        MetadataValue.objects.filter(schema__in=xmp_delete_list, object_id=self.component.pk, content_type=ctype_component).delete()
+            latitude = None
+            longitude = None
+            for x in xmp_metadata_list:
+                if x.xpath == 'exif:GPSLatitude':
+                    latitude = x.value
+                elif x.xpath == 'exif:GPSLongitude':
+                    longitude = x.value
+                x.save()
+        except Exception, e:
+            log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
+            self.deferred.errback(e)
+            return
 
-        latitude = None
-        longitude = None
-        for x in xmp_metadata_list:
-            if x.xpath == 'exif:GPSLatitude':
-                latitude = x.value
-            elif x.xpath == 'exif:GPSLongitude':
-                longitude = x.value
-            x.save()
         if latitude != None and longitude != None:
             try:
                 GeoInfo.objects.save_geo_coords(self.component.item, latitude,longitude)
