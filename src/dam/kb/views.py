@@ -100,7 +100,8 @@ def object_index(request):
     '''
     GET: return the list of objects defined in the knowledge base.
     '''
-    return _dispatch(request, {'GET' : object_index_get})
+    return _dispatch(request, {'GET' : object_index_get,
+                               'PUT' :  object_put})
 
 
 def object_index_get(request):
@@ -129,6 +130,49 @@ def object_get(request, object_id):
         return HttpResponseNotFound()
 
     return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
+
+
+def object_put(request):
+    try:
+        obj_dict = _assert_return_json_data(request)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses = _kb_session()
+    object_class_id = obj_dict.get('class', None)
+    if object_class_id is None:
+        return HTTPResponseBadRequest('Object representation lacks a '
+                                      +'"class" field')
+
+    object_name = obj_dict.get('name', None)
+    if object_name is None:
+        return HTTPResponseBadRequest('Object representation lacks a '
+                                      +'"name" field')
+    
+    explicit_id = obj_dict.get('id', None)
+    
+    try:
+        ObjectClass = ses.python_class(object_class_id)
+    except kb_exc.NotFound:
+        return HTTPResponseBadRequest('Invalid object class: %s'
+                                      % (object_class_id, ))
+
+    obj = ObjectClass(object_name, explicit_id=explicit_id)
+
+    # FIXME: right now, we only support updating a few fields
+    updatable_fields = {'name'        : set([unicode, str]),
+                        'notes'       : set([unicode, str])}
+
+    try:
+        _assert_update_object_fields(obj, obj_dict, updatable_fields)
+        _assert_update_object_attrs(obj, obj_dict.get('attributes', {}), ses)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses.add(obj)
+    ses.commit()
+
+    return HttpResponse('ok')
 
 
 def object_post(request, object_id):
