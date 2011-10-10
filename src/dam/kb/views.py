@@ -219,11 +219,11 @@ def _infer_method(req):
     assert(isinstance(req, HttpRequest))
 
     encodable_methods = ('PUT', 'DELETE')
-    encoding_post_var = '__REAL_HTTP_METHOD__'
+    encoding_get_var = '__REAL_HTTP_METHOD__'
 
     if (('POST' == req.method) and
-        (encoding_post_var in req.POST)):
-        enc_method = req.POST[encoding_post_var]
+        (encoding_get_var in req.GET)):
+        enc_method = req.GET[encoding_get_var]
         assert(enc_method in encodable_methods)
         return (enc_method, req.POST)
     elif ('POST' == req.method):
