@@ -102,7 +102,7 @@ def object_index(request):
     PUT: insert a new object in the knowledge base.
     '''
     return _dispatch(request, {'GET' : object_index_get,
-                               'PUT' :  object_put})
+                               'PUT' : object_index_put})
 
 
 def object_index_get(request):
@@ -112,28 +112,7 @@ def object_index_get(request):
     return HttpResponse(simplejson.dumps(obj_dicts))
 
 
-@login_required
-def object_(request, **kwargs):
-    '''
-    GET: return a specific object from the knowledge base.
-    POST: update an existing object in the knowledge base.
-    DELETE: delete and existing object from the knowledge base.
-    '''
-    return _dispatch(request, {'GET' :  object_get,
-                               'POST' : object_post}, kwargs)
-
-
-def object_get(request, object_id):
-    ses = _kb_session()
-    try:
-        cls = ses.object(object_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
-
-    return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
-
-
-def object_put(request):
+def object_index_put(request):
     try:
         obj_dict = _assert_return_json_data(request)
     except ValueError as e:
@@ -174,6 +153,27 @@ def object_put(request):
     ses.commit()
 
     return HttpResponse('ok')
+
+
+@login_required
+def object_(request, **kwargs):
+    '''
+    GET: return a specific object from the knowledge base.
+    POST: update an existing object in the knowledge base.
+    DELETE: delete and existing object from the knowledge base.
+    '''
+    return _dispatch(request, {'GET' :  object_get,
+                               'POST' : object_post}, kwargs)
+
+
+def object_get(request, object_id):
+    ses = _kb_session()
+    try:
+        cls = ses.object(object_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
 
 
 def object_post(request, object_id):
