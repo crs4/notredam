@@ -49,7 +49,7 @@ from dam.upload.views import _run_pipelines
 
 from django.utils.datastructures import SortedDict
 
-
+from datetime import datetime
 import time
 from mx.DateTime.Parser import DateTimeFromString
 
@@ -259,7 +259,89 @@ def _search_complex_query(complex_query,  items):
 
     return items
 
+def filter_by_date(date_type, query_dict, items, workspace = None):
+        """
+        @param date_type: creation_time or last_update
+        @param query_dict: dict containing keys like 'created' or 'created<' etc. Usually request.POST
+        @param items: items to filter
+        @param workspace: scope of the filtering needed in case of date_type == 'last_update'
+        """
+        if date_type is not 'last_update' and date_type is not 'creation_time':
+            raise Exception('you can filter in time only by last_update or creation_item, sorr')
+        
+        if date_type == 'last_update' and not workspace:
+            raise Exception('you need to specify a workpace if you want to filter by last_update')
+    
+        def _create_query_kwargs(date_type, filter_type, date_value):
+            """
+            @param date_type: 'last_update' or 'creation_time'
+            @param filter_type: 'a_given_date' or 'dates_before' etc
+            @param date_value:  value of the date
+            """
+            date_format = '%d/%m/%Y %H:%M:%S'
+            date = datetime.strptime(date_value, date_format)
+            if filter_type == 'a_given_date':
+                return {date_type: date}
+            if filter_type == 'dates_before':
+                return {date_type + '__lt':date}
+            if filter_type == 'dates_before_equal':
+                return {date_type + '__lte': date}
+            if  filter_type == 'dates_after':
+                return {date_type + '__gt' : date}
+            if filter_type == 'dates_after_equal':
+                return {date_type + '__gte': date}
+        
+        def _query_by_date(items, date_type, filter_type, date_value):
+            """
+            @param items: to filter
+            @param date_type: 'creation_time' or 'last_update'
+            @param filter_type: 'a_given_date' or 'dates_before' etc
+            @param date_value: value of the date
+            """
+            if date_type == 'creation_time':
+                kwargs = _create_query_kwargs('creation_time', filter_type, date_value)
+                return items.filter(**kwargs)
+            elif date_type == 'last_update':
+                kwargs = _create_query_kwargs('last_update', filter_type, date_value)
+                kwargs.update({'item__in': items, 'workspace': workspace})
+                ws_items = WorkspaceItem.objects.filter(**kwargs)
+                return items.filter(workspaceitem__in = ws_items)
+           
+        
+        a_given_date = query_dict.get(date_type)
+        dates_before = query_dict.get(date_type + '<')
+        dates_after = query_dict.get(date_type +'>')
+        dates_before_equal = query_dict.get(date_type +'<=')
+        dates_after_equal = query_dict.get(date_type + '>=')
+        
+        if a_given_date:            
+            if (dates_before or dates_after or dates_before_equal or dates_after_equal):
+                raise Exception('wrong date query')
 
+            items = _query_by_date(items, date_type, 'a_given_date', a_given_date)
+            return items 
+            
+        if dates_before:
+            if dates_before_equal:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_before', dates_before)
+        
+        if dates_before_equal:
+            if dates_before:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_before_equal', dates_before_equal)
+        
+        if dates_after:
+            if dates_after_equal:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_after', dates_after)
+        
+        if dates_after_equal:
+            if dates_after:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_after_equal', dates_after_equal)
+        return items
+        
 def _search(request,  items, workspace = None):
     
     def search_node(node, sub_branch):        
@@ -274,11 +356,18 @@ def _search(request,  items, workspace = None):
         items = _search_complex_query(complex_query,  items)
         return items
         
+    
+        
     query = request.POST.get('query')
     order_by = request.POST.get('order_by',  'creation_time')
     order_mode = request.POST.get('order_mode',  'decrescent')
     show_deleted = request.POST.has_key('show_deleted')
+    
+    items = filter_by_date('creation_time', request.POST, items)
+    items = filter_by_date('last_update', request.POST, items, workspace)
 
+    #items = filter_by_date('creation_time', {'creation_time<=': '10/10/2011 18:10:10', 'creation_time>=':'10/10/2011 15:0:0'}, items)
+    #items = filter_by_date('last_update', {'last_update<=': '10/10/2011 17:0:0', 'last_update>=': '10/10/2011 15:0:0'  }, items, workspace)
     
     show_associated_items = request.POST.get('show_associated_items')
     nodes_query = []
@@ -474,11 +563,11 @@ def _search(request,  items, workspace = None):
             logger.debug('queries %s'%queries)
             for word in words:
                 logger.debug('word %s'%word)
-                if DATABASES['default']['ENGINE'] == 'sqlite3':
+                if DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
                     q = Q(metadata__value__iregex = u'(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%word.strip())                
                     queries.append(items.filter(q))
                     logger.debug('items.filter(q) %s'%items.filter(q))
-                elif DATABASES['default']['ENGINE'] == 'mysql':
+                elif DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%word.strip())
                     queries.append(items.filter(q))
                 
