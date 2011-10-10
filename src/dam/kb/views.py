@@ -99,6 +99,7 @@ def class_post(request, class_id):
 def object_index(request):
     '''
     GET: return the list of objects defined in the knowledge base.
+    PUT: insert a new object in the knowledge base.
     '''
     return _dispatch(request, {'GET' : object_index_get,
                                'PUT' :  object_put})
