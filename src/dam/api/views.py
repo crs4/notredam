@@ -768,6 +768,9 @@ class WorkspaceResource(ModResource):
         
         return HttpResponse(simplejson.dumps(resp))
         
+        
+    def _search(self, workspace, start, limit, metadata, media_type, renditions, state,  ):
+        pass
     @exception_handler
     @api_key_required
     def search(self,  request, workspace_id):        
@@ -784,17 +787,16 @@ class WorkspaceResource(ModResource):
         start = request.POST.get('start')
         limit = request.POST.get('limit')
         
+        
         metadata = request.POST.getlist('metadata')
-        media_type = request.POST.get('media_type')
+        media_type = request.POST.getlist('media_type')
         logger.debug('metadata %s'%metadata)
         
         workspace = Workspace.objects.get(pk = workspace_id)
-        items = Item.objects.filter(workspaces__pk = workspace_id)
-        
-        items = _search(request,  items, workspace).distinct()
+        items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)
+        logger.debug('---------items %s'%items)
+        items, total_count = _search(request.POST,  items, media_type, start, limit,  workspace)
      
-        if media_type:
-            items = items.filter(type__name = media_type)
         resp = {'items': []}
         variants = request.POST.getlist('renditions')
         logger.debug('variants %s'%variants)
@@ -804,11 +806,6 @@ class WorkspaceResource(ModResource):
         if state:
             items = items.filter(stateitemassociation__state__name = state)
         
-        
-        logger.debug('items %s'%items)
-        totalCount = items.count()
-        if start and limit and items.count():
-            items = items[start:start + limit]
      
         items = items.distinct()
     
@@ -818,7 +815,7 @@ class WorkspaceResource(ModResource):
             logger.debug(item)
             resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
     
-        resp['totalCount'] = totalCount
+        resp['totalCount'] = total_count
         json_resp = json.dumps(resp)
         return HttpResponse(json_resp)
         
@@ -2938,7 +2935,7 @@ class SmartFolderResource(ModResource):
         new_post = request.POST.copy()
         new_post['query']= 'SmartFolders:"%s"'%sm.label
         request.POST = new_post
-        items = _search(request,  items, workspace).distinct()
+        items = _search(request.POST,  items, workspace = workspace).distinct()
         resp = {}
         resp['items'] = [i.pk for i in items.all()] 
         return HttpResponse(simplejson.dumps(resp))        

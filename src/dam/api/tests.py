@@ -251,11 +251,12 @@ class WSTestCase(MyTestCase):
         """
         workspace = DAMWorkspace.objects.get(pk = 1)
         print 'MetadataValue.objects.all() %s'%MetadataValue.objects.all()
-        params = self.get_final_parameters({ 'query': 'test', 
+        params = self.get_final_parameters({ 
+            'query': 'test', 
             'media_type': 'image', 
             'start':0,
             'limit':1,
-            'metadata': 'dc_description'
+            #'metadata': 'dc_description'
           
         }) 
         response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
