@@ -342,7 +342,7 @@ def filter_by_date(date_type, query_dict, items, workspace = None):
             items = _query_by_date(items, date_type, 'dates_after_equal', dates_after_equal)
         return items
         
-def _search(request,  items, workspace = None):
+def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspace = None):
     
     def search_node(node, sub_branch):        
         if show_associated_items:
@@ -356,30 +356,31 @@ def _search(request,  items, workspace = None):
         items = _search_complex_query(complex_query,  items)
         return items
         
-    
+    if media_type:
+        items = items.filter(type__name__in = media_type).distinct()
         
-    query = request.POST.get('query')
-    order_by = request.POST.get('order_by',  'creation_time')
-    order_mode = request.POST.get('order_mode',  'decrescent')
-    show_deleted = request.POST.has_key('show_deleted')
+    query = query_dict.get('query')
+    order_by = query_dict.get('order_by',  'creation_time')
+    order_mode = query_dict.get('order_mode',  'decrescent')
+    show_deleted = query_dict.has_key('show_deleted')
     
-    items = filter_by_date('creation_time', request.POST, items)
-    items = filter_by_date('last_update', request.POST, items, workspace)
+    items = filter_by_date('creation_time', query_dict, items)
+    items = filter_by_date('last_update', query_dict, items, workspace)
 
     #items = filter_by_date('creation_time', {'creation_time<=': '10/10/2011 18:10:10', 'creation_time>=':'10/10/2011 15:0:0'}, items)
     #items = filter_by_date('last_update', {'last_update<=': '10/10/2011 17:0:0', 'last_update>=': '10/10/2011 15:0:0'  }, items, workspace)
     
-    show_associated_items = request.POST.get('show_associated_items')
+    show_associated_items = query_dict.get('show_associated_items')
     nodes_query = []
     
-    nodes_query.extend(request.POST.getlist('keyword'))
-    nodes_query.extend(request.POST.getlist('collection'))
+    nodes_query.extend(query_dict.getlist('keyword'))
+    nodes_query.extend(query_dict.getlist('collection'))
     
-    smart_folders_query = request.POST.getlist('smart_folder')
+    smart_folders_query = query_dict.getlist('smart_folder')
 
     queries = []
     
-    complex_query = request.POST.get('complex_query')
+    complex_query = query_dict.get('complex_query')
     logger.debug('complex_query %s'%complex_query)
     
     if not show_deleted:        
@@ -634,19 +635,24 @@ def _search(request,  items, workspace = None):
             items = items.order_by('-%s'%order_by)
         else:
             items = items.order_by('%s'%order_by)
+    
+    total_count = items.count()
+
+    if start and limit:
+        items = items[start:start+limit]
 
 
-    return items
+    return (items, total_count)
 
-def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
+def _search_items(request, workspace, media_type, start = 0, limit = 30):
     user = User.objects.get(pk=request.session['_auth_user_id'])
     logger.debug('************** searching items for user %s' % user.pk)
 
-    only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
+    only_basket = request.POST.has_key('only_basket')    
     logger.debug('************** searching only_basket %s' % only_basket)
     
     
-    items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
+    items = workspace.items.all()
     logger.debug('****************** found %d items' % len(items))
 
     user_basket = Basket.get_basket(user, workspace)
@@ -656,12 +662,7 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-    items = _search(request,  items, workspace)
-
-    total_count = items.count()
-
-    if not unlimited:
-        items = items[start:start+limit]
+    items, total_count = _search(request.POST,  items, media_type, start, limit, workspace)
 
     return (items, total_count)
 
@@ -706,10 +707,11 @@ def load_items(request, view_type=None, unlimited=False):
         limit = int(request.POST.get('limit', 30))
 		
         if limit == 0:
-            unlimited = True
+            start = None
+            limit = None
             
         
-        items, total_count = _search_items(request, workspace, media_type, start, limit, unlimited)                    
+        items, total_count = _search_items(request, workspace, media_type, start, limit)                    
         item_dict = []
         now = time.time()
 
