@@ -340,11 +340,6 @@ _kb_attrs_dict_map = {kb_attrs.Boolean : lambda a:
                                 ['max',     a.max],
                                 ['default', a.default]]
                                + _std_attr_fields(a)),
-                      kb_attrs.String  : lambda a:
-                          dict([['type',    'string'],
-                                ['length',  a.length],
-                                ['default', a.default]]
-                               + _std_attr_fields(a)),
                       kb_attrs.Uri  : lambda a:
                           dict([['type',    'uri'],
                                 ['length',  a.length],
