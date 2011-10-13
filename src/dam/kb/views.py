@@ -224,12 +224,12 @@ def object_index_put(request):
     ses = _kb_session()
     object_class_id = obj_dict.get('class', None)
     if object_class_id is None:
-        return HTTPResponseBadRequest('Object representation lacks a '
+        return HttpResponseBadRequest('Object representation lacks a '
                                       +'"class" field')
 
     object_name = obj_dict.get('name', None)
     if object_name is None:
-        return HTTPResponseBadRequest('Object representation lacks a '
+        return HttpResponseBadRequest('Object representation lacks a '
                                       +'"name" field')
     
     explicit_id = obj_dict.get('id', None)
@@ -237,7 +237,7 @@ def object_index_put(request):
     try:
         ObjectClass = ses.python_class(object_class_id)
     except kb_exc.NotFound:
-        return HTTPResponseBadRequest('Invalid object class: %s'
+        return HttpResponseBadRequest('Invalid object class: %s'
                                       % (object_class_id, ))
 
     obj = ObjectClass(object_name, explicit_id=explicit_id)
