@@ -28,6 +28,7 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
 from django.utils import simplejson
 
 import tinykb.session as kb_ses
+import tinykb.classes as kb_cls
 import tinykb.exceptions as kb_exc
 import tinykb.attributes as kb_attrs
 import util
@@ -36,8 +37,10 @@ import util
 def class_index(request):
     '''
     GET: return the list of classes defined in the knowledge base.
+    PUT: insert a new class in the knowledge base.
     '''
-    return _dispatch(request, {'GET' : class_index_get})
+    return _dispatch(request, {'GET' : class_index_get,
+                               'PUT' : class_index_put})
 
 
 def class_index_get(request):
@@ -45,6 +48,106 @@ def class_index_get(request):
     cls_dicts = [_kbclass_to_dict(c) for c in ses.classes()]
 
     return HttpResponse(simplejson.dumps(cls_dicts))
+
+
+def class_index_put(request):
+    try:
+        cls_dict = _assert_return_json_data(request)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses = _kb_session()
+
+    class_name = cls_dict.get('name', None)
+    if class_name is None:
+        return HttpResponseBadRequest('Class representation lacks a '
+                                      +'"name" field')
+
+    superclass = None
+    superclass_id = cls_dict.get('superclass', None)
+    if superclass_id is not None:
+        try:
+            superclass = ses.class_(superclass_id)
+        except kb_exc.NotFound:
+            return HttpResponseBadRequest('Unknown superclass id: "%s"'
+                                          % (superclass_id, ))
+
+    explicit_id = cls_dict.get('id', None)
+
+    # Build the list of attributes of the class
+    json_attrs = cls_dict.get('attributes', [])
+    attrs = []
+    for attr_id in json_attrs:
+        a = json_attrs[attr_id]
+        try:
+            attr_type = a['type']
+        except KeyError:
+            return HttpResponseBadRequest('Attribute "%s" lacks a "type" field'
+                                          % (attr_id, ))
+
+        try:
+            attr_fn = _kb_dict_attrs_map[attr_type]
+        except KeyError:
+            return HttpResponseBadRequest(('Attribute "%s" has an invalid '
+                                           + 'type: "%s"')
+                                          % (attr_id, attr_type))
+
+        try:
+            attr_obj = attr_fn(a)
+        except KeyError as e:
+            return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
+                                           + 'a required field: "%s"')
+                                          % (attr_id, attr_type, str(e)))
+
+        attrs.append(attr_obj)
+
+    if superclass is None:
+        cls = kb_cls.KBRootClass(class_name, explicit_id=explicit_id,
+                                 attributes=attrs)
+    else:
+        cls = kb_cls.KBClass(class_name, superclass=superclass,
+                             explicit_id=explicit_id, attributes=attrs)
+
+    # FIXME: right now, we only support updating a few fields
+    updatable_fields = {'name'        : set([unicode, str]),
+                        'notes'       : set([unicode, str]),
+                        'can_catalog' : set([bool])}
+    try:
+        _assert_update_object_fields(cls, cls_dict, updatable_fields)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses.add(cls)
+    ses.commit()
+
+    return HttpResponse('ok')
+
+
+def class_index_post(request):
+    try:
+        cls_dict = _assert_return_json_data(request)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses = _kb_session()
+    try:
+        cls = ses.class_(class_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    # FIXME: right now, we only support updating a few fields
+    updatable_fields = {'name'        : set([unicode, str]),
+                        'notes'       : set([unicode, str]),
+                        'can_catalog' : set([bool])}
+    try:
+        _assert_update_object_fields(cls, cls_dict, updatable_fields)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    ses.add(cls)
+    ses.commit()
+
+    return HttpResponse('ok')
 
 
 @login_required
@@ -360,6 +463,50 @@ _kb_attrs_dict_map = {kb_attrs.Boolean : lambda a:
                                + _std_attr_fields(a))                         
                       }
 
+
+# This is the "inverse" of the mapping above: it associates a
+# JSON'able dictionary representation of a class attribute with a
+# function returning the actual Attribute object.  The function should
+# raise a KeyError when a required dictionary field is missing
+_kb_dict_attrs_map = {'bool' : lambda d:
+                          kb_attrs.Boolean(default=d.get('default'),
+                                           **(_std_attr_dict_fields(d))),
+                      'int' : lambda d:
+                          kb_attrs.Integer(min_=d.get('min'),
+                                           max_=d.get('max'),
+                                           default=d.get('default'),
+                                           **(_std_attr_dict_fields(d))),
+                      'real' : lambda d:
+                          kb_attrs.Real(min_=d.get('min'),
+                                        max_=d.get('max'),
+                                        default=d.get('default'),
+                                        **(_std_attr_dict_fields(d))),
+                      'string' : lambda d:
+                          kb_attrs.String(length=d['length'],
+                                          default=d.get('default'),
+                                          **(_std_attr_dict_fields(d))),
+                      'date' : lambda d:
+                          kb_attrs.Date(min_=d.get('min'),
+                                        max_=d.get('max'),
+                                        default=d.get('default'),
+                                        **(_std_attr_dict_fields(d))),
+                      'uri' : lambda d:
+                          kb_attrs.Uri(length=d['length'],
+                                       default=d.get('default'),
+                                       **(_std_attr_dict_fields(d))),
+                      'choice' : lambda d:
+                          kb_attrs.Choice(choices=d['choices'],
+                                          default=d.get('default'),
+                                          **(_std_attr_dict_fields(d))),
+                      'objref' : lambda d:
+                          kb_attrs.ObjectReference(target_class=d['target_class'],
+                                                 **(_std_attr_dict_fields(d))),
+                      'objref-list' : lambda d:
+                          kb_attrs.ObjectReference(target_class=d['target_class'],
+                                                  **(_std_attr_dict_fields(d)))
+                      }
+
+
 def _kbattr_to_dict(attr):
     '''
     Create a string representation of a KB class attribute descriptor
@@ -375,6 +522,17 @@ def _std_attr_fields(a):
     return [['name',        a.name],
             ['maybe_empty', a.maybe_empty],
             ['notes',       a.notes]] 
+
+
+def _std_attr_dict_fields(d):
+    '''
+    This is the "inverse" of _std_attr_fields(): return a dictionary
+    that, when used as **kwargs, will give a value to the keyword
+    arguments common to each Attribute sub-class constructor
+    '''
+    return {'name' : d['name'],
+            'maybe_empty' : d.get('maybe_empty', True),
+            'notes' : d.get('notes')}
 
 
 def _kbobject_to_dict(obj):
