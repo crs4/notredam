@@ -618,20 +618,6 @@ class WorkspaceResource(ModResource):
         resp = [i.pk for i in items]            
         
         return resp
-    
-    @exception_handler
-    @api_key_required   
-    def get_items(self,  request,  workspace_id):   
-        """"
-        Allows to get the list of items of a workspace
-
-        - Method: GET
-        - parameters: none 
-        - Returns: a json string similar to ['adcc76c9c76fe5905ea7fa27a6ea8099e5aa97ec4']
-        """ 
-        resp = WorkspaceResource()._get_items(workspace_id)
-        json_resp = json.dumps(resp)
-        return HttpResponse(json_resp)
         
     def _read(self, workspace_id):
         ws = Workspace.objects.get(pk = workspace_id)        
@@ -767,13 +753,10 @@ class WorkspaceResource(ModResource):
            resp['scripts'].append(_get_scripts_info(script))
         
         return HttpResponse(simplejson.dumps(resp))
-        
-        
-    def _search(self, workspace, start, limit, metadata, media_type, renditions, state,  ):
-        pass
+
     @exception_handler
     @api_key_required
-    def search(self,  request, workspace_id):        
+    def get_items(self,  request, workspace_id):        
         """
         Allows to retrieve items according to a given query.
         The query can contains one or more words, each one can be formatted in this way:
@@ -784,36 +767,40 @@ class WorkspaceResource(ModResource):
         
         """
         
-        start = request.POST.get('start')
-        limit = request.POST.get('limit')
+        start = request.GET.get('start')
+        limit = request.GET.get('limit')
         
         
-        metadata = request.POST.getlist('metadata')
-        media_type = request.POST.getlist('media_type')
+        metadata = request.GET.getlist('metadata')
+        media_type = request.GET.getlist('media_type')
         logger.debug('metadata %s'%metadata)
         
         workspace = Workspace.objects.get(pk = workspace_id)
+        variants = request.GET.getlist('renditions')
+        logger.debug('variants %s'%variants)
+        
         items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)
         logger.debug('---------items %s'%items)
-        items, total_count = _search(request.POST,  items, media_type, start, limit,  workspace)
+        items, total_count = _search(request.GET,  items, media_type, start, limit,  workspace)
      
         resp = {'items': []}
-        variants = request.POST.getlist('renditions')
-        logger.debug('variants %s'%variants)
-                
-        state = request.POST.get('state')
-        logger.debug('state %s'%state)
-        if state:
-            items = items.filter(stateitemassociation__state__name = state)
         
-     
-        items = items.distinct()
-    
+                
+        #state = request.GET.get('state')
+        #logger.debug('state %s'%state)
+        #if state:
+            #items = items.filter(stateitemassociation__state__name = state)
+        #
+     #
+        items = items.distinct()    
         item_res = ItemResource()
 
         for item in items:
             logger.debug(item)
-            resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
+            try:
+                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
+            except Exception,ex:
+                logger.error(ex)
     
         resp['totalCount'] = total_count
         json_resp = json.dumps(resp)
@@ -1187,54 +1174,36 @@ class ItemResource(ModResource):
         
     
     def _get_item_info(self, item, workspace, variants, metadata):
-        media_type = item.type.name
-                
+        media_type = item.type.name            
         tmp = {'pk': item.pk, 'media_type': media_type}
+    
         for m in metadata:
-            property_namespace, property_field_name = m.split('_')
+            if m == '*':                
+                properties = MetadataProperty.objects.all()
+                for metadata_value in MetadataValue.objects.filter(item = item):
+                    tmp[str(metadata_value.schema)] = metadata_value.value
+                break
+                
+            property_namespace, property_field_name = m.split(':')
                 
             try:
                 property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
-                mv = MetadataValue.objects.get(schema = property, item = item)
-                
+                mv = MetadataValue.objects.get(schema = property, item = item)                
                 tmp[m] = mv.value
-                
             except Exception, ex:
-                logger.debug('skipping %s'%ex)
+                #logger.error('skipping %s'%ex)
                 pass
+                
+                    
+                
+                    
             
         
 #        component_list = Component.objects.filter(item = item, workspace = workspace)
         for variant in variants:
-            if variant== 'thumbnail':
-                pass
-#                    url = _get_thumb_url(item, workspace, absolute_url = True)[0]
-            else:
-                component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)
-                v = component.variant
-                va = v.variantassociation_set.get(workspace = workspace)
-                logger.debug('v %s'%v)
-                url  = component.get_component_url()
-#                url = '/files/images/ooo.jpg'        
-                
+            component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
+            url  = component.get_url()                
             tmp[variant] = url
-                
-#                
-#        
-#        for c in component_list:
-#            v = c.variant
-#            if v.name in variants:
-#                if v.name == 'thumbnail':
-#                    
-#                    url = _get_thumb_url(item, workspace, absolute_url = True)[0]
-#                else:
-#                    va = v.variantassociation_set.get(workspace = workspace)
-#                    logger.debug('v %s'%v)
-#                    url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)
-##                url = '/files/images/ooo.jpg'        
-#                
-#                tmp[v.name] = url
-                
                 
         return tmp
     

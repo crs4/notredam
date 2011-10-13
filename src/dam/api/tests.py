@@ -230,22 +230,9 @@ class WSTestCase(MyTestCase):
         self.assertTrue(WorkspacePermissionAssociation.objects.filter(users = u,  workspace__pk = ws_pk,  permission__name = 'admin').count() == 0)
         
         
-    def test_0005_get_items(self):
-        """
-        Gets all the items in the first workspace using the api method /api/workspace/ws_name/get_items/ and checks it against the list of them in django db 
-        """
-        ws_pk = 1
-        params = {'workspace_id':ws_pk}        
-        params = self.get_final_parameters(params)
-        response = self.client.get('/api/workspace/%s/get_items/'%ws_pk,  params)        
-        
-        resp_dict = json.loads(response.content)        
-#        print 'resp_dict ',  resp_dict        
-        
-        self.assertTrue(resp_dict ==  [i.pk for i in Item.objects.filter(workspaces__pk = ws_pk)] )   
        
       
-    def test_0006_search(self):
+    def test_0005_get_items(self):
         """
         Search an image with a query list 'test' as dc description value using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
         """
@@ -256,15 +243,16 @@ class WSTestCase(MyTestCase):
             'media_type': 'image', 
             'start':0,
             'limit':1,
+            'renditions': ['original', 'thumbnail']
             #'metadata': 'dc_description'
           
         }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
         
         print resp_dict
         self.assertTrue(len(resp_dict['items']) == 1)
-#        self.assertTrue(resp_dict['totalCount'] == 2)
+
        
         
         
@@ -283,7 +271,7 @@ class WSTestCase(MyTestCase):
             'metadata': 'dc_description'
           
         }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
         
         print resp_dict
@@ -306,37 +294,14 @@ class WSTestCase(MyTestCase):
             'metadata': 'dc_description'
           
         }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
         
         print resp_dict
 #        self.assertTrue(len(resp_dict['items']) == params['limit'])
         self.assertTrue(resp_dict['totalCount'] == smart_folder.nodes.all()[0].items.count())
 #        self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
-    
-
-
-    def test_0009_search_complex(self):
-        """
-        not clear
-        """
-        workspace = DAMWorkspace.objects.get(pk = 1)
-        params = self.get_final_parameters({ 
-            'keyword': 18,
-            #'query': '"test prova"' ,
-            #'media_type': 'image', 
-            'start':0,
-            'limit':1,
-            #'metadata': 'dc_description'
-          
-        }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
-        resp_dict = json.loads(response.content)
         
-        print resp_dict
-        self.assertTrue(len(resp_dict['items']) == 1)
-        self.assertTrue(resp_dict['totalCount'] == 1)
-    
     def test_0010_keywords(self):
         """
         Search images with some given keywords using the api method /api/workspace/ws_name/get_keywords/. An image with the given keywords is found and it is checked that also the node children have the same keywords.
