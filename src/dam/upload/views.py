@@ -38,7 +38,7 @@ from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, Met
 from dam.variants.models import Variant
 from dam.treeview.models import Node
 #from dam.batch_processor.models import MachineState, Machine, Action
-from dam.workspace.models import DAMWorkspace as Workspace
+from dam.workspace.models import DAMWorkspace as Workspace, WorkspaceItem
 from dam.core.dam_workspace.decorators import permission_required
 from dam.upload.models import UploadURL
 from dam.upload.uploadhandler import StorageHandler
@@ -180,11 +180,9 @@ def _save_uploaded_item(request, upload_file, user, workspace):
     
     media_type = Type.objects.get(name=type)
     
-    item = Item.objects.create(owner = user, uploader = user,  type = media_type)
+    item = Item.objects.create(workspace, owner = user, uploader = user,  type = media_type)
     item_id = item.pk
-    item.add_to_uploaded_inbox(workspace)
-
-    item.workspaces.add(workspace)
+    
 
     _save_uploaded_component(request, res_id, file_name, variant, item, user, workspace)
 #    EventRegistration.objects.notify('upload', workspace,  **{'items':[item]})
@@ -216,12 +214,9 @@ def _create_item(user, workspace, res_id, media_type, original_filename):
         item = Item.objects.get(type=media_type, source_file_path = original_filename, workspaces = workspace) 
         created = False
     except Item.DoesNotExist:
-        item = Item.objects.create(owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
+        item = Item.objects.create(workspace, owner = user, uploader = user,  _id = res_id, type=media_type, source_file_path = original_filename)    
         created = True
     
-    if created:        
-        item.add_to_uploaded_inbox(workspace)    
-        item.workspaces.add(workspace)
         
     return (item, created)
 
@@ -674,40 +669,42 @@ def guess_media_type (file):
     return media_type
 
 def upload_session_finished(request):
-    from treeview.models import Node
-    session = request.POST['session']
-    workspace = request.session.get('workspace')
-    user = User.objects.get(pk = request.session['_auth_user_id'])
-    
-    tmp_dir = '/tmp/'+ session
-    logger.debug('tmp_dir %s'%tmp_dir)
+    try:
+        from treeview.models import Node
+        session = request.POST['session']
+        workspace = request.session.get('workspace')
+        user = User.objects.get(pk = request.session['_auth_user_id'])
+        
+        tmp_dir = '/tmp/'+ session
+        logger.debug('tmp_dir %s'%tmp_dir)
 
 
-    inbox_label = None
-    if os.path.exists(tmp_dir):
-        items_deleted ,processes = import_dir(tmp_dir, user, workspace)
+        inbox_label = None
+        if os.path.exists(tmp_dir):
+            items_deleted ,processes = import_dir(tmp_dir, user, workspace)
 
-        uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
-        try:
-            inbox = Node.objects.get(parent = uploaded, items = processes[0].processtarget_set.all()[0].target_id)
+            uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
+            try:
+                inbox = Node.objects.get(parent = uploaded, items = processes[0].processtarget_set.all()[0].target_id)
+                
+                logger.debug('----------------------inbox %s'%inbox)
+                inbox_label = inbox.label
             
-            logger.debug('----------------------inbox %s'%inbox)
-            inbox_label = inbox.label
-        
-        except Exception, ex:
-            logger.exception(ex)
-            inbox_label = None
-            #something strange, no inbox found
-        
+            except Exception, ex:
+                logger.exception(ex)
+                inbox_label = None
+                #something strange, no inbox found
+            
 
-        item_in_progress = 0
-        for process in processes:
-            item_in_progress += process.processtarget_set.all().count()
-        os.rmdir(tmp_dir)
-        return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress, 'inbox': inbox_label}))
-    else:
-        return HttpResponse(simplejson.dumps({'success': False}))
-    
+            item_in_progress = 0
+            for process in processes:
+                item_in_progress += process.processtarget_set.all().count()
+            os.rmdir(tmp_dir)
+            return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress, 'inbox': inbox_label}))
+        else:
+            return HttpResponse(simplejson.dumps({'success': False}))
+    except Exception, ex:
+        logger.exception(ex)
         
 @login_required
 def upload_archive(request):

@@ -18,6 +18,7 @@
 
 import os
 import re
+from xml.sax import ContentHandler, parseString
 from json import dumps
 from django.contrib.contenttypes.models import ContentType
 from dam.plugins.common.analyzer import Analyzer
@@ -42,9 +43,9 @@ def run(workspace,             # workspace object
 
 class ExtractBasic(Analyzer):
     md_server = "LowLoad"
-    exe_list = {'image_basic': 'identify', 'media_basic': 'ffprobe', 'doc_basic': 'pdfinfo'}
+    exe_list = {'image_basic': 'identify', 'media_basic': 'mediainfo', 'doc_basic': 'pdfinfo'}
     cmd_image_basic = '"file://%(infile)s"'
-    cmd_media_basic = '-show_streams -show_files "file://%(infile)s"'
+    cmd_media_basic = '-f "--Output=XML" "file://%(infile)s"'
     cmd_doc_basic   = '"file://%(infile)s"'
     regex  = r'(?P<filename>[^ \[]*)(?P<frame>\[\d+\]){0,1}\s(?P<type>[\w._-]+)\s' \
              r'(?P<width>\d+)x(?P<height>\d+)\s' \
@@ -86,11 +87,11 @@ class ExtractBasic(Analyzer):
         return 'ok'
 
     def parse_media_basic(self, result, filename):
-        log.debug('parse_media_basic: entering')
-        features = {}
+        log.debug('parse_media_basic: entering "%s"' % type(result))
         fullpath = str(self._fc.abspath(filename))
-        features = Parser(result).parse()
-        #set_flv_duration(features['streams'], fullpath)
+        parser = Parser()
+        parseString(result.encode('utf-8'), parser)
+        features = parser.parsed
         self._save_features(features, 'media_basic')
         return 'ok'
 
@@ -113,7 +114,7 @@ class ExtractBasic(Analyzer):
     def _save_features(self, features, extractor_type):
         "save results of basic extractions"
         metadata_list, delete_list = [], []
-        log.debug('ExtractBasicFeatures._save_features: %s' % features)
+        #log.debug('ExtractBasicFeatures._save_features: %s' % features)
         ctype = ContentType.objects.get_for_model(self.source)
         try:
             save_type(ctype, self.source)
@@ -126,8 +127,10 @@ class ExtractBasic(Analyzer):
         except Exception, e:
             log.error("Failed to save features in component object: %s" % str(e))
         if extractor_type == 'media_basic':
-            for stream_n in xrange(int(features['file']['nb_streams'])):
-                m_list, d_list = self._save_metadata(features[str(stream_n)], ctype)
+            for stream in features.keys():
+                if stream not in ['video', 'audio']:   # skip "general" "menu" or other stream
+                    continue
+                m_list, d_list = self._save_metadata(features[stream], ctype)
                 metadata_list.extend(m_list)
                 delete_list.extend(d_list)
         else: 
@@ -163,7 +166,7 @@ class ExtractBasic(Analyzer):
         for feature in features.keys():
             if features[feature]=='' or features[feature] == '0':
                 continue 
-            if feature == 'size':
+            if feature == 'file_size':
                 c.size = features[feature]
             if feature == 'height':
                 c.height = features[feature]
@@ -200,49 +203,42 @@ class ExtractBasic(Analyzer):
         return (metadata_list, delete_list)
 
 
-    
-#
-#  Helper code for parse_media_basic
-#
+class Parser(ContentHandler):
+    def __init__(self):
+        ContentHandler.__init__(self)
+        self.current_track = None   # holds data for the current track
+        self.parsed = {}      # holds all tracks
+        self.content = ""     # accumulator for character data
+        self.numeric = re.compile('\d+\.?\d*$')   
+        self.float_required = ['file_size', 'duration', 'overall_bit_rate', 'stream_size', 
+                               'ID',  'file_size', 'bit_rate', 'width', 'height', 
+                               'frame_rate', 'resolution', 'bit_depth', 'delay',]
+        # duration is in milliseconds, we want seconds
+        self.conversions = { 'duration': lambda x: str(float(x)/1000.) }  
 
-class Parser:
-    def __init__(self, data):
-        self.data = data.split('\n')
-        self.func = self.start
-        self.parsed = {}     # accumulate sections parsed in active
-        self.active = None   # temp map to collect name, value pairs
+    def startElement(self, name, attrs):
+        if name == 'track':
+            t = attrs.getValue('type').lower()
+            if t not in self.parsed:    # only one track of a given type is parsed
+                self.current_track = {}
+                self.parsed[t] = self.current_track
 
-    def parse(self):
-        for l in self.data:
-            self.func(l.strip())
-        if self.func != self.start:
-            raise Exception('Truncated input')
-        f = self.parsed['file']
-        for i in xrange(int(f['nb_streams'])):
-            s = self.parsed[str(i)]
-            s['size'] = f['size']
-            s['duration'] = f['duration']
-        return self.parsed
+    def endElement(self, name):
+        "Put a value in the active dictionary, checking that is a numeric value"
+        if name == 'track':
+            self.current_track == None
+        elif self.current_track is not None:
+            name = name.lower()
+            value = self.content.strip()
+            if name not in self.current_track:
+                if name not in self.float_required or self.numeric.match(value):
+                    value = self.conversions.get(name, lambda x: x)(value)
+                    self.current_track[name] = value
+        self.content = ""
 
-    def start(self, line):
-        if line in ['[STREAM]', '[FILE]' ]:
-            self.end_delim = '[/' + line[1:]
-            self.func = self.collect
-            self.active = {'index':'file'}  # when parsing a [STREAM] overwritten by stream number
+    def characters(self, content):
+        self.content += content
 
-    def collect(self, line):
-        if line == self.end_delim:
-            self.parsed[self.active['index']] = self.active
-            self.func = self.start
-        else:
-            parts = line.split('=')
-            name = parts[0].strip()
-            if len(parts) > 1:
-                value = '='.join(parts[1:])
-            else:
-                log.debug('no value: %s' % line)
-                value = ''
-            self.active[name] = value
 
 #def is_flv(streams):
 #    for k in streams.keys():

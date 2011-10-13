@@ -991,7 +991,7 @@ class ItemResource(ModResource):
         
         
         _check_app_permissions(ws,  user_id,  ['admin',  'remove_item'])
-        item.workspaces.remove(ws)
+        item.workspaceitem_set.filter(workspace = ws).delete()
         if item.workspaces.all().count() == 0:
             item.delete()
         return HttpResponse('')        
@@ -1636,9 +1636,8 @@ class ItemResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
 
         
-        item = Item.objects.create(uploader = user,_id = new_id(),  type = Type.objects.get_or_create_by_mime(media_type))
-        ws.items.add(item)
-        item.add_to_uploaded_inbox(ws)        
+        item = Item.objects.create(ws, uploader = user,_id = new_id(),  type = Type.objects.get_or_create_by_mime(media_type))
+             
         
         resp = {'id': item.pk,   'workspace_id':ws_id}
         json_resp = json.dumps(resp)
