@@ -637,10 +637,12 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
             items = items.order_by('%s'%order_by)
     
     total_count = items.count()
-
-    if start and limit:
+    
+    logger.debug('start %s'%start)
+    logger.debug('limit %s'%limit)
+    if start is not None and limit is not None:
         items = items[start:start+limit]
-
+    logger.debug(len(items))
 
     return (items, total_count)
 
