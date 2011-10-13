@@ -118,6 +118,15 @@ class Session(object):
         All the pending objects will be saved on the knowledge base
         SQL DB.
         '''
+        # Before committing, ensure that all KBClass-derived objects
+        # have an associated table
+        new_kb_cls = [a for a in self.session.new
+                      if isinstance(a, kb_cls.KBClass)]
+        for c in new_kb_cls:
+            if not c.is_bound():
+                # FIXME: really do it automatically?  Or raise an error?
+                c.create_table(self.session)
+        
         try:
             self.session.commit()
         except sqlalchemy.exc.IntegrityError:
