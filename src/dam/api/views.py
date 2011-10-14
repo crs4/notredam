@@ -36,7 +36,7 @@ from decimal import *
 from dam.repository.models import Item,  Component, _get_resource_url, new_id
 from dam.core.dam_repository.models import Type
 from dam.core.dam_metadata.models import XMPStructure
-from dam.workspace.models import DAMWorkspace
+from dam.workspace.models import DAMWorkspace, WorkspaceItem
 from dam.core.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
@@ -769,36 +769,32 @@ class WorkspaceResource(ModResource):
         
         start = request.GET.get('start')
         limit = request.GET.get('limit')
-        
-        
+        show_deleted = request.GET.get('show_deleted', False)        
         metadata = request.GET.getlist('metadata')
         media_type = request.GET.getlist('media_type')
         logger.debug('metadata %s'%metadata)
+        
+        logger.debug('show_deleted %s'%show_deleted)
         
         workspace = Workspace.objects.get(pk = workspace_id)
         variants = request.GET.getlist('renditions')
         logger.debug('variants %s'%variants)
         
-        items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)
-        logger.debug('---------items %s'%items)
-        items, total_count = _search(request.GET,  items, media_type, start, limit,  workspace)
-     
-        resp = {'items': []}
+        items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)        
         
-                
+        items, total_count = _search(request.GET,  items, media_type, start, limit,  workspace)     
+        resp = {'items': []}
         #state = request.GET.get('state')
         #logger.debug('state %s'%state)
         #if state:
-            #items = items.filter(stateitemassociation__state__name = state)
-        #
-     #
+            #items = items.filter(stateitemassociation__state__name = state) 
         items = items.distinct()    
         item_res = ItemResource()
-
+        logger.debug('items %s '%items)
         for item in items:
             logger.debug(item)
             try:
-                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
+                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, deletion_info = show_deleted))
             except Exception,ex:
                 logger.error(ex)
     
@@ -1173,9 +1169,14 @@ class ItemResource(ModResource):
         
         
     
-    def _get_item_info(self, item, workspace, variants, metadata):
+    def _get_item_info(self, item, workspace, variants, metadata, deletion_info = False):
         media_type = item.type.name            
-        tmp = {'pk': item.pk, 'media_type': media_type}
+        tmp = {
+            'pk': item.pk, 
+            'media_type': media_type
+        }
+        if deletion_info:
+            tmp['deleted'] = WorkspaceItem.objects.get(item = item, workspace = workspace).deleted
     
         for m in metadata:
             if m == '*':                
@@ -1194,16 +1195,14 @@ class ItemResource(ModResource):
                 #logger.error('skipping %s'%ex)
                 pass
                 
-                    
-                
-                    
-            
-        
 #        component_list = Component.objects.filter(item = item, workspace = workspace)
         for variant in variants:
-            component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
-            url  = component.get_url()                
-            tmp[variant] = url
+            try:
+                component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
+                url  = component.get_url()                
+            except Exception, ex:
+                logger.error(ex)
+                tmp[variant] = None
                 
         return tmp
     
