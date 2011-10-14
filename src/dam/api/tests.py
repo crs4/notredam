@@ -71,32 +71,7 @@ from dam.core.dam_repository.models import Type
 from dam.workflow.models import State, StateItemAssociation
 from dam.workflow.views import _set_state
 from dam.mprocessor.models import Pipeline
-import hashlib
-
-def _get_final_parameters(api_key, secret, user_id, kwargs = None):
-    if  not kwargs:
-        kwargs = {}
-    kwargs['api_key'] = api_key
-    kwargs['user_id'] = user_id
-    to_hash = secret
-    parameters = []
-    
-    for key,  value in kwargs.items():
-        if isinstance(value,  list):
-            value.sort()
-            for el in value:
-                parameters.append(str(key)+str(el))
-        else:                    
-            parameters.append(str(key)+str(value))
-    
-    parameters.sort()
-    for el in parameters:
-        to_hash += el
-        
-    hashed_secret = hashlib.sha1(to_hash).hexdigest()
-    kwargs['checksum'] = hashed_secret 
-    return kwargs
-
+from dam.api.utils import _get_final_parameters
 
 class MyTestCase(TestCase):
     """
@@ -239,7 +214,7 @@ class WSTestCase(MyTestCase):
         workspace = DAMWorkspace.objects.get(pk = 1)
         print 'MetadataValue.objects.all() %s'%MetadataValue.objects.all()
         params = self.get_final_parameters({ 
-            'query': 'test', 
+            #'query': 'test', 
             'media_type': 'image', 
             'start':0,
             'limit':1,
@@ -251,7 +226,7 @@ class WSTestCase(MyTestCase):
         resp_dict = json.loads(response.content)
         
         print resp_dict
-        self.assertTrue(len(resp_dict['items']) == 1)
+        self.assertTrue(len(resp_dict['items']) == params['limit'])
 
        
         
