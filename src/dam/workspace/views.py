@@ -285,6 +285,8 @@ def filter_by_date(date_type, query_dict, items, workspace = None):
             else:
                 date_format = '%d/%m/%Y %H:%M:%S'                
            
+            logger.debug('date_format %s'%date_format)
+            
             date = datetime.strptime(date_value, date_format)
             if filter_type == 'a_given_date':
                 return {date_type: date}
@@ -304,8 +306,9 @@ def filter_by_date(date_type, query_dict, items, workspace = None):
             @param filter_type: 'a_given_date' or 'dates_before' etc
             @param date_value: value of the date
             """
-            if date_type == 'creation_time':
+            if date_type == 'creation_time':                
                 kwargs = _create_query_kwargs('creation_time', filter_type, date_value)
+                logger.debug('kwargs %s'%kwargs)
                 return items.filter(**kwargs)
             elif date_type == 'last_update':
                 kwargs = _create_query_kwargs('last_update', filter_type, date_value)

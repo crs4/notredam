@@ -204,47 +204,49 @@ class WSTestCase(MyTestCase):
         self.assertTrue(u not in ws.members.all())
         self.assertTrue(WorkspacePermissionAssociation.objects.filter(users = u,  workspace__pk = ws_pk,  permission__name = 'admin').count() == 0)
         
-        
-       
-      
     def test_0005_get_items(self):
         """
         Search an image with a query list 'test' as dc description value using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
         """
+        from datetime import datetime
         workspace = DAMWorkspace.objects.get(pk = 1)
         print 'MetadataValue.objects.all() %s'%MetadataValue.objects.all()
-        params = self.get_final_parameters({ 
-            #'query': 'test', 
+        params = self.get_final_parameters({             
             'media_type': 'image', 
             'start':0,
             'limit':1,
             'renditions': ['original', 'thumbnail']
-            #'metadata': 'dc_description'
-          
         }) 
         response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
         
-        print resp_dict
         self.assertTrue(len(resp_dict['items']) == params['limit'])
-
+        self.assertTrue(int(resp_dict['totalCount']) == Item.objects.filter(workspaceitem__workspace = workspace, workspaceitem__deleted = False).distinct().count())
+        self.assertTrue(resp_dict['items'][0].has_key('pk'))
+        self.assertTrue(resp_dict['items'][0].has_key('media_type'))
+        self.assertTrue(resp_dict['items'][0].has_key('last_update'))
+        self.assertTrue(resp_dict['items'][0].has_key('creation_time'))
+        self.assertTrue(datetime.strptime(resp_dict['items'][0]['last_update'], '%c') == Item.objects.get(pk = resp_dict['items'][0]['pk']).get_last_update(workspace))
+        self.assertTrue(resp_dict['items'][0].has_key('original'))
+        self.assertTrue(resp_dict['items'][0].has_key('thumbnail'))
     
     def test_0006_get_items_filtering_by_last_update(self):
         """
-        Search iterms filtering by last update.        
+        Search items filtering by last update.        
         """
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.get(pk = 1)
-        item1 = Item.objects.get(pk = 2)
+        item1 = Item.objects.get(pk = 2)        
+        
+        print 'item.last_update', item.get_last_update(workspace).strftime('%c')
+        print 'item1.last_update', item1.get_last_update(workspace).strftime('%c')
+        
         params = self.get_final_parameters({ 
-            'last_update>=': item.get_last_update(workspace).strftime('%d/%m/%Y %H:%M:%S')
+            'last_update>=': item1.get_last_update(workspace).strftime('%d/%m/%Y %H:%M:%S')
         }) 
         response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
-        self.assertTrue(resp_dict['totalCount'] == 2)        
-        
-        
-        
+        self.assertTrue(resp_dict['totalCount'] == 2)           
     
     def test_0007_search_keywords(self):
         """
@@ -499,8 +501,10 @@ class WSTestCase(MyTestCase):
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.get(pk = 1)
         item1 = Item.objects.get(pk = 2)
+        print 'item.creation_time', item.creation_time.strftime('%c')
+        print 'item1.creation_time', item1.creation_time.strftime('%c')
         params = self.get_final_parameters({ 
-            'creation_time>': item.get_last_update(workspace).strftime('%d/%m/%Y %H:%M:%S')
+            'creation_time>': item.creation_time.strftime('%d/%m/%Y %H:%M:%S')
         }) 
         response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
@@ -508,7 +512,7 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['items'][0]['pk'] == 2)
         
         
-    def test_0023_get_items_with_metadata(self):
+    def test_get_items_with_metadata(self):
         """
         Search items retrieving a given metadata.        
         """
@@ -528,7 +532,7 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['items'][1]['metadata'].has_key('dc:title'))
         self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) == 1)        
         
-    def test_0024_get_items_with_all_metadata(self):
+    def test_get_items_with_all_metadata(self):
         """
         Search items retrieving all metadata.        
         """
@@ -545,7 +549,7 @@ class WSTestCase(MyTestCase):
         self.assertTrue(len(resp_dict['items'][0]['metadata'].keys()) > 1)
         self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) > 1)
         
-    def test_0025_get_items_with_deleted_ones(self):
+    def test_get_items_with_deleted_ones(self):
         """
         Search items retrieving all items. included deleted.        
         """
@@ -704,6 +708,8 @@ class ItemTest(MyTestCase):
         sub = item.metadata.filter(schema__field_name = 'subject')        
         self.assertTrue(sub[0].value == 'test')
         self.assertTrue(sub[1].value == 'test2')
+        
+    
        
      
     def test_0029_remove_metadata_single(self):
@@ -828,8 +834,6 @@ class ItemTest(MyTestCase):
         print '-------------------------',  resp_dict
         
     
-        
-    
     def test_0036_set_state(self): 
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
@@ -840,6 +844,21 @@ class ItemTest(MyTestCase):
         
         self.assertTrue(response.content == '')
         self.assertTrue(StateItemAssociation.objects.get(item = item).state.name == 'test')
+        
+    def test_last_update_on_change_metadata(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        last_update = item.get_last_update(workspace)        
+        
+        metadata_dict = {'dc_title': {'en-US': 'test'}}
+        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict)})
+        self.client.post('/api/item/%s/set_metadata/'%item.pk, params, )
+        
+        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict)})
+                   
+        
+
+
         
         
 
