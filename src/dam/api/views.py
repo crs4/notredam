@@ -1166,7 +1166,8 @@ class ItemResource(ModResource):
         logger.debug('resp %s'%resp)
         return resp
     
-    def _get_item_info(self, item, workspace, variants, metadata, deletion_info = False):
+    def _get_item_info(self, item, workspace, variants = [], metadata = None, deletion_info = False, workspaces_list = False, keywords_list = False, rendition_file_name = False):
+                
         media_type = item.type.name            
         tmp = {
             'pk': item.pk, 
@@ -1174,9 +1175,17 @@ class ItemResource(ModResource):
             'creation_time': item.creation_time.strftime('%c'),
             'last_update': item.get_last_update(workspace).strftime('%c')
         }
+        
         if deletion_info:
             tmp['deleted'] = WorkspaceItem.objects.get(item = item, workspace = workspace).deleted
-    
+        
+        if keywords_list:
+            tmp['keywords'] =  list(item.keywords())
+
+        if workspaces_list:
+            wss = item.get_workspaces()
+            tmp['workspaces'] = [ws.pk for ws in wss]
+        
         if metadata:
             tmp['metadata'] = {}    
         
@@ -1197,18 +1206,20 @@ class ItemResource(ModResource):
                 #logger.error('skipping %s'%ex)
                 pass
                 
-#        component_list = Component.objects.filter(item = item, workspace = workspace)
         logger.debug('variants %s'%variants)
-        for variant in variants:
+        if variants: 
+            tmp['renditions'] = {}
             
-            try:
+        for variant in variants:            
+            try:                
                 component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
                 url  = component.get_url()                
-                tmp[variant] = url
+                tmp['renditions'][variant] = {'url':url}                
+                if rendition_file_name:
+                    tmp['renditions'][variant]['file_name'] = component.file_name                
             except Exception, ex:
                 logger.error(ex)
-                tmp[variant] = None
-            
+                tmp[variant] = None            
                 
         return tmp
     
@@ -1409,60 +1420,7 @@ class ItemResource(ModResource):
         _add_items_to_ws(item, ws, current_ws)        
         return HttpResponse('')        
     
-    def _read(self, user, item_id, flag, ws_id = None, variants = None):
-        item = Item.objects.get(pk = item_id)         
-        
-        keywords = list(item.keywords())
-            
-        wss = item.workspaces.all()
-        logger.debug('wss %s'%wss)
-        resp = {'id': item.pk, 
-         'workspaces':[ws.pk for ws in wss ],  
-         'keywords':keywords,  
-       
-        
-        'media_type': str(item.type)}
-        try:
-            upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace
-            resp['upload_workspace']= upload_workspace.pk
-        except Node.DoesNotExist:
-            pass
-        
-        try:    
-            metadata = self._get_metadata(item)            
-            resp['metadata'] = metadata
-            
-        except:
-            resp['metadata'] = {}        
-        
-        
-#            request.POST.['get_variant_urls'] = workspace
-        if flag:
-            self.get_variant_urls(user,  item, ws_id, variants )
-            
-            logger.debug(item.variants)
-            resp['renditions'] = {}
-                
-            for variant_name,  value in item.variants.items():
-                tmp = {}
-                try:
-                    file_name = item.component_set.get(variant__name = variant_name, workspace__pk = ws_id).file_name
-                    tmp['file_name'] = file_name
-                except Exception, ex:
-                    logger.exception(ex)
-                    
-                tmp['url'] = value
-                v = Variant.objects.get(name = variant_name)
-                c = v.get_component(Workspace.objects.get(pk = ws_id),item)
-                try:
-                    tmp['metadata_list'] = item.get_metadata_values()
-                except Exception, ex:
-                    tmp['metadata_list'] = {}
-                    logger.exception(ex)
 
-                resp['renditions'] [variant_name] = tmp
-        
-        return resp
     
     @exception_handler
     @api_key_required

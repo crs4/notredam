@@ -206,7 +206,7 @@ class WSTestCase(MyTestCase):
         
     def test_0005_get_items(self):
         """
-        Search an image with a query list 'test' as dc description value using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
+        Retrieve one of the images on ws 1, with some renditions info.
         """
         from datetime import datetime
         workspace = DAMWorkspace.objects.get(pk = 1)
@@ -227,8 +227,11 @@ class WSTestCase(MyTestCase):
         self.assertTrue(resp_dict['items'][0].has_key('last_update'))
         self.assertTrue(resp_dict['items'][0].has_key('creation_time'))
         self.assertTrue(datetime.strptime(resp_dict['items'][0]['last_update'], '%c') == Item.objects.get(pk = resp_dict['items'][0]['pk']).get_last_update(workspace))
-        self.assertTrue(resp_dict['items'][0].has_key('original'))
-        self.assertTrue(resp_dict['items'][0].has_key('thumbnail'))
+        self.assertTrue(resp_dict['items'][0].has_key('renditions'))
+        self.assertTrue(resp_dict['items'][0]['renditions'].has_key('original'))
+        self.assertTrue(resp_dict['items'][0]['renditions'].has_key('thumbnail'))
+        self.assertTrue(resp_dict['items'][0]['renditions']['original'].has_key('url'))
+        self.assertTrue(resp_dict['items'][0]['renditions']['thumbnail'].has_key('url'))
     
     def test_0006_get_items_filtering_by_last_update(self):
         """

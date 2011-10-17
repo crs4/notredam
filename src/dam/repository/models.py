@@ -201,8 +201,10 @@ class Item(AbstractItem):
         logger.debug('new_metadata %s' %new_metadata)
         MetadataValue.objects.save_metadata_value([self], new_metadata,  'original', self.workspaces.all()[0]) #workspace for variant metadata, not supported yet
 
-
-
+    def get_workspaces(self):
+        from dam.workspace.models import DAMWorkspace, WorkspaceItem
+        return DAMWorkspace.objects.filter(workspaceitem__in = WorkspaceItem.objects.filter(item = self, deleted = False))
+        
     def get_workspaces_count(self):
         """
         Number of workspaces where the current item has been added
