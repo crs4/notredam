@@ -122,32 +122,6 @@ def class_index_put(request):
     return HttpResponse('ok')
 
 
-def class_index_post(request):
-    try:
-        cls_dict = _assert_return_json_data(request)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-
-    ses = _kb_session()
-    try:
-        cls = ses.class_(class_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
-
-    # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str])}
-    try:
-        _assert_update_object_fields(cls, cls_dict, updatable_fields)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-
-    ses.add(cls)
-    ses.commit()
-
-    return HttpResponse('ok')
-
-
 @login_required
 def class_(request, **kwargs):
     '''
