@@ -228,7 +228,21 @@ class WSTestCase(MyTestCase):
         print resp_dict
         self.assertTrue(len(resp_dict['items']) == params['limit'])
 
-       
+    
+    def test_0006_get_items_filtering_by_last_update(self):
+        """
+        Search iterms filtering by last update.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'last_update>=': item.get_last_update(workspace).strftime('%d/%m/%Y %H:%M:%S')
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['totalCount'] == 2)        
+        
         
         
     
@@ -478,6 +492,77 @@ class WSTestCase(MyTestCase):
         print resp_dict 
         self.assertTrue(resp_dict.has_key('renditions'))
         
+    def test_0022_get_items_filtering_by_creation_time(self):
+        """
+        Search iterms filtering by last update.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'creation_time>': item.get_last_update(workspace).strftime('%d/%m/%Y %H:%M:%S')
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['totalCount'] == 1)
+        self.assertTrue(resp_dict['items'][0]['pk'] == 2)
+        
+        
+    def test_0023_get_items_with_metadata(self):
+        """
+        Search items retrieving a given metadata.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'metadata': 'dc:title'
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 2)
+        self.assertTrue(resp_dict['items'][0]['metadata'].has_key('dc:title'))
+        self.assertTrue(len(resp_dict['items'][0]['metadata'].keys()) == 1)
+        
+        self.assertTrue(resp_dict['items'][1]['metadata'].has_key('dc:title'))
+        self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) == 1)        
+        
+    def test_0024_get_items_with_all_metadata(self):
+        """
+        Search items retrieving all metadata.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'metadata': '*'
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 2)
+        self.assertTrue(len(resp_dict['items'][0]['metadata'].keys()) > 1)
+        self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) > 1)
+        
+    def test_0025_get_items_with_deleted_ones(self):
+        """
+        Search items retrieving all items. included deleted.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'show_deleted': True
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 3)
+        self.assertTrue(resp_dict['items'][0]['deleted'] == True)
+        self.assertTrue(resp_dict['items'][1]['deleted'] == False)
+        self.assertTrue(resp_dict['items'][2]['deleted'] == False)
+    
         
         
 class ItemTest(MyTestCase):  
