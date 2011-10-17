@@ -1165,15 +1165,14 @@ class ItemResource(ModResource):
             
         logger.debug('resp %s'%resp)
         return resp
-            
-        
-        
     
     def _get_item_info(self, item, workspace, variants, metadata, deletion_info = False):
         media_type = item.type.name            
         tmp = {
             'pk': item.pk, 
-            'media_type': media_type
+            'media_type': media_type,
+            'creation_time': item.creation_time.strftime('%c'),
+            'last_update': item.get_last_update(workspace).strftime('%c')
         }
         if deletion_info:
             tmp['deleted'] = WorkspaceItem.objects.get(item = item, workspace = workspace).deleted
@@ -1199,13 +1198,17 @@ class ItemResource(ModResource):
                 pass
                 
 #        component_list = Component.objects.filter(item = item, workspace = workspace)
+        logger.debug('variants %s'%variants)
         for variant in variants:
+            
             try:
                 component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
                 url  = component.get_url()                
+                tmp[variant] = url
             except Exception, ex:
                 logger.error(ex)
                 tmp[variant] = None
+            
                 
         return tmp
     
@@ -1410,12 +1413,15 @@ class ItemResource(ModResource):
         item = Item.objects.get(pk = item_id)         
         
         keywords = list(item.keywords())
-        colls = item.node_set.filter(type = 'collection')
-        collection_ids = list(item.collections())
             
         wss = item.workspaces.all()
         logger.debug('wss %s'%wss)
-        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': str(item.type)}
+        resp = {'id': item.pk, 
+         'workspaces':[ws.pk for ws in wss ],  
+         'keywords':keywords,  
+       
+        
+        'media_type': str(item.type)}
         try:
             upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace
             resp['upload_workspace']= upload_workspace.pk

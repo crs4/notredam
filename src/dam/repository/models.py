@@ -126,7 +126,12 @@ class Item(AbstractItem):
 
         
     def set_metadata(self,property_namespace, property_name, value):
-        property = MetadataProperty.objects.get(field_name = property_name, namespace__name = property_namespace)
+        """
+        @param property_namespace: namespace prefix,  e.g  dc for Dublin Core
+        @param property_name: the name of the metadata, for example title, subject etc.
+        @param value: value for the given metadata
+        """
+        property = MetadataProperty.objects.get(field_name = property_name, namespace__prefix = property_namespace)
     
         new_metadata = {}
 
