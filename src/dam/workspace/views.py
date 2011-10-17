@@ -266,6 +266,7 @@ def filter_by_date(date_type, query_dict, items, workspace = None):
         @param items: items to filter
         @param workspace: scope of the filtering needed in case of date_type == 'last_update'
         """
+        
         if date_type is not 'last_update' and date_type is not 'creation_time':
             raise Exception('you can filter in time only by last_update or creation_item, sorr')
         
@@ -278,7 +279,12 @@ def filter_by_date(date_type, query_dict, items, workspace = None):
             @param filter_type: 'a_given_date' or 'dates_before' etc
             @param date_value:  value of the date
             """
-            date_format = '%d/%m/%Y %H:%M:%S'
+            
+            if len(date_value.split(' ')) == 1: #maybe a date without hour
+                date_format = '%d/%m/%Y'
+            else:
+                date_format = '%d/%m/%Y %H:%M:%S'                
+           
             date = datetime.strptime(date_value, date_format)
             if filter_type == 'a_given_date':
                 return {date_type: date}

@@ -85,6 +85,8 @@ class Item(AbstractItem):
     objects = ItemManager()
     
     def get_last_update(self, ws):
+        """@param ws: workpace of whom last update is requested"""
+        
         ws_item = self.workspaceitem_set.get(item = self, workspace = ws)
         return ws_item.last_update
     
@@ -291,12 +293,14 @@ class Item(AbstractItem):
             
         if self.get_workspaces_count() == 0:
             #REMOVING ORIGINAL FILE
-            orig = self.component_set.get(variant__name = 'original')
+            
             try:
+                orig = self.component_set.get(variant__name = 'original')
                 os.remove(orig.get_file_path())
+                orig.delete()
             except:
                 pass #file maybe does not exist
-            orig.delete()
+            
             #self.delete()
             
            

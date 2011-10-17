@@ -1178,11 +1178,14 @@ class ItemResource(ModResource):
         if deletion_info:
             tmp['deleted'] = WorkspaceItem.objects.get(item = item, workspace = workspace).deleted
     
+        if metadata:
+            tmp['metadata'] = {}    
+        
         for m in metadata:
             if m == '*':                
                 properties = MetadataProperty.objects.all()
                 for metadata_value in MetadataValue.objects.filter(item = item):
-                    tmp[str(metadata_value.schema)] = metadata_value.value
+                    tmp['metadata'][str(metadata_value.schema)] = metadata_value.value
                 break
                 
             property_namespace, property_field_name = m.split(':')
@@ -1190,7 +1193,7 @@ class ItemResource(ModResource):
             try:
                 property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
                 mv = MetadataValue.objects.get(schema = property, item = item)                
-                tmp[m] = mv.value
+                tmp['metadata'][m] = mv.value
             except Exception, ex:
                 #logger.error('skipping %s'%ex)
                 pass
