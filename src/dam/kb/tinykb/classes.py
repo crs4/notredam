@@ -98,8 +98,8 @@ class ItemVisibility(object):
 
 
 class KBClass(object):
-    def __init__(self, name, superclass, attributes=[], can_catalog=True,
-                 notes=None, explicit_id=None):
+    def __init__(self, name, superclass, attributes=[], notes=None,
+                 explicit_id=None):
         if explicit_id is None:
             self.id = niceid.niceid(name) # FIXME: check uniqueness!
         else:
@@ -118,7 +118,6 @@ class KBClass(object):
 
         for a in attributes:
             self.attributes.append(a)
-        self.can_catalog = can_catalog
         self.notes = notes
 
         ## When created from scratch, no table on DB should exists
@@ -283,11 +282,9 @@ class KBClass(object):
 
 
 class KBRootClass(KBClass):
-    def __init__(self, name, attributes=[], can_catalog=True, notes=None,
-                 explicit_id=None):
+    def __init__(self, name, attributes=[], notes=None, explicit_id=None):
         KBClass.__init__(self, name, None, attributes=attributes,
-                         can_catalog=can_catalog, notes=notes,
-                         explicit_id=explicit_id)
+                         notes=notes, explicit_id=explicit_id)
 
     def add_to_workspace(self, workspace, access=access.READ_ONLY):
         workspace.add_root_class(self, access)

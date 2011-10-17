@@ -110,8 +110,7 @@ def class_index_put(request):
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str]),
-                        'can_catalog' : set([bool])}
+                        'notes'       : set([unicode, str])}
     try:
         _assert_update_object_fields(cls, cls_dict, updatable_fields)
     except ValueError as e:
@@ -137,8 +136,7 @@ def class_index_post(request):
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str]),
-                        'can_catalog' : set([bool])}
+                        'notes'       : set([unicode, str])}
     try:
         _assert_update_object_fields(cls, cls_dict, updatable_fields)
     except ValueError as e:
@@ -185,8 +183,7 @@ def class_post(request, class_id):
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str]),
-                        'can_catalog' : set([bool])}
+                        'notes'       : set([unicode, str])}
     try:
         _assert_update_object_fields(cls, cls_dict, updatable_fields)
     except ValueError as e:
@@ -407,7 +404,6 @@ def _kbclass_to_dict(cls):
     clsdict = {'id'          : cls.id,
                'name'        : cls.name,
                'superclass'  : superclass,
-               'can_catalog' : cls.can_catalog,
                'notes'       : cls.notes,
                'attributes'  : clsattrs}
 
