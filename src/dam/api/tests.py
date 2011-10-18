@@ -258,20 +258,48 @@ class WSTestCase(MyTestCase):
         workspace = DAMWorkspace.objects.get(pk = 1)
         node = Node.objects.get(label = 'test_remove_1')
         
-        params = self.get_final_parameters({ 'keyword': node.pk, 
-            'media_type': 'image', 
-            'start':0,
-            'limit':1,
-            'metadata': 'dc_description'
+        params = self.get_final_parameters({ 
+            'keyword': node.pk, 
+            'media_type': 'image'
           
         }) 
         response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
-        
-        print resp_dict
-        self.assertTrue(len(resp_dict['items']) == params['limit'])
+      
         self.assertTrue(resp_dict['totalCount'] == node.items.count())
-        #self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
+     
+     
+    def test_search_keywords_failure(self):
+        """
+        Search an image with a given keyword  using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+      
+        
+        params = self.get_final_parameters({ 
+            'keyword': 1000, 
+            'media_type': 'image'
+          
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+      
+        self.assertTrue(resp_dict['totalCount'] == 0)
+    
+    def test_search_in_metadata(self):
+        """
+        Search items by a string.
+        """
+        
+        workspace = DAMWorkspace.objects.get(pk = 1)
+      
+        
+        params = self.get_final_parameters({ 
+            'query': 'test1', 
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)      
+        self.assertTrue(resp_dict['totalCount'] == 1)
              
     def test_0008_search_smart_folders(self):
         """
