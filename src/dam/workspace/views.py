@@ -612,7 +612,7 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                 
                 items = reduce(operator.and_,  queries)
     
-    items.distinct()       
+    items = items.distinct()       
     property = None
     
     if order_by:
