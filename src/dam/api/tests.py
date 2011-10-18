@@ -681,7 +681,7 @@ class ItemTest(MyTestCase):
         item_pk = 1000    
                     
         ws_pk = 1
-        params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
+        params = self.get_final_parameters({'workspace': ws_pk, 'renditions': 'original'})
         response = self.client.get('/api/item/%s/get/'%item_pk, params) 
         resp_dict = json.loads(response.content)
         print resp_dict 

@@ -2873,7 +2873,8 @@ class SmartFolderResource(ModResource):
         new_post = request.POST.copy()
         new_post['query']= 'SmartFolders:"%s"'%sm.label
         request.POST = new_post
-        items = _search(request.POST,  items, workspace = workspace).distinct()
+        items, totalCount = _search(request.POST,  items, workspace = workspace)
+        
         resp = {}
         resp['items'] = [i.pk for i in items.all()] 
         return HttpResponse(simplejson.dumps(resp))        

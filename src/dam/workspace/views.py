@@ -394,9 +394,7 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
     
     if not show_deleted:        
         items = items.exclude(workspaceitem__in = WorkspaceItem.objects.filter(deleted = True, workspace = workspace))
-
-    logger.debug('----------------items %s in workspace %s'%(items, workspace))
-    
+        
     if not workspace:
         workspace = request.session['workspace']
     if complex_query:
@@ -414,17 +412,12 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                     node = node[0] 
                     queries.append(search_node(node, not show_associated_items))
                 else:
-#                    return Item.objects.none()
                     queries.append(Item.objects.none())
                     
         if smart_folders_query:
             for smart_folder_id in smart_folders_query:                
                 smart_folder_node = SmartFolder.objects.get(pk = smart_folder_id)
                 queries.append(search_smart_folder(smart_folder_node, items))
-            
-            
-#            items = reduce(and_,  queries)
-            
 #Text query        
         logger.debug('queries %s'%queries)
         if query:
@@ -437,17 +430,8 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
             smart_folder = re.findall('\s*SmartFolders:"(.+)"\s*', query,  re.U)
             
             keywords = re.findall('\s*Keywords:/(.+)/\s*', query,  re.U)
-#            spaced_keywords = re.findall('\s*Keywords:"([\w\s/]*)"\s*', query,  re.U)
-#            keywords.extend(spaced_keywords)
-    #        
-            collections= re.findall('\s*Collections:/(.+)/\s*', query,  re.U)
-#            spaced_collections = re.findall('\s*Collections:"([\w\s/]*)"\s*', query,  re.U)
-#            collections.extend(spaced_collections)
-            
+            collections= re.findall('\s*Collections:/(.+)/\s*', query,  re.U)            
             geo = re.findall('\s*geo:\(([\d.-]*),([\d.-]*)\),\(([\d.-]*),([\d.-]*)\)\s*', query,  re.U)
-            
-    #            just put out  keywords and collections....
-    #        simple_query = re.sub('(\w+:\w+)', '', query,)
             simple_query = re.compile('(\w+:/.+/)',  re.U).sub('', query)
             
             simple_query = re.sub('(\w+:".+")', '', simple_query)
@@ -461,21 +445,14 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
             simple_query = re.sub('\s*(\w+:\w+=\w+[.\w]*)\s*', '', simple_query)
             
             logger.debug('----%s'%simple_query)
-            
-            
-    #       remove geo too...
+
             simple_query = re.sub('(\w+:\(([\d.-]*),([\d.-]*)\),\(([\d.-]*),([\d.-]*)\))', '', simple_query)
 
             multi_words = re.findall('"(.+?)"', simple_query,  re.U)
             single_word_query = re.compile('"(.+)"',  re.U).sub( '', simple_query)
             
             words = re.findall( '\s*(.+)\s*', single_word_query ,  re.U)
-            
-#            words = re.findall( '\s*([\w+\.*])\s*', single_word_query ,  re.U)
-    #            words.extend(multi_words)
-            
-    #        logger.debug('keywords %s'%keywords )
-    #        logger.debug('collections %s'%collections)        
+      
             logger.debug('words %s'%words )
             logger.debug('multi_words %s'%multi_words)
             logger.debug('geo %s'%geo)
@@ -543,8 +520,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
             logger.debug('queries %s'%queries)
             for coll  in collections:
                 
-    #                q = Q(node__label__iexact = collection.strip(),  node__type = 'collection')
-    #                queries.append(items.filter(q))
                 logger.debug('path %s'%coll)
                 node = Node.objects.get_from_path(coll, workspace,  'collection')
                 logger.debug('node found %s'%node)
@@ -600,9 +575,7 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                     words_joined = '[[:blank:]]+'.join(tmp)
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%words_joined)
                     queries.append(items.filter(q))
-                    
-        
-#        logger.debug('queries %s'%queries)
+
         if queries:
             logger.debug('queries %s'%queries)
             if len(queries) == 1:
@@ -613,10 +586,8 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                 items = reduce(operator.and_,  queries)
     
     items = items.distinct()       
-    property = None
-    
-    if order_by:
-        
+    property = None    
+    if order_by:        
         if order_by == 'creation_time':
             pass
         
@@ -676,23 +647,6 @@ def _search_items(request, workspace, media_type, start = 0, limit = 30):
     items, total_count = _search(request.POST,  items, media_type, start, limit, workspace)
 
     return (items, total_count)
-
-
-#def _get_thumb_url(item, workspace):
-#
-#    thumb_url = NOTAVAILABLE
-#    thumb_ready = 0
-#
-#    try:
-#        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = 'thumbnail')
-#        url = item.get_variant(workspace, variant).get_component_url()
-#        if url:
-#            thumb_ready = 1
-#            thumb_url = url
-#    except:
-#        pass
-#        
-#    return thumb_url, thumb_ready
 
 @login_required
 def load_items(request, view_type=None, unlimited=False):
