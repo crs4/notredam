@@ -825,15 +825,6 @@ def _init_default_classes(engine):
          'name'        : 'Keyword',
          'table'       : 'object_keyword',
          'notes'       : 'Simple keyword without attributes',
-         'is_root'     : True},
-        ## Category 
-        {'id'          : 'category',
-         'root'        : 'category',
-         'parent'      : 'category',
-         'parent_root' : 'category',
-         'name'        : 'Category',
-         'table'       : 'object_category',
-         'notes'       : 'Simple category without attributes',
          'is_root'     : True}]
 
     engine.execute(class_t.insert(), default_classes)
