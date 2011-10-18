@@ -1166,7 +1166,7 @@ class ItemResource(ModResource):
         logger.debug('resp %s'%resp)
         return resp
     
-    def _get_item_info(self, item, workspace, variants = [], metadata = None, deletion_info = False, workspaces_list = False, keywords_list = False, rendition_file_name = False):
+    def _get_item_info(self, item, workspace, variants = [], metadata = None, deletion_info = False, workspaces_list = False, keywords_list = False, rendition_file_name = False, upload_workspace = False):
                 
         media_type = item.type.name            
         tmp = {
@@ -1185,6 +1185,13 @@ class ItemResource(ModResource):
         if workspaces_list:
             wss = item.get_workspaces()
             tmp['workspaces'] = [ws.pk for ws in wss]
+        
+        
+        try:		
+            upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace		
+            tmp['upload_workspace']= upload_workspace.pk		
+        except Node.DoesNotExist:		
+            pass
         
         if metadata:
             tmp['metadata'] = {}    
@@ -1454,16 +1461,12 @@ class ItemResource(ModResource):
         user = User.objects.get(pk = user_id)
         if not user.is_superuser:
             if item.workspaces.filter(members = user).count() == 0:
-                raise  InsufficientPermissions            
-        flag = request.GET.__contains__('renditions_workspace')
-        if flag:
-            ws_id = request.GET.get('renditions_workspace')
-            variants = request.GET.getlist('renditions')
-        else:
-            ws_id = None
-            variants = None
+                raise  InsufficientPermissions
+        workspace = request.GET['workspace']
+        variants = request.GET.getlist('renditions')
         
-        resp = ItemResource()._read(user, item_id, flag, ws_id, variants)
+        item = Item.objects.get(pk = item_id)
+        resp = ItemResource()._get_item_info(item, workspace, variants = [], metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = False, upload_workspace = True)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)

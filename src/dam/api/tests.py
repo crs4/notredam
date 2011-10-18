@@ -624,28 +624,28 @@ class ItemTest(MyTestCase):
          
     
     def test_0024_get(self):
+        
         item = Item.objects.all()[0]    
         keywords = list(item.keywords())            
         ws_pk = 1
-        params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
+        params = self.get_final_parameters({'workspace': ws_pk, 'renditions': 'original'})
         response = self.client.get('/api/item/%s/get/'%item.pk, params, )                        
         resp_dict = json.loads(response.content)
         print resp_dict 
-        self.assertTrue(resp_dict.has_key('id'))
+        self.assertTrue(resp_dict.has_key('pk'))
         self.assertTrue(resp_dict.has_key('keywords'))
         
         self.assertTrue(resp_dict.has_key('workspaces'))
-        self.assertTrue(resp_dict['media_type'] == 'image/jpeg') 
+        self.assertTrue(resp_dict['media_type'] == 'image') 
         
-        self.assertTrue(resp_dict['id'] == item.pk) 
+        self.assertTrue(resp_dict['pk'] == item.pk) 
         self.assertTrue(resp_dict['keywords'] == keywords)
         self.assertTrue(resp_dict['upload_workspace'] == 1)
-        print "resp_dict %s"%resp_dict
+      
+        metadata = {}
+        for metadata_value in MetadataValue.objects.filter(item = item):
+            metadata[str(metadata_value.schema)] = metadata_value.value
         
-        
-        metadata = {'dc_subject': ['test']}
-#        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
-        print("resp_dict['metadata'] %s"%resp_dict['metadata'])
         self.assertTrue(resp_dict['metadata'] == metadata)
         
         
