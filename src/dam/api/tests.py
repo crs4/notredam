@@ -923,6 +923,20 @@ class ItemTest(MyTestCase):
         last_update2 = datetime.strptime(json.loads(resp.content)['last_update'], '%c')        
         self.assertTrue(last_update2 > last_update)
         
+    def test_last_update_on_add_to_ws(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)        
+        workspace_receiver = DAMWorkspace.objects.create_workspace('test_item_add_to_ws', '', workspace.creator)
+        item = Item.objects.get(pk = 1)
+        get_params = self.get_final_parameters({'workspace': 1})        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)       
+        last_update = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+      
+        item.add_to_ws(workspace_receiver)
+        get_params = self.get_final_parameters({'workspace': workspace_receiver.pk})      
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)
+        last_update2 = datetime.strptime(json.loads(resp.content)['last_update'], '%c')        
+        self.assertTrue(last_update2 > last_update)
+        
 
 class KeywordsTest(MyTestCase):
     """
