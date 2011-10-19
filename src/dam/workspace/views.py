@@ -113,8 +113,7 @@ def _admin_workspace(request,  ws):
     return HttpResponse(resp)
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
-    from workspace.models import WorkspaceItem
-    ws_item, created = WorkspaceItem.objects.get_or_create(item = item, workspace = ws)
+    created = item.add_to_ws(ws)
     if created:
         orig_variant = Variant.objects.get(name = 'original')
         original = item.get_variant(current_ws, orig_variant)
@@ -143,8 +142,7 @@ def add_items_to_ws(request):
         current_ws = request.session['workspace']
         remove = request.POST.get('remove')
         move_public = request.POST.get('move_public', 'false')
-        items = Item.objects.filter(pk__in = item_ids)
-        
+        items = Item.objects.filter(pk__in = item_ids)        
         
         item_imported = []
         run_items = []
@@ -158,11 +156,11 @@ def add_items_to_ws(request):
         if remove == 'true':
             _remove_items(request, current_ws, items)
                 
-        if len(item_imported) > 0:
-            imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
-            time_imported = time.strftime("%Y-%m-%d", time.gmtime())
-            node = Node.objects.get_or_create(label = time_imported,  type = 'inbox',  parent = imported,  workspace = ws,  depth = 2)[0]
-            node.items.add(*item_imported)
+        #if len(item_imported) > 0:
+            #imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
+            #time_imported = time.strftime("%Y-%m-%d", time.gmtime())
+            #node = Node.objects.get_or_create(label = time_imported,  type = 'inbox',  parent = imported,  workspace = ws,  depth = 2)[0]
+            #node.items.add(*item_imported)
         
         resp = simplejson.dumps({'success': True, 'errors': []})
 
