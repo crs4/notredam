@@ -848,19 +848,15 @@ class ItemTest(MyTestCase):
         self.assertTrue(item.node_set.filter(pk = new_node.pk).count() == 0)
                
     def test_0033_add_to_ws(self):
-        
-        workspace = DAMWorkspace.objects.create(name = 'test', creator = self.user)
+        ws = DAMWorkspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.create_workspace('test_item_add_to_ws', '', ws.creator)        
         workspace_id = workspace.pk
-        
         
         item = Item.objects.all()[0]
         params = self.get_final_parameters({ 'workspace_id': workspace_id})        
         response = self.client.post('/api/item/%s/add_to_workspace/'%item.pk, params, )            
         self.assertTrue(response.content == '')        
         self.assertTrue(item in workspace.items.all()) 
-        
-
-        
         
         
     def test_0034_get_state(self):

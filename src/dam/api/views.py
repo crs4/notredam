@@ -1424,9 +1424,9 @@ class ItemResource(ModResource):
         workspace_id = request.POST['workspace_id']        
         ws = DAMWorkspace.objects.get(pk = workspace_id)        
         item = Item.objects.get(pk = item_id)
+        
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
-        current_ws = item.workspaces.exclude(pk = ws.pk)[0]
-        _add_items_to_ws(item, ws, current_ws)        
+        item.add_to_ws(ws)        
         return HttpResponse('')        
     
     @exception_handler
