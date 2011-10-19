@@ -26,8 +26,6 @@ from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
 from dam.metadata.models import *
 
-
-
 import os, datetime, urlparse, time, re, settings, logging
 from json import loads
 from django.utils import simplejson
@@ -69,8 +67,7 @@ class ItemManager(models.Manager):
     def create(self, workspace, **kwargs):
         from workspace.models import WorkspaceItem
         item = super(ItemManager, self).create(**kwargs)
-        WorkspaceItem.objects.create(item = item, workspace = workspace)
-        item.add_to_uploaded_inbox(workspace)       
+        item.add_to_ws(workspace, True)
         return item
         
 class Item(AbstractItem):
@@ -236,26 +233,43 @@ class Item(AbstractItem):
             comp.workspace.add(ws)
             
             if variant.shared:
-                comp.workspace.add(*self.workspaces.all())
-        
-        #logger.debug('variant %s, comp %s' % (variant, comp))
-        #logger.debug('comp.pk %s'%comp.pk)
-        
+                comp.workspace.add(*self.workspaces.all())        
         
         logger.debug('======== COMPONENT_VARIANT  ======= %s %s' % (comp.variant, comp.pk))
         return comp
 
-    def add_to_uploaded_inbox(self, workspace):
+    
+    def add_to_ws(self, workspace, item_creation = False):
         """
-        Add the item to the uploaded inbox of the given workspace
-        @param ws an instance of workspace.DAMWorkspace
+        @param workspace: workspace to whom add the item
+        @return: True if the item has been added, False if already in workspace
+        """
+        from workspace.models import WorkspaceItem
+        
+        ws_item, created = WorkspaceItem.objects.get_or_create(item = self, workspace = workspace)
+        if created:
+            if item_creation:
+                self._add_to_inbox(workspace, 'uploaded')
+            else:
+                self._add_to_inbox(workspace, 'imported')
+                
+        return created
+        
+    
+    def _add_to_inbox(self, workspace, type):
+        """
+        @param workspace: workspace to whom add the item
+        @param type: string, can be "uploaded" or "imported"        
         """
         
-        uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
-        time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
-        node = workspace.tree_nodes.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  depth = 2)[0]
-        node.items.add(self)
-        return node
+        if type not in ["imported", "uploaded"]:
+            raise Exception('type should be "imported" or "uploaded"')
+            
+        inbox_node = workspace.tree_nodes.get(depth = 1, label__iexact = type, type = 'inbox')
+        time_strf = time.strftime("%Y-%m-%d", time.gmtime())
+        new_inbox = workspace.tree_nodes.get_or_create(label = time_strf,  type = 'inbox',  parent = inbox_node,  depth = 2)[0]
+        new_inbox.items.add(self)
+        return new_inbox
 
     def delete_from_ws(self, user, workspaces=None):
         """
