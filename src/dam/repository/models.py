@@ -137,13 +137,13 @@ class Item(AbstractItem):
 
         if property.type == 'lang':
             if not isinstance(value,  dict):
-                raise Exception('format of metadata %s is invalid; it must be a dictionary (ex: {"en-US":"value"})')
+                raise Exception('format of metadata %s is invalid; it must be a dictionary (ex: {"en-US":"value"})'%value)
             
             new_metadata[str(property.pk)]  = []
             for lang in value.keys():
                 
                 if lang not in MetadataLanguage.objects.all().values_list('code',  flat = True):
-                    raise Exception('invalid language %s for metadata %s' % (lang, data))
+                    raise Exception('invalid language %s for metadata %s' % (lang, property))
                 
                 new_metadata[str(property.pk)] .append([value[lang],  lang])
             
@@ -153,14 +153,14 @@ class Item(AbstractItem):
 #                list of dict
             
             if not isinstance(value,  list):
-                raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+                raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % property)
             
             structure = XMPStructure.objects.get(name = property.type)
             structure_list = []
             
             for _structure in value:
                 if not isinstance(_structure ,  dict):
-                    raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+                    raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % property)
                 
                 tmp_dict = {}
                 for el in _structure.keys():
@@ -183,10 +183,10 @@ class Item(AbstractItem):
 #                list of str
             
             if not isinstance(value,  list):
-                raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+                raise Exception('format of metadata %s is invalid; it must be a list of strings' % property)
             for el in value:
                 if not isinstance(el,  basestring):
-                    raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+                    raise Exception('format of metadata %s is invalid; it must be a list of strings' % property)
             
             new_metadata[str(property.pk)] = value
         else:
@@ -194,7 +194,7 @@ class Item(AbstractItem):
             if not isinstance(value,  basestring) and not isinstance(value,  int) and not isinstance(value,  float):
 #                    logger.debug('value %s'%value)
 #                    logger.debug('-------------------------------------value.__class__ %s'%value.__class__)
-                raise Exception('format of metadata %s is invalid; it must be a string' % data)
+                raise Exception('format of metadata %s is invalid; it must be a string' % property)
             
             new_metadata[str(property.pk)] = value
         
@@ -228,24 +228,10 @@ class Item(AbstractItem):
                 comp = Component.objects.get(item = self, variant= variant)
                 comp.workspace.add(ws)
                 comp.workspace.add(*self.workspaces.all())
-            else:
-                #logger.debug('item %s'%self)
-                #logger.debug('variant %s'%variant)
-                #logger.debug('worskapce %s'%ws)
-                #logger.debug('media_type %s'%media_type)
+            else:               
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws)
-                
-#                comp = Component.objects.get(pk = 1)
-                logger.debug('comp %s'%comp)
-                
-#                comp.metadata.all().delete()
             
-            
-        except Component.DoesNotExist:
-            #logger.debug('variant does not exist yet')
-            #logger.debug('variant %s'%variant)
-            #logger.debug('type %s'%media_type)
-                    
+        except Component.DoesNotExist:           
             comp = Component.objects.create(variant = variant, item = self, type = media_type)
             comp.workspace.add(ws)
             

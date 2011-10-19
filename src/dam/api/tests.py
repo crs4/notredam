@@ -72,6 +72,7 @@ from dam.workflow.models import State, StateItemAssociation
 from dam.workflow.views import _set_state
 from dam.mprocessor.models import Pipeline
 from dam.api.utils import _get_final_parameters
+from datetime import datetime
 
 class MyTestCase(TestCase):
     """
@@ -208,7 +209,7 @@ class WSTestCase(MyTestCase):
         """
         Retrieve one of the images on ws 1, with some renditions info.
         """
-        from datetime import datetime
+        
         workspace = DAMWorkspace.objects.get(pk = 1)
         print 'MetadataValue.objects.all() %s'%MetadataValue.objects.all()
         params = self.get_final_parameters({             
@@ -580,6 +581,26 @@ class WSTestCase(MyTestCase):
         self.assertTrue(len(resp_dict['items'][0]['metadata'].keys()) > 1)
         self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) > 1)
         
+    
+    def test_get_items_with_keywords(self):
+        """
+        Search items retrieving all metadata.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+       
+        params = self.get_final_parameters({ 
+            'get_keywords': True
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 2)
+        self.assertTrue(resp_dict['items'][0].has_key('keywords') == True) 
+        self.assertTrue(resp_dict['items'][1].has_key('keywords') == True) 
+        self.assertTrue(len(resp_dict['items'][0]['keywords']) == 1)
+        self.assertTrue(len(resp_dict['items'][1]['keywords']) == 1)
+        
+    
     def test_get_items_with_deleted_ones(self):
         """
         Search items retrieving all items. included deleted.        
@@ -879,18 +900,28 @@ class ItemTest(MyTestCase):
     def test_last_update_on_change_metadata(self):
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.get(pk = 1)
-        last_update = item.get_last_update(workspace)        
+        get_params = self.get_final_parameters({'workspace': 1})        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)       
+        last_update = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+        item.set_metadata('dc','subject', ['test_last_update'])
+                
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)
+        last_update2 = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+        self.assertTrue(last_update2 > last_update)
+    
+    def test_last_update_on_add_keyword(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        get_params = self.get_final_parameters({'workspace': 1})        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)       
+        last_update = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+      
+        node = Node.objects.get(label = 'test')
+        node.save_keyword_association([item.pk])
         
-        metadata_dict = {'dc_title': {'en-US': 'test'}}
-        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict)})
-        self.client.post('/api/item/%s/set_metadata/'%item.pk, params, )
-        
-        params = self.get_final_parameters({'metadata':json.dumps(metadata_dict)})
-                   
-        
-
-
-        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)
+        last_update2 = datetime.strptime(json.loads(resp.content)['last_update'], '%c')        
+        self.assertTrue(last_update2 > last_update)
         
 
 class KeywordsTest(MyTestCase):

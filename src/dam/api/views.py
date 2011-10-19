@@ -771,6 +771,8 @@ class WorkspaceResource(ModResource):
         limit = request.GET.get('limit')
         show_deleted = request.GET.get('show_deleted', False)        
         metadata = request.GET.getlist('metadata')
+        get_keywords = request.GET.has_key('get_keywords')
+        
         media_type = request.GET.getlist('media_type')
         logger.debug('metadata %s'%metadata)
         
@@ -794,7 +796,7 @@ class WorkspaceResource(ModResource):
         for item in items:
             logger.debug(item)
             try:
-                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, deletion_info = show_deleted))
+                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, deletion_info = show_deleted, keywords_list = get_keywords))
             except Exception,ex:
                 logger.error(ex)
     
@@ -1427,16 +1429,14 @@ class ItemResource(ModResource):
         _add_items_to_ws(item, ws, current_ws)        
         return HttpResponse('')        
     
-
-    
     @exception_handler
     @api_key_required
     def read(self,  request, item_id):
         """
         - method: GET
             - parameters: 
-                - variants_workspace: the workspace id for whom retrieve the variants' info
-                - variants: optional, list of variants to get
+                - workspace: the workspace id for whom retrieve the variants' info
+                - renditions: optional, list of variants to get
         - returns: 
             - JSON example:
             {
@@ -1456,12 +1456,15 @@ class ItemResource(ModResource):
             }
         """
         
-        
         user_id = request.GET.get('user_id')        
         user = User.objects.get(pk = user_id)
         if not user.is_superuser:
             if item.workspaces.filter(members = user).count() == 0:
                 raise  InsufficientPermissions
+        
+        if not request.GET.has_key('workspace'):
+            raise MissingArgs, 'workspace is a required argument'
+        
         workspace = request.GET['workspace']
         variants = request.GET.getlist('renditions')
         
