@@ -141,6 +141,19 @@ class KBClass(object):
     def is_bound(self):
         return self.sqlalchemy_table is not None
 
+    def all_attributes(self):
+        '''
+        Return all the class attributes, including the ones of
+        ancestor classes (if any)
+        '''
+        attrs = [self.attributes]
+        c = self
+        while c.superclass is not c:
+            # Iterate until the root class is reached
+            attrs.append(c.attributes)
+            c = c.superclass
+        return [d for l in attrs for d in l] # Flatten
+
     def _get_parent_table(self):
         if self.superclass is self:
             parent_table = 'object'
