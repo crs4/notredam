@@ -510,7 +510,7 @@ def _kbobject_to_dict(obj):
     Create a JSON'able dictionary representation of the given KB object
     '''
     objattrs = {}
-    for a in getattr(obj, 'class').attributes:
+    for a in getattr(obj, 'class').all_attributes():
         objattrs[a.id] = _kbobjattr_to_dict(a, getattr(obj, a.id))
 
     objdict = {'id'          : obj.id,
