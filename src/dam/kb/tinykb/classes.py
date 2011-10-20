@@ -146,12 +146,17 @@ class KBClass(object):
         Return all the class attributes, including the ones of
         ancestor classes (if any)
         '''
-        attrs = [self.attributes]
+        attrs = []
         c = self
         while c.superclass is not c:
             # Iterate until the root class is reached
             attrs.append(c.attributes)
             c = c.superclass
+
+        # Don't forget to consider the root class, which is skipped in
+        # the previous 'while' loop
+        attrs.append(c.attributes)
+
         return [d for l in attrs for d in l] # Flatten
 
     def _get_parent_table(self):
