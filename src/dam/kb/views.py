@@ -367,7 +367,7 @@ def _kbclass_to_dict(cls):
     Create a JSON'able dictionary representation of the given KB class
     '''
     clsattrs = {}
-    for a in cls.attributes:
+    for a in cls.all_attributes():
         clsattrs[a.id] = _kbattr_to_dict(a)
 
     if (cls.superclass.id == cls.id):
