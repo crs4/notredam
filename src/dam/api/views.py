@@ -758,13 +758,43 @@ class WorkspaceResource(ModResource):
     @api_key_required
     def get_items(self,  request, workspace_id):        
         """
-        Allows to retrieve items according to a given query.
-        The query can contains one or more words, each one can be formatted in this way:
-            {metadata_schema}_{metadata_name}={value}
-            
-        For example 'dc:title=test' will find all items with dublin core title metadata equal to 'test'.
-        Obviously, you can search just with simple words, so if query is equal to 'test', a full text search on all searchable metadata will be performed.
+        Allows to retrieve workspace items.
+        Items can be filtered querying by a string contained in metadata, media type, keywords, smart folders, creation date and last update.
+        It is also possible to retrieve deleted items.         
         
+        Items returned are paginated. To improve performance, you can choose which item information retrieve: metadata, keywords, renditions. 
+        
+            - method: GET
+            - paramters:
+                - query: optional, it can contain one or more words. You can use double quotes to delimit a multi words phrase. The string will be used for a full text search within metadata.
+                - media_type: optional, list of media types to which items must belong to (image, audio, video, doc). If not supplied, all media types will be returned.
+                - keyword: optional, list of keyword ids. Items associated with the given keywords will be returned
+                - smart_folder: optional, list of smart folder ids. Items associated with the given smart folder will be returned
+                - start: it indicates the initial index of the items set that will be returned.
+                - limit: how many items will be returned in the given page.
+                - metadata: optional, a list of metadata schemas you want to retrieve for each items returned. Metadata schemas must be formatted in this way: {metadata_schema}:{metadata_name}. For example dc:title will retrieve the Dublin Core title for each item returned. Use '*' for retrieving all metadata.
+                - renditions: optional, a list of renditions you want to retrieve for each items.
+                - show_deleted: optional, true if you want to retrieve also the items deleted from the given workspace
+                - creation_time: optional, retrieve all items created in the given date (expressed in dd/mm/yyyy hh:mm:ss or dd/mm/yyyy). You can use also creation_time>, creation_time<, creation_time>=, creation_time<=
+                - last_update: optional, retrieve all items modified in the given date (expressed in dd/mm/yyyy hh:mm:ss or dd/mm/yyyy). You can use also last_update>, last_update<, last_update>=, last_update<=
+        
+            - returns:  items that match the query, according to pagination ."totalCount" indicates the total of items. Here an example of the JSON returned:
+            
+            {"items": [{
+                "upload_workspace": 1, 
+                "creation_time": "Thu Oct  6 11:21:26 2011", 
+                "last_update": "Mon Oct 17 11:24:50 2011", 
+                "renditions": {
+                    "original": {"url": "http://notredam_address/some_url"}, 
+                    "thumbnail": {"url": "http://notredam_address/some_url"}
+                }, 
+                "pk": 2, 
+                "media_type": 
+                "image"
+            }], 
+            "totalCount": 2}
+
+       
         """
         
         start = request.GET.get('start')
@@ -1439,21 +1469,15 @@ class ItemResource(ModResource):
                 - renditions: optional, list of variants to get
         - returns: 
             - JSON example:
-            {
-            'id': 1, 
-            'workspaces':[1,2],  
-            'keywords':[5,6], 
-            'collections': [3,4],
-            'metadata':[
-                            {
-                            'namespace':'dc',
-                            'name':'title',
-                            value:'foo'
-                            }
-                            ],
-            "variants urls": {"fullscreen": "http://127.0.1.1:7000/resources/7551515e84958f0ff70b22b8f43131af2209bf15/resource.jpg", "preview": "http://127.0.1.1:7000/resources/f64b97087bdbef164116789bc7e1d1d6964cc943/resource.jpg", "original": "http://127.0.1.1:7000/resources/e121aad2baa81693eaf498f00aa477facdb275fa/resource.jpg", "thumbnail": "http://127.0.1.1:7000/resources/413f4dfbe508b0730fb62c806175326abb259bed/resource.jpg"}
-            
-            }
+            {'workspaces': [1], 
+            'upload_workspace': 1, 
+            'creation_time': 'Thu Oct  6 09:52:32 2011', 
+            'last_update': 'Mon Oct 17 11:29:51 2011', 
+            'pk': 1, 
+            'keywords': [{'id': 22, 'label': 'test_remove_1'}], 
+            'media_type': 'image', 
+            'metadata': {'dc:title': 'test1', 'dc:format': 'image/jpeg', 'tiff:ImageLength': '450', 'tiff:ImageWidth': '360', 'notreDAM:FileSize': '38016', 'dc:subject': 'test1'}}
+
         """
         
         user_id = request.GET.get('user_id')        
