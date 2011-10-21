@@ -72,7 +72,8 @@ parser.add_option('-p', '--preinit',
                   help='Perform KB pre-initialization and exit (default: no)')
 parser.add_option('-t', '--populate-with-test-data',
                   dest='populate_with_test_data', action='store_true',
-                  help='Create test classes and objects (default: no)')
+                  help=('Create test classes and objects after KB '
+                        + 'initialization (default: no)'))
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
