@@ -18,8 +18,6 @@
 
 from django.db import models
 from django.db.models import Q
-
-from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 from dam.core.dam_repository.models import Type
@@ -70,42 +68,41 @@ class WSManager(WorkspaceManager):
             logger.exception(ex)
             raise ex        
         
-        return ws
+        return ws 
 
 class DAMWorkspace(Workspace):
     """
     Subclass of dam_workspace.Workspace,
     adds a many-to-many reference to the Item and State model 
     """
-    items = models.ManyToManyField(Item, related_name="workspaces",  blank=True)
+    items = models.ManyToManyField('repository.Item', related_name="workspaces",  through='WorkspaceItem')
 #    states = models.ManyToManyField(State)
     objects = WSManager()
         
 
-    def remove_item(self, item):
-        """
-        Removes the given item from the current workspace and its inbox node
-        Also deletes item's component bound to the current workspace
-        @param item item to remove (an instance of repository.Item)
-        """
-        from dam.treeview.models import Node
-        
-        try:
-            
-            inbox_nodes = Node.objects.filter(type = 'inbox', workspace = self, items = item) #just to be sure, filter instead of get
-            for inbox_node in inbox_nodes:
-                inbox_node.items.remove(item)
-                if inbox_node.items.all().count() == 0:
-                    inbox_node.delete()
-            
-            logger.debug('item.workspaces %s'%item.workspaces.all())
-            item.workspaces.remove(self)
-            logger.debug('item.workspaces %s'%item.workspaces.all())
-            item.component_set.all().filter(workspace = self).exclude(Q(variant__auto_generated = False)| Q(variant__shared = True)).delete()
-            
-        except Exception, ex:
-            logger.exception(ex)
-            raise ex        
+    #def remove_item(self, item):
+        #"""
+        #Removes the given item from the current workspace and its inbox node
+        #Also deletes item's component bound to the current workspace
+        #@param item item to remove (an instance of repository.Item)
+        #"""
+        #from dam.treeview.models import Node
+        #
+        #try:
+            #
+            #inbox_nodes = Node.objects.filter(type = 'inbox', workspace = self, items = item) #just to be sure, filter instead of get
+            #for inbox_node in inbox_nodes:
+                #inbox_node.items.remove(item)
+                #if inbox_node.items.all().count() == 0:
+                    #inbox_node.delete()
+            #
+            #logger.debug('item.workspaces %s'%item.workspaces.all())
+            #item.workspaceitem_set.filter(workspace = self).delete()
+            #item.component_set.all().filter(workspace = self).exclude(Q(variant__auto_generated = False)| Q(variant__shared = True)).delete()
+            #
+        #except Exception, ex:
+            #logger.exception(ex)
+            #raise ex        
     
     def get_variants(self):
         """
@@ -117,4 +114,12 @@ class DAMWorkspace(Workspace):
     def get_active_processes(self, ):
         return Process.objects.filter(pipeline__workspace = self).order_by('-start_date')
         
+        
+class WorkspaceItem(models.Model):
+    item = models.ForeignKey('repository.Item')
+    workspace = models.ForeignKey(DAMWorkspace)
+    last_update = models.DateTimeField(auto_now = True)
+    deleted = models.BooleanField(default= False)
     
+    class Meta:
+        unique_together = (('item', 'workspace'),)

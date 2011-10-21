@@ -54,9 +54,6 @@ class AdaptVideo(Adapter):
         self.out_type = Type.objects.get_or_create_by_mime(cmd['mime'])
         self.out_file = get_storage_file_name(self.item.ID, self.workspace.pk, output_variant, self.out_type.ext)
 
-        if not av.has_audio():
-            self.cmdline = synthetic_audio(self.cmdline)
-
         params = {}
         params.update(cmd['defaults'])
         params.update(preset_params)
@@ -68,7 +65,16 @@ class AdaptVideo(Adapter):
                        'out_filename': self.out_file,
                        'video_width': w,
                        'video_height': h, 
-                       'num_buffers': str(int(math.ceil(float(av.get_video_duration())*(44100./2100.)))),})
+        })
+
+        if not av.has_audio():   
+            try:                    # try to create a silent audio
+                duration = float(av.get_video_duration())
+                params.update({'num_buffers': str(int(math.ceil(duration * (44100./2100.))))})
+                self.cmdline = synthetic_audio(self.cmdline)
+            except:
+                # for some reason we could not get the video duration
+                self.cmdline = rm_audio(self.cmdline)
 
         self.cmdline = self.cmdline % params
 
@@ -140,6 +146,13 @@ __silent_audio = """
 #
 def synthetic_audio(cmdline):
     return cmdline.replace(__audio_decoder, __silent_audio)
+
+#
+# Return only the audio portion of the cmdline
+#
+def rm_audio(cmdline):
+    pos = cmdline.find(__encoder) + len(__encoder)
+    return cmdline[:pos]
 
 def get_presets():
     return [x[4:] for x in globals() if x.startswith('CMD_')]

@@ -211,6 +211,7 @@ Ext.onReady(function(){
                         var list_panel = new Ext.Panel({
                             title: 'Available users (select to add)',
                             region: 'center',
+                            autoScroll: true,
                             items: [list_users]
                         });
                         

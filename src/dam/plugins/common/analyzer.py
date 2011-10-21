@@ -36,22 +36,30 @@ class Analyzer:
 
     def handle_result(self, result, *args):
         #log.debug('= handle_result %s' % str(result)[:128])
-        return_value = self.parse_stdout(result['data'], *args)
-        self.deferred.callback(return_value)
+        try:
+            return_value = self.parse_stdout(result['data'], *args)
+            self.deferred.callback(return_value)
+        except Exception, e:
+            log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
+            self.deferred.errback(e)
         
     def handle_error(self, result):
         self.deferred.errback(Failure(Exception(result.getErrorMessage())))
 
     def execute(self, **params):     
         # get basic data (avoid creating stuff in DB)
-        self.get_cmdline(**params)
-
-        args = splitstring(self.cmdline)
-        if self.fake:
-            log.debug('######### Command line:\n%s' % str(args))
+        try:
+            self.get_cmdline(**params)
+            args = splitstring(self.cmdline)
+        except Exception, e:
+            log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
+            self.deferred.errback(e)
         else:
-            proxy = Proxy(self.md_server)
-            d = proxy.call(self.remote_exe, args, self.env)
-            d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=self.cb_args)
-        return self.deferred
+            if self.fake:
+                log.debug('######### Command line:\n%s' % str(args))
+            else:
+                proxy = Proxy(self.md_server)
+                d = proxy.call(self.remote_exe, args, self.env)
+                d.addCallbacks(self.handle_result, self.handle_error, callbackArgs=self.cb_args)
+        return self.deferred    # if executed stand alone
 

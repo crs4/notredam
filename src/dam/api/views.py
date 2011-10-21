@@ -36,7 +36,7 @@ from decimal import *
 from dam.repository.models import Item,  Component, _get_resource_url, new_id
 from dam.core.dam_repository.models import Type
 from dam.core.dam_metadata.models import XMPStructure
-from dam.workspace.models import DAMWorkspace
+from dam.workspace.models import DAMWorkspace, WorkspaceItem
 from dam.core.dam_workspace.models import WorkspacePermissionAssociation, WorkspacePermission
 from dam.workflow.models import State, StateItemAssociation
 from dam.treeview.models import Node, NodeMetadataAssociation,  SmartFolder, SmartFolderNodeAssociation
@@ -46,6 +46,7 @@ from dam.mprocessor.models import Pipeline
 from dam.workspace.views import _add_items_to_ws, _search
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
+from dam.kb.models import Object as KBObject
 from dam.upload.views import _upload_variant, _upload_resource_via_raw_post_data, _upload_resource_via_post
 from dam.workflow.views import _set_state 
 from dam.scripts.views import _edit_script, _get_scripts_info
@@ -618,20 +619,6 @@ class WorkspaceResource(ModResource):
         resp = [i.pk for i in items]            
         
         return resp
-    
-    @exception_handler
-    @api_key_required   
-    def get_items(self,  request,  workspace_id):   
-        """"
-        Allows to get the list of items of a workspace
-
-        - Method: GET
-        - parameters: none 
-        - Returns: a json string similar to ['adcc76c9c76fe5905ea7fa27a6ea8099e5aa97ec4']
-        """ 
-        resp = WorkspaceResource()._get_items(workspace_id)
-        json_resp = json.dumps(resp)
-        return HttpResponse(json_resp)
         
     def _read(self, workspace_id):
         ws = Workspace.objects.get(pk = workspace_id)        
@@ -767,58 +754,84 @@ class WorkspaceResource(ModResource):
            resp['scripts'].append(_get_scripts_info(script))
         
         return HttpResponse(simplejson.dumps(resp))
-        
+
     @exception_handler
     @api_key_required
-    def search(self,  request, workspace_id):        
+    def get_items(self,  request, workspace_id):        
         """
-        Allows to retrieve items according to a given query.
-        The query can contains one or more words, each one can be formatted in this way:
-            {metadata_schema}_{metadata_name}={value}
+        Allows to retrieve workspace items.
+        Items can be filtered querying by a string contained in metadata, media type, keywords, smart folders, creation date and last update.
+        It is also possible to retrieve deleted items.         
+        
+        Items returned are paginated. To improve performance, you can choose which item information retrieve: metadata, keywords, renditions. 
+        
+            - method: GET
+            - paramters:
+                - query: optional, it can contain one or more words. You can use double quotes to delimit a multi words phrase. The string will be used for a full text search within metadata.
+                - media_type: optional, list of media types to which items must belong to (image, audio, video, doc). If not supplied, all media types will be returned.
+                - keyword: optional, list of keyword ids. Items associated with the given keywords will be returned
+                - smart_folder: optional, list of smart folder ids. Items associated with the given smart folder will be returned
+                - start: it indicates the initial index of the items set that will be returned.
+                - limit: how many items will be returned in the given page.
+                - metadata: optional, a list of metadata schemas you want to retrieve for each items returned. Metadata schemas must be formatted in this way: {metadata_schema}:{metadata_name}. For example dc:title will retrieve the Dublin Core title for each item returned. Use '*' for retrieving all metadata.
+                - renditions: optional, a list of renditions you want to retrieve for each items.
+                - show_deleted: optional, true if you want to retrieve also the items deleted from the given workspace
+                - creation_time: optional, retrieve all items created in the given date (expressed in dd/mm/yyyy hh:mm:ss or dd/mm/yyyy). You can use also creation_time>, creation_time<, creation_time>=, creation_time<=
+                - last_update: optional, retrieve all items modified in the given date (expressed in dd/mm/yyyy hh:mm:ss or dd/mm/yyyy). You can use also last_update>, last_update<, last_update>=, last_update<=
+        
+            - returns:  items that match the query, according to pagination ."totalCount" indicates the total of items. Here an example of the JSON returned:
             
-        For example 'dc:title=test' will find all items with dublin core title metadata equal to 'test'.
-        Obviously, you can search just with simple words, so if query is equal to 'test', a full text search on all searchable metadata will be performed.
-        
+            {"items": [{
+                "upload_workspace": 1, 
+                "creation_time": "Thu Oct  6 11:21:26 2011", 
+                "last_update": "Mon Oct 17 11:24:50 2011", 
+                "renditions": {
+                    "original": {"url": "http://notredam_address/some_url"}, 
+                    "thumbnail": {"url": "http://notredam_address/some_url"}
+                }, 
+                "pk": 2, 
+                "media_type": 
+                "image"
+            }], 
+            "totalCount": 2}
+
+       
         """
         
-        start = request.POST.get('start')
-        limit = request.POST.get('limit')
+        start = request.GET.get('start')
+        limit = request.GET.get('limit')
+        show_deleted = request.GET.get('show_deleted', False)        
+        metadata = request.GET.getlist('metadata')
+        get_keywords = request.GET.has_key('get_keywords')
         
-        metadata = request.POST.getlist('metadata')
-        media_type = request.POST.get('media_type')
+        media_type = request.GET.getlist('media_type')
         logger.debug('metadata %s'%metadata)
         
+        logger.debug('show_deleted %s'%show_deleted)
+        
         workspace = Workspace.objects.get(pk = workspace_id)
-        items = Item.objects.filter(workspaces__pk = workspace_id)
-        
-        items = _search(request,  items, workspace).distinct()
-     
-        if media_type:
-            items = items.filter(type__name = media_type)
-        resp = {'items': []}
-        variants = request.POST.getlist('renditions')
+        variants = request.GET.getlist('renditions')
         logger.debug('variants %s'%variants)
-                
-        state = request.POST.get('state')
-        logger.debug('state %s'%state)
-        if state:
-            items = items.filter(stateitemassociation__state__name = state)
         
+        items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)        
         
-        logger.debug('items %s'%items)
-        totalCount = items.count()
-        if start and limit and items.count():
-            items = items[start:start + limit]
-     
-        items = items.distinct()
-    
+        items, total_count = _search(request.GET,  items, media_type, start, limit,  workspace)     
+        resp = {'items': []}
+        #state = request.GET.get('state')
+        #logger.debug('state %s'%state)
+        #if state:
+            #items = items.filter(stateitemassociation__state__name = state) 
+        items = items.distinct()    
         item_res = ItemResource()
-
+        logger.debug('items %s '%items)
         for item in items:
             logger.debug(item)
-            resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata))
+            try:
+                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, deletion_info = show_deleted, keywords_list = get_keywords))
+            except Exception,ex:
+                logger.error(ex)
     
-        resp['totalCount'] = totalCount
+        resp['totalCount'] = total_count
         json_resp = json.dumps(resp)
         return HttpResponse(json_resp)
         
@@ -991,7 +1004,7 @@ class ItemResource(ModResource):
         
         
         _check_app_permissions(ws,  user_id,  ['admin',  'remove_item'])
-        item.workspaces.remove(ws)
+        item.workspaceitem_set.filter(workspace = ws).delete()
         if item.workspaces.all().count() == 0:
             item.delete()
         return HttpResponse('')        
@@ -1185,59 +1198,68 @@ class ItemResource(ModResource):
             
         logger.debug('resp %s'%resp)
         return resp
-            
-        
-        
     
-    def _get_item_info(self, item, workspace, variants, metadata):
-        media_type = item.type.name
+    def _get_item_info(self, item, workspace, variants = [], metadata = None, deletion_info = False, workspaces_list = False, keywords_list = False, rendition_file_name = False, upload_workspace = False):
                 
-        tmp = {'pk': item.pk, 'media_type': media_type}
+        media_type = item.type.name            
+        tmp = {
+            'pk': item.pk, 
+            'media_type': media_type,
+            'creation_time': item.creation_time.strftime('%c'),
+            'last_update': item.get_last_update(workspace).strftime('%c')
+        }
+        
+        if deletion_info:
+            tmp['deleted'] = WorkspaceItem.objects.get(item = item, workspace = workspace).deleted
+        
+        if keywords_list:
+            tmp['keywords'] =  list(item.keywords())
+
+        if workspaces_list:
+            wss = item.get_workspaces()
+            tmp['workspaces'] = [ws.pk for ws in wss]
+        
+        
+        try:		
+            upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace		
+            tmp['upload_workspace']= upload_workspace.pk		
+        except Node.DoesNotExist:		
+            pass
+        
+        if metadata:
+            tmp['metadata'] = {}    
+        
         for m in metadata:
-            property_namespace, property_field_name = m.split('_')
+            if m == '*':                
+                properties = MetadataProperty.objects.all()
+                for metadata_value in MetadataValue.objects.filter(item = item):
+                    tmp['metadata'][str(metadata_value.schema)] = metadata_value.value
+                break
+                
+            property_namespace, property_field_name = m.split(':')
                 
             try:
                 property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
-                mv = MetadataValue.objects.get(schema = property, item = item)
-                
-                tmp[m] = mv.value
-                
+                mv = MetadataValue.objects.get(schema = property, item = item)                
+                tmp['metadata'][m] = mv.value
             except Exception, ex:
-                logger.debug('skipping %s'%ex)
+                #logger.error('skipping %s'%ex)
                 pass
+                
+        logger.debug('variants %s'%variants)
+        if variants: 
+            tmp['renditions'] = {}
             
-        
-#        component_list = Component.objects.filter(item = item, workspace = workspace)
-        for variant in variants:
-            if variant== 'thumbnail':
-                pass
-#                    url = _get_thumb_url(item, workspace, absolute_url = True)[0]
-            else:
-                component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)
-                v = component.variant
-                va = v.variantassociation_set.get(workspace = workspace)
-                logger.debug('v %s'%v)
-                url  = component.get_component_url()
-#                url = '/files/images/ooo.jpg'        
-                
-            tmp[variant] = url
-                
-#                
-#        
-#        for c in component_list:
-#            v = c.variant
-#            if v.name in variants:
-#                if v.name == 'thumbnail':
-#                    
-#                    url = _get_thumb_url(item, workspace, absolute_url = True)[0]
-#                else:
-#                    va = v.variantassociation_set.get(workspace = workspace)
-#                    logger.debug('v %s'%v)
-#                    url  = get_component_url(workspace, item.pk,v.name, redirect_if_not_available = False)
-##                url = '/files/images/ooo.jpg'        
-#                
-#                tmp[v.name] = url
-                
+        for variant in variants:            
+            try:                
+                component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
+                url  = component.get_url()                
+                tmp['renditions'][variant] = {'url':url}                
+                if rendition_file_name:
+                    tmp['renditions'][variant]['file_name'] = component.file_name                
+            except Exception, ex:
+                logger.error(ex)
+                tmp[variant] = None            
                 
         return tmp
     
@@ -1433,62 +1455,10 @@ class ItemResource(ModResource):
         workspace_id = request.POST['workspace_id']        
         ws = DAMWorkspace.objects.get(pk = workspace_id)        
         item = Item.objects.get(pk = item_id)
+        
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
-        current_ws = item.workspaces.exclude(pk = ws.pk)[0]
-        _add_items_to_ws(item, ws, current_ws)        
+        item.add_to_ws(ws)        
         return HttpResponse('')        
-    
-    def _read(self, user, item_id, flag, ws_id = None, variants = None):
-        item = Item.objects.get(pk = item_id)         
-        
-        keywords = list(item.keywords())
-        colls = item.node_set.filter(type = 'collection')
-        collection_ids = list(item.collections())
-            
-        wss = item.workspaces.all()
-        logger.debug('wss %s'%wss)
-        resp = {'id': item.pk,  'workspaces':[ws.pk for ws in wss ],  'keywords':keywords,  'collections': collection_ids,  'media_type': str(item.type)}
-        try:
-            upload_workspace = Node.objects.get(type = 'inbox', parent__label = 'Uploaded', items = item).workspace
-            resp['upload_workspace']= upload_workspace.pk
-        except Node.DoesNotExist:
-            pass
-        
-        try:    
-            metadata = self._get_metadata(item)            
-            resp['metadata'] = metadata
-            
-        except:
-            resp['metadata'] = {}        
-        
-        
-#            request.POST.['get_variant_urls'] = workspace
-        if flag:
-            self.get_variant_urls(user,  item, ws_id, variants )
-            
-            logger.debug(item.variants)
-            resp['renditions'] = {}
-                
-            for variant_name,  value in item.variants.items():
-                tmp = {}
-                try:
-                    file_name = item.component_set.get(variant__name = variant_name, workspace__pk = ws_id).file_name
-                    tmp['file_name'] = file_name
-                except Exception, ex:
-                    logger.exception(ex)
-                    
-                tmp['url'] = value
-                v = Variant.objects.get(name = variant_name)
-                c = v.get_component(Workspace.objects.get(pk = ws_id),item)
-                try:
-                    tmp['metadata_list'] = item.get_metadata_values()
-                except Exception, ex:
-                    tmp['metadata_list'] = {}
-                    logger.exception(ex)
-
-                resp['renditions'] [variant_name] = tmp
-        
-        return resp
     
     @exception_handler
     @api_key_required
@@ -1496,42 +1466,35 @@ class ItemResource(ModResource):
         """
         - method: GET
             - parameters: 
-                - variants_workspace: the workspace id for whom retrieve the variants' info
-                - variants: optional, list of variants to get
+                - workspace: the workspace id for whom retrieve the variants' info
+                - renditions: optional, list of variants to get
         - returns: 
             - JSON example:
-            {
-            'id': 1, 
-            'workspaces':[1,2],  
-            'keywords':[5,6], 
-            'collections': [3,4],
-            'metadata':[
-                            {
-                            'namespace':'dc',
-                            'name':'title',
-                            value:'foo'
-                            }
-                            ],
-            "variants urls": {"fullscreen": "http://127.0.1.1:7000/resources/7551515e84958f0ff70b22b8f43131af2209bf15/resource.jpg", "preview": "http://127.0.1.1:7000/resources/f64b97087bdbef164116789bc7e1d1d6964cc943/resource.jpg", "original": "http://127.0.1.1:7000/resources/e121aad2baa81693eaf498f00aa477facdb275fa/resource.jpg", "thumbnail": "http://127.0.1.1:7000/resources/413f4dfbe508b0730fb62c806175326abb259bed/resource.jpg"}
-            
-            }
+            {'workspaces': [1], 
+            'upload_workspace': 1, 
+            'creation_time': 'Thu Oct  6 09:52:32 2011', 
+            'last_update': 'Mon Oct 17 11:29:51 2011', 
+            'pk': 1, 
+            'keywords': [{'id': 22, 'label': 'test_remove_1'}], 
+            'media_type': 'image', 
+            'metadata': {'dc:title': 'test1', 'dc:format': 'image/jpeg', 'tiff:ImageLength': '450', 'tiff:ImageWidth': '360', 'notreDAM:FileSize': '38016', 'dc:subject': 'test1'}}
+
         """
-        
         
         user_id = request.GET.get('user_id')        
         user = User.objects.get(pk = user_id)
         if not user.is_superuser:
             if item.workspaces.filter(members = user).count() == 0:
-                raise  InsufficientPermissions            
-        flag = request.GET.__contains__('renditions_workspace')
-        if flag:
-            ws_id = request.GET.get('renditions_workspace')
-            variants = request.GET.getlist('renditions')
-        else:
-            ws_id = None
-            variants = None
+                raise  InsufficientPermissions
         
-        resp = ItemResource()._read(user, item_id, flag, ws_id, variants)
+        if not request.GET.has_key('workspace'):
+            raise MissingArgs, 'workspace is a required argument'
+        
+        workspace = request.GET['workspace']
+        variants = request.GET.getlist('renditions')
+        
+        item = Item.objects.get(pk = item_id)
+        resp = ItemResource()._get_item_info(item, workspace, variants = [], metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = False, upload_workspace = True)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
@@ -1636,9 +1599,8 @@ class ItemResource(ModResource):
         _check_app_permissions(ws,  user_id,  ['admin',  'add_item'])        
 
         
-        item = Item.objects.create(uploader = user,_id = new_id(),  type = Type.objects.get_or_create_by_mime(media_type))
-        ws.items.add(item)
-        item.add_to_uploaded_inbox(ws)        
+        item = Item.objects.create(ws, uploader = user,_id = new_id(),  type = Type.objects.get_or_create_by_mime(media_type))
+             
         
         resp = {'id': item.pk,   'workspace_id':ws_id}
         json_resp = json.dumps(resp)
@@ -2049,9 +2011,15 @@ class KeywordsResource(ModResource):
 #    @exception_handler
     def _read(self, user, workspace_id, node_id  = None, flag = False):
         def get_info(kw,  get_branch = False):
+            label = node.label
+            kb_object = None
+            if kw.kb_object is not None:
+                label = kw.kb_object.name
+                kb_object_id = kw.kb_object.id
             kw_info = {
                 'id': kw.pk,  
                 'label': kw.label,   
+                'kb_object': kb_object_id,
                 'workspace':kw.workspace.pk, 
                 'type': kw.cls, 
                 'associate_ancestors': kw.associate_ancestors,  
@@ -2188,6 +2156,7 @@ class KeywordsResource(ModResource):
         - method: POST
             - parameters: 
                 - label (required)
+                - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
                 - workspace_id: optional, it allows to create a keyword at the top level
                 - parent_id optional, required if no workspace_id is passed
                 - type: 'category' or 'keyword'
@@ -2249,11 +2218,17 @@ class KeywordsResource(ModResource):
         user_id = request.POST.get('user_id') 
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_taxonomy'])
         
-        new_node = Node.objects.filter(parent = node_parent, label = request.POST['label'])
+        label = request.POST['label']
+        if (request.POST.has_key['kb_object']
+            and request.POST['kb_object'] is not None):
+            # The KB object name will override the label
+            # FIXME: check that the provided label is equal to obj name?
+            obj = KBObjects.object.get(id=request.POST['kb_object'])
+        new_node = Node.objects.filter(parent = node_parent, label = label)
         if new_node.count() > 0:
             new_node = new_node[0]
         else:
-            new_node = Node.objects.add_node(node_parent, request.POST['label'],  ws, type, associate_ancestors)   
+            new_node = Node.objects.add_node(node_parent, label,  ws, type, associate_ancestors, kb_object=obj)
             if len(metadata_schema) > 0:
                 new_node.save_metadata_mapping(metadata_schema)
         
@@ -2939,7 +2914,8 @@ class SmartFolderResource(ModResource):
         new_post = request.POST.copy()
         new_post['query']= 'SmartFolders:"%s"'%sm.label
         request.POST = new_post
-        items = _search(request,  items, workspace).distinct()
+        items, totalCount = _search(request.POST,  items, workspace = workspace)
+        
         resp = {}
         resp['items'] = [i.pk for i in items.all()] 
         return HttpResponse(simplejson.dumps(resp))        

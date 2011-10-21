@@ -25,8 +25,6 @@ from dam.workflow.models import State, WrongItemWorkspace
 from dam.mprocessor.models import Pipeline
 from django.db import IntegrityError
 
-
-
 class CodeErrorException(Exception): #abstract
     error_code = None
     error_message = None
@@ -34,12 +32,10 @@ class CodeErrorException(Exception): #abstract
     def error_class(self):
         return self.__class__.__name__
     
-
 class VerboseCodeErrorException(CodeErrorException):
     def __init__(self, error_dict = None,  *args,  **kwargs):
         super(VerboseCodeErrorException,  self).__init__(*args,  **kwargs)
-        self.error_dict = error_dict
-        
+        self.error_dict = error_dict        
 
 class BadRequest(CodeErrorException):
     error_code = 400
@@ -49,22 +45,13 @@ class Forbidden(CodeErrorException):
 
 class NotFound(CodeErrorException):
     error_code = 404
-
-
-
-class MalformedJSON(BadRequest):
     
+class MalformedJSON(BadRequest):    
     error_message = 'malformed json request'
-
-class TooManyArgsPassed(BadRequest):
-    error_code = 23
-    error_message = 'too many arguments passed'
-    
 
 class MissingArgs(BadRequest):    
     error_message = 'missing required arguments'
     
-
 class SmartFolderError(BadRequest):    
     error_message = 'missing required arguments'
     

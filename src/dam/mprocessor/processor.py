@@ -84,7 +84,7 @@ class MProcessor(MQServer):
         if process:
             d = Batch(process).run()
             d.addCallback(self.mq_run)
-        return 'OK'
+        return 'ok'
 
 class Batch:
     def __init__(self, process):
@@ -238,7 +238,9 @@ class Batch:
                 self.outstanding += 1
                 log.debug('calling method with params ws=%s, id=%s, params=%s' % (self.process.workspace.pk, item.target_id, params))
                 d = method(self.process.workspace, item.target_id, **params)
+                log.debug('past %s' % str(method))
             except Exception, e:
+                log.error('ERROR in %s: %s %s' % (str(method), type(e), str(e)))
                 self._handle_err(str(e), item, schedule, action, params)
             else:
                 d.addCallbacks(self._handle_ok, self._handle_err, 

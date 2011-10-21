@@ -50,17 +50,20 @@ class Adapter:
 
     def execute(self, output_variant_name, output_type, **params):     
         # get basic data (avoid creating stuff in DB)
-        self.get_cmdline(output_variant_name, output_type, **params)
-        output_variant = Variant.objects.get(name = output_variant_name)
-        self.out_comp = self.item.create_variant(output_variant, self.workspace, self.out_type)
-        self.out_comp.source = self.source
-
-        args = splitstring(self.cmdline)
-        if self.fake:
-            log.debug('######### Command line:\n%s' % str(args))
+        try:
+            self.get_cmdline(output_variant_name, output_type, **params)
+            output_variant = Variant.objects.get(name = output_variant_name)
+            self.out_comp = self.item.create_variant(output_variant, self.workspace, self.out_type)
+            self.out_comp.source = self.source
+            args = splitstring(self.cmdline)
+        except Exception, e:
+            log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
+            self.deferred.errback(e)
         else:
-            proxy = Proxy(self.md_server)
-            d = proxy.call(self.remote_exe, args, self.env)
-            d.addCallbacks(self.handle_result, self.handle_error)
-        return self.deferred
-
+            if self.fake:
+                log.debug('######### Command line:\n%s' % str(args))
+            else:
+                proxy = Proxy(self.md_server)
+                d = proxy.call(self.remote_exe, args, self.env)
+                d.addCallbacks(self.handle_result, self.handle_error)
+        return self.deferred    # if executed stand alone
