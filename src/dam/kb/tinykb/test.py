@@ -96,7 +96,7 @@ def test_create_object_classes(connstring=CONNSTRING):
     # catalog2.add_to_workspace(w2)
 
     all_objs = [#w1, w2, w3,
-                KeywordClass
+                KeywordClass,
                 class1, class2, class3,
                 #u1, u2,
                 #it1, it2, it3,
