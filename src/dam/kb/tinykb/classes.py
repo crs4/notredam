@@ -98,8 +98,8 @@ class ItemVisibility(object):
 
 
 class KBClass(object):
-    def __init__(self, name, superclass, attributes=[], can_catalog=True,
-                 notes=None, explicit_id=None):
+    def __init__(self, name, superclass, attributes=[], notes=None,
+                 explicit_id=None):
         if explicit_id is None:
             self.id = niceid.niceid(name) # FIXME: check uniqueness!
         else:
@@ -118,7 +118,6 @@ class KBClass(object):
 
         for a in attributes:
             self.attributes.append(a)
-        self.can_catalog = can_catalog
         self.notes = notes
 
         ## When created from scratch, no table on DB should exists
@@ -141,6 +140,24 @@ class KBClass(object):
 
     def is_bound(self):
         return self.sqlalchemy_table is not None
+
+    def all_attributes(self):
+        '''
+        Return all the class attributes, including the ones of
+        ancestor classes (if any)
+        '''
+        attrs = []
+        c = self
+        while c.superclass is not c:
+            # Iterate until the root class is reached
+            attrs.append(c.attributes)
+            c = c.superclass
+
+        # Don't forget to consider the root class, which is skipped in
+        # the previous 'while' loop
+        attrs.append(c.attributes)
+
+        return [d for l in attrs for d in l] # Flatten
 
     def _get_parent_table(self):
         if self.superclass is self:
@@ -283,11 +300,9 @@ class KBClass(object):
 
 
 class KBRootClass(KBClass):
-    def __init__(self, name, attributes=[], can_catalog=True, notes=None,
-                 explicit_id=None):
+    def __init__(self, name, attributes=[], notes=None, explicit_id=None):
         KBClass.__init__(self, name, None, attributes=attributes,
-                         can_catalog=can_catalog, notes=notes,
-                         explicit_id=explicit_id)
+                         notes=notes, explicit_id=explicit_id)
 
     def add_to_workspace(self, workspace, access=access.READ_ONLY):
         workspace.add_root_class(self, access)

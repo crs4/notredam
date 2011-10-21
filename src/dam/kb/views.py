@@ -110,35 +110,7 @@ def class_index_put(request):
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str]),
-                        'can_catalog' : set([bool])}
-    try:
-        _assert_update_object_fields(cls, cls_dict, updatable_fields)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-
-    ses.add(cls)
-    ses.commit()
-
-    return HttpResponse('ok')
-
-
-def class_index_post(request):
-    try:
-        cls_dict = _assert_return_json_data(request)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-
-    ses = _kb_session()
-    try:
-        cls = ses.class_(class_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
-
-    # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str]),
-                        'can_catalog' : set([bool])}
+                        'notes'       : set([unicode, str])}
     try:
         _assert_update_object_fields(cls, cls_dict, updatable_fields)
     except ValueError as e:
@@ -185,8 +157,7 @@ def class_post(request, class_id):
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str]),
-                        'can_catalog' : set([bool])}
+                        'notes'       : set([unicode, str])}
     try:
         _assert_update_object_fields(cls, cls_dict, updatable_fields)
     except ValueError as e:
@@ -396,7 +367,7 @@ def _kbclass_to_dict(cls):
     Create a JSON'able dictionary representation of the given KB class
     '''
     clsattrs = {}
-    for a in cls.attributes:
+    for a in cls.all_attributes():
         clsattrs[a.id] = _kbattr_to_dict(a)
 
     if (cls.superclass.id == cls.id):
@@ -407,7 +378,6 @@ def _kbclass_to_dict(cls):
     clsdict = {'id'          : cls.id,
                'name'        : cls.name,
                'superclass'  : superclass,
-               'can_catalog' : cls.can_catalog,
                'notes'       : cls.notes,
                'attributes'  : clsattrs}
 
@@ -540,7 +510,7 @@ def _kbobject_to_dict(obj):
     Create a JSON'able dictionary representation of the given KB object
     '''
     objattrs = {}
-    for a in getattr(obj, 'class').attributes:
+    for a in getattr(obj, 'class').all_attributes():
         objattrs[a.id] = _kbobjattr_to_dict(a, getattr(obj, a.id))
 
     objdict = {'id'          : obj.id,

@@ -48,11 +48,9 @@ def test_create_object_classes(connstring=CONNSTRING):
     # w2 = classes.Workspace('ws2', u2)
     # w3 = classes.Workspace('ws3', u2)
 
-    ## Retrieve 'Keyword' and 'Category' classes, which must exists
-    CategoryClass = ses.class_('category')
+    ## Retrieve the 'Keyword' class, which must exists
     KeywordClass = ses.class_('keyword')
 
-    Category = CategoryClass.make_python_class(ses)
     Keyword = KeywordClass.make_python_class(ses)
 
     class1 = classes.KBRootClass('Building', explicit_id='building',
@@ -69,14 +67,11 @@ def test_create_object_classes(connstring=CONNSTRING):
     class2.create_table(ses)
     class3.create_table(ses)
 
-    ## Ensure that Keyword and Category classes are visible in all workspaces
+    ## Ensure that the Keyword class is visible in all workspaces
     ## FIXME: it should be done automatically
     # KeywordClass.add_to_workspace(w1)
     # KeywordClass.add_to_workspace(w2)
     # KeywordClass.add_to_workspace(w3)
-    # CategoryClass.add_to_workspace(w1)
-    # CategoryClass.add_to_workspace(w2)
-    # CategoryClass.add_to_workspace(w3)
 
     # class1.add_to_workspace(w1)
     # class2.add_to_workspace(w2)
@@ -90,25 +85,21 @@ def test_create_object_classes(connstring=CONNSTRING):
     # it2.add_to_workspace(w1)
     # it3.add_to_workspace(w2)
 
-    cat1 = Category('cat1')
-    cat2 = Category('cat2', 'Just another category')
-
     kw1 = Keyword('key1', 'Just a keyword', explicit_id='key1')
     kw2 = Keyword('key2', explicit_id='key2')
 
     catalog1 = classes.RootCatalogEntry(kw1)
-    catalog2 = classes.RootCatalogEntry(cat1)
-    catalog3 = classes.CatalogEntry(cat2, catalog2)
+    catalog2 = classes.RootCatalogEntry(kw2)
+    catalog3 = classes.CatalogEntry(kw1, catalog2)
 
     # catalog1.add_to_workspace(w1)
     # catalog2.add_to_workspace(w2)
 
     all_objs = [#w1, w2, w3,
-                KeywordClass, CategoryClass,
+                KeywordClass,
                 class1, class2, class3,
                 #u1, u2,
                 #it1, it2, it3,
-                cat1, cat2,
                 kw1, kw2,
                 catalog1, catalog2, catalog3]
 
@@ -119,8 +110,7 @@ def test_create_object_classes(connstring=CONNSTRING):
 def test_create_derived_classes(connstring=CONNSTRING):
     ses = session.Session(connstring)
 
-    ## Retrieve 'Keyword' and 'Category' classes, which must exists
-    CategoryClass = ses.class_('category')
+    ## Retrieve the 'Keyword' class, which must exists
     KeywordClass = ses.class_('keyword')
 
     # The Keyword Python class must exist in order to create a

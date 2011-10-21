@@ -97,7 +97,6 @@ class_t = Table('class', metadata,
                 Column('parent_root', String(128), nullable=False),
                 Column('name', String(64), nullable=False),
                 Column('table', String(128), unique=True, nullable=False),
-                Column('can_catalog', Boolean, nullable=False),
                 Column('notes', String(4096)),
                 
                 ## Redundant column which simplifies SQLAlchemy
@@ -846,18 +845,7 @@ def _init_default_classes(engine):
          'parent_root' : 'keyword',
          'name'        : 'Keyword',
          'table'       : 'object_keyword',
-         'can_catalog' : True,
          'notes'       : 'Simple keyword without attributes',
-         'is_root'     : True},
-        ## Category 
-        {'id'          : 'category',
-         'root'        : 'category',
-         'parent'      : 'category',
-         'parent_root' : 'category',
-         'name'        : 'Category',
-         'table'       : 'object_category',
-         'can_catalog' : False,
-         'notes'       : 'Simple category without attributes',
          'is_root'     : True}]
 
     engine.execute(class_t.insert(), default_classes)
