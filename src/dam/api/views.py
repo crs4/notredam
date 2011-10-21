@@ -2220,7 +2220,7 @@ class KeywordsResource(ModResource):
         
         obj = None
         label = request.POST['label']
-        if (request.POST.has_key['kb_object']
+        if (request.POST.has_key('kb_object')
             and request.POST['kb_object'] is not None):
             # The KB object name will override the label
             # FIXME: check that the provided label is equal to obj name?
