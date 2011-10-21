@@ -47,7 +47,7 @@ class SiblingsWithSameLabel(Exception):
 
 class NodeManager(models.Manager):
 
-    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None):
+    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None, kb_object = None):
     #    if not node.parent:
     #        raise InvalidNode
             
@@ -63,7 +63,7 @@ class NodeManager(models.Manager):
     #    else:
     #        cls = node.cls
             
-        new_node = self.create(workspace= workspace, label = label,  type = node.type)
+        new_node = self.create(workspace= workspace, label = label,  type = node.type, kb_object = kb_object)
         if cls:
             new_node.cls = cls
         
@@ -110,7 +110,7 @@ class NodeManager(models.Manager):
             else:
                 parent = relation_node[node.parent.pk]
                     
-            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent)
+            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent, kb_object = node.kb_object)
             new_node.type.add(*node.type.all())
             relation_node[node.pk] = new_node
         new_root.save()
