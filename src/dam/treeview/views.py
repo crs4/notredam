@@ -31,6 +31,7 @@ from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item, Component
 from dam.core.dam_repository.models import Type
+from dam.kb.models import Object as KBObject
 
 from django.utils import simplejson
 
@@ -89,7 +90,16 @@ def edit_node(request):
 def _add_keyword(request, node, label, workspace):
     metadata_schemas = request.POST.getlist('metadata')
     cls  = request.POST.get('cls')
-    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False))
+
+    obj = None
+    if (request.POST.has_key('kb_object')
+        and request.POST['kb_object'] is not None):
+        # The KB object name will override the label
+        # FIXME: check that the provided label is equal to obj name?
+        obj = KBObjects.object.get(id=request.POST['kb_object'])
+        label = obj.name
+
+    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False), kb_object=obj)
     node.save_metadata_mapping(metadata_schemas)
     
     return node
