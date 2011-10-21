@@ -2159,7 +2159,7 @@ class KeywordsResource(ModResource):
                 - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
                 - workspace_id: optional, it allows to create a keyword at the top level
                 - parent_id optional, required if no workspace_id is passed
-                - type: 'category' or 'keyword'
+                - type: 'category', 'keyword', 'object-category' or 'object-keyword'
                 - associate_ancestors: boolean, valid only if type is 'keyword'
                 - metadata_schema: optional. JSON list of dictionaries containing namespace, name and value for the metadata schemas  to associate to the new keyword. Example: [{"namespace": 'dublin core','name': 'title',   "value": 'test'}]
                 
@@ -2188,7 +2188,7 @@ class KeywordsResource(ModResource):
         else:
             raise MissingArgs        
         
-        if type not in ['keyword',  'category']:
+        if type not in ['keyword',  'category', 'object-category', 'object-keyword']:
             raise ArgsValidationError
             
         if type == 'keyword':
@@ -2220,8 +2220,7 @@ class KeywordsResource(ModResource):
         
         obj = None
         label = request.POST['label']
-        if (request.POST.has_key('kb_object')
-            and request.POST['kb_object'] is not None):
+        if (type in ('object-category', 'object-keyword')):
             # The KB object name will override the label
             # FIXME: check that the provided label is equal to obj name?
             obj = KBObjects.object.get(id=request.POST['kb_object'])

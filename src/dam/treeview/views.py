@@ -39,7 +39,9 @@ import cPickle as pickle
 import logging
 logger = logging.getLogger('dam')
 
-    
+# Allowed values for the 'cls' field in JSON repr of catalog nodes
+valid_object_node_classes = ('object-keyword', 'object-category')
+
 @login_required
 @permission_required('edit_taxonomy')
 def move_node(request):
@@ -92,8 +94,7 @@ def _add_keyword(request, node, label, workspace):
     cls  = request.POST.get('cls')
 
     obj = None
-    if (request.POST.has_key('kb_object')
-        and request.POST['kb_object'] is not None):
+    if (cls in valid_object_node_classes):
         # The KB object name will override the label
         # FIXME: check that the provided label is equal to obj name?
         obj = KBObjects.object.get(id=request.POST['kb_object'])
