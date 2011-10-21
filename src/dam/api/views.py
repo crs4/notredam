@@ -2218,6 +2218,7 @@ class KeywordsResource(ModResource):
         user_id = request.POST.get('user_id') 
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_taxonomy'])
         
+        obj = None
         label = request.POST['label']
         if (request.POST.has_key['kb_object']
             and request.POST['kb_object'] is not None):
