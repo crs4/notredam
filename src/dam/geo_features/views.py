@@ -137,7 +137,7 @@ def get_markers(request):
     ne_lat= float(bounds['ne_lat'])
     ne_lng= float(bounds['ne_lng'])
 
-    filter_items, count = _search_items(request, workspace, media_type, unlimited=True)
+    filter_items, count = _search_items(request, workspace, media_type, start = None, limit = None)
 
     geotagged = GeoInfo.objects.search_geotagged(ne_lat, ne_lng, sw_lat, sw_lng, filter_items)
 

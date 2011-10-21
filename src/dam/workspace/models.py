@@ -18,8 +18,6 @@
 
 from django.db import models
 from django.db.models import Q
-
-from dam.repository.models import Item
 from dam.workflow.models import State
 from dam.core.dam_workspace.models import Workspace, WorkspaceManager
 from dam.core.dam_repository.models import Type
@@ -77,7 +75,7 @@ class DAMWorkspace(Workspace):
     Subclass of dam_workspace.Workspace,
     adds a many-to-many reference to the Item and State model 
     """
-    items = models.ManyToManyField(Item, related_name="workspaces",  through='WorkspaceItem')
+    items = models.ManyToManyField('repository.Item', related_name="workspaces",  through='WorkspaceItem')
 #    states = models.ManyToManyField(State)
     objects = WSManager()
         
@@ -118,7 +116,7 @@ class DAMWorkspace(Workspace):
         
         
 class WorkspaceItem(models.Model):
-    item = models.ForeignKey(Item)
+    item = models.ForeignKey('repository.Item')
     workspace = models.ForeignKey(DAMWorkspace)
     last_update = models.DateTimeField(auto_now = True)
     deleted = models.BooleanField(default= False)
