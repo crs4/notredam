@@ -19,8 +19,6 @@ import re
 from django.db import models
 import logging
 logger = logging.getLogger('dam')
-
-from dam.repository.models import Item
 from dam.metadata.models import MetadataProperty
 from django.db.models import Q
 
@@ -126,5 +124,5 @@ class GeoInfo(models.Model):
     """
     latitude = models.FloatField()
     longitude = models.FloatField()
-    item = models.ForeignKey(Item)
+    item = models.ForeignKey('repository.Item')
     objects = GeoManager()

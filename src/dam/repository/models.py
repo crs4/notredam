@@ -26,8 +26,6 @@ from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
 from dam.metadata.models import *
 
-
-
 import os, datetime, urlparse, time, re, settings, logging
 from json import loads
 from django.utils import simplejson
@@ -69,8 +67,7 @@ class ItemManager(models.Manager):
     def create(self, workspace, **kwargs):
         from workspace.models import WorkspaceItem
         item = super(ItemManager, self).create(**kwargs)
-        WorkspaceItem.objects.create(item = item, workspace = workspace)
-        item.add_to_uploaded_inbox(workspace)       
+        item.add_to_ws(workspace, True)
         return item
         
 class Item(AbstractItem):
@@ -85,6 +82,8 @@ class Item(AbstractItem):
     objects = ItemManager()
     
     def get_last_update(self, ws):
+        """@param ws: workpace of whom last update is requested"""
+        
         ws_item = self.workspaceitem_set.get(item = self, workspace = ws)
         return ws_item.last_update
     
@@ -124,19 +123,24 @@ class Item(AbstractItem):
 
         
     def set_metadata(self,property_namespace, property_name, value):
-        property = MetadataProperty.objects.get(field_name = property_name, namespace__name = property_namespace)
+        """
+        @param property_namespace: namespace prefix,  e.g  dc for Dublin Core
+        @param property_name: the name of the metadata, for example title, subject etc.
+        @param value: value for the given metadata
+        """
+        property = MetadataProperty.objects.get(field_name = property_name, namespace__prefix = property_namespace)
     
         new_metadata = {}
 
         if property.type == 'lang':
             if not isinstance(value,  dict):
-                raise Exception('format of metadata %s is invalid; it must be a dictionary (ex: {"en-US":"value"})')
+                raise Exception('format of metadata %s is invalid; it must be a dictionary (ex: {"en-US":"value"})'%value)
             
             new_metadata[str(property.pk)]  = []
             for lang in value.keys():
                 
                 if lang not in MetadataLanguage.objects.all().values_list('code',  flat = True):
-                    raise Exception('invalid language %s for metadata %s' % (lang, data))
+                    raise Exception('invalid language %s for metadata %s' % (lang, property))
                 
                 new_metadata[str(property.pk)] .append([value[lang],  lang])
             
@@ -146,14 +150,14 @@ class Item(AbstractItem):
 #                list of dict
             
             if not isinstance(value,  list):
-                raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+                raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % property)
             
             structure = XMPStructure.objects.get(name = property.type)
             structure_list = []
             
             for _structure in value:
                 if not isinstance(_structure ,  dict):
-                    raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+                    raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % property)
                 
                 tmp_dict = {}
                 for el in _structure.keys():
@@ -176,10 +180,10 @@ class Item(AbstractItem):
 #                list of str
             
             if not isinstance(value,  list):
-                raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+                raise Exception('format of metadata %s is invalid; it must be a list of strings' % property)
             for el in value:
                 if not isinstance(el,  basestring):
-                    raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+                    raise Exception('format of metadata %s is invalid; it must be a list of strings' % property)
             
             new_metadata[str(property.pk)] = value
         else:
@@ -187,15 +191,17 @@ class Item(AbstractItem):
             if not isinstance(value,  basestring) and not isinstance(value,  int) and not isinstance(value,  float):
 #                    logger.debug('value %s'%value)
 #                    logger.debug('-------------------------------------value.__class__ %s'%value.__class__)
-                raise Exception('format of metadata %s is invalid; it must be a string' % data)
+                raise Exception('format of metadata %s is invalid; it must be a string' % property)
             
             new_metadata[str(property.pk)] = value
         
         logger.debug('new_metadata %s' %new_metadata)
         MetadataValue.objects.save_metadata_value([self], new_metadata,  'original', self.workspaces.all()[0]) #workspace for variant metadata, not supported yet
 
-
-
+    def get_workspaces(self):
+        from dam.workspace.models import DAMWorkspace, WorkspaceItem
+        return DAMWorkspace.objects.filter(workspaceitem__in = WorkspaceItem.objects.filter(item = self, deleted = False))
+        
     def get_workspaces_count(self):
         """
         Number of workspaces where the current item has been added
@@ -219,48 +225,51 @@ class Item(AbstractItem):
                 comp = Component.objects.get(item = self, variant= variant)
                 comp.workspace.add(ws)
                 comp.workspace.add(*self.workspaces.all())
-            else:
-                #logger.debug('item %s'%self)
-                #logger.debug('variant %s'%variant)
-                #logger.debug('worskapce %s'%ws)
-                #logger.debug('media_type %s'%media_type)
+            else:               
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws)
-                
-#                comp = Component.objects.get(pk = 1)
-                logger.debug('comp %s'%comp)
-                
-#                comp.metadata.all().delete()
             
-            
-        except Component.DoesNotExist:
-            #logger.debug('variant does not exist yet')
-            #logger.debug('variant %s'%variant)
-            #logger.debug('type %s'%media_type)
-                    
+        except Component.DoesNotExist:           
             comp = Component.objects.create(variant = variant, item = self, type = media_type)
             comp.workspace.add(ws)
             
             if variant.shared:
-                comp.workspace.add(*self.workspaces.all())
-        
-        #logger.debug('variant %s, comp %s' % (variant, comp))
-        #logger.debug('comp.pk %s'%comp.pk)
-        
+                comp.workspace.add(*self.workspaces.all())        
         
         logger.debug('======== COMPONENT_VARIANT  ======= %s %s' % (comp.variant, comp.pk))
         return comp
 
-    def add_to_uploaded_inbox(self, workspace):
+    
+    def add_to_ws(self, workspace, item_creation = False):
         """
-        Add the item to the uploaded inbox of the given workspace
-        @param ws an instance of workspace.DAMWorkspace
+        @param workspace: workspace to whom add the item
+        @return: True if the item has been added, False if already in workspace
+        """
+        from workspace.models import WorkspaceItem
+        
+        ws_item, created = WorkspaceItem.objects.get_or_create(item = self, workspace = workspace)
+        if created:
+            if item_creation:
+                self._add_to_inbox(workspace, 'uploaded')
+            else:
+                self._add_to_inbox(workspace, 'imported')
+                
+        return created
+        
+    
+    def _add_to_inbox(self, workspace, type):
+        """
+        @param workspace: workspace to whom add the item
+        @param type: string, can be "uploaded" or "imported"        
         """
         
-        uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
-        time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
-        node = workspace.tree_nodes.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  depth = 2)[0]
-        node.items.add(self)
-        return node
+        if type not in ["imported", "uploaded"]:
+            raise Exception('type should be "imported" or "uploaded"')
+            
+        inbox_node = workspace.tree_nodes.get(depth = 1, label__iexact = type, type = 'inbox')
+        time_strf = time.strftime("%Y-%m-%d", time.gmtime())
+        new_inbox = workspace.tree_nodes.get_or_create(label = time_strf,  type = 'inbox',  parent = inbox_node,  depth = 2)[0]
+        new_inbox.items.add(self)
+        return new_inbox
 
     def delete_from_ws(self, user, workspaces=None):
         """
@@ -291,12 +300,14 @@ class Item(AbstractItem):
             
         if self.get_workspaces_count() == 0:
             #REMOVING ORIGINAL FILE
-            orig = self.component_set.get(variant__name = 'original')
+            
             try:
+                orig = self.component_set.get(variant__name = 'original')
                 os.remove(orig.get_file_path())
+                orig.delete()
             except:
                 pass #file maybe does not exist
-            orig.delete()
+            
             #self.delete()
             
            
