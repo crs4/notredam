@@ -27,6 +27,20 @@ from tinykb import schema
 from tinykb import test as kb_test
 from util import notredam_connstring
 
+def preinit_notredam_kb():
+    '''
+    Create knowledge base tables which are required *before* creating
+    Django tables
+    '''
+    connstring = notredam_connstring()
+    # The 'object' table is also used by Django's models.Object, which
+    # only references some columns.  Thus, we need to create the
+    # complete table here --- and all the tables it depends from
+    # FIXME: try to maintain schema isolation
+    tables = [schema.class_t, schema.object_t]
+    schema.create_tables(connstring, tables)
+
+
 def init_notredam_kb():
     '''
     Initialize the knowledge base assuming that it is going to
@@ -52,15 +66,24 @@ import optparse
 
 parser = optparse.OptionParser(
     description='Initialize NotreDAM knowledge base.')
-parser.set_defaults(populate_with_test_data=False)
+parser.set_defaults(preinit=False, populate_with_test_data=False)
+parser.add_option('-p', '--preinit',
+                  dest='preinit', action='store_true',
+                  help='Perform KB pre-initialization and exit (default: no)')
 parser.add_option('-t', '--populate-with-test-data',
                   dest='populate_with_test_data', action='store_true',
-                  help='Create test classes and objects (default: no)')
+                  help=('Create test classes and objects after KB '
+                        + 'initialization (default: no)'))
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
-    print 'Initializing knowledge base'
-    init_notredam_kb()
-    if options.populate_with_test_data:
-        print 'Populating knowledge base with test classes and objects'
-        populate_test_kb()
+    if options.preinit:
+        print 'Pre-initializing knowledge base'
+        preinit_notredam_kb()
+    else:
+        print 'Initializing knowledge base'
+        init_notredam_kb()
+
+        if options.populate_with_test_data:
+            print 'Populating knowledge base with test classes and objects'
+            populate_test_kb()

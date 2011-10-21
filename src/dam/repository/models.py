@@ -26,17 +26,11 @@ from dam.core.dam_repository.models import AbstractItem, AbstractComponent
 from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
 from dam.metadata.models import *
 
-
-import os
-import urlparse
+import os, datetime, urlparse, time, re, settings, logging
 from json import loads
 from django.utils import simplejson
-import time
 from django.utils.encoding import smart_str
-import re
-import settings
 
-import logging
 logger = logging.getLogger('dam')
 
 from mediadart.storage import Storage
@@ -69,6 +63,13 @@ def _get_resource_url(id):
         url = None
     return url
 
+class ItemManager(models.Manager):
+    def create(self, workspace, **kwargs):
+        from workspace.models import WorkspaceItem
+        item = super(ItemManager, self).create(**kwargs)
+        item.add_to_ws(workspace, True)
+        return item
+        
 class Item(AbstractItem):
 
     """
@@ -78,7 +79,27 @@ class Item(AbstractItem):
     _id = models.CharField(max_length=40,  db_column = 'md_id')
     metadata = generic.GenericRelation('metadata.MetadataValue')
     source_file_path = models.TextField() #path from whom the item was imported(/tmp/somedir/somefile in case of upload)
+    objects = ItemManager()
     
+    def get_last_update(self, ws):
+        """@param ws: workpace of whom last update is requested"""
+        
+        ws_item = self.workspaceitem_set.get(item = self, workspace = ws)
+        return ws_item.last_update
+    
+    def update_last_modified(self, time = datetime.datetime.now(), workspaces = []):
+        from dam.workspace.models import WorkspaceItem
+        logger.debug('workspaces %s'%workspaces)
+        
+        if not workspaces:
+            ws_items = WorkspaceItem.objects.filter(item = self)
+        else:
+            ws_items = WorkspaceItem.objects.filter(item = self, workspace__in = workspaces)
+        
+        logger.debug('ws_items %s'%ws_items)
+        for ws_item in ws_items:
+            ws_item.last_update = time
+            ws_item.save()
     
     def _get_id(self):
         return self._id
@@ -96,20 +117,30 @@ class Item(AbstractItem):
     def __unicode__(self):
         return self.get_file_name()
 	
+    def save(self, *args, **kwargs):
+        super(Item, self).save(*args, **kwargs)
+        self.update_last_modified()
+
+        
     def set_metadata(self,property_namespace, property_name, value):
-        property = MetadataProperty.objects.get(field_name = property_name, namespace__name = property_namespace)
+        """
+        @param property_namespace: namespace prefix,  e.g  dc for Dublin Core
+        @param property_name: the name of the metadata, for example title, subject etc.
+        @param value: value for the given metadata
+        """
+        property = MetadataProperty.objects.get(field_name = property_name, namespace__prefix = property_namespace)
     
         new_metadata = {}
 
         if property.type == 'lang':
             if not isinstance(value,  dict):
-                raise Exception('format of metadata %s is invalid; it must be a dictionary (ex: {"en-US":"value"})')
+                raise Exception('format of metadata %s is invalid; it must be a dictionary (ex: {"en-US":"value"})'%value)
             
             new_metadata[str(property.pk)]  = []
             for lang in value.keys():
                 
                 if lang not in MetadataLanguage.objects.all().values_list('code',  flat = True):
-                    raise Exception('invalid language %s for metadata %s' % (lang, data))
+                    raise Exception('invalid language %s for metadata %s' % (lang, property))
                 
                 new_metadata[str(property.pk)] .append([value[lang],  lang])
             
@@ -119,14 +150,14 @@ class Item(AbstractItem):
 #                list of dict
             
             if not isinstance(value,  list):
-                raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+                raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % property)
             
             structure = XMPStructure.objects.get(name = property.type)
             structure_list = []
             
             for _structure in value:
                 if not isinstance(_structure ,  dict):
-                    raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % data)
+                    raise Exception('format of metadata %s is invalid; it must be a list of dictionaries' % property)
                 
                 tmp_dict = {}
                 for el in _structure.keys():
@@ -149,10 +180,10 @@ class Item(AbstractItem):
 #                list of str
             
             if not isinstance(value,  list):
-                raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+                raise Exception('format of metadata %s is invalid; it must be a list of strings' % property)
             for el in value:
                 if not isinstance(el,  basestring):
-                    raise Exception('format of metadata %s is invalid; it must be a list of strings' % data)
+                    raise Exception('format of metadata %s is invalid; it must be a list of strings' % property)
             
             new_metadata[str(property.pk)] = value
         else:
@@ -160,20 +191,22 @@ class Item(AbstractItem):
             if not isinstance(value,  basestring) and not isinstance(value,  int) and not isinstance(value,  float):
 #                    logger.debug('value %s'%value)
 #                    logger.debug('-------------------------------------value.__class__ %s'%value.__class__)
-                raise Exception('format of metadata %s is invalid; it must be a string' % data)
+                raise Exception('format of metadata %s is invalid; it must be a string' % property)
             
             new_metadata[str(property.pk)] = value
         
         logger.debug('new_metadata %s' %new_metadata)
         MetadataValue.objects.save_metadata_value([self], new_metadata,  'original', self.workspaces.all()[0]) #workspace for variant metadata, not supported yet
 
-
-
+    def get_workspaces(self):
+        from dam.workspace.models import DAMWorkspace, WorkspaceItem
+        return DAMWorkspace.objects.filter(workspaceitem__in = WorkspaceItem.objects.filter(item = self, deleted = False))
+        
     def get_workspaces_count(self):
         """
         Number of workspaces where the current item has been added
         """
-        return self.workspaces.all().count()
+        return self.workspaceitem_set.filter(deleted = False).count()
         
     def create_variant(self, variant, ws,  media_type):  # no default for media_type
         """
@@ -192,48 +225,51 @@ class Item(AbstractItem):
                 comp = Component.objects.get(item = self, variant= variant)
                 comp.workspace.add(ws)
                 comp.workspace.add(*self.workspaces.all())
-            else:
-                #logger.debug('item %s'%self)
-                #logger.debug('variant %s'%variant)
-                #logger.debug('worskapce %s'%ws)
-                #logger.debug('media_type %s'%media_type)
+            else:               
                 comp = Component.objects.get(item = self, variant= variant,  workspace = ws)
-                
-#                comp = Component.objects.get(pk = 1)
-                logger.debug('comp %s'%comp)
-                
-#                comp.metadata.all().delete()
             
-            
-        except Component.DoesNotExist:
-            #logger.debug('variant does not exist yet')
-            #logger.debug('variant %s'%variant)
-            #logger.debug('type %s'%media_type)
-                    
+        except Component.DoesNotExist:           
             comp = Component.objects.create(variant = variant, item = self, type = media_type)
             comp.workspace.add(ws)
             
             if variant.shared:
-                comp.workspace.add(*self.workspaces.all())
-        
-        #logger.debug('variant %s, comp %s' % (variant, comp))
-        #logger.debug('comp.pk %s'%comp.pk)
-        
+                comp.workspace.add(*self.workspaces.all())        
         
         logger.debug('======== COMPONENT_VARIANT  ======= %s %s' % (comp.variant, comp.pk))
         return comp
 
-    def add_to_uploaded_inbox(self, workspace):
+    
+    def add_to_ws(self, workspace, item_creation = False):
         """
-        Add the item to the uploaded inbox of the given workspace
-        @param ws an instance of workspace.DAMWorkspace
+        @param workspace: workspace to whom add the item
+        @return: True if the item has been added, False if already in workspace
+        """
+        from workspace.models import WorkspaceItem
+        
+        ws_item, created = WorkspaceItem.objects.get_or_create(item = self, workspace = workspace)
+        if created:
+            if item_creation:
+                self._add_to_inbox(workspace, 'uploaded')
+            else:
+                self._add_to_inbox(workspace, 'imported')
+                
+        return created
+        
+    
+    def _add_to_inbox(self, workspace, type):
+        """
+        @param workspace: workspace to whom add the item
+        @param type: string, can be "uploaded" or "imported"        
         """
         
-        uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
-        time_uploaded = time.strftime("%Y-%m-%d", time.gmtime())
-        node = workspace.tree_nodes.get_or_create(label = time_uploaded,  type = 'inbox',  parent = uploaded,  depth = 2)[0]
-        node.items.add(self)
-        return node
+        if type not in ["imported", "uploaded"]:
+            raise Exception('type should be "imported" or "uploaded"')
+            
+        inbox_node = workspace.tree_nodes.get(depth = 1, label__iexact = type, type = 'inbox')
+        time_strf = time.strftime("%Y-%m-%d", time.gmtime())
+        new_inbox = workspace.tree_nodes.get_or_create(label = time_strf,  type = 'inbox',  parent = inbox_node,  depth = 2)[0]
+        new_inbox.items.add(self)
+        return new_inbox
 
     def delete_from_ws(self, user, workspaces=None):
         """
@@ -256,18 +292,23 @@ class Item(AbstractItem):
             except:
                 pass # maybe file does not exist
             c.delete()
-                
-        self.workspaces.remove(*workspaces)
-        
+              
+        ws_items = self.workspaceitem_set.filter(workspace__in = workspaces)
+        for ws_item in ws_items:
+            ws_item.deleted = True
+            ws_item.save()
+            
         if self.get_workspaces_count() == 0:
             #REMOVING ORIGINAL FILE
-            orig = self.component_set.get(variant__name = 'original')
+            
             try:
+                orig = self.component_set.get(variant__name = 'original')
                 os.remove(orig.get_file_path())
+                orig.delete()
             except:
                 pass #file maybe does not exist
-            orig.delete()
-            self.delete()
+            
+            #self.delete()
             
            
         else:
@@ -498,7 +539,7 @@ class Item(AbstractItem):
     
         return caption
         
-    def get_info(self, workspace,  caption = None, default_language = None):        
+    def get_info(self, workspace,  caption = None, default_language = None, check_deleted = False):        
         from dam.geo_features.models import GeoInfo
         if caption and default_language: 
            caption = self._get_caption(caption, default_language)
@@ -507,7 +548,7 @@ class Item(AbstractItem):
 
 
 #        now = '?t=' + str(time.time());
-        t = time.mktime(self.update_time.utctimetuple())
+        t = time.mktime(self.get_last_update(workspace).utctimetuple())
         thumb_url = '/item/%s/%s/?t=%s'%(self.ID, 'thumbnail', t);
         preview_url = '/item/%s/%s/?t=%s'%(self.ID, 'preview', t);
         fullscreen_url = '/item/%s/%s/?t=%s'%(self.ID, 'fullscreen', t);
@@ -529,12 +570,13 @@ class Item(AbstractItem):
         else:
             geotagged = 0
         
+        
+        
         info = {
             'name': caption,
             'size':self.get_file_size(), 
             'pk': smart_str(self.pk), 
             '_id':self._id,
-           
             'status': status,
             #'thumb': thumb_url is not None,
             'url':smart_str(thumb_url), 
@@ -544,7 +586,11 @@ class Item(AbstractItem):
 #            'preview_available': False,
             'geotagged': geotagged
             }
-            
+        
+        if check_deleted: #performance can be improved here
+            deleted = self.workspaceitem_set.get(workspace = workspace).deleted            
+            info['deleted'] = deleted
+         
         states = self.stateitemassociation_set.all()
         if states.count():
             state_association = states[0]
@@ -598,8 +644,10 @@ class Component(AbstractComponent):
     def save(self, *args, **kwargs):
         import datetime
         super(Component, self).save(*args, **kwargs)
-        self.item.update_time = datetime.datetime.now()
-        self.item.save()
+        self.item.update_last_modified(workspaces = self.workspace.all())
+            
+        #self.item.update_time = datetime.datetime.now()
+        #self.item.save()
 
     def get_features(self):
         klass = {'video': AVFeatures,'audio':AVFeatures, 'image': ImageFeatures, 'doc': PdfFeatures, }
@@ -892,15 +940,13 @@ class Watermark(AbstractComponent):
 
 class AVFeatures:
     def __init__(self, features):
-        self.info = {}
-        self.info['video'] = [features[x] for x in features.keys() if x != 'file' and features[x]['codec_type'] == 'video']
-        self.info['audio'] = [features[x] for x in features.keys() if x != 'file' and features[x]['codec_type'] == 'audio']
+        self.info = features   # if there are multiple video streams only one is retained
 
     def __get_attr(self, name, stream_type):
         if self.info[stream_type]:
-            return self.info[stream_type][0][name]
+            return self.info[stream_type][name]
         else:
-            raise Exception('No video')
+            raise Exception('No %s' % stream_type)
 
     def get_video_width(self):
         return self.__get_attr('width', 'video')
@@ -909,25 +955,25 @@ class AVFeatures:
         return self.__get_attr('height', 'video')
 
     def get_video_codec(self):
-        return self.__get_attr('codec_name', 'video')
+        return self.__get_attr('codec', 'video')
 
     def get_audio_codec(self):
-        return self.__get_attr('codec_name', 'audio')
+        return self.__get_attr('codec', 'audio')
 
     def get_video_duration(self):
         return self.__get_attr('duration', 'video')
 
     def get_video_frame_rate(self):
-        return '%s/%s' % (self.__get_attr('r_frame_rate_num', 'video'), self.__get_attr('r_frame_rate_den', 'video'))
+        return self.__get_attr('frame_rate', 'video')
 
     def get_audio_sample_rate(self):
-        return self.__get_attr('sample_rate', 'audio')
+        return self.__get_attr('sampling_rate', 'audio')
 
     def has_audio(self):
-        return not not self.info['audio']
+        return 'audio' in self.info
 
     def has_video(self):
-        return not not self.info['video']
+        return 'video' in self.info
 
 #class AudioFeatures:
 #    def __init__(self, features):
@@ -987,48 +1033,109 @@ class PdfFeatures:
 ########################################################################
 # Format of the produced features.
 #
-#{'0': {'codec_long_name': 'H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10',
-#       'codec_name': 'h264',
-#       'codec_type': 'video',
-#       'decoder_time_base': '125/5994',
-#       'display_aspect_ratio': '12/5',
-#       'duration': '149.899899',
-#       'gop_size': '12',
-#       'has_b_frames': '0',
-#       'height': '800',
-#       'index': '0',
-#       'nb_frames': '0',
-#       'pix_fmt': 'yuv420p',
-#       'r_frame_rate': '23.976024',
-#       'r_frame_rate_den': '1001',
-#       'r_frame_rate_num': '24000',
-#       'sample_aspect_ratio': '1/1',
-#       'size': '140175513.000000',
-#       'start_time': '0.000000',
-#       'time_base': '1/1000',
-#       'width': '1920'},
-# '1': {'bits_per_sample': '0',
-#       'channels': '2',
-#       'codec_long_name': 'Advanced Audio Coding',
-#       'codec_name': 'aac',
-#       'codec_type': 'audio',
-#       'decoder_time_base': '0/1',
-#       'duration': '149.899899',
-#       'index': '1',
-#       'nb_frames': '0',
-#       'sample_rate': '44100.000000',
-#       'size': '140175513.000000',
-#       'start_time': '0.023000',
-#       'time_base': '1/1000'},
-# 'file': {'bit_rate': '0.000000',
-#          'demuxer_long_name': 'FLV format',
-#          'demuxer_name': 'flv',
-#          'duration': '149.899899',
-#          'filename': '/home/orlando/Videos/tron.flv',
-#          'index': 'file',
-#          'nb_streams': '2',
-#          'size': '140175513.000000',
-#          'start_time': '0.000000'}}
+#{u'audio': {u'bit_rate': u'192000',
+#            u'bit_rate_mode': u'CBR',
+#            u'channel_s_': u'2',
+#            u'codec': u'MPA1L2',
+#            u'commercial_name': u'MPEG Audio',
+#            u'compression_mode': u'Lossy',
+#            u'count': u'169',
+#            u'count_of_stream_of_this_kind': u'1',
+#            u'delay': u'220.000',
+#            u'delay__origin': u'Container',
+#            u'delay_relative_to_video': u'-80',
+#            u'duration': u'176208',
+#            u'file': u'',
+#            u'format': u'MPEG Audio',
+#            u'format_profile': u'Layer 2',
+#            u'format_version': u'Version 1',
+#            u'frame_count': u'7342',
+#            u'id': u'192',
+#            u'internet_media_type': u'audio/mpeg',
+#            u'kind_of_stream': u'Audio',
+#            u'mediainfo': u'',
+#            u'proportion_of_this_stream': u'0.00539',
+#            u'samples_count': u'8457984',
+#            u'sampling_rate': u'48000',
+#            u'stream_identifier': u'0',
+#            u'stream_size': u'4228992',
+#            u'video0_delay': u'-80'},
+# u'general': {u'audio_codecs': u'MPEG-1 Audio layer 2',
+#              u'audio_format_list': u'MPEG Audio',
+#              u'audio_format_withhint_list': u'MPEG Audio',
+#              u'codec': u'MPEG-PS',
+#              u'codec_extensions_usually_used': u'mpeg mpg m2p vob pss',
+#              u'codecs_video': u'MPEG-2 Video',
+#              u'commercial_name': u'MPEG-PS',
+#              u'complete_name': u'09.mpg',
+#              u'count': u'278',
+#              u'count_of_audio_streams': u'1',
+#              u'count_of_stream_of_this_kind': u'1',
+#              u'count_of_video_streams': u'1',
+#              u'duration': u'176208',
+#              u'file_extension': u'mpg',
+#              u'file_last_modification_date': u'UTC 2011-09-19 17:09:55',
+#              u'file_last_modification_date__local_': u'2011-09-19 19:09:55',
+#              u'file_name': u'09.mpg',
+#              u'file_size': u'784926724',
+#              u'format': u'MPEG-PS',
+#              u'format_extensions_usually_used': u'mpeg mpg m2p vob pss',
+#              u'internet_media_type': u'video/MP2P',
+#              u'kind_of_stream': u'General',
+#              u'overall_bit_rate': u'35636371',
+#              u'overall_bit_rate_mode': u'VBR',
+#              u'proportion_of_this_stream': u'0.02061',
+#              u'stream_identifier': u'0',
+#              u'stream_size': u'16175821',
+#              u'video_format_list': u'MPEG Video',
+#              u'video_format_withhint_list': u'MPEG Video'},
+# u'video': {u'bit_depth': u'8',
+#            u'bit_rate': u'34735207',
+#            u'bit_rate_mode': u'VBR',
+#            u'bits__pixel_frame_': u'0.670',
+#            u'buffer_size': u'458752',
+#            u'chroma_subsampling': u'4:2:0',
+#            u'codec': u'MPEG-2V',
+#            u'codec_family': u'MPEG-V',
+#            u'codec_profile': u'High@High',
+#            u'codec_settings__matrix': u'Default',
+#            u'color_space': u'YUV',
+#            u'colorimetry': u'4:2:0',
+#            u'commercial_name': u'MPEG-2 Video',
+#            u'compression_mode': u'Lossy',
+#            u'count': u'202',
+#            u'count_of_stream_of_this_kind': u'1',
+#            u'delay': u'300.000',
+#            u'delay__origin': u'Container',
+#            u'delay_original': u'0',
+#            u'delay_original_settings': u'drop_frame_flag=0 / closed_gop=1 / broken_link=0',
+#            u'delay_original_source': u'Stream',
+#            u'display_aspect_ratio': u'1.778',
+#            u'duration': u'176080',
+#            u'format': u'MPEG Video',
+#            u'format_profile': u'High@High',
+#            u'format_settings': u'BVOP',
+#            u'format_settings__bvop': u'Yes',
+#            u'format_settings__gop': u'M=3, N=12',
+#            u'format_settings__matrix': u'Default',
+#            u'format_version': u'Version 2',
+#            u'frame_count': u'4402',
+#            u'frame_rate': u'25.000',
+#            u'height': u'1080',
+#            u'id': u'224 (0xE0)',
+#            u'interlacement': u'PPF',
+#            u'internet_media_type': u'video/MPV',
+#            u'intra_dc_precision': u'9',
+#            u'kind_of_stream': u'Video',
+#            u'maximum_bit_rate': u'35000000',
+#            u'pixel_aspect_ratio': u'1.000',
+#            u'proportion_of_this_stream': u'0.97400',
+#            u'resolution': u'8',
+#            u'scan_type': u'Progressive',
+#            u'standard': u'PAL',
+#            u'stream_identifier': u'0',
+#            u'stream_size': u'764521911',
+#            u'width': u'1920'}}
 #
 #########################################################################
 #

@@ -30,7 +30,7 @@ from dam.repository.models import Item, Component
 from dam.core.dam_workspace.decorators import permission_required, membership_required
 from dam.treeview import views as treeview
 from dam.treeview.models import Node,  Category,  SmartFolder
-from dam.workspace.models import DAMWorkspace as Workspace
+from dam.workspace.models import DAMWorkspace as Workspace, WorkspaceItem
 from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.variants.models import Variant      
 from dam.workspace.forms import AdminWorkspaceForm
@@ -49,7 +49,7 @@ from dam.upload.views import _run_pipelines
 
 from django.utils.datastructures import SortedDict
 
-
+from datetime import datetime
 import time
 from mx.DateTime.Parser import DateTimeFromString
 
@@ -113,19 +113,22 @@ def _admin_workspace(request,  ws):
     return HttpResponse(resp)
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
-    if ws not in item.workspaces.all():
-        item.workspaces.add(ws)
+    created = item.add_to_ws(ws)
+    if created:
         orig_variant = Variant.objects.get(name = 'original')
         original = item.get_variant(current_ws, orig_variant)
         original.workspace.add(ws)
         return True
-    return False
-        
+    ws_item.deleted = False
+    ws_item.save()
+    return True
+        #
 @permission_required('remove_item')
 def _remove_items(request, ws, items):
 
     for item in items:
-        ws.remove_item(item)
+        item.delete_from_ws(request.user, [ws])
+        
         
 @login_required
 @permission_required('add_item', False)
@@ -139,8 +142,7 @@ def add_items_to_ws(request):
         current_ws = request.session['workspace']
         remove = request.POST.get('remove')
         move_public = request.POST.get('move_public', 'false')
-        items = Item.objects.filter(pk__in = item_ids)
-        
+        items = Item.objects.filter(pk__in = item_ids)        
         
         item_imported = []
         run_items = []
@@ -154,11 +156,11 @@ def add_items_to_ws(request):
         if remove == 'true':
             _remove_items(request, current_ws, items)
                 
-        if len(item_imported) > 0:
-            imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
-            time_imported = time.strftime("%Y-%m-%d", time.gmtime())
-            node = Node.objects.get_or_create(label = time_imported,  type = 'inbox',  parent = imported,  workspace = ws,  depth = 2)[0]
-            node.items.add(*item_imported)
+        #if len(item_imported) > 0:
+            #imported = Node.objects.get(depth = 1,  label = 'Imported',  type = 'inbox',  workspace = ws)
+            #time_imported = time.strftime("%Y-%m-%d", time.gmtime())
+            #node = Node.objects.get_or_create(label = time_imported,  type = 'inbox',  parent = imported,  workspace = ws,  depth = 2)[0]
+            #node.items.add(*item_imported)
         
         resp = simplejson.dumps({'success': True, 'errors': []})
 
@@ -255,8 +257,99 @@ def _search_complex_query(complex_query,  items):
 
     return items
 
+def filter_by_date(date_type, query_dict, items, workspace = None):
+        """
+        @param date_type: creation_time or last_update
+        @param query_dict: dict containing keys like 'created' or 'created<' etc. Usually request.POST
+        @param items: items to filter
+        @param workspace: scope of the filtering needed in case of date_type == 'last_update'
+        """
+        
+        if date_type is not 'last_update' and date_type is not 'creation_time':
+            raise Exception('you can filter in time only by last_update or creation_item, sorr')
+        
+        if date_type == 'last_update' and not workspace:
+            raise Exception('you need to specify a workpace if you want to filter by last_update')
+    
+        def _create_query_kwargs(date_type, filter_type, date_value):
+            """
+            @param date_type: 'last_update' or 'creation_time'
+            @param filter_type: 'a_given_date' or 'dates_before' etc
+            @param date_value:  value of the date
+            """
+            
+            if len(date_value.split(' ')) == 1: #maybe a date without hour
+                date_format = '%d/%m/%Y'
+            else:
+                date_format = '%d/%m/%Y %H:%M:%S'                
+           
+            logger.debug('date_format %s'%date_format)
+            
+            date = datetime.strptime(date_value, date_format)
+            if filter_type == 'a_given_date':
+                return {date_type: date}
+            if filter_type == 'dates_before':
+                return {date_type + '__lt':date}
+            if filter_type == 'dates_before_equal':
+                return {date_type + '__lte': date}
+            if  filter_type == 'dates_after':
+                return {date_type + '__gt' : date}
+            if filter_type == 'dates_after_equal':
+                return {date_type + '__gte': date}
+        
+        def _query_by_date(items, date_type, filter_type, date_value):
+            """
+            @param items: to filter
+            @param date_type: 'creation_time' or 'last_update'
+            @param filter_type: 'a_given_date' or 'dates_before' etc
+            @param date_value: value of the date
+            """
+            if date_type == 'creation_time':                
+                kwargs = _create_query_kwargs('creation_time', filter_type, date_value)
+                logger.debug('kwargs %s'%kwargs)
+                return items.filter(**kwargs)
+            elif date_type == 'last_update':
+                kwargs = _create_query_kwargs('last_update', filter_type, date_value)
+                kwargs.update({'item__in': items, 'workspace': workspace})
+                ws_items = WorkspaceItem.objects.filter(**kwargs)
+                return items.filter(workspaceitem__in = ws_items)
+           
+        
+        a_given_date = query_dict.get(date_type)
+        dates_before = query_dict.get(date_type + '<')
+        dates_after = query_dict.get(date_type +'>')
+        dates_before_equal = query_dict.get(date_type +'<=')
+        dates_after_equal = query_dict.get(date_type + '>=')
+        
+        if a_given_date:            
+            if (dates_before or dates_after or dates_before_equal or dates_after_equal):
+                raise Exception('wrong date query')
 
-def _search(request,  items, workspace = None):
+            items = _query_by_date(items, date_type, 'a_given_date', a_given_date)
+            return items 
+            
+        if dates_before:
+            if dates_before_equal:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_before', dates_before)
+        
+        if dates_before_equal:
+            if dates_before:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_before_equal', dates_before_equal)
+        
+        if dates_after:
+            if dates_after_equal:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_after', dates_after)
+        
+        if dates_after_equal:
+            if dates_after:
+                raise Exception('wrong date query')
+            items = _query_by_date(items, date_type, 'dates_after_equal', dates_after_equal)
+        return items
+        
+def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspace = None):
     
     def search_node(node, sub_branch):        
         if show_associated_items:
@@ -270,22 +363,36 @@ def _search(request,  items, workspace = None):
         items = _search_complex_query(complex_query,  items)
         return items
         
-    query = request.POST.get('query')
-    order_by = request.POST.get('order_by',  'creation_time')
-    order_mode = request.POST.get('order_mode',  'decrescent')
+    if media_type:
+        items = items.filter(type__name__in = media_type).distinct()
+        
+    query = query_dict.get('query')
+    order_by = query_dict.get('order_by',  'creation_time')
+    order_mode = query_dict.get('order_mode',  'decrescent')
+    show_deleted = query_dict.has_key('show_deleted')
     
-    show_associated_items = request.POST.get('show_associated_items')
+    items = filter_by_date('creation_time', query_dict, items)
+    items = filter_by_date('last_update', query_dict, items, workspace)
+
+    #items = filter_by_date('creation_time', {'creation_time<=': '10/10/2011 18:10:10', 'creation_time>=':'10/10/2011 15:0:0'}, items)
+    #items = filter_by_date('last_update', {'last_update<=': '10/10/2011 17:0:0', 'last_update>=': '10/10/2011 15:0:0'  }, items, workspace)
+    
+    show_associated_items = query_dict.get('show_associated_items')
     nodes_query = []
     
-    nodes_query.extend(request.POST.getlist('keyword'))
-    nodes_query.extend(request.POST.getlist('collection'))
+    nodes_query.extend(query_dict.getlist('keyword'))
+    nodes_query.extend(query_dict.getlist('collection'))
     
-    smart_folders_query = request.POST.getlist('smart_folder')
+    smart_folders_query = query_dict.getlist('smart_folder')
 
     queries = []
     
-    complex_query = request.POST.get('complex_query')
+    complex_query = query_dict.get('complex_query')
     logger.debug('complex_query %s'%complex_query)
+    
+    if not show_deleted:        
+        items = items.exclude(workspaceitem__in = WorkspaceItem.objects.filter(deleted = True, workspace = workspace))
+        
     if not workspace:
         workspace = request.session['workspace']
     if complex_query:
@@ -303,17 +410,12 @@ def _search(request,  items, workspace = None):
                     node = node[0] 
                     queries.append(search_node(node, not show_associated_items))
                 else:
-#                    return Item.objects.none()
                     queries.append(Item.objects.none())
                     
         if smart_folders_query:
             for smart_folder_id in smart_folders_query:                
                 smart_folder_node = SmartFolder.objects.get(pk = smart_folder_id)
                 queries.append(search_smart_folder(smart_folder_node, items))
-            
-            
-#            items = reduce(and_,  queries)
-            
 #Text query        
         logger.debug('queries %s'%queries)
         if query:
@@ -326,17 +428,8 @@ def _search(request,  items, workspace = None):
             smart_folder = re.findall('\s*SmartFolders:"(.+)"\s*', query,  re.U)
             
             keywords = re.findall('\s*Keywords:/(.+)/\s*', query,  re.U)
-#            spaced_keywords = re.findall('\s*Keywords:"([\w\s/]*)"\s*', query,  re.U)
-#            keywords.extend(spaced_keywords)
-    #        
-            collections= re.findall('\s*Collections:/(.+)/\s*', query,  re.U)
-#            spaced_collections = re.findall('\s*Collections:"([\w\s/]*)"\s*', query,  re.U)
-#            collections.extend(spaced_collections)
-            
+            collections= re.findall('\s*Collections:/(.+)/\s*', query,  re.U)            
             geo = re.findall('\s*geo:\(([\d.-]*),([\d.-]*)\),\(([\d.-]*),([\d.-]*)\)\s*', query,  re.U)
-            
-    #            just put out  keywords and collections....
-    #        simple_query = re.sub('(\w+:\w+)', '', query,)
             simple_query = re.compile('(\w+:/.+/)',  re.U).sub('', query)
             
             simple_query = re.sub('(\w+:".+")', '', simple_query)
@@ -350,21 +443,14 @@ def _search(request,  items, workspace = None):
             simple_query = re.sub('\s*(\w+:\w+=\w+[.\w]*)\s*', '', simple_query)
             
             logger.debug('----%s'%simple_query)
-            
-            
-    #       remove geo too...
+
             simple_query = re.sub('(\w+:\(([\d.-]*),([\d.-]*)\),\(([\d.-]*),([\d.-]*)\))', '', simple_query)
 
             multi_words = re.findall('"(.+?)"', simple_query,  re.U)
             single_word_query = re.compile('"(.+)"',  re.U).sub( '', simple_query)
             
             words = re.findall( '\s*(.+)\s*', single_word_query ,  re.U)
-            
-#            words = re.findall( '\s*([\w+\.*])\s*', single_word_query ,  re.U)
-    #            words.extend(multi_words)
-            
-    #        logger.debug('keywords %s'%keywords )
-    #        logger.debug('collections %s'%collections)        
+      
             logger.debug('words %s'%words )
             logger.debug('multi_words %s'%multi_words)
             logger.debug('geo %s'%geo)
@@ -432,8 +518,6 @@ def _search(request,  items, workspace = None):
             logger.debug('queries %s'%queries)
             for coll  in collections:
                 
-    #                q = Q(node__label__iexact = collection.strip(),  node__type = 'collection')
-    #                queries.append(items.filter(q))
                 logger.debug('path %s'%coll)
                 node = Node.objects.get_from_path(coll, workspace,  'collection')
                 logger.debug('node found %s'%node)
@@ -462,11 +546,11 @@ def _search(request,  items, workspace = None):
             logger.debug('queries %s'%queries)
             for word in words:
                 logger.debug('word %s'%word)
-                if DATABASES['default']['ENGINE'] == 'sqlite3':
+                if DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
                     q = Q(metadata__value__iregex = u'(?:^|(?:[\w\s]*\s))(%s)(?:$|(?:\s+\w*))'%word.strip())                
                     queries.append(items.filter(q))
                     logger.debug('items.filter(q) %s'%items.filter(q))
-                elif DATABASES['default']['ENGINE'] == 'mysql':
+                elif DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%word.strip())
                     queries.append(items.filter(q))
                 
@@ -489,9 +573,7 @@ def _search(request,  items, workspace = None):
                     words_joined = '[[:blank:]]+'.join(tmp)
                     q = Q(metadata__value__iregex = '[[:<:]]%s[[:>:]]'%words_joined)
                     queries.append(items.filter(q))
-                    
-        
-#        logger.debug('queries %s'%queries)
+
         if queries:
             logger.debug('queries %s'%queries)
             if len(queries) == 1:
@@ -501,11 +583,9 @@ def _search(request,  items, workspace = None):
                 
                 items = reduce(operator.and_,  queries)
     
-    items.distinct()       
-    property = None
-    
-    if order_by:
-        
+    items = items.distinct()       
+    property = None    
+    if order_by:        
         if order_by == 'creation_time':
             pass
         
@@ -533,19 +613,27 @@ def _search(request,  items, workspace = None):
             items = items.order_by('-%s'%order_by)
         else:
             items = items.order_by('%s'%order_by)
+    
+    total_count = items.count()
+    
+    logger.debug('start %s'%start)
+    logger.debug('limit %s'%limit)
+    if start is not None and limit is not None:
+        items = items[start:start+limit]
+    logger.debug(len(items))
 
-    logger.debug('items %s'%items)
-    return items
+    return (items, total_count)
 
-def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=False):
+def _search_items(request, workspace, media_type, start = 0, limit = 30):
     user = User.objects.get(pk=request.session['_auth_user_id'])
     logger.debug('************** searching items for user %s' % user.pk)
 
-    only_basket = simplejson.loads(request.POST.get('only_basket', 'false'))    
+    only_basket = request.POST.has_key('only_basket')    
     logger.debug('************** searching only_basket %s' % only_basket)
     
-    items = workspace.items.filter(type__name__in = media_type).distinct().order_by('-creation_time')
-    logger.debug('******************8 found %d items' % len(items))
+    
+    items = workspace.items.all()
+    logger.debug('****************** found %d items' % len(items))
 
     user_basket = Basket.get_basket(user, workspace)
     basket_items = user_basket.items.all().values_list('pk', flat=True)
@@ -554,31 +642,9 @@ def _search_items(request, workspace, media_type, start=0, limit=30, unlimited=F
     if only_basket:
         items = items.filter(pk__in=basket_items)
 
-    items = _search(request,  items)
-
-    total_count = items.count()
-
-    if not unlimited:
-        items = items[start:start+limit]
+    items, total_count = _search(request.POST,  items, media_type, start, limit, workspace)
 
     return (items, total_count)
-
-
-#def _get_thumb_url(item, workspace):
-#
-#    thumb_url = NOTAVAILABLE
-#    thumb_ready = 0
-#
-#    try:
-#        variant = workspace.get_variants().distinct().get(media_type =  item.type, name = 'thumbnail')
-#        url = item.get_variant(workspace, variant).get_component_url()
-#        if url:
-#            thumb_ready = 1
-#            thumb_url = url
-#    except:
-#        pass
-#        
-#    return thumb_url, thumb_ready
 
 @login_required
 def load_items(request, view_type=None, unlimited=False):
@@ -586,11 +652,7 @@ def load_items(request, view_type=None, unlimited=False):
     from datetime import datetime
     try:
         user = request.user
-        workspace_id = request.POST.get('workspace_id')
-
-#        if  workspace_id:
-#            workspace = Workspace.objects.get(pk = workspace_id)
-#        else:
+        
         workspace = request.session['workspace']        
 
         media_type = request.POST.getlist('media_type')
@@ -608,10 +670,11 @@ def load_items(request, view_type=None, unlimited=False):
         limit = int(request.POST.get('limit', 30))
 		
         if limit == 0:
-            unlimited = True
+            start = None
+            limit = None
             
         
-        items, total_count = _search_items(request, workspace, media_type, start, limit, unlimited)                    
+        items, total_count = _search_items(request, workspace, media_type, start, limit)                    
         item_dict = []
         now = time.time()
 
@@ -633,8 +696,11 @@ def load_items(request, view_type=None, unlimited=False):
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
         default_language = get_metadata_default_language(user, workspace)    
         
+        
+        check_deleted = request.POST.has_key('show_deleted')
+
         for item in items:
-            tmp = item.get_info(workspace, thumb_caption, default_language)
+            tmp = item.get_info(workspace, thumb_caption, default_language, check_deleted = check_deleted)
             if item.pk in basket_items:
                 tmp['item_in_basket'] = 1
             else:

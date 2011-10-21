@@ -24,6 +24,7 @@ from django.contrib.auth.models import User
 
 from dam.repository.models import Item
 from dam.core.dam_tree.models import AbstractNode
+from dam.kb.models import Object as KBObject
 
 import logging
 logger = logging.getLogger('dam')
@@ -46,7 +47,7 @@ class SiblingsWithSameLabel(Exception):
 
 class NodeManager(models.Manager):
 
-    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None):
+    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None, kb_object = None):
     #    if not node.parent:
     #        raise InvalidNode
             
@@ -62,7 +63,7 @@ class NodeManager(models.Manager):
     #    else:
     #        cls = node.cls
             
-        new_node = self.create(workspace= workspace, label = label,  type = node.type)
+        new_node = self.create(workspace= workspace, label = label,  type = node.type, kb_object = kb_object)
         if cls:
             new_node.cls = cls
         
@@ -109,7 +110,7 @@ class NodeManager(models.Manager):
             else:
                 parent = relation_node[node.parent.pk]
                     
-            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent)
+            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent, kb_object = node.kb_object)
             new_node.type.add(*node.type.all())
             relation_node[node.pk] = new_node
         new_root.save()
@@ -149,6 +150,14 @@ class Node(AbstractNode):
     metadata_schema = models.ManyToManyField('metadata.MetadataProperty',  through = 'NodeMetadataAssociation',  blank=True, null=True)
     associate_ancestors = models.BooleanField(default = False)
     
+    # Each catalog node has an optional reference to a knowledge base
+    # object.  When it is not None, the node label should be ignored,
+    # and the object name should be used instead (see, for example,
+    # the __str__() method below)
+    kb_object = models.ForeignKey(KBObject, related_name='catalog_nodes',
+                                  blank=True, null=True, default=None,
+                                  on_delete=models.SET_NULL)
+
     def check_ws(self, ws):
         if self.workspace != ws:
             raise WrongWorkspace
@@ -170,6 +179,8 @@ class Node(AbstractNode):
         items = Item.objects.filter(pk__in = items)
         self.items.remove(*items)
         self.remove_metadata(items)
+        for item in items:            
+            item.update_last_modified(workspaces = [self.workspace])
 
     def remove_collection_association(self, items):
         logger.debug('items %s'%items)
@@ -179,12 +190,15 @@ class Node(AbstractNode):
             logger.debug('self.items %s'%self.items.all())
             self.items.remove(*items)
             logger.debug('self.items %s'%self.items.all())
+            for item in items:            
+                item.update_last_modified(workspaces = [self.workspace])
         except Exception, ex:
             logger.exception(ex)
             raise ex    
 
     def save_keyword_association(self, items):
         items = Item.objects.filter(pk__in = items)
+        
         if self.associate_ancestors:
             nodes = self.get_ancestors().filter(depth__gt = 0)
         else:
@@ -196,10 +210,15 @@ class Node(AbstractNode):
                 n.items.add(*items)
     
             n.save_metadata(items)
+        
+        for item in items:            
+            item.update_last_modified(workspaces = [self.workspace])
 
     def save_collection_association(self, items):
         items = Item.objects.filter(pk__in = items)
         self.items.add(*items)
+        for item in items:
+            item.update_last_modified(workspaces = [self.workspace])
 
     def save_metadata_mapping(self, metadata_schemas):
         from dam.metadata.models import MetadataProperty
@@ -255,8 +274,31 @@ class Node(AbstractNode):
             raise NotEditableNode
         self.check_ws(workspace)
         self.label = label
+
+        # When the label is changed, the catalog entry loses its
+        # association with a KB object (if any), and becomes a simple
+        # keyword-based node
+        self.kb_object = None
+
         self.save()
     
+    def reassoc_node(self, kb_object, workspace):
+        '''
+        Associate a node to the given KB object.
+
+        @type  kb_object: dam.kb.models.Object or string
+        @param kb_object: a KB object instance, or its id (a string)
+        '''
+        if not isinstance(kb_object, KBObject):
+            kb_object = KBObject.objects.get(id=kb_object)
+        self.kb_object = kb_object
+        
+        # Just for coherency: ensure that the node label reflects the
+        # object name
+        self.label = kb_object.name
+
+        self.save()
+
     def move_node(self, node_dest, workspace):
         if not self.parent :
             raise InvalidNode
@@ -319,6 +361,14 @@ class Node(AbstractNode):
                 
     class Meta:        
         db_table = 'node'        
+
+    def __str__(self):
+        # If the node is associated to a KB object, then return its
+        # name (instead of the node label)
+        if self.kb_object is not None:
+            return unicode(kb_object.name)
+
+        return unicode(self.label)
 
 class NodeMetadataAssociation(models.Model):
     node = models.ForeignKey(Node)

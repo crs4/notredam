@@ -71,32 +71,8 @@ from dam.core.dam_repository.models import Type
 from dam.workflow.models import State, StateItemAssociation
 from dam.workflow.views import _set_state
 from dam.mprocessor.models import Pipeline
-import hashlib
-
-def _get_final_parameters(api_key, secret, user_id, kwargs = None):
-    if  not kwargs:
-        kwargs = {}
-    kwargs['api_key'] = api_key
-    kwargs['user_id'] = user_id
-    to_hash = secret
-    parameters = []
-    
-    for key,  value in kwargs.items():
-        if isinstance(value,  list):
-            value.sort()
-            for el in value:
-                parameters.append(str(key)+str(el))
-        else:                    
-            parameters.append(str(key)+str(value))
-    
-    parameters.sort()
-    for el in parameters:
-        to_hash += el
-        
-    hashed_secret = hashlib.sha1(to_hash).hexdigest()
-    kwargs['checksum'] = hashed_secret 
-    return kwargs
-
+from dam.api.utils import _get_final_parameters
+from datetime import datetime
 
 class MyTestCase(TestCase):
     """
@@ -229,44 +205,52 @@ class WSTestCase(MyTestCase):
         self.assertTrue(u not in ws.members.all())
         self.assertTrue(WorkspacePermissionAssociation.objects.filter(users = u,  workspace__pk = ws_pk,  permission__name = 'admin').count() == 0)
         
-        
     def test_0005_get_items(self):
         """
-        Gets all the items in the first workspace using the api method /api/workspace/ws_name/get_items/ and checks it against the list of them in django db 
+        Retrieve one of the images on ws 1, with some renditions info.
         """
-        ws_pk = 1
-        params = {'workspace_id':ws_pk}        
-        params = self.get_final_parameters(params)
-        response = self.client.get('/api/workspace/%s/get_items/'%ws_pk,  params)        
         
-        resp_dict = json.loads(response.content)        
-#        print 'resp_dict ',  resp_dict        
-        
-        self.assertTrue(resp_dict ==  [i.pk for i in Item.objects.filter(workspaces__pk = ws_pk)] )   
-       
-      
-    def test_0006_search(self):
-        """
-        Search an image with a query list 'test' as dc description value using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
-        """
         workspace = DAMWorkspace.objects.get(pk = 1)
         print 'MetadataValue.objects.all() %s'%MetadataValue.objects.all()
-        params = self.get_final_parameters({ 'query': 'test', 
+        params = self.get_final_parameters({             
             'media_type': 'image', 
             'start':0,
             'limit':1,
-            'metadata': 'dc_description'
-          
+            'renditions': ['original', 'thumbnail']
         }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
         
-        print resp_dict
-        self.assertTrue(len(resp_dict['items']) == 1)
-#        self.assertTrue(resp_dict['totalCount'] == 2)
-       
+        self.assertTrue(len(resp_dict['items']) == params['limit'])
+        self.assertTrue(int(resp_dict['totalCount']) == Item.objects.filter(workspaceitem__workspace = workspace, workspaceitem__deleted = False).distinct().count())
+        self.assertTrue(resp_dict['items'][0].has_key('pk'))
+        self.assertTrue(resp_dict['items'][0].has_key('media_type'))
+        self.assertTrue(resp_dict['items'][0].has_key('last_update'))
+        self.assertTrue(resp_dict['items'][0].has_key('creation_time'))
+        self.assertTrue(datetime.strptime(resp_dict['items'][0]['last_update'], '%c') == Item.objects.get(pk = resp_dict['items'][0]['pk']).get_last_update(workspace))
+        self.assertTrue(resp_dict['items'][0].has_key('renditions'))
+        self.assertTrue(resp_dict['items'][0]['renditions'].has_key('original'))
+        self.assertTrue(resp_dict['items'][0]['renditions'].has_key('thumbnail'))
+        self.assertTrue(resp_dict['items'][0]['renditions']['original'].has_key('url'))
+        self.assertTrue(resp_dict['items'][0]['renditions']['thumbnail'].has_key('url'))
+    
+    def test_0006_get_items_filtering_by_last_update(self):
+        """
+        Search items filtering by last update.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)        
         
+        print 'item.last_update', item.get_last_update(workspace).strftime('%c')
+        print 'item1.last_update', item1.get_last_update(workspace).strftime('%c')
         
+        params = self.get_final_parameters({ 
+            'last_update>=': item1.get_last_update(workspace).strftime('%d/%m/%Y %H:%M:%S')
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['totalCount'] == 2)           
     
     def test_0007_search_keywords(self):
         """
@@ -275,20 +259,48 @@ class WSTestCase(MyTestCase):
         workspace = DAMWorkspace.objects.get(pk = 1)
         node = Node.objects.get(label = 'test_remove_1')
         
-        params = self.get_final_parameters({ 'keyword': node.pk, 
-            'media_type': 'image', 
-            'start':0,
-            'limit':1,
-            'metadata': 'dc_description'
+        params = self.get_final_parameters({ 
+            'keyword': node.pk, 
+            'media_type': 'image'
           
         }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
-        
-        print resp_dict
-        self.assertTrue(len(resp_dict['items']) == params['limit'])
+      
         self.assertTrue(resp_dict['totalCount'] == node.items.count())
-        #self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
+     
+     
+    def test_search_keywords_failure(self):
+        """
+        Search an image with a given keyword  using the api method /api/workspace/ws_name/search/ and checks if the image is actually found in django db (it must be because it is in a fixture file loaded at testing start up)
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+      
+        
+        params = self.get_final_parameters({ 
+            'keyword': 1000, 
+            'media_type': 'image'
+          
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+      
+        self.assertTrue(resp_dict['totalCount'] == 0)
+    
+    def test_search_in_metadata(self):
+        """
+        Search items by a string.
+        """
+        
+        workspace = DAMWorkspace.objects.get(pk = 1)
+      
+        
+        params = self.get_final_parameters({ 
+            'query': 'test1', 
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)      
+        self.assertTrue(resp_dict['totalCount'] == 1)
              
     def test_0008_search_smart_folders(self):
         """
@@ -305,37 +317,14 @@ class WSTestCase(MyTestCase):
             'metadata': 'dc_description'
           
         }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
         resp_dict = json.loads(response.content)
         
         print resp_dict
 #        self.assertTrue(len(resp_dict['items']) == params['limit'])
         self.assertTrue(resp_dict['totalCount'] == smart_folder.nodes.all()[0].items.count())
 #        self.assertTrue(resp_dict['items'][0].has_key('dc_description'))
-    
-
-
-    def test_0009_search_complex(self):
-        """
-        not clear
-        """
-        workspace = DAMWorkspace.objects.get(pk = 1)
-        params = self.get_final_parameters({ 
-            'keyword': 18,
-            #'query': '"test prova"' ,
-            #'media_type': 'image', 
-            'start':0,
-            'limit':1,
-            #'metadata': 'dc_description'
-          
-        }) 
-        response = self.client.post('/api/workspace/%s/search/'%workspace.pk, params)   
-        resp_dict = json.loads(response.content)
         
-        print resp_dict
-        self.assertTrue(len(resp_dict['items']) == 1)
-        self.assertTrue(resp_dict['totalCount'] == 1)
-    
     def test_0010_keywords(self):
         """
         Search images with some given keywords using the api method /api/workspace/ws_name/get_keywords/. An image with the given keywords is found and it is checked that also the node children have the same keywords.
@@ -537,6 +526,99 @@ class WSTestCase(MyTestCase):
         print resp_dict 
         self.assertTrue(resp_dict.has_key('renditions'))
         
+    def test_0022_get_items_filtering_by_creation_time(self):
+        """
+        Search iterms filtering by last update.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        print 'item.creation_time', item.creation_time.strftime('%c')
+        print 'item1.creation_time', item1.creation_time.strftime('%c')
+        params = self.get_final_parameters({ 
+            'creation_time>': item.creation_time.strftime('%d/%m/%Y %H:%M:%S')
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        self.assertTrue(resp_dict['totalCount'] == 1)
+        self.assertTrue(resp_dict['items'][0]['pk'] == 2)
+        
+        
+    def test_get_items_with_metadata(self):
+        """
+        Search items retrieving a given metadata.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'metadata': 'dc:title'
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 2)
+        self.assertTrue(resp_dict['items'][0]['metadata'].has_key('dc:title'))
+        self.assertTrue(len(resp_dict['items'][0]['metadata'].keys()) == 1)
+        
+        self.assertTrue(resp_dict['items'][1]['metadata'].has_key('dc:title'))
+        self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) == 1)        
+        
+    def test_get_items_with_all_metadata(self):
+        """
+        Search items retrieving all metadata.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'metadata': '*'
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 2)
+        self.assertTrue(len(resp_dict['items'][0]['metadata'].keys()) > 1)
+        self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) > 1)
+        
+    
+    def test_get_items_with_keywords(self):
+        """
+        Search items retrieving all metadata.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+       
+        params = self.get_final_parameters({ 
+            'get_keywords': True
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 2)
+        self.assertTrue(resp_dict['items'][0].has_key('keywords') == True) 
+        self.assertTrue(resp_dict['items'][1].has_key('keywords') == True) 
+        self.assertTrue(len(resp_dict['items'][0]['keywords']) == 1)
+        self.assertTrue(len(resp_dict['items'][1]['keywords']) == 1)
+        
+    
+    def test_get_items_with_deleted_ones(self):
+        """
+        Search items retrieving all items. included deleted.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'show_deleted': True
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        
+        self.assertTrue(resp_dict['totalCount'] == 3)
+        self.assertTrue(resp_dict['items'][0]['deleted'] == True)
+        self.assertTrue(resp_dict['items'][1]['deleted'] == False)
+        self.assertTrue(resp_dict['items'][2]['deleted'] == False)
+    
         
         
 class ItemTest(MyTestCase):  
@@ -591,28 +673,28 @@ class ItemTest(MyTestCase):
          
     
     def test_0024_get(self):
+        
         item = Item.objects.all()[0]    
         keywords = list(item.keywords())            
         ws_pk = 1
-        params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
+        params = self.get_final_parameters({'workspace': ws_pk, 'renditions': 'original'})
         response = self.client.get('/api/item/%s/get/'%item.pk, params, )                        
         resp_dict = json.loads(response.content)
         print resp_dict 
-        self.assertTrue(resp_dict.has_key('id'))
+        self.assertTrue(resp_dict.has_key('pk'))
         self.assertTrue(resp_dict.has_key('keywords'))
         
         self.assertTrue(resp_dict.has_key('workspaces'))
-        self.assertTrue(resp_dict['media_type'] == 'image/jpeg') 
+        self.assertTrue(resp_dict['media_type'] == 'image') 
         
-        self.assertTrue(resp_dict['id'] == item.pk) 
+        self.assertTrue(resp_dict['pk'] == item.pk) 
         self.assertTrue(resp_dict['keywords'] == keywords)
         self.assertTrue(resp_dict['upload_workspace'] == 1)
-        print "resp_dict %s"%resp_dict
+      
+        metadata = {}
+        for metadata_value in MetadataValue.objects.filter(item = item):
+            metadata[str(metadata_value.schema)] = metadata_value.value
         
-        
-        metadata = {'dc_subject': ['test']}
-#        metadata = {u'dc_subject': [u'test_remove_1', u'test', u'prova', u'provaaaa'], u'dc_identifier': u'test id', u'dc_description': {u'en-US': u'test prova\n'}, u'Iptc4xmpExt_LocationShown': [{u'Iptc4xmpExt_CountryCode': u'123', u'Iptc4xmpExt_ProvinceState': u'test', u'Iptc4xmpExt_CountryName': u'test', u'Iptc4xmpExt_City': u'test'}, {u'Iptc4xmpExt_CountryCode': u'1233', u'Iptc4xmpExt_ProvinceState': u'prova', u'Iptc4xmpExt_CountryName': u'prova', u'Iptc4xmpExt_City': u'prova'}]}                                                                                                                                                                                                    
-        print("resp_dict['metadata'] %s"%resp_dict['metadata'])
         self.assertTrue(resp_dict['metadata'] == metadata)
         
         
@@ -620,7 +702,7 @@ class ItemTest(MyTestCase):
         item_pk = 1000    
                     
         ws_pk = 1
-        params = self.get_final_parameters({'renditions_workspace': ws_pk, 'renditions': 'original'})
+        params = self.get_final_parameters({'workspace': ws_pk, 'renditions': 'original'})
         response = self.client.get('/api/item/%s/get/'%item_pk, params) 
         resp_dict = json.loads(response.content)
         print resp_dict 
@@ -678,6 +760,8 @@ class ItemTest(MyTestCase):
         sub = item.metadata.filter(schema__field_name = 'subject')        
         self.assertTrue(sub[0].value == 'test')
         self.assertTrue(sub[1].value == 'test2')
+        
+    
        
      
     def test_0029_remove_metadata_single(self):
@@ -687,10 +771,12 @@ class ItemTest(MyTestCase):
         
         resp_dict = json.loads(response.content)        
         item_id = resp_dict.get('id')
+        print 'item_id',  item_id
         item = Item.objects.get(pk = item_id)
        
         
 #        metadata_dict = {'namespace':'dc',  'name':'subject',  'value': ['test',  'test2']}
+        item.metadata.clear()
         metadata_dict = {'dc_subject': ['test', 'test2']}
         params = self.get_final_parameters({ 'metadata':json.dumps(metadata_dict),  'workspace_id':1})        
         self.client.post('/api/item/%s/set_metadata/'%item_id, params, )         
@@ -699,7 +785,8 @@ class ItemTest(MyTestCase):
         params = self.get_final_parameters({ 'metadata':json.dumps([metadata_dict_to_remove]), 'workspace_id':1})        
         response = self.client.post('/api/item/%s/remove_metadata/'%item_id, params, )        
         self.assertTrue(response.content == '')        
-        m = item.metadata.all()        
+        m = item.metadata.all() 
+        print '----m',m       
         self.assertTrue(m.count() == 1)
         m_0 = m[0]      
 #        self.assertTrue(m_0.schema.namespace == metadata_dict['namespace'])
@@ -720,6 +807,7 @@ class ItemTest(MyTestCase):
         item_id = resp_dict.get('id')
         item = Item.objects.get(pk = item_id)
         
+        item.metadata.clear()
         metadata_dict = {'namespace':'dc',  'name':'subject',  'value': ['test',  'test2']}
         params = self.get_final_parameters({ 'metadata':json.dumps([metadata_dict])})        
         self.client.post('/api/item/%s/set_metadata/'%item_id, params, )         
@@ -760,19 +848,15 @@ class ItemTest(MyTestCase):
         self.assertTrue(item.node_set.filter(pk = new_node.pk).count() == 0)
                
     def test_0033_add_to_ws(self):
-        
-        workspace = DAMWorkspace.objects.create(name = 'test', creator = self.user)
+        ws = DAMWorkspace.objects.get(pk = 1)
+        workspace = DAMWorkspace.objects.create_workspace('test_item_add_to_ws', '', ws.creator)        
         workspace_id = workspace.pk
-        
         
         item = Item.objects.all()[0]
         params = self.get_final_parameters({ 'workspace_id': workspace_id})        
         response = self.client.post('/api/item/%s/add_to_workspace/'%item.pk, params, )            
         self.assertTrue(response.content == '')        
         self.assertTrue(item in workspace.items.all()) 
-        
-
-        
         
         
     def test_0034_get_state(self):
@@ -798,8 +882,6 @@ class ItemTest(MyTestCase):
         print '-------------------------',  resp_dict
         
     
-        
-    
     def test_0036_set_state(self): 
         workspace = DAMWorkspace.objects.get(pk = 1)
         item = Item.objects.all()[0]
@@ -811,6 +893,45 @@ class ItemTest(MyTestCase):
         self.assertTrue(response.content == '')
         self.assertTrue(StateItemAssociation.objects.get(item = item).state.name == 'test')
         
+    def test_last_update_on_change_metadata(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        get_params = self.get_final_parameters({'workspace': 1})        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)       
+        last_update = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+        item.set_metadata('dc','subject', ['test_last_update'])
+                
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)
+        last_update2 = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+        self.assertTrue(last_update2 > last_update)
+    
+    def test_last_update_on_add_keyword(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        get_params = self.get_final_parameters({'workspace': 1})        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)       
+        last_update = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+      
+        node = Node.objects.get(label = 'test')
+        node.save_keyword_association([item.pk])
+        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)
+        last_update2 = datetime.strptime(json.loads(resp.content)['last_update'], '%c')        
+        self.assertTrue(last_update2 > last_update)
+        
+    def test_last_update_on_add_to_ws(self):
+        workspace = DAMWorkspace.objects.get(pk = 1)        
+        workspace_receiver = DAMWorkspace.objects.create_workspace('test_item_add_to_ws', '', workspace.creator)
+        item = Item.objects.get(pk = 1)
+        get_params = self.get_final_parameters({'workspace': 1})        
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)       
+        last_update = datetime.strptime(json.loads(resp.content)['last_update'], '%c')
+      
+        item.add_to_ws(workspace_receiver)
+        get_params = self.get_final_parameters({'workspace': workspace_receiver.pk})      
+        resp =  self.client.get('/api/item/%s/get/'%item.pk, get_params)
+        last_update2 = datetime.strptime(json.loads(resp.content)['last_update'], '%c')        
+        self.assertTrue(last_update2 > last_update)
         
 
 class KeywordsTest(MyTestCase):
@@ -1072,7 +1193,7 @@ class KeywordsTest(MyTestCase):
         workspace_id = 1
         ws = DAMWorkspace.objects.get(pk = workspace_id)
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
-        item = Item.objects.create(uploader = User.objects.get(pk = 1),  type = Type.objects.get_by_mime('image/jpeg')[0],)
+        item = Item.objects.create(ws, uploader = User.objects.get(pk = 1),  type = Type.objects.get_by_mime('image/jpeg')[0],)
         
         node_parent = Node.objects.get(label = 'People',  workspace = ws)
         item = Item.objects.all()[0]
