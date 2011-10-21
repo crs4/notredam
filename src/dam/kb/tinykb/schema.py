@@ -765,6 +765,15 @@ def get_attr_tables(ddl_tables, engine):
 # Initialization and test functions
 ###############################################################################
 
+def create_tables(connstr_or_engine, tables):
+    '''
+    Create a SQLAlchemy table on the DB, using the given connection
+    string or engine
+    '''
+    engine = _get_engine(connstr_or_engine)
+    metadata.create_all(bind=engine, tables=tables)
+
+
 def init_db(connstr_or_engine):
     '''
     Initialize the KB database using the given SQLAlchemy connection
