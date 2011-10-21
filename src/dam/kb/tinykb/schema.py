@@ -767,13 +767,11 @@ def get_attr_tables(ddl_tables, engine):
 
 def init_db(connstr_or_engine):
     '''
-    Initialize the database using the given SQLAlchemy engine or
-    connection string
+    Initialize the KB database using the given SQLAlchemy connection
+    string or engine.  This function will check whether the KB tables
+    still exist on the DB, and won't try to alter them if they do.
     '''
-    if isinstance(connstr_or_engine, str):
-        engine = sqlalchemy.create_engine(connstr_or_engine)
-    else:
-        engine = connstr_or_engine
+    engine = _get_engine(connstr_or_engine)
 
     metadata.create_all(engine)
 
@@ -782,12 +780,26 @@ def init_db(connstr_or_engine):
     _init_default_classes(engine)
 
 
-## Re-initialize the database using the given SQLAlchemy engine
-def reset_db(connstring):
-    eng = sqlalchemy.create_engine(connstring)
+## Re-initialize the database using the given SQLAlchemy engine or
+## connection string
+def reset_db(connstr_or_engine):
+    eng = _get_engine(connstr_or_engine)
     metadata.drop_all(engine)
 
     init_db(engine)
+
+
+def _get_engine(connstr_or_engine):
+    '''
+    Take either a SQLAlchemy engine or a connection string, and return
+    a SQLAlchemy engine (possibly creating it).
+    '''
+    if isinstance(connstr_or_engine, str):
+        engine = sqlalchemy.create_engine(connstr_or_engine)
+    else:
+        engine = connstr_or_engine
+
+    return engine
 
 
 ## Default class attribute types
