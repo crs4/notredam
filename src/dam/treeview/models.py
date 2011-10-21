@@ -24,6 +24,7 @@ from django.contrib.auth.models import User
 
 from dam.repository.models import Item
 from dam.core.dam_tree.models import AbstractNode
+from dam.kb.models import Object as KBObject
 
 import logging
 logger = logging.getLogger('dam')
@@ -149,6 +150,14 @@ class Node(AbstractNode):
     metadata_schema = models.ManyToManyField('metadata.MetadataProperty',  through = 'NodeMetadataAssociation',  blank=True, null=True)
     associate_ancestors = models.BooleanField(default = False)
     
+    # Each catalog node has an optional reference to a knowledge base
+    # object.  When it is not None, the node label should be ignored,
+    # and the object name should be used instead (see, for example,
+    # the __str__() method below)
+    kb_object = models.ForeignKey(KBObject, related_name='catalog_nodes',
+                                  blank=True, null=True, default=None,
+                                  on_delete=models.SET_NULL)
+
     def check_ws(self, ws):
         if self.workspace != ws:
             raise WrongWorkspace
@@ -265,8 +274,31 @@ class Node(AbstractNode):
             raise NotEditableNode
         self.check_ws(workspace)
         self.label = label
+
+        # When the label is changed, the catalog entry loses its
+        # association with a KB object (if any), and becomes a simple
+        # keyword-based node
+        self.kb_object = None
+
         self.save()
     
+    def reassoc_node(self, kb_object, workspace):
+        '''
+        Associate a node to the given KB object.
+
+        @type  kb_object: dam.kb.models.Object or string
+        @param kb_object: a KB object instance, or its id (a string)
+        '''
+        if not isinstance(kb_object, KBObject):
+            kb_object = KBObject.objects.get(id=kb_object)
+        self.kb_object = kb_object
+        
+        # Just for coherency: ensure that the node label reflects the
+        # object name
+        self.label = kb_object.name
+
+        self.save()
+
     def move_node(self, node_dest, workspace):
         if not self.parent :
             raise InvalidNode
@@ -329,6 +361,14 @@ class Node(AbstractNode):
                 
     class Meta:        
         db_table = 'node'        
+
+    def __str__(self):
+        # If the node is associated to a KB object, then return its
+        # name (instead of the node label)
+        if self.kb_object is not None:
+            return unicode(kb_object.name)
+
+        return unicode(self.label)
 
 class NodeMetadataAssociation(models.Model):
     node = models.ForeignKey(Node)
