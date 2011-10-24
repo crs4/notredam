@@ -366,7 +366,7 @@ class Node(AbstractNode):
         # If the node is associated to a KB object, then return its
         # name (instead of the node label)
         if self.kb_object is not None:
-            return unicode(kb_object.name)
+            return unicode(self.kb_object.name)
 
         return unicode(self.label)
 
