@@ -101,7 +101,12 @@ def _add_keyword(request, node, label, workspace):
     if (cls in valid_object_node_classes):
         # The KB object name will override the label
         # FIXME: check that the provided label is equal to obj name?
+<<<<<<< local
+        print 'request.POST[\'kb_object\']: %s' %request.POST['kb_object']
+        obj = KBObject.objects.get(id=request.POST['kb_object'])
+=======
         obj = KBObject.object.get(id=request.POST['kb_object'])
+>>>>>>> other
         label = obj.name
 
     node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False), kb_object=obj)
@@ -110,7 +115,7 @@ def _add_keyword(request, node, label, workspace):
     return node
     
 @permission_required('edit_collection')
-def _add_collection(request, node,  label,  workspace):
+def _add_collection(request, node,  label,  workspace): 
     return Node.objects.add_node(node, label, workspace)
 
 @login_required
@@ -200,6 +205,7 @@ def get_nodes(request):
     Retrieves the requested nodes
     """
     workspace = request.session['workspace']
+    print "node_id %s" %request.POST.get('node',  'root')
     node_id = request.POST.get('node',  'root')
     last_added = request.POST.get('last_added')
     child = request.POST.get('child')
@@ -217,7 +223,6 @@ def get_nodes(request):
         node = Node.objects.get(pk = node_id)
 #    nodes = node.get_branch(depth=1).exclude(pk = node.pk)
     nodes = node.children.all().extra(select={'leaf': 'rgt-lft=1'})
-    
 #    if last_added:
 #        nodes = [nodes[nodes.count()-1]]
     
@@ -237,6 +242,8 @@ def get_nodes(request):
         can_edit = workspace.has_permission(user, 'edit_collection')
 
     for n in nodes:
+        print "n--"
+        print n
         if can_edit:
             allowDrag = n.is_draggable
             editable = n.editable
@@ -392,5 +399,4 @@ def delete_smart_folder(request):
     sm_fold = SmartFolder.objects.get(pk = smart_folder_id)
     sm_fold.delete()
     return HttpResponse(simplejson.dumps({'success': True}))
-    
     

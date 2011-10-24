@@ -35,7 +35,7 @@ def notredam_connstring():
     django_db_engine = db['ENGINE']
     if ('django.db.backends.postgresql_psycopg2' == django_db_engine):
         engine = 'postgresql'
-    elif ('django.db.backends.postgresql_psycopg2' == django_db_engine):
+    elif ('django.db.backends.mysql' == django_db_engine):
         engine = 'mysql'
     else:
         raise ValueError('Unsupported DB for knowledge base: '
