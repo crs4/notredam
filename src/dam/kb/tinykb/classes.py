@@ -55,12 +55,19 @@ class Workspace(object):
         self.visible_catalog_trees.append(CatalogTreeVisibility(cat_entry,
                                                                 self, access))
 
-    def add_root_class(self, klass, access=access.READ_ONLY):
-        if not klass.is_root():
-            ## Just in case someone set klass.superclass != None
-            raise ValueError('Cannot share a non-root class (%s)' % (klass, ))
-        self.visible_root_classes.append(KBClassVisibility(klass, self,
-                                                           access))
+    def setup_root_class(self, class_, access=access.READ_ONLY):
+        if not class_.is_root():
+            ## Just in case someone set class_.superclass != None
+            raise ValueError('Cannot share a non-root class (%s)' % (class_, ))
+        vis = [v for v in self.visible_root_classes
+               if getattr(v, 'class') is class_]
+        if vis == []:
+            # The class is not visible yet, let's add it
+            self.visible_root_classes.append(KBClassVisibility(class_, self,
+                                                               access))
+        else:
+            # The class is still visible, let's just update its access rules
+            vis.access = access
 
 
 class User(object):
@@ -304,8 +311,39 @@ class KBRootClass(KBClass):
         KBClass.__init__(self, name, None, attributes=attributes,
                          notes=notes, explicit_id=explicit_id)
 
-    def add_to_workspace(self, workspace, access=access.READ_ONLY):
-        workspace.add_root_class(self, access)
+    def setup_workspace(self, workspace, access=access.READ_ONLY):
+        '''
+        Setup the root class visibility on the given workspace.
+
+        @type workspace:  Workspace
+        @param workspace: the workspace to configure
+
+        @type access:  Access mode (access.OWNER, access.READ_ONLY or
+                       access.READ_WRITE)
+        @param access: Access configuration for the class on the given
+                       workspace
+        '''
+        workspace.setup_root_class(self, access)
+
+    def restrict_to_workspaces(self, ws_list):
+        '''
+        Remove root class access configurations for workspaces which
+        are not included in the given list.
+
+        Note that the list could also contain workspaces without an
+        actual class access configuration (their status will not be
+        changed by this method).
+
+        @type ws_list:  a list of Workspace objects
+        @param ws_list: workspaces which could access to the root class
+        '''
+        # Collect visibility configurations whose workspaces does not
+        # appear in ws_list...
+        del_ws_vis = [v for v in self.visibility
+                      if v.workspace not in ws_list]
+        # ...and delete them.
+        for v in del_ws_vis:
+            self.visibility.remove(v)
 
     def __repr__(self):
         return "<KBRootClass('%s', '%s')>" % (self.name, self.id)
