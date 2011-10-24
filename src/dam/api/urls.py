@@ -135,5 +135,13 @@ urlpatterns = patterns('',
    url(r'^api/login/$', Auth(permitted_methods=('POST'), )._login),   
    url(r'^api/get_users/$', Auth(permitted_methods=('GET'), ).get_users),   
    url(r'^api/add_user/$', Auth(permitted_methods=('GET'), ).add_user),   
-      
+ 
+   # Knowledge base public API
+   url(r'^api/kb/class/?$', 'kb.views.class_index'),
+   url(r'^api/kb/class/(?P<class_id>\w+)/?$', 'kb.views.class_'),
+   url(r'^api/kb/class/(?P<class_id>\w+)/objects/?$',
+       'kb.views.class_objects'),
+   url(r'^api/kb/object/?$', 'kb.views.object_index'),
+   url(r'^api/kb/object/(?P<object_id>\w+)/?$', 'kb.views.object_'),
+
 )
