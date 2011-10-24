@@ -34,6 +34,8 @@ import tinykb.exceptions as kb_exc
 import tinykb.attributes as kb_attrs
 import util
 
+# FIXME: use the standard ModResource-based dispatch system here
+
 @login_required
 def class_index(request):
     '''
