@@ -93,6 +93,10 @@ def _add_keyword(request, node, label, workspace):
     metadata_schemas = request.POST.getlist('metadata')
     cls  = request.POST.get('cls')
 
+    # Ensure that metadata mappings are only provided for 'keyword' nodes
+    # FIXME: it's kludgy, heavy code refactoring would be advisable
+    assert((metadata_schemas == []) or (cls == 'keyword'))
+
     obj = None
     if (cls in valid_object_node_classes):
         # The KB object name will override the label
