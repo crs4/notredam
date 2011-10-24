@@ -27,6 +27,7 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
                          HttpResponseNotAllowed, HttpResponseBadRequest)
 from django.utils import simplejson
 
+import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.classes as kb_cls
 import tinykb.exceptions as kb_exc
@@ -104,6 +105,12 @@ def class_index_put(request):
     if superclass is None:
         cls = kb_cls.KBRootClass(class_name, explicit_id=explicit_id,
                                  attributes=attrs)
+        # We also need to configure the visibility of the root class
+        # on DAM workspaces
+        resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict)
+        if resp is not None:
+            # An error has occurred
+            return resp
     else:
         cls = kb_cls.KBClass(class_name, superclass=superclass,
                              explicit_id=explicit_id, attributes=attrs)
@@ -154,6 +161,14 @@ def class_post(request, class_id):
         cls = ses.class_(class_id)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
+
+    # In case we're dealing with a root class, also consider its
+    # visibility
+    if isinstance(cls, kb_cls.KBRootClass):
+        resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict)
+        if resp is not None:
+            # An error has occurred
+            return resp
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
@@ -379,9 +394,29 @@ def _kbclass_to_dict(cls):
                'name'        : cls.name,
                'superclass'  : superclass,
                'notes'       : cls.notes,
-               'attributes'  : clsattrs}
+               'attributes'  : clsattrs,
+               'workspaces'  : _kb_class_visibility_to_dict(cls)}
 
     return clsdict
+
+
+# Return a dictionary describing the access rules of a workspace to
+# the given KB class
+def _kb_class_visibility_to_dict(cls):
+    # Internal mapping from access type to string
+    access_str_map = {kb_access.OWNER      : 'owner',
+                      kb_access.READ_ONLY  : 'read-only',
+                      kb_access.READ_WRITE : 'read-write'}
+    # Retrieve the root class
+    while cls.superclass is not cls:
+        cls = cls.superclass
+    assert(isinstance(cls, kb_cls.KBRootClass)) # Just in case...
+
+    vis_dict = {}
+    for v in cls.visibility:
+        vis_dict[v.workspace.id] = access_str_map[v.access]
+
+    return vis_dict
 
 
 # Mapping between attribute type and functions returning a JSON'able
@@ -551,7 +586,6 @@ def _assert_return_json_data(request):
     type is not supported.
     '''
     if ('application/json; charset=UTF-8' == request.META['CONTENT_TYPE']):
-        print type(request.raw_post_data)
         return simplejson.loads(request.raw_post_data)
     else:
         # FIXME: we should support other charset encodings here
@@ -587,7 +621,6 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
     obj_class_attrs = getattr(obj, 'class').attributes
     for a in obj_class_attrs:
         val = obj_dict.get(a.id, getattr(obj, a.id))
-        print '*** ', obj, a.id, type(getattr(obj, a.id)), val
         expected_types = a.python_types()
         if not type(val) in expected_types:
             raise ValueError(('Invalid type for attribute %s: '
@@ -646,3 +679,72 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
         else:
             # Simple case: just update the attribute
             setattr(obj, a.id, val)
+
+
+# Configure the workspace visibility of the given KBRootClass (cls,
+# with JSON'able representation cls_dict), using the given request and
+# KB session.  Return a HttpResponse object on failure, or None in
+# case of success
+def _setup_kb_root_class_visibility(request, ses, cls, cls_dict):
+    cls_workspaces_dict = cls_dict.get('workspaces', None)
+    if cls_workspaces_dict is None:
+        return HttpResponseBadRequest('Root class representation lacks a '
+                                      +'"workspaces" field')
+
+    # Retrieve all the workspace IDs the current user has access to
+    user_ws_ids = [w.id for w in request.user.workspaces.all()]
+    
+    owner_ws_found = False  # Did we get at least one owner WS?
+    ws_list = []
+    for (ws_id, access_str) in cls_workspaces_dict.items():
+        try:
+            ws_id = int(ws_id)
+        except ValueError:
+            return HttpResponseBadRequest(('Workspace id "%s" does not appear '
+                                           + 'to be an integer') % (ws_id, ))
+
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseBadRequest('Unknown workspace id: %s'
+                                          % (ws_id, ))
+        
+        if ws_id not in user_ws_ids:
+            return HttpResponseBadRequest(('Current user "%s" cannot share '
+                                           + 'classes on workspace %s')
+                                          % (request.user.username, ws_id ))
+        
+        ws_list.append(ws)
+        
+        # Translate the user-provided access string into a workspace
+        # permission.  NOTE: this mapping MUST respect the one used in
+        # _kb_class_visibility_to_dict()
+        if (access_str == 'owner'):
+            owner_ws_found = True
+            access = kb_access.OWNER
+        elif (access_str == 'read-only'):
+            access = kb_access.READ_ONLY
+        elif (access_str == 'read-write'):
+            access = kb_access.READ_WRITE
+        else:
+            return HttpResponseBadRequest('Invalid permission for '
+                                          'workspace %s: "%s"'
+                                          % (ws_id, access_str))
+        
+        # Everything seems to be fine, let's share the class on
+        # the given workspace(s)
+        cls.setup_workspace(ws, access=access)
+        
+    if not owner_ws_found:
+        # No owner workspace was provided, let's abort before
+        # committing the new class on the KB
+        return HttpResponseBadRequest('Root class representation lacks'
+                                      + ' an "owner" workspace in the'
+                                      + ' "workspaces" field')
+
+    # Finally, remove the workspace visibilities which were not
+    # mentioned in the class dictionary
+    cls.restrict_to_workspaces(ws_list)
+
+    # Everything is fine
+    return None
