@@ -241,12 +241,15 @@ class KBClass(object):
 
         return self._references_cache
 
-    # Return the Python class corresponding to the KBClass.  Returns
-    # None if self.make_python_class() was not invoked before
-    def get_python_class(self):
-        return self.python_class
-
     def make_python_class(self, session_or_engine=None):
+        '''
+        Return the Python class associated to a KB class.
+
+        @type session_or_engine:  SQLAlchemy session or engine
+        @param session_or_engine: explicit session/engine to use (if None,
+                                  the method will try to use the one bound to
+                                  self, if any).
+        '''
         if self.python_class is not None:
             return self.python_class
 
@@ -287,7 +290,8 @@ class KBClass(object):
 
         # NOTE: self.python_class needs to be set *before* generating
         # the SQLAlchemy ORM mapper, because it will invoke
-        # self.get_python_class(), which cannot return None
+        # self.make_python_class() again, thus causing an infinite
+        # recursion
         self.python_class = newclass
 
         # Let's now build the SQLAlchemy ORM mapper
