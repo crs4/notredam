@@ -101,7 +101,7 @@ def _add_keyword(request, node, label, workspace):
     if (cls in valid_object_node_classes):
         # The KB object name will override the label
         # FIXME: check that the provided label is equal to obj name?
-        obj = KBObjects.object.get(id=request.POST['kb_object'])
+        obj = KBObject.object.get(id=request.POST['kb_object'])
         label = obj.name
 
     node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False), kb_object=obj)
