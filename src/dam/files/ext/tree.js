@@ -363,8 +363,6 @@ function create_tree(title, id){
                         tristate = true;
                         cb.checked = true;
                         tri_span.addClass('tri_state_cb');
-                        
-                             
                          Ext.Ajax.request({
                             url:'/remove_association/',
                             params:{
@@ -385,9 +383,6 @@ function create_tree(title, id){
                         
                         
                     }
-                    
-                    
-                    
                 }
                 
                 
@@ -587,11 +582,7 @@ var treeAction = function(tree_action){
     var sel_node = tree_action.scope;
     
     function submit_tree_form_obj(){
-/*    	console.log('ok ci siamo :');
-    	console.log('cls :'+cls);
-    	console.log('label :'+label);
-    	console.log('check :'+check);
-*/    	var params;
+    	var params;
     	if (Ext.getCmp('check_drop_option_id').getValue()){
     		params = {cls: "object-keyword"};
     	}else{
@@ -599,7 +590,7 @@ var treeAction = function(tree_action){
     	}
 //    	params.node_id = node_id;
     	params.kb_object = Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.id;
-    	
+    	params.type = 'object';
     	Ext.getCmp('tree_form_obj').getForm().submit({
             clientValidation: true,
             params:params,
@@ -782,7 +773,9 @@ var treeAction = function(tree_action){
         }
    //console.log('----------------tree_action.text ' + tree_action.text); 
     if (tree_action.text == gettext("Delete")){
-        var _delete_node = function(btn){
+        console.log("Delete");
+        console.log(sel_node);
+    	var _delete_node = function(btn){
             if(btn == 'yes'){
                 Ext.Ajax.request({
                     url: '/delete_node/',
@@ -823,8 +816,11 @@ var treeAction = function(tree_action){
         search.setValue(path);
         set_query_on_store({query: path, show_associated_items: true});
     }
-    else if (tree_action.text == gettext("Object Reference")){
-    	console.log('presente: '+sel_node.id);
+    else if (tree_action.text == gettext("Object Reference") || 
+    		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-category') ||
+    		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'keyword-category')){
+    	console.log('selNode: ');
+    	console.log(sel_node);
     	var fields = [];
     	var node_id, type;
         var height_form= 370;
@@ -858,7 +854,7 @@ var treeAction = function(tree_action){
             allowDrag:false,
             allowDrop:true,
             editable: false,
-            type:'keyword',
+            type:'object',
             iconCls:'category',
 /*            text		: 'My Root Node',
             draggable	: false,
@@ -940,9 +936,10 @@ var treeAction = function(tree_action){
     });
     win.show();
     }
-    else{
+    else{    	console.log('tree_action.text: '+tree_action.text);
+    		console.log(sel_node.attributes.iconCls);
         var fields = []; 
-        if  (tree_action.text == gettext("Add") || tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ||  tree_action.text == gettext("Edit") || tree_action.text == gettext("Object Reference")){
+        if  (tree_action.text == gettext("Add") || tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ||  tree_action.text == gettext("Edit")){
 	        
         	var node_id, type;
 	       

@@ -232,21 +232,35 @@ def get_nodes(request):
 #        nodes = nodes.extra(select={'n_items': "select count(distinct metadata_metadata.object_id) from metadata_metadata where metadata_metadata.value in (select node2.label from node as node2 where lft between node.lft and node.rgt )"})
     result = []
     if node.type == 'keyword':
+        print 'node'
+        print node
         can_edit = workspace.has_permission(user, 'edit_taxonomy')
     else:
         can_edit = workspace.has_permission(user, 'edit_collection')
 
     for n in nodes:
         print "n--"
-        print n
-        if can_edit:
+        print n.cls
+        if (n.cls == 'object-category'):
+            allowDrag = True
+            editable = True
+            n.is_drop_target = True
+            allowDrop = False
+        elif (n.cls == 'object-keyword'):
+            allowDrag = True
+            editable = True
+            n.is_drop_target = True
+            allowDrop = True
+        elif can_edit:
             allowDrag = n.is_draggable
             editable = n.editable
+            allowDrop = n.is_drop_target
         else:
             allowDrag = False
             editable = False
-            
-        tmp = {'text' : n.label,  'id':n.id, 'leaf': n.leaf,  'allowDrag':allowDrag,  'allowDrop': n.is_drop_target,  'editable': editable,  'type': n.type, 'iconCls': n.cls,'isCategory': n.cls == 'category', 'isNewKeywords': n.cls == 'new_keyword',  'isNoKeyword': n.cls == 'no_keyword', 'uiProvider': 'MyNodeUI', }
+            allowDrop = n.is_drop_target
+
+        tmp = {'text' : n.label,  'id':n.id, 'leaf': n.leaf,  'allowDrag':allowDrag,  'allowDrop': allowDrop,  'editable': editable,  'type': n.type, 'iconCls': n.cls,'isCategory': n.cls == 'category', 'isNewKeywords': n.cls == 'new_keyword',  'isNoKeyword': n.cls == 'no_keyword', 'uiProvider': 'MyNodeUI', }
         
         if n.type == 'keyword':
             tmp['add_metadata_parent'] = n.associate_ancestors        
