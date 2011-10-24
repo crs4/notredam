@@ -413,7 +413,7 @@ mapper(ItemVisibility, schema.item_visibility,
 
 mapper(Workspace, schema.workspace,
        properties={
-        '_creator' : schema.workspace.c.creator,
+        '_creator_id' : schema.workspace.c.creator_id,
         'creator' : relationship(User, backref='workspaces', cascade='all'),
         'visible_items' : relationship(ItemVisibility, backref='workspace',
                                        cascade='all'),
