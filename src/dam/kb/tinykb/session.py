@@ -302,8 +302,11 @@ class Session(object):
         @type  id_: string
         @param id_: the identifier of the required Workspace
         '''
-        return self.session.query(kb_cls.Workspace).filter(
-            kb_cls.Workspace.id == id_).one()
+        try:
+            return self.session.query(kb_cls.Workspace).filter(
+                kb_cls.Workspace.id == id_).one()
+        except sa_exc.NoResultFound:
+            raise kb_exc.NotFound('workspace.id == %d' % (id_, ))
 
     def workspaces(self, user=None):
         '''
