@@ -69,13 +69,13 @@ def test_create_object_classes(connstring=CONNSTRING):
 
     ## Ensure that the Keyword class is visible in all workspaces
     ## FIXME: it should be done automatically
-    # KeywordClass.add_to_workspace(w1)
-    # KeywordClass.add_to_workspace(w2)
-    # KeywordClass.add_to_workspace(w3)
+    # KeywordClass.setup_workspace(w1)
+    # KeywordClass.setup_workspace(w2)
+    # KeywordClass.setup_workspace(w3)
 
-    # class1.add_to_workspace(w1)
-    # class2.add_to_workspace(w2)
-    # class3.add_to_workspace(w2)
+    # class1.setup_workspace(w1)
+    # class2.setup_workspace(w2)
+    # class3.setup_workspace(w2)
 
     # it1 = classes.Item()
     # it2 = classes.Item()
