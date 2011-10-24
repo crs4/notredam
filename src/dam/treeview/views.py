@@ -31,6 +31,7 @@ from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item, Component
 from dam.core.dam_repository.models import Type
+from dam.kb.models import Object as KBObject
 
 from django.utils import simplejson
 
@@ -38,7 +39,9 @@ import cPickle as pickle
 import logging
 logger = logging.getLogger('dam')
 
-    
+# Allowed values for the 'cls' field in JSON repr of catalog nodes
+valid_object_node_classes = ('object-keyword', 'object-category')
+
 @login_required
 @permission_required('edit_taxonomy')
 def move_node(request):
@@ -89,7 +92,19 @@ def edit_node(request):
 def _add_keyword(request, node, label, workspace):
     metadata_schemas = request.POST.getlist('metadata')
     cls  = request.POST.get('cls')
-    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False))
+
+    # Ensure that metadata mappings are only provided for 'keyword' nodes
+    # FIXME: it's kludgy, heavy code refactoring would be advisable
+    assert((metadata_schemas == []) or (cls == 'keyword'))
+
+    obj = None
+    if (cls in valid_object_node_classes):
+        # The KB object name will override the label
+        # FIXME: check that the provided label is equal to obj name?
+        obj = KBObject.object.get(id=request.POST['kb_object'])
+        label = obj.name
+
+    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False), kb_object=obj)
     node.save_metadata_mapping(metadata_schemas)
     
     return node
