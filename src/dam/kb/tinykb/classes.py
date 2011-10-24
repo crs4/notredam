@@ -108,6 +108,7 @@ class KBClass(object):
         self.table = ('object_' + self.id).lower()
         self.name = name
 
+        # FIXME: handle these fields with a SQLAlchemy mapper property?
         if superclass is None:
             self._root_id = self.id
             self.superclass = self
@@ -311,12 +312,12 @@ class KBRootClass(KBClass):
 
 
 class KBClassAttribute(object):
-    def __init__(self, klass, name, attr_type):
+    def __init__(self, class_, name, attr_type):
         pass
 
 class KBClassVisibility(object):
-    def __init__(self, klass, workspace, access):
-        self.klass = klass
+    def __init__(self, class_, workspace, access):
+        setattr(self, 'class', class_)
         self.workspace = workspace
         ## FIXME: check for access validity
         self.access = access
@@ -457,7 +458,7 @@ mapper(KBClassVisibility, schema.class_visibility,
         '_workspace' : schema.class_visibility.c.workspace,
         '_class_id' : schema.class_visibility.c['class'],
         '_class_root' : schema.class_visibility.c.class_root,
-        'klass' : relationship(KBRootClass,
+        'class' : relationship(KBRootClass,
                                backref='visibility', cascade='all')
         })
 
