@@ -110,11 +110,10 @@ class KBClass(object):
 
         if superclass is None:
             self._root_id = self.id
-            superclass = self
-
-        # FIXME: handle these fields with a SQLAlchemy mapper property?
-        self.superclass = superclass
-        self._root_id = superclass._root_id
+            self.superclass = self
+        else:
+            self.superclass = superclass
+            self._root_id = superclass._root_id
 
         for a in attributes:
             self.attributes.append(a)
