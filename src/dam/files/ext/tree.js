@@ -436,8 +436,8 @@ function create_tree(title, id){
                 this.getEl().on('contextmenu',
                 	
                     function(e){     
-                    	console.log('cm');
-                    	console.log(this.id)
+                    	//console.log('cm');
+                    	//console.log(this.id)
                         if (this.id == 'keywords_tree') {
                             contextMenuShow(root_keywords,e);
                         }
@@ -599,14 +599,7 @@ var treeAction = function(tree_action){
     	}
 //    	params.node_id = node_id;
     	params.kb_object = Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.id;
-
     	
-    	console.log('FORM: ');
-    	console.log(Ext.getCmp('tree_form_obj').getForm());
-    	console.log('PARAMS: ');
-    	console.log(params);
-    	console.log('form.url');
-    	console.log(Ext.getCmp('tree_form_obj').getForm().url);
     	Ext.getCmp('tree_form_obj').getForm().submit({
             clientValidation: true,
             params:params,
@@ -614,17 +607,11 @@ var treeAction = function(tree_action){
             //url: '/add_node/',
             waitMsg: gettext('Saving...'),
             success: function(form, action) {
-	    		console.log('dentro submit.');
-        		console.log('PARAMS: ');
-	    		//console.log(params);
                 if(!sel_node.length) {
-            		console.log('fuori tree_action: '+ tree_action.text);
+            		console.log(tree_loader);
                     if(tree_action.text == gettext('Add') ||  tree_action.text == gettext('Object Reference')){
-                    		console.log('dentro tree_action: '+ tree_action.text);
                             tree_loader.clearOnLoad = false;
                             tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
-                            consele.log('after');
-                            consele.log(tree_loader.baseParams);
                             tree_loader.load(sel_node,function(){
                                 tree_loader.clearOnLoad = true;
                                 tree_loader.baseParams = {};
@@ -648,7 +635,6 @@ var treeAction = function(tree_action){
 	                case Ext.form.Action.SERVER_INVALID:
 	                   Ext.Msg.alert('Failure', action.result.msg);
             	}
-            	win.close();
            }
         });
     }
@@ -676,21 +662,14 @@ var treeAction = function(tree_action){
         }
         
         var form = Ext.getCmp('tree_form').getForm();
-    	console.log('FORM: ');
-    	console.log(form);
-    	console.log('PARAMS: ');
-    	console.log(params);
 
         form.submit({
             clientValidation: true,
             params: params,
             waitMsg: gettext('Saving...'),
             success: function(form, action) {
-        		console.log('PARAMS: ');
-        		console.log(params);
                 if(!sel_node.length) {
                     if(tree_action.text == gettext('Add') ||  tree_action.text == gettext('Category') || tree_action.text == gettext('Keyword') ){
-                    		console.log('dentro tree_action: '+ tree_action.text);
                             tree_loader.clearOnLoad = false;
                             tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label').getValue()};
                             tree_loader.load(sel_node,function(){
@@ -907,7 +886,6 @@ var treeAction = function(tree_action){
 	            								//console.log(sel);console.log(nodes);
 	            								if (node.leaf == true){
 	            									Ext.getCmp('node_label_obj').setValue(node.text);
-	            									console.log(node);
 	            								}
 	                    					 }
 	            		}
@@ -931,7 +909,6 @@ var treeAction = function(tree_action){
                 type: 'submit',
                 handler: function(){
             		submit_tree_form_obj();
-            		//win.close();
                 }
             },{
                 text: gettext('Cancel'),
