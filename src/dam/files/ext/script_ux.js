@@ -777,22 +777,23 @@ Ext.reg('watermarkposition', Ext.ux.WatermarkPosition);
     
 
 Ext.ux.Select = function(config) {
- 	set_rendition_store(config);
- 	//this.values = config.values;
+    console.log(config);
+ 	//set_rendition_store(config);
+ 	this.values = config.values;
      	
- 	//Ext.apply(config, {
- 		//store: new Ext.data.ArrayStore({        
-	        //fields: config.fields || ['value'],
-	        //data: config.values
-	    //}),
-	    //valueField: config.valueField || 'value',
-		//displayField: config.displayField || 'value'
-		//
-	    //
-	    //
-	    //
- 	//});
- 	
+ 	Ext.apply(config, {
+ 		store: new Ext.data.ArrayStore({        
+	        fields: config.fields || ['value'],
+	        data: config.values
+	    }),
+	    valueField: config.valueField || 'value',
+		displayField: config.displayField || 'value'
+		
+	    
+	    
+	    
+ 	});
+ 	//
     // call parent constructor
     Ext.ux.Select.superclass.constructor.call(this, config);
     
@@ -821,6 +822,53 @@ Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {
 }); 
 
 Ext.reg('select', Ext.ux.Select);
+
+Ext.ux.RenditionSelect = function(config) {
+    console.log(config);
+ 	set_rendition_store(config);
+ 	//this.values = config.values;
+     	
+ 	//Ext.apply(config, {
+ 		//store: new Ext.data.ArrayStore({        
+	        //fields: config.fields || ['value'],
+	        //data: config.values
+	    //}),
+	    //valueField: config.valueField || 'value',
+		//displayField: config.displayField || 'value'
+		//
+	    //
+	    //
+	    //
+ 	//});
+ 	
+    // call parent constructor
+    Ext.ux.Select.superclass.constructor.call(this, config);
+    
+ 
+}; 
+
+Ext.extend(Ext.ux.RenditionSelect, Ext.form.ComboBox, {	
+    allowBlank: false,
+    autoSelect: true,
+	width: 200,
+    editable: false,
+    triggerAction: 'all',
+    lazyRender:true,
+    forceSelection: true,
+    mode: 'local',
+    _set_dynamic: function(){
+		this.dynamic = true;
+	}
+	//,
+	//getValue: function(){
+		//var tmp = Ext.ux.Select.superclass.getValue.call(this);
+	//}
+    
+    
+ 
+}); 
+
+Ext.reg('rendition_select', Ext.ux.RenditionSelect);
 
 
 Ext.ux.CBFieldSet = function(config) {	

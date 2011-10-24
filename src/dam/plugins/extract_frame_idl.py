@@ -28,7 +28,7 @@ def inspect(workspace):
             {   
                 'name': 'output_variant_name',
                 'fieldLabel': 'Output Rendition',
-                'xtype': 'select',
+                'xtype': 'rendition_select',
                 #'values': output_variants,
                 
                 'description': 'output-variant',
