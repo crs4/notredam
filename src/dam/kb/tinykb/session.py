@@ -260,7 +260,7 @@ class Session(object):
         query = self.session.query(kb_cls.KBObject).filter(
             kb_cls.KBObject.id == id_)
         if ws is not None:
-            query = _add_ws_filter(query.join(kb_cls.KBClass))
+            query = _add_ws_filter(query.join(kb_cls.KBClass), ws)
             
         try:
             obj = query.one()
@@ -292,7 +292,7 @@ class Session(object):
         query = self.session.query(class_)
 
         if ws is not None:
-            query = _add_ws_filter(query.join(kb_cls.KBClass))
+            query = _add_ws_filter(query.join(kb_cls.KBClass), ws)
 
         if filter_expr is not None:
             query = query.filter(filter_expr)
