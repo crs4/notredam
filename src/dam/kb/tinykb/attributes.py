@@ -313,8 +313,7 @@ class ObjectReference(Attribute):
         # id of the attribute
         table = self._class.sqlalchemy_table
 
-        target_pyclass = self.target.get_python_class() 
-        assert(target_pyclass is not None)
+        target_pyclass = self.target.make_python_class() 
 
         target_table = self.target.sqlalchemy_table
 
@@ -405,8 +404,7 @@ class ObjectReferencesList(Attribute):
         # additional_tables()
         assert(mytable is not None)
 
-        target_pyclass = self.target.get_python_class() 
-        assert(target_pyclass is not None)
+        target_pyclass = self.target.make_python_class() 
 
         target_table = self.target.sqlalchemy_table
         

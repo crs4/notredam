@@ -72,6 +72,7 @@ var MDAction =  function(opts, layer) {
 	
 	
 	MDAction.superclass.constructor.call(this, opts, layer);
+    console.log(opts.title);
 	layer.containers.push(this);
 
 }; 
@@ -620,6 +621,7 @@ Ext.onReady(function(){
 									
 									if(action_stored.length > 0){
 										action_stored = action_stored[0];
+                                        
 										var action_box = new MDAction({
 											title: action_stored.data.name,
 											//position:[20,20],
@@ -634,8 +636,16 @@ Ext.onReady(function(){
 											dynamic: action.dynamic
 											
 											
-										}, baseLayer); 
-										action_box.form.getForm().setValues(action.params);
+										}, baseLayer);
+                                        console.log('action.params'); 
+                                        console.log(action.params); 
+                                        try{
+                                            action_box.form.getForm().setValues(action.params);
+                                        }
+                                        catch(e){
+                                            console.error(e);
+                                        }
+										
 										
 										Ext.each(action_box.form.items.items, function(field){          						
 											if (field.data_loaded)

@@ -24,39 +24,55 @@
 
 from django.contrib.auth.decorators import login_required
 from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
-                         HttpResponseNotAllowed, HttpResponseBadRequest)
+                         HttpResponseNotAllowed, HttpResponseBadRequest,
+                         HttpResponseForbidden)
 from django.utils import simplejson
 
+import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.classes as kb_cls
 import tinykb.exceptions as kb_exc
 import tinykb.attributes as kb_attrs
 import util
 
+# FIXME: use the standard ModResource-based dispatch system here
+
 @login_required
-def class_index(request):
+def class_index(request, ws_id):
     '''
     GET: return the list of classes defined in the knowledge base.
     PUT: insert a new class in the knowledge base.
     '''
     return _dispatch(request, {'GET' : class_index_get,
-                               'PUT' : class_index_put})
+                               'PUT' : class_index_put},
+                     {'ws_id' : int(ws_id)})
 
 
-def class_index_get(request):
+def class_index_get(request, ws_id):
     ses = _kb_session()
-    cls_dicts = [_kbclass_to_dict(c) for c in ses.classes()]
+
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    cls_dicts = [_kbclass_to_dict(c) for c in ses.classes(ws=ws)]
 
     return HttpResponse(simplejson.dumps(cls_dicts))
 
 
-def class_index_put(request):
+def class_index_put(request, ws_id):
     try:
         cls_dict = _assert_return_json_data(request)
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
     ses = _kb_session()
+
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
     class_name = cls_dict.get('name', None)
     if class_name is None:
@@ -73,6 +89,14 @@ def class_index_put(request):
                                           % (superclass_id, ))
 
     explicit_id = cls_dict.get('id', None)
+    if explicit_id is not None:
+        # Check for uniqueness
+        try:
+            ses.class_(explicit_id)
+            return HttpResponseBadRequest('Class id "%s" already in use'
+                                          % (explicit_id, ))
+        except kb_exc.NotFound:
+            pass
 
     # Build the list of attributes of the class
     json_attrs = cls_dict.get('attributes', [])
@@ -104,6 +128,13 @@ def class_index_put(request):
     if superclass is None:
         cls = kb_cls.KBRootClass(class_name, explicit_id=explicit_id,
                                  attributes=attrs)
+        # We also need to configure the visibility of the root class
+        # on DAM workspaces
+        resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict, ws)
+
+        if resp is not None:
+            # An error has occurred
+            return resp
     else:
         cls = kb_cls.KBClass(class_name, superclass=superclass,
                              explicit_id=explicit_id, attributes=attrs)
@@ -119,31 +150,38 @@ def class_index_put(request):
     ses.add(cls)
     ses.commit()
 
-    return HttpResponse('ok')
+    return HttpResponse(cls.id)
 
 
 @login_required
-def class_(request, **kwargs):
+def class_(request, ws_id, class_id):
     '''
     GET: return a specific class from the knowledge base.
     POST: update an existing class in the knowledge base.
     DELETE: delete and existing class from the knowledge base.
     '''
     return _dispatch(request, {'GET'  : class_get,
-                               'POST' : class_post}, kwargs)
+                               'POST' : class_post},
+                     {'ws_id' : int(ws_id),
+                      'class_id' : class_id})
 
 
-def class_get(request, class_id):
+def class_get(request, ws_id, class_id):
     ses = _kb_session()
     try:
-        cls = ses.class_(class_id)
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        cls = ses.class_(class_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
     return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls)))
 
 
-def class_post(request, class_id):
+def class_post(request, ws_id, class_id):
     try:
         cls_dict = _assert_return_json_data(request)
     except ValueError as e:
@@ -151,9 +189,32 @@ def class_post(request, class_id):
 
     ses = _kb_session()
     try:
-        cls = ses.class_(class_id)
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        cls = ses.class_(class_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
+
+    perm = cls.workspace_permission(ws)
+    if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
+        return HttpResponseForbidden()
+
+    # If the current workspace doesn't own the class root, then ignore
+    # the new workspaces access configuration (if any)
+    # FIXME: maybe check whether access rules were changed, and raise an err?
+    if perm != kb_access.OWNER:
+        cls_dict['workspaces'] = _kb_class_visibility_to_dict(cls)
+
+    # In case we're dealing with a root class, also consider its
+    # visibility
+    if isinstance(cls, kb_cls.KBRootClass):
+        resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict, ws)
+        if resp is not None:
+            # An error has occurred
+            return resp
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
@@ -170,29 +231,42 @@ def class_post(request, class_id):
 
 
 @login_required
-def object_index(request):
+def object_index(request, ws_id):
     '''
     GET: return the list of objects defined in the knowledge base.
     PUT: insert a new object in the knowledge base.
     '''
     return _dispatch(request, {'GET' : object_index_get,
-                               'PUT' : object_index_put})
+                               'PUT' : object_index_put},
+                     {'ws_id' : int(ws_id)})
 
 
-def object_index_get(request):
+def object_index_get(request, ws_id):
     ses = _kb_session()
-    obj_dicts = [_kbobject_to_dict(o) for o in ses.objects()]
+
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    obj_dicts = [_kbobject_to_dict(o) for o in ses.objects(ws=ws)]
 
     return HttpResponse(simplejson.dumps(obj_dicts))
 
 
-def object_index_put(request):
+def object_index_put(request, ws_id):
     try:
         obj_dict = _assert_return_json_data(request)
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
     ses = _kb_session()
+
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
     object_class_id = obj_dict.get('class', None)
     if object_class_id is None:
         return HttpResponseBadRequest('Object representation lacks a '
@@ -205,8 +279,17 @@ def object_index_put(request):
     
     explicit_id = obj_dict.get('id', None)
     
+    if explicit_id is not None:
+        # Check for uniqueness
+        try:
+            ses.object(explicit_id)
+            return HttpResponseBadRequest('Object id "%s" already in use'
+                                          % (explicit_id, ))
+        except kb_exc.NotFound:
+            pass
+
     try:
-        ObjectClass = ses.python_class(object_class_id)
+        ObjectClass = ses.python_class(object_class_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseBadRequest('Invalid object class: %s'
                                       % (object_class_id, ))
@@ -226,31 +309,38 @@ def object_index_put(request):
     ses.add(obj)
     ses.commit()
 
-    return HttpResponse('ok')
+    return HttpResponse(obj.id)
 
 
 @login_required
-def object_(request, **kwargs):
+def object_(request, ws_id, object_id):
     '''
     GET: return a specific object from the knowledge base.
     POST: update an existing object in the knowledge base.
     DELETE: delete and existing object from the knowledge base.
     '''
     return _dispatch(request, {'GET' :  object_get,
-                               'POST' : object_post}, kwargs)
+                               'POST' : object_post},
+                     {'ws_id' : int(ws_id),
+                      'object_id' : object_id})
 
 
-def object_get(request, object_id):
+def object_get(request, ws_id, object_id):
     ses = _kb_session()
     try:
-        cls = ses.object(object_id)
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        cls = ses.object(object_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
     return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
 
 
-def object_post(request, object_id):
+def object_post(request, ws_id, object_id):
     try:
         obj_dict = _assert_return_json_data(request)
     except ValueError as e:
@@ -258,7 +348,12 @@ def object_post(request, object_id):
 
     ses = _kb_session()
     try:
-        obj = ses.object(object_id)
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        obj = ses.object(object_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
@@ -278,18 +373,24 @@ def object_post(request, object_id):
 
 
 @login_required
-def class_objects(request, class_id):
+def class_objects(request, ws_id, class_id):
     '''
     GET: return the list of objects belonging to a given KB class.
     '''
     return _dispatch(request, {'GET' : class_objects_get},
-                     {'class_id' : class_id})
+                     {'ws_id' : int(ws_id),
+                      'class_id' : class_id})
 
 
-def class_objects_get(request, class_id):
+def class_objects_get(request, ws_id, class_id):
     ses = _kb_session()
     try:
-        cls = ses.class_(class_id)
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        cls = ses.class_(class_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
@@ -379,9 +480,29 @@ def _kbclass_to_dict(cls):
                'name'        : cls.name,
                'superclass'  : superclass,
                'notes'       : cls.notes,
-               'attributes'  : clsattrs}
+               'attributes'  : clsattrs,
+               'workspaces'  : _kb_class_visibility_to_dict(cls)}
 
     return clsdict
+
+
+# Return a dictionary describing the access rules of a workspace to
+# the given KB class
+def _kb_class_visibility_to_dict(cls):
+    # Internal mapping from access type to string
+    access_str_map = {kb_access.OWNER      : 'owner',
+                      kb_access.READ_ONLY  : 'read-only',
+                      kb_access.READ_WRITE : 'read-write'}
+    # Retrieve the root class
+    while cls.superclass is not cls:
+        cls = cls.superclass
+    assert(isinstance(cls, kb_cls.KBRootClass)) # Just in case...
+
+    vis_dict = {}
+    for v in cls.visibility:
+        vis_dict[v.workspace.id] = access_str_map[v.access]
+
+    return vis_dict
 
 
 # Mapping between attribute type and functions returning a JSON'able
@@ -551,7 +672,6 @@ def _assert_return_json_data(request):
     type is not supported.
     '''
     if ('application/json; charset=UTF-8' == request.META['CONTENT_TYPE']):
-        print type(request.raw_post_data)
         return simplejson.loads(request.raw_post_data)
     else:
         # FIXME: we should support other charset encodings here
@@ -587,7 +707,6 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
     obj_class_attrs = getattr(obj, 'class').attributes
     for a in obj_class_attrs:
         val = obj_dict.get(a.id, getattr(obj, a.id))
-        print '*** ', obj, a.id, type(getattr(obj, a.id)), val
         expected_types = a.python_types()
         if not type(val) in expected_types:
             raise ValueError(('Invalid type for attribute %s: '
@@ -646,3 +765,72 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
         else:
             # Simple case: just update the attribute
             setattr(obj, a.id, val)
+
+
+# Configure the workspace visibility of the given KBRootClass (cls,
+# with JSON'able representation cls_dict), using the given request and
+# KB session.  'curr_ws' is the current workspace (which should appear
+# among the class owners).  Return a HttpResponse object on failure,
+# or None in case of success
+def _setup_kb_root_class_visibility(request, ses, cls, cls_dict, curr_ws):
+    cls_workspaces_dict = cls_dict.get('workspaces', None)
+    if cls_workspaces_dict is None:
+        return HttpResponseBadRequest('Root class representation lacks a '
+                                      +'"workspaces" field')
+
+    # Retrieve all the workspace IDs the current user has access to
+    user_ws_ids = [w.id for w in request.user.workspaces.all()]
+    
+    owner_ws_list = []  # List of owner workspaces
+    ws_list = []
+    for (ws_id, access_str) in cls_workspaces_dict.items():
+        try:
+            ws_id = int(ws_id)
+        except ValueError:
+            return HttpResponseBadRequest(('Workspace id "%s" does not appear '
+                                           + 'to be an integer') % (ws_id, ))
+
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseBadRequest('Unknown workspace id: %s'
+                                          % (ws_id, ))
+        
+        if ws_id not in user_ws_ids:
+            return HttpResponseBadRequest(('Current user "%s" cannot share '
+                                           + 'classes on workspace %s')
+                                          % (request.user.username, ws_id ))
+        
+        ws_list.append(ws)
+        
+        # Translate the user-provided access string into a workspace
+        # permission.  NOTE: this mapping MUST respect the one used in
+        # _kb_class_visibility_to_dict()
+        if (access_str == 'owner'):
+            owner_ws_list.append(ws)
+            access = kb_access.OWNER
+        elif (access_str == 'read-only'):
+            access = kb_access.READ_ONLY
+        elif (access_str == 'read-write'):
+            access = kb_access.READ_WRITE
+        else:
+            return HttpResponseBadRequest('Invalid permission for '
+                                          'workspace %s: "%s"'
+                                          % (ws_id, access_str))
+        
+        # Everything seems to be fine, let's share the class on
+        # the given workspace(s)
+        cls.setup_workspace(ws, access=access)
+        
+    # Also ensure that the current workspace is among the owners
+    if curr_ws not in owner_ws_list:
+        return HttpResponseBadRequest(('Root class representation does not'
+                                       + ' report the current workspace (%d)'
+                                       + ' as owner') % (ws_id, ))
+        
+    # Finally, remove the workspace visibilities which were not
+    # mentioned in the class dictionary
+    cls.restrict_to_workspaces(ws_list)
+
+    # Everything is fine
+    return None
