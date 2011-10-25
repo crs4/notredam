@@ -150,7 +150,7 @@ def class_index_put(request, ws_id):
     ses.add(cls)
     ses.commit()
 
-    return HttpResponse('ok')
+    return HttpResponse(cls.id)
 
 
 @login_required
@@ -309,7 +309,7 @@ def object_index_put(request, ws_id):
     ses.add(obj)
     ses.commit()
 
-    return HttpResponse('ok')
+    return HttpResponse(obj.id)
 
 
 @login_required
