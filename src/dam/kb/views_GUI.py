@@ -126,7 +126,7 @@ def _add_attribute(name, value, groupname):
           }
     return tmp
 
-def _put_attributes(cls_obj,rtr):
+def _put_attributes(cls_obj, rtr):
     rtr['rows'].append(_add_attribute('notes', cls_obj['notes'],cls_obj['name']))
     for c in cls_obj['attributes']:
         tmp = _add_attribute(c,cls_obj['attributes'][c],cls_obj['name'])
