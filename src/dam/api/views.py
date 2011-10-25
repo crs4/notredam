@@ -2012,7 +2012,7 @@ class KeywordsResource(ModResource):
     def _read(self, user, workspace_id, node_id  = None, flag = False):
         def get_info(kw,  get_branch = False):
             label = node.label
-            kb_object = None
+            kb_object_id = None
             if kw.kb_object is not None:
                 label = kw.kb_object.name
                 kb_object_id = kw.kb_object.id
