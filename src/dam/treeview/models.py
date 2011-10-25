@@ -162,17 +162,19 @@ class Node(AbstractNode):
         if self.workspace != ws:
             raise WrongWorkspace
 
-    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace):
+    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace, kb_object_id):
     
         if label :
             self.rename_node(label, workspace)
-        
         if self.cls != 'category':
             if metadata_schemas:
                 self.save_metadata_mapping(metadata_schemas)        
                 self.save_metadata()
             
             self.associate_ancestors = associate_ancestors
+            self.save()
+        if kb_object_id:
+            self.kb_object = KBObject.objects.get(pk = kb_object_id)
             self.save()
 
     def remove_keyword_association(self, items):
