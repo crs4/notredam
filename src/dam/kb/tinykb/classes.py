@@ -55,12 +55,19 @@ class Workspace(object):
         self.visible_catalog_trees.append(CatalogTreeVisibility(cat_entry,
                                                                 self, access))
 
-    def add_root_class(self, klass, access=access.READ_ONLY):
-        if not klass.is_root():
-            ## Just in case someone set klass.superclass != None
-            raise ValueError('Cannot share a non-root class (%s)' % (klass, ))
-        self.visible_root_classes.append(KBClassVisibility(klass, self,
-                                                           access))
+    def setup_root_class(self, class_, access=access.READ_ONLY):
+        if not class_.is_root():
+            ## Just in case someone set class_.superclass != None
+            raise ValueError('Cannot share a non-root class (%s)' % (class_, ))
+        vis = [v for v in self.visible_root_classes
+               if getattr(v, 'class') is class_]
+        if vis == []:
+            # The class is not visible yet, let's add it
+            self.visible_root_classes.append(KBClassVisibility(class_, self,
+                                                               access))
+        else:
+            # The class is still visible, let's just update its access rules
+            vis.access = access
 
 
 class User(object):
@@ -108,13 +115,13 @@ class KBClass(object):
         self.table = ('object_' + self.id).lower()
         self.name = name
 
+        # FIXME: handle these fields with a SQLAlchemy mapper property?
         if superclass is None:
             self._root_id = self.id
-            superclass = self
-
-        # FIXME: handle these fields with a SQLAlchemy mapper property?
-        self.superclass = superclass
-        self._root_id = superclass._root_id
+            self.superclass = self
+        else:
+            self.superclass = superclass
+            self._root_id = superclass._root_id
 
         for a in attributes:
             self.attributes.append(a)
@@ -234,12 +241,15 @@ class KBClass(object):
 
         return self._references_cache
 
-    # Return the Python class corresponding to the KBClass.  Returns
-    # None if self.make_python_class() was not invoked before
-    def get_python_class(self):
-        return self.python_class
-
     def make_python_class(self, session_or_engine=None):
+        '''
+        Return the Python class associated to a KB class.
+
+        @type session_or_engine:  SQLAlchemy session or engine
+        @param session_or_engine: explicit session/engine to use (if None,
+                                  the method will try to use the one bound to
+                                  self, if any).
+        '''
         if self.python_class is not None:
             return self.python_class
 
@@ -280,7 +290,8 @@ class KBClass(object):
 
         # NOTE: self.python_class needs to be set *before* generating
         # the SQLAlchemy ORM mapper, because it will invoke
-        # self.get_python_class(), which cannot return None
+        # self.make_python_class() again, thus causing an infinite
+        # recursion
         self.python_class = newclass
 
         # Let's now build the SQLAlchemy ORM mapper
@@ -304,20 +315,67 @@ class KBRootClass(KBClass):
         KBClass.__init__(self, name, None, attributes=attributes,
                          notes=notes, explicit_id=explicit_id)
 
-    def add_to_workspace(self, workspace, access=access.READ_ONLY):
-        workspace.add_root_class(self, access)
+    def setup_workspace(self, workspace, access=access.READ_ONLY):
+        '''
+        Setup the root class visibility on the given workspace.
+
+        @type workspace:  Workspace
+        @param workspace: the workspace to configure
+
+        @type access:  Access mode (access.OWNER, access.READ_ONLY or
+                       access.READ_WRITE)
+        @param access: Access configuration for the class on the given
+                       workspace
+        '''
+        workspace.setup_root_class(self, access)
+
+    def restrict_to_workspaces(self, ws_list):
+        '''
+        Remove root class access configurations for workspaces which
+        are not included in the given list.
+
+        Note that the list could also contain workspaces without an
+        actual class access configuration (their status will not be
+        changed by this method).
+
+        @type ws_list:  a list of Workspace objects
+        @param ws_list: workspaces which could access to the root class
+        '''
+        # Collect visibility configurations whose workspaces does not
+        # appear in ws_list...
+        del_ws_vis = [v for v in self.visibility
+                      if v.workspace not in ws_list]
+        # ...and delete them.
+        for v in del_ws_vis:
+            self.visibility.remove(v)
+
+    def workspace_permission(self, workspace):
+        '''
+        Return the access configuration for the given workspace, or
+        None if nothing was set.
+
+        @type workspace:  Workspace
+        @param workspace: the workspace to configure
+        '''
+        acc = [v.workspace for v in self.visibility if v.workspace == self]
+        if len(acc) == 0:
+            # No access rules for the given workspace
+            return None
+        else:
+            assert(len(acc) == 1) # Just in case
+            return acc[0].access
 
     def __repr__(self):
         return "<KBRootClass('%s', '%s')>" % (self.name, self.id)
 
 
 class KBClassAttribute(object):
-    def __init__(self, klass, name, attr_type):
+    def __init__(self, class_, name, attr_type):
         pass
 
 class KBClassVisibility(object):
-    def __init__(self, klass, workspace, access):
-        self.klass = klass
+    def __init__(self, class_, workspace, access):
+        setattr(self, 'class', class_)
         self.workspace = workspace
         ## FIXME: check for access validity
         self.access = access
@@ -413,7 +471,7 @@ mapper(ItemVisibility, schema.item_visibility,
 
 mapper(Workspace, schema.workspace,
        properties={
-        '_creator' : schema.workspace.c.creator,
+        '_creator_id' : schema.workspace.c.creator_id,
         'creator' : relationship(User, backref='workspaces', cascade='all'),
         'visible_items' : relationship(ItemVisibility, backref='workspace',
                                        cascade='all'),
@@ -458,7 +516,7 @@ mapper(KBClassVisibility, schema.class_visibility,
         '_workspace' : schema.class_visibility.c.workspace,
         '_class_id' : schema.class_visibility.c['class'],
         '_class_root' : schema.class_visibility.c.class_root,
-        'klass' : relationship(KBRootClass,
+        'class' : relationship(KBRootClass,
                                backref='visibility', cascade='all')
         })
 

@@ -51,6 +51,5 @@ urlpatterns = patterns('',
     (r'^', include('dam.admin.urls')),
     (r'^', include('dam.scripts.urls')),
     (r'^', include('dam.eventmanager.urls')),
-    (r'^kb/', include('dam.kb.urls')),
     (r'^i18n/', include('django.conf.urls.i18n')),
 )

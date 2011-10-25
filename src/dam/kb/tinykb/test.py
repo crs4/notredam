@@ -23,6 +23,7 @@
 #
 #########################################################################
 
+import access
 import attributes as attrs
 import classes
 import schema
@@ -41,12 +42,8 @@ def init_db():
 def test_create_object_classes(connstring=CONNSTRING):
     ses = session.Session(connstring)
 
-    # u1 = classes.User('alice')
-    # u2 = classes.User('bob')
-
-    # w1 = classes.Workspace('ws1', u1)
-    # w2 = classes.Workspace('ws2', u2)
-    # w3 = classes.Workspace('ws3', u2)
+    ## Retrieve workspace 1, which is assumed to exist
+    w1 = ses.workspace(1)
 
     ## Retrieve the 'Keyword' class, which must exists
     KeywordClass = ses.class_('keyword')
@@ -69,13 +66,11 @@ def test_create_object_classes(connstring=CONNSTRING):
 
     ## Ensure that the Keyword class is visible in all workspaces
     ## FIXME: it should be done automatically
-    # KeywordClass.add_to_workspace(w1)
-    # KeywordClass.add_to_workspace(w2)
-    # KeywordClass.add_to_workspace(w3)
+    # KeywordClass.setup_workspace(w1, access.OWNER)
 
-    # class1.add_to_workspace(w1)
-    # class2.add_to_workspace(w2)
-    # class3.add_to_workspace(w2)
+    class1.setup_workspace(w1, access=access.OWNER)
+    class2.setup_workspace(w1, access=access.OWNER)
+    class3.setup_workspace(w1, access=access.OWNER)
 
     # it1 = classes.Item()
     # it2 = classes.Item()
@@ -95,7 +90,7 @@ def test_create_object_classes(connstring=CONNSTRING):
     # catalog1.add_to_workspace(w1)
     # catalog2.add_to_workspace(w2)
 
-    all_objs = [#w1, w2, w3,
+    all_objs = [w1,
                 KeywordClass,
                 class1, class2, class3,
                 #u1, u2,
