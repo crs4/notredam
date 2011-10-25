@@ -75,7 +75,7 @@ def edit_node(request):
         resp = {'success':True}
         for node in nodes:
             if node.type == 'keyword':
-                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace)
+                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace, request.POST.get('kb_object',  False))
                 
             elif node.type == 'collection':
                 rename_collection(request, node, label, workspace)
@@ -200,7 +200,6 @@ def get_nodes(request):
     Retrieves the requested nodes
     """
     workspace = request.session['workspace']
-    print "node_id %s" %request.POST.get('node',  'root')
     node_id = request.POST.get('node',  'root')
     last_added = request.POST.get('last_added')
     child = request.POST.get('child')
@@ -232,17 +231,15 @@ def get_nodes(request):
 #        nodes = nodes.extra(select={'n_items': "select count(distinct metadata_metadata.object_id) from metadata_metadata where metadata_metadata.value in (select node2.label from node as node2 where lft between node.lft and node.rgt )"})
     result = []
     if node.type == 'keyword':
-        print 'node'
-        print node
         can_edit = workspace.has_permission(user, 'edit_taxonomy')
     else:
         can_edit = workspace.has_permission(user, 'edit_collection')
 
     for n in nodes:
-        print "n--"
-        print n.cls
+#        logger.debug("n--")
+#        loger.debug(n.cls)
         if (n.cls == 'object-category'):
-            allowDrag = True
+            allowDrag = False
             editable = True
             n.is_drop_target = True
             allowDrop = False
@@ -327,15 +324,19 @@ def get_metadataschema_keyword_target(request):
         resp['metadataschema'].append({'pk': schema.pk,  'name': '%s:%s'%(schema.namespace.prefix, schema.field_name), 'selected': selected,  'value':value})
         
     return HttpResponse(simplejson.dumps(resp))
-        
-@login_required    
-def get_item_nodes(request):
-    items = request.POST.getlist('items')
-    resp = {'nodes': []}
+
+def _get_item_nodes(items):
     item_ids = ','.join([ i for i in items])
     query = 'select count(*) from node_items where node_items.node_id = node.id and item_id in (%s)'%item_ids
     nodes = Node.objects.filter(items__pk__in = items).extra({'count': query})
-    
+
+    return nodes
+
+@login_required    
+def get_item_nodes(request):
+    items = request.POST.getlist('items')
+    nodes = _get_item_nodes(items)
+    resp = {'nodes': []}
     for node in nodes:
         node_info = {'id': node.id,  'type': node.type}
         node_items = node.items.all()
@@ -344,6 +345,7 @@ def get_item_nodes(request):
             node_info['items'] = [item.pk for item in node_items]
             
         resp['nodes'].append(node_info)    
+
     
     return HttpResponse(simplejson.dumps(resp))
 

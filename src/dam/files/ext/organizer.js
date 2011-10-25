@@ -2077,34 +2077,6 @@ var search_box = {
                                 groupTextTpl: '{text}'
                             })
                               }),
-                            new Ext.grid.GridPanel({
-                                id: 'obj3_metadata_editor',
-                                title: 'Object3',
-                                hideHeaders: true,
-                                hidden: true,
-                                forceLayout: true,
-                                //autoScroll: true,
-                                collapsed: false,
-                                view: new Ext.grid.GridView({
-                                    forceFit: true,
-                                }),            
-                                store: new Ext.data.JsonStore({
-                                    url: '/get_metadata/',
-                                    
-                                    root: 'metadata',
-                                    method: 'POST',                            
-                                    fields:[
-                                            'metadata_schema',
-                                            'metadata', 
-                                            'value',
-                                            'editable'
-                                    ]
-                                }),
-                                columns: [                
-                                    {id: 'metadata', header: 'metadata', width: 60, sortable: false, dataIndex: 'metadata'},                
-                                    {header: 'value',  dataIndex: 'value',sortable: false, editor: new Ext.form.TextField({autoScroll: true})},
-                                ]
-                            }),
                         new Ext.grid.MetadataGrid({
 	                    title: gettext('Descriptors'),
 	                    id: 'metadata_panel',
