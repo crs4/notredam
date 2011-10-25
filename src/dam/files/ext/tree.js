@@ -588,7 +588,6 @@ var treeAction = function(tree_action){
     	}else{
     		params = { cls: "object-category"};
     	}
-//    	params.node_id = node_id;
     	params.kb_object = Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.id;
     	params.type = 'object';
     	Ext.getCmp('tree_form_obj').getForm().submit({
@@ -600,18 +599,13 @@ var treeAction = function(tree_action){
             success: function(form, action) {
                 if(!sel_node.length) {
             		console.log(tree_loader);
-                    if(tree_action.text == gettext('Add') ||  tree_action.text == gettext('Object Reference')){
-                            tree_loader.clearOnLoad = false;
-                            tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
-                            tree_loader.load(sel_node,function(){
-                                tree_loader.clearOnLoad = true;
-                                tree_loader.baseParams = {};
-                                sel_node.expand();
-                                });
-                    }
-                    else{
-                        sel_node.setText(form.getValues().label);
-                    }
+                    tree_loader.clearOnLoad = false;
+                    tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
+                    tree_loader.load(sel_node,function(){
+                        tree_loader.clearOnLoad = true;
+                        tree_loader.baseParams = {};
+                        sel_node.expand();
+                    });
                 }
                 win.close();
             },
@@ -818,9 +812,11 @@ var treeAction = function(tree_action){
     }
     else if (tree_action.text == gettext("Object Reference") || 
     		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-category') ||
-    		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'keyword-category')){
+    		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-keyword')){
     	console.log('selNode: ');
     	console.log(sel_node);
+    	console.log('selNode.attributes.text');
+    	console.log(sel_node.attributes.text);
     	var fields = [];
     	var node_id, type;
         var height_form= 370;
@@ -836,14 +832,21 @@ var treeAction = function(tree_action){
             fieldLabel: 'can drop item',
             name: 'check_drop_option'
         });
-        var label = new Ext.form.TextField({
+    	if (sel_node.attributes.iconCls == 'object-keyword'){
+    		add_option_droppable.setValue(true);
+    	}
+    	var label = new Ext.form.TextField({
             fieldLabel: 'label',
             name: 'label',
             id:'node_label_obj',                            
             allowBlank:false,
             readOnly: true
         });
-        fields.push(label);
+    	if (tree_action.text == gettext("Edit")){
+    		label.setValue(sel_node.attributes.text);
+    	}
+
+    	fields.push(label);
         fields.push(add_option_droppable);
      
         // SET the root node.
