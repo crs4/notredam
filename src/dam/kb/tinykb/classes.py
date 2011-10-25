@@ -349,6 +349,22 @@ class KBRootClass(KBClass):
         for v in del_ws_vis:
             self.visibility.remove(v)
 
+    def workspace_permission(self, workspace):
+        '''
+        Return the access configuration for the given workspace, or
+        None if nothing was set.
+
+        @type workspace:  Workspace
+        @param workspace: the workspace to configure
+        '''
+        acc = [v.workspace for v in self.visibility if v.workspace == self]
+        if len(acc) == 0:
+            # No access rules for the given workspace
+            return None
+        else:
+            assert(len(acc) == 1) # Just in case
+            return acc[0].access
+
     def __repr__(self):
         return "<KBRootClass('%s', '%s')>" % (self.name, self.id)
 
