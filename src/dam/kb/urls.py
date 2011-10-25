@@ -23,4 +23,11 @@
 #
 #########################################################################
 
-# See public API in ../api/urls.py
+from django.conf.urls.defaults import *
+
+urlpatterns = patterns('kb',
+    (r'^get_hierarchy/$', 'views_GUI.get_object_attributes'),
+    (r'^get_nodes_real_obj/$', 'views_GUI.get_nodes_real_obj'),
+    
+)
+
