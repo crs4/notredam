@@ -2011,14 +2011,14 @@ class KeywordsResource(ModResource):
 #    @exception_handler
     def _read(self, user, workspace_id, node_id  = None, flag = False):
         def get_info(kw,  get_branch = False):
-            label = node.label
+            label = kw.label
             kb_object_id = None
             if kw.kb_object is not None:
                 label = kw.kb_object.name
                 kb_object_id = kw.kb_object.id
             kw_info = {
                 'id': kw.pk,  
-                'label': kw.label,   
+                'label': label,   
                 'kb_object': kb_object_id,
                 'workspace':kw.workspace.pk, 
                 'type': kw.cls, 
