@@ -162,11 +162,11 @@ class Node(AbstractNode):
         if self.workspace != ws:
             raise WrongWorkspace
 
-    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace, kb_object_id):
+    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace, kb_object_id=None):
     
-        if label :
+        if label and not kb_object_id:
             self.rename_node(label, workspace)
-        if self.cls != 'category':
+        if self.cls == 'keyword':
             if metadata_schemas:
                 self.save_metadata_mapping(metadata_schemas)        
                 self.save_metadata()
@@ -174,7 +174,7 @@ class Node(AbstractNode):
             self.associate_ancestors = associate_ancestors
             self.save()
         if kb_object_id:
-            self.kb_object = KBObject.objects.get(pk = kb_object_id)
+            self.reassoc_node(label, workspace, kb_object_id)
             self.save()
 
     def remove_keyword_association(self, items):
@@ -291,6 +291,10 @@ class Node(AbstractNode):
         @type  kb_object: dam.kb.models.Object or string
         @param kb_object: a KB object instance, or its id (a string)
         '''
+        if not self.editable:
+            raise NotEditableNode
+        self.check_ws(workspace)
+
         if not isinstance(kb_object, KBObject):
             kb_object = KBObject.objects.get(id=kb_object)
         self.kb_object = kb_object
