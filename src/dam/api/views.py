@@ -2249,6 +2249,7 @@ class KeywordsResource(ModResource):
         - method: POST
             - parameters: 
                 - label                 
+                - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
                 - associate_ancestors: boolean, valid only if type is 'keyword'
                 - metadata_schema: optional. JSON list of dictionaries containing namespace, name and value for the metadata schemas  to associate to the new keyword. Example: [{"namespace": 'dublin core','name': 'title',   "value": 'test'}]
                 
