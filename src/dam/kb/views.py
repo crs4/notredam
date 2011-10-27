@@ -612,6 +612,7 @@ def _std_attr_fields(a):
     '''
     return [['name',        a.name],
             ['maybe_empty', a.maybe_empty],
+            ['order',       a.order],
             ['notes',       a.notes]] 
 
 
@@ -623,6 +624,7 @@ def _std_attr_dict_fields(d):
     '''
     return {'name' : d['name'],
             'maybe_empty' : d.get('maybe_empty', True),
+            'order' : d.get('order', 0),
             'notes' : d.get('notes')}
 
 
