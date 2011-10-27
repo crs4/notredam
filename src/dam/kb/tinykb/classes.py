@@ -385,7 +385,7 @@ class KBClassVisibility(object):
         self.access = access
 
     def __repr__(self):
-        return "<KBClassVisibility('%s, %s, %s')>" % (self.item,
+        return "<KBClassVisibility('%s, %s, %s')>" % (getattr(self, 'class'),
                                                       self.workspace,
                                                       self.access)
 
