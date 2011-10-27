@@ -586,7 +586,7 @@ _kb_dict_attrs_map = {'bool' : lambda d:
                                        default=d.get('default'),
                                        **(_std_attr_dict_fields(d))),
                       'choice' : lambda d:
-                          kb_attrs.Choice(choices=d['choices'],
+                          kb_attrs.Choice(list_of_choices=d['choices'],
                                           default=d.get('default'),
                                           **(_std_attr_dict_fields(d))),
                       'objref' : lambda d:
