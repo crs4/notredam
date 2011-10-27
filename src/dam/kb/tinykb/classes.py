@@ -306,6 +306,17 @@ class KBClass(object):
 
         return newclass
 
+    def workspace_permission(self, workspace):
+        '''
+        Return the access configuration for the given workspace, or
+        None if nothing was set.
+
+        @type workspace:  Workspace
+        @param workspace: the workspace to configure
+        '''
+        # We actually ask for the permissions to our root class
+        return self._root.workspace_permission(workspace)
+
     def __repr__(self):
         return "<KBClass('%s', '%s')>" % (self.name, self.id)
 
@@ -350,14 +361,7 @@ class KBRootClass(KBClass):
             self.visibility.remove(v)
 
     def workspace_permission(self, workspace):
-        '''
-        Return the access configuration for the given workspace, or
-        None if nothing was set.
-
-        @type workspace:  Workspace
-        @param workspace: the workspace to configure
-        '''
-        acc = [v.workspace for v in self.visibility if v.workspace == self]
+        acc = [v for v in self.visibility if v.workspace == workspace]
         if len(acc) == 0:
             # No access rules for the given workspace
             return None
