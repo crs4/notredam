@@ -177,7 +177,8 @@ class Real(Attribute):
 class String(Attribute):
     def __init__(self, name, length=256, maybe_empty=True, default=None,
                  order=0, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
         self.length = length
         self.default = default
 
