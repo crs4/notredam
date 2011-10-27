@@ -28,7 +28,7 @@ supported_types  = {
    'doc/pdf': ['.pdf'],
    'video/flv': ['.flv'],
    'video/mp4': ['.mp4'],
-   'video/mpeg': ['.m1v', '.mpa', '.mpg', '.mpe', '.mpeg'],
+   'video/mpeg': ['.m1v', '.mpa', '.mpg', '.mpe', '.mpeg', '.mxf'],
    'video/ogg': ['.ogg'],
    'video/ts': ['.ts'],
    'video/x-m4v': ['.m4v'],
