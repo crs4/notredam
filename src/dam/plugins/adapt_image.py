@@ -73,7 +73,7 @@ class AdaptImage(Adapter):
         argv = ""
         for action in actions:
             if action == 'resize':
-                argv +=  '-resize %sx%s' % (resize_w, resize_h)
+                argv +=  '-auto-orient -resize %sx%s' % (resize_w, resize_h)
                 
             elif action == 'crop':
                 if crop_ratio:
