@@ -271,16 +271,17 @@ class_attribute_real = Table('class_attribute_real', metadata,
                                                    'class_attribute.id'],
                                                   onupdate='CASCADE',
                                                   ondelete='RESTRICT'),
-                             CheckConstraint('precision >= 0',
+
+                             CheckConstraint('"precision" >= 0',
                                              name='class_attr_real_precision_gt0_constr'),
                              CheckConstraint('"min" IS NULL OR ("default" >= "min")',
                                              name='class_attr_real_min_constr'),
                              CheckConstraint('"max" IS NULL OR ("default" <= "max")',
                                              name='class_attr_real_max_constr'),
-
                              
                              # An attribute name cannot appear twice
                              # whithin a class hierarchy
+                             # FIXME: too strict, what about sibling classes?
                              UniqueConstraint('class_root', 'id',
                                               name='class_attr_real_unique_root_id_constr')
                              )
