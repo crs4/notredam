@@ -29,23 +29,34 @@ def notredam_connstring():
     '''
     # FIXME: this function, of course, is quite a kludge
     from dam.settings import DATABASES
-    db = DATABASES['default']
 
-    # FIXME: kludgy way to convert Django database settings into a connstring
-    django_db_engine = db['ENGINE']
-    if ('django.db.backends.postgresql_psycopg2' == django_db_engine):
-        engine = 'postgresql'
-    elif ('django.db.backends.mysql' == django_db_engine):
-        engine = 'mysql'
-    else:
-        raise ValueError('Unsupported DB for knowledge base: '
-                         + django_db_engine)
+    # We may need to modify the settings
+    db = DATABASES['default']
 
     django_db_host = db['HOST']
     if ('' == django_db_host):
         django_db_host = 'localhost'
 
-    connstr = '%s://%s:%s@%s/%s' % (engine,
-                                    db['USER'], db['PASSWORD'],
-                                    django_db_host, db['NAME'])
+    # Username/password separator in SQLAlchemy connection string (may
+    # be modified depending on the engine)
+    user_pass_separator = ':'
+
+    # FIXME: kludgy way to convert Django database settings into a connstring
+    django_db_engine = db['ENGINE']
+    if ('django.db.backends.postgresql_psycopg2' == django_db_engine):
+        connstr = '%s://%s:%s@%s/%s' % ('postgresql',
+                                         db['USER'],
+                                         db['PASSWORD'],
+                                         django_db_host, db['NAME'])
+    elif ('django.db.backends.mysql' == django_db_engine):
+        connstr = '%s://%s:%s@%s/%s' % ('mysql',
+                                         db['USER'],
+                                         db['PASSWORD'],
+                                         django_db_host, db['NAME'])
+    elif ('django.db.backends.sqlite3' == django_db_engine):
+        connstr = '%s:///%s' % ('sqlite', db['NAME'])
+    else:
+        raise ValueError('Unsupported DB for knowledge base: '
+                         + django_db_engine)
+
     return connstr
