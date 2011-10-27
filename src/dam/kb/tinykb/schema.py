@@ -177,6 +177,7 @@ class_attribute = Table('class_attribute', metadata,
                                           onupdate='CASCADE',
                                           ondelete='RESTRICT'),
                                nullable=False),
+                        Column('order', Integer, default=0, nullable=False),
                         Column('maybe_empty', Boolean, nullable=False),
                         Column('notes', String(4096)),
 
