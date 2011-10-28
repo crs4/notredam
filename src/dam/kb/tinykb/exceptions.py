@@ -32,3 +32,15 @@ class NotFound(Exception):
 
     def __str__(self):
         return repr(self.parameter)
+
+
+class ValidationError(Exception):
+    '''
+    Raised when trying to assign an incompatible value to an object
+    attribute managed by the knowledge base.
+    '''
+    def __init__(self, value):
+        self.parameter = value
+
+    def __str__(self):
+        return repr(self.parameter)
