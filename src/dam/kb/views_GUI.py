@@ -41,11 +41,7 @@ def _get_root_tree(request,ws_id):
     cls_dicts = simplejson.loads(cls_dicts.content)   
 
     for n in cls_dicts:
-        allowDrag = True
-        editable = False
-        if n['superclass']:
-            spr.append({'namesuper':n['superclass']}) 
-        else:
+        if not n['superclass']:
             tmp = {'text' : n['name'],  
                'id': n['id'], 
                'leaf': False,
@@ -70,8 +66,8 @@ def _get_child_cls_obj(request,ws_id, parent):
                        'leaf': False,
                     }  
                 result.append(tmp)
-        print "class result"
-        print result
+        logger.debug("class result")
+        logger.debug(result)
     except Exception, ex:
         logger.debug(ex)
 
@@ -85,8 +81,7 @@ def _get_child_cls_obj(request,ws_id, parent):
                 }  
             result.append(tmp)
     
-    print "result---:  %s" %result
-    #result = _verify_leaf(result,spr)
+    logger.info("result---:  %s" %result)
             
     return result
 
