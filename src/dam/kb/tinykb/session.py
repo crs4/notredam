@@ -29,7 +29,7 @@ import sqlalchemy.orm.exc as sa_exc
 
 import attributes as kb_attrs
 import classes as kb_cls
-import exceptions as kb_exc
+import errors as kb_exc
 import schema as kb_schema
 
 class Session(object):
@@ -309,8 +309,15 @@ class Session(object):
         @type  id_: string
         @param id_: the identifier of the required User
         '''
-        return self.session.query(kb_cls.User).filter(
-            kb_cls.User.id == id_).one()
+        query = self.session.query(kb_cls.User).filter(
+            kb_cls.User.id == id_)
+
+        try:
+            user = query.one()
+        except sa_exc.NoResultFound:
+            raise kb_exc.NotFound('user.id == %s' % (id_, ))
+
+        return user
 
     def users(self, filter_expr=None):
         '''
