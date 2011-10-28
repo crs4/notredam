@@ -195,7 +195,7 @@ class Session(object):
         @param class_: a knowledge base class instance, the tables of which
                        will be created on the DB
         '''
-        assert(isinstance(_class, kb_cls.KBClass))
+        assert(isinstance(class_, kb_cls.KBClass))
         self.add(class_)
         class_.create_table(self.session)
 
