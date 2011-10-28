@@ -586,7 +586,7 @@ _kb_dict_attrs_map = {'bool' : lambda d:
                                        default=d.get('default'),
                                        **(_std_attr_dict_fields(d))),
                       'choice' : lambda d:
-                          kb_attrs.Choice(choices=d['choices'],
+                          kb_attrs.Choice(list_of_choices=d['choices'],
                                           default=d.get('default'),
                                           **(_std_attr_dict_fields(d))),
                       'objref' : lambda d:
@@ -612,6 +612,7 @@ def _std_attr_fields(a):
     '''
     return [['name',        a.name],
             ['maybe_empty', a.maybe_empty],
+            ['order',       a.order],
             ['notes',       a.notes]] 
 
 
@@ -623,6 +624,7 @@ def _std_attr_dict_fields(d):
     '''
     return {'name' : d['name'],
             'maybe_empty' : d.get('maybe_empty', True),
+            'order' : d.get('order', 0),
             'notes' : d.get('notes')}
 
 
@@ -834,3 +836,4 @@ def _setup_kb_root_class_visibility(request, ses, cls, cls_dict, curr_ws):
 
     # Everything is fine
     return None
+

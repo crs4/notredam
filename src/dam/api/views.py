@@ -2011,14 +2011,14 @@ class KeywordsResource(ModResource):
 #    @exception_handler
     def _read(self, user, workspace_id, node_id  = None, flag = False):
         def get_info(kw,  get_branch = False):
-            label = node.label
-            kb_object = None
+            label = kw.label
+            kb_object_id = None
             if kw.kb_object is not None:
                 label = kw.kb_object.name
                 kb_object_id = kw.kb_object.id
             kw_info = {
                 'id': kw.pk,  
-                'label': kw.label,   
+                'label': label,   
                 'kb_object': kb_object_id,
                 'workspace':kw.workspace.pk, 
                 'type': kw.cls, 
@@ -2249,6 +2249,7 @@ class KeywordsResource(ModResource):
         - method: POST
             - parameters: 
                 - label                 
+                - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
                 - associate_ancestors: boolean, valid only if type is 'keyword'
                 - metadata_schema: optional. JSON list of dictionaries containing namespace, name and value for the metadata schemas  to associate to the new keyword. Example: [{"namespace": 'dublin core','name': 'title',   "value": 'test'}]
                 

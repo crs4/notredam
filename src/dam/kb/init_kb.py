@@ -64,25 +64,32 @@ def populate_test_kb():
 #########################################################################
 import optparse
 
-parser = optparse.OptionParser(
-    description='Initialize NotreDAM knowledge base.')
-parser.set_defaults(preinit=False, populate_with_test_data=False)
-parser.add_option('-p', '--preinit',
-                  dest='preinit', action='store_true',
-                  help='Perform KB pre-initialization and exit (default: no)')
-parser.add_option('-t', '--populate-with-test-data',
-                  dest='populate_with_test_data', action='store_true',
-                  help=('Create test classes and objects after KB '
-                        + 'initialization (default: no)'))
-(options, args) = parser.parse_args()
-
 if __name__ == '__main__':
+    parser = optparse.OptionParser(
+        description='Initialize NotreDAM knowledge base.')
+    parser.set_defaults(preinit=False, populate_with_test_data=False)
+    parser.add_option('-p', '--preinit',
+                      dest='preinit', action='store_true',
+                      help=('Only perform KB pre-initialization, and exit '
+                            + 'immediately (default: no)'))
+    parser.add_option('-s', '--skip-regular-init',
+                      dest='skip_regular_init', action='store_true',
+                      help=('Skip regular init (e.g. when the KB is still '
+                            'initialized, but the "-t" option is being used) '
+                            + '(default: no)'))
+    parser.add_option('-t', '--populate-with-test-data',
+                      dest='populate_with_test_data', action='store_true',
+                      help=('Create test classes and objects after KB '
+                            + 'initialization (default: no)'))
+    (options, args) = parser.parse_args()
+
     if options.preinit:
         print 'Pre-initializing knowledge base'
         preinit_notredam_kb()
     else:
-        print 'Initializing knowledge base'
-        init_notredam_kb()
+        if not options.skip_regular_init:
+            print 'Initializing knowledge base'
+            init_notredam_kb()
 
         if options.populate_with_test_data:
             print 'Populating knowledge base with test classes and objects'

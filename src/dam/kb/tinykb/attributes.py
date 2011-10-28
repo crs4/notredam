@@ -39,13 +39,15 @@ from util.niceid import niceid
 
 # Base abstract class
 class Attribute(object):
-    def __init__(self, name, maybe_empty=True, notes=None, explicit_id=None):
+    def __init__(self, name, maybe_empty=True, order=0, notes=None,
+                 explicit_id=None):
         if explicit_id is not None:
             self.id = explicit_id
         else:
             self.id = niceid(name, 0) # FIXME: should we add random chars?
         self.name = name
         self.maybe_empty = maybe_empty
+        self.order = order
         self.notes = notes
 
     def column_name(self):
@@ -79,9 +81,10 @@ class Attribute(object):
 
 
 class Boolean(Attribute):
-    def __init__(self, name, maybe_empty=True, default=None,
+    def __init__(self, name, maybe_empty=True, default=None, order=0,
                  notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
         self.default = default
 
     def python_types(self):
@@ -99,8 +102,9 @@ class Boolean(Attribute):
 
 class Integer(Attribute):
     def __init__(self, name, min_=None, max_=None, maybe_empty=True,
-                 default=None, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+                 default=None, order=0, notes=None):
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
         self.default = default
         self.min = min_
         self.max = max_
@@ -135,8 +139,9 @@ class Integer(Attribute):
 
 class Real(Attribute):
     def __init__(self, name, precision=10, min_=None, max_=None,
-                 maybe_empty=True, default=None, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+                 maybe_empty=True, default=None, order=0, notes=None):
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
         self.default = default
         self.min = min_
         self.max = max_
@@ -171,8 +176,9 @@ class Real(Attribute):
 
 class String(Attribute):
     def __init__(self, name, length=256, maybe_empty=True, default=None,
-                 notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+                 order=0, notes=None):
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
         self.length = length
         self.default = default
 
@@ -191,8 +197,9 @@ class String(Attribute):
 
 class Date(Attribute):
     def __init__(self, name, min_=None, max_=None, maybe_empty=True,
-                 default=None, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+                 default=None, order=0, notes=None):
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
         self.default = default
         self.min = min_
         self.max = max_
@@ -233,13 +240,14 @@ class Uri(String):
 
 class Choice(Attribute):
     def __init__(self, name, list_of_choices, maybe_empty=True, default=None,
-                 notes=None):
+                 order=0, notes=None):
         if default is not None:
             if not (default in list_of_choices):
                 raise ValueError("Default value '%s' is not a valid choice"
                                  " (possible values: %s)" % (default,
                                                              list_of_choices))
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
         self._list_of_choices = list_of_choices
         self.choices = json.dumps(list_of_choices)
         self.default = default
@@ -276,7 +284,8 @@ class Choice(Attribute):
 
                                                 
 class ObjectReference(Attribute):
-    def __init__(self, name, target_class, maybe_empty=True, notes=None):
+    def __init__(self, name, target_class, maybe_empty=True, order=0,
+                 notes=None):
         if isinstance(target_class, classes.KBClass):
             self._target_table = target_class.table
             self.target = target_class
@@ -290,7 +299,8 @@ class ObjectReference(Attribute):
             self._target_table = sa_mapper.tables[0].name
             self.target = target_class.__kb_class__
 
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
 
     def python_types(self):
         # FIXME: an event handler would be necessary for obj id assignments
@@ -333,7 +343,8 @@ class ObjectReference(Attribute):
 
 
 class ObjectReferencesList(Attribute):
-    def __init__(self, name, target_class, maybe_empty=True, notes=None):
+    def __init__(self, name, target_class, maybe_empty=True, order=0,
+                 notes=None):
         if isinstance(target_class, classes.KBClass):
             self._target_table = target_class.table
             self.target = target_class
@@ -343,7 +354,8 @@ class ObjectReferencesList(Attribute):
             self._target_table = sa_mapper.tables[0].name
             self.target = target_class.__kb_class__
 
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, notes=notes)
+        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
+                           notes=notes)
 
         # FIXME: ensure uniqueness!
         # FIXME: it would be better to prefix the owner table name
