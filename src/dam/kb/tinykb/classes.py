@@ -328,6 +328,23 @@ class KBClass(object):
         # We actually ask for the permissions to our root class
         return self._root.workspace_permission(workspace)
 
+    def __lt__(self, kb_cls):
+        if not isinstance(kb_cls, KBClass):
+            raise TypeError(('KBClass instances can only be compared with '
+                             + 'objects of the same type '
+                             + '(got "%s" of type "%s" instead)')
+                            % (unicode(kb_cls), unicode(type(kb_cls))))
+        return (kb_cls in self.ancestors())
+
+    def __gt__(self, kb_cls):
+        return (self in kb_cls.ancestors())
+
+    def __le__(self, kb_cls):
+        return (kb_cls is self) or (self < kb_cls)
+
+    def __ge__(self, kb_cls):
+        return (kb_cls is self) or (self > kb_cls)
+
     def __repr__(self):
         return "<KBClass('%s', '%s')>" % (self.name, self.id)
 
