@@ -31,7 +31,7 @@ from django.utils import simplejson
 import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.classes as kb_cls
-import tinykb.exceptions as kb_exc
+import tinykb.errors as kb_exc
 import tinykb.attributes as kb_attrs
 import util
 
