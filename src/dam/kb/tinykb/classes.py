@@ -304,6 +304,11 @@ class KBClass(object):
                polymorphic_identity=self.id,
                properties = mapper_props)
 
+        # Also add event listeners for validating assignments
+        # according to attribute types
+        for a in self.attributes:
+            a.make_event_listeners(newclass)
+        
         return newclass
 
     def workspace_permission(self, workspace):
