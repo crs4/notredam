@@ -133,8 +133,8 @@ class Integer(Attribute):
         return ret
 
     def __repr__(self):
-        return '<Integer(min=%s, max=%s, default=%s)>' % (self.min_,
-                                                          self.max_,
+        return '<Integer(min=%s, max=%s, default=%s)>' % (self.min,
+                                                          self.max,
                                                           self.default)
 
 
@@ -170,8 +170,8 @@ class Real(Attribute):
         return ret
 
     def __repr__(self):
-        return '<Real(min=%s, max=%s, default=%s)>' % (self.min_,
-                                                       self.max_,
+        return '<Real(min=%s, max=%s, default=%s)>' % (self.min,
+                                                       self.max,
                                                        self.default)
 
 
@@ -229,8 +229,8 @@ class Date(Attribute):
 
 
     def __repr__(self):
-        return '<Date(min=%s, max=%s, default=%s)>' % (self.min_,
-                                                       self.max_,
+        return '<Date(min=%s, max=%s, default=%s)>' % (self.min,
+                                                       self.max,
                                                        self.default)
 
 class Uri(String):
