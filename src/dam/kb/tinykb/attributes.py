@@ -32,6 +32,7 @@ import sqlalchemy.orm as sa_orm
 from sqlalchemy import event, Column, CheckConstraint, ForeignKey, Table
 from sqlalchemy.orm import mapper, relationship
 
+import errors as kb_exc
 import schema
 import classes
 

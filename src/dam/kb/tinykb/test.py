@@ -26,6 +26,7 @@
 import access
 import attributes as attrs
 import classes
+import errors as kb_exc
 import schema
 import session
 
