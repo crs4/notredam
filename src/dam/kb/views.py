@@ -706,7 +706,7 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
     object attribute (i.e. with special care for object references and
     other "complex" types).
     '''
-    obj_class_attrs = getattr(obj, 'class').attributes
+    obj_class_attrs = getattr(obj, 'class').all_attributes()
     for a in obj_class_attrs:
         val = obj_dict.get(a.id, getattr(obj, a.id))
         expected_types = a.python_types()
