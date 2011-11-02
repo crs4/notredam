@@ -22,6 +22,8 @@
 #
 #########################################################################
 
+import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
                          HttpResponseNotAllowed, HttpResponseBadRequest,
@@ -651,7 +653,7 @@ _kb_objattrs_dict_map = {kb_attrs.Boolean : lambda a, v: v,
                          kb_attrs.Integer : lambda a, v: v,
                          kb_attrs.Real    : lambda a, v: v,
                          kb_attrs.String  : lambda a, v: v,
-                         kb_attrs.Date    : lambda a, v: v,
+                         kb_attrs.Date    : lambda a, v: v.isoformat(),
                          kb_attrs.String  : lambda a, v: v,
                          kb_attrs.Uri     : lambda a, v: v,
                          kb_attrs.Choice  : lambda a, v: v,
