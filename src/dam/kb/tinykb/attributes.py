@@ -55,13 +55,6 @@ class Attribute(object):
         # The id is assumed to be safe to use as column name
         return self.id
 
-    def python_types(self):
-        '''
-        Return a set of Python types which could be used when giving a
-        value to the attribute.
-        '''
-        raise NotImplementedError
-
     # Return a list of SQLAlchemy DDL objects (type,
     # CheckConstraint, etc.) describing the Type object
     def ddl(self):
@@ -116,10 +109,6 @@ class Boolean(Attribute):
                            notes=notes)
         self.default = default
 
-    def python_types(self):
-        return set([bool]
-                   + ([type(None)] if self.maybe_empty else []))
-
     def ddl(self):
         return [Column(self.column_name(), sa.types.Boolean,
                        nullable=self.maybe_empty,
@@ -147,10 +136,6 @@ class Integer(Attribute):
         self.default = default
         self.min = min_
         self.max = max_
-
-    def python_types(self):
-        return set([int]
-                   + ([type(None)] if self.maybe_empty else []))
 
     def ddl(self):
         ret = [Column(self.column_name(), sa.types.Integer,
@@ -204,10 +189,6 @@ class Real(Attribute):
         self.min = min_
         self.max = max_
 
-    def python_types(self):
-        return set([decimal.Decimal]
-                   + ([type(None)] if self.maybe_empty else []))
-
     def ddl(self):
         ret = [Column(self.column_name(),
                       sa.types.Numeric(precision=self.precision),
@@ -259,10 +240,6 @@ class String(Attribute):
         self.length = length
         self.default = default
 
-    def python_types(self):
-        return set([unicode, str]
-                   + ([type(None)] if self.maybe_empty else []))
-
     def ddl(self):
         return [Column(self.column_name(), sa.types.String(self.length),
                        nullable=self.maybe_empty, default=self.default)]
@@ -294,10 +271,6 @@ class Date(Attribute):
         self.default = default
         self.min = min_
         self.max = max_
-
-    def python_types(self):
-        return set([unicode, str, datetime.date]
-                   + ([type(None)] if self.maybe_empty else []))
 
     def ddl(self):
         ret = [Column(self.column_name(), sa.types.Date,
@@ -398,10 +371,6 @@ class Choice(Attribute):
         '''
         return self._list_of_choices
 
-    def python_types(self):
-        return set([unicode, str]
-                   + ([type(None)] if self.maybe_empty else []))
-
     def ddl(self):
         return [Column(self.column_name(),
                        sa.types.Enum(*self._list_of_choices,
@@ -444,12 +413,6 @@ class ObjectReference(Attribute):
 
         Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
                            notes=notes)
-
-    def python_types(self):
-        # FIXME: an event handler would be necessary for obj id assignments
-        return set([unicode, str, # In case an object ID is provided
-                    type(self.target_class)]
-                   + ([type(None)] if self.maybe_empty else []))
 
     @sa_orm.reconstructor
     def __init_on_load__(self):
@@ -519,10 +482,6 @@ class ObjectReferencesList(Attribute):
 
         # Will be assigned after invoking the attribute table constructor
         self._sqlalchemy_table = None
-
-    def python_types(self):
-        return set([list,
-                    sa_orm.collections.InstrumentedList])
 
     def make_event_listeners(self, cls):
         # Contrary to other attributes, we react to the 'append' event
