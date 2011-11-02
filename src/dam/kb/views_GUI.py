@@ -147,4 +147,5 @@ def get_object_attributes(request):
     logger.debug(rtr)
     resp = simplejson.dumps(rtr)
     
-    return HttpResponse(resp)    
+    return HttpResponse(resp)
+
