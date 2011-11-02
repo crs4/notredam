@@ -323,7 +323,7 @@ class Date(Attribute):
             return value
         if (isinstance(value, str) or isinstance(value, unicode)):
             try:
-                dt = datetime.datetime.strptime('2011-02-11','%Y-%m-%d')
+                dt = datetime.datetime.strptime(value, '%Y-%m-%d')
                 value = datetime.date(dt.year, dt.month, dt.day)
             except ValueError, e:
                 raise kb_exc.ValidationError('cannot parse date: %s'
