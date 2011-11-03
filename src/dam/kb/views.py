@@ -653,11 +653,15 @@ _kb_objattrs_dict_map = {kb_attrs.Boolean : lambda a, v: v,
                          kb_attrs.Integer : lambda a, v: v,
                          kb_attrs.Real    : lambda a, v: v,
                          kb_attrs.String  : lambda a, v: v,
-                         kb_attrs.Date    : lambda a, v: v.isoformat(),
+                         kb_attrs.Date    : lambda a, v: ((v is not None
+                                                           and v.isoformat())
+                                                          or None),
                          kb_attrs.String  : lambda a, v: v,
                          kb_attrs.Uri     : lambda a, v: v,
                          kb_attrs.Choice  : lambda a, v: v,
-                         kb_attrs.ObjectReference : lambda a, v: v.id,
+                         kb_attrs.ObjectReference: lambda a,v: ((v is not None
+                                                                 and v.id)
+                                                                or None),
                          kb_attrs.ObjectReferencesList : lambda a, v:
                              [o.id for o in v]
                          }
