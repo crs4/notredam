@@ -457,26 +457,6 @@ Ext.onReady(function() {
                     layout: 'fit',
                     items: [rights_panel]
                 }]
-            }, {
-                listeners: {
-                	tabchange: move_to_first_tab
-            	},                    
-	            items: [{
-	                title: 'Knowledge Base',
-	                layout: 'fit',
-	                iconCls: 'x-icon-configuration',
-	                style: 'padding: 10px;'
-	            }, {
-	                title: 'Vocabulary',
-	                iconCls: 'x-icon-descriptors',
-	                style: 'padding: 10px;',
-	                layout: 'fit',
-	                items: [{
-	                    xtype: 'tabpanel',
-	                    activeTab: 0,
-	                    items: []	
-	                	}]	
-	            	}]
             }]
         }]
     });

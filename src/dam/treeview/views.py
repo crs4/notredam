@@ -75,7 +75,7 @@ def edit_node(request):
         resp = {'success':True}
         for node in nodes:
             if node.type == 'keyword':
-                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace, request.POST.get('kb_object',  False))
+                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace, request.POST.get('kb_object',  False), request.POST.get('cls',  False))
                 
             elif node.type == 'collection':
                 rename_collection(request, node, label, workspace)

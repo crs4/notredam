@@ -69,7 +69,11 @@ def test_create_object_classes(connstring=CONNSTRING):
                                              attrs.Integer('Height', min_=0),
                                              attrs.String('Location'),
                                              attrs.Date('Date of completion')])
-    class2 = classes.KBRootClass('Apple')
+    class2 = classes.KBRootClass('Apple',explicit_id='apple',
+                                 notes='Generic apple',
+                                 attributes=[attrs.Boolean('eating',
+                                                           default=True)])
+                                 
     class3 = classes.KBRootClass('Orange')
 
     class1.create_table(ses) # FIXME: automatically build parent tables?
@@ -94,6 +98,8 @@ def test_create_object_classes(connstring=CONNSTRING):
 
     kw1 = Keyword('key1', 'Just a keyword', explicit_id='key1')
     kw2 = Keyword('key2', explicit_id='key2')
+    kw3 = Keyword('key3', 'key3', explicit_id='key3')
+    kw4 = Keyword('key4', explicit_id='key4')
 
     catalog1 = classes.RootCatalogEntry(kw1)
     catalog2 = classes.RootCatalogEntry(kw2)
@@ -158,20 +164,29 @@ def test_create_derived_class_objects(connstring=CONNSTRING):
 
     Church = ses.python_class('church')
     Castle = ses.python_class('castle')
-
+    Apple = ses.python_class('apple')
+    
     kw1 = ses.object('key1')
     kw2 = ses.object('key2')
+    kw3 = ses.object('key3')
+    kw4 = ses.object('key4')
 
     church1 = Church('Cute little church', 'Unknown church near Siliqua')
+    church2 = Church('Bonaria', 'Bonaria di Cagliari')
     castle1 = Castle('Acquafredda', 'Castle of Siliqua')
+    castle2 = Castle('Carbonia', 'Castle of Carbonia')
+    apple1 = Apple('Red apple', 'Witch\'s apple')
 
     # Here we use the standard mangling rules for attribute names:
     # lowercase, spaces converted to underscores
     castle1.nearby_church = church1
+    castle2.nearby_church = church2
     church1.tags.append(kw1)
     church1.tags.append(kw2)
+    church2.tags.append(kw3)
+    church2.tags.append(kw4)
     
-    all_objs = [church1, castle1]
+    all_objs = [church1, castle1, church2, castle2, apple1]
 
     ses.add_all(all_objs)
     ses.commit()

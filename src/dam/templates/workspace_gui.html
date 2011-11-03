@@ -34,6 +34,7 @@
 			   
 	    <script type="text/javascript" src="/files/ext/addTabButton.js"></script>
 		<script type="text/javascript" src="/files/ext/general.js"></script>
+        <script type="text/javascript" src="/files/ext/utils_realObjs.js"></script>
 		<script type="text/javascript" src="/files/ext/workspaces.js"></script>
 		<script type="text/javascript" src="/files/ext/tree.js"></script>
 		<script type="text/javascript" src="/files/ext/menus.js"></script>
@@ -47,7 +48,8 @@
 		<script type="text/javascript" src="/files/ext/variants.js"></script>
 		<script type="text/javascript" src="/files/ext/config_metadata.js"></script>
 	        <script type="text/javascript" src="/files/ext/scripts.js"></script>
-		<script type="text/javascript" src="/files/ext/organizer.js"></script>
+        <script type="text/javascript" src="/files/ext/organizer.js"></script>
+        <script type="text/javascript" src="/files/ext/knowledge_base.js"></script>
 	
 		<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={{GOOGLE_KEY}}" type="text/javascript"></script>
 		<script type="text/javascript" src="/files/javascript/maps/mapiconmaker.js"></script>
@@ -83,6 +85,10 @@
 		{%block prefs%}
 			| <a href='javascript:open_pref()' >preferences</a> 
 		{%endblock%}
+
+        {%block knowledge%}
+            | <a href='javascript:open_knowledgeBase()' >knowledge base</a> 
+        {%endblock%}
         
         {%if user.is_staff%}
             | <a href="/dam_admin/">admin</a>
