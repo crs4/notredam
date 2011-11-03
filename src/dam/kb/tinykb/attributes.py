@@ -32,6 +32,7 @@ import sqlalchemy.orm as sa_orm
 from sqlalchemy import event, Column, CheckConstraint, ForeignKey, Table
 from sqlalchemy.orm import mapper, relationship
 
+import errors as kb_exc
 import schema
 import classes
 
@@ -54,13 +55,6 @@ class Attribute(object):
         # The id is assumed to be safe to use as column name
         return self.id
 
-    def python_types(self):
-        '''
-        Return a set of Python types which could be used when giving a
-        value to the attribute.
-        '''
-        raise NotImplementedError
-
     # Return a list of SQLAlchemy DDL objects (type,
     # CheckConstraint, etc.) describing the Type object
     def ddl(self):
@@ -79,6 +73,34 @@ class Attribute(object):
     def additional_tables(self):
         return []
 
+    def make_event_listeners(self, cls):
+        '''
+        Build one or more SQLAlchemy event listeners for the KB
+        attribute, when it's used on the given Python class.
+
+        @type cls:  a Python class
+        @param cls: a class whose instances will contain KB attribute values
+        '''
+        # The following default implementation should work most of the
+        # times
+        event.listen(getattr(cls, self.id), 'set',
+                     lambda _target, val, _oldval, _init: self.validate(val),
+                     propagate=True, retval=True)
+
+    def validate(self, value):
+        '''
+        Check whether the given value is compatible with KB attribute
+        type and configuration, and thus whether it could be safely
+        assigned/appended to the corresponding field of a Python
+        object.  Raise a ValidationError in case of mismatch, or just
+        return the value itself (possibly with some ad-hoc type
+        casting) in case of success.
+
+        @type value:  a Python term
+        @param value: the value to check
+        '''
+        raise NotImplementedError
+
 
 class Boolean(Attribute):
     def __init__(self, name, maybe_empty=True, default=None, order=0,
@@ -87,14 +109,20 @@ class Boolean(Attribute):
                            notes=notes)
         self.default = default
 
-    def python_types(self):
-        return set([bool]
-                   + ([type(None)] if self.maybe_empty else []))
-
     def ddl(self):
         return [Column(self.column_name(), sa.types.Boolean,
                        nullable=self.maybe_empty,
                        default=self.default)]
+
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, int) and value in (0, 1):
+            return bool(value)
+        raise kb_exc.ValidationError('expected a boolean-like value, got "%s"'
+                                     % (str(value), ))
 
     def __repr__(self):
         return '<Boolean(default=%s)>' % (self.default)
@@ -108,10 +136,6 @@ class Integer(Attribute):
         self.default = default
         self.min = min_
         self.max = max_
-
-    def python_types(self):
-        return set([int]
-                   + ([type(None)] if self.maybe_empty else []))
 
     def ddl(self):
         ret = [Column(self.column_name(), sa.types.Integer,
@@ -131,9 +155,28 @@ class Integer(Attribute):
                                                 self.id))))
         return ret
 
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        if not (isinstance(value, int) or (isinstance(value, decimal.Decimal)
+                                           and value == int(value))):
+            raise kb_exc.ValidationError(('expected an integer-like value, '
+                                          + 'got "%s"')
+                                         % (str(value), ))
+
+        in_range = ((self.min is None or (value >= self.min))
+                    and (self.max is None or (value <= self.max)))
+        if not in_range:
+            str_min = (self.min is None and '-Inf') or str(self.min)
+            str_max = (self.max is None and 'Inf') or str(self.max)
+            raise kb_exc.ValidationError('Value %d is out of [%s,%s] range'
+                                         % (value, str_min, str_max))
+
+        return int(value)
+
     def __repr__(self):
-        return '<Integer(min=%s, max=%s, default=%s)>' % (self.min_,
-                                                          self.max_,
+        return '<Integer(min=%s, max=%s, default=%s)>' % (self.min,
+                                                          self.max,
                                                           self.default)
 
 
@@ -145,10 +188,6 @@ class Real(Attribute):
         self.default = default
         self.min = min_
         self.max = max_
-
-    def python_types(self):
-        return set([decimal.Decimal]
-                   + ([type(None)] if self.maybe_empty else []))
 
     def ddl(self):
         ret = [Column(self.column_name(),
@@ -168,9 +207,28 @@ class Real(Attribute):
                                                 self.id))))
         return ret
 
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        if not (isinstance(value, float) or isinstance(value,
+                                                       decimal.Decimal)):
+            raise kb_exc.ValidationError(('expected a float-like value, '
+                                          + 'got "%s"')
+                                         % (str(value), ))
+
+        in_range = ((self.min is None or (value >= self.min))
+                    and (self.max is None or (value <= self.max)))
+        if not in_range:
+            str_min = (self.min is None and '-Inf') or str(self.min)
+            str_max = (self.max is None and 'Inf') or str(self.max)
+            raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
+                                         % (value, str_min, str_max))
+
+        return decimal.Decimal(value)
+
     def __repr__(self):
-        return '<Real(min=%s, max=%s, default=%s)>' % (self.min_,
-                                                       self.max_,
+        return '<Real(min=%s, max=%s, default=%s)>' % (self.min,
+                                                       self.max,
                                                        self.default)
 
 
@@ -182,13 +240,23 @@ class String(Attribute):
         self.length = length
         self.default = default
 
-    def python_types(self):
-        return set([unicode, str]
-                   + ([type(None)] if self.maybe_empty else []))
-
     def ddl(self):
         return [Column(self.column_name(), sa.types.String(self.length),
                        nullable=self.maybe_empty, default=self.default)]
+
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        if not (isinstance(value, str) or isinstance(value, unicode)):
+            raise kb_exc.ValidationError(('expected a string-like value, '
+                                          + 'got "%s"')
+                                         % (str(value), ))
+        if len(value) > self.length:
+            raise kb_exc.ValidationError(('string length (%d chars) is above '
+                                          + 'the maximum limit (%d chars)')
+                                         % (len(value), self.length))
+        
+        return unicode(value)
 
     def __repr__(self):
         return "<String(length=%d, default='%s')>" % (self.length,
@@ -203,10 +271,6 @@ class Date(Attribute):
         self.default = default
         self.min = min_
         self.max = max_
-
-    def python_types(self):
-        return set([unicode, str, datetime.date]
-                   + ([type(None)] if self.maybe_empty else []))
 
     def ddl(self):
         ret = [Column(self.column_name(), sa.types.Date,
@@ -227,15 +291,57 @@ class Date(Attribute):
         return ret
 
 
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        if (isinstance(value, str) or isinstance(value, unicode)):
+            try:
+                dt = datetime.datetime.strptime(value, '%Y-%m-%d')
+                value = datetime.date(dt.year, dt.month, dt.day)
+            except ValueError, e:
+                raise kb_exc.ValidationError('cannot parse date: %s'
+                                             % unicode(e))
+        elif isinstance(value, datetime.datetime):
+            value = datetime.date(value.year, value.month, value.day)
+        elif not isinstance(value, datetime.date):
+            raise kb_exc.ValidationError(('expected a date-like value, '
+                                          + 'got "%s"')
+                                         % (unicode(value), ))
+
+        in_range = ((self.min is None or (value >= self.min))
+                    and (self.max is None or (value <= self.max)))
+        if not in_range:
+            str_min = (self.min is None and '-Inf') or unicode(self.min)
+            str_max = (self.max is None and 'Inf') or unicode(self.max)
+            raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
+                                         % (value, str_min, str_max))
+
+        return value
+
     def __repr__(self):
-        return '<Date(min=%s, max=%s, default=%s)>' % (self.min_,
-                                                       self.max_,
+        return '<Date(min=%s, max=%s, default=%s)>' % (self.min,
+                                                       self.max,
                                                        self.default)
 
 class Uri(String):
     def __repr__(self):
         return "<Uri(length=%d, default='%s')>" % (self.length,
                                                    self.default)
+
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        if not (isinstance(value, str) or isinstance(value, unicode)):
+            raise kb_exc.ValidationError(('expected a URI-like value, '
+                                          + 'got "%s"')
+                                         % (str(value), ))
+        if len(value) > self.length:
+            raise kb_exc.ValidationError(('URI length (%d chars) is above '
+                                          + 'the maximum limit (%d chars)')
+                                         % (len(value), self.length))
+
+        # FIXME: actually perform URI validation
+        return unicode(value)
 
 
 class Choice(Attribute):
@@ -265,10 +371,6 @@ class Choice(Attribute):
         '''
         return self._list_of_choices
 
-    def python_types(self):
-        return set([unicode, str]
-                   + ([type(None)] if self.maybe_empty else []))
-
     def ddl(self):
         return [Column(self.column_name(),
                        sa.types.Enum(*self._list_of_choices,
@@ -278,6 +380,16 @@ class Choice(Attribute):
                                                self.column_name()))),
                        nullable=self.maybe_empty, default=self.default)]
     
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        value = unicode(value)
+        if value not in self._list_of_choices:
+            raise kb_exc.ValidationError('"%s" is not a valid choice among %s'
+                                         % (value,
+                                            unicode(self._list_of_choices)))
+        return value
+
     def __repr__(self):
         return "<Choice(choices=%s, default='%s')>" % (self.choices,
                                                        self.default)
@@ -301,12 +413,6 @@ class ObjectReference(Attribute):
 
         Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
                            notes=notes)
-
-    def python_types(self):
-        # FIXME: an event handler would be necessary for obj id assignments
-        return set([unicode, str, # In case an object ID is provided
-                    type(self.target_class)]
-                   + ([type(None)] if self.maybe_empty else []))
 
     @sa_orm.reconstructor
     def __init_on_load__(self):
@@ -337,6 +443,11 @@ class ObjectReference(Attribute):
                                cascade='all',
                                primaryjoin=(table.c[colname]
                                             == target_table.c.id))}
+
+    def validate(self, value):
+        if self.maybe_empty and value is None:
+            return value
+        return _validate_objref(value, self.target)
 
     def __repr__(self):
         return "<ObjectReference(target_class=%s)>" % (self.target, )
@@ -372,9 +483,15 @@ class ObjectReferencesList(Attribute):
         # Will be assigned after invoking the attribute table constructor
         self._sqlalchemy_table = None
 
-    def python_types(self):
-        return set([list,
-                    sa_orm.collections.InstrumentedList])
+    def make_event_listeners(self, cls):
+        # Contrary to other attributes, we react to the 'append' event
+        event.listen(getattr(cls, self.id), 'append',
+                     lambda _target, val, _init: self.validate(val),
+                     propagate=True, retval=True)
+
+    def validate(self, value):
+        # FIXME: also use the self.maybe_empty setting somehow (before commit?)
+        return _validate_objref(value, self.target)
 
     def ddl(self):
         return []
@@ -434,7 +551,23 @@ class ObjectReferencesList(Attribute):
     def __repr__(self):
         return "<ObjectReferencesList(target_class=%s)>" % (self.target, )
 
-                                                
+###############################################################################
+## Utility functions
+###############################################################################
+
+# Check whether the given value is compatible with the given target
+# KBClass instance.
+# FIXME: should be an ObjectReference method: refactor ObjectReferencesList!
+def _validate_objref(value, target):
+    target_pyclass = target.make_python_class()
+    if not isinstance(value, target_pyclass):
+        raise kb_exc.ValidationError(('expected a value of type "%s" '
+                                      + '(or descendants), got "%s" '
+                                      + '(of type %s)')
+                                     % (unicode(target_pyclass),
+                                        unicode(value), unicode(type(value))))
+    return value
+
 ###############################################################################
 ## Mappers
 ###############################################################################

@@ -145,6 +145,20 @@ class KBClass(object):
     def is_root(self):
         return (self.id == self._root_id)
 
+    def ancestors(self):
+        '''
+        Return a list of all the ancestor KBClass'es, starting from
+        the immediate parent (if any).
+        '''
+        c = self.superclass
+        prev_c = self
+        ancestors = []
+        while c is not prev_c:
+            ancestors.append(c)
+            prev_c = c
+            c = c.superclass
+        return ancestors
+
     def is_bound(self):
         return self.sqlalchemy_table is not None
 
@@ -153,18 +167,10 @@ class KBClass(object):
         Return all the class attributes, including the ones of
         ancestor classes (if any)
         '''
-        attrs = []
-        c = self
-        while c.superclass is not c:
-            # Iterate until the root class is reached
-            attrs.append(c.attributes)
-            c = c.superclass
+        classes = [self] + self.ancestors()
+        nested_attrs = [c.attributes for c in classes]
 
-        # Don't forget to consider the root class, which is skipped in
-        # the previous 'while' loop
-        attrs.append(c.attributes)
-
-        return [d for l in attrs for d in l] # Flatten
+        return [d for l in nested_attrs for d in l] # Flatten
 
     def _get_parent_table(self):
         if self.superclass is self:
@@ -304,6 +310,11 @@ class KBClass(object):
                polymorphic_identity=self.id,
                properties = mapper_props)
 
+        # Also add event listeners for validating assignments
+        # according to attribute types
+        for a in self.attributes:
+            a.make_event_listeners(newclass)
+        
         return newclass
 
     def workspace_permission(self, workspace):
@@ -316,6 +327,23 @@ class KBClass(object):
         '''
         # We actually ask for the permissions to our root class
         return self._root.workspace_permission(workspace)
+
+    def __lt__(self, kb_cls):
+        if not isinstance(kb_cls, KBClass):
+            raise TypeError(('KBClass instances can only be compared with '
+                             + 'objects of the same type '
+                             + '(got "%s" of type "%s" instead)')
+                            % (unicode(kb_cls), unicode(type(kb_cls))))
+        return (kb_cls in self.ancestors())
+
+    def __gt__(self, kb_cls):
+        return (self in kb_cls.ancestors())
+
+    def __le__(self, kb_cls):
+        return (kb_cls is self) or (self < kb_cls)
+
+    def __ge__(self, kb_cls):
+        return (kb_cls is self) or (self > kb_cls)
 
     def __repr__(self):
         return "<KBClass('%s', '%s')>" % (self.name, self.id)

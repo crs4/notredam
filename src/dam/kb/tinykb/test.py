@@ -26,6 +26,7 @@
 import access
 import attributes as attrs
 import classes
+import errors as kb_exc
 import schema
 import session
 
@@ -42,8 +43,19 @@ def init_db():
 def test_create_object_classes(connstring=CONNSTRING):
     ses = session.Session(connstring)
 
-    ## Retrieve workspace 1, which is assumed to exist
-    w1 = ses.workspace(1)
+    ## Retrieve user 1, if it exists
+    try:
+        u1 = ses.user(1)
+    except kb_exc.NotFound:
+        u1 = classes.User('user')
+        ses.add(u1)
+
+    ## Retrieve workspace 1, if it exists
+    try:
+        w1 = ses.workspace(1)
+    except kb_exc.NotFound:
+        w1 = classes.Workspace('ws', u1)
+        ses.add(w1)
 
     ## Retrieve the 'Keyword' class, which must exists
     KeywordClass = ses.class_('keyword')

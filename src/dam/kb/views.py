@@ -22,6 +22,8 @@
 #
 #########################################################################
 
+import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
                          HttpResponseNotAllowed, HttpResponseBadRequest,
@@ -31,7 +33,7 @@ from django.utils import simplejson
 import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.classes as kb_cls
-import tinykb.exceptions as kb_exc
+import tinykb.errors as kb_exc
 import tinykb.attributes as kb_attrs
 import util
 
@@ -651,7 +653,7 @@ _kb_objattrs_dict_map = {kb_attrs.Boolean : lambda a, v: v,
                          kb_attrs.Integer : lambda a, v: v,
                          kb_attrs.Real    : lambda a, v: v,
                          kb_attrs.String  : lambda a, v: v,
-                         kb_attrs.Date    : lambda a, v: v,
+                         kb_attrs.Date    : lambda a, v: v.isoformat(),
                          kb_attrs.String  : lambda a, v: v,
                          kb_attrs.Uri     : lambda a, v: v,
                          kb_attrs.Choice  : lambda a, v: v,
@@ -706,67 +708,56 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
     object attribute (i.e. with special care for object references and
     other "complex" types).
     '''
-    obj_class_attrs = getattr(obj, 'class').attributes
+    obj_class_attrs = getattr(obj, 'class').all_attributes()
     for a in obj_class_attrs:
         val = obj_dict.get(a.id, getattr(obj, a.id))
-        expected_types = a.python_types()
-        if not type(val) in expected_types:
-            raise ValueError(('Invalid type for attribute %s: '
-                              + 'expected one of %s, got %s')
-                             % (a.id, str(expected_types),
-                                str(type(val))))
-
-        # Let's now perform validation checks on each possible
-        # attribute type
-        if (type(a) == kb_attrs.Choice):
-            # Before updating, check whether the provided value is a
-            # valid choice
-            if val not in a.get_choices():
-                raise ValueError(('Invalid value for attribute %s: '
-                                  + 'expected one of %s, got \'%s\'')
-                                 % (a.id, str(a.get_choices()), str(val)))
-            setattr(obj, a.id, val)
-        elif (type(a) == kb_attrs.ObjectReference):
-            # We can't simply update the attribute: we need to
-            # retrieve the referred object by its ID
-            curr_obj = getattr(obj, a.id)
-            if (val == curr_obj.id):
-                # Nothing to be done here
-                break
+        try:
+            if (type(a) == kb_attrs.ObjectReference):
+                # We can't simply update the attribute: we need to
+                # retrieve the referred object by its ID
+                curr_obj = getattr(obj, a.id)
+                if (val == curr_obj.id):
+                    # Nothing to be done here
+                    break
+                else:
+                    try:
+                        new_obj = sa_session.object(val)
+                    except kb_exc.NotFound:
+                        raise ValueError('Unknown object id reference: %s'
+                                         % val)
+                    # Actually perform the assignment
+                    setattr(obj, a.id, new_obj)
+            elif (type(a) == kb_attrs.ObjectReferencesList):
+                # We can't simply update the attribute: we need to
+                # retrieve the referred objects by their ID, and
+                # add/remove them from the list
+                obj_lst = getattr(obj, a.id)
+                # Objects to be removed (i.e. whose ID is not present in
+                # the list provided by the client)
+                rm_objects = [o for o in obj_lst if o.id not in val]
+                # Objects to be added
+                curr_oids = [o.id for o in obj_lst]
+                add_oids = [x for x in val if x not in curr_oids]
+                add_objects = []
+                for x in add_oids:
+                    try:
+                        add_objects.append(sa_session.object(x))
+                    except kb_exc.NotFound:
+                        raise ValueError('Unknown object id reference: %s'
+                                         % x)
+                # Actually perform removals/additions
+                for o in rm_objects:
+                    obj_lst.remove(o)
+                for o in add_objects:
+                    obj_lst.append(o)
             else:
-                try:
-                    new_obj = sa_session.object(val)
-                except kb_exc.NotFound:
-                    raise ValueError('Unknown object id reference: %s'
-                                     % val)
-                # Actually perform the assignment
-                setattr(obj, a.id, new_obj)
-        elif (type(a) == kb_attrs.ObjectReferencesList):
-            # We can't simply update the attribute: we need to
-            # retrieve the referred objects by their ID, and
-            # add/remove them from the list
-            obj_lst = getattr(obj, a.id)
-            # Objects to be removed (i.e. whose ID is not present in
-            # the list provided by the client)
-            rm_objects = [o for o in obj_lst if o.id not in val]
-            # Objects to be added
-            curr_oids = [o.id for o in obj_lst]
-            add_oids = [x for x in val if x not in curr_oids]
-            add_objects = []
-            for x in add_oids:
-                try:
-                    add_objects.append(sa_session.object(x))
-                except kb_exc.NotFound:
-                    raise ValueError('Unknown object id reference: %s'
-                                     % x)
-            # Actually perform removals/additions
-            for o in rm_objects:
-                obj_lst.remove(o)
-            for o in add_objects:
-                obj_lst.append(o)
-        else:
-            # Simple case: just update the attribute
-            setattr(obj, a.id, val)
+                # Simple case: just update the attribute
+                setattr(obj, a.id, val)
+        except kb_exc.ValidationError, e:
+            # One of the setattr() calls failed: re-raise the
+            # exception with the proper error message
+            raise ValueError(u'Error updating attribute "%s": %s'
+                             % (a.id, unicode(e.parameter)))
 
 
 # Configure the workspace visibility of the given KBRootClass (cls,
