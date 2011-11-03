@@ -834,10 +834,10 @@ var treeAction = function(tree_action){
         var url = '/' + action.toLowerCase() + '_node/';
     	var add_option_droppable = new Ext.form.Checkbox({
             id: 'check_drop_option_id',
-            fieldLabel: 'can drop item',
+            fieldLabel: 'Object as Keyword',
             name: 'check_drop_option'
         });
-    	if (sel_node.attributes.iconCls == 'object-keyword'){
+    	if (sel_node.attributes.iconCls == 'object-keyword' && tree_action.text  == gettext('Edit')){
     		add_option_droppable.setValue(true);
     	}
     	var label = new Ext.form.TextField({
@@ -855,6 +855,19 @@ var treeAction = function(tree_action){
             text:'Select an object:',
             allowBlank:false
         });
+        var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
+            text: gettext('All items'),
+            id:'root_obj_tree',
+            expanded: true,
+            allowDrag:false,
+            allowDrop:true,
+            editable: false,
+            type:'object',
+            iconCls:'category',
+/*            text		: 'My Root Node',
+            draggable	: false,
+            id		: '0'                  // this IS the id of the startnode
+*/        });
 
         // SET the root node.
         var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
@@ -906,7 +919,7 @@ var treeAction = function(tree_action){
 	    });  
 	  	tree_obj_reference.setRootNode(Tree_Obj_Root);
 
-	  	/*		function setNode(){//FIXME tree is not generated all, so it's impossibile search Node in this position. 
+	  	/*		function setNode(){//FIXME tree is not generated all, so it's impossibile search Node in this way. 
 				console.log('0');
 		    	Ext.getCmp('obj_reference_tree').getSelectionModel().select(Ext.getCmp('obj_reference_tree').getRootNode());
 		    	console.log('1');
@@ -923,7 +936,7 @@ var treeAction = function(tree_action){
 	  	console.log('URL: '+ url);
 	  	var tree_form_obj = new Ext.FormPanel({
             id:'tree_form_obj',
-            labelWidth: 80, // label settings here cascade unless overridden
+            labelWidth: 110, // label settings here cascade unless overridden
             frame:true,
             height: height_form,
             bodyStyle:'padding:5px 5px 0',              
@@ -1270,6 +1283,10 @@ contextMenuShow = function(node_menu,e){
                     if (node.id == 'fake') {
                         return false;
                     }
+                },
+                contextmenu: function(e) {
+                	// Init your context menu
+                	console.log('CONTEXT MENU');
                 }
             }
         });
