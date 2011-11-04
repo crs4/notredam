@@ -30,6 +30,8 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
                          HttpResponseForbidden)
 from django.utils import simplejson
 
+from dam.core.dam_workspace.decorators import permission_required
+
 import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.classes as kb_cls
@@ -40,6 +42,7 @@ import util
 # FIXME: use the standard ModResource-based dispatch system here
 
 @login_required
+@permission_required('admin', False)
 def class_index(request, ws_id):
     '''
     GET: return the list of classes defined in the knowledge base.
@@ -156,6 +159,7 @@ def class_index_put(request, ws_id):
 
 
 @login_required
+@permission_required('admin', False)
 def class_(request, ws_id, class_id):
     '''
     GET: return a specific class from the knowledge base.
@@ -233,6 +237,7 @@ def class_post(request, ws_id, class_id):
 
 
 @login_required
+@permission_required('admin', False)
 def object_index(request, ws_id):
     '''
     GET: return the list of objects defined in the knowledge base.
@@ -315,6 +320,7 @@ def object_index_put(request, ws_id):
 
 
 @login_required
+@permission_required('admin', False)
 def object_(request, ws_id, object_id):
     '''
     GET: return a specific object from the knowledge base.
@@ -375,6 +381,7 @@ def object_post(request, ws_id, object_id):
 
 
 @login_required
+@permission_required('admin', False)
 def class_objects(request, ws_id, class_id):
     '''
     GET: return the list of objects belonging to a given KB class.
