@@ -1258,7 +1258,7 @@ class ItemResource(ModResource):
                     tmp['renditions'][variant]['file_name'] = component.file_name                
             except Exception, ex:
                 logger.error(ex)
-                tmp[variant] = None            
+                tmp['renditions'][variant] = {'url':None}                
                 
         return tmp
     
