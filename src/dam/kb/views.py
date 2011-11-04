@@ -782,8 +782,17 @@ def _setup_kb_root_class_visibility(request, ses, cls, cls_dict, curr_ws):
         return HttpResponseBadRequest('Root class representation lacks a '
                                       +'"workspaces" field')
 
-    # Retrieve all the workspace IDs the current user has access to
-    user_ws_ids = [w.id for w in request.user.workspaces.all()]
+    user = request.user
+
+    # Retrieve all the workspace IDs we could actually work on
+    # FIXME: with_permissions() seems broken
+    # from dam.workspace.models import DAMWorkspace as WS
+    # usr_ws_ids = [w.id
+    #              for w in WS.permissions.with_permissions(request.user,
+    #                                                       ('admin', ))]
+    adm_ws = [w for w in user.workspaces.all()
+              if w.has_permission(user, 'admin')]
+    adm_ws_ids = [w.id for w in adm_ws]
     
     owner_ws_list = []  # List of owner workspaces
     ws_list = []
@@ -794,16 +803,15 @@ def _setup_kb_root_class_visibility(request, ses, cls, cls_dict, curr_ws):
             return HttpResponseBadRequest(('Workspace id "%s" does not appear '
                                            + 'to be an integer') % (ws_id, ))
 
-        try:
-            ws = ses.workspace(ws_id)
-        except kb_exc.NotFound:
-            return HttpResponseBadRequest('Unknown workspace id: %s'
-                                          % (ws_id, ))
-        
-        if ws_id not in user_ws_ids:
+        if ws_id not in adm_ws_ids:
             return HttpResponseBadRequest(('Current user "%s" cannot share '
                                            + 'classes on workspace %s')
                                           % (request.user.username, ws_id ))
+        
+        # Since we have the permissions to handle ws_id, the following
+        # call should always succeed (unless something really wrong is
+        # going on, and thus we let exceptions propagate)
+        ws = ses.workspace(ws_id)
         
         ws_list.append(ws)
         
