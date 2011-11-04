@@ -67,7 +67,8 @@ class Workspace(object):
                                                                access))
         else:
             # The class is still visible, let's just update its access rules
-            vis.access = access
+            for v in vis:
+                v.access = access
 
 
 class User(object):
