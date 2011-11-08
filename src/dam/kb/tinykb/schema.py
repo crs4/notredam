@@ -439,49 +439,7 @@ class_attribute_objref = Table('class_attribute_objref', metadata,
                                                     ['class.id',
                                                      'class.root'],
                                                     onupdate='CASCADE',
-                                                    ondelete='RESTRICT'),
-
-                               # An attribute name cannot appear twice
-                               # whithin a class hierarchy
-                               UniqueConstraint('class_root', 'id',
-                                                name='class_attr_objref_unique_root_id_constr')
-                               )
-
-
-class_attribute_objref_list = Table('class_attribute_objref_list', metadata,
-                                    Column('class', String(128),
-                                           nullable=False, primary_key=True),
-                                    Column('class_root', String(128),
-                                           nullable=False, primary_key=True),
-                                    Column('id', String(128), nullable=False,
-                                           primary_key=True),
-                                    Column('target_class', String(128),
-                                           nullable=False),
-                                    Column('target_class_root', String(128),
-                                           nullable=False),
-                                    Column('table', String(128),
-                                           nullable=False, unique=True),
-
-                                    ForeignKeyConstraint(['class',
-                                                          'class_root',
-                                                          'id'],
-                                                         ['class_attribute.class',
-                                                          'class_attribute.class_root',
-                                                          'class_attribute.id'],
-                                                         onupdate='CASCADE',
-                                                         ondelete='RESTRICT'),
-                                    
-                                    ForeignKeyConstraint(['target_class',
-                                                          'target_class_root'],
-                                                         ['class.id',
-                                                          'class.root'],
-                                                         onupdate='CASCADE',
-                                                         ondelete='RESTRICT'),
-
-                                    # An attribute name cannot appear twice
-                                    # whithin a class hierarchy
-                                    UniqueConstraint('class_root', 'id',
-                                                     name='class_attr_objref_list_unique_root_id_constr')
+                                                    ondelete='RESTRICT')
                                )
 
 
@@ -832,9 +790,7 @@ def _init_default_class_attr_types(engine):
         {'name'  : 'choice',
          'notes' : 'Selection among multiple values'},
         {'name'  : 'objref',
-         'notes' : 'Typed object referece'},
-        {'name'  : 'objref-list',
-         'notes' : 'List of typed object refereces'}
+         'notes' : 'Typed object reference'}
         ]
 
     engine.execute(attribute_type.insert(), default_attr_types)
