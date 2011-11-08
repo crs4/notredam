@@ -1493,7 +1493,7 @@ class ItemResource(ModResource):
         variants = request.GET.getlist('renditions')
         
         item = Item.objects.get(pk = item_id)
-        resp = ItemResource()._get_item_info(item, workspace, variants = [], metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = False, upload_workspace = True)
+        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = False, upload_workspace = True)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
