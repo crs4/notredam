@@ -1,0 +1,14 @@
+{%extends "base.html"%}
+{%block js%}    
+    <script type="text/javascript" src="/files/ext/login.js"></script>    
+{%endblock%}
+{%block header_info%}
+    var HEADERHEIGHT = 40;
+{%endblock%}
+
+
+{%block body_content%}
+    <div id="hidden-csrf" class="x-hidden">
+    {% csrf_token %}
+    </div>
+{%endblock%}
