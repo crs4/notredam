@@ -186,13 +186,7 @@ class_attribute = Table('class_attribute', metadata,
                         ForeignKeyConstraint(['class', 'class_root'],
                                              ['class.id', 'class.root'],
                                              onupdate='CASCADE',
-                                             ondelete='RESTRICT'),
-
-                        # An attribute name cannot appear twice
-                        # whithin a class hierarchy
-                        # FIXME: sibling classes w/ unrelated same-named attrs?
-                        UniqueConstraint('class_root', 'name',
-                                         name='class_attr_unique_root_id_constr')
+                                             ondelete='RESTRICT')
                         )
 
 ###############################################################################
@@ -214,11 +208,6 @@ class_attribute_bool = Table('class_attribute_bool', metadata,
                                                    'class_attribute.id'],
                                                   onupdate='CASCADE',
                                                   ondelete='RESTRICT'),
-
-                             # An attribute name cannot appear twice
-                             # whithin a class hierarchy
-                             UniqueConstraint('class_root', 'id',
-                                              name='class_attr_bool_unique_root_id_constr')
                              )
 
 
@@ -243,12 +232,7 @@ class_attribute_int = Table('class_attribute_int', metadata,
                             CheckConstraint('"min" IS NULL OR ("default" >= "min")',
                                             name='class_attr_int_min_constr'),
                             CheckConstraint('"max" IS NULL OR ("default" <= "max")',
-                                            name='class_attr_int_max_constr'),
-
-                            # An attribute name cannot appear twice
-                            # whithin a class hierarchy
-                            UniqueConstraint('class_root', 'id',
-                                             name='class_attr_int_unique_root_id_constr')
+                                            name='class_attr_int_max_constr')
                             )
 
 
@@ -280,13 +264,7 @@ class_attribute_real = Table('class_attribute_real', metadata,
                              CheckConstraint('"min" IS NULL OR ("default" >= "min")',
                                              name='class_attr_real_min_constr'),
                              CheckConstraint('"max" IS NULL OR ("default" <= "max")',
-                                             name='class_attr_real_max_constr'),
-                             
-                             # An attribute name cannot appear twice
-                             # whithin a class hierarchy
-                             # FIXME: too strict, what about sibling classes?
-                             UniqueConstraint('class_root', 'id',
-                                              name='class_attr_real_unique_root_id_constr')
+                                             name='class_attr_real_max_constr')
                              )
 
 
@@ -310,13 +288,7 @@ class_attribute_string = Table('class_attribute_string', metadata,
                                                     ondelete='RESTRICT'),
                                
                                CheckConstraint('length >= 0',
-                                               name='class_attr_string_length_gt0_constr'),
-
-                               # An attribute name cannot appear twice
-                               # whithin a class hierarchy
-                               UniqueConstraint('class_root', 'id',
-                                                name='class_attr_string_unique_root_id_constr')
-
+                                               name='class_attr_string_length_gt0_constr')
                                )
 
 
@@ -342,13 +314,7 @@ class_attribute_date = Table('class_attribute_date', metadata,
                              CheckConstraint('"min" IS NULL OR ("default" >= "min")',
                                              name='class_attr_date_min_constr'),
                              CheckConstraint('"max" IS NULL OR ("default" <= "max")',
-                                             name='class_attr_date_max_constr'),
-                             
-                             # An attribute name cannot appear twice
-                             # whithin a class hierarchy
-                             UniqueConstraint('class_root', 'id',
-                                              name='class_attr_date_unique_root_id_constr')
-
+                                             name='class_attr_date_max_constr')
                              )
 
 
@@ -372,12 +338,7 @@ class_attribute_uri = Table('class_attribute_uri', metadata,
                                                  ondelete='RESTRICT'),
                             
                             CheckConstraint('length >= 0',
-                                            name='class_attr_uri_length_gt0_constr'),
-
-                            # An attribute name cannot appear twice
-                            # whithin a class hierarchy
-                            UniqueConstraint('class_root', 'id',
-                                             name='class_attr_uri_unique_root_id_constr')
+                                            name='class_attr_uri_length_gt0_constr')
                             )
 
 
@@ -405,12 +366,7 @@ class_attribute_choice = Table('class_attribute_choice', metadata,
                                # default choice is somehow contained
                                # in the JSON list of strings
                                CheckConstraint("choices LIKE '%\"' || \"default\" || '\"%'",
-                                               name='class_attr_string_length_gt0_constr'),
-
-                               # An attribute name cannot appear twice
-                               # whithin a class hierarchy
-                               UniqueConstraint('class_root', 'id',
-                                                name='class_attr_choice_unique_root_id_constr')
+                                               name='class_attr_string_length_gt0_constr')
                                )
 
 
