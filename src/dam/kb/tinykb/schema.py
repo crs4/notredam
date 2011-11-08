@@ -179,6 +179,8 @@ class_attribute = Table('class_attribute', metadata,
                                nullable=False),
                         Column('order', Integer, default=0, nullable=False),
                         Column('maybe_empty', Boolean, nullable=False),
+                        Column('multivalue_table', String(128), default=None,
+                               unique=True, nullable=True),
                         Column('notes', String(4096)),
 
                         ForeignKeyConstraint(['class', 'class_root'],
