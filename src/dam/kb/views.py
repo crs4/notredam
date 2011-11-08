@@ -22,6 +22,7 @@
 #
 #########################################################################
 
+import copy
 import datetime
 
 from django.contrib.auth.decorators import login_required
@@ -105,6 +106,17 @@ def class_index_put(request, ws_id):
 
     # Build the list of attributes of the class
     json_attrs = cls_dict.get('attributes', [])
+
+    # Remove inherited attributes.  We may raise an error when
+    # inherited attribute IDs are are reused, but being more tolerant
+    # we allow to create new KB classes by cut'n'pasting (and slightly
+    # modifying) the JSON representation of existing ones
+    if superclass is not None:
+        inherited_attr_ids = [a.id for a in superclass.all_attributes()]
+        for xid in inherited_attr_ids:
+            # FIXME: raise an error if the attr does not match existing one
+            del(json_attrs[xid])
+
     attrs = []
     for attr_id in json_attrs:
         a = json_attrs[attr_id]
@@ -120,13 +132,15 @@ def class_index_put(request, ws_id):
             return HttpResponseBadRequest(('Attribute "%s" has an invalid '
                                            + 'type: "%s"')
                                           % (attr_id, attr_type))
-
         try:
-            attr_obj = attr_fn(a)
+            attr_obj = attr_fn(a, ses, ws)
         except KeyError as e:
             return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
                                            + 'a required field: "%s"')
                                           % (attr_id, attr_type, str(e)))
+        except ValueError, e:
+            return HttpResponseBadRequest('Cannot create attribute "%s": %s'
+                                          % (attr_id, str(e)))
 
         attrs.append(attr_obj)
 
@@ -556,54 +570,52 @@ _kb_attrs_dict_map = {kb_attrs.Boolean : lambda a:
                       kb_attrs.ObjectReference : lambda a:
                           dict([['type',         'objref'],
                                 ['target_class', a.target.id]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.ObjectReferencesList : lambda a:
-                          dict([['type',         'objref-list'],
-                                ['target_class', a.target.id]]
-                               + _std_attr_fields(a))                         
+                               + _std_attr_fields(a))
                       }
 
 
-# This is the "inverse" of the mapping above: it associates a
+# Here is the "inverse" of the mapping above: it associates a
 # JSON'able dictionary representation of a class attribute with a
 # function returning the actual Attribute object.  The function should
-# raise a KeyError when a required dictionary field is missing
-_kb_dict_attrs_map = {'bool' : lambda d:
+# raise a KeyError when a required dictionary field is missing, or a
+# ValueError when the value is wrong
+def _kb_dict_objref_fn(d, ses, ws):
+    cls_id = d['target_class']
+    try: target_class = ses.class_(cls_id, ws=ws)
+    except kb_exc.NotFound: raise ValueError('invalid class id: %s' % (cls_id))
+    return kb_attrs.ObjectReference(target_class=target_class,
+                                    **(_std_attr_dict_fields(d)))
+_kb_dict_attrs_map = {'bool' : lambda d, _ses, _ws:
                           kb_attrs.Boolean(default=d.get('default'),
                                            **(_std_attr_dict_fields(d))),
-                      'int' : lambda d:
+                      'int' : lambda d, _ses, _ws:
                           kb_attrs.Integer(min_=d.get('min'),
                                            max_=d.get('max'),
                                            default=d.get('default'),
                                            **(_std_attr_dict_fields(d))),
-                      'real' : lambda d:
+                      'real' : lambda d, _ses, _ws:
                           kb_attrs.Real(min_=d.get('min'),
                                         max_=d.get('max'),
                                         default=d.get('default'),
                                         **(_std_attr_dict_fields(d))),
-                      'string' : lambda d:
+                      'string' : lambda d, _ses, _ws:
                           kb_attrs.String(length=d['length'],
                                           default=d.get('default'),
                                           **(_std_attr_dict_fields(d))),
-                      'date' : lambda d:
+                      'date' : lambda d, _ses, _ws:
                           kb_attrs.Date(min_=d.get('min'),
                                         max_=d.get('max'),
                                         default=d.get('default'),
                                         **(_std_attr_dict_fields(d))),
-                      'uri' : lambda d:
+                      'uri' : lambda d, _ses, _ws:
                           kb_attrs.Uri(length=d['length'],
                                        default=d.get('default'),
                                        **(_std_attr_dict_fields(d))),
-                      'choice' : lambda d:
+                      'choice' : lambda d, _ses, _ws:
                           kb_attrs.Choice(list_of_choices=d['choices'],
                                           default=d.get('default'),
                                           **(_std_attr_dict_fields(d))),
-                      'objref' : lambda d:
-                          kb_attrs.ObjectReference(target_class=d['target_class'],
-                                                 **(_std_attr_dict_fields(d))),
-                      'objref-list' : lambda d:
-                          kb_attrs.ObjectReference(target_class=d['target_class'],
-                                                  **(_std_attr_dict_fields(d)))
+                      'objref' : _kb_dict_objref_fn
                       }
 
 
@@ -622,6 +634,7 @@ def _std_attr_fields(a):
     return [['name',        a.name],
             ['maybe_empty', a.maybe_empty],
             ['order',       a.order],
+            ['multivalued', a.multivalued],
             ['notes',       a.notes]] 
 
 
@@ -634,6 +647,7 @@ def _std_attr_dict_fields(d):
     return {'name' : d['name'],
             'maybe_empty' : d.get('maybe_empty', True),
             'order' : d.get('order', 0),
+            'multivalued' : d.get('multivalued', False),
             'notes' : d.get('notes')}
 
 
@@ -656,21 +670,24 @@ def _kbobject_to_dict(obj):
 
 # Mapping between object attribute type and functions returning a
 # JSON'able dictionary representation of the attribute value
-_kb_objattrs_dict_map = {kb_attrs.Boolean : lambda a, v: v,
-                         kb_attrs.Integer : lambda a, v: v,
-                         kb_attrs.Real    : lambda a, v: v,
-                         kb_attrs.String  : lambda a, v: v,
-                         kb_attrs.Date    : lambda a, v: ((v is not None
-                                                           and v.isoformat())
-                                                          or None),
-                         kb_attrs.String  : lambda a, v: v,
-                         kb_attrs.Uri     : lambda a, v: v,
-                         kb_attrs.Choice  : lambda a, v: v,
-                         kb_attrs.ObjectReference: lambda a,v: ((v is not None
-                                                                 and v.id)
-                                                                or None),
-                         kb_attrs.ObjectReferencesList : lambda a, v:
-                             [o.id for o in v]
+def _std_dict_fn(attr, val):
+    if attr.multivalued: return [v for v in val]
+    else: return val
+def _date_dict_fn(attr, val):
+    if attr.multivalued: return [v.isoformat() for v in val]
+    else: return (val is not None and val.isoformat()) or None
+def _objref_dict_fn(attr, val):
+    if attr.multivalued: return [v.id for v in val]
+    else: return (val is not None and val.id or None)
+_kb_objattrs_dict_map = {kb_attrs.Boolean : _std_dict_fn,
+                         kb_attrs.Integer : _std_dict_fn,
+                         kb_attrs.Real    : _std_dict_fn,
+                         kb_attrs.String  : _std_dict_fn,
+                         kb_attrs.Date    : _date_dict_fn,
+                         kb_attrs.String  : _std_dict_fn,
+                         kb_attrs.Uri     : _std_dict_fn,
+                         kb_attrs.Choice  : _std_dict_fn,
+                         kb_attrs.ObjectReference: _objref_dict_fn
                          }
 
 def _kbobjattr_to_dict(attr, val):
@@ -723,7 +740,7 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
     for a in obj_class_attrs:
         val = obj_dict.get(a.id, getattr(obj, a.id))
         try:
-            if (type(a) == kb_attrs.ObjectReference):
+            if ((type(a) == kb_attrs.ObjectReference) and not a.multivalued):
                 # We can't simply update the attribute: we need to
                 # retrieve the referred object by its ID
                 curr_obj = getattr(obj, a.id)
@@ -738,29 +755,38 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                                          % val)
                     # Actually perform the assignment
                     setattr(obj, a.id, new_obj)
-            elif (type(a) == kb_attrs.ObjectReferencesList):
-                # We can't simply update the attribute: we need to
-                # retrieve the referred objects by their ID, and
-                # add/remove them from the list
-                obj_lst = getattr(obj, a.id)
-                # Objects to be removed (i.e. whose ID is not present in
-                # the list provided by the client)
-                rm_objects = [o for o in obj_lst if o.id not in val]
-                # Objects to be added
-                curr_oids = [o.id for o in obj_lst]
-                add_oids = [x for x in val if x not in curr_oids]
-                add_objects = []
-                for x in add_oids:
-                    try:
-                        add_objects.append(sa_session.object(x))
-                    except kb_exc.NotFound:
-                        raise ValueError('Unknown object id reference: %s'
-                                         % x)
-                # Actually perform removals/additions
-                for o in rm_objects:
-                    obj_lst.remove(o)
-                for o in add_objects:
-                    obj_lst.append(o)
+            elif a.multivalued:
+                # We expect 'val' to be a list
+                if not isinstance(val, list):
+                    raise ValueError('Expected a list of values for '
+                                     'multi-valued attribute, got %s')
+                if (not a.maybe_empty) and (len(val) == 0):
+                    raise ValueError('Got an empty list of values for '
+                                     'an attribute which must not be empty')
+                # Let's remove all the list elements.  We'll later
+                # re-add them
+                obj_l = getattr(obj, a.id)
+                orig_l = copy.deepcopy(obj_l)
+                for x in orig_l:
+                    obj_l.remove(x)
+
+                if (type(a) == kb_attrs.ObjectReference):
+                    # We need to retrieve the referred objects by
+                    # their ID, in order to spot errors
+                    obj_lst = []
+                    for xid in val:
+                        try:
+                            obj_lst.append(sa_session.object(xid))
+                        except kb_exc.NotFound:
+                            raise ValueError('Unknown object id reference: %s'
+                                             % xid)
+                    newlst = obj_id_lst
+                else:
+                    newlst = val
+
+                # Time to re-add the elements to the list
+                for x in newlst:
+                    obj_l.append(x)
             else:
                 # Simple case: just update the attribute
                 setattr(obj, a.id, val)
