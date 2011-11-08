@@ -120,11 +120,16 @@ class KBClass(object):
         if superclass is None:
             self._root_id = self.id
             self.superclass = self
+            inherited_attr_ids = [a.id for a in superclass.all_attributes()]
         else:
             self.superclass = superclass
             self._root_id = superclass._root_id
+            inherited_attr_ids = []
 
         for a in attributes:
+            if a.id in inherited_attr_ids:
+                raise RuntimeError('Cannot redefine inherited attribute "%s"'
+                                   % a.id)
             self.attributes.append(a)
         self.notes = notes
 
