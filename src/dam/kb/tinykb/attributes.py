@@ -30,6 +30,7 @@ import json
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
 import sqlalchemy.ext.associationproxy as sa_proxy
+import sqlalchemy.ext.orderinglist as sa_order
 from sqlalchemy import (event, Column, CheckConstraint, ForeignKey,
                         PrimaryKeyConstraint, Table)
 from sqlalchemy.orm import mapper, relationship
@@ -111,11 +112,11 @@ class Attribute(object):
         # intermediate mapper class to use with an SQLAlchemy
         # Association Proxy.  It will allow to handle the multivalued
         # attribute of the Python class as a simple list of values
+        mvtable = self._sqlalchemy_mv_table
         if not hasattr(self, '_mvclass'):
             # The following code can be executed only once per
             # Attribute instance
             table = self._class.sqlalchemy_table
-            mvtable = self._sqlalchemy_mv_table
             if mvtable is None:
                 raise RuntimeError('BUG: Attribute.mapper_properties() cannot '
                                    'be called before '
@@ -135,8 +136,11 @@ class Attribute(object):
         # association proxy.  The underlying relation will be mapped
         # on an "hidden" attribute (i.e. prefixed with an underscore)
         hidden_id = '_' + self.id
-        return {hidden_id : relationship(self._mvclass, backref='object',
-                                         cascade='all')}
+        return {hidden_id : relationship(
+                self._mvclass, backref='object',
+                collection_class=sa_order.ordering_list('order'),
+                order_by=[mvtable.c.order],
+                cascade='all')}
 
     # Internal routine for building properties related to the
     # attribute column on the KB object table.  This implementation
@@ -191,6 +195,7 @@ class Attribute(object):
                           Column('object', sa.types.String(128),
                                  ForeignKey('%s.id' % (owner_table.name, )),
                                  nullable=False),
+                          Column('order', sa.types.Integer, nullable=False),
                           *raw_ddl_pk, **kwargs)
 
             # When this table constructor closure is executed, it will
