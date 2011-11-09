@@ -73,7 +73,7 @@ def class_index_put(request, ws_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    if not isinstance(dict, cls_dict):
+    if not isinstance(cls_dict, dict):
         return HttpResponseBadRequest('JSON class representation must be '
                                       'a dictionary')
 
@@ -211,7 +211,7 @@ def class_post(request, ws_id, class_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    if not isinstance(dict, cls_dict):
+    if not isinstance(cls_dict, dict):
         return HttpResponseBadRequest('JSON class representation must be '
                                       'a dictionary')
 
@@ -289,7 +289,7 @@ def object_index_put(request, ws_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    if not isinstance(dict, obj_dict):
+    if not isinstance(obj_dict, dict):
         return HttpResponseBadRequest('JSON object representation must be '
                                       'a dictionary')
 
@@ -380,7 +380,7 @@ def object_post(request, ws_id, object_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    if not isinstance(dict, obj_dict):
+    if not isinstance(obj_dict, dict):
         return HttpResponseBadRequest('JSON object representation must be '
                                       'a dictionary')
 
