@@ -744,7 +744,8 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                 # We expect 'val' to be a list
                 if not isinstance(val, list):
                     raise ValueError('Expected a list of values for '
-                                     'multi-valued attribute, got %s')
+                                     'multi-valued attribute, got "%s"'
+                                     % (val, ))
                 if (not a.maybe_empty) and (len(val) == 0):
                     raise ValueError('Got an empty list of values for '
                                      'an attribute which must not be empty')
