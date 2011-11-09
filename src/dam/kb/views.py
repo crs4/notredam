@@ -22,7 +22,6 @@
 #
 #########################################################################
 
-import copy
 import datetime
 
 from django.contrib.auth.decorators import login_required
@@ -768,7 +767,7 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                 # Let's remove all the list elements.  We'll later
                 # re-add them
                 obj_l = getattr(obj, a.id)
-                orig_l = copy.deepcopy(obj_l)
+                orig_l = [x for x in obj_l] # Read-only copy
                 for x in orig_l:
                     obj_l.remove(x)
 
