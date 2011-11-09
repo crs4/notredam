@@ -73,6 +73,10 @@ def class_index_put(request, ws_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
+    if not isinstance(dict, cls_dict):
+        return HttpResponseBadRequest('JSON class representation must be '
+                                      'a dictionary')
+
     ses = _kb_session()
 
     try:
@@ -207,6 +211,10 @@ def class_post(request, ws_id, class_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
+    if not isinstance(dict, cls_dict):
+        return HttpResponseBadRequest('JSON class representation must be '
+                                      'a dictionary')
+
     ses = _kb_session()
     try:
         ws = ses.workspace(ws_id)
@@ -280,6 +288,10 @@ def object_index_put(request, ws_id):
         obj_dict = _assert_return_json_data(request)
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
+
+    if not isinstance(dict, obj_dict):
+        return HttpResponseBadRequest('JSON object representation must be '
+                                      'a dictionary')
 
     ses = _kb_session()
 
@@ -367,6 +379,10 @@ def object_post(request, ws_id, object_id):
         obj_dict = _assert_return_json_data(request)
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
+
+    if not isinstance(dict, obj_dict):
+        return HttpResponseBadRequest('JSON object representation must be '
+                                      'a dictionary')
 
     ses = _kb_session()
     try:
