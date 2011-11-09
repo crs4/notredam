@@ -889,4 +889,3 @@ def _setup_kb_root_class_visibility(request, ses, cls, cls_dict, curr_ws):
 
     # Everything is fine
     return None
-
