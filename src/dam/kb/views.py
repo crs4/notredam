@@ -765,7 +765,7 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                         except kb_exc.NotFound:
                             raise ValueError('Unknown object id reference: %s'
                                              % xid)
-                    newlst = obj_id_lst
+                    newlst = obj_lst
                 else:
                     newlst = val
 
