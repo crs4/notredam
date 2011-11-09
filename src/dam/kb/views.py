@@ -740,22 +740,7 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
     for a in obj_class_attrs:
         val = obj_dict.get(a.id, getattr(obj, a.id))
         try:
-            if ((type(a) == kb_attrs.ObjectReference) and not a.multivalued):
-                # We can't simply update the attribute: we need to
-                # retrieve the referred object by its ID
-                curr_obj = getattr(obj, a.id)
-                if (val == curr_obj.id):
-                    # Nothing to be done here
-                    break
-                else:
-                    try:
-                        new_obj = sa_session.object(val)
-                    except kb_exc.NotFound:
-                        raise ValueError('Unknown object id reference: %s'
-                                         % val)
-                    # Actually perform the assignment
-                    setattr(obj, a.id, new_obj)
-            elif a.multivalued:
+            if a.multivalued:
                 # We expect 'val' to be a list
                 if not isinstance(val, list):
                     raise ValueError('Expected a list of values for '
@@ -787,9 +772,25 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                 # Time to re-add the elements to the list
                 for x in newlst:
                     obj_l.append(x)
-            else:
-                # Simple case: just update the attribute
-                setattr(obj, a.id, val)
+            else: # not a.multivalued
+                if type(a) == kb_attrs.ObjectReference:
+                    # We can't simply update the attribute: we need to
+                    # retrieve the referred object by its ID
+                    curr_obj = getattr(obj, a.id)
+                    if (val == curr_obj.id):
+                        # Nothing to be done here
+                        break
+                    else:
+                        try:
+                            new_obj = sa_session.object(val)
+                        except kb_exc.NotFound:
+                            raise ValueError('Unknown object id reference: %s'
+                                             % val)
+                    # Actually perform the assignment
+                    setattr(obj, a.id, new_obj)
+                else:
+                    # Simple case: just update the attribute
+                    setattr(obj, a.id, val)
         except kb_exc.ValidationError, e:
             # One of the setattr() calls failed: re-raise the
             # exception with the proper error message
