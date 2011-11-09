@@ -120,11 +120,11 @@ class KBClass(object):
         if superclass is None:
             self._root_id = self.id
             self.superclass = self
-            inherited_attr_ids = [a.id for a in superclass.all_attributes()]
+            inherited_attr_ids = []
         else:
             self.superclass = superclass
             self._root_id = superclass._root_id
-            inherited_attr_ids = []
+            inherited_attr_ids = [a.id for a in superclass.all_attributes()]
 
         for a in attributes:
             if a.id in inherited_attr_ids:
