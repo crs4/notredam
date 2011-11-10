@@ -113,7 +113,7 @@ class KBClass(object):
         else:
             self.id = explicit_id
 
-        self.table = ('object_' + self.id).lower()
+        self.table = (schema.DB_OBJECT_PREFIX + 'object_' + self.id).lower()
         self.name = name
 
         # FIXME: handle these fields with a SQLAlchemy mapper property?
@@ -180,7 +180,7 @@ class KBClass(object):
 
     def _get_parent_table(self):
         if self.superclass is self:
-            parent_table = 'object'
+            parent_table = schema.object_t.name
         else:
             parent_table = self.superclass.table
 

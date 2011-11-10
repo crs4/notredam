@@ -24,6 +24,8 @@
 
 from django.db import models
 
+import tinykb.schema as kb_schema
+
 # This is a partial, read-only copy of the 'object' table defined in
 # tinykb/schema.py, used for guaranteeing referential integrity from
 # the DAM catalog.
@@ -42,5 +44,5 @@ class Object(models.Model):
                            % self.id, self.name)
 
     class Meta:
-        db_table = 'object'
+        db_table = kb_schema.object_t.name
         managed = False # Since it's handled in/by the KB
