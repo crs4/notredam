@@ -147,13 +147,15 @@ def test_create_derived_classes(connstring=CONNSTRING):
 
     class4 = classes.KBClass('Church',  explicit_id='church',
                              superclass=class1, notes='A church',
-                             attributes=[attrs.Uri('Website'),
+                             attributes=[attrs.Uri('Websites',
+                                                   multivalued=True),
                                          attrs.Choice('Number of naves',
                                                       ['One', 'Two',
                                                        'Three or more'],
                                                       default='Two'),
-                                         attrs.ObjectReferencesList('Tags',
-                                                                    KeywordClass)])
+                                         attrs.ObjectReference(
+                                             'Tags', KeywordClass,
+                                             multivalued=True)])
     class4.create_table(ses)
     Church = class4.make_python_class(ses)
     class6=ses.class_('ClassTest1')
@@ -221,8 +223,13 @@ def test_create_derived_class_objects(connstring=CONNSTRING):
     castle2.nearby_church = church2
     church1.tags.append(kw1)
     church1.tags.append(kw2)
+<<<<<<< local
     church2.tags.append(kw3)
     church2.tags.append(kw4)
+=======
+    church1.websites.append('http://www.google.com/')
+    church1.websites.append('http://www.xkcd.com/')
+>>>>>>> other
     
     all_objs = [church1, castle1, church2, castle2, apple1, objSubClassTest1, objSubClassTest2]
 

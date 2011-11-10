@@ -67,7 +67,8 @@ class Workspace(object):
                                                                access))
         else:
             # The class is still visible, let's just update its access rules
-            vis.access = access
+            for v in vis:
+                v.access = access
 
 
 class User(object):
@@ -119,11 +120,16 @@ class KBClass(object):
         if superclass is None:
             self._root_id = self.id
             self.superclass = self
+            inherited_attr_ids = []
         else:
             self.superclass = superclass
             self._root_id = superclass._root_id
+            inherited_attr_ids = [a.id for a in superclass.all_attributes()]
 
         for a in attributes:
+            if a.id in inherited_attr_ids:
+                raise RuntimeError('Cannot redefine inherited attribute "%s"'
+                                   % a.id)
             self.attributes.append(a)
         self.notes = notes
 
@@ -235,18 +241,6 @@ class KBClass(object):
             # FIXME: raise a meaningful (non SQLAlchemy-related) exception here
             raise
 
-    def _get_object_references(self):
-        from attributes import ObjectReference, ObjectReferencesList
-
-        # FIXME: properly handle references cache, using a SQLAlchemy event
-        if not hasattr(self, '_references_cache'):
-            self._references_cache = [
-                x for x in self.attributes
-                if (isinstance(x, ObjectReference)
-                    or isinstance(x, ObjectReferencesList))]
-
-        return self._references_cache
-
     def make_python_class(self, session_or_engine=None):
         '''
         Return the Python class associated to a KB class.
@@ -302,8 +296,7 @@ class KBClass(object):
 
         # Let's now build the SQLAlchemy ORM mapper
         mapper_props = {}
-        objrefs = self._get_object_references()
-        for r in objrefs:
+        for r in self.attributes:
             mapper_props.update(r.mapper_properties())
 
         mapper(newclass, self.sqlalchemy_table, inherits=parent_class,
@@ -313,7 +306,7 @@ class KBClass(object):
         # Also add event listeners for validating assignments
         # according to attribute types
         for a in self.attributes:
-            a.make_event_listeners(newclass)
+            a.make_proxies_and_event_listeners(newclass)
         
         return newclass
 
@@ -491,6 +484,7 @@ class CatalogTreeVisibility(object):
 ###############################################################################
 ## Mappers
 ###############################################################################
+from attributes import Attribute
 
 mapper(User, schema.user)
 
@@ -537,7 +531,10 @@ mapper(KBClass, schema.class_t,
                                             ==schema.class_t.c.id),
                                remote_side=[schema.class_t.c.id],
                                post_update=True,
-                               cascade='all')
+                               cascade='all'),
+        'attributes' : relationship(Attribute,
+                                    back_populates='_class',
+                                    cascade='save-update')
         })
 
 mapper(KBRootClass, inherits=KBClass,
