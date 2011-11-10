@@ -24,7 +24,6 @@ var ws_store = new Ext.data.JsonStore({
             root: 'workspaces',
             idProperty: 'pk',
             fields:[{name:'pk', type:'int'}, 'name', 'description', 'root_id',  'inbox_root_id', 'media_type']
-        
         });
 
         
@@ -254,7 +253,6 @@ function switch_ws(current_record, ws_id){
         
         
     }
-    console.log( current_record);
     ws.id = current_record.data.pk;
     ws.name = current_record.data.name;
     ws.description= current_record.data.description;
