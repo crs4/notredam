@@ -180,9 +180,31 @@ def delete_ws(request,  ws_id):
         return HttpResponseServerError('You must have at least one workspace.')
     
 @login_required
+def get_admin_workspaces(request):
+    try:
+        user = request.user
+        wss = user.workspaces.filter(ws_permissions__pk = WorkspacePermission.objects.get(name='admin').pk)
+        
+        resp = {'workspaces': []}
+        for ws in wss:
+            tmp = {
+                'pk': ws.pk,
+                'name': ws.name,
+                'description': ws.description,
+            }
+            resp['workspaces'].append(tmp)
+
+        resp = simplejson.dumps(resp)
+        return HttpResponse(resp)
+    except Exception,  ex:
+        logger.exception(ex)
+        raise ex
+    
+@login_required
 def get_workspaces(request):
     try:
         user = request.user
+        WorkspacePermissionAssociation.objects.filter(users = user, permission = WorkspacePermission.objects.get(name='admin'))
         wss = user.workspaces.all().order_by('name').distinct()
         
         resp = {'workspaces': []}
