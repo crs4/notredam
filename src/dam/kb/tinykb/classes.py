@@ -484,6 +484,7 @@ class CatalogTreeVisibility(object):
 ###############################################################################
 ## Mappers
 ###############################################################################
+from attributes import Attribute
 
 mapper(User, schema.user)
 
@@ -530,7 +531,10 @@ mapper(KBClass, schema.class_t,
                                             ==schema.class_t.c.id),
                                remote_side=[schema.class_t.c.id],
                                post_update=True,
-                               cascade='all')
+                               cascade='all'),
+        'attributes' : relationship(Attribute,
+                                    back_populates='_class',
+                                    cascade='save-update')
         })
 
 mapper(KBRootClass, inherits=KBClass,
