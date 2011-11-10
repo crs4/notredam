@@ -311,7 +311,7 @@ class Integer(Attribute):
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
-            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.min),
+            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
                                        name=('%s_%s_%s_max_constr'
                                              % (self._class_root_id,
                                                 self._class_id,
@@ -366,7 +366,7 @@ class Real(Attribute):
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
-            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.min),
+            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
                                        name=('%s_%s_%s_max_constr'
                                              % (self._class_root_id,
                                                 self._class_id,
@@ -452,7 +452,7 @@ class Date(Attribute):
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
-            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.min),
+            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
                                        name=('%s_%s_%s_max_constr'
                                              % (self._class_root_id,
                                                 self._class_id,
