@@ -57,7 +57,7 @@ class Attribute(object):
         # FIXME: ensure uniqueness!
         # FIXME: it would be better to prefix the owner table name
         if self.multivalued:
-            self._multivalue_table = niceid(self.id)
+            self._multivalue_table = schema.DB_OBJECT_PREFIX + niceid(self.id)
             # Will be assigned after invoking the attribute table constructor
             self._sqlalchemy_mv_table = None
         else:
@@ -305,14 +305,16 @@ class Integer(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s_%s_%s_min_constr'
-                                             % (self._class_root_id,
+                                       name=('%s%s_%s_%s_min_constr'
+                                             % (schema.DB_OBJECT_PREFIX,
+                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s_%s_%s_max_constr'
-                                             % (self._class_root_id,
+                                       name=('%s%s_%s_%s_max_constr'
+                                             % (schema.DB_OBJECT_PREFIX,
+                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -360,14 +362,16 @@ class Real(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s_%s_%s_min_constr'
-                                             % (self._class_root_id,
+                                       name=('%s%s_%s_%s_min_constr'
+                                             % (schema.DB_OBJECT_PREFIX,
+                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s_%s_%s_max_constr'
-                                             % (self._class_root_id,
+                                       name=('%s%s_%s_%s_max_constr'
+                                             % (schema.DB_OBJECT_PREFIX,
+                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -446,14 +450,16 @@ class Date(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s_%s_%s_min_constr'
-                                             % (self._class_root_id,
+                                       name=('%s%s_%s_%s_min_constr'
+                                             % (schema.DB_OBJECT_PREFIX,
+                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s_%s_%s_max_constr'
-                                             % (self._class_root_id,
+                                       name=('%s%s_%s_%s_max_constr'
+                                             % (schema.DB_OBJECT_PREFIX,
+                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -546,8 +552,9 @@ class Choice(Attribute):
         colname = self.column_name()
         return [Column(colname,
                        sa.types.Enum(*self._list_of_choices,
-                                      name=('%s_%s_%s_enum'
-                                            % (self._class_root_id,
+                                      name=('%s%s_%s_%s_enum'
+                                            % (schema.DB_OBJECT_PREFIX,
+                                               self._class_root_id,
                                                self._class_id,
                                                self.id))),
                        nullable=self.maybe_empty and not self.multivalued,
