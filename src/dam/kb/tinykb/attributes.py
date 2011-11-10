@@ -37,7 +37,6 @@ from sqlalchemy.orm import mapper, relationship
 
 import errors as kb_exc
 import schema
-import classes
 
 from util.niceid import niceid
 
@@ -568,7 +567,11 @@ class Choice(Attribute):
         return "<Choice(choices=%s, default='%s')>" % (self.choices,
                                                        self.default)
 
-                                                
+
+# The following statement should stay here in order to avoid circular
+# importing issues
+import classes
+
 class ObjectReference(Attribute):
     def __init__(self, name, target_class, maybe_empty=True, order=0,
                  multivalued=False, notes=None):
@@ -677,7 +680,7 @@ mapper(Attribute, schema.class_attribute,
        properties={
         '_class_id' : schema.class_attribute.c['class'],
         '_class_root_id' : schema.class_attribute.c.class_root,
-        '_class' : relationship(classes.KBClass, backref='attributes',
+        '_class' : relationship(classes.KBClass, back_populates='attributes',
                                 cascade='all'),
         '_multivalue_table' : schema.class_attribute.c.multivalue_table
         })
@@ -709,3 +712,27 @@ mapper(ObjectReference, schema.class_attribute_objref, inherits=Attribute,
         'target' : relationship(classes.KBClass, backref='references',
                                 cascade='all')
         })
+
+###############################################################################
+## Events
+###############################################################################
+
+# Bind an attribute to its owner class when it gets added to the
+# 'attributes' list
+# FIXME: it should happen automatically, shouldn't it?
+def kbclass_append_attribute(target, value, _initiator):
+    value._class_id = target.id
+    value._class_root_id = target._root_id
+
+event.listen(classes.KBClass.attributes, 'append', kbclass_append_attribute,
+             propagate=True, retval=False)
+
+# Detach attributes from its (former) owner class when it gets removed from
+# the 'attributes' list
+# FIXME: it should happen automatically, shouldn't it?
+def kbclass_remove_attribute(target, value, _initiator):
+    value._class_id = None
+    value._class_root_id = None
+
+event.listen(classes.KBClass.attributes, 'remove', kbclass_remove_attribute,
+             propagate=True, retval=False)
