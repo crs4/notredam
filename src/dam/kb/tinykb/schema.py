@@ -32,6 +32,12 @@ from sqlalchemy.types import *
 
 from sqlalchemy.sql.expression import insert
 
+# Prefix used for all tables, constraints, etc. owned by the KB
+DB_OBJECT_PREFIX = 'kb_'
+
+# Just an abbreviation of prefix variable
+_p = DB_OBJECT_PREFIX
+
 # Ammissible values for classes and catalog entries visibility in
 # workspaces
 access_enum = ['owner', 'read-only', 'read-write']
@@ -44,7 +50,7 @@ user = Table('auth_user', metadata,
              Column('username', String(30), nullable=False)
              )
 
-## DAM item
+## DAM item (managed by Django)
 item = Table('item', metadata,
              Column('id', Integer, primary_key=True),
              ## FIXME: possibly consider other fields here
@@ -62,7 +68,7 @@ workspace = Table('dam_workspace_workspace', metadata,
                   )
 
 ## Item visibility in different workspaces
-item_visibility = Table('workspace_damworkspace_items', metadata,
+item_visibility = Table(_p+'workspace_damworkspace_items', metadata,
                         Column('id', Integer, primary_key=True),
                         ## FIXME: the actual field references the
                         ## "abstract" table workspace_damworkspace
@@ -76,20 +82,20 @@ item_visibility = Table('workspace_damworkspace_items', metadata,
                                           ondelete='RESTRICT')),
                         Column('access',
                                Enum(*access_enum,
-                                    name='workspace_damworkspace_items_access_enum'),
+                                    name=_p+'workspace_damworkspace_items_access_enum'),
                                nullable=False),
 
                         ## Actual primary key (the 'id' field is
                         ## redundant, and only required by Django
                         ## model)
                         UniqueConstraint('damworkspace_id', 'item_id',
-                                         name='workspace_items_actual_pkey_constr')
+                                         name=_p+'workspace_items_actual_pkey_constr')
                         )
 
 ## User-defined class for real-world objects
-class_t = Table('class', metadata,
+class_t = Table(_p+'class', metadata,
                 Column('id', String(128), primary_key=True),
-                Column('root', ForeignKey('class.id',
+                Column('root', ForeignKey(_p+'class.id',
                                           onupdate='CASCADE',
                                           ondelete='RESTRICT'),
                        nullable=False),
@@ -105,15 +111,15 @@ class_t = Table('class', metadata,
                 ## is_root <=> (root = id)
                 CheckConstraint('(NOT (root = id) OR is_root)'
                                 ' AND (NOT is_root OR (root = id))',
-                                name='catalog_is_root_value_constr'),
+                                name=_p+'catalog_is_root_value_constr'),
                 
                 ## Redundant constraint needed for foreign key references
                 UniqueConstraint('id', 'root',
-                                 name='class_unique_id_root_constr'),
+                                 name=_p+'class_unique_id_root_constr'),
 
                 ## Ensure that a class and its parent share the same root node
                 ForeignKeyConstraint(['parent', 'parent_root'],
-                                     ['class.id', 'class.root'],
+                                     [_p+'class.id', _p+'class.root'],
                                      onupdate='CASCADE',
                                      ondelete='RESTRICT'),
 
@@ -121,11 +127,11 @@ class_t = Table('class', metadata,
                 ## and vice versa:   (root = id) <=> (parent = id)
                 CheckConstraint('((NOT (root = id)) OR (parent = id))'
                                 ' AND ((NOT (parent = id)) OR (root = id))',
-                                name='class_root_iff_no_parent_constr')
+                                name=_p+'class_root_iff_no_parent_constr')
                 )
 
 ## Class visibility in workspaces
-class_visibility = Table('class_visibility', metadata,
+class_visibility = Table(_p+'class_visibility', metadata,
                          Column('workspace',
                                 ForeignKey('dam_workspace_workspace.id',
                                            onupdate='CASCADE',
@@ -135,18 +141,18 @@ class_visibility = Table('class_visibility', metadata,
                          Column('class_root', String(128)),
                          Column('access',
                                 Enum(*access_enum,
-                                      name='class_visibility_access_enum'),
+                                      name=_p+'class_visibility_access_enum'),
                                 nullable=False),
                          
                          ## Redundant constraint needed for foreign
                          ## key references
                          UniqueConstraint('workspace', 'class_root',
-                                          name='class_visibility_unique_class_root_ws_constr'),
+                                          name=_p+'class_visibility_unique_class_root_ws_constr'),
 
                          ForeignKeyConstraint(['class',
                                                'class_root'],
-                                              ['class.id',
-                                               'class.root'],
+                                              [_p+'class.id',
+                                               _p+'class.root'],
                                               onupdate='CASCADE',
                                               ondelete='RESTRICT'),
 
@@ -154,17 +160,17 @@ class_visibility = Table('class_visibility', metadata,
                          ## Ensure that we only give visibility to
                          ## root classes
                          CheckConstraint('class = class_root',
-                                         name='class_visibility_parent_root_constr')
+                                         name=_p+'class_visibility_parent_root_constr')
                          )
 
 ## Known attribute types
-attribute_type = Table('attribute_type', metadata,
+attribute_type = Table(_p+'attribute_type', metadata,
                        Column('name', String(128), primary_key=True),
                        Column('notes', String(4096))
                        )
 
 ## Generic class attributes
-class_attribute = Table('class_attribute', metadata,
+class_attribute = Table(_p+'class_attribute', metadata,
                         Column('class', String(128), nullable=False,
                                primary_key=True),
                         Column('class_root', String(128), nullable=False,
@@ -173,7 +179,7 @@ class_attribute = Table('class_attribute', metadata,
                                primary_key=True),
                         Column('name', String(128), nullable=False),
                         Column('type',
-                               ForeignKey('attribute_type.name',
+                               ForeignKey(_p+'attribute_type.name',
                                           onupdate='CASCADE',
                                           ondelete='RESTRICT'),
                                nullable=False),
@@ -184,7 +190,7 @@ class_attribute = Table('class_attribute', metadata,
                         Column('notes', String(4096)),
 
                         ForeignKeyConstraint(['class', 'class_root'],
-                                             ['class.id', 'class.root'],
+                                             [_p+'class.id', _p+'class.root'],
                                              onupdate='CASCADE',
                                              ondelete='RESTRICT')
                         )
@@ -192,7 +198,7 @@ class_attribute = Table('class_attribute', metadata,
 ###############################################################################
 ## Type-specific class attribute tables
 ###############################################################################
-class_attribute_bool = Table('class_attribute_bool', metadata,
+class_attribute_bool = Table(_p+'class_attribute_bool', metadata,
                              Column('class', String(128), nullable=False,
                                     primary_key=True),
                              Column('class_root', String(128), nullable=False,
@@ -203,15 +209,15 @@ class_attribute_bool = Table('class_attribute_bool', metadata,
 
                              ForeignKeyConstraint(['class', 'class_root',
                                                    'id'],
-                                                  ['class_attribute.class',
-                                                   'class_attribute.class_root',
-                                                   'class_attribute.id'],
+                                                  [_p+'class_attribute.class',
+                                                   _p+'class_attribute.class_root',
+                                                   _p+'class_attribute.id'],
                                                   onupdate='CASCADE',
                                                   ondelete='RESTRICT'),
                              )
 
 
-class_attribute_int = Table('class_attribute_int', metadata,
+class_attribute_int = Table(_p+'class_attribute_int', metadata,
                             Column('class', String(128), nullable=False,
                                    primary_key=True),
                             Column('class_root', String(128), nullable=False,
@@ -224,19 +230,19 @@ class_attribute_int = Table('class_attribute_int', metadata,
                             
                             ForeignKeyConstraint(['class', 'class_root',
                                                   'id'],
-                                                 ['class_attribute.class',
-                                                  'class_attribute.class_root',
-                                                  'class_attribute.id'],
+                                                 [_p+'class_attribute.class',
+                                                  _p+'class_attribute.class_root',
+                                                  _p+'class_attribute.id'],
                                                  onupdate='CASCADE',
                                                  ondelete='RESTRICT'),
                             CheckConstraint('"min" IS NULL OR ("default" >= "min")',
-                                            name='class_attr_int_min_constr'),
+                                          name=_p+'class_attr_int_min_constr'),
                             CheckConstraint('"max" IS NULL OR ("default" <= "max")',
-                                            name='class_attr_int_max_constr')
+                                          name=_p+'class_attr_int_max_constr')
                             )
 
 
-class_attribute_real = Table('class_attribute_real', metadata,
+class_attribute_real = Table(_p+'class_attribute_real', metadata,
                              Column('class', String(128), nullable=False,
                                     primary_key=True),
                              Column('class_root', String(128), nullable=False,
@@ -253,22 +259,22 @@ class_attribute_real = Table('class_attribute_real', metadata,
                              
                              ForeignKeyConstraint(['class', 'class_root',
                                                    'id'],
-                                                  ['class_attribute.class',
-                                                   'class_attribute.class_root',
-                                                   'class_attribute.id'],
+                                                  [_p+'class_attribute.class',
+                                                   _p+'class_attribute.class_root',
+                                                   _p+'class_attribute.id'],
                                                   onupdate='CASCADE',
                                                   ondelete='RESTRICT'),
 
                              CheckConstraint('"precision" >= 0',
-                                             name='class_attr_real_precision_gt0_constr'),
+                                             name=_p+'class_attr_real_precision_gt0_constr'),
                              CheckConstraint('"min" IS NULL OR ("default" >= "min")',
-                                             name='class_attr_real_min_constr'),
+                                         name=_p+'class_attr_real_min_constr'),
                              CheckConstraint('"max" IS NULL OR ("default" <= "max")',
-                                             name='class_attr_real_max_constr')
+                                          name=_p+'class_attr_real_max_constr')
                              )
 
 
-class_attribute_string = Table('class_attribute_string', metadata,
+class_attribute_string = Table(_p+'class_attribute_string', metadata,
                                Column('class', String(128), nullable=False,
                                       primary_key=True),
                                Column('class_root', String(128), nullable=False,
@@ -281,18 +287,18 @@ class_attribute_string = Table('class_attribute_string', metadata,
                                
                                ForeignKeyConstraint(['class', 'class_root',
                                                      'id'],
-                                                    ['class_attribute.class',
-                                                     'class_attribute.class_root',
-                                                     'class_attribute.id'],
+                                                    [_p+'class_attribute.class',
+                                                     _p+'class_attribute.class_root',
+                                                     _p+'class_attribute.id'],
                                                     onupdate='CASCADE',
                                                     ondelete='RESTRICT'),
                                
                                CheckConstraint('length >= 0',
-                                               name='class_attr_string_length_gt0_constr')
+                                               name=_p+'class_attr_string_length_gt0_constr')
                                )
 
 
-class_attribute_date = Table('class_attribute_date', metadata,
+class_attribute_date = Table(_p+'class_attribute_date', metadata,
                              Column('class', String(128), nullable=False,
                                     primary_key=True),
                              Column('class_root', String(128), nullable=False,
@@ -305,20 +311,20 @@ class_attribute_date = Table('class_attribute_date', metadata,
                              
                              ForeignKeyConstraint(['class', 'class_root',
                                                    'id'],
-                                                  ['class_attribute.class',
-                                                   'class_attribute.class_root',
-                                                   'class_attribute.id'],
+                                                  [_p+'class_attribute.class',
+                                                   _p+'class_attribute.class_root',
+                                                   _p+'class_attribute.id'],
                                                   onupdate='CASCADE',
                                                   ondelete='RESTRICT'),
                              
                              CheckConstraint('"min" IS NULL OR ("default" >= "min")',
-                                             name='class_attr_date_min_constr'),
+                                         name=_p+'class_attr_date_min_constr'),
                              CheckConstraint('"max" IS NULL OR ("default" <= "max")',
-                                             name='class_attr_date_max_constr')
+                                          name=_p+'class_attr_date_max_constr')
                              )
 
 
-class_attribute_uri = Table('class_attribute_uri', metadata,
+class_attribute_uri = Table(_p+'class_attribute_uri', metadata,
                             Column('class', String(128), nullable=False,
                                    primary_key=True),
                             Column('class_root', String(128), nullable=False,
@@ -331,18 +337,18 @@ class_attribute_uri = Table('class_attribute_uri', metadata,
                             
                             ForeignKeyConstraint(['class', 'class_root',
                                                   'id'],
-                                                 ['class_attribute.class',
-                                                  'class_attribute.class_root',
-                                                  'class_attribute.id'],
+                                                 [_p+'class_attribute.class',
+                                                  _p+'class_attribute.class_root',
+                                                  _p+'class_attribute.id'],
                                                  onupdate='CASCADE',
                                                  ondelete='RESTRICT'),
                             
                             CheckConstraint('length >= 0',
-                                            name='class_attr_uri_length_gt0_constr')
+                                            name=_p+'class_attr_uri_length_gt0_constr')
                             )
 
 
-class_attribute_choice = Table('class_attribute_choice', metadata,
+class_attribute_choice = Table(_p+'class_attribute_choice', metadata,
                                Column('class', String(128), nullable=False,
                                       primary_key=True),
                                Column('class_root', String(128), nullable=False,
@@ -356,9 +362,9 @@ class_attribute_choice = Table('class_attribute_choice', metadata,
                                
                                ForeignKeyConstraint(['class', 'class_root',
                                                      'id'],
-                                                    ['class_attribute.class',
-                                                     'class_attribute.class_root',
-                                                     'class_attribute.id'],
+                                                    [_p+'class_attribute.class',
+                                                     _p+'class_attribute.class_root',
+                                                     _p+'class_attribute.id'],
                                                     onupdate='CASCADE',
                                                     ondelete='RESTRICT'),
 
@@ -366,11 +372,11 @@ class_attribute_choice = Table('class_attribute_choice', metadata,
                                # default choice is somehow contained
                                # in the JSON list of strings
                                CheckConstraint("choices LIKE '%\"' || \"default\" || '\"%'",
-                                               name='class_attr_string_length_gt0_constr')
+                                               name=_p+'class_attr_string_length_gt0_constr')
                                )
 
 
-class_attribute_objref = Table('class_attribute_objref', metadata,
+class_attribute_objref = Table(_p+'class_attribute_objref', metadata,
                                Column('class', String(128), nullable=False,
                                       primary_key=True),
                                Column('class_root', String(128), nullable=False,
@@ -384,23 +390,23 @@ class_attribute_objref = Table('class_attribute_objref', metadata,
 
                                ForeignKeyConstraint(['class', 'class_root',
                                                      'id'],
-                                                    ['class_attribute.class',
-                                                     'class_attribute.class_root',
-                                                     'class_attribute.id'],
+                                                    [_p+'class_attribute.class',
+                                                     _p+'class_attribute.class_root',
+                                                     _p+'class_attribute.id'],
                                                     onupdate='CASCADE',
                                                     ondelete='RESTRICT'),
 
                                ForeignKeyConstraint(['target_class',
                                                      'target_class_root'],
-                                                    ['class.id',
-                                                     'class.root'],
+                                                    [_p+'class.id',
+                                                     _p+'class.root'],
                                                     onupdate='CASCADE',
                                                     ondelete='RESTRICT')
                                )
 
 
 ## Objects registry
-object_t = Table('object', metadata,
+object_t = Table(_p+'object', metadata,
                  Column('id', String(128), primary_key=True),
                  Column('class', String(128), nullable=False),
                  Column('class_root', String(128), nullable=False),
@@ -409,21 +415,21 @@ object_t = Table('object', metadata,
 
                  ## Redundant constraint needed for foreign key references
                  UniqueConstraint('id', 'class',
-                                  name='class_unique_id_class_constr'),
+                                  name=_p+'class_unique_id_class_constr'),
 
                  ## Redundant constraint needed for foreign key references
                  UniqueConstraint('id', 'class_root',
-                                  name='class_unique_id_class_root_constr'),
+                                  name=_p+'class_unique_id_class_root_constr'),
                  
                  ForeignKeyConstraint(['class', 'class_root'],
-                                      ['class.id', 'class.root'],
+                                      [_p+'class.id', _p+'class.root'],
                                       onupdate='CASCADE', ondelete='RESTRICT')
                  )
 
 ## An entry in the catalog
-catalog_entry = Table('catalog_entry', metadata,
+catalog_entry = Table(_p+'catalog_entry', metadata,
                       Column('id', String(128), primary_key=True),
-                      Column('root', ForeignKey('catalog_entry.id',
+                      Column('root', ForeignKey(_p+'catalog_entry.id',
                                                 onupdate='CASCADE',
                                                 ondelete='RESTRICT'),
                              nullable=False),
@@ -438,33 +444,33 @@ catalog_entry = Table('catalog_entry', metadata,
                       ## is_root <=> (root = id)
                       CheckConstraint('(NOT (root = id) OR is_root)'
                                       ' AND (NOT is_root OR (root = id))',
-                                      name='catalog_is_root_value_constr'),
+                                      name=_p+'catalog_is_root_value_constr'),
                       
                       ## Redundant constraint needed for foreign key references
                       UniqueConstraint('id', 'root',
-                                       name='catalog_unique_id_root_constr'),
+                                       name=_p+'catalog_unique_id_root_constr'),
 
                       ## Redundant constraint needed for foreign key references
                       UniqueConstraint('id', 'root', 'object_class_root',
-                                       name='catalog_unique_id_root_obj_root_constr'),
+                                       name=_p+'catalog_unique_id_root_obj_root_constr'),
 
                       ## Redundant constraint needed for foreign key references
                       UniqueConstraint('id', 'object', 'object_class_root',
-                                    name='catalog_unique_id_obj_class_constr'),
+                                    name=_p+'catalog_unique_id_obj_class_constr'),
 
                       ## External reference to typing object (and its
                       ## root class)
                       ForeignKeyConstraint(['object', 'object_class_root'],
-                                           ['object.id',
-                                            'object.class_root'],
+                                           [_p+'object.id',
+                                            _p+'object.class_root'],
                                            onupdate='CASCADE',
                                            ondelete='RESTRICT'),
 
                       ## Ensure that a catalog entry and its parent
                       ## share the same root node
                       ForeignKeyConstraint(['parent', 'parent_root'],
-                                           ['catalog_entry.id',
-                                            'catalog_entry.root'],
+                                           [_p+'catalog_entry.id',
+                                            _p+'catalog_entry.root'],
                                            onupdate='CASCADE',
                                            ondelete='RESTRICT'),
                       
@@ -473,11 +479,11 @@ catalog_entry = Table('catalog_entry', metadata,
                       CheckConstraint('((NOT (root = id)) OR (parent = id))'
                                       ' AND ((NOT (parent = id))'
                                       '      OR (root = id))',
-                                      name='catalog_root_iff_no_parent_constr')
+                                      name=_p+'catalog_root_iff_no_parent_constr')
                 )
 
 ## Class visibility in workspaces
-catalog_tree_visibility = Table('catalog_tree_visibility', metadata,
+catalog_tree_visibility = Table(_p+'catalog_tree_visibility', metadata,
                                 Column('workspace',
                                        ForeignKey('dam_workspace_workspace.id',
                                                   onupdate='CASCADE',
@@ -493,21 +499,21 @@ catalog_tree_visibility = Table('catalog_tree_visibility', metadata,
                                        nullable=False),
                                 Column('access',
                                 Enum(*access_enum,
-                                     name='class_visibility_access_enum'),
+                                     name=_p+'class_visibility_access_enum'),
                                      nullable=False),
                          
                                 ## Redundant constraint needed for foreign
                                 ## key references
                                 UniqueConstraint('catalog_entry_root',
                                                  'workspace',
-                                                 name='catalog_tree_visibility_unique_catalog_root_ws_constr'),
+                                                 name=_p+'catalog_tree_visibility_unique_catalog_root_ws_constr'),
 
                                 ForeignKeyConstraint(['catalog_entry',
                                                       'catalog_entry_root',
                                                       'catalog_entry_object_class_root'],
-                                                     ['catalog_entry.id',
-                                                      'catalog_entry.root',
-                                                      'catalog_entry.object_class_root'],
+                                                     [_p+'catalog_entry.id',
+                                                      _p+'catalog_entry.root',
+                                                      _p+'catalog_entry.object_class_root'],
                                                      onupdate='CASCADE',
                                                      ondelete='RESTRICT'),
 
@@ -519,8 +525,8 @@ catalog_tree_visibility = Table('catalog_tree_visibility', metadata,
                                 ## classes)
                                 ForeignKeyConstraint(['workspace',
                                                       'catalog_entry_object_class_root'],
-                                                     ['class_visibility.workspace',
-                                                      'class_visibility.class_root'],
+                                                     [_p+'class_visibility.workspace',
+                                                      _p+'class_visibility.class_root'],
                                                      onupdate='CASCADE',
                                                      ondelete='RESTRICT'),
 
@@ -528,7 +534,7 @@ catalog_tree_visibility = Table('catalog_tree_visibility', metadata,
                                 ## root catalog entries
                                 CheckConstraint('catalog_entry'
                                                 ' = catalog_entry_root',
-                                                name='catalog_parent_root_constr')
+                                                name=_p+'catalog_parent_root_constr')
                          )
 
 ## Cataloging information.  Only associate items and catalog entries when:
@@ -538,7 +544,7 @@ catalog_tree_visibility = Table('catalog_tree_visibility', metadata,
 ##
 ##    2. both the item and the catalog entry class are visibile in the
 ##       same workspace.
-cataloging = Table('cataloging', metadata,
+cataloging = Table(_p+'cataloging', metadata,
                    Column('item', Integer,
                           primary_key=True),
                    Column('workspace', Integer,
@@ -551,31 +557,31 @@ cataloging = Table('cataloging', metadata,
                    Column('catalog_entry_object_class_root', String(128)),
 
                    ForeignKeyConstraint(['item', 'workspace'],
-                                        ['workspace_damworkspace_items.item_id',
-                                         'workspace_damworkspace_items.damworkspace_id'],
+                                        [_p+'workspace_damworkspace_items.item_id',
+                                         _p+'workspace_damworkspace_items.damworkspace_id'],
                                         onupdate='CASCADE',
                                         ondelete='RESTRICT'),
 
                    ForeignKeyConstraint(['catalog_entry_root',
                                          'workspace'],
-                                  ['catalog_tree_visibility.catalog_entry_root',
-                                   'catalog_tree_visibility.workspace'],
+                                  [_p+'catalog_tree_visibility.catalog_entry_root',
+                                   _p+'catalog_tree_visibility.workspace'],
                                         onupdate='CASCADE',
                                         ondelete='RESTRICT'),
 
                    ForeignKeyConstraint(['catalog_entry',
                                          'catalog_entry_object',
                                          'catalog_entry_object_class_root'],
-                                  ['catalog_entry.id',
-                                   'catalog_entry.object',
-                                   'catalog_entry.object_class_root'],
+                                  [_p+'catalog_entry.id',
+                                   _p+'catalog_entry.object',
+                                   _p+'catalog_entry.object_class_root'],
                                         onupdate='CASCADE',
                                         ondelete='RESTRICT'),
 
                    ForeignKeyConstraint(['workspace',
                                          'catalog_entry_object_class_root'],
-                                        ['class_visibility.workspace',
-                                         'class_visibility.class_root'],
+                                        [_p+'class_visibility.workspace',
+                                         _p+'class_visibility.class_root'],
                                         onupdate='CASCADE',
                                         ondelete='RESTRICT')
                    )
@@ -612,14 +618,14 @@ cataloging = Table('cataloging', metadata,
 ##          - object.id = Building.id = Church.id = Cathedral.id
 
 ## Simple keyword (without attributes)
-object_keyword = Table('object_keyword', metadata,
-                       Column('id', ForeignKey('object.id'),
+object_keyword = Table(_p+'object_keyword', metadata,
+                       Column('id', ForeignKey(_p+'object.id'),
                               primary_key=True)
                        )
 
 # Category: almost like keyword, but it cannot catalog objects
-object_category = Table('object_category', metadata,
-                        Column('id', ForeignKey('object.id'),
+object_category = Table(_p+'object_category', metadata,
+                        Column('id', ForeignKey(_p+'object.id'),
                                primary_key=True)
                         )
 
@@ -760,7 +766,7 @@ def _init_default_classes(engine):
          'parent'      : 'keyword',
          'parent_root' : 'keyword',
          'name'        : 'Keyword',
-         'table'       : 'object_keyword',
+         'table'       : object_keyword.name,
          'notes'       : 'Simple keyword without attributes',
          'is_root'     : True}]
 
