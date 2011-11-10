@@ -812,7 +812,6 @@ function createMediaPanel(config, autoLoad) {
         			pending: inprogress.length,
         			failed: 0
         		};
-        		console.log(data);
         		update_task_status(data);
         		
         	}

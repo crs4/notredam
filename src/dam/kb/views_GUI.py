@@ -144,3 +144,27 @@ def get_object_attributes(request):
     
     return HttpResponse(resp)
 
+def get_class_attributes(request, class_id):
+    cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
+    cls_dicts = simplejson.loads(cls_dicts.content) 
+    rtr = {"rows":[]}
+    for attribute in cls_dicts['attributes']:
+        tmp = {}
+        tmp['id'] = attribute
+        for specific_field in cls_dicts['attributes'][attribute]:
+            tmp[specific_field] = cls_dicts['attributes'][attribute][specific_field]
+        rtr['rows'].append(tmp)
+    
+    resp = simplejson.dumps(rtr)
+    return HttpResponse(resp)
+    
+    
+def get_specific_info_class (request, class_id):
+
+    cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
+    cls_dicts = simplejson.loads(cls_dicts.content) 
+    rtr = {"rows":[]}
+    rtr['rows'].append(cls_dicts)
+    resp = simplejson.dumps(rtr)
+    return HttpResponse(resp)
+    
