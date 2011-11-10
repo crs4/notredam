@@ -117,8 +117,9 @@ def class_index_put(request, ws_id):
     if superclass is not None:
         inherited_attr_ids = [a.id for a in superclass.all_attributes()]
         for xid in inherited_attr_ids:
-            # FIXME: raise an error if the attr does not match existing one
-            del(json_attrs[xid])
+            if json_attrs.has_key(xid):
+                # FIXME: raise an error if the attr does not match existing one
+                del(json_attrs[xid])
 
     attrs = []
     for attr_id in json_attrs:
