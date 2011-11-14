@@ -127,6 +127,15 @@ def _put_attributes(cls_obj, rtr):
         tmp = _add_attribute(c,cls_obj['attributes'][c],cls_obj['name'])
         rtr['rows'].append(tmp)
 
+def get_specific_info_obj(request, obj_id):
+    ses = views_kb._kb_session()
+    ws = ses.workspace(request.session['workspace'].pk)
+    cls = ses.object(obj_id, ws=ws)
+    rtr = {"rows":[]}
+    rtr['rows'].append(views_kb._kbobject_to_dict(cls))
+    resp = simplejson.dumps(rtr)
+    return HttpResponse(resp)
+
 def get_object_attributes(request):
     
     nodes = tree_view._get_item_nodes(request.POST.getlist('items'))
@@ -154,13 +163,11 @@ def get_class_attributes(request, class_id):
         for specific_field in cls_dicts['attributes'][attribute]:
             tmp[specific_field] = cls_dicts['attributes'][attribute][specific_field]
         rtr['rows'].append(tmp)
-    
     resp = simplejson.dumps(rtr)
     return HttpResponse(resp)
     
     
-def get_specific_info_class (request, class_id):
-
+def get_specific_info_class(request, class_id):
     cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
     cls_dicts = simplejson.loads(cls_dicts.content) 
     rtr = {"rows":[]}
