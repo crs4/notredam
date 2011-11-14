@@ -486,11 +486,20 @@ var showDetails = function(view){
         
         if (admin | remove_item){
             Ext.getCmp('mvto').enable();
-            Ext.getCmp('90').enable();
-            Ext.getCmp('-90').enable();
-            Ext.getCmp('180').enable();
-            Ext.getCmp('-180').enable();
             Ext.getCmp('remove_from_ws').enable();
+            var mytab = Ext.getCmp('media_tabs').getActiveTab();
+            var myview = mytab.getComponent(0);
+            var items_selected = myview.getSelectedRecords();
+            for(var j=0; j<items_selected.length; j ++){
+               if (items_selected[j].data.type == 'image') {
+                   Ext.getCmp('90').enable();
+                   Ext.getCmp('-90').enable();
+                   Ext.getCmp('180').enable();
+                   Ext.getCmp('-180').enable();
+                   break;
+               }
+            }
+            
         
         }
         else{
@@ -879,6 +888,9 @@ function createMediaPanel(config, autoLoad) {
 		var checked = false;
        if  (config.media_type)
            checked= config.media_type.indexOf(name) >= 0;
+           console.log('checked is ' + checked);
+           console.log('config.media_type is ' + config.media_type);
+           console.log('config.media_type.indexOf(name) is ' + config.media_type.indexOf(name));
 		
 		return {
 			xtype: 'checkbox',
