@@ -548,40 +548,40 @@ def _kb_class_visibility_to_dict(cls):
 # dictionary representation of the attribute itself
 _kb_attrs_dict_map = {kb_attrs.Boolean : lambda a:
                           dict([['type',   'bool'],
-                                ['default', a.default]]
+                                ['default_value', a.default]]
                                + _std_attr_fields(a)),
                       kb_attrs.Integer : lambda a:
                           dict([['type',    'int'],
                                 ['min',     a.min],
                                 ['max',     a.max],
-                                ['default', a.default]]
+                                ['default_value', a.default]]
                                + _std_attr_fields(a)),
                       kb_attrs.Real    : lambda a:
                           dict([['type',    'real'],
                                 ['min',     a.min],
                                 ['max',     a.max],
-                                ['default', a.default]]
+                                ['default_value', a.default]]
                                + _std_attr_fields(a)),
                       kb_attrs.String  : lambda a:
                           dict([['type',    'string'],
                                 ['length',  a.length],
-                                ['default', a.default]]
+                                ['default_value', a.default]]
                                + _std_attr_fields(a)),
                       kb_attrs.Date    : lambda a:
                           dict([['type',    'date'],
                                 ['min',     a.min],
                                 ['max',     a.max],
-                                ['default', a.default]]
+                                ['default_value', a.default]]
                                + _std_attr_fields(a)),
                       kb_attrs.Uri  : lambda a:
                           dict([['type',    'uri'],
                                 ['length',  a.length],
-                                ['default', a.default]]
+                                ['default_value', a.default]]
                                + _std_attr_fields(a)),
                       kb_attrs.Choice  : lambda a:
                           dict([['type',    'choice'],
                                 ['choices', simplejson.loads(a.choices)],
-                                ['default', a.default]]
+                                ['default_value', a.default]]
                                + _std_attr_fields(a)),
                       kb_attrs.ObjectReference : lambda a:
                           dict([['type',         'objref'],
@@ -602,34 +602,34 @@ def _kb_dict_objref_fn(d, ses, ws):
     return kb_attrs.ObjectReference(target_class=target_class,
                                     **(_std_attr_dict_fields(d)))
 _kb_dict_attrs_map = {'bool' : lambda d, _ses, _ws:
-                          kb_attrs.Boolean(default=d.get('default'),
+                          kb_attrs.Boolean(default=d.get('default_value'),
                                            **(_std_attr_dict_fields(d))),
                       'int' : lambda d, _ses, _ws:
                           kb_attrs.Integer(min_=d.get('min'),
                                            max_=d.get('max'),
-                                           default=d.get('default'),
+                                           default=d.get('default_value'),
                                            **(_std_attr_dict_fields(d))),
                       'real' : lambda d, _ses, _ws:
                           kb_attrs.Real(min_=d.get('min'),
                                         max_=d.get('max'),
-                                        default=d.get('default'),
+                                        default=d.get('default_value'),
                                         **(_std_attr_dict_fields(d))),
                       'string' : lambda d, _ses, _ws:
                           kb_attrs.String(length=d['length'],
-                                          default=d.get('default'),
+                                          default=d.get('default_value'),
                                           **(_std_attr_dict_fields(d))),
                       'date' : lambda d, _ses, _ws:
                           kb_attrs.Date(min_=d.get('min'),
                                         max_=d.get('max'),
-                                        default=d.get('default'),
+                                        default=d.get('default_value'),
                                         **(_std_attr_dict_fields(d))),
                       'uri' : lambda d, _ses, _ws:
                           kb_attrs.Uri(length=d['length'],
-                                       default=d.get('default'),
+                                       default=d.get('default_value'),
                                        **(_std_attr_dict_fields(d))),
                       'choice' : lambda d, _ses, _ws:
                           kb_attrs.Choice(list_of_choices=d['choices'],
-                                          default=d.get('default'),
+                                          default=d.get('default_value'),
                                           **(_std_attr_dict_fields(d))),
                       'objref' : _kb_dict_objref_fn
                       }
