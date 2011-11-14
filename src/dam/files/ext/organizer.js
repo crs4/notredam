@@ -486,11 +486,19 @@ var showDetails = function(view){
         
         if (admin | remove_item){
             Ext.getCmp('mvto').enable();
+            Ext.getCmp('90').enable();
+            Ext.getCmp('-90').enable();
+            Ext.getCmp('180').enable();
+            Ext.getCmp('-180').enable();
             Ext.getCmp('remove_from_ws').enable();
         
         }
         else{
             Ext.getCmp('mvto').disable();
+            Ext.getCmp('90').disable();
+            Ext.getCmp('-90').disable();
+            Ext.getCmp('180').disable();
+            Ext.getCmp('-180').disable();
             Ext.getCmp('remove_from_ws').disable();
         }
         
@@ -555,6 +563,10 @@ var showDetails = function(view){
         Ext.getCmp('object_menu').menu.items.get('remove_from_ws').disable();
         Ext.getCmp('object_menu').menu.items.get('set_state_to').disable();
         Ext.getCmp('sync_xmp').disable();
+        Ext.getCmp('edit_menu').menu.items.get('90').disable();
+        Ext.getCmp('edit_menu').menu.items.get('-90').disable();
+        Ext.getCmp('edit_menu').menu.items.get('180').disable();
+        Ext.getCmp('edit_menu').menu.items.get('-180').disable();
         
         
         Ext.getCmp('runscript').disable();
