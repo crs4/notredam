@@ -28,6 +28,9 @@ from django.conf.urls.defaults import *
 urlpatterns = patterns('kb',
     (r'^get_hierarchy/$', 'views_GUI.get_object_attributes'),
     (r'^get_nodes_real_obj/$', 'views_GUI.get_nodes_real_obj'),
+    (r'^get_specific_info_class/(?P<class_id>\w+)/?$', 'views_GUI.get_specific_info_class'),
+    (r'^get_class_attributes/(?P<class_id>\w+)/?$', 'views_GUI.get_class_attributes'),
+
     
 )
 
