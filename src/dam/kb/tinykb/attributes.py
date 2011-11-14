@@ -32,7 +32,7 @@ import sqlalchemy.orm as sa_orm
 import sqlalchemy.ext.associationproxy as sa_proxy
 import sqlalchemy.ext.orderinglist as sa_order
 from sqlalchemy import (event, Column, CheckConstraint, ForeignKey,
-                        UniqueConstraint, Table)
+                        PrimaryKeyConstraint, Table)
 from sqlalchemy.orm import mapper, relationship
 
 import errors as kb_exc
@@ -189,7 +189,7 @@ class Attribute(object):
                 # uniqueness and (if necessary) allow external references
                 pk_cols = (['object'] # See table definition below
                            + [c.name for c in raw_ddl if isinstance(c,Column)])
-                raw_ddl_pk = raw_ddl + [UniqueConstraint(*pk_cols)]
+                raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
                 t = Table(self._multivalue_table, metadata,
                           Column('object', sa.types.String(128),
                                  ForeignKey('%s.id' % (owner_table.name, )),
