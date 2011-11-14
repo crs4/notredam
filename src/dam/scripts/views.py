@@ -27,6 +27,8 @@ from httplib import HTTP
 from django.db import IntegrityError
 from dam.mprocessor.models import Pipeline, TriggerEvent
 from dam.supported_types import mime_types_by_type
+from dam.repository.models import Item
+from dam.upload.views import _run_pipelines
 
 import logging
 logger = logging.getLogger('dam')
@@ -56,6 +58,24 @@ def get_scripts(request):
         resp['scripts'].append(info)
     
     return HttpResponse(simplejson.dumps(resp))
+
+@login_required
+def get_rotation_script(request):
+    workspace = request.session.get('workspace')
+    r_script = Pipeline.objects.filter(workspace = workspace, name = 'image renditions').distinct()
+    triggers_name = 'upload'
+    items = request.POST.getlist('items')
+    items = Item.objects.filter(pk__in = items)
+    rotation =  request.POST.get('rotation')
+    params = {'adapt_image':{'rotation': int(rotation)}}
+    try:
+        _run_pipelines(items, triggers_name, request.user, workspace, params)
+    except Exception, ex:
+        logger.exception(ex)
+        return HttpResponse(simplejson.dumps({'success': False}))
+    return HttpResponse(simplejson.dumps({'success': True}))
+
+
 
 @login_required
 def get_actions(request):  
@@ -185,7 +205,7 @@ def run_script(request):
     from dam.repository.models import Item
     script_id = request.POST['script_id']
     script = Pipeline.objects.get(pk = script_id)
-    dynamic_params = request.POST.get('dynamic_params', {});
+    dynamic_params = request.POST.get('dynamic_params', {})
     if dynamic_params:
 		dynamic_params = simplejson.loads(dynamic_params)    
     
