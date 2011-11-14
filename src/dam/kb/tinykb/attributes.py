@@ -32,7 +32,7 @@ import sqlalchemy.orm as sa_orm
 import sqlalchemy.ext.associationproxy as sa_proxy
 import sqlalchemy.ext.orderinglist as sa_order
 from sqlalchemy import (event, Column, CheckConstraint, ForeignKey,
-                        PrimaryKeyConstraint, Table)
+                        UniqueConstraint, Table)
 from sqlalchemy.orm import mapper, relationship
 
 import errors as kb_exc
@@ -54,14 +54,8 @@ class Attribute(object):
         self.order = order
         self.notes = notes
 
-        # FIXME: ensure uniqueness!
-        # FIXME: it would be better to prefix the owner table name
-        if self.multivalued:
-            self._multivalue_table = schema.DB_OBJECT_PREFIX + niceid(self.id)
-            # Will be assigned after invoking the attribute table constructor
-            self._sqlalchemy_mv_table = None
-        else:
-            self._multivalue_table = None
+        # Will be defined when the attribute will be attached to a KB class
+        self._multivalue_table = None
 
     @sa_orm.reconstructor
     def __init_on_load__(self):
@@ -179,6 +173,12 @@ class Attribute(object):
         owner_table = self._class.sqlalchemy_table
 
         def table_builder(metadata, autoload=False, **kwargs):
+            if self._multivalue_table is None:
+                raise RuntimeError('BUG: Attribute.additional_tables() was '
+                                   'invoked on attribute "%s" before '
+                                   'associating the attribute to a KB class '
+                                   '(class_id = %s)'
+                                   % (self.id, str(self._class_id)))
             if autoload:
                 t = Table(self._multivalue_table, metadata, autoload=True,
                           **kwargs)
@@ -189,7 +189,7 @@ class Attribute(object):
                 # uniqueness and (if necessary) allow external references
                 pk_cols = (['object'] # See table definition below
                            + [c.name for c in raw_ddl if isinstance(c,Column)])
-                raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
+                raw_ddl_pk = raw_ddl + [UniqueConstraint(*pk_cols)]
                 t = Table(self._multivalue_table, metadata,
                           Column('object', sa.types.String(128),
                                  ForeignKey('%s.id' % (owner_table.name, )),
@@ -305,16 +305,14 @@ class Integer(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s%s_%s_%s_min_constr'
+                                       name=('%sclass_%s_attr_%s_min_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s%s_%s_%s_max_constr'
+                                       name=('%sclass_%s_attr_%s_max_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -362,16 +360,14 @@ class Real(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s%s_%s_%s_min_constr'
+                                       name=('%sclass_%s_attr_%s_min_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s%s_%s_%s_max_constr'
+                                       name=('%sclass_%s_attr_%s_max_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -450,16 +446,14 @@ class Date(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s%s_%s_%s_min_constr'
+                                       name=('%sclass_%s_attr_%s_min_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s%s_%s_%s_max_constr'
+                                       name=('%sclass_%s_attr_%s_max_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -552,9 +546,8 @@ class Choice(Attribute):
         colname = self.column_name()
         return [Column(colname,
                        sa.types.Enum(*self._list_of_choices,
-                                      name=('%s%s_%s_%s_enum'
+                                      name=('%sclass_%s_attr_%s_enum'
                                             % (schema.DB_OBJECT_PREFIX,
-                                               self._class_root_id,
                                                self._class_id,
                                                self.id))),
                        nullable=self.maybe_empty and not self.multivalued,
@@ -728,8 +721,24 @@ mapper(ObjectReference, schema.class_attribute_objref, inherits=Attribute,
 # 'attributes' list
 # FIXME: it should happen automatically, shouldn't it?
 def kbclass_append_attribute(target, value, _initiator):
+    if (value.multivalued and hasattr(value, '_sqlalchemy_mv_table')
+        and (value._sqlalchemy_mv_table is not None)):
+        raise RuntimeError('BUG: cannot reassign attribute "%s", since it is '
+                           'still bound to table "%s"'
+                           % (value.id,
+                              value._sqlalchemy_mv_table.name))
     value._class_id = target.id
     value._class_root_id = target._root_id
+
+    # FIXME: ensure uniqueness!
+    # FIXME: it would be better to prefix the owner table name
+    if value.multivalued:
+        value._multivalue_table = ('%sclass_%s_attr_%s'
+                                   % (schema.DB_OBJECT_PREFIX,
+                                      value._class_id,
+                                      value.id))
+        # Will be assigned after invoking the attribute table constructor
+        value._sqlalchemy_mv_table = None
 
 event.listen(classes.KBClass.attributes, 'append', kbclass_append_attribute,
              propagate=True, retval=False)
@@ -740,6 +749,8 @@ event.listen(classes.KBClass.attributes, 'append', kbclass_append_attribute,
 def kbclass_remove_attribute(target, value, _initiator):
     value._class_id = None
     value._class_root_id = None
+    value._multivalue_table = None
+    # FIXME: decide what to do if a MV table is "orphaned" by attr removal
 
 event.listen(classes.KBClass.attributes, 'remove', kbclass_remove_attribute,
              propagate=True, retval=False)
