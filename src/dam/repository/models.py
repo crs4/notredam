@@ -455,6 +455,7 @@ class Item(AbstractItem):
         try:
             return self.component_set.get(variant = variant, workspace = workspace)
         except Component.DoesNotExist:
+            logger.error("COMPONENT DOES NOT EXIST")
             return self.create_variant(variant, workspace)
 
     def get_variants(self, workspace):
