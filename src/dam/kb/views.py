@@ -300,10 +300,10 @@ def object_index_put(request, ws_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    object_class_id = obj_dict.get('class', None)
+    object_class_id = obj_dict.get('class_id', None)
     if object_class_id is None:
         return HttpResponseBadRequest('Object representation lacks a '
-                                      +'"class" field')
+                                      +'"class_id" field')
 
     object_name = obj_dict.get('name', None)
     if object_name is None:
@@ -677,7 +677,7 @@ def _kbobject_to_dict(obj):
 
     objdict = {'id'          : obj.id,
                'name'        : obj.name,
-               'class'       : getattr(obj, 'class').id,
+               'class_id'    : getattr(obj, 'class').id,
                'notes'       : obj.notes,
                'attributes'  : objattrs}
 
@@ -793,8 +793,8 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                 if type(a) == kb_attrs.ObjectReference:
                     # We can't simply update the attribute: we need to
                     # retrieve the referred object by its ID
-                    curr_obj = getattr(obj, a.id)
-                    if (val == curr_obj.id):
+                    curr_obj_id = getattr(obj, a.id)
+                    if (val == curr_obj_id):
                         # Nothing to be done here
                         break
                     else:
