@@ -32,6 +32,7 @@
 
 import os
 import datetime
+import re
 from twisted.internet import reactor, defer
 from mediadart.utils import default_start_mqueue
 
@@ -234,7 +235,8 @@ class Batch:
                 #log.debug('item_params %s'%item_params)
                 #log.debug('params %s'%params)
                 params.update(item_params.get('*', {}))
-                params.update(item_params.get(action, {}))
+                x = re.compile('^[a-z_]+' ) # cut out digits from action name
+                params.update(item_params.get(x.match(action).group(), {}))
                 self.outstanding += 1
                 log.debug('calling method with params ws=%s, id=%s, params=%s' % (self.process.workspace.pk, item.target_id, params))
                 d = method(self.process.workspace, item.target_id, **params)
