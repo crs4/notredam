@@ -54,14 +54,8 @@ class Attribute(object):
         self.order = order
         self.notes = notes
 
-        # FIXME: ensure uniqueness!
-        # FIXME: it would be better to prefix the owner table name
-        if self.multivalued:
-            self._multivalue_table = schema.DB_OBJECT_PREFIX + niceid(self.id)
-            # Will be assigned after invoking the attribute table constructor
-            self._sqlalchemy_mv_table = None
-        else:
-            self._multivalue_table = None
+        # Will be defined when the attribute will be attached to a KB class
+        self._multivalue_table = None
 
     @sa_orm.reconstructor
     def __init_on_load__(self):
@@ -179,6 +173,12 @@ class Attribute(object):
         owner_table = self._class.sqlalchemy_table
 
         def table_builder(metadata, autoload=False, **kwargs):
+            if self._multivalue_table is None:
+                raise RuntimeError('BUG: Attribute.additional_tables() was '
+                                   'invoked on attribute "%s" before '
+                                   'associating the attribute to a KB class '
+                                   '(class_id = %s)'
+                                   % (self.id, str(self._class_id)))
             if autoload:
                 t = Table(self._multivalue_table, metadata, autoload=True,
                           **kwargs)
@@ -721,8 +721,24 @@ mapper(ObjectReference, schema.class_attribute_objref, inherits=Attribute,
 # 'attributes' list
 # FIXME: it should happen automatically, shouldn't it?
 def kbclass_append_attribute(target, value, _initiator):
+    if (value.multivalued and hasattr(value, '_sqlalchemy_mv_table')
+        and (value._sqlalchemy_mv_table is not None)):
+        raise RuntimeError('BUG: cannot reassign attribute "%s", since it is '
+                           'still bound to table "%s"'
+                           % (value.id,
+                              value._sqlalchemy_mv_table.name))
     value._class_id = target.id
     value._class_root_id = target._root_id
+
+    # FIXME: ensure uniqueness!
+    # FIXME: it would be better to prefix the owner table name
+    if value.multivalued:
+        value._multivalue_table = ('%sclass_%s_attr_%s'
+                                   % (schema.DB_OBJECT_PREFIX,
+                                      value._class_id,
+                                      value.id))
+        # Will be assigned after invoking the attribute table constructor
+        value._sqlalchemy_mv_table = None
 
 event.listen(classes.KBClass.attributes, 'append', kbclass_append_attribute,
              propagate=True, retval=False)
@@ -733,6 +749,8 @@ event.listen(classes.KBClass.attributes, 'append', kbclass_append_attribute,
 def kbclass_remove_attribute(target, value, _initiator):
     value._class_id = None
     value._class_root_id = None
+    value._multivalue_table = None
+    # FIXME: decide what to do if a MV table is "orphaned" by attr removal
 
 event.listen(classes.KBClass.attributes, 'remove', kbclass_remove_attribute,
              propagate=True, retval=False)
