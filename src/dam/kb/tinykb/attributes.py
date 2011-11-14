@@ -305,16 +305,14 @@ class Integer(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s%s_%s_%s_min_constr'
+                                       name=('%sclass_%s_attr_%s_min_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s%s_%s_%s_max_constr'
+                                       name=('%sclass_%s_attr_%s_max_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -362,16 +360,14 @@ class Real(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s%s_%s_%s_min_constr'
+                                       name=('%sclass_%s_attr_%s_min_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s%s_%s_%s_max_constr'
+                                       name=('%sclass_%s_attr_%s_max_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -450,16 +446,14 @@ class Date(Attribute):
                       default=self.default)]
         if self.min is not None:
             ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%s%s_%s_%s_min_constr'
+                                       name=('%sclass_%s_attr_%s_min_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         if self.max is not None:
             ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%s%s_%s_%s_max_constr'
+                                       name=('%sclass_%s_attr_%s_max_constr'
                                              % (schema.DB_OBJECT_PREFIX,
-                                                self._class_root_id,
                                                 self._class_id,
                                                 self.id))))
         return ret
@@ -552,9 +546,8 @@ class Choice(Attribute):
         colname = self.column_name()
         return [Column(colname,
                        sa.types.Enum(*self._list_of_choices,
-                                      name=('%s%s_%s_%s_enum'
+                                      name=('%sclass_%s_attr_%s_enum'
                                             % (schema.DB_OBJECT_PREFIX,
-                                               self._class_root_id,
                                                self._class_id,
                                                self.id))),
                        nullable=self.maybe_empty and not self.multivalued,
