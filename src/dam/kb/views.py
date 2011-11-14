@@ -793,8 +793,8 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                 if type(a) == kb_attrs.ObjectReference:
                     # We can't simply update the attribute: we need to
                     # retrieve the referred object by its ID
-                    curr_obj = getattr(obj, a.id)
-                    if (val == curr_obj.id):
+                    curr_obj_id = getattr(obj, a.id)
+                    if (val == curr_obj_id):
                         # Nothing to be done here
                         break
                     else:
