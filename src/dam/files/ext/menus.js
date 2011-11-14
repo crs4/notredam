@@ -509,7 +509,43 @@ Ext.onReady(function(){
         id:'states_menu',
         items: []        
     });    
-            
+           
+    var rotate_image = function() {
+                        var tab = Ext.getCmp('media_tabs').getActiveTab();  
+                        var view = tab.getComponent(0);
+                       	var items_selected = view.getSelectedRecords();
+			var items = [];
+
+                       	if (items_selected.length){
+                        			Ext.each(items_selected, function(i){
+                        			items.push(i.data.pk);
+                        			});
+                        
+                        		var ajax_params = {
+                            			items: items,
+                            			rotation: this.id,
+              				};    
+					Ext.Ajax.request({
+                        			url: '/get_rotation_script/',
+                        			params:ajax_params,
+                        			success: function(){
+                        			Ext.Msg.alert('','Rotation started successfully.', function(){
+							Ext.getCmp('dynamic_input_window').close();
+								});
+                        			var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
+                        			var view = media_tabs.getComponent(0);
+                        			view.getStore().reload();
+                        		
+                        			},
+                        			failure: function(){
+                        			Ext.Msg.alert('', 'Rotation failed, a server side error occurred.');
+                       		 		}
+                        
+                        		});	
+			}
+                    };
+
+ 
     var ws_menu =  function() {
 //        switch_menu = new Ext.menu.Menu({
 //            id: 'switch_ws_menu',
@@ -590,8 +626,32 @@ Ext.onReady(function(){
                     Ext.getCmp('media_tabs').getActiveTab().getComponent(0).clearSelections();
 
                 }
-            }
-           
+            },
+            {
+                text: gettext('90 clockwise'),
+                icon: '/files/images/icons/arrow_turn_right.png',
+                id: '90',
+                handler: rotate_image,
+            },            
+            {
+                text: gettext('90 counterclockwise'),
+                icon: '/files/images/icons/arrow_turn_left.png',
+                id: '-90',
+                handler: rotate_image,
+            },            
+            {
+                text: gettext('180 clockwise'),
+                icon: '/files/images/icons/arrow_180.png',
+                id: '180',
+                handler: rotate_image,
+            },            
+            {
+                text: gettext('180 counterclockwise'),
+                icon: '/files/images/icons/arrow_minus_180.png',
+                id: '-180',
+                handler: rotate_image,
+            }            
+
             ]
         }
     );
