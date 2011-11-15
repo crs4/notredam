@@ -36,721 +36,720 @@ from sqlalchemy import (event, Column, CheckConstraint, ForeignKey,
 from sqlalchemy.orm import mapper, relationship
 
 import errors as kb_exc
-import schema
 
 from util.niceid import niceid
 
-# Base abstract class
-class Attribute(object):
-    def __init__(self, name, maybe_empty=True, order=0, multivalued=False,
-                 notes=None, explicit_id=None):
-        if explicit_id is not None:
-            self.id = explicit_id
-        else:
-            self.id = niceid(name, 0) # FIXME: should we add random chars?
-        self.name = name
-        self.maybe_empty = maybe_empty
-        self.multivalued = multivalued
-        self.order = order
-        self.notes = notes
+class Attributes(object):
+    '''
+    This class holds the Python classes representing KB class
+    attributes, mapped to a knowledge base working session.
+    '''
+    def __init__(self, classes, schema):
+        '''
+        Create a knowledge base class attributes container.
 
-        # Will be defined when the attribute will be attached to a KB class
-        self._multivalue_table = None
+        @type  schema: schema.Schema object
+        @param schema: DB schema used for mapping the attribute classes
 
-    @sa_orm.reconstructor
-    def __init_on_load__(self):
-        if self._multivalue_table is not None:
-            self.multivalued = True
-            # Will be assigned after invoking the attribute table constructor
-            self._sqlalchemy_mv_table = None
-        else:
-            self.multivalued = False
+        '''
+        self._schema = schema
 
-    def column_name(self):
-        if not self.multivalued:
-            # The id is assumed to be safe to use as column name
-            return self.id
-        else:
-            # The column name is used in the additional multivalue
-            # table: 'reference' is also used in self.mapper_properties()
-            return 'value'
+        _init_base_attributes(self, classes, self._schema)
 
-    # Return a list of SQLAlchemy DDL objects (type, CheckConstraint,
-    # etc.) aimed at building the main object table for the class
-    # containing the attribute
-    def ddl(self):
-        # This implementation should work most of the times: if the
-        # attribute is multivalued, return an empty list --- otherwise
-        # call the low-level _raw_ddl() method (which may also be used
-        # by self.additional_tables()
-        if self.multivalued:
-            return []
-        else:
-            return self._raw_ddl()
 
-    # Return a list of SQLAlchemy DDL objects which may be used to
-    # build either the main object table for the class containing the
-    # attribute, or its associated tables (e.g. when the attribute is
-    # multivalued)
-    def _raw_ddl(self):
-        raise NotImplementedError
-
-    # Return a dictionary containing the SQLAlchemy mapper properties
-    # required to make the attribute work
-    def mapper_properties(self):
-        if not self.multivalued:
-            return self._objtable_mapper_properties()
-
-        # In case of a multivalued attribute, we will create an
-        # intermediate mapper class to use with an SQLAlchemy
-        # Association Proxy.  It will allow to handle the multivalued
-        # attribute of the Python class as a simple list of values
-        mvtable = self._sqlalchemy_mv_table
-        if not hasattr(self, '_mvclass'):
-            # The following code can be executed only once per
-            # Attribute instance
-            table = self._class.sqlalchemy_table
-            if mvtable is None:
-                raise RuntimeError('BUG: Attribute.mapper_properties() cannot '
-                                   'be called before '
-                                   'Attribute.additional_tables()')
-
-            class MVClass(object):
-                def __init__(self, value):
-                    self.value = value
-
-            mapper(MVClass, mvtable,
-                   properties=self._mvtable_mapper_properties())
-        
-            self._mvclass = MVClass # See enclosing 'if' statement
-
-        # Associate the KB object to the multivalued attribute table.
-        # The "plain" attribute id is used to establish a SQLAlchemy
-        # association proxy.  The underlying relation will be mapped
-        # on an "hidden" attribute (i.e. prefixed with an underscore)
-        hidden_id = '_' + self.id
-        return {hidden_id : relationship(
-                self._mvclass, backref='object',
-                collection_class=sa_order.ordering_list('order'),
-                order_by=[mvtable.c.order],
-                cascade='all')}
-
-    # Internal routine for building properties related to the
-    # attribute column on the KB object table.  This implementation
-    # should work for most of the derived classes
-    def _objtable_mapper_properties(self):
-        # Since the column is a "pure" value, it can be mapped by
-        # SQLAlchemy without further issues
-        assert(not self.multivalued)
-
-        return {}
-
-    # Internal routine for building properties for the multivalue
-    # table.  This implementation should work for most of the derived
-    # classes: it will create a 'value' property (based on the 'value'
-    # column itself), and mask the 'object' column
-    def _mvtable_mapper_properties(self):
-        assert(self.multivalued)
-        mvtable = self._sqlalchemy_mv_table
-        assert(mvtable is not None)
-
-        return {'_object' : mvtable.c.object, # 'object' field will be backref
-                'value'   : mvtable.c.value}
-
-    # Return a list of closures with two arguments (metadata and
-    # **kwargs), which (when invoked) will return additional
-    # SQLAlchemy Table objects needed for storing the attribute
-    # (i.e. when it's multivalued).  Each table will have a foreign
-    # key dependency with the owner object table
-    def additional_tables(self):
-        # This implementation should work most of the times: if the
-        # attribute is not multivalued, then no additional table
-        # constructors are required; otherwise, build just one of them using
-        # self._raw_ddl()
-        if not self.multivalued:
-            return []
-        
-        owner_table = self._class.sqlalchemy_table
-
-        def table_builder(metadata, autoload=False, **kwargs):
-            if self._multivalue_table is None:
-                raise RuntimeError('BUG: Attribute.additional_tables() was '
-                                   'invoked on attribute "%s" before '
-                                   'associating the attribute to a KB class '
-                                   '(class_id = %s)'
-                                   % (self.id, str(self._class_id)))
-            if autoload:
-                t = Table(self._multivalue_table, metadata, autoload=True,
-                          **kwargs)
+###############################################################################
+# Mapped KB attribute classes
+###############################################################################
+def _init_base_attributes(o, classes, schema):
+    '''
+    Create the base KB attribute classes and ORM mappings for a
+    knowledge base working session, using the given schema.  The
+    classes will be attached as attributes to the "o" object,
+    preserving their name.
+    '''
+    # Base abstract class
+    class Attribute(object):
+        def __init__(self, name, maybe_empty=True, order=0, multivalued=False,
+                     notes=None, explicit_id=None):
+            if explicit_id is not None:
+                self.id = explicit_id
             else:
-                raw_ddl = self._raw_ddl()
-                # We will also configure a primary key composed by all
-                # the columns of the multivalue table.  It will ensure
-                # uniqueness and (if necessary) allow external references
-                pk_cols = (['object'] # See table definition below
-                           + [c.name for c in raw_ddl if isinstance(c,Column)])
-                raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
-                t = Table(self._multivalue_table, metadata,
-                          Column('object', sa.types.String(128),
-                                 ForeignKey('%s.id' % (owner_table.name, )),
-                                 nullable=False),
-                          Column('order', sa.types.Integer, nullable=False),
-                          *raw_ddl_pk, **kwargs)
+                self.id = niceid(name, 0) # FIXME: should we add random chars?
+            self.name = name
+            self.maybe_empty = maybe_empty
+            self.multivalued = multivalued
+            self.order = order
+            self.notes = notes
 
-            # When this table constructor closure is executed, it will
-            # also update the object reference to the SQLAlchemy table
-            # object (which will be needed by self.mapper_properties())
-            self._sqlalchemy_mv_table = t
+            # Will be defined when the attribute will be attached to a KB class
+            self._multivalue_table = None
 
-            return t
-        
-        return [table_builder]
+        @sa_orm.reconstructor
+        def __init_on_load__(self):
+            if self._multivalue_table is not None:
+                self.multivalued = True
+                # Will be assigned after invoking the attribute table
+                # constructor
+                self._sqlalchemy_mv_table = None
+            else:
+                self.multivalued = False
 
-    def make_proxies_and_event_listeners(self, cls):
-        '''
-        Build one or more SQLAlchemy association proxies and/or event
-        listeners for the KB attribute, when it's used on the given
-        Python class.
+        def column_name(self):
+            if not self.multivalued:
+                # The id is assumed to be safe to use as column name
+                return self.id
+            else:
+                # The column name is used in the additional multivalue
+                # table: 'reference' is also used in self.mapper_properties()
+                return 'value'
 
-        This method can only be called after the Python class the
-        attribute belongs to has been properly initialized
+        # Return a list of SQLAlchemy DDL objects (type, CheckConstraint,
+        # etc.) aimed at building the main object table for the class
+        # containing the attribute
+        def ddl(self):
+            # This implementation should work most of the times: if the
+            # attribute is multivalued, return an empty list --- otherwise
+            # call the low-level _raw_ddl() method (which may also be used
+            # by self.additional_tables()
+            if self.multivalued:
+                return []
+            else:
+                return self._raw_ddl()
 
-        @type cls:  a Python class
-        @param cls: a class whose instances will contain KB attribute values
-        '''
-        # The following default implementation should work most of the
-        # times.  We'll react to the 'set' event, unless the attribute
-        # is multivalued (in this case, we'll react to 'append')
-        if not self.multivalued:
-            event.listen(getattr(cls, self.id), 'set',
-                         lambda _target, val, _oldval, _init: (
-                             self.validate(val)),
+        # Return a list of SQLAlchemy DDL objects which may be used to
+        # build either the main object table for the class containing the
+        # attribute, or its associated tables (e.g. when the attribute is
+        # multivalued)
+        def _raw_ddl(self):
+            raise NotImplementedError
+
+        # Return a dictionary containing the SQLAlchemy mapper properties
+        # required to make the attribute work
+        def mapper_properties(self):
+            if not self.multivalued:
+                return self._objtable_mapper_properties()
+
+            # In case of a multivalued attribute, we will create an
+            # intermediate mapper class to use with an SQLAlchemy
+            # Association Proxy.  It will allow to handle the multivalued
+            # attribute of the Python class as a simple list of values
+            mvtable = self._sqlalchemy_mv_table
+            if not hasattr(self, '_mvclass'):
+                # The following code can be executed only once per
+                # Attribute instance
+                table = self._class.sqlalchemy_table
+                if mvtable is None:
+                    raise RuntimeError('BUG: Attribute.mapper_properties() '
+                                       'cannot be called before '
+                                       'Attribute.additional_tables()')
+
+                class MVClass(object):
+                    def __init__(self, value):
+                        self.value = value
+
+                mapper(MVClass, mvtable,
+                       properties=self._mvtable_mapper_properties())
+
+                self._mvclass = MVClass # See enclosing 'if' statement
+
+            # Associate the KB object to the multivalued attribute table.
+            # The "plain" attribute id is used to establish a SQLAlchemy
+            # association proxy.  The underlying relation will be mapped
+            # on an "hidden" attribute (i.e. prefixed with an underscore)
+            hidden_id = '_' + self.id
+            return {hidden_id : relationship(
+                    self._mvclass, backref='object',
+                    collection_class=sa_order.ordering_list('order'),
+                    order_by=[mvtable.c.order],
+                    cascade='all')}
+
+        # Internal routine for building properties related to the
+        # attribute column on the KB object table.  This implementation
+        # should work for most of the derived classes
+        def _objtable_mapper_properties(self):
+            # Since the column is a "pure" value, it can be mapped by
+            # SQLAlchemy without further issues
+            assert(not self.multivalued)
+
+            return {}
+
+        # Internal routine for building properties for the multivalue
+        # table.  This implementation should work for most of the derived
+        # classes: it will create a 'value' property (based on the 'value'
+        # column itself), and mask the 'object' column
+        def _mvtable_mapper_properties(self):
+            assert(self.multivalued)
+            mvtable = self._sqlalchemy_mv_table
+            assert(mvtable is not None)
+
+            return {'_object' : mvtable.c.object, # 'object' used for backref
+                    'value'   : mvtable.c.value}
+
+        # Return a list of closures with two arguments (metadata and
+        # **kwargs), which (when invoked) will return additional
+        # SQLAlchemy Table objects needed for storing the attribute
+        # (i.e. when it's multivalued).  Each table will have a foreign
+        # key dependency with the owner object table
+        def additional_tables(self):
+            # This implementation should work most of the times: if
+            # the attribute is not multivalued, then no additional
+            # table constructors are required; otherwise, build just
+            # one of them using self._raw_ddl()
+            if not self.multivalued:
+                return []
+
+            owner_table = self._class.sqlalchemy_table
+
+            def table_builder(metadata, autoload=False, **kwargs):
+                if self._multivalue_table is None:
+                    raise RuntimeError('BUG: Attribute.additional_tables() '
+                                       'was invoked on attribute "%s" before '
+                                       'associating the attribute to a KB '
+                                       'class (class_id = %s)'
+                                       % (self.id, str(self._class_id)))
+                if autoload:
+                    t = Table(self._multivalue_table, metadata, autoload=True,
+                              **kwargs)
+                else:
+                    raw_ddl = self._raw_ddl()
+                    # We will also configure a primary key composed by all
+                    # the columns of the multivalue table.  It will ensure
+                    # uniqueness and (if necessary) allow external references
+                    pk_cols = (['object'] # See table definition below
+                               + [c.name for c in raw_ddl
+                                  if isinstance(c, Column)])
+                    raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
+                    t = Table(self._multivalue_table, metadata,
+                              Column('object', sa.types.String(128),
+                                     ForeignKey('%s.id'
+                                                % (owner_table.name, )),
+                                     nullable=False),
+                              Column('order', sa.types.Integer,
+                                     nullable=False),
+                              *raw_ddl_pk, **kwargs)
+
+                # When this table constructor closure is executed, it will
+                # also update the object reference to the SQLAlchemy table
+                # object (which will be needed by self.mapper_properties())
+                self._sqlalchemy_mv_table = t
+
+                return t
+
+            return [table_builder]
+
+        def make_proxies_and_event_listeners(self, cls):
+            '''
+            Build one or more SQLAlchemy association proxies and/or event
+            listeners for the KB attribute, when it's used on the given
+            Python class.
+
+            This method can only be called after the Python class the
+            attribute belongs to has been properly initialized
+
+            @type cls:  a Python class
+            @param cls: a class whose instances will contain KB attribute
+                        values
+            '''
+            # The following default implementation should work most of the
+            # times.  We'll react to the 'set' event, unless the attribute
+            # is multivalued (in this case, we'll react to 'append')
+            if not self.multivalued:
+                event.listen(getattr(cls, self.id), 'set',
+                             lambda _target, val, _oldval, _init: (
+                                 self.validate(val)),
+                             propagate=True, retval=True)
+                return
+
+            # If the attribute is multivalued, we're going to configure a
+            # SQLAlchemy association proxy, and listen to the 'set' event
+            # on the related MV class
+            if not hasattr(self, '_mvclass'):
+                raise RuntimeError('BUG: '
+                                   'Attribute.make_proxies_and_event_listeners() '
+                                   'cannot be called before '
+                                   'Attribute.mapper_properties()')
+
+            # This association proxy is based on the "hidden" attribute id
+            # and 'value' property of the MV class.  All this stuff must
+            # have been configured in .mapper_properties()
+            hidden_id = '_' + self.id
+            setattr(cls, self.id,
+                    sa_proxy.association_proxy(hidden_id, 'value'))
+
+            event.listen(self._mvclass.value, 'set',
+                         lambda _target, val, _oldval,_init:self.validate(val),
                          propagate=True, retval=True)
-            return
 
-        # If the attribute is multivalued, we're going to configure a
-        # SQLAlchemy association proxy, and listen to the 'set' event
-        # on the related MV class
-        if not hasattr(self, '_mvclass'):
-            raise RuntimeError('BUG: '
-                               'Attribute.make_proxies_and_event_listeners() '
-                               'cannot be called before '
-                               'Attribute.mapper_properties()')
+        def validate(self, value):
+            '''
+            Check whether the given value is compatible with KB attribute
+            type and configuration, and thus whether it could be safely
+            assigned/appended to the corresponding field of a Python
+            object.  Raise a ValidationError in case of mismatch, or just
+            return the value itself (possibly with some ad-hoc type
+            casting) in case of success.
 
-        # This association proxy is based on the "hidden" attribute id
-        # and 'value' property of the MV class.  All this stuff must
-        # have been configured in .mapper_properties()
-        hidden_id = '_' + self.id
-        setattr(cls, self.id,
-                sa_proxy.association_proxy(hidden_id, 'value'))
+            @type value:  a Python term
+            @param value: the value to check
+            '''
+            raise NotImplementedError
 
-        event.listen(self._mvclass.value, 'set',
-                     lambda _target, val, _oldval, _init: self.validate(val),
-                     propagate=True, retval=True)
+    o.Attribute = Attribute
 
-    def validate(self, value):
-        '''
-        Check whether the given value is compatible with KB attribute
-        type and configuration, and thus whether it could be safely
-        assigned/appended to the corresponding field of a Python
-        object.  Raise a ValidationError in case of mismatch, or just
-        return the value itself (possibly with some ad-hoc type
-        casting) in case of success.
+    class Boolean(Attribute):
+        def __init__(self, name, maybe_empty=True, default=None, order=0,
+                     multivalued=False, notes=None):
+            Attribute.__init__(self, name, maybe_empty=maybe_empty,
+                               order=order, multivalued=multivalued,
+                               notes=notes)
+            self.default = default
 
-        @type value:  a Python term
-        @param value: the value to check
-        '''
-        raise NotImplementedError
+        def _raw_ddl(self):
+            return [Column(self.column_name(), sa.types.Boolean,
+                           nullable=self.maybe_empty and not self.multivalued,
+                           default=self.default)]
 
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
+            if isinstance(value, bool):
+                return value
+            elif isinstance(value, int) and value in (0, 1):
+                return bool(value)
+            raise kb_exc.ValidationError('expected a boolean-like value, '
+                                         'got "%s"' % (str(value), ))
 
-class Boolean(Attribute):
-    def __init__(self, name, maybe_empty=True, default=None, order=0,
-                 multivalued=False, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
-                           multivalued=multivalued, notes=notes)
-        self.default = default
+        def __repr__(self):
+            return '<Boolean(default=%s)>' % (self.default)
 
-    def _raw_ddl(self):
-        return [Column(self.column_name(), sa.types.Boolean,
-                       nullable=self.maybe_empty and not self.multivalued,
-                       default=self.default)]
+    o.Boolean = Boolean
 
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
-            return value
-        if isinstance(value, bool):
-            return value
-        elif isinstance(value, int) and value in (0, 1):
-            return bool(value)
-        raise kb_exc.ValidationError('expected a boolean-like value, got "%s"'
-                                     % (str(value), ))
+    class Integer(Attribute):
+        def __init__(self, name, min_=None, max_=None, maybe_empty=True,
+                     default=None, order=0, multivalued=False, notes=None):
+            Attribute.__init__(self, name, maybe_empty=maybe_empty,
+                               order=order, multivalued=multivalued,
+                               notes=notes)
+            self.default = default
+            self.min = min_
+            self.max = max_
 
-    def __repr__(self):
-        return '<Boolean(default=%s)>' % (self.default)
+        def _raw_ddl(self):
+            colname = self.column_name()
+            ret = [Column(colname, sa.types.Integer,
+                          nullable=self.maybe_empty and not self.multivalued,
+                          default=self.default)]
+            if self.min is not None:
+                ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
+                                           name=('%sclass_%s_attr_%s_min_constr'
+                                                 % (schema.prefix,
+                                                    self._class_id,
+                                                    self.id))))
+            if self.max is not None:
+                ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
+                                           name=('%sclass_%s_attr_%s_max_constr'
+                                                 % (schema.prefix,
+                                                    self._class_id,
+                                                    self.id))))
+            return ret
 
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
+            if not (isinstance(value, int) or (isinstance(value,
+                                                          decimal.Decimal)
+                                               and value == int(value))):
+                raise kb_exc.ValidationError(('expected an integer-like value,'
+                                              + ' got "%s"')
+                                             % (str(value), ))
 
-class Integer(Attribute):
-    def __init__(self, name, min_=None, max_=None, maybe_empty=True,
-                 default=None, order=0, multivalued=False, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
-                           multivalued=multivalued, notes=notes)
-        self.default = default
-        self.min = min_
-        self.max = max_
+            in_range = ((self.min is None or (value >= self.min))
+                        and (self.max is None or (value <= self.max)))
+            if not in_range:
+                str_min = (self.min is None and '-Inf') or str(self.min)
+                str_max = (self.max is None and 'Inf') or str(self.max)
+                raise kb_exc.ValidationError('Value %d is out of [%s,%s] range'
+                                             % (value, str_min, str_max))
 
-    def _raw_ddl(self):
-        colname = self.column_name()
-        ret = [Column(colname, sa.types.Integer,
-                      nullable=self.maybe_empty and not self.multivalued,
-                      default=self.default)]
-        if self.min is not None:
-            ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%sclass_%s_attr_%s_min_constr'
-                                             % (schema.DB_OBJECT_PREFIX,
-                                                self._class_id,
-                                                self.id))))
-        if self.max is not None:
-            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%sclass_%s_attr_%s_max_constr'
-                                             % (schema.DB_OBJECT_PREFIX,
-                                                self._class_id,
-                                                self.id))))
-        return ret
+            return int(value)
 
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
-            return value
-        if not (isinstance(value, int) or (isinstance(value, decimal.Decimal)
-                                           and value == int(value))):
-            raise kb_exc.ValidationError(('expected an integer-like value, '
-                                          + 'got "%s"')
-                                         % (str(value), ))
+        def __repr__(self):
+            return '<Integer(min=%s, max=%s, default=%s)>' % (self.min,
+                                                              self.max,
+                                                              self.default)
 
-        in_range = ((self.min is None or (value >= self.min))
-                    and (self.max is None or (value <= self.max)))
-        if not in_range:
-            str_min = (self.min is None and '-Inf') or str(self.min)
-            str_max = (self.max is None and 'Inf') or str(self.max)
-            raise kb_exc.ValidationError('Value %d is out of [%s,%s] range'
-                                         % (value, str_min, str_max))
+    o.Integer = Integer
 
-        return int(value)
+    class Real(Attribute):
+        def __init__(self, name, precision=10, min_=None, max_=None,
+                     maybe_empty=True, default=None, order=0,
+                     multivalued=False, notes=None):
+            Attribute.__init__(self, name, maybe_empty=maybe_empty,
+                               order=order, multivalued=multivalued,
+                               notes=notes)
+            self.default = default
+            self.min = min_
+            self.max = max_
 
-    def __repr__(self):
-        return '<Integer(min=%s, max=%s, default=%s)>' % (self.min,
-                                                          self.max,
+        def _raw_ddl(self):
+            colname = self.column_name()
+            ret = [Column(colname,
+                          sa.types.Numeric(precision=self.precision),
+                          nullable=self.maybe_empty and not self.multivalued,
+                          default=self.default)]
+            if self.min is not None:
+                ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
+                                           name=('%sclass_%s_attr_%s_min_constr'
+                                                 % (schema.prefix,
+                                                    self._class_id,
+                                                    self.id))))
+            if self.max is not None:
+                ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
+                                           name=('%sclass_%s_attr_%s_max_constr'
+                                                 % (schema.prefix,
+                                                    self._class_id,
+                                                    self.id))))
+            return ret
+
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
+            if not (isinstance(value, float) or isinstance(value,
+                                                           decimal.Decimal)):
+                raise kb_exc.ValidationError(('expected a float-like value, '
+                                              + 'got "%s"')
+                                             % (str(value), ))
+
+            in_range = ((self.min is None or (value >= self.min))
+                        and (self.max is None or (value <= self.max)))
+            if not in_range:
+                str_min = (self.min is None and '-Inf') or str(self.min)
+                str_max = (self.max is None and 'Inf') or str(self.max)
+                raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
+                                             % (value, str_min, str_max))
+
+            return decimal.Decimal(value)
+
+        def __repr__(self):
+            return '<Real(min=%s, max=%s, default=%s)>' % (self.min,
+                                                           self.max,
+                                                           self.default)
+
+    o.Real = Real
+
+    class String(Attribute):
+        def __init__(self, name, length=256, maybe_empty=True, default=None,
+                     order=0, multivalued=False, notes=None):
+            Attribute.__init__(self, name, maybe_empty=maybe_empty,
+                               order=order, multivalued=multivalued,
+                               notes=notes)
+            self.length = length
+            self.default = default
+
+        def _raw_ddl(self):
+            colname = self.column_name()
+            return [Column(colname, sa.types.String(self.length),
+                           nullable=self.maybe_empty and not self.multivalued,
+                           default=self.default)]
+
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
+            if not (isinstance(value, str) or isinstance(value, unicode)):
+                raise kb_exc.ValidationError(('expected a string-like value, '
+                                              + 'got "%s"')
+                                             % (str(value), ))
+            if len(value) > self.length:
+                raise kb_exc.ValidationError('string length (%d chars) is '
+                                             'above the maximum limit '
+                                             '(%d chars)'
+                                             % (len(value), self.length))
+
+            return unicode(value)
+
+        def __repr__(self):
+            return "<String(length=%d, default='%s')>" % (self.length,
                                                           self.default)
 
+    o.String = String
 
-class Real(Attribute):
-    def __init__(self, name, precision=10, min_=None, max_=None,
-                 maybe_empty=True, default=None, order=0, multivalued=False,
-                 notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
-                           multivalued=multivalued, notes=notes)
-        self.default = default
-        self.min = min_
-        self.max = max_
+    class Date(Attribute):
+        def __init__(self, name, min_=None, max_=None, maybe_empty=True,
+                     default=None, order=0, multivalued=False, notes=None):
+            Attribute.__init__(self, name, maybe_empty=maybe_empty,
+                               order=order, multivalued=multivalued,
+                               notes=notes)
+            self.default = default
+            self.min = min_
+            self.max = max_
 
-    def _raw_ddl(self):
-        colname = self.column_name()
-        ret = [Column(colname,
-                      sa.types.Numeric(precision=self.precision),
-                      nullable=self.maybe_empty and not self.multivalued,
-                      default=self.default)]
-        if self.min is not None:
-            ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%sclass_%s_attr_%s_min_constr'
-                                             % (schema.DB_OBJECT_PREFIX,
-                                                self._class_id,
-                                                self.id))))
-        if self.max is not None:
-            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%sclass_%s_attr_%s_max_constr'
-                                             % (schema.DB_OBJECT_PREFIX,
-                                                self._class_id,
-                                                self.id))))
-        return ret
+        def _raw_ddl(self):
+            colname = self.column_name()
+            ret = [Column(colname, sa.types.Date,
+                          nullable=self.maybe_empty and not self.multivalued,
+                          default=self.default)]
+            if self.min is not None:
+                ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
+                                           name=('%sclass_%s_attr_%s_min_constr'
+                                                 % (schema.prefix,
+                                                    self._class_id,
+                                                    self.id))))
+            if self.max is not None:
+                ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
+                                           name=('%sclass_%s_attr_%s_max_constr'
+                                                 % (schema.prefix,
+                                                    self._class_id,
+                                                    self.id))))
+            return ret
 
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
+
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
+            if (isinstance(value, str) or isinstance(value, unicode)):
+                try:
+                    dt = datetime.datetime.strptime(value, '%Y-%m-%d')
+                    value = datetime.date(dt.year, dt.month, dt.day)
+                except ValueError, e:
+                    raise kb_exc.ValidationError('cannot parse date: %s'
+                                                 % unicode(e))
+            elif isinstance(value, datetime.datetime):
+                value = datetime.date(value.year, value.month, value.day)
+            elif not isinstance(value, datetime.date):
+                raise kb_exc.ValidationError(('expected a date-like value, '
+                                              + 'got "%s"')
+                                             % (unicode(value), ))
+
+            in_range = ((self.min is None or (value >= self.min))
+                        and (self.max is None or (value <= self.max)))
+            if not in_range:
+                str_min = (self.min is None and '-Inf') or unicode(self.min)
+                str_max = (self.max is None and 'Inf') or unicode(self.max)
+                raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
+                                             % (value, str_min, str_max))
+
             return value
-        if not (isinstance(value, float) or isinstance(value,
-                                                       decimal.Decimal)):
-            raise kb_exc.ValidationError(('expected a float-like value, '
-                                          + 'got "%s"')
-                                         % (str(value), ))
 
-        in_range = ((self.min is None or (value >= self.min))
-                    and (self.max is None or (value <= self.max)))
-        if not in_range:
-            str_min = (self.min is None and '-Inf') or str(self.min)
-            str_max = (self.max is None and 'Inf') or str(self.max)
-            raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
-                                         % (value, str_min, str_max))
+        def __repr__(self):
+            return '<Date(min=%s, max=%s, default=%s)>' % (self.min,
+                                                           self.max,
+                                                           self.default)
+    o.Date = Date
 
-        return decimal.Decimal(value)
-
-    def __repr__(self):
-        return '<Real(min=%s, max=%s, default=%s)>' % (self.min,
-                                                       self.max,
+    class Uri(String):
+        def __repr__(self):
+            return "<Uri(length=%d, default='%s')>" % (self.length,
                                                        self.default)
 
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
+            if not (isinstance(value, str) or isinstance(value, unicode)):
+                raise kb_exc.ValidationError(('expected a URI-like value, '
+                                              + 'got "%s"')
+                                             % (str(value), ))
+            if len(value) > self.length:
+                raise kb_exc.ValidationError(('URI length (%d chars) is above '
+                                              + 'the maximum limit (%d chars)')
+                                             % (len(value), self.length))
 
-class String(Attribute):
-    def __init__(self, name, length=256, maybe_empty=True, default=None,
-                 order=0, multivalued=False, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
-                           multivalued=multivalued, notes=notes)
-        self.length = length
-        self.default = default
+            # FIXME: actually perform URI validation
+            return unicode(value)
 
-    def _raw_ddl(self):
-        colname = self.column_name()
-        return [Column(colname, sa.types.String(self.length),
-                       nullable=self.maybe_empty and not self.multivalued,
-                       default=self.default)]
+    o.Uri = Uri
 
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
-            return value
-        if not (isinstance(value, str) or isinstance(value, unicode)):
-            raise kb_exc.ValidationError(('expected a string-like value, '
-                                          + 'got "%s"')
-                                         % (str(value), ))
-        if len(value) > self.length:
-            raise kb_exc.ValidationError(('string length (%d chars) is above '
-                                          + 'the maximum limit (%d chars)')
-                                         % (len(value), self.length))
-        
-        return unicode(value)
+    class Choice(Attribute):
+        def __init__(self, name, list_of_choices, maybe_empty=True,
+                     default=None, order=0, multivalued=False, notes=None):
+            if default is not None:
+                if not (default in list_of_choices):
+                    raise ValueError("Default value '%s' is not a valid choice"
+                                     " (possible values: %s)"
+                                     % (default, list_of_choices))
+            Attribute.__init__(self, name, maybe_empty=maybe_empty,
+                               order=order, multivalued=multivalued,
+                               notes=notes)
+            self._list_of_choices = list_of_choices
+            self.choices = json.dumps(list_of_choices)
+            self.default = default
 
-    def __repr__(self):
-        return "<String(length=%d, default='%s')>" % (self.length,
-                                                      self.default)
+        @sa_orm.reconstructor
+        def __init_on_load__(self):
+            # Don't forget to call superclass reconstructors
+            Attribute.__init_on_load__(self)
 
+            # Populate the _init_on_load field from the JSON value read
+            # from the DB
+            self._list_of_choices = json.loads(self.choices)
+            assert(isinstance(self._list_of_choices, list))
 
-class Date(Attribute):
-    def __init__(self, name, min_=None, max_=None, maybe_empty=True,
-                 default=None, order=0, multivalued=False, notes=None):
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
-                           multivalued=multivalued, notes=notes)
-        self.default = default
-        self.min = min_
-        self.max = max_
+        def get_choices(self):
+            '''
+            Return the list of available choices
+            '''
+            return self._list_of_choices
 
-    def _raw_ddl(self):
-        colname = self.column_name()
-        ret = [Column(colname, sa.types.Date,
-                      nullable=self.maybe_empty and not self.multivalued,
-                      default=self.default)]
-        if self.min is not None:
-            ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                       name=('%sclass_%s_attr_%s_min_constr'
-                                             % (schema.DB_OBJECT_PREFIX,
-                                                self._class_id,
-                                                self.id))))
-        if self.max is not None:
-            ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                       name=('%sclass_%s_attr_%s_max_constr'
-                                             % (schema.DB_OBJECT_PREFIX,
-                                                self._class_id,
-                                                self.id))))
-        return ret
+        def _raw_ddl(self):
+            colname = self.column_name()
+            return [Column(colname,
+                           sa.types.Enum(*self._list_of_choices,
+                                          name=('%sclass_%s_attr_%s_enum'
+                                                % (schema.prefix,
+                                                   self._class_id,
+                                                   self.id))),
+                           nullable=self.maybe_empty and not self.multivalued,
+                           default=self.default)]
 
-
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
-            return value
-        if (isinstance(value, str) or isinstance(value, unicode)):
-            try:
-                dt = datetime.datetime.strptime(value, '%Y-%m-%d')
-                value = datetime.date(dt.year, dt.month, dt.day)
-            except ValueError, e:
-                raise kb_exc.ValidationError('cannot parse date: %s'
-                                             % unicode(e))
-        elif isinstance(value, datetime.datetime):
-            value = datetime.date(value.year, value.month, value.day)
-        elif not isinstance(value, datetime.date):
-            raise kb_exc.ValidationError(('expected a date-like value, '
-                                          + 'got "%s"')
-                                         % (unicode(value), ))
-
-        in_range = ((self.min is None or (value >= self.min))
-                    and (self.max is None or (value <= self.max)))
-        if not in_range:
-            str_min = (self.min is None and '-Inf') or unicode(self.min)
-            str_max = (self.max is None and 'Inf') or unicode(self.max)
-            raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
-                                         % (value, str_min, str_max))
-
-        return value
-
-    def __repr__(self):
-        return '<Date(min=%s, max=%s, default=%s)>' % (self.min,
-                                                       self.max,
-                                                       self.default)
-
-class Uri(String):
-    def __repr__(self):
-        return "<Uri(length=%d, default='%s')>" % (self.length,
-                                                   self.default)
-
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
-            return value
-        if not (isinstance(value, str) or isinstance(value, unicode)):
-            raise kb_exc.ValidationError(('expected a URI-like value, '
-                                          + 'got "%s"')
-                                         % (str(value), ))
-        if len(value) > self.length:
-            raise kb_exc.ValidationError(('URI length (%d chars) is above '
-                                          + 'the maximum limit (%d chars)')
-                                         % (len(value), self.length))
-
-        # FIXME: actually perform URI validation
-        return unicode(value)
-
-
-class Choice(Attribute):
-    def __init__(self, name, list_of_choices, maybe_empty=True, default=None,
-                 order=0, multivalued=False, notes=None):
-        if default is not None:
-            if not (default in list_of_choices):
-                raise ValueError("Default value '%s' is not a valid choice"
-                                 " (possible values: %s)" % (default,
-                                                             list_of_choices))
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
-                           multivalued=multivalued, notes=notes)
-        self._list_of_choices = list_of_choices
-        self.choices = json.dumps(list_of_choices)
-        self.default = default
-
-    @sa_orm.reconstructor
-    def __init_on_load__(self):
-        # FIXME: why doesn't SQLAlchemy call superclass reconstructors?
-        Attribute.__init_on_load__(self)
-
-        # Populate the _init_on_load field from the JSON value read
-        # from the DB
-        self._list_of_choices = json.loads(self.choices)
-        assert(isinstance(self._list_of_choices, list))
-
-    def get_choices(self):
-        '''
-        Return the list of available choices
-        '''
-        return self._list_of_choices
-
-    def _raw_ddl(self):
-        colname = self.column_name()
-        return [Column(colname,
-                       sa.types.Enum(*self._list_of_choices,
-                                      name=('%sclass_%s_attr_%s_enum'
-                                            % (schema.DB_OBJECT_PREFIX,
-                                               self._class_id,
-                                               self.id))),
-                       nullable=self.maybe_empty and not self.multivalued,
-                       default=self.default)]
-    
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
-            return value
-        value = unicode(value)
-        if value not in self._list_of_choices:
-            raise kb_exc.ValidationError('"%s" is not a valid choice among %s'
-                                         % (value,
-                                            unicode(self._list_of_choices)))
-        return value
-
-    def __repr__(self):
-        return "<Choice(choices=%s, default='%s')>" % (self.choices,
-                                                       self.default)
-
-
-# The following statement should stay here in order to avoid circular
-# importing issues
-import classes
-
-class ObjectReference(Attribute):
-    def __init__(self, name, target_class, maybe_empty=True, order=0,
-                 multivalued=False, notes=None):
-        if isinstance(target_class, classes.KBClass):
-            self._target_table = target_class.table
-            self.target = target_class
-        else:
-            sa_mapper = sa.orm.class_mapper(target_class)
-            ## FIXME: is it correct to take the first table below?
-            # if len(sa_mapper.tables) > 1:
-            #     raise ValueError('Target class %s is mapped to multiple'
-            #                      ' tables: %s' % (target_class,
-            #                                       sa_mapper.tables))
-            self._target_table = sa_mapper.tables[0].name
-            self.target = target_class.__kb_class__
-
-        Attribute.__init__(self, name, maybe_empty=maybe_empty, order=order,
-                           multivalued=multivalued, notes=notes)
-
-    @sa_orm.reconstructor
-    def __init_on_load__(self):
-        # FIXME: why doesn't SQLAlchemy call superclass reconstructors?
-        Attribute.__init_on_load__(self)
-
-        # Populate the _target_table field
-        self._target_table = self.target.table
-
-    def _raw_ddl(self):
-        colname = self.column_name()
-        return [Column(colname, sa.types.String(128),
-                       ForeignKey('%s.id' % (self._target_table, )),
-                       nullable=self.maybe_empty and not self.multivalued)]
-
-    # Override the default internal method, configuring a KB object
-    # relationship for the corresponding field of the KB Python object
-    def _objtable_mapper_properties(self):
-        assert(not self.multivalued)
-
-        obj_table = self._class.sqlalchemy_table
-        target_pyclass = self.target.make_python_class()
-        target_table = self.target.sqlalchemy_table
-        colname = self.column_name()
-
-        return {('_' + colname) : obj_table.c[colname], # "Hide" column name...
-                colname # ...and use "original" col name as a relationship
-                : relationship(target_pyclass,
-                               backref=('references_%s_%s'
-                                        % (self.target.id,
-                                           colname)),
-                               cascade='all',
-                               primaryjoin=(obj_table.c[colname]
-                                            == target_table.c.id))}
-
-    # Override the default internal method, configuring a KB object
-    # relationship for the 'value' attribute of the multivalue table
-    def _mvtable_mapper_properties(self):
-        assert(self.multivalued)
-        mvtable = self._sqlalchemy_mv_table
-        assert(mvtable is not None)
-
-        target_pyclass = self.target.make_python_class()
-        target_table = self.target.sqlalchemy_table
-
-        return {'_object' : mvtable.c.object, # 'object' field will be backref
-                '_value'  : mvtable.c.value,  # "Hide" object id
-                'value'   : relationship(target_pyclass,
-                                         backref=('references_%s_%s'
-                                                  % (self._class.id,
-                                                     self.id)),
-                                         cascade='all',
-                                         primaryjoin=(mvtable.c.value
-                                                      == target_table.c.id))}
-    
-    def validate(self, value):
-        if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
+            value = unicode(value)
+            if value not in self._list_of_choices:
+                raise kb_exc.ValidationError('"%s" is not a valid choice among'
+                                             ' %s'
+                                             % (value,
+                                                unicode(self._list_of_choices)))
             return value
 
-        target_pyclass = self.target.make_python_class()
-        if not isinstance(value, target_pyclass):
-            raise kb_exc.ValidationError(('expected a value of type "%s" '
-                                          + '(or descendants), got "%s" '
-                                          + '(of type %s)')
-                                         % (unicode(target_pyclass),
-                                            unicode(value),
-                                            unicode(type(value))))
-        return value
+        def __repr__(self):
+            return "<Choice(choices=%s, default='%s')>" % (self.choices,
+                                                           self.default)
 
-    def __repr__(self):
-        return "<ObjectReference(target_class=%s)>" % (self.target, )
+    o.Choice = Choice
 
+    class ObjectReference(Attribute):
+        def __init__(self, name, target_class, maybe_empty=True, order=0,
+                     multivalued=False, notes=None):
+            if isinstance(target_class, classes.KBClass):
+                self._target_table = target_class.table
+                self.target = target_class
+            else:
+                sa_mapper = sa.orm.class_mapper(target_class)
+                ## FIXME: is it correct to take the first table below?
+                # if len(sa_mapper.tables) > 1:
+                #     raise ValueError('Target class %s is mapped to multiple'
+                #                      ' tables: %s' % (target_class,
+                #                                       sa_mapper.tables))
+                self._target_table = sa_mapper.tables[0].name
+                self.target = target_class.__kb_class__
 
-###############################################################################
-## Utility functions
-###############################################################################
+            Attribute.__init__(self, name, maybe_empty=maybe_empty,
+                               order=order, multivalued=multivalued,
+                               notes=notes)
 
-# Check whether the given value is compatible with the given target
-# KBClass instance.
-# FIXME: should be an ObjectReference method: refactor ObjectReferencesList!
+        @sa_orm.reconstructor
+        def __init_on_load__(self):
+            # FIXME: why doesn't SQLAlchemy call superclass reconstructors?
+            Attribute.__init_on_load__(self)
 
-###############################################################################
-## Mappers
-###############################################################################
+            # Populate the _target_table field
+            self._target_table = self.target.table
 
-mapper(Attribute, schema.class_attribute,
-       polymorphic_on=schema.class_attribute.c['type'],
-       properties={
-        '_class_id' : schema.class_attribute.c['class'],
-        '_class_root_id' : schema.class_attribute.c.class_root,
-        '_class' : relationship(classes.KBClass, back_populates='attributes',
-                                cascade='all'),
-        '_multivalue_table' : schema.class_attribute.c.multivalue_table
-        })
+        def _raw_ddl(self):
+            colname = self.column_name()
+            return [Column(colname, sa.types.String(128),
+                           ForeignKey('%s.id' % (self._target_table, )),
+                           nullable=self.maybe_empty and not self.multivalued)]
 
-mapper(Boolean, schema.class_attribute_bool, inherits=Attribute,
-       polymorphic_identity='bool')
+        # Override the default internal method, configuring a KB object
+        # relationship for the corresponding field of the KB Python object
+        def _objtable_mapper_properties(self):
+            assert(not self.multivalued)
 
-mapper(Integer, schema.class_attribute_int, inherits=Attribute,
-       polymorphic_identity='int')
+            obj_table = self._class.sqlalchemy_table
+            target_pyclass = self.target.make_python_class()
+            target_table = self.target.sqlalchemy_table
+            colname = self.column_name()
 
-mapper(Real, schema.class_attribute_real, inherits=Attribute,
-       polymorphic_identity='real')
+            return {('_' + colname) : obj_table.c[colname], # "Hide" colname...
+                    colname # ...and use "original" colname as a relationship
+                    : relationship(target_pyclass,
+                                   backref=('references_%s_%s'
+                                            % (self.target.id,
+                                               colname)),
+                                   cascade='all',
+                                   primaryjoin=(obj_table.c[colname]
+                                                == target_table.c.id))}
 
-mapper(String, schema.class_attribute_string, inherits=Attribute,
-       polymorphic_identity='string')
+        # Override the default internal method, configuring a KB object
+        # relationship for the 'value' attribute of the multivalue table
+        def _mvtable_mapper_properties(self):
+            assert(self.multivalued)
+            mvtable = self._sqlalchemy_mv_table
+            assert(mvtable is not None)
 
-mapper(Date, schema.class_attribute_date, inherits=Attribute,
-       polymorphic_identity='date')
+            target_pyclass = self.target.make_python_class()
+            target_table = self.target.sqlalchemy_table
 
-mapper(Uri, schema.class_attribute_uri, inherits=Attribute,
-       polymorphic_identity='uri')
+            return {'_object' : mvtable.c.object, # 'object' used as backref
+                    '_value'  : mvtable.c.value,  # "Hide" object id
+                    'value'   : relationship(target_pyclass,
+                                             backref=('references_%s_%s'
+                                                      % (self._class.id,
+                                                         self.id)),
+                                             cascade='all',
+                                             primaryjoin=(mvtable.c.value
+                                                          == target_table.c.id))}
 
-mapper(Choice, schema.class_attribute_choice, inherits=Attribute,
-       polymorphic_identity='choice')
+        def validate(self, value):
+            if self.maybe_empty and not self.multivalued and value is None:
+                return value
 
-mapper(ObjectReference, schema.class_attribute_objref, inherits=Attribute,
-       polymorphic_identity='objref',
-       properties={
-        'target' : relationship(classes.KBClass, backref='references',
-                                cascade='all')
-        })
+            target_pyclass = self.target.make_python_class()
+            if not isinstance(value, target_pyclass):
+                raise kb_exc.ValidationError(('expected a value of type "%s" '
+                                              + '(or descendants), got "%s" '
+                                              + '(of type %s)')
+                                             % (unicode(target_pyclass),
+                                                unicode(value),
+                                                unicode(type(value))))
+            return value
 
-###############################################################################
-## Events
-###############################################################################
+        def __repr__(self):
+            return "<ObjectReference(target_class=%s)>" % (self.target, )
 
-# Bind an attribute to its owner class when it gets added to the
-# 'attributes' list
-# FIXME: it should happen automatically, shouldn't it?
-def kbclass_append_attribute(target, value, _initiator):
-    if (value.multivalued and hasattr(value, '_sqlalchemy_mv_table')
-        and (value._sqlalchemy_mv_table is not None)):
-        raise RuntimeError('BUG: cannot reassign attribute "%s", since it is '
-                           'still bound to table "%s"'
-                           % (value.id,
-                              value._sqlalchemy_mv_table.name))
-    value._class_id = target.id
-    value._class_root_id = target._root_id
+    o.ObjectReference = ObjectReference
 
-    # FIXME: ensure uniqueness!
-    # FIXME: it would be better to prefix the owner table name
-    if value.multivalued:
-        value._multivalue_table = ('%sclass_%s_attr_%s'
-                                   % (schema.DB_OBJECT_PREFIX,
-                                      value._class_id,
-                                      value.id))
-        # Will be assigned after invoking the attribute table constructor
-        value._sqlalchemy_mv_table = None
+    ###########################################################################
+    ## Mappers
+    ###########################################################################
 
-event.listen(classes.KBClass.attributes, 'append', kbclass_append_attribute,
-             propagate=True, retval=False)
+    mapper(Attribute, schema.class_attribute,
+           polymorphic_on=schema.class_attribute.c['type'],
+           properties={
+            '_class_id' : schema.class_attribute.c['class'],
+            '_class_root_id' : schema.class_attribute.c.class_root,
+            '_class' : relationship(classes.KBClass,
+                                    back_populates='attributes',
+                                    cascade='all'),
+            '_multivalue_table' : schema.class_attribute.c.multivalue_table
+            })
 
-# Detach attributes from its (former) owner class when it gets removed from
-# the 'attributes' list
-# FIXME: it should happen automatically, shouldn't it?
-def kbclass_remove_attribute(target, value, _initiator):
-    value._class_id = None
-    value._class_root_id = None
-    value._multivalue_table = None
-    # FIXME: decide what to do if a MV table is "orphaned" by attr removal
+    mapper(Boolean, schema.class_attribute_bool, inherits=Attribute,
+           polymorphic_identity='bool')
 
-event.listen(classes.KBClass.attributes, 'remove', kbclass_remove_attribute,
-             propagate=True, retval=False)
+    mapper(Integer, schema.class_attribute_int, inherits=Attribute,
+           polymorphic_identity='int')
+
+    mapper(Real, schema.class_attribute_real, inherits=Attribute,
+           polymorphic_identity='real')
+
+    mapper(String, schema.class_attribute_string, inherits=Attribute,
+           polymorphic_identity='string')
+
+    mapper(Date, schema.class_attribute_date, inherits=Attribute,
+           polymorphic_identity='date')
+
+    mapper(Uri, schema.class_attribute_uri, inherits=Attribute,
+           polymorphic_identity='uri')
+
+    mapper(Choice, schema.class_attribute_choice, inherits=Attribute,
+           polymorphic_identity='choice')
+
+    mapper(ObjectReference, schema.class_attribute_objref, inherits=Attribute,
+           polymorphic_identity='objref',
+           properties={
+            'target' : relationship(classes.KBClass, backref='references',
+                                    cascade='all')
+            })
+

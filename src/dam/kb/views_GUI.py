@@ -21,9 +21,7 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
                          HttpResponseNotAllowed, HttpResponseBadRequest)
 from django.utils import simplejson
 import tinykb.session as kb_ses
-import tinykb.classes as kb_cls
 import tinykb.errors as kb_exc
-import tinykb.attributes as kb_attrs
 import util
 from dam.workspace.models import DAMWorkspace as Workspace
 import dam.kb.views as views_kb
