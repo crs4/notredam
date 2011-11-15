@@ -657,8 +657,6 @@ Ext.grid.MetadataStoreObj = function(grid) {
         },
         groupField: 'groupname',
         url: '/kb/get_hierarchy/',
-        //url: '/get_metadata/',
-        //        autoLoad: true,
         recordType: Ext.grid.MetadataRecordObj,
         listeners: {
             beforeload: function(store, options) {
