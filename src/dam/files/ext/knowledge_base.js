@@ -28,33 +28,36 @@ function store_get_class_attributes(id_class){
 	});
 }
 
-function init_store_obj_data(id_obj, add_obj){
+function init_store_obj_data_edit(obj_id, add_obj){
 	//var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
 	var obj_store = new Ext.data.JsonStore({
-	    url: '/kb/get_specific_info_obj/'+id_obj+'/',
+	    url: '/kb/get_specific_info_obj/'+obj_id+'/',
 	    id:'obj_store',
 	    root: 'rows',
-	    fields:['id','name','class','notes','attributes'],
+	    fields:['id','name','class_id','notes','attributes'],
         listeners:{
 			load: function() {
 				console.log('LOADDDD obj');
-				load_detail_obj(this, id_obj, add_obj);
+				load_detail_obj(this, obj_id, add_obj);
 			}
 		}
 	});
 	obj_store.load();
 }
 
-function store_get_obj_attributes(id_class){
+function store_get_obj_attributes(class_id, obj_id){
+	//obj_id == null new obj else edit exixting obj 
 	//var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
-	return store_get_class_attributes(id_class); //FIXME
-/*	return new Ext.data.JsonStore({
-	    url: '/',
+	return new Ext.data.JsonStore({
+	    url: '/kb/get_obj_attributes/',
 	    autoLoad:true,
+	    baseParams:{
+			class_id: class_id,
+			obj_id : obj_id
+		},
 	    root: 'rows',
-	    fields:['id','name','type','maybe_empty','default_value','order','notes', 'value',]
+	    fields:['id','name','type','multivalued','maybe_empty','default_value','order','notes', 'value']
 	});	
-*/
 }
 
 var ws_admin_store = new Ext.data.JsonStore({
@@ -65,7 +68,7 @@ var ws_admin_store = new Ext.data.JsonStore({
     fields:['pk','name','description']
 });
 
-function remove_option(value,attribute_detail_panel){
+/*function remove_option(value,attribute_detail_panel){
 	console.log('remove option');
 	if (value == 'int'){
 		attribute_detail_panel.remove(Ext.getCmp('id_min'));
@@ -85,34 +88,49 @@ function remove_option(value,attribute_detail_panel){
 	}
 	attribute_detail_panel.doLayout();
 }
-
-function add_option(value,attribute_detail_panel){
-	
+*/
+function add_option(value, attribute_detail_panel, data){
+	//initializing
 	attribute_detail_panel.removeAll();
-	if (value.data.id == 'int'){
+	var min_number_value = undefined;
+	var max_number_value = undefined;
+	var default_v = undefined;
+	var min_date_value = undefined;
+	var max_date_value = undefined;
+	var max_length_value = undefined;
+	
+	if (value == 'int'){
 		console.log('Integer');
+		if (data){
+			min_number_value = data.min;
+			max_number_value = data.max;
+			default_v = data.default_value;
+		}
 		var min_number = new Ext.form.NumberField({
 			name: 'min_number',
 			id  : 'id_min',
+	        value = min_number_value,
 			fieldLabel: 'Min value',
 	        allowBlank:true
 		});
 		var max_number = new Ext.form.NumberField({
 			name: 'max_number',
 			id  : 'id_max',
+			value = max_number_value,
 			fieldLabel: 'Max value',
 	        allowBlank:true
 		});
 		var default_value = new Ext.form.NumberField({
 			name: 'default_value',
 			id  : 'id_default_value',
+			value = default_v,
 			fieldLabel: 'Default value',
 	        allowBlank:true
 		});
 		attribute_detail_panel.add(min_number);
 		attribute_detail_panel.add(max_number);
 		attribute_detail_panel.add(default_value);
-	}else if (value.data.id == 'date'){
+	}else if (value == 'date'){
 		console.log('Date');
 		var min_date = new Ext.form.DateField({
 			name: 'min_date',
@@ -135,7 +153,7 @@ function add_option(value,attribute_detail_panel){
 		attribute_detail_panel.add(min_date);
 		attribute_detail_panel.add(max_date);
 		attribute_detail_panel.add(default_value);
-	}else if (value.data.id == 'string' || value.data.id == 'uri'){
+	}else if (value == 'string' || value.data.id == 'uri'){
 		console.log('Stringa o uri');
 		var max_length = new Ext.form.NumberField({
 			name: 'max_length',
@@ -157,14 +175,22 @@ function add_single_attribute(edit, attributes_grid){
 	//console.log(attributes_grid);
 	
 	if (edit){
-		console.log('edit: load value');
+		console.log('edit: load value  --  attributegrid.data');
+		console.log(attributes_grid.getSelectionModel().getSelected());
+		name_textField_value = attributes_grid.getSelectionModel().getSelected().data.name;
+		empty_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.maybe_empty;
+		multivalued_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.multivalued;
+		notes_textField_value = attributes_grid.getSelectionModel().getSelected().data.notes
+		title = "Edit attribute";
+		text_button = gettext('Edit');
 	}else{
 		console.log('add: unload value');
 		name_textField_value = 'Flanders asd asd';
 		empty_chekbox_value = false;
 		multivalued_chekbox_value = false;
-		notes_textField_value = null
+		notes_textField_value = null;
 		title = "Add new attribute";
+		text_button = gettext('Add');
 	}
 	var name_textField = new Ext.form.TextField({
         fieldLabel: 'Name',
@@ -193,10 +219,13 @@ function add_single_attribute(edit, attributes_grid){
         triggerAction: 'all',
         listeners:{ 
 			select:{ fn:function(combo, ewVal, oldVal){
-				console.log('select ---- ');
-				//add_option(ewVal, attribute_detail_panel);
-				add_option(ewVal, Ext.getCmp('id_option_attribute_panel'));
-		//		console.log(field);
+				add_option(ewVal.data.id, Ext.getCmp('id_option_attribute_panel'), null);
+			}},
+			render:{fn:function(combo){
+				if (edit){
+					combo.setValue(attributes_grid.getSelectionModel().getSelected().data.type);
+					add_option(attributes_grid.getSelectionModel().getSelected().data.type, Ext.getCmp('id_option_attribute_panel'), attributes_grid.getSelectionModel().getSelected().data);
+				}
 			}}
       	}        
 	});	
@@ -213,15 +242,7 @@ function add_single_attribute(edit, attributes_grid){
         fieldLabel: 'Multivalued',
         checked:multivalued_chekbox_value, 
         name: 'multivalued_chekbox'
-/*        	,
-        listeners: { 
-			selectionchange: { fn:function(this){
-				console.log('Selectionchange');
-                //Ext.getCmp('cityCmb').clearValue();
-                //myStore.load({params:{ddi_country: this.value}});
-            }}
-		}
-*/    });
+    });
 	var notes_textField = new Ext.form.TextField({
         fieldLabel: 'Notes',
         allowBlank:true,
@@ -256,7 +277,7 @@ function add_single_attribute(edit, attributes_grid){
         }
         ],
         buttons: [{
-            text: gettext('Add'),
+            text: text_button,
             type: 'submit',
             handler: function(){
         		console.log('submit');
@@ -290,20 +311,34 @@ function add_single_attribute(edit, attributes_grid){
         		if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue()}else{min_value = null}
         		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue()}else{max_value = null}
         		if (Ext.getCmp('id_max_length')){max_length = Ext.getCmp('id_max_length').getValue()}else{max_length = null}
-        		attributes_grid.store.add(new Attribute({
-        			id			: name_textField.getValue().replace(/ /g, "_"),
-        			name		: name_textField.getValue(),
-        			default_value: default_value,
-        			order		: '0',
-        			notes		: notes_textField.getValue(),
-        			type		: type_combo.getValue(),
-        			multivalued : multivalued_chekbox.getValue(),
-        			maybe_empty : empty_chekbox.getValue(),
-        			min			: min_value,
-        			max			: max_value,
-        			length		: max_length
-        			
-        		}));
+        		if (this.text == gettext('Edit')){
+        			attributes_grid.getSelectionModel().getSelected().set('id',name_textField.getValue().replace(/ /g, "_"));
+        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
+        			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
+        			attributes_grid.getSelectionModel().getSelected().set('order','0');
+        			attributes_grid.getSelectionModel().getSelected().set('notes',notes_textField.getValue());
+        			attributes_grid.getSelectionModel().getSelected().set('type',type_combo.getValue());
+        			attributes_grid.getSelectionModel().getSelected().set('multivalued',multivalued_chekbox.getValue());
+        			attributes_grid.getSelectionModel().getSelected().set('maybe_empty',empty_chekbox.getValue());
+        			attributes_grid.getSelectionModel().getSelected().set('min',min_value);
+        			attributes_grid.getSelectionModel().getSelected().set('max',max_value);
+        			attributes_grid.getSelectionModel().getSelected().set('length',max_length);
+        		}else{
+	        		attributes_grid.store.add(new Attribute({
+	        			id			: name_textField.getValue().replace(/ /g, "_"),
+	        			name		: name_textField.getValue(),
+	        			default_value: default_value,
+	        			order		: '0',
+	        			notes		: notes_textField.getValue(),
+	        			type		: type_combo.getValue(),
+	        			multivalued : multivalued_chekbox.getValue(),
+	        			maybe_empty : empty_chekbox.getValue(),
+	        			min			: min_value,
+	        			max			: max_value,
+	        			length		: max_length
+	        			
+	        		}));
+        		}
         		win_att_class.close();
             }
         },{
@@ -519,20 +554,21 @@ function load_detail_class(class_data, id_class, add_class){
  * Detail Obj Panel
  */	
 
-function load_detail_obj(obj_data, id_obj, id_obj){
+function load_detail_obj(obj_data, obj_id, add_obj){
 	console.log('load_detail_obj');
 	// obj_data store
 	// id_class id class
-	// id_obj is null if add new obj else id_obj to view and edit
+	// obj_id is null if add new obj else obj_id to view and edit
 	
 	console.log(obj_data.getAt(0).data);
 	
 	var fields = [];
-	if (!id_obj){
+	if (!add_obj){
 		id_textField_value = obj_data.getAt(0).data.id;
 		name_textField_value = obj_data.getAt(0).data.name;
 		notes_textField_value = obj_data.getAt(0).data.notes;
 		class_id_textField_value = obj_data.getAt(0).data.class_id;
+		store_attributes_grid_obj = store_get_obj_attributes(obj_data.getAt(0).data.class_id, obj_id);
 		var title = "Edit object " + name_textField_value;
 	}else{
 		id_textField_value = null;
@@ -540,7 +576,6 @@ function load_detail_obj(obj_data, id_obj, id_obj){
 		notes_textField_value = null;
 		var title = "Add new object";
 	}
-	store_attributes_grid = store_get_class_attributes(obj_data.getAt(0).data.class_id);
 	
 	var id_textField = new Ext.form.TextField({
         fieldLabel: 'Identification',
@@ -566,7 +601,7 @@ function load_detail_obj(obj_data, id_obj, id_obj){
         value: class_id_textField_value,
         hidden: true
     });
-	fields.push(superclass_textField);
+	fields.push(class_id_textField);
 	var notes_textField = new Ext.form.TextField({
         fieldLabel: 'Notes',
         allowBlank:true,
@@ -578,27 +613,25 @@ function load_detail_obj(obj_data, id_obj, id_obj){
 	
     //attributes
 	console.log('STORE EditorGridPanel');
-	console.log(store_attributes_grid);
+	console.log(store_attributes_grid_obj);
     var attributes_grid = new Ext.grid.EditorGridPanel({
-        store: store_attributes_grid,
+        store: store_attributes_grid_obj,
         title:'Attributes',
         cm: new Ext.grid.ColumnModel([
                                 {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id'},
-                                {id:'name',header: "Name", width: 110, sortable: true, dataIndex: 'name'},
+                                {id:'name',header: "Name", width: 80, sortable: true, dataIndex: 'name'},
                                 {id:'default_value',header: "Default", width: 70, sortable: true, dataIndex: 'default_value'},
                                 {id:'type',header: "Type", width: 50, sortable: true, dataIndex: 'type'},
-                                {id:'value',header: "Value", width: 50, dataIndex: 'value',
-                                 editor:new Ext.form.TextField({
-                             	 	allowBlank: false
-                              	})            
-/*                                 editor: function(){
-                                	console.log('dentro la funzione');
+                                {id:'multivalued',header: "Multivalued", width: 50, sortable: true, dataIndex: 'multivalued'},
+                                {id:'value',header: "Value", width: 90, dataIndex: 'value',
+                                 editor:{fn:function(){
+                                	console.log('test');
+                                	console.log(this.store);
                                 	new Ext.form.TextField({
-                                	 	allowBlank: false
-                                 	});            
-                                }
-*/                                },
-                                {id:'maybe_empty',header: "Empty", width: 70, sortable: true, dataIndex: 'maybe_empty'}
+                             	 	allowBlank: false
+                              	})}}
+                                },
+                                {id:'maybe_empty',header: "Empty", width: 50, sortable: true, dataIndex: 'maybe_empty'}
         ]),
     	height: 220
     });
@@ -716,7 +749,7 @@ function open_knowledgeBase(){
 							console.log('obj part');
 							console.log(sel);
 							console.log(node.attributes.id);
-							init_store_obj_data(node.attributes.id, false);
+							init_store_obj_data_edit(node.attributes.id, false);
 						}
 					}
        			}	            		
@@ -804,11 +837,9 @@ function open_knowledgeBase(){
 		});
 		return contextMenuVocabulary
 	}
-		
 /**
  * Content Windows 
  */	
-    
 	var win_knowledge_base = new Ext.Window({
         id		:'id_win_knowledge_base',
 		layout	: 'border',
@@ -823,12 +854,11 @@ function open_knowledgeBase(){
       	     	  tree_obj_reference
         ],
         buttons	:[{
-            text: 'Cancel',
+            text: 'Close',
             handler: function() {
         	win_knowledge_base.close();
         	}
         }]
     });
-	console.log('Io ci sono');
 	win_knowledge_base.show();  
 }

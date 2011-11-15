@@ -74,7 +74,7 @@ def _get_child_cls_obj(request,ws_id, parent):
     obj_dicts = views_kb.object_index_get(request, ws_id)
     obj_dicts = simplejson.loads(obj_dicts.content)   
     for o in obj_dicts:
-        if parent.lower() == o['class'].lower():
+        if parent.lower() == o['class_id'].lower():
             tmp = {'text' : o['name'],  
                    'id': o['id'], 
                    'leaf': True,
@@ -136,8 +136,7 @@ def get_specific_info_obj(request, obj_id):
     resp = simplejson.dumps(rtr)
     return HttpResponse(resp)
 
-def get_object_attributes(request):
-    
+def get_object_attributes_hierarchy(request):
     nodes = tree_view._get_item_nodes(request.POST.getlist('items'))
     ses = views_kb._kb_session()
     rtr = {"rows":[]}
@@ -148,6 +147,35 @@ def get_object_attributes(request):
                 cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id))
                 _put_attributes(cls,rtr)
             n = Node.objects.get(pk = n.parent_id)
+    logger.debug(rtr)
+    resp = simplejson.dumps(rtr)
+    
+    return HttpResponse(resp)
+
+def get_object_attributes(request):
+
+    print 'get_object_attributes'
+    class_id = request.POST.getlist('class_id')[0]
+    obj_id = request.POST.getlist('obj_id')[0]
+    cls_obj = views_kb.object_get(request, request.session['workspace'].pk,obj_id)
+    cls_obj = simplejson.loads(cls_obj.content)
+    print 'obj------'
+    print cls_obj['attributes']
+    cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
+    cls_dicts = simplejson.loads(cls_dicts.content) 
+    rtr = {"rows":[]}
+    for attribute in cls_dicts['attributes']:
+        tmp = {}
+        tmp['id'] = attribute
+        tmp['value'] = cls_obj['attributes'][attribute]
+        for specific_field in cls_dicts['attributes'][attribute]:
+            tmp[specific_field] = cls_dicts['attributes'][attribute][specific_field]
+        rtr['rows'].append(tmp)
+        #
+#    if request.POST.getlist('obj_id'):
+#        #edit obj
+#    else:
+#        #new obj
     logger.debug(rtr)
     resp = simplejson.dumps(rtr)
     
