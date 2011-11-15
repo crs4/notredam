@@ -34,9 +34,7 @@ from dam.core.dam_workspace.decorators import permission_required
 
 import tinykb.access as kb_access
 import tinykb.session as kb_ses
-import tinykb.classes as kb_cls
 import tinykb.errors as kb_exc
-import tinykb.attributes as kb_attrs
 import util
 
 # FIXME: use the standard ModResource-based dispatch system here
@@ -61,7 +59,7 @@ def class_index_get(request, ws_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    cls_dicts = [_kbclass_to_dict(c) for c in ses.classes(ws=ws)]
+    cls_dicts = [_kbclass_to_dict(c, ses) for c in ses.classes(ws=ws)]
 
     return HttpResponse(simplejson.dumps(cls_dicts))
 
@@ -131,7 +129,7 @@ def class_index_put(request, ws_id):
                                           % (attr_id, ))
 
         try:
-            attr_fn = _kb_dict_attrs_map[attr_type]
+            attr_fn = _kb_dict_attrs_map(attr_type, ses)
         except KeyError:
             return HttpResponseBadRequest(('Attribute "%s" has an invalid '
                                            + 'type: "%s"')
@@ -149,8 +147,8 @@ def class_index_put(request, ws_id):
         attrs.append(attr_obj)
 
     if superclass is None:
-        cls = kb_cls.KBRootClass(class_name, explicit_id=explicit_id,
-                                 attributes=attrs)
+        cls = ses.orm.KBRootClass(class_name, explicit_id=explicit_id,
+                                  attributes=attrs)
         # We also need to configure the visibility of the root class
         # on DAM workspaces
         resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict, ws)
@@ -159,8 +157,8 @@ def class_index_put(request, ws_id):
             # An error has occurred
             return resp
     else:
-        cls = kb_cls.KBClass(class_name, superclass=superclass,
-                             explicit_id=explicit_id, attributes=attrs)
+        cls = ses.orm.KBClass(class_name, superclass=superclass,
+                              explicit_id=explicit_id, attributes=attrs)
 
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
@@ -202,7 +200,7 @@ def class_get(request, ws_id, class_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
-    return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls)))
+    return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls, ses)))
 
 
 def class_post(request, ws_id, class_id):
@@ -238,7 +236,7 @@ def class_post(request, ws_id, class_id):
 
     # In case we're dealing with a root class, also consider its
     # visibility
-    if isinstance(cls, kb_cls.KBRootClass):
+    if isinstance(cls, ses.orm.KBRootClass):
         resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict, ws)
         if resp is not None:
             # An error has occurred
@@ -434,7 +432,7 @@ def class_objects_get(request, ws_id, class_id):
         return HttpResponseNotFound()
 
     objs = ses.objects(class_=cls.make_python_class())
-    obj_dicts = [_kbobject_to_dict(o) for o in objs]
+    obj_dicts = [_kbobject_to_dict(o, ses) for o in objs]
 
     return HttpResponse(simplejson.dumps(obj_dicts))
 
@@ -502,13 +500,13 @@ def _kb_session():
     return kb_ses.Session(connstr)
     
 
-def _kbclass_to_dict(cls):
+def _kbclass_to_dict(cls, ses):
     '''
     Create a JSON'able dictionary representation of the given KB class
     '''
     clsattrs = {}
     for a in cls.all_attributes():
-        clsattrs[a.id] = _kbattr_to_dict(a)
+        clsattrs[a.id] = _kbattr_to_dict(a, ses)
 
     if (cls.superclass.id == cls.id):
         superclass = None
@@ -520,14 +518,14 @@ def _kbclass_to_dict(cls):
                'superclass'  : superclass,
                'notes'       : cls.notes,
                'attributes'  : clsattrs,
-               'workspaces'  : _kb_class_visibility_to_dict(cls)}
+               'workspaces'  : _kb_class_visibility_to_dict(cls, ses)}
 
     return clsdict
 
 
 # Return a dictionary describing the access rules of a workspace to
 # the given KB class
-def _kb_class_visibility_to_dict(cls):
+def _kb_class_visibility_to_dict(cls, ses):
     # Internal mapping from access type to string
     access_str_map = {kb_access.OWNER      : 'owner',
                       kb_access.READ_ONLY  : 'read-only',
@@ -535,7 +533,7 @@ def _kb_class_visibility_to_dict(cls):
     # Retrieve the root class
     while cls.superclass is not cls:
         cls = cls.superclass
-    assert(isinstance(cls, kb_cls.KBRootClass)) # Just in case...
+    assert(isinstance(cls, ses.orm.KBRootClass)) # Just in case...
 
     vis_dict = {}
     for v in cls.visibility:
@@ -546,100 +544,109 @@ def _kb_class_visibility_to_dict(cls):
 
 # Mapping between attribute type and functions returning a JSON'able
 # dictionary representation of the attribute itself
-_kb_attrs_dict_map = {kb_attrs.Boolean : lambda a:
-                          dict([['type',   'bool'],
-                                ['default_value', a.default]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.Integer : lambda a:
-                          dict([['type',    'int'],
-                                ['min',     a.min],
-                                ['max',     a.max],
-                                ['default_value', a.default]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.Real    : lambda a:
-                          dict([['type',    'real'],
-                                ['min',     a.min],
-                                ['max',     a.max],
-                                ['default_value', a.default]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.String  : lambda a:
-                          dict([['type',    'string'],
-                                ['length',  a.length],
-                                ['default_value', a.default]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.Date    : lambda a:
-                          dict([['type',    'date'],
-                                ['min',     a.min],
-                                ['max',     a.max],
-                                ['default_value', a.default]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.Uri  : lambda a:
-                          dict([['type',    'uri'],
-                                ['length',  a.length],
-                                ['default_value', a.default]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.Choice  : lambda a:
-                          dict([['type',    'choice'],
-                                ['choices', simplejson.loads(a.choices)],
-                                ['default_value', a.default]]
-                               + _std_attr_fields(a)),
-                      kb_attrs.ObjectReference : lambda a:
-                          dict([['type',         'objref'],
-                                ['target_class', a.target.id]]
-                               + _std_attr_fields(a))
-                      }
+def _kb_attrs_dict_map(attr_type, ses):
+    kb_attrs = ses.orm.attributes
+    type_dict_map = {kb_attrs.Boolean : lambda a:
+                         dict([['type',   'bool'],
+                               ['default_value', a.default]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.Integer : lambda a:
+                         dict([['type',    'int'],
+                               ['min',     a.min],
+                               ['max',     a.max],
+                               ['default_value', a.default]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.Real    : lambda a:
+                         dict([['type',    'real'],
+                               ['min',     a.min],
+                               ['max',     a.max],
+                               ['default_value', a.default]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.String  : lambda a:
+                         dict([['type',    'string'],
+                               ['length',  a.length],
+                               ['default_value', a.default]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.Date    : lambda a:
+                         dict([['type',    'date'],
+                               ['min',     a.min],
+                               ['max',     a.max],
+                               ['default_value', a.default]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.Uri  : lambda a:
+                         dict([['type',    'uri'],
+                               ['length',  a.length],
+                               ['default_value', a.default]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.Choice  : lambda a:
+                         dict([['type',    'choice'],
+                               ['choices', simplejson.loads(a.choices)],
+                               ['default_value', a.default]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.ObjectReference : lambda a:
+                         dict([['type',         'objref'],
+                               ['target_class', a.target.id]]
+                              + _std_attr_fields(a))
+                     }
+    return type_dict_map[attr_type]
 
+# Here is the "inverse" of the mapping above: it associates a string
+# representing an attribute type with a function which takes the
+# attribute JSON representation and returnins the actual Attribute
+# object.  The returned function should raise a KeyError when a
+# required dictionary field is missing, or a ValueError when the value
+# is wrong
+def _kb_dict_attrs_map(attr_type_str, ses):
+    kb_attrs = ses.orm.attributes
 
-# Here is the "inverse" of the mapping above: it associates a
-# JSON'able dictionary representation of a class attribute with a
-# function returning the actual Attribute object.  The function should
-# raise a KeyError when a required dictionary field is missing, or a
-# ValueError when the value is wrong
-def _kb_dict_objref_fn(d, ses, ws):
-    cls_id = d['target_class']
-    try: target_class = ses.class_(cls_id, ws=ws)
-    except kb_exc.NotFound: raise ValueError('invalid class id: %s' % (cls_id))
-    return kb_attrs.ObjectReference(target_class=target_class,
-                                    **(_std_attr_dict_fields(d)))
-_kb_dict_attrs_map = {'bool' : lambda d, _ses, _ws:
-                          kb_attrs.Boolean(default=d.get('default_value'),
-                                           **(_std_attr_dict_fields(d))),
-                      'int' : lambda d, _ses, _ws:
-                          kb_attrs.Integer(min_=d.get('min'),
-                                           max_=d.get('max'),
-                                           default=d.get('default_value'),
-                                           **(_std_attr_dict_fields(d))),
-                      'real' : lambda d, _ses, _ws:
-                          kb_attrs.Real(min_=d.get('min'),
-                                        max_=d.get('max'),
-                                        default=d.get('default_value'),
-                                        **(_std_attr_dict_fields(d))),
-                      'string' : lambda d, _ses, _ws:
-                          kb_attrs.String(length=d['length'],
-                                          default=d.get('default_value'),
-                                          **(_std_attr_dict_fields(d))),
-                      'date' : lambda d, _ses, _ws:
-                          kb_attrs.Date(min_=d.get('min'),
-                                        max_=d.get('max'),
-                                        default=d.get('default_value'),
-                                        **(_std_attr_dict_fields(d))),
-                      'uri' : lambda d, _ses, _ws:
-                          kb_attrs.Uri(length=d['length'],
+    def _kb_dict_objref_fn(d, ses, ws):
+        cls_id = d['target_class']
+        try: target_class = ses.class_(cls_id, ws=ws)
+        except kb_exc.NotFound: raise ValueError('invalid class id: %s'
+                                                 % (cls_id))
+        return kb_attrs.ObjectReference(target_class=target_class,
+                                        **(_std_attr_dict_fields(d)))
+
+    str_fn_map = {'bool' : lambda d, _ses, _ws:
+                      kb_attrs.Boolean(default=d.get('default_value'),
+                                       **(_std_attr_dict_fields(d))),
+                  'int' : lambda d, _ses, _ws:
+                      kb_attrs.Integer(min_=d.get('min'),
+                                       max_=d.get('max'),
                                        default=d.get('default_value'),
                                        **(_std_attr_dict_fields(d))),
-                      'choice' : lambda d, _ses, _ws:
-                          kb_attrs.Choice(list_of_choices=d['choices'],
-                                          default=d.get('default_value'),
-                                          **(_std_attr_dict_fields(d))),
-                      'objref' : _kb_dict_objref_fn
-                      }
+                  'real' : lambda d, _ses, _ws:
+                      kb_attrs.Real(min_=d.get('min'),
+                                    max_=d.get('max'),
+                                    default=d.get('default_value'),
+                                    **(_std_attr_dict_fields(d))),
+                  'string' : lambda d, _ses, _ws:
+                      kb_attrs.String(length=d['length'],
+                                      default=d.get('default_value'),
+                                      **(_std_attr_dict_fields(d))),
+                  'date' : lambda d, _ses, _ws:
+                      kb_attrs.Date(min_=d.get('min'),
+                                    max_=d.get('max'),
+                                    default=d.get('default_value'),
+                                    **(_std_attr_dict_fields(d))),
+                  'uri' : lambda d, _ses, _ws:
+                      kb_attrs.Uri(length=d['length'],
+                                   default=d.get('default_value'),
+                                   **(_std_attr_dict_fields(d))),
+                  'choice' : lambda d, _ses, _ws:
+                      kb_attrs.Choice(list_of_choices=d['choices'],
+                                      default=d.get('default_value'),
+                                      **(_std_attr_dict_fields(d))),
+                  'objref' : _kb_dict_objref_fn
+                  }
+    return str_fn_map[attr_type_str]
 
 
-def _kbattr_to_dict(attr):
+def _kbattr_to_dict(attr, ses):
     '''
     Create a string representation of a KB class attribute descriptor
     '''
-    return _kb_attrs_dict_map[type(attr)](attr)
+    return _kb_attrs_dict_map(type(attr), ses)(attr)
 
 
 def _std_attr_fields(a):
@@ -667,13 +674,13 @@ def _std_attr_dict_fields(d):
             'notes' : d.get('notes')}
 
 
-def _kbobject_to_dict(obj):
+def _kbobject_to_dict(obj, ses):
     '''
     Create a JSON'able dictionary representation of the given KB object
     '''
     objattrs = {}
     for a in getattr(obj, 'class').all_attributes():
-        objattrs[a.id] = _kbobjattr_to_dict(a, getattr(obj, a.id))
+        objattrs[a.id] = _kbobjattr_to_dict(a, getattr(obj, a.id), ses)
 
     objdict = {'id'          : obj.id,
                'name'        : obj.name,
@@ -686,31 +693,35 @@ def _kbobject_to_dict(obj):
 
 # Mapping between object attribute type and functions returning a
 # JSON'able dictionary representation of the attribute value
-def _std_dict_fn(attr, val):
-    if attr.multivalued: return [v for v in val]
-    else: return val
-def _date_dict_fn(attr, val):
-    if attr.multivalued: return [v.isoformat() for v in val]
-    else: return (val is not None and val.isoformat()) or None
-def _objref_dict_fn(attr, val):
-    if attr.multivalued: return [v.id for v in val]
-    else: return (val is not None and val.id or None)
-_kb_objattrs_dict_map = {kb_attrs.Boolean : _std_dict_fn,
-                         kb_attrs.Integer : _std_dict_fn,
-                         kb_attrs.Real    : _std_dict_fn,
-                         kb_attrs.String  : _std_dict_fn,
-                         kb_attrs.Date    : _date_dict_fn,
-                         kb_attrs.String  : _std_dict_fn,
-                         kb_attrs.Uri     : _std_dict_fn,
-                         kb_attrs.Choice  : _std_dict_fn,
-                         kb_attrs.ObjectReference: _objref_dict_fn
-                         }
+def _kb_objattrs_dict_map(attr_type, ses):
+    def _std_dict_fn(attr, val):
+        if attr.multivalued: return [v for v in val]
+        else: return val
+    def _date_dict_fn(attr, val):
+        if attr.multivalued: return [v.isoformat() for v in val]
+        else: return (val is not None and val.isoformat()) or None
+    def _objref_dict_fn(attr, val):
+        if attr.multivalued: return [v.id for v in val]
+        else: return (val is not None and val.id or None)
 
-def _kbobjattr_to_dict(attr, val):
+    kb_attrs = ses.orm.attributes
+    type_fn_map = {kb_attrs.Boolean : _std_dict_fn,
+                   kb_attrs.Integer : _std_dict_fn,
+                   kb_attrs.Real    : _std_dict_fn,
+                   kb_attrs.String  : _std_dict_fn,
+                   kb_attrs.Date    : _date_dict_fn,
+                   kb_attrs.String  : _std_dict_fn,
+                   kb_attrs.Uri     : _std_dict_fn,
+                   kb_attrs.Choice  : _std_dict_fn,
+                   kb_attrs.ObjectReference: _objref_dict_fn
+                   }
+    return type_fn_map[attr_type]
+
+def _kbobjattr_to_dict(attr, val, ses):
     '''
     Create a string representation of a KB class attribute descriptor
     '''
-    return _kb_objattrs_dict_map[type(attr)](attr, val)
+    return _kb_objattrs_dict_map(type(attr), ses)(attr, val)
 
 
 def _assert_return_json_data(request):
@@ -746,12 +757,14 @@ def _assert_update_object_fields(obj, obj_dict, updatable_fields):
         setattr(obj, f, val)
 
 
-def _assert_update_object_attrs(obj, obj_dict, sa_session):
+def _assert_update_object_attrs(obj, obj_dict, ses):
     '''
     Almost like _assert_update_object_fields(), but applied to KB
     object attribute (i.e. with special care for object references and
     other "complex" types).
     '''
+    kb_attrs = ses.orm.attributes
+
     obj_class_attrs = getattr(obj, 'class').all_attributes()
     for a in obj_class_attrs:
         val = obj_dict.get(a.id, getattr(obj, a.id))
@@ -778,7 +791,7 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                     obj_lst = []
                     for xid in val:
                         try:
-                            obj_lst.append(sa_session.object(xid))
+                            obj_lst.append(ses.object(xid))
                         except kb_exc.NotFound:
                             raise ValueError('Unknown object id reference: %s'
                                              % xid)
@@ -799,7 +812,7 @@ def _assert_update_object_attrs(obj, obj_dict, sa_session):
                         break
                     else:
                         try:
-                            new_obj = sa_session.object(val)
+                            new_obj = ses.object(val)
                         except kb_exc.NotFound:
                             raise ValueError('Unknown object id reference: %s'
                                              % val)

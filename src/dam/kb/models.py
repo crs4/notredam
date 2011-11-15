@@ -44,5 +44,5 @@ class Object(models.Model):
                            % self.id, self.name)
 
     class Meta:
-        db_table = kb_schema.object_t.name
+        db_table = kb_schema.Schema().object_t.name # FIXME: consider prefix
         managed = False # Since it's handled in/by the KB

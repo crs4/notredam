@@ -26,6 +26,7 @@ import sqlalchemy
 import sqlalchemy.orm as sa_orm
 import sqlalchemy.engine.base as sa_base
 import sqlalchemy.orm.exc as sa_exc
+import sqlalchemy.schema as sa_schema
 
 import attributes as kb_attrs
 import classes as kb_cls
@@ -38,24 +39,29 @@ class Session(object):
     handles DB connection details.
     '''
 
-    def __init__(self, connstr_or_engine):
+    def __init__(self, connstr_or_engine, db_prefix='kb_'):
         '''
         Create a knowledge base session instance.
 
         @type  connstr_or_engine: SQLAlchemy connection string or engine
         @param connstr_or_engine: used to access the knowledge base SQL DB
-        '''
 
+        @type  db_prefix: string
+        @param db_prefix: prefix used for naming the SQL DB schema objects
+                          managed by the KB (tables, constraints...).
+        '''
         if isinstance(connstr_or_engine, str):
             self.engine = sqlalchemy.create_engine(connstr_or_engine)
         elif isinstance(sqlalchemy.Engine):
             self.engine = connstr_or_engine
         else:
-            raise ValueError('Unsupported type for Session initialization: '
+            raise TypeError('Unsupported type for Session initialization: '
                              % (connstr_or_engine, ))
-            
 
         self.session = sa_orm.Session(bind=self.engine)
+
+        self.schema = kb_schema.Schema(db_prefix)
+        self.orm = kb_cls.Classes(self.schema)
 
         # Known python classes
         self._python_classes_cache = {}
@@ -69,14 +75,14 @@ class Session(object):
         @type  obj: one of the classes exported from tinykb.classes
         @param obj: object to be added
         '''
-        if isinstance(obj, kb_cls.KBClass):
+        if isinstance(obj, self.orm.KBClass):
             # We will need to invalidate the Python classes cache
             self._rebuild_python_classes_cache_after_commit = True
 
         self.session.add(obj)
 
     def add_all(self, obj_list):
-        if any([isinstance(obj, kb_cls.KBClass) for obj in obj_list]):
+        if any([isinstance(obj, self.orm.KBClass) for obj in obj_list]):
             # We will need to invalidate the Python classes cache
             self._rebuild_python_classes_cache_after_commit = True
 
@@ -121,7 +127,7 @@ class Session(object):
         # Before committing, ensure that all KBClass-derived objects
         # have an associated table
         new_kb_cls = [a for a in self.session.new
-                      if isinstance(a, kb_cls.KBClass)]
+                      if isinstance(a, self.orm.KBClass)]
         for c in new_kb_cls:
             if not c.is_bound():
                 # FIXME: really do it automatically?  Or raise an error?
@@ -158,10 +164,10 @@ class Session(object):
         @type  id_: string
         @param id_: the identifier of the required KBClass
         '''
-        query = self.session.query(kb_cls.KBClass).filter(
-            kb_cls.KBClass.id == id_)
+        query = self.session.query(self.orm.KBClass).filter(
+            self.orm.KBClass.id == id_)
         if ws is not None:
-            query = _add_ws_filter(query, ws)
+            query = self._add_ws_filter(query, ws)
 
         try:
             cls = query.one()
@@ -178,9 +184,9 @@ class Session(object):
         @type  ws: Workspace
         @param ws: KB workspace object used to filter classes (default: None)
         '''
-        query = self.session.query(kb_cls.KBClass)
+        query = self.session.query(self.orm.KBClass)
         if ws is not None:
-            query = _add_ws_filter(query, ws)
+            query = self._add_ws_filter(query, ws)
         return query
 
     def create_table(self, class_):
@@ -195,7 +201,7 @@ class Session(object):
         @param class_: a knowledge base class instance, the tables of which
                        will be created on the DB
         '''
-        assert(isinstance(class_, kb_cls.KBClass))
+        assert(isinstance(class_, self.orm.KBClass))
         self.add(class_)
         class_.create_table(self.session)
 
@@ -257,10 +263,10 @@ class Session(object):
         # It will cause the Python classes to be instantiated and ORM-mapped
         self.python_classes()
 
-        query = self.session.query(kb_cls.KBObject).filter(
-            kb_cls.KBObject.id == id_)
+        query = self.session.query(self.orm.KBObject).filter(
+            self.orm.KBObject.id == id_)
         if ws is not None:
-            query = _add_ws_filter(query.join(kb_cls.KBClass), ws)
+            query = self._add_ws_filter(query.join(self.orm.KBClass), ws)
             
         try:
             obj = query.one()
@@ -269,14 +275,14 @@ class Session(object):
 
         return obj
 
-    def objects(self, class_=kb_cls.KBObject, ws=None, filter_expr=None):
+    def objects(self, class_=None, ws=None, filter_expr=None):
         '''
         Return an iterator yielding all known KBObject instances from
         the SQL DB.
 
         @type  class_: class.KBObject
         @param class_: the base class for selecting objects from SQL DB
-                       (default: class.KBObject)
+                       (default: None, meaning self.orm.KBObject)
 
         @type  ws: Workspace
         @param ws: KB workspace object used to filter KB objects according to
@@ -286,13 +292,16 @@ class Session(object):
         @param filter_expr: an optional SQLAlchemy filter expression for
                             selecting objects to be returned
         '''
+        if class_ is None:
+            class_ = self.orm.KBObject
+
         # It will cause the Python classes to be instantiated and ORM-mapped
         self.python_classes()
 
         query = self.session.query(class_)
 
         if ws is not None:
-            query = _add_ws_filter(query.join(kb_cls.KBClass), ws)
+            query = self._add_ws_filter(query.join(self.orm.KBClass), ws)
 
         if filter_expr is not None:
             query = query.filter(filter_expr)
@@ -309,8 +318,8 @@ class Session(object):
         @type  id_: string
         @param id_: the identifier of the required User
         '''
-        query = self.session.query(kb_cls.User).filter(
-            kb_cls.User.id == id_)
+        query = self.session.query(self.orm.User).filter(
+            self.orm.User.id == id_)
 
         try:
             user = query.one()
@@ -328,7 +337,7 @@ class Session(object):
         @param filter_expr: an optional SQLAlchemy filter expression for
                             selecting users to be returned
         '''
-        query = self.session.query(kb_cls.User)
+        query = self.session.query(self.orm.User)
         if filter_expr is not None:
             query = query.filter(filter_expr)
 
@@ -343,8 +352,8 @@ class Session(object):
         @param id_: the identifier of the required Workspace
         '''
         try:
-            return self.session.query(kb_cls.Workspace).filter(
-                kb_cls.Workspace.id == id_).one()
+            return self.session.query(self.orm.Workspace).filter(
+                self.orm.Workspace.id == id_).one()
         except sa_exc.NoResultFound:
             raise kb_exc.NotFound('workspace.id == %d' % (id_, ))
 
@@ -356,21 +365,21 @@ class Session(object):
         @type  user: User
         @param user: optional User object for filtering returned workspaces
         '''
-        query = self.session.query(kb_cls.Workspace)
+        query = self.session.query(self.orm.Workspace)
         if user is not None:
-            query = query.filter(kb_cls.Workspace.creator == user)
+            query = query.filter(self.orm.Workspace.creator == user)
         return query
 
 
-###############################################################################
-# Internal functions
-###############################################################################
+    ###########################################################################
+    # Internal functions
+    ###########################################################################
 
-# Add a workspace filter to the given SQLAlchemy query object
-def _add_ws_filter(query, ws):
-    # FIXME: the following alias should really be inferred by SQLAlchemy
-    rootcls_alias = sa_orm.aliased(kb_cls.KBRootClass)
-    return query.join(rootcls_alias,
-                      kb_cls.KBClass._root).join(
-        kb_cls.KBClassVisibility).filter(
-                          kb_cls.KBClassVisibility.workspace == ws)
+    # Add a workspace filter to the given SQLAlchemy query object
+    def _add_ws_filter(self, query, ws):
+        # FIXME: the following alias should really be inferred by SQLAlchemy
+        rootcls_alias = sa_orm.aliased(self.orm.KBRootClass)
+        return query.join(rootcls_alias,
+                          self.orm.KBClass._root).join(
+            self.orm.KBClassVisibility).filter(
+                              self.orm.KBClassVisibility.workspace == ws)

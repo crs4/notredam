@@ -37,8 +37,9 @@ def preinit_notredam_kb():
     # only references some columns.  Thus, we need to create the
     # complete table here --- and all the tables it depends from
     # FIXME: try to maintain schema isolation
-    tables = [schema.class_t, schema.object_t]
-    schema.create_tables(connstring, tables)
+    s = schema.Schema()
+    tables = [s.class_t, s.object_t]
+    s.create_tables(connstring, tables)
 
 
 def init_notredam_kb():
@@ -47,7 +48,8 @@ def init_notredam_kb():
     populate a NotreDAM database
     '''
     connstring = notredam_connstring()
-    schema.init_db(connstring)
+    s = schema.Schema()
+    s.init_db(connstring)
 
 
 def populate_test_kb():
