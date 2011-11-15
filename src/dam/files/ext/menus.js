@@ -631,24 +631,28 @@ Ext.onReady(function(){
                 text: gettext('90 clockwise'),
                 icon: '/files/images/icons/arrow_turn_right.png',
                 id: '90',
+                disabled: true,
                 handler: rotate_image,
             },            
             {
                 text: gettext('90 counterclockwise'),
                 icon: '/files/images/icons/arrow_turn_left.png',
                 id: '-90',
+                disabled: true,
                 handler: rotate_image,
             },            
             {
                 text: gettext('180 clockwise'),
                 icon: '/files/images/icons/arrow_180.png',
                 id: '180',
+                disabled: true,
                 handler: rotate_image,
             },            
             {
                 text: gettext('180 counterclockwise'),
                 icon: '/files/images/icons/arrow_minus_180.png',
                 id: '-180',
+                disabled: true,
                 handler: rotate_image,
             }            
 
