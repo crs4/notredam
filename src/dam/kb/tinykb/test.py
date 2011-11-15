@@ -23,10 +23,8 @@
 #
 #########################################################################
 
-import access
-import attributes as attrs
-import classes
 import errors as kb_exc
+import access
 import schema
 import session
 
@@ -35,13 +33,17 @@ import pdb
 CONNSTRING = 'postgresql://tinykb:tinykb@localhost/tinykb'
 
 def reset_db():
-    schema.reset_db(CONNSTRING)
+    s = schema.Schema()
+    s.reset_db(CONNSTRING)
 
 def init_db():
-    schema.init_db(CONNSTRING)
+    s = schema.Schema()
+    s.init_db(CONNSTRING)
 
 def test_create_object_classes(connstring=CONNSTRING):
     ses = session.Session(connstring)
+    classes = ses.orm
+    attrs = ses.orm.attributes
 
     ## Retrieve user 1, if it exists
     try:
@@ -66,7 +68,8 @@ def test_create_object_classes(connstring=CONNSTRING):
                                  notes='Generic building',
                                  attributes=[attrs.Boolean('Visitable',
                                                            default=True),
-                                             attrs.Integer('Height', min_=0),
+                                             attrs.Integer('Height',
+                                                           min_=0),
                                              attrs.String('Location'),
                                              attrs.Date('Date of completion')])
     class2 = classes.KBRootClass('Apple')
@@ -116,6 +119,8 @@ def test_create_object_classes(connstring=CONNSTRING):
 
 def test_create_derived_classes(connstring=CONNSTRING):
     ses = session.Session(connstring)
+    classes = ses.orm
+    attrs = ses.orm.attributes
 
     ## Retrieve the 'Keyword' class, which must exists
     KeywordClass = ses.class_('keyword')
