@@ -45,15 +45,13 @@ class Session(object):
         @type  connstr_or_engine: SQLAlchemy connection string or engine
         @param connstr_or_engine: used to access the knowledge base SQL DB
         '''
-
         if isinstance(connstr_or_engine, str):
             self.engine = sqlalchemy.create_engine(connstr_or_engine)
         elif isinstance(sqlalchemy.Engine):
             self.engine = connstr_or_engine
         else:
-            raise ValueError('Unsupported type for Session initialization: '
+            raise TypeError('Unsupported type for Session initialization: '
                              % (connstr_or_engine, ))
-            
 
         self.session = sa_orm.Session(bind=self.engine)
 
