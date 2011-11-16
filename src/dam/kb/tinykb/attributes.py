@@ -41,14 +41,19 @@ from util.niceid import niceid
 
 class Attributes(object):
     '''
-    This class holds the Python classes representing KB class
-    attributes, mapped to a knowledge base working session.
+    Container for the Python classes representing KB class attributes,
+    mapped to a knowledge base working session.
     '''
     def __init__(self, classes, schema):
         '''
         Create a knowledge base class attributes container.
 
-        @type  schema: schema.Schema object
+        @type  classes: L{classes.Classes}
+        @param classes: contains the
+                        KB classes which will be associated to the
+                        contained attributes
+
+        @type  schema: L{schema.Schema}
         @param schema: DB schema used for mapping the attribute classes
 
         '''

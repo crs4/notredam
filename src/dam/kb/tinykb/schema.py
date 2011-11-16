@@ -38,9 +38,10 @@ access_enum = ['owner', 'read-only', 'read-write']
 
 class Schema(object):
     '''
-    This class holds the SQL DB schema used during a knowledge base
+    Container for the SQL DB schema used during a knowledge base
     working session.
     '''
+    # FIXME: document table names, and expose them as read-only properties
     def __init__(self, prefix='kb_'):
         '''
         Create a knowledge base SQL DB schema.
@@ -62,6 +63,12 @@ class Schema(object):
     '''
 
     prefix = property(lambda self: self._prefix)
+    '''
+    The prefix used for SQL DB schema objects managed by the KB
+    (tables, constraints...).
+
+    @type: string
+    '''
 
     def init_db(self, connstr_or_engine):
         '''
