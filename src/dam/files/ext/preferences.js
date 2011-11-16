@@ -44,7 +44,7 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
                     width       : 500,
                     height      : 350,
                     //plain       : true,
-                    title: obj + ' Preferences',
+                    title: obj + ' Account Preferences',
                     modal: true,
                     items    : new Ext.TabPanel({
                                 autoTabs       : true,
