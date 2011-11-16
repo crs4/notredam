@@ -60,12 +60,28 @@ class Session(object):
 
         self.session = sa_orm.Session(bind=self.engine)
 
-        self.schema = kb_schema.Schema(db_prefix)
-        self.orm = kb_cls.Classes(self.schema)
+        self._schema = kb_schema.Schema(db_prefix)
+        self._orm = kb_cls.Classes(self._schema)
 
         # Known python classes
         self._python_classes_cache = {}
         self._rebuild_python_classes_cache_after_commit = False
+
+    schema = property(lambda self: self._schema)
+    '''
+    The SQL DB schema instance bound to the session
+
+    @type: L{schema.Schema}
+    '''
+
+    orm = property(lambda self: self._orm)
+    '''
+    The ORM configuration associated to the session.  All the
+    knowledge base classes can be accessed as attributes of this
+    property, almost like a dynamic namespace.
+
+    @type: L{classes.Classes}
+    '''
 
     def add(self, obj):
         '''
