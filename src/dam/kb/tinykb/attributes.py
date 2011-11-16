@@ -44,7 +44,7 @@ class Attributes(object):
     Container for the Python classes representing KB class attributes,
     mapped to a knowledge base working session.
     '''
-    def __init__(self, classes, schema):
+    def __init__(self, classes):
         '''
         Create a knowledge base class attributes container.
 
@@ -57,7 +57,7 @@ class Attributes(object):
         @param schema: DB schema used for mapping the attribute classes
 
         '''
-        self._schema = schema
+        self._schema = classes.schema
 
         _init_base_attributes(self, classes, self._schema)
 

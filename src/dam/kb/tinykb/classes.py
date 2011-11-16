@@ -557,7 +557,7 @@ def _init_base_classes(o, schema):
     # Mappers
     ###########################################################################
     from attributes import Attributes
-    o._attributes = Attributes(o, schema)
+    o._attributes = Attributes(o)
 
     mapper(User, schema.user)
 
