@@ -642,19 +642,12 @@ Ext.onReady(function(){
                 handler: rotate_image,
             },            
             {
-                text: gettext('180 clockwise'),
+                text: gettext('180 rotation'),
                 icon: '/files/images/icons/arrow_180.png',
                 id: '180',
                 disabled: true,
                 handler: rotate_image,
             },            
-            {
-                text: gettext('180 counterclockwise'),
-                icon: '/files/images/icons/arrow_minus_180.png',
-                id: '-180',
-                disabled: true,
-                handler: rotate_image,
-            }            
 
             ]
         }
