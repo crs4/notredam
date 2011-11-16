@@ -61,6 +61,13 @@ class Attributes(object):
 
         _init_base_attributes(self, classes, self._schema)
 
+    schema = property(lambda self: self._schema)
+    '''
+    The SQL DB schema instance bound to the session
+
+    @type: L{schema.Schema}
+    '''
+
 
 ###############################################################################
 # Mapped KB attribute classes
