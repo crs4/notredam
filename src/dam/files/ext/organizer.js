@@ -885,9 +885,6 @@ function createMediaPanel(config, autoLoad) {
 		var checked = false;
        if  (config.media_type)
            checked= config.media_type.indexOf(name) >= 0;
-           console.log('checked is ' + checked);
-           console.log('config.media_type is ' + config.media_type);
-           console.log('config.media_type.indexOf(name) is ' + config.media_type.indexOf(name));
 		
 		return {
 			xtype: 'checkbox',
@@ -1073,7 +1070,6 @@ function createMediaPanel(config, autoLoad) {
 	    		
 	    		var media_tabs = Ext.getCmp('media_tabs');
 	    		console.log('media_tabs.getActiveTab().title ' + media_tabs.getActiveTab().title);
-	    		console.log('closeee ' + media_tabs.items.items.length);
 	    		
 	    		if (media_tabs.items.items.length == 2){
 	    			
