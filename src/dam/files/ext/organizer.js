@@ -495,7 +495,6 @@ var showDetails = function(view){
                    Ext.getCmp('90').enable();
                    Ext.getCmp('-90').enable();
                    Ext.getCmp('180').enable();
-                   Ext.getCmp('-180').enable();
                    break;
                }
             }
@@ -507,7 +506,6 @@ var showDetails = function(view){
             Ext.getCmp('90').disable();
             Ext.getCmp('-90').disable();
             Ext.getCmp('180').disable();
-            Ext.getCmp('-180').disable();
             Ext.getCmp('remove_from_ws').disable();
         }
         
@@ -575,7 +573,6 @@ var showDetails = function(view){
         Ext.getCmp('edit_menu').menu.items.get('90').disable();
         Ext.getCmp('edit_menu').menu.items.get('-90').disable();
         Ext.getCmp('edit_menu').menu.items.get('180').disable();
-        Ext.getCmp('edit_menu').menu.items.get('-180').disable();
         
         
         Ext.getCmp('runscript').disable();
