@@ -61,6 +61,14 @@ class Classes(object):
     @type: attributes.Attributes
     '''
 
+    schema = property(lambda self: self._schema)
+    '''
+    The SQL DB schema instance bound to the session
+
+    @type: L{schema.Schema}
+    '''
+
+
 ###############################################################################
 # Mapped classes
 ###############################################################################
