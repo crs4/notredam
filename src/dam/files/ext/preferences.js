@@ -109,8 +109,9 @@ var account_prefs = new Ext.FormPanel({
         }
     },{
         text: 'Cancel',
-        handler: function() {
-            win.close();
+        handler: function(obj) {
+            var my_win = obj.findParentByType('window');
+            my_win.close();
             
            
         }
