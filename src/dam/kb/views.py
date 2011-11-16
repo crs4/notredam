@@ -276,7 +276,7 @@ def object_index_get(request, ws_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    obj_dicts = [_kbobject_to_dict(o) for o in ses.objects(ws=ws)]
+    obj_dicts = [_kbobject_to_dict(o, ses) for o in ses.objects(ws=ws)]
 
     return HttpResponse(simplejson.dumps(obj_dicts))
 
@@ -365,11 +365,11 @@ def object_get(request, ws_id, object_id):
         return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
     try:
-        cls = ses.object(object_id, ws=ws)
+        obj = ses.object(object_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
-    return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls)))
+    return HttpResponse(simplejson.dumps(_kbobject_to_dict(obj, ses)))
 
 
 def object_post(request, ws_id, object_id):
