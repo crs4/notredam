@@ -52,6 +52,14 @@ class Classes(object):
 
         _init_base_classes(self, self._schema)
 
+    # self._attributes is set in _init_base_classes
+    attributes = property(lambda self: self._attributes)
+    '''
+    Contains the knowledge base Attribute classes mapped to a
+    working session.
+
+    @type: attributes.Attributes
+    '''
 
 ###############################################################################
 # Mapped classes
@@ -61,7 +69,7 @@ def _init_base_classes(o, schema):
     Create the base classes and ORM mappings for a knowledge base
     working session, using the given schema.  The classes will be
     attached as attributes to the "o" object, preserving their name.
-    Furthermore, o.attributes will contain the KB attribute classes
+    Furthermore, o._attributes will contain the KB attribute classes
     mapped to the given schema.
     '''
     class Workspace(object):
@@ -538,7 +546,7 @@ def _init_base_classes(o, schema):
     # Mappers
     ###########################################################################
     from attributes import Attributes
-    o.attributes = Attributes(o, schema)
+    o._attributes = Attributes(o, schema)
 
     mapper(User, schema.user)
 
@@ -586,7 +594,7 @@ def _init_base_classes(o, schema):
                                    remote_side=[schema.class_t.c.id],
                                    post_update=True,
                                    cascade='all'),
-            'attributes' : relationship(o.attributes.Attribute,
+            'attributes' : relationship(o._attributes.Attribute,
                                         back_populates='_class',
                                         cascade='save-update')
             })
@@ -706,7 +714,7 @@ def _init_base_classes(o, schema):
     # 'attributes' list
     # FIXME: it should happen automatically, shouldn't it?
     def kbclass_append_attribute(target, value, _initiator):
-        if not isinstance(value, o.attributes.Attribute):
+        if not isinstance(value, o._attributes.Attribute):
             raise TypeError('Expected an Attribute, got "%s" (type: %s)'
                             % (value, type(value)))
         if (value.multivalued and hasattr(value, '_sqlalchemy_mv_table')
@@ -735,7 +743,7 @@ def _init_base_classes(o, schema):
     # the 'attributes' list
     # FIXME: it should happen automatically, shouldn't it?
     def kbclass_remove_attribute(target, value, _initiator):
-        assert(isinstance(value, o.attributes.Attribute))
+        assert(isinstance(value, o._attributes.Attribute))
         value._class_id = None
         value._class_root_id = None
         value._multivalue_table = None
