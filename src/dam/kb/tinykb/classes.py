@@ -37,14 +37,17 @@ from util import niceid
 
 class Classes(object):
     '''
-    This class holds the Python classes mapped to a knowledge base
+    Container for the Python classes mapped to a knowledge base
     working session.
+
+    When instantiated, this class configures the ORM machinery needed
+    to bind the underlying knowledge base to a set of Python classes.
     '''
     def __init__(self, schema):
         '''
         Create a knowledge base class container.
 
-        @type  schema: schema.Schema object
+        @type  schema: L{schema.Schema}
         @param schema: DB schema used for mapping the classes
 
         '''

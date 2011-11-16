@@ -35,10 +35,9 @@ import schema as kb_schema
 
 class Session(object):
     '''
-    This class represents a working session on the knowledge base, and
-    handles DB connection details.
+    A working session of the knowledge base, which handles SQL DB
+    connection and object-relational mapping details.
     '''
-
     def __init__(self, connstr_or_engine, db_prefix='kb_'):
         '''
         Create a knowledge base session instance.
@@ -85,10 +84,10 @@ class Session(object):
 
     def add(self, obj):
         '''
-        Add an object instance to the knowledge base session, ready
-        for later commit.
+        Add an object to the knowledge base session, ready for later
+        commit.
 
-        @type  obj: one of the classes exported from tinykb.classes
+        @type  obj: one of the classes accessible through the L{orm} property
         @param obj: object to be added
         '''
         if isinstance(obj, self.orm.KBClass):
@@ -98,6 +97,14 @@ class Session(object):
         self.session.add(obj)
 
     def add_all(self, obj_list):
+        '''
+        Add a list of objects to the knowledge base session, ready for
+        later commit.
+
+        @type  obj: list of instances, whose class must be accessible
+               through the L{orm} property
+        @param obj: object to be added
+        '''
         if any([isinstance(obj, self.orm.KBClass) for obj in obj_list]):
             # We will need to invalidate the Python classes cache
             self._rebuild_python_classes_cache_after_commit = True
@@ -106,11 +113,11 @@ class Session(object):
     
     def expunge(self, obj):
         '''
-        Remove an object instance from the set handled by the
-        knowledge base session.
+        Remove an object from the set handled by the knowledge base
+        session.
 
-        @param obj: an object instance (previously added with add() or
-        add_all())
+        @param obj: an object instance (previously added with L{add}() or
+        L{add_all}())
         '''
         if isinstance(obj, list):
             for o in obj:
@@ -129,7 +136,7 @@ class Session(object):
         '''
         Start a nested transaction.
 
-        This function will create a savepoint in case of rollback.
+        This method creates a savepoint in case of L{rollback}.
         '''
         self.session.begin_nested()
 
@@ -164,7 +171,7 @@ class Session(object):
         Undo the effects of the current transaction on the knowledge
         base SQL DB.
 
-        If begin_nested() was used, the rollback will stop at the last
+        If L{begin_nested}() was used, the rollback will stop at the last
         savepoint.
         '''
         self.session.rollback()
@@ -179,6 +186,8 @@ class Session(object):
 
         @type  id_: string
         @param id_: the identifier of the required KBClass
+
+        @return: a KBClass instance
         '''
         query = self.session.query(self.orm.KBClass).filter(
             self.orm.KBClass.id == id_)
@@ -199,6 +208,8 @@ class Session(object):
 
         @type  ws: Workspace
         @param ws: KB workspace object used to filter classes (default: None)
+
+        @return: an iterator yielding KBClass instances
         '''
         query = self.session.query(self.orm.KBClass)
         if ws is not None:
@@ -223,7 +234,7 @@ class Session(object):
 
     def python_class(self, id_, ws=None):
         '''
-        Return the Python class corresponding to the KBClass object
+        Retrieve the Python class corresponding to the KBClass object
         with the given identifier.
 
         The returned class will be ORM-mapped and ready to be used for
@@ -237,6 +248,8 @@ class Session(object):
 
         @type  ws: Workspace
         @param ws: KB workspace object used to filter classes (default: None)
+
+        @return: a Python class (inheriting from KBObject)
         '''
         # It will cause the Python classes to be instantiated and ORM-mapped
         self.python_classes(ws=ws)
@@ -250,11 +263,13 @@ class Session(object):
 
     def python_classes(self, ws=None):
         '''
-        Return a list of the Python classes corresponding to all the
+        Retrieve a list of the Python classes corresponding to all the
         KBClass objects stored on the SQL DB.
 
         @type  ws: Workspace
         @param ws: KB workspace object used to filter classes (default: None)
+
+        @return: a list of Python classes (inheriting from KBObject)
         '''
         if not self._python_classes_cache.has_key(ws):
             self._python_classes_cache[ws] = [c.make_python_class(self.session)
@@ -263,7 +278,7 @@ class Session(object):
 
     def object(self, id_, ws=None):
         '''
-        Return the Python object mapped to the KB object with the
+        Retrieve the Python object mapped to the KB object with the
         given id.
 
         An exception will be raised if the given id doesn't refer to
@@ -275,6 +290,8 @@ class Session(object):
 
         @type  id_: string
         @param id_: the identifier of the required KBObject
+
+        @return: a Python object
         '''
         # It will cause the Python classes to be instantiated and ORM-mapped
         self.python_classes()
@@ -307,6 +324,8 @@ class Session(object):
         @type  filter_expr: SQLAlchemy expression
         @param filter_expr: an optional SQLAlchemy filter expression for
                             selecting objects to be returned
+
+        @return: an iterator yielding Python objects
         '''
         if class_ is None:
             class_ = self.orm.KBObject
@@ -326,13 +345,15 @@ class Session(object):
 
     def user(self, id_):
         '''
-        Return the User object with the given id.
+        Retrieve the User object with the given id.
 
         An exception will be raised if the given id doesn't refer to
         any stored user.
 
         @type  id_: string
         @param id_: the identifier of the required User
+
+        @return: an User object
         '''
         query = self.session.query(self.orm.User).filter(
             self.orm.User.id == id_)
@@ -352,6 +373,8 @@ class Session(object):
         @type  filter_expr: SQLAlchemy expression
         @param filter_expr: an optional SQLAlchemy filter expression for
                             selecting users to be returned
+
+        @return: an iterator yielding User objects
         '''
         query = self.session.query(self.orm.User)
         if filter_expr is not None:
@@ -359,13 +382,15 @@ class Session(object):
 
     def workspace(self, id_):
         '''
-        Return the Workspace object with the given id.
+        Retrieve the Workspace object with the given id.
 
         An exception will be raised if the given id doesn't refer to
         any stored workspace.
 
         @type  id_: string
         @param id_: the identifier of the required Workspace
+
+        @return: a Workspace object
         '''
         try:
             return self.session.query(self.orm.Workspace).filter(
@@ -380,6 +405,8 @@ class Session(object):
 
         @type  user: User
         @param user: optional User object for filtering returned workspaces
+
+        @return: an iterator yielding Workspace objects
         '''
         query = self.session.query(self.orm.Workspace)
         if user is not None:
