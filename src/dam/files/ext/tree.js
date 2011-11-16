@@ -762,7 +762,7 @@ var treeAction = function( tree_action){
         }
         
     }
-    else if(tree_action.text == gettext('Show Associated Items')){
+    else if(tree_action.text == gettext('Show items with this keyword')){
         var path = get_final_node_path(sel_node);
         var tree = Ext.getCmp('keywords_tree');
         tree.getSelectionModel().suspendEvents();
@@ -927,7 +927,7 @@ var edit_node = new Ext.menu.Item({text: gettext('Edit')});
 var delete_node = new Ext.menu.Item({text: gettext('Delete')});
 
 var search_box_node = new Ext.menu.Item({text: gettext('Add To Search Box')});
-var show_item_node = new Ext.menu.Item({text: gettext('Show Associated Items')});
+var show_item_node = new Ext.menu.Item({text: gettext('Show items with this keyword')});
 
 
 var contextMenuKeywords = new Ext.menu.Menu({id:'mainContext'});
@@ -978,7 +978,7 @@ contextMenuShow = function( node_menu,e ){
             contextMenu.find('text', gettext('Add'))[0].disable();
             contextMenu.find('text', gettext('Delete'))[0].disable();
             contextMenu.find('text', gettext('Edit'))[0].setHandler(treeAction, sel_nodes);
-            contextMenu.find('text', gettext('Show Associated Items'))[0].disable();        
+            contextMenu.find('text', gettext('Show items with this keyword'))[0].disable();        
             
             
             var all_cat = true;
@@ -1007,8 +1007,8 @@ contextMenuShow = function( node_menu,e ){
             	
                 Ext.getCmp('addKeyword').setHandler(treeAction, node_menu);
                 Ext.getCmp('addCategory').setHandler(treeAction, node_menu);
-                contextMenu.find('text', gettext('Show Associated Items'))[0].enable();
-                contextMenu.find('text', gettext('Show Associated Items'))[0].setHandler(treeAction, node_menu);
+                contextMenu.find('text', gettext('Show items with this keyword'))[0].enable();
+                contextMenu.find('text', gettext('Show items with this keyword'))[0].setHandler(treeAction, node_menu);
 
             }
             else{
@@ -1041,7 +1041,7 @@ contextMenuShow = function( node_menu,e ){
             
         if (node_menu.attributes.isCategory) {
             contextMenu.find('text', gettext('Add To Search Box'))[0].disable();
-            contextMenu.find('text', gettext('Show Associated Items'))[0].disable();
+            contextMenu.find('text', gettext('Show items with this keyword'))[0].disable();
         }
         if (tree.id == 'keywords_tree') {
             if(!admin && ! edit_taxonomy){
