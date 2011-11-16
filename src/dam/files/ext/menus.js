@@ -375,7 +375,7 @@ Ext.onReady(function(){
             }
 
 			Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload();
-            Ext.MessageBox.alert(gettext('Success'), gettext('Object(s) deleted successfully.'));
+            Ext.MessageBox.alert(gettext('Message'), gettext('Item(s) deleted.'));
 
 		};
 
