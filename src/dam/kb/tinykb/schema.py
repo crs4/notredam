@@ -54,6 +54,13 @@ class Schema(object):
 
         _init_base_schema(self, self._metadata, self._prefix)
 
+    metadata = property(lambda self: self._metadata)
+    '''
+    The SQLAlchemy MetaData object bound to the schema
+
+    @type: SQLAlchemy MetaData
+    '''
+
     prefix = property(lambda self: self._prefix)
 
     def init_db(self, connstr_or_engine):
