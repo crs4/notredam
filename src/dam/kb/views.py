@@ -120,8 +120,11 @@ def class_index_put(request, ws_id):
                 del(json_attrs[xid])
 
     attrs = []
-    for attr_id in json_attrs:
-        a = json_attrs[attr_id]
+    for (attr_id, a) in json_attrs.iteritems():
+        if not isinstance(a, dict):
+            return HttpResponseBadRequest('Expected a dictionary for '
+                                          'representing attribute "%s", got '
+                                          '"%s"' % (attr_id, str(a)))
         try:
             attr_type = a['type']
         except KeyError:
