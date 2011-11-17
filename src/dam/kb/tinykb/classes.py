@@ -89,12 +89,6 @@ def _init_base_classes(o):
     schema = o.session.schema
     engine = o.session.engine
 
-    # This dictionary associates KB class IDs to the respective Python
-    # classes, if they were created before.  It ensures that two
-    # KBClass objects referring to the same ID always return the same
-    # Python class
-    o._kbclass_id_python_class_cache = {}
-
     class Workspace(object):
         def __init__(self, name, creator):
             self.name = name
@@ -316,11 +310,9 @@ def _init_base_classes(o):
             class will be built only once, and further calls will
             always return the same result
             '''
-            # Check whether another KBClass with the same ID
-            # (i.e. another copy of the same DB record) the same
-            # Python class
-            if self.id in o._kbclass_id_python_class_cache.has_key:
-                return o._kbclass_id_python_class_cache.has_key[self.id]
+            ret = getattr(self, '_cached_pyclass', None)
+            if ret is not None:
+                return ret
 
             try:
                 self.bind_to_table()
@@ -359,7 +351,7 @@ def _init_base_classes(o):
             # generating the SQLAlchemy ORM mapper, because it will
             # invoke self.make_python_class() again, thus causing an
             # infinite recursion
-            o._kbclass_id_python_class_cache.has_key[self.id] = newclass
+            self._cached_pyclass = newclass
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
