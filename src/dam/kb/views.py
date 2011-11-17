@@ -431,7 +431,7 @@ def class_objects_get(request, ws_id, class_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
-    objs = ses.objects(class_=cls.make_python_class())
+    objs = ses.objects(class_=cls.python_class)
     obj_dicts = [_kbobject_to_dict(o, ses) for o in objs]
 
     return HttpResponse(simplejson.dumps(obj_dicts))
