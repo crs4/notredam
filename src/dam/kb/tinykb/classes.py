@@ -318,7 +318,7 @@ def _init_base_classes(o):
                 self.bind_to_table()
 
             if not self.is_root():
-                parent_class = self.superclass.make_python_class(engine)
+                parent_class = self.superclass.python_class
                 init_method = lambda instance, name, notes=None, explicit_id=None:(
                     parent_class.__init__(instance, name, notes=notes,
                                           explicit_id=explicit_id))
@@ -344,7 +344,7 @@ def _init_base_classes(o):
 
             # NOTE: the cached python class needs to be set *before*
             # generating the SQLAlchemy ORM mapper, because it will
-            # invoke self.make_python_class() again, thus causing an
+            # access to self.python_class again, thus causing an
             # infinite recursion
             self._cached_pyclass = newclass
 

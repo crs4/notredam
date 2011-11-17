@@ -675,7 +675,7 @@ def _init_base_attributes(o):
             assert(not self.multivalued)
 
             obj_table = self._class.sqlalchemy_table
-            target_pyclass = self.target.make_python_class()
+            target_pyclass = self.target.python_class
             target_table = self.target.sqlalchemy_table
             colname = self.column_name()
 
@@ -696,7 +696,7 @@ def _init_base_attributes(o):
             mvtable = self._sqlalchemy_mv_table
             assert(mvtable is not None)
 
-            target_pyclass = self.target.make_python_class()
+            target_pyclass = self.target.python_class
             target_table = self.target.sqlalchemy_table
 
             return {'_object' : mvtable.c.object, # 'object' used as backref
@@ -713,7 +713,7 @@ def _init_base_attributes(o):
             if self.maybe_empty and not self.multivalued and value is None:
                 return value
 
-            target_pyclass = self.target.make_python_class()
+            target_pyclass = self.target.python_class
             if not isinstance(value, target_pyclass):
                 raise kb_exc.ValidationError(('expected a value of type "%s" '
                                               + '(or descendants), got "%s" '
