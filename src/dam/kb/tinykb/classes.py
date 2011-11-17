@@ -314,13 +314,8 @@ def _init_base_classes(o):
             if ret is not None:
                 return ret
 
-            try:
+            if not self.is_bound():
                 self.bind_to_table()
-            except exc.InvalidRequestError:
-                raise AttributeError('KBClass must be bound to a SQL table '
-                                     'in order to generate a Python class.  '
-                                     'Maybe you should call '
-                                     'KBClass.bind_to_table()?')
 
             if not self.is_root():
                 parent_class = self.superclass.make_python_class(engine)
