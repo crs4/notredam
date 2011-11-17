@@ -492,12 +492,14 @@ def _infer_method(req):
         return (req.method, req.GET)
 
 
+# Global KB session, based on NotreDAM DBMS connection parameters
+KB_SESSION = kb_ses.Session(util.notredam_connstring())
 def _kb_session():
     '''
-    Create a knowledge base session, using the NotreDAM connection parameters
+    Create a knowledge base session
     '''
     connstr = util.notredam_connstring()
-    return kb_ses.Session(connstr)
+    return KB_SESSION.duplicate()
     
 
 def _kbclass_to_dict(cls, ses):
