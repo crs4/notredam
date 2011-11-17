@@ -50,14 +50,14 @@ class Session(object):
                           managed by the KB (tables, constraints...).
         '''
         if isinstance(connstr_or_engine, str):
-            self.engine = sqlalchemy.create_engine(connstr_or_engine)
-        elif isinstance(sqlalchemy.Engine):
-            self.engine = connstr_or_engine
+            self._engine = sqlalchemy.create_engine(connstr_or_engine)
+        elif isinstance(connstr_or_engine, sa_base.Engine):
+            self._engine = connstr_or_engine
         else:
             raise TypeError('Unsupported type for Session initialization: '
                              % (connstr_or_engine, ))
 
-        self.session = sa_orm.Session(bind=self.engine)
+        self.session = sa_orm.Session(bind=self._engine)
 
         self._schema = kb_schema.Schema(db_prefix)
         self._orm = kb_cls.Classes(self._schema)
@@ -65,6 +65,13 @@ class Session(object):
         # Known python classes
         self._python_classes_cache = {}
         self._rebuild_python_classes_cache_after_commit = False
+
+    engine = property(lambda self: self._engine)
+    '''
+    The SQLAlchemy engine used for connecting to the DBMS
+
+    @type: SQLAlchemy engine
+    '''
 
     schema = property(lambda self: self._schema)
     '''
@@ -154,7 +161,7 @@ class Session(object):
         for c in new_kb_cls:
             if not c.is_bound():
                 # FIXME: really do it automatically?  Or raise an error?
-                c.create_table(self.session)
+                c.create_table()
         
         try:
             self.session.commit()
@@ -230,7 +237,7 @@ class Session(object):
         '''
         assert(isinstance(class_, self.orm.KBClass))
         self.add(class_)
-        class_.create_table(self.session)
+        class_.create_table()
 
     def python_class(self, id_, ws=None):
         '''
