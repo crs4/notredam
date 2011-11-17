@@ -38,7 +38,8 @@ class Session(object):
     A working session of the knowledge base, which handles SQL DB
     connection and object-relational mapping details.
     '''
-    def __init__(self, connstr_or_engine, db_prefix='kb_'):
+    def __init__(self, connstr_or_engine, db_prefix='kb_',
+                 _duplicate_from=None):
         '''
         Create a knowledge base session instance.
 
@@ -59,9 +60,16 @@ class Session(object):
 
         self.session = sa_orm.Session(bind=self._engine)
 
-        self._schema = kb_schema.Schema(db_prefix)
-        self._orm = kb_cls.Classes(self._schema)
+        if _duplicate_from is None:
+            self._schema = kb_schema.Schema(db_prefix)
+            self._orm = kb_cls.Classes(self)
+        else:
+            assert(isinstance(_duplicate_from, Session))
+            assert(db_prefix == _duplicate_from._schema.prefix) # Coherency
 
+            self._schema = _duplicate_from._schema
+            self._orm = _duplicate_from._orm
+            
         # Known python classes
         self._python_classes_cache = {}
         self._rebuild_python_classes_cache_after_commit = False
@@ -88,6 +96,17 @@ class Session(object):
 
     @type: L{classes.Classes}
     '''
+
+    def duplicate(self):
+        '''
+        Create a new Session object sharing the schema and ORM
+        machinery with the original one.
+
+        @return: a new Session instance
+        '''
+        return Session(self._engine, self._schema.prefix,
+                       _duplicate_from=self)
+
 
     def add(self, obj):
         '''
