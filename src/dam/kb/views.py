@@ -729,13 +729,16 @@ def _kbobjattr_to_dict(attr, val, ses):
     return _kb_objattrs_dict_map(type(attr), ses)(attr, val)
 
 
+import re
+_content_type_re = re.compile('application/json; *charset=UTF-8',
+                              re.IGNORECASE)
 def _assert_return_json_data(request):
     '''
     Ensure that a Django request contains JSON data, and return it
     (taking care of its encoding).  Raise a ValueError if the content
     type is not supported.
     '''
-    if ('application/json; charset=UTF-8' == request.META['CONTENT_TYPE']):
+    if (_content_type_re.match(request.META['CONTENT_TYPE'])):
         return simplejson.loads(request.raw_post_data)
     else:
         # FIXME: we should support other charset encodings here
