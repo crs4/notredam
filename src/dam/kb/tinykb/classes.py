@@ -89,6 +89,12 @@ def _init_base_classes(o):
     schema = o.session.schema
     engine = o.session.engine
 
+    # This dictionary associates KB class IDs to the respective Python
+    # classes, if they were created before.  It ensures that two
+    # KBClass objects referring to the same ID always return the same
+    # Python class
+    o._kbclass_id_python_class_cache = {}
+
     class Workspace(object):
         def __init__(self, name, creator):
             self.name = name
@@ -200,7 +206,6 @@ def _init_base_classes(o):
             ## When created from scratch, no table on DB should exists
             self.sqlalchemy_table = None
             self.additional_sqlalchemy_tables = []
-            self.python_class = None
 
         @orm.reconstructor
         def __init_on_load__(self):
@@ -300,12 +305,17 @@ def _init_base_classes(o):
                 # exception here
                 raise
 
-        def make_python_class(self):
+        def _make_or_get_python_class(self):
             '''
-            Return the Python class associated to a KB class.
+            Return the Python class associated to a KB class.  The
+            class will be built only once, and further calls will
+            always return the same result
             '''
-            if self.python_class is not None:
-                return self.python_class
+            # Check whether another KBClass with the same ID
+            # (i.e. another copy of the same DB record) the same
+            # Python class
+            if self.id in o._kbclass_id_python_class_cache.has_key:
+                return o._kbclass_id_python_class_cache.has_key[self.id]
 
             try:
                 self.bind_to_table()
@@ -340,18 +350,18 @@ def _init_base_classes(o):
                             (parent_class, ),
                             classdict)
 
-            # NOTE: self.python_class needs to be set *before* generating
-            # the SQLAlchemy ORM mapper, because it will invoke
-            # self.make_python_class() again, thus causing an infinite
-            # recursion
-            self.python_class = newclass
+            # NOTE: the cached python class needs to be set *before*
+            # generating the SQLAlchemy ORM mapper, because it will
+            # invoke self.make_python_class() again, thus causing an
+            # infinite recursion
+            o._kbclass_id_python_class_cache.has_key[self.id] = newclass
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
             for r in self.attributes:
                 mapper_props.update(r.mapper_properties())
 
-            mapper(newclass, self.sqlalchemy_table, inherits=parent_class,
+            mapper(newclass, self._sqlalchemy_table, inherits=parent_class,
                    polymorphic_identity=self.id,
                    properties = mapper_props)
 
@@ -361,6 +371,8 @@ def _init_base_classes(o):
                 a.make_proxies_and_event_listeners(newclass)
 
             return newclass
+
+        python_class = property(_make_or_get_python_class)
 
         def workspace_permission(self, workspace):
             '''
