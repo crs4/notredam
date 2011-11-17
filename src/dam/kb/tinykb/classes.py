@@ -204,15 +204,15 @@ def _init_base_classes(o):
             self.notes = notes
 
             ## When created from scratch, no table on DB should exists
-            self.sqlalchemy_table = None
+            self._sqlalchemy_table = None
             self.additional_sqlalchemy_tables = []
 
         @orm.reconstructor
         def __init_on_load__(self):
+            self._sqlalchemy_table = None
             self.bind_to_table()
-            assert(hasattr(self, 'sqlalchemy_table'))
 
-            self.python_class = None
+        sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
         def is_root(self):
             return (self.id == self._root_id)
@@ -232,7 +232,7 @@ def _init_base_classes(o):
             return ancestors
 
         def is_bound(self):
-            return self.sqlalchemy_table is not None
+            return self._sqlalchemy_table is not None
 
         def all_attributes(self):
             '''
@@ -269,16 +269,16 @@ def _init_base_classes(o):
             if self.is_bound():
                 ## We are already bound to a table
                 raise AttributeError('%s is already bound to a SQL table (%s)'
-                                     % (self, self.sqlalchemy_table.name))
+                                     % (self, self._sqlalchemy_table.name))
 
             parent_table = self._get_parent_table()
 
             attrs_ddl = self._get_attributes_ddl()
 
-            self.sqlalchemy_table = schema.create_object_table(self.table,
-                                                               parent_table,
-                                                               attrs_ddl,
-                                                               engine)
+            self._sqlalchemy_table = schema.create_object_table(self.table,
+                                                                parent_table,
+                                                                attrs_ddl,
+                                                                engine)
 
             add_tables = self._get_attributes_tables()
 
@@ -288,11 +288,16 @@ def _init_base_classes(o):
         def bind_to_table(self):
             parent_table = self._get_parent_table()
             attrs_ddl = self._get_attributes_ddl()
+
+            if self.is_bound():
+                raise AttributeError('KBClass.bind_to_table() was called twice'
+                                     ' on %s' % (self, ))
+
             try:
-                self.sqlalchemy_table = schema.get_object_table(self.table,
-                                                                parent_table,
-                                                                attrs_ddl,
-                                                                engine)
+                self._sqlalchemy_table = schema.get_object_table(self.table,
+                                                                 parent_table,
+                                                                 attrs_ddl,
+                                                                 engine)
 
                 # The following call is going to require
                 # self.sqlalchemy_table (set above)
