@@ -69,10 +69,6 @@ class Session(object):
 
             self._schema = _duplicate_from._schema
             self._orm = _duplicate_from._orm
-            
-        # Known python classes
-        self._python_classes_cache = {}
-        self._rebuild_python_classes_cache_after_commit = False
 
     engine = property(lambda self: self._engine)
     '''
@@ -116,10 +112,6 @@ class Session(object):
         @type  obj: one of the classes accessible through the L{orm} property
         @param obj: object to be added
         '''
-        if isinstance(obj, self.orm.KBClass):
-            # We will need to invalidate the Python classes cache
-            self._rebuild_python_classes_cache_after_commit = True
-
         self.session.add(obj)
 
     def add_all(self, obj_list):
@@ -131,10 +123,6 @@ class Session(object):
                through the L{orm} property
         @param obj: object to be added
         '''
-        if any([isinstance(obj, self.orm.KBClass) for obj in obj_list]):
-            # We will need to invalidate the Python classes cache
-            self._rebuild_python_classes_cache_after_commit = True
-
         self.session.add_all(obj_list)
     
     def expunge(self, obj):
@@ -187,10 +175,6 @@ class Session(object):
         except sqlalchemy.exc.IntegrityError:
             self.session.rollback()
             raise
-
-        if self._rebuild_python_classes_cache_after_commit:
-            self._python_classes_cache = {}
-            self._rebuild_python_classes_cache_after_commit = False
 
     def rollback(self):
         '''
@@ -277,15 +261,7 @@ class Session(object):
 
         @return: a Python class (inheriting from KBObject)
         '''
-        # It will cause the Python classes to be instantiated and ORM-mapped
-        self.python_classes(ws=ws)
-        cls = [x for x in self._python_classes_cache[ws]
-               if x.__class_id__ == id_]
-
-        # FIXME: decide how to handle the 'id not found' error
-        assert(len(cls) == 1)
-
-        return cls[0]
+        return self.class_(id_, ws=ws).python_class
 
     def python_classes(self, ws=None):
         '''
@@ -297,10 +273,7 @@ class Session(object):
 
         @return: a list of Python classes (inheriting from KBObject)
         '''
-        if not self._python_classes_cache.has_key(ws):
-            self._python_classes_cache[ws] = [c.make_python_class(self.session)
-                                              for c in self.classes(ws=ws)]
-        return self._python_classes_cache[ws]
+        return [c.python_class for c in self.classes(ws=ws)]
 
     def object(self, id_, ws=None):
         '''
