@@ -27,7 +27,7 @@ supported_types  = {
    'image/x-portable-pixmap': ['.ppm'],
    'doc/pdf': ['.pdf'],
    'video/flv': ['.flv'],
-   'video/mp4': ['.mp4'],
+   'video/mp4': ['.mp4', '.mxf'],
    'video/mpeg': ['.m1v', '.mpa', '.mpg', '.mpe', '.mpeg'],
    'video/ogg': ['.ogg'],
    'video/ts': ['.ts'],
