@@ -57,28 +57,34 @@ class Attributes(object):
         @param schema: DB schema used for mapping the attribute classes
 
         '''
-        self._schema = classes.schema
+        import classes as kb_classes
+        assert(isinstance(classes, kb_classes.Classes))
 
-        _init_base_attributes(self, classes, self._schema)
+        self._classes = classes
 
-    schema = property(lambda self: self._schema)
+        _init_base_attributes(self)
+
+    classes = property(lambda self: self._classes)
     '''
-    The SQL DB schema instance bound to the session
+    The knowledge base classes with which the attributes are bound
 
-    @type: L{schema.Schema}
+    @type: L{classes.Classes}
     '''
 
 
 ###############################################################################
 # Mapped KB attribute classes
 ###############################################################################
-def _init_base_attributes(o, classes, schema):
+def _init_base_attributes(o):
     '''
     Create the base KB attribute classes and ORM mappings for a
-    knowledge base working session, using the given schema.  The
-    classes will be attached as attributes to the "o" object,
-    preserving their name.
+    knowledge base working session, using the given object (which must
+    contain a 'classes' attribute).  The classes will be attached as
+    attributes to the "o" object, preserving their name.
     '''
+    classes = o.classes
+    schema = classes.session.schema
+
     # Base abstract class
     class Attribute(object):
         def __init__(self, name, maybe_empty=True, order=0, multivalued=False,

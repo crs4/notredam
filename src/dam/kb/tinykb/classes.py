@@ -43,17 +43,20 @@ class Classes(object):
     When instantiated, this class configures the ORM machinery needed
     to bind the underlying knowledge base to a set of Python classes.
     '''
-    def __init__(self, schema):
+    def __init__(self, session):
         '''
         Create a knowledge base class container.
 
-        @type  schema: L{schema.Schema}
+        @type  schema: L{session.Session}
         @param schema: DB schema used for mapping the classes
 
         '''
-        self._schema = schema
+        import session as kb_session
+        assert(isinstance(session, kb_session.Session))
 
-        _init_base_classes(self, self._schema)
+        self._session = session
+
+        _init_base_classes(self)
 
     # self._attributes is set in _init_base_classes
     attributes = property(lambda self: self._attributes)
@@ -64,25 +67,28 @@ class Classes(object):
     @type: attributes.Attributes
     '''
 
-    schema = property(lambda self: self._schema)
+    session = property(lambda self: self._session)
     '''
-    The SQL DB schema instance bound to the session
+    The knowledge base session with which the attributes are bound
 
-    @type: L{schema.Schema}
+    @type: L{session.Session}
     '''
 
 
 ###############################################################################
 # Mapped classes
 ###############################################################################
-def _init_base_classes(o, schema):
+def _init_base_classes(o):
     '''
     Create the base classes and ORM mappings for a knowledge base
-    working session, using the given schema.  The classes will be
-    attached as attributes to the "o" object, preserving their name.
-    Furthermore, o._attributes will contain the KB attribute classes
-    mapped to the given schema.
+    working session (which must hold a 'session' attribute).  The
+    classes will be attached as attributes to the "o" object,
+    preserving their name.  Furthermore, o._attributes will contain
+    the KB attribute classes mapped to the given schema.
     '''
+    schema = o.session.schema
+    engine = o.session.engine
+
     class Workspace(object):
         def __init__(self, name, creator):
             self.name = name
@@ -198,10 +204,7 @@ def _init_base_classes(o, schema):
 
         @orm.reconstructor
         def __init_on_load__(self):
-            # Retrieve the session of the current object...
-            ses = orm.Session.object_session(self)
-            # ...and use it to bind to its SQL table
-            self.bind_to_table(ses.get_bind(None))
+            self.bind_to_table()
             assert(hasattr(self, 'sqlalchemy_table'))
 
             self.python_class = None
@@ -257,13 +260,11 @@ def _init_base_classes(o, schema):
 
             return attrs_tbl_list
 
-        def create_table(self, session_or_engine):
+        def create_table(self):
             if self.is_bound():
                 ## We are already bound to a table
                 raise AttributeError('%s is already bound to a SQL table (%s)'
                                      % (self, self.sqlalchemy_table.name))
-
-            engine = _get_engine(session_or_engine)
 
             parent_table = self._get_parent_table()
 
@@ -279,9 +280,7 @@ def _init_base_classes(o, schema):
             self.additional_sqlalchemy_tables = schema.create_attr_tables(
                 add_tables, engine)
 
-        def bind_to_table(self, session_or_engine):
-            engine = _get_engine(session_or_engine)
-
+        def bind_to_table(self):
             parent_table = self._get_parent_table()
             attrs_ddl = self._get_attributes_ddl()
             try:
@@ -301,25 +300,15 @@ def _init_base_classes(o, schema):
                 # exception here
                 raise
 
-        def make_python_class(self, session_or_engine=None):
+        def make_python_class(self):
             '''
             Return the Python class associated to a KB class.
-
-            @type session_or_engine:  SQLAlchemy session or engine
-            @param session_or_engine: explicit session/engine to use (if None,
-                                      the method will try to use the one bound
-                                      to self, if any).
             '''
             if self.python_class is not None:
                 return self.python_class
 
-            if session_or_engine is None:
-                # See whether we're still bound to a session
-                session_or_engine = orm.Session.object_session(self)
-                assert(session_or_engine is not None)
-
             try:
-                self.bind_to_table(session_or_engine)
+                self.bind_to_table()
             except exc.InvalidRequestError:
                 raise AttributeError('KBClass must be bound to a SQL table '
                                      'in order to generate a Python class.  '
@@ -327,8 +316,7 @@ def _init_base_classes(o, schema):
                                      'KBClass.bind_to_table()?')
 
             if not self.is_root():
-                parent_class = self.superclass.make_python_class(
-                    session_or_engine)
+                parent_class = self.superclass.make_python_class(engine)
                 init_method = lambda instance, name, notes=None, explicit_id=None:(
                     parent_class.__init__(instance, name, notes=notes,
                                           explicit_id=explicit_id))
@@ -762,16 +750,3 @@ def _init_base_classes(o, schema):
 
     event.listen(KBClass.attributes, 'remove',
                  kbclass_remove_attribute, propagate=True, retval=False)
-
-
-###############################################################################
-## Utility methods
-###############################################################################
-def _get_engine(session_or_engine):
-    import session
-    if isinstance(session_or_engine, session.Session):
-        return session_or_engine.session.get_bind(None)
-    if isinstance(session_or_engine, Session):
-        return session_or_engine.get_bind(None)
-    else:
-        return session_or_engine
