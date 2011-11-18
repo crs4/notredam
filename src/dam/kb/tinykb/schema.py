@@ -46,8 +46,8 @@ class Schema(object):
         '''
         Create a knowledge base SQL DB schema.
 
-        @type  prefix: string
-        @param prefix: prefix used for naming the SQL DB schema objects
+        :type  prefix: string
+        :param prefix: prefix used for naming the SQL DB schema objects
                        managed by the KB (tables, constraints...).
         '''
         self._metadata = MetaData()
@@ -59,7 +59,7 @@ class Schema(object):
     '''
     The SQLAlchemy MetaData object bound to the schema
 
-    @type: SQLAlchemy MetaData
+    :type: SQLAlchemy MetaData
     '''
 
     prefix = property(lambda self: self._prefix)
@@ -67,7 +67,7 @@ class Schema(object):
     The prefix used for SQL DB schema objects managed by the KB
     (tables, constraints...).
 
-    @type: string
+    :type: string
     '''
 
     def init_db(self, connstr_or_engine):
@@ -76,8 +76,8 @@ class Schema(object):
         the KB tables still exist on the DB, and won't try to alter
         them if they do.
 
-        @type  connstr_or_engine: SQLAlchemy connection string or engine
-        @param connstr_or_engine: used to access the knowledge base SQL DB
+        :type  connstr_or_engine: SQLAlchemy connection string or engine
+        :param connstr_or_engine: used to access the knowledge base SQL DB
         '''
         engine = _get_engine(connstr_or_engine)
 
@@ -91,8 +91,8 @@ class Schema(object):
         '''
         Re-initialize the KB database.
 
-        @type  connstr_or_engine: SQLAlchemy connection string or engine
-        @param connstr_or_engine: used to access the knowledge base SQL DB
+        :type  connstr_or_engine: SQLAlchemy connection string or engine
+        :param connstr_or_engine: used to access the knowledge base SQL DB
         '''
         eng = _get_engine(connstr_or_engine)
 
@@ -106,22 +106,23 @@ class Schema(object):
         '''
         Create a table for storing KB objects
 
-        @type  table_name: string
-        @param table_name: name of the new table (must be unique)
+        :type  table_name: string
+        :param table_name: name of the new table (must be unique)
 
-        @type  parent_table_name: string
-        @param parent_table_name: name of the parent table, referred to the
+        :type  parent_table_name: string
+        :param parent_table_name: name of the parent table, referred to the
                                   object parent class, and used for building
                                   foreign key references
 
-        @type  attrs_ddl: list of SQLAlchemy DDL objects
-        @param attrs_ddl: describes the fields of the object table
+        :type  attrs_ddl: list of SQLAlchemy DDL objects
+        :param attrs_ddl: describes the fields of the object table
 
 
-        @type  engine: SQLALchemy engine
-        @param engine: used for creating the table on the SQL DB
+        :type  engine: SQLALchemy engine
+        :param engine: used for creating the table on the SQL DB
 
-        @return: the new SQLAlchemy table object
+        :rtype: SQLAlchemy table
+        :returns: the new SQLAlchemy table object
         '''
         newtable = self._build_object_table(table_name, parent_table_name,
                                             attrs_ddl)
@@ -136,22 +137,23 @@ class Schema(object):
         if the expected table does not exist yet, or does not match
         the given description.
 
-        @type  table_name: string
-        @param table_name: name of the new table (must be unique)
+        :type  table_name: string
+        :param table_name: name of the new table (must be unique)
 
-        @type  parent_table_name: string
-        @param parent_table_name: name of the parent table, referred to the
+        :type  parent_table_name: string
+        :param parent_table_name: name of the parent table, referred to the
                                   object parent class, and used in foreign
                                   key references
 
-        @type  attrs_ddl: list of SQLAlchemy DDL objects
-        @param attrs_ddl: describes the fields of the object table
+        :type  attrs_ddl: list of SQLAlchemy DDL objects
+        :param attrs_ddl: describes the fields of the object table
 
 
-        @type  engine: SQLALchemy engine
-        @param engine: used for creating the table on the SQL DB
+        :type  engine: SQLALchemy engine
+        :param engine: used for creating the table on the SQL DB
 
-        @return: the SQLAlchemy table object
+        :rtype: SQLAlchemy table
+        :returns: the SQLAlchemy table object
         '''
         newtable = self._build_object_table(table_name, parent_table_name,
                                             attrs_ddl, engine=engine,
@@ -163,10 +165,11 @@ class Schema(object):
         Create additional tables for storing KB object attributes
         (e.g. multivalued ones).
 
-        @type  add_tables: list of functions of type f(MetaData, **kwargs)
-        @param add_tables: list of table DDL constructor functions
+        :type  add_tables: list of functions of type ``f(MetaData, **kwargs)``
+        :param add_tables: list of table DDL constructor functions
 
-        @return: the list of new SQLAlchemy table objects
+        :rtype: list of SQLAlchemy tables
+        :returns: the list of new SQLAlchemy table objects
         '''
         newtables = self._build_attr_tables(add_tables, engine)
 
@@ -180,10 +183,11 @@ class Schema(object):
         Retrieve the additional tables used for storing KB object
         attributes (e.g. multivalued ones).
 
-        @type  add_tables: list of functions of type f(MetaData, **kwargs)
-        @param add_tables: list of table DDL constructor functions
+        :type  add_tables: list of functions of type ``f(MetaData, **kwargs)``
+        :param add_tables: list of table DDL constructor functions
 
-        @return: the list of new SQLAlchemy table objects
+        :rtype: list of SQLAlchemy tables
+        :returns: the list of new SQLAlchemy table objects
         ''' 
         newtables = self._build_attr_tables(add_tables, engine,
                                             load_existing=True)
@@ -194,11 +198,11 @@ class Schema(object):
         Create a SQLAlchemy table on the DB, using the given connection
         string or engine
 
-        @type  connstr_or_engine: SQLAlchemy connection string or engine
-        @param connstr_or_engine: used to access the knowledge base SQL DB
+        :type  connstr_or_engine: SQLAlchemy connection string or engine
+        :param connstr_or_engine: used to access the knowledge base SQL DB
 
-        @type  tables: list of SQLAlchemy table objects
-        @param tables: tables to create
+        :type  tables: list of SQLAlchemy table objects
+        :param tables: tables to create
         '''
         engine = _get_engine(connstr_or_engine)
         self._metadata.create_all(bind=engine, tables=tables)

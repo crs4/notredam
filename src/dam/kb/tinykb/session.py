@@ -43,11 +43,11 @@ class Session(object):
         '''
         Create a knowledge base session instance.
 
-        @type  connstr_or_engine: SQLAlchemy connection string or engine
-        @param connstr_or_engine: used to access the knowledge base SQL DB
+        :type  connstr_or_engine: SQLAlchemy connection string or engine
+        :param connstr_or_engine: used to access the knowledge base SQL DB
 
-        @type  db_prefix: string
-        @param db_prefix: prefix used for naming the SQL DB schema objects
+        :type  db_prefix: string
+        :param db_prefix: prefix used for naming the SQL DB schema objects
                           managed by the KB (tables, constraints...).
         '''
         if isinstance(connstr_or_engine, str):
@@ -74,14 +74,14 @@ class Session(object):
     '''
     The SQLAlchemy engine used for connecting to the DBMS
 
-    @type: SQLAlchemy engine
+    :type: SQLAlchemy engine
     '''
 
     schema = property(lambda self: self._schema)
     '''
     The SQL DB schema instance bound to the session
 
-    @type: L{schema.Schema}
+    :type: L{schema.Schema}
     '''
 
     orm = property(lambda self: self._orm)
@@ -90,7 +90,7 @@ class Session(object):
     knowledge base classes can be accessed as attributes of this
     property, almost like a dynamic namespace.
 
-    @type: L{classes.Classes}
+    :type: L{classes.Classes}
     '''
 
     def duplicate(self):
@@ -98,7 +98,8 @@ class Session(object):
         Create a new Session object sharing the schema and ORM
         machinery with the original one.
 
-        @return: a new Session instance
+        :rtype: Session
+        :returns: a new Session instance
         '''
         return Session(self._engine, self._schema.prefix,
                        _duplicate_from=self)
@@ -109,8 +110,8 @@ class Session(object):
         Add an object to the knowledge base session, ready for later
         commit.
 
-        @type  obj: one of the classes accessible through the L{orm} property
-        @param obj: object to be added
+        :type  obj: one of the classes accessible through the L{orm} property
+        :param obj: object to be added
         '''
         self.session.add(obj)
 
@@ -119,9 +120,9 @@ class Session(object):
         Add a list of objects to the knowledge base session, ready for
         later commit.
 
-        @type  obj: list of instances, whose class must be accessible
+        :type  obj: list of instances, whose class must be accessible
                through the L{orm} property
-        @param obj: object to be added
+        :param obj: object to be added
         '''
         self.session.add_all(obj_list)
     
@@ -130,8 +131,9 @@ class Session(object):
         Remove an object from the set handled by the knowledge base
         session.
 
-        @param obj: an object instance (previously added with L{add}() or
-        L{add_all}())
+        :type obj: object
+        :param obj: an object instance (previously added with L{add}() or
+                    L{add_all}())
         '''
         if isinstance(obj, list):
             for o in obj:
@@ -194,10 +196,11 @@ class Session(object):
         An exception will be raised if the given id is not used by any
         stored class.
 
-        @type  id_: string
-        @param id_: the identifier of the required KBClass
+        :type  id_: string
+        :param id_: the identifier of the required KBClass
 
-        @return: a KBClass instance
+        :rtype: KBClass
+        :returns: a KBClass instance
         '''
         query = self.session.query(self.orm.KBClass).filter(
             self.orm.KBClass.id == id_)
@@ -216,10 +219,11 @@ class Session(object):
         Return an iterator yielding all known KBClass instances from
         the SQL DB.
 
-        @type  ws: Workspace
-        @param ws: KB workspace object used to filter classes (default: None)
+        :type  ws: Workspace
+        :param ws: KB workspace object used to filter classes (default: None)
 
-        @return: an iterator yielding KBClass instances
+        :rtype: iterator
+        :returns: an iterator yielding KBClass instances
         '''
         query = self.session.query(self.orm.KBClass)
         if ws is not None:
@@ -234,8 +238,8 @@ class Session(object):
         The KBClass instance itself will be automatically added to the
         set of objects managed by the Session.
 
-        @type  class_: KBClass
-        @param class_: a knowledge base class instance, the tables of which
+        :type  class_: KBClass
+        :param class_: a knowledge base class instance, the tables of which
                        will be created on the DB
         '''
         assert(isinstance(class_, self.orm.KBClass))
@@ -253,13 +257,14 @@ class Session(object):
         An exception will be raised if the given id doesn't refer to
         any stored class.
 
-        @type  id_: string
-        @param id_: the identifier of the required KBClass
+        :type  id_: string
+        :param id_: the identifier of the required KBClass
 
-        @type  ws: Workspace
-        @param ws: KB workspace object used to filter classes (default: None)
+        :type  ws: Workspace
+        :param ws: KB workspace object used to filter classes (default: None)
 
-        @return: a Python class (inheriting from KBObject)
+        :rtype: class
+        :returns: a Python class (inheriting from KBObject)
         '''
         return self.class_(id_, ws=ws).python_class
 
@@ -268,10 +273,11 @@ class Session(object):
         Retrieve a list of the Python classes corresponding to all the
         KBClass objects stored on the SQL DB.
 
-        @type  ws: Workspace
-        @param ws: KB workspace object used to filter classes (default: None)
+        :type  ws: Workspace
+        :param ws: KB workspace object used to filter classes (default: None)
 
-        @return: a list of Python classes (inheriting from KBObject)
+        :rtype: list of classes
+        :returns: a list of Python classes (inheriting from KBObject)
         '''
         return [c.python_class for c in self.classes(ws=ws)]
 
@@ -283,14 +289,15 @@ class Session(object):
         An exception will be raised if the given id doesn't refer to
         any stored object.
 
-        @type  ws: Workspace
-        @param ws: KB workspace object used to filter KB objects according to
+        :type  ws: Workspace
+        :param ws: KB workspace object used to filter KB objects according to
                    the visibility of their class (default: None)
 
-        @type  id_: string
-        @param id_: the identifier of the required KBObject
+        :type  id_: string
+        :param id_: the identifier of the required KBObject
 
-        @return: a Python object
+        :rtype: object
+        :returns: a Python object
         '''
         # It will cause the Python classes to be instantiated and ORM-mapped
         self.python_classes()
@@ -312,19 +319,20 @@ class Session(object):
         Return an iterator yielding all known KBObject instances from
         the SQL DB.
 
-        @type  class_: class.KBObject
-        @param class_: the base class for selecting objects from SQL DB
+        :type  class_: class.KBObject
+        :param class_: the base class for selecting objects from SQL DB
                        (default: None, meaning self.orm.KBObject)
 
-        @type  ws: Workspace
-        @param ws: KB workspace object used to filter KB objects according to
+        :type  ws: Workspace
+        :param ws: KB workspace object used to filter KB objects according to
                    the visibility of their class (default: None)
 
-        @type  filter_expr: SQLAlchemy expression
-        @param filter_expr: an optional SQLAlchemy filter expression for
+        :type  filter_expr: SQLAlchemy expression
+        :param filter_expr: an optional SQLAlchemy filter expression for
                             selecting objects to be returned
 
-        @return: an iterator yielding Python objects
+        :rtype: iterator
+        :returns: an iterator yielding Python objects
         '''
         if class_ is None:
             class_ = self.orm.KBObject
@@ -349,10 +357,10 @@ class Session(object):
         An exception will be raised if the given id doesn't refer to
         any stored user.
 
-        @type  id_: string
-        @param id_: the identifier of the required User
+        :type  id_: string
+        :param id_: the identifier of the required User
 
-        @return: an User object
+        :returns: an User object
         '''
         query = self.session.query(self.orm.User).filter(
             self.orm.User.id == id_)
@@ -369,11 +377,12 @@ class Session(object):
         Return an iterator yielding all known KB user objects from the
         SQL DB.
 
-        @type  filter_expr: SQLAlchemy expression
-        @param filter_expr: an optional SQLAlchemy filter expression for
+        :type  filter_expr: SQLAlchemy expression
+        :param filter_expr: an optional SQLAlchemy filter expression for
                             selecting users to be returned
 
-        @return: an iterator yielding User objects
+        :rtype: iterator
+        :returns: an iterator yielding User objects
         '''
         query = self.session.query(self.orm.User)
         if filter_expr is not None:
@@ -386,10 +395,11 @@ class Session(object):
         An exception will be raised if the given id doesn't refer to
         any stored workspace.
 
-        @type  id_: string
-        @param id_: the identifier of the required Workspace
+        :type  id_: string
+        :param id_: the identifier of the required Workspace
 
-        @return: a Workspace object
+        :rtype: iterator
+        :returns: a Workspace object
         '''
         try:
             return self.session.query(self.orm.Workspace).filter(
@@ -402,10 +412,11 @@ class Session(object):
         Return an iterator yielding all the workspaces for the given
         user (when provided).
 
-        @type  user: User
-        @param user: optional User object for filtering returned workspaces
+        :type  user: User
+        :param user: optional User object for filtering returned workspaces
 
-        @return: an iterator yielding Workspace objects
+        :rtype: iterator
+        :returns: an iterator yielding Workspace objects
         '''
         query = self.session.query(self.orm.Workspace)
         if user is not None:
