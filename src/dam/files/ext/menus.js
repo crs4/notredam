@@ -564,6 +564,9 @@ Ext.onReady(function(){
                         { text: gettext('Renditions'),                                                      
                             handler: variants_prefs 
                             
+                            },
+                            { text: gettext('Vocabulary'),                                                      
+                                handler: function(){ open_knowledgeBase(); }
                             }
                         ]
                     }
