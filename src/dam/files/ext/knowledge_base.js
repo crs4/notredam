@@ -682,8 +682,7 @@ function load_detail_class(class_data, id_class, add_class){
         		console.log(params);
         		Ext.Ajax.request({
         			url:url_submit,
-        			params: params,
-        			//jsonData: params,
+        			jsonData: params,
         			method: 'PUT',
         			headers: {
                         'Content-Type': 'application/json;charset=utf-8'
@@ -692,13 +691,14 @@ function load_detail_class(class_data, id_class, add_class){
                     waitMsg: 'Saving...',
                     success: function(response){
         	        // return response.responseText;
-        	        	alert('succes');
-        	        	console.log(Ext.util.JSON.decode(response));
+        	        	//alert('succes');
+        	        	//console.log(Ext.util.JSON.decode(response));
+                    	Ext.getCmp('obj_reference_tree').reload();
                     },
                     failure:function(response){
         	        // return response.responseText;
-        	        	alert('failure');
-        	        	console.log(response);
+        	        	//alert('failure');
+        	        	//console.log(response);
                     }
         		});
 /*                my_form.getForm().submit({
