@@ -65,8 +65,6 @@ def class_index_get(request, ws_id):
 
 
 def class_index_put(request, ws_id):
-    print "-----"
-    print request
     try:
         cls_dict = _assert_return_json_data(request)
     except ValueError as e:
@@ -122,8 +120,11 @@ def class_index_put(request, ws_id):
                 del(json_attrs[xid])
 
     attrs = []
-    for attr_id in json_attrs:
-        a = json_attrs[attr_id]
+    for (attr_id, a) in json_attrs.iteritems():
+        if not isinstance(a, dict):
+            return HttpResponseBadRequest('Expected a dictionary for '
+                                          'representing attribute "%s", got '
+                                          '"%s"' % (attr_id, str(a)))
         try:
             attr_type = a['type']
         except KeyError:
@@ -279,7 +280,6 @@ def object_index_get(request, ws_id):
         return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
     obj_dicts = [_kbobject_to_dict(o, ses) for o in ses.objects(ws=ws)]
-#    obj_dicts = [_kbobject_to_dict(o) for o in ses.objects(ws=ws)]
 
     return HttpResponse(simplejson.dumps(obj_dicts))
 
@@ -368,12 +368,11 @@ def object_get(request, ws_id, object_id):
         return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
     try:
-        cls = ses.object(object_id, ws=ws)
+        obj = ses.object(object_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
-    return HttpResponse(simplejson.dumps(_kbobject_to_dict(cls, ses)))
-
+    return HttpResponse(simplejson.dumps(_kbobject_to_dict(obj, ses)))
 
 def object_post(request, ws_id, object_id):
     try:
@@ -434,7 +433,7 @@ def class_objects_get(request, ws_id, class_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
-    objs = ses.objects(class_=cls.make_python_class())
+    objs = ses.objects(class_=cls.python_class)
     obj_dicts = [_kbobject_to_dict(o, ses) for o in objs]
 
     return HttpResponse(simplejson.dumps(obj_dicts))
@@ -495,12 +494,14 @@ def _infer_method(req):
         return (req.method, req.GET)
 
 
+# Global KB session, based on NotreDAM DBMS connection parameters
+KB_SESSION = kb_ses.Session(util.notredam_connstring())
 def _kb_session():
     '''
-    Create a knowledge base session, using the NotreDAM connection parameters
+    Create a knowledge base session
     '''
     connstr = util.notredam_connstring()
-    return kb_ses.Session(connstr)
+    return KB_SESSION.duplicate()
     
 
 def _kbclass_to_dict(cls, ses):
@@ -727,13 +728,16 @@ def _kbobjattr_to_dict(attr, val, ses):
     return _kb_objattrs_dict_map(type(attr), ses)(attr, val)
 
 
+import re
+_content_type_re = re.compile('application/json; *charset=UTF-8',
+                              re.IGNORECASE)
 def _assert_return_json_data(request):
     '''
     Ensure that a Django request contains JSON data, and return it
     (taking care of its encoding).  Raise a ValueError if the content
     type is not supported.
     '''
-    if ('application/json; charset=UTF-8' == request.META['CONTENT_TYPE']):
+    if (_content_type_re.match(request.META['CONTENT_TYPE'])):
         return simplejson.loads(request.raw_post_data)
     else:
         # FIXME: we should support other charset encodings here
