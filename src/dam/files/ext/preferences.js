@@ -79,7 +79,7 @@ var on_success = function(form, action) {
     if(ws_store && form.title == 'Media Types')
     	ws_store.reload();
     
-    Ext.MessageBox.alert('Save what?', 'Preferences saved successfully.'); //save workspace preferences
+    Ext.MessageBox.alert('Save', 'Preferences saved successfully.'); //save workspace preferences
 };
 
 var get_general_form = function() {
@@ -100,14 +100,14 @@ var account_prefs = new Ext.FormPanel({
     url: '/account_prefs/',
     
     buttons: [{
-        text: 'Save account', //save first tab of user account preferences
+        text: 'Save', //save first tab of user account preferences
         type: 'submit',
         handler: function(){
             Ext.getCmp('account_form').getForm().submit({
                 success: function(){
 //		                			user = Ext.getCmp('username').getValue();
 //		                			Ext.get('user_logged').dom.innerHTML = user;
-                     Ext.MessageBox.alert('Save prefs?', 'Preferences saved successfully.');
+                     Ext.MessageBox.alert('Save', 'Preferences saved successfully.');
                 }
             }
         );
@@ -367,7 +367,7 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
             items: fields[k],
             url: submit_url,
             buttons: [{
-                text: 'Save other', // save from the second tab workspace preferences
+                text: 'Save', // save from the second tab workspace preferences
                 type: 'submit',
                 handler: function(){
                 
