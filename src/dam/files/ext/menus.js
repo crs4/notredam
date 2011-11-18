@@ -585,7 +585,7 @@ Ext.onReady(function(){
                 
                  {
                     id: 'preferences_menu',
-                    text: gettext('Configuration'),
+                    text: gettext('Configure'),
                     menu:{
                         items:[{
                                 text: gettext('Descriptors'),
