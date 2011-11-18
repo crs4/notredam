@@ -92,12 +92,12 @@ var ws_admin_store = new Ext.data.JsonStore({
 function add_option(value, attribute_detail_panel, data){
 	//initializing
 	attribute_detail_panel.removeAll();
-	var min_number_value = undefined;
-	var max_number_value = undefined;
-	var default_v = undefined;
-	var min_date_value = undefined;
-	var max_date_value = undefined;
-	var max_length_value = undefined;
+	var min_number_value = null;
+	var max_number_value = null;
+	var default_v = null;
+	var min_date_value = null;
+	var max_date_value = null;
+	var max_length_value = null;
 	
 	if (value == 'int'){
 		console.log('Integer');
@@ -109,22 +109,22 @@ function add_option(value, attribute_detail_panel, data){
 		var min_number = new Ext.form.NumberField({
 			name: 'min_number',
 			id  : 'id_min',
-	        value = min_number_value,
 			fieldLabel: 'Min value',
+			value: min_number_value,
 	        allowBlank:true
 		});
 		var max_number = new Ext.form.NumberField({
 			name: 'max_number',
 			id  : 'id_max',
-			value = max_number_value,
 			fieldLabel: 'Max value',
+			value: max_number_value,
 	        allowBlank:true
 		});
 		var default_value = new Ext.form.NumberField({
 			name: 'default_value',
 			id  : 'id_default_value',
-			value = default_v,
 			fieldLabel: 'Default value',
+			value: default_v,
 	        allowBlank:true
 		});
 		attribute_detail_panel.add(min_number);
@@ -132,38 +132,97 @@ function add_option(value, attribute_detail_panel, data){
 		attribute_detail_panel.add(default_value);
 	}else if (value == 'date'){
 		console.log('Date');
+		if (data){
+			min_date_value = data.min;
+			max_date_value = data.max;
+			default_v = data.default_value;
+		}
 		var min_date = new Ext.form.DateField({
 			name: 'min_date',
 			id  : 'id_min',
 			fieldLabel: 'Min date',
+			value: min_date_value,
 	        allowBlank:true
 		});
 		var max_date = new Ext.form.DateField({
 			name: 'max_date',
 			id  : 'id_max',
 			fieldLabel: 'Max date',
+			value: max_date_value,
 	        allowBlank:true
 		});
 		var default_value = new Ext.form.DateField({
 			name: 'default_value',
 			id  : 'id_default_value',
 			fieldLabel: 'Default value',
+			value: default_v,
 	        allowBlank:true
 		});
 		attribute_detail_panel.add(min_date);
 		attribute_detail_panel.add(max_date);
 		attribute_detail_panel.add(default_value);
-	}else if (value == 'string' || value.data.id == 'uri'){
+	}else if (value == 'string' || value == 'uri'){
 		console.log('Stringa o uri');
+		if (data){
+			max_length_value = data.length;
+		}
 		var max_length = new Ext.form.NumberField({
 			name: 'max_length',
 			id  : 'id_max_length',
 			fieldLabel: 'Max length',
+			value: max_length_value,
 	        allowBlank:true
 		});
 		attribute_detail_panel.add(max_length);
-	}else if (value.data.id == 'objref'){
+	}else if (value == 'objref'){
 		console.log('OBJREF');
+	}else if(value == 'bool'){
+		if (data){
+			default_v = data.default_value;
+		}
+		var default_value = new Ext.form.ComboBox({
+			name: 'default_value',
+			id  : 'id_default_value',
+	        store: 
+	            new Ext.data.SimpleStore({
+	              fields: ['id','name'],
+	              data: [
+	                ["true","True"],["false","false"]]
+	          }), // end of Ext.data.SimpleStore
+	        fieldLabel: 'Type',
+	        hiddenName: 'type',
+	        width: 130,
+	        emptyText: 'Select ...',
+	        displayField: 'name',
+	        valueField: 'id',
+	        mode: 'local',
+	        editable: false,
+			value: default_v,
+			fieldLabel: 'Default value',
+	        allowBlank:true
+		});
+		attribute_detail_panel.add(default_value);
+	}else if(value == 'choice'){
+		if (data){
+			choices_value = data.choices;
+			default_v = data.default_value;
+		}
+		var choices = new Ext.form.TextField({
+			name: 'choices',
+			id  : 'id_choices',
+			fieldLabel: 'Choices',
+			value: choices_value,
+	        allowBlank:false
+		});
+		var default_value = new Ext.form.TextField({
+			name: 'default_value',
+			id  : 'id_default_value',
+			fieldLabel: 'Default value',
+			value: default_v,
+	        allowBlank:true
+		});
+		attribute_detail_panel.add(choices);
+		attribute_detail_panel.add(default_value);
 	}
 	attribute_detail_panel.doLayout();
 }
@@ -175,8 +234,8 @@ function add_single_attribute(edit, attributes_grid){
 	//console.log(attributes_grid);
 	
 	if (edit){
-		console.log('edit: load value  --  attributegrid.data');
-		console.log(attributes_grid.getSelectionModel().getSelected());
+//		console.log('edit: load value  --  attributegrid.data');
+//		console.log(attributes_grid.getSelectionModel().getSelected());
 		name_textField_value = attributes_grid.getSelectionModel().getSelected().data.name;
 		empty_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.maybe_empty;
 		multivalued_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.multivalued;
@@ -184,7 +243,7 @@ function add_single_attribute(edit, attributes_grid){
 		title = "Edit attribute";
 		text_button = gettext('Edit');
 	}else{
-		console.log('add: unload value');
+//		console.log('add: unload value');
 		name_textField_value = 'Flanders asd asd';
 		empty_chekbox_value = false;
 		multivalued_chekbox_value = false;
@@ -243,7 +302,7 @@ function add_single_attribute(edit, attributes_grid){
         checked:multivalued_chekbox_value, 
         name: 'multivalued_chekbox'
     });
-	var notes_textField = new Ext.form.TextField({
+	var notes_textField = new Ext.form.TextArea({
         fieldLabel: 'Notes',
         allowBlank:true,
         name: 'notes',
@@ -375,19 +434,23 @@ function load_detail_class(class_data, id_class, add_class){
 	// add_class true if add new class false otherwise
 	var fields = [];
 	if (!add_class){
-		id_textField_value = class_data.getAt(0).data.id;
-		name_textField_value = class_data.getAt(0).data.name;
-		can_catalog_chekbox_value = true;
-		notes_textField_value = class_data.getAt(0).data.notes;
+		var id_textField_value = class_data.getAt(0).data.id;
+		var name_textField_value = class_data.getAt(0).data.name;
+		var can_catalog_chekbox_value = true;
+		var notes_textField_value = class_data.getAt(0).data.notes;
 		var title = "Edit class " + name_textField_value;
-		store_attributes_grid = store_get_class_attributes(id_class);
+		var store_attributes_grid = store_get_class_attributes(id_class);
+		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'+id_class;
+		var superclass_value = class_data.getAt(0).data.superclass;
 	}else{
-		id_textField_value = null;
-		name_textField_value = null;
-		can_catalog_chekbox_value = false;
-		notes_textField_value = null;
+		var id_textField_value = null;
+		var name_textField_value = null;
+		var can_catalog_chekbox_value = false;
+		var notes_textField_value = null;
 		var title = "Add new class";
-		store_attributes_grid = [];
+		var store_attributes_grid = [];
+		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'; 
+		var superclass_value = Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.attributes.id;
 	}
 	
 	var id_textField = new Ext.form.TextField({
@@ -411,19 +474,20 @@ function load_detail_class(class_data, id_class, add_class){
         name: 'superclass',
         id:'id_superclass_class',
         allowBlank:false,
-        value:class_data.getAt(0).data.superclass,
-        hidden: true
+        value: superclass_value,
+        hidden: true,
+        hidden:true
     });
 	fields.push(superclass_textField);
-	var can_catalog_chekbox = new Ext.form.Checkbox({
+/*	var can_catalog_chekbox = new Ext.form.Checkbox({
         id: 'id_canan_catalog',
         allowBlank:false,
         fieldLabel: 'Can Catalog',
         checked:can_catalog_chekbox_value, 
         name: 'can_catalog'
     });
-	fields.push(can_catalog_chekbox);
-	var notes_textField = new Ext.form.TextField({
+	fields.push(can_catalog_chekbox);*/
+	var notes_textField = new Ext.form.TextArea({
         fieldLabel: 'Notes',
         allowBlank:true,
         name: 'notes',
@@ -450,12 +514,33 @@ function load_detail_class(class_data, id_class, add_class){
                                 {id:'name',header: "Name", width: 110, sortable: true, dataIndex: 'name'},
                                 {id:'description',header: "Description", width: 160, sortable: true, dataIndex: 'description'}
         ]),
+        listeners:{
+        	afterrender: {fn:function(){
+        		console.log('test after render');
+        		console.log(ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk);
+        		console.log(this.getSelectionModel());
+        	}}
+        },
         height: 150
     });
     fields.push(ws_admin_grid);
     //attributes
-	var sm_attributes_grid = new Ext.grid.CheckboxSelectionModel({singleSelect: true});
+	var sm_attributes_grid = new Ext.grid.CheckboxSelectionModel({
+		singleSelect: true,
+		listeners:{
+			rowselect: {fn:function(sm){
+				console.log(Ext.getCmp('id_edit_attributes_class'));
+				Ext.getCmp('id_edit_attributes_class').enable();
+				Ext.getCmp('id_remove_attributes_class').enable();
+			}},
+			rowdeselect: {fn:function(sm){
+				Ext.getCmp('id_edit_attributes_class').disable();
+				Ext.getCmp('id_remove_attributes_class').disable();
+			}}
+		}
+	});
     var attributes_grid = new Ext.grid.GridPanel({
+    	id: 'attribute_grid_id',
         store: store_attributes_grid,
         sm: sm_attributes_grid,
         title:'Attributes',
@@ -485,16 +570,20 @@ function load_detail_class(class_data, id_class, add_class){
         	}
         }, '-', {
             text:'Edit',
+            id: 'id_edit_attributes_class',
             tooltip:'Edit attribute',
             iconCls:'edit_icon',
+            disabled:true,
             handler: function() {
         		console.log('not implemented yet');
         		add_single_attribute(true, attributes_grid);
         	}
         },'-',{
             text:'Remove',
+            id: 'id_remove_attributes_class',
             tooltip:'Remove the selected item',
             iconCls:'clear_icon',
+            disabled:true,
             handler: function() {
         		Ext.Msg.confirm('Attribute Deletion', 'Attribute deletion cannot be undone, do you want to proceed?', 
 	                function(btn){
@@ -514,14 +603,14 @@ function load_detail_class(class_data, id_class, add_class){
         labelWidth: 110, // label settings here cascade unless overridden
         frame:true,
         bodyStyle:'padding:5px 5px 0',              
-        url: '/PUT/',
+        url: url_submit,
 //        items: fields,
         items: [{
         	layout:'column',
         	items:[{
         		columnWidth:.5,
                 layout: 'form',
-                items: [id_textField, name_textField, superclass_textField, can_catalog_chekbox, notes_textField]
+                items: [id_textField, name_textField, superclass_textField, /*can_catalog_chekbox,*/ notes_textField]
         	},{
         		columnWidth:.5,
                 layout: 'form',
@@ -534,7 +623,96 @@ function load_detail_class(class_data, id_class, add_class){
             type: 'submit',
             handler: function(){
         		console.log('submit');
-            }
+        		var my_form = this.findParentByType('form');
+        		// problem con layout column unusable
+        		/*console.log('Form');
+        		console.log(my_form);
+        		var items = my_form.items.items;
+        		console.log('Items');
+        		console.log(items);
+        		console.log('-----');
+        		for (var i = 0;  i < items.length; i ++){
+        			console.log(items[i].getXType());
+        		}*/
+        		params = {};
+        		if (id_textField.getValue()){
+        			params['id'] = id_textField.getValue();
+        		}else{
+        			params['id'] = name_textField.getValue().replace(/ /g, "_");
+        		}
+        		params['name'] = name_textField.getValue();
+        		params['supeclass'] = superclass_textField.getValue();
+        		//params['can_catalog'] = can_catalog_chekbox.getValue();
+        		params['notes'] = notes_textField.getValue();
+        		console.log('get selected workspaces');
+        		console.log(ws_admin_grid.getSelectionModel().getSelected());
+        		params['workspaces'] = {};
+        		//FIXME it is necessary generalize
+        		params['workspaces'][ws_admin_grid.getSelectionModel().getSelected().data.pk] = "owner";
+        		console.log('attributes');
+        		console.log(attributes_grid);
+        		var attribute;
+        		params['attributes'] = {};
+        		for (var i=0; i < Ext.getCmp('attribute_grid_id').getStore().getCount(); i++){
+        			console.log('i:'+i);
+        			attribute = Ext.getCmp('attribute_grid_id').getStore().getAt(i).data;
+        			
+        			params['attributes'][attribute.id] = {
+        				'name': attribute.name,
+        				'type': attribute.type,
+        				'multivalued': attribute.multivalued,
+        				'maybe_empty': attribute.maybe_empty,
+        				'default_value': attribute.default_value,
+        				'order': attribute.order,
+        				'notes': attribute.notes
+        			};
+        			//if type int od data {'min', 'max'}
+        			if (attribute.type == 'int' || attribute.type == 'data'){
+        				params['attributes'][attribute.id]['min'] = attribute.min;
+        				params['attributes'][attribute.id]['max'] = attribute.max;
+        			}else if (attribute.type == 'string' || attribute.type == 'uri'){ //if type string or uri {'length'}
+        				params['attributes'][attribute.id]['length'] = attribute.length;
+        			}else if (attribute.type == 'choice'){ //if type choice {'choices'}
+        				params['attributes'][attribute.id]['choices'] = attribute.choice;
+        			}else if (attribute.type == 'objref'){ //if type objref {'target_class'}
+        				console.log('objref');
+        			}
+        		}
+        		console.log('Params');
+        		console.log(params);
+        		Ext.Ajax.request({
+        			url:url_submit,
+        			params: params,
+        			//jsonData: params,
+        			method: 'PUT',
+        			headers: {
+                        'Content-Type': 'application/json;charset=utf-8'
+                    },
+                    clientValidation: true,
+                    waitMsg: 'Saving...',
+                    success: function(response){
+        	        // return response.responseText;
+        	        	alert('succes');
+        	        	console.log(Ext.util.JSON.decode(response));
+                    },
+                    failure:function(response){
+        	        // return response.responseText;
+        	        	alert('failure');
+        	        	console.log(response);
+                    }
+        		});
+/*                my_form.getForm().submit({
+                    method: 'PUT',
+                    clientValidation: true,
+                    waitMsg: 'Saving...',
+                    success: function(response){
+        	        // return response.responseText;
+        	        	alert('added');
+        	        	console.log(response);
+                    }
+                });
+*/
+        }
         },{
             text: gettext('Cancel'),
             handler: function(){
@@ -714,7 +892,7 @@ function open_knowledgeBase(){
     
 	var tree_obj_reference = new Ext.tree.TreePanel({
 		id:'obj_reference_tree',
-		title:'Vocabulary',
+		title:'Classes and Objects',
         region:'west',
 		containerScroll: true,
 		width: 200,
@@ -743,13 +921,19 @@ function open_knowledgeBase(){
 				"selectionchange": {
 					fn:function(sel, node){
 						console.log('selection change');
+						console.log(node);
 						if (node.attributes.leaf == false){
-							init_store_class_data(node.attributes.id, false);
+	    						init_store_class_data(node.attributes.id, false);
 						}else{
 							console.log('obj part');
 							console.log(sel);
 							console.log(node.attributes.id);
-							init_store_obj_data_edit(node.attributes.id, false);
+							if (node.attributes.id != 'root_obj_tree'){
+								init_store_obj_data_edit(node.attributes.id, false);
+							}else{
+								Ext.getCmp('details_panel_class').removeAll();//FIXME err if panel is empty.
+								Ext.getCmp('details_panel_class').setTitle('Class Objects');
+							}
 						}
 					}
        			}	            		
@@ -848,7 +1032,7 @@ function open_knowledgeBase(){
 		},
         width	: 850,
         height	: 500,
-        title	:'Knowledge Base',
+        title	:'Vocabulary',
         modal	: true,
       	items	:[details_panel,
       	     	  tree_obj_reference
@@ -860,5 +1044,8 @@ function open_knowledgeBase(){
         	}
         }]
     });
+	var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
+	console.log('current workspace');
+	console.log(ws_record.data.pk);
 	win_knowledge_base.show();  
 }

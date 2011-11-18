@@ -130,7 +130,7 @@ def get_specific_info_obj(request, obj_id):
     ws = ses.workspace(request.session['workspace'].pk)
     cls = ses.object(obj_id, ws=ws)
     rtr = {"rows":[]}
-    rtr['rows'].append(views_kb._kbobject_to_dict(cls))
+    rtr['rows'].append(views_kb._kbobject_to_dict(cls, ses))
     resp = simplejson.dumps(rtr)
     return HttpResponse(resp)
 
@@ -142,7 +142,7 @@ def get_object_attributes_hierarchy(request):
         n = Node.objects.get(pk = node.id)
         while n.parent_id:
             if n.kb_object_id:
-                cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id))
+                cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id), ses)
                 _put_attributes(cls,rtr)
             n = Node.objects.get(pk = n.parent_id)
     logger.debug(rtr)

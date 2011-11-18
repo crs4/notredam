@@ -85,10 +85,6 @@
 			| <a href='javascript:open_pref()' >preferences</a> 
 		{%endblock%}
 
-        {%block knowledge%}
-            | <a href='javascript:open_knowledgeBase()' >knowledge base</a> 
-        {%endblock%}
-        
         {%if user.is_staff%}
             | <a href="/dam_admin/">admin</a>
         {%endif%}
