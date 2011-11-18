@@ -37,33 +37,58 @@ from util import niceid
 
 class Classes(object):
     '''
-    This class holds the Python classes mapped to a knowledge base
+    Container for the Python classes mapped to a knowledge base
     working session.
+
+    When instantiated, this class configures the ORM machinery needed
+    to bind the underlying knowledge base to a set of Python classes.
     '''
-    def __init__(self, schema):
+    def __init__(self, session):
         '''
         Create a knowledge base class container.
 
-        @type  schema: schema.Schema object
+        @type  schema: L{session.Session}
         @param schema: DB schema used for mapping the classes
 
         '''
-        self._schema = schema
+        import session as kb_session
+        assert(isinstance(session, kb_session.Session))
 
-        _init_base_classes(self, self._schema)
+        self._session = session
+
+        _init_base_classes(self)
+
+    # self._attributes is set in _init_base_classes
+    attributes = property(lambda self: self._attributes)
+    '''
+    Contains the knowledge base Attribute classes mapped to a
+    working session.
+
+    @type: attributes.Attributes
+    '''
+
+    session = property(lambda self: self._session)
+    '''
+    The knowledge base session with which the attributes are bound
+
+    @type: L{session.Session}
+    '''
 
 
 ###############################################################################
 # Mapped classes
 ###############################################################################
-def _init_base_classes(o, schema):
+def _init_base_classes(o):
     '''
     Create the base classes and ORM mappings for a knowledge base
-    working session, using the given schema.  The classes will be
-    attached as attributes to the "o" object, preserving their name.
-    Furthermore, o.attributes will contain the KB attribute classes
-    mapped to the given schema.
+    working session (which must hold a 'session' attribute).  The
+    classes will be attached as attributes to the "o" object,
+    preserving their name.  Furthermore, o._attributes will contain
+    the KB attribute classes mapped to the given schema.
     '''
+    schema = o.session.schema
+    engine = o.session.engine
+
     class Workspace(object):
         def __init__(self, name, creator):
             self.name = name
@@ -173,19 +198,15 @@ def _init_base_classes(o, schema):
             self.notes = notes
 
             ## When created from scratch, no table on DB should exists
-            self.sqlalchemy_table = None
+            self._sqlalchemy_table = None
             self.additional_sqlalchemy_tables = []
-            self.python_class = None
 
         @orm.reconstructor
         def __init_on_load__(self):
-            # Retrieve the session of the current object...
-            ses = orm.Session.object_session(self)
-            # ...and use it to bind to its SQL table
-            self.bind_to_table(ses.get_bind(None))
-            assert(hasattr(self, 'sqlalchemy_table'))
+            self._sqlalchemy_table = None
+            self.bind_to_table()
 
-            self.python_class = None
+        sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
         def is_root(self):
             return (self.id == self._root_id)
@@ -205,7 +226,7 @@ def _init_base_classes(o, schema):
             return ancestors
 
         def is_bound(self):
-            return self.sqlalchemy_table is not None
+            return self._sqlalchemy_table is not None
 
         def all_attributes(self):
             '''
@@ -238,38 +259,39 @@ def _init_base_classes(o, schema):
 
             return attrs_tbl_list
 
-        def create_table(self, session_or_engine):
+        def create_table(self):
             if self.is_bound():
                 ## We are already bound to a table
                 raise AttributeError('%s is already bound to a SQL table (%s)'
-                                     % (self, self.sqlalchemy_table.name))
-
-            engine = _get_engine(session_or_engine)
+                                     % (self, self._sqlalchemy_table.name))
 
             parent_table = self._get_parent_table()
 
             attrs_ddl = self._get_attributes_ddl()
 
-            self.sqlalchemy_table = schema.create_object_table(self.table,
-                                                               parent_table,
-                                                               attrs_ddl,
-                                                               engine)
+            self._sqlalchemy_table = schema.create_object_table(self.table,
+                                                                parent_table,
+                                                                attrs_ddl,
+                                                                engine)
 
             add_tables = self._get_attributes_tables()
 
             self.additional_sqlalchemy_tables = schema.create_attr_tables(
                 add_tables, engine)
 
-        def bind_to_table(self, session_or_engine):
-            engine = _get_engine(session_or_engine)
-
+        def bind_to_table(self):
             parent_table = self._get_parent_table()
             attrs_ddl = self._get_attributes_ddl()
+
+            if self.is_bound():
+                raise AttributeError('KBClass.bind_to_table() was called twice'
+                                     ' on %s' % (self, ))
+
             try:
-                self.sqlalchemy_table = schema.get_object_table(self.table,
-                                                                parent_table,
-                                                                attrs_ddl,
-                                                                engine)
+                self._sqlalchemy_table = schema.get_object_table(self.table,
+                                                                 parent_table,
+                                                                 attrs_ddl,
+                                                                 engine)
 
                 # The following call is going to require
                 # self.sqlalchemy_table (set above)
@@ -282,34 +304,21 @@ def _init_base_classes(o, schema):
                 # exception here
                 raise
 
-        def make_python_class(self, session_or_engine=None):
+        def _make_or_get_python_class(self):
             '''
-            Return the Python class associated to a KB class.
-
-            @type session_or_engine:  SQLAlchemy session or engine
-            @param session_or_engine: explicit session/engine to use (if None,
-                                      the method will try to use the one bound
-                                      to self, if any).
+            Return the Python class associated to a KB class.  The
+            class will be built only once, and further calls will
+            always return the same result
             '''
-            if self.python_class is not None:
-                return self.python_class
+            ret = getattr(self, '_cached_pyclass', None)
+            if ret is not None:
+                return ret
 
-            if session_or_engine is None:
-                # See whether we're still bound to a session
-                session_or_engine = orm.Session.object_session(self)
-                assert(session_or_engine is not None)
-
-            try:
-                self.bind_to_table(session_or_engine)
-            except exc.InvalidRequestError:
-                raise AttributeError('KBClass must be bound to a SQL table '
-                                     'in order to generate a Python class.  '
-                                     'Maybe you should call '
-                                     'KBClass.bind_to_table()?')
+            if not self.is_bound():
+                self.bind_to_table()
 
             if not self.is_root():
-                parent_class = self.superclass.make_python_class(
-                    session_or_engine)
+                parent_class = self.superclass.python_class
                 init_method = lambda instance, name, notes=None, explicit_id=None:(
                     parent_class.__init__(instance, name, notes=notes,
                                           explicit_id=explicit_id))
@@ -333,18 +342,18 @@ def _init_base_classes(o, schema):
                             (parent_class, ),
                             classdict)
 
-            # NOTE: self.python_class needs to be set *before* generating
-            # the SQLAlchemy ORM mapper, because it will invoke
-            # self.make_python_class() again, thus causing an infinite
-            # recursion
-            self.python_class = newclass
+            # NOTE: the cached python class needs to be set *before*
+            # generating the SQLAlchemy ORM mapper, because it will
+            # access to self.python_class again, thus causing an
+            # infinite recursion
+            self._cached_pyclass = newclass
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
             for r in self.attributes:
                 mapper_props.update(r.mapper_properties())
 
-            mapper(newclass, self.sqlalchemy_table, inherits=parent_class,
+            mapper(newclass, self._sqlalchemy_table, inherits=parent_class,
                    polymorphic_identity=self.id,
                    properties = mapper_props)
 
@@ -354,6 +363,8 @@ def _init_base_classes(o, schema):
                 a.make_proxies_and_event_listeners(newclass)
 
             return newclass
+
+        python_class = property(_make_or_get_python_class)
 
         def workspace_permission(self, workspace):
             '''
@@ -538,7 +549,7 @@ def _init_base_classes(o, schema):
     # Mappers
     ###########################################################################
     from attributes import Attributes
-    o.attributes = Attributes(o, schema)
+    o._attributes = Attributes(o)
 
     mapper(User, schema.user)
 
@@ -586,7 +597,7 @@ def _init_base_classes(o, schema):
                                    remote_side=[schema.class_t.c.id],
                                    post_update=True,
                                    cascade='all'),
-            'attributes' : relationship(o.attributes.Attribute,
+            'attributes' : relationship(o._attributes.Attribute,
                                         back_populates='_class',
                                         cascade='save-update')
             })
@@ -706,7 +717,7 @@ def _init_base_classes(o, schema):
     # 'attributes' list
     # FIXME: it should happen automatically, shouldn't it?
     def kbclass_append_attribute(target, value, _initiator):
-        if not isinstance(value, o.attributes.Attribute):
+        if not isinstance(value, o._attributes.Attribute):
             raise TypeError('Expected an Attribute, got "%s" (type: %s)'
                             % (value, type(value)))
         if (value.multivalued and hasattr(value, '_sqlalchemy_mv_table')
@@ -735,7 +746,7 @@ def _init_base_classes(o, schema):
     # the 'attributes' list
     # FIXME: it should happen automatically, shouldn't it?
     def kbclass_remove_attribute(target, value, _initiator):
-        assert(isinstance(value, o.attributes.Attribute))
+        assert(isinstance(value, o._attributes.Attribute))
         value._class_id = None
         value._class_root_id = None
         value._multivalue_table = None
@@ -743,16 +754,3 @@ def _init_base_classes(o, schema):
 
     event.listen(KBClass.attributes, 'remove',
                  kbclass_remove_attribute, propagate=True, retval=False)
-
-
-###############################################################################
-## Utility methods
-###############################################################################
-def _get_engine(session_or_engine):
-    import session
-    if isinstance(session_or_engine, session.Session):
-        return session_or_engine.session.get_bind(None)
-    if isinstance(session_or_engine, Session):
-        return session_or_engine.get_bind(None)
-    else:
-        return session_or_engine

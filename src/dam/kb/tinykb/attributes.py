@@ -41,32 +41,50 @@ from util.niceid import niceid
 
 class Attributes(object):
     '''
-    This class holds the Python classes representing KB class
-    attributes, mapped to a knowledge base working session.
+    Container for the Python classes representing KB class attributes,
+    mapped to a knowledge base working session.
     '''
-    def __init__(self, classes, schema):
+    def __init__(self, classes):
         '''
         Create a knowledge base class attributes container.
 
-        @type  schema: schema.Schema object
+        @type  classes: L{classes.Classes}
+        @param classes: contains the
+                        KB classes which will be associated to the
+                        contained attributes
+
+        @type  schema: L{schema.Schema}
         @param schema: DB schema used for mapping the attribute classes
 
         '''
-        self._schema = schema
+        import classes as kb_classes
+        assert(isinstance(classes, kb_classes.Classes))
 
-        _init_base_attributes(self, classes, self._schema)
+        self._classes = classes
+
+        _init_base_attributes(self)
+
+    classes = property(lambda self: self._classes)
+    '''
+    The knowledge base classes with which the attributes are bound
+
+    @type: L{classes.Classes}
+    '''
 
 
 ###############################################################################
 # Mapped KB attribute classes
 ###############################################################################
-def _init_base_attributes(o, classes, schema):
+def _init_base_attributes(o):
     '''
     Create the base KB attribute classes and ORM mappings for a
-    knowledge base working session, using the given schema.  The
-    classes will be attached as attributes to the "o" object,
-    preserving their name.
+    knowledge base working session, using the given object (which must
+    contain a 'classes' attribute).  The classes will be attached as
+    attributes to the "o" object, preserving their name.
     '''
+    classes = o.classes
+    schema = classes.session.schema
+
     # Base abstract class
     class Attribute(object):
         def __init__(self, name, maybe_empty=True, order=0, multivalued=False,
@@ -657,7 +675,7 @@ def _init_base_attributes(o, classes, schema):
             assert(not self.multivalued)
 
             obj_table = self._class.sqlalchemy_table
-            target_pyclass = self.target.make_python_class()
+            target_pyclass = self.target.python_class
             target_table = self.target.sqlalchemy_table
             colname = self.column_name()
 
@@ -678,7 +696,7 @@ def _init_base_attributes(o, classes, schema):
             mvtable = self._sqlalchemy_mv_table
             assert(mvtable is not None)
 
-            target_pyclass = self.target.make_python_class()
+            target_pyclass = self.target.python_class
             target_table = self.target.sqlalchemy_table
 
             return {'_object' : mvtable.c.object, # 'object' used as backref
@@ -695,7 +713,7 @@ def _init_base_attributes(o, classes, schema):
             if self.maybe_empty and not self.multivalued and value is None:
                 return value
 
-            target_pyclass = self.target.make_python_class()
+            target_pyclass = self.target.python_class
             if not isinstance(value, target_pyclass):
                 raise kb_exc.ValidationError(('expected a value of type "%s" '
                                               + '(or descendants), got "%s" '
