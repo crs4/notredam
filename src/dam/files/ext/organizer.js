@@ -646,6 +646,11 @@ var createView = function(config) {
         listeners: {
             selectionchange: {fn:showDetails, buffer:100},
             dblclick: {fn:showFullscreen, buffer:100},
+            contextMenu: function(view, index, node, e){
+            	e.stopEvent();
+            	var menu = Ext.getCmp('mainMenu');
+            	menu.show(node,'c-br');
+            },
 //            dblclick: function(){
 //            	console.log('sdsfd');
 //            	
