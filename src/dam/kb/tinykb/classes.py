@@ -47,8 +47,8 @@ class Classes(object):
         '''
         Create a knowledge base class container.
 
-        @type  schema: L{session.Session}
-        @param schema: DB schema used for mapping the classes
+        :type  schema: L{session.Session}
+        :param schema: DB schema used for mapping the classes
 
         '''
         import session as kb_session
@@ -64,14 +64,14 @@ class Classes(object):
     Contains the knowledge base Attribute classes mapped to a
     working session.
 
-    @type: attributes.Attributes
+    :type: attributes.Attributes
     '''
 
     session = property(lambda self: self._session)
     '''
     The knowledge base session with which the attributes are bound
 
-    @type: L{session.Session}
+    :type: L{session.Session}
     '''
 
 
@@ -371,8 +371,8 @@ def _init_base_classes(o):
             Return the access configuration for the given workspace, or
             None if nothing was set.
 
-            @type workspace:  Workspace
-            @param workspace: the workspace to configure
+            :type workspace:  Workspace
+            :param workspace: the workspace to configure
             '''
             # We actually ask for the permissions to our root class
             return self._root.workspace_permission(workspace)
@@ -407,12 +407,12 @@ def _init_base_classes(o):
             '''
             Setup the root class visibility on the given workspace.
 
-            @type workspace:  Workspace
-            @param workspace: the workspace to configure
+            :type workspace:  Workspace
+            :param workspace: the workspace to configure
 
-            @type access:  Access mode (access.OWNER, access.READ_ONLY or
+            :type access:  Access mode (access.OWNER, access.READ_ONLY or
                            access.READ_WRITE)
-            @param access: Access configuration for the class on the given
+            :param access: Access configuration for the class on the given
                            workspace
             '''
             workspace.setup_root_class(self, access)
@@ -426,8 +426,8 @@ def _init_base_classes(o):
             actual class access configuration (their status will not be
             changed by this method).
 
-            @type ws_list:  a list of Workspace objects
-            @param ws_list: workspaces which could access to the root class
+            :type ws_list:  a list of Workspace objects
+            :param ws_list: workspaces which could access to the root class
             '''
             # Collect visibility configurations whose workspaces does not
             # appear in ws_list...

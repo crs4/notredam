@@ -48,13 +48,13 @@ class Attributes(object):
         '''
         Create a knowledge base class attributes container.
 
-        @type  classes: L{classes.Classes}
-        @param classes: contains the
+        :type  classes: L{classes.Classes}
+        :param classes: contains the
                         KB classes which will be associated to the
                         contained attributes
 
-        @type  schema: L{schema.Schema}
-        @param schema: DB schema used for mapping the attribute classes
+        :type  schema: L{schema.Schema}
+        :param schema: DB schema used for mapping the attribute classes
 
         '''
         import classes as kb_classes
@@ -68,7 +68,7 @@ class Attributes(object):
     '''
     The knowledge base classes with which the attributes are bound
 
-    @type: L{classes.Classes}
+    :type: L{classes.Classes}
     '''
 
 
@@ -264,8 +264,8 @@ def _init_base_attributes(o):
             This method can only be called after the Python class the
             attribute belongs to has been properly initialized
 
-            @type cls:  a Python class
-            @param cls: a class whose instances will contain KB attribute
+            :type cls:  a Python class
+            :param cls: a class whose instances will contain KB attribute
                         values
             '''
             # The following default implementation should work most of the
@@ -307,8 +307,8 @@ def _init_base_attributes(o):
             return the value itself (possibly with some ad-hoc type
             casting) in case of success.
 
-            @type value:  a Python term
-            @param value: the value to check
+            :type value:  a Python term
+            :param value: the value to check
             '''
             raise NotImplementedError
 
