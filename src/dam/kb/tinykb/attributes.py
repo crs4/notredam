@@ -26,6 +26,7 @@
 import datetime
 import decimal
 import json
+import types
 
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
@@ -39,7 +40,7 @@ import errors as kb_exc
 
 from util.niceid import niceid
 
-class Attributes(object):
+class Attributes(types.ModuleType):
     '''
     Container for the Python classes representing KB class attributes,
     mapped to a knowledge base working session.
@@ -48,6 +49,7 @@ class Attributes(object):
     :param classes: KB classes which will be associated to the attributes
     '''
     def __init__(self, classes):
+        types.ModuleType.__init__(self, 'tinykb.attributes_%x' % (id(self), ))
         import classes as kb_classes
         assert(isinstance(classes, kb_classes.Classes))
 

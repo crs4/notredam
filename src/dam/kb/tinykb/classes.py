@@ -23,6 +23,8 @@
 #
 #########################################################################
 
+import types
+
 from sqlalchemy import ForeignKey, event
 import sqlalchemy.orm as orm
 import sqlalchemy.exc as exc
@@ -35,7 +37,7 @@ import access
 
 from util import niceid
 
-class Classes(object):
+class Classes(types.ModuleType):
     '''
     Container for the Python classes mapped to a knowledge base
     working session.
@@ -48,6 +50,7 @@ class Classes(object):
 
     '''
     def __init__(self, session):
+        types.ModuleType.__init__(self, 'tinykb.classes_%x' % (id(self), ))
         import session as kb_session
         assert(isinstance(session, kb_session.Session))
 
