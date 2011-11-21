@@ -42,15 +42,12 @@ class Classes(object):
 
     When instantiated, this class configures the ORM machinery needed
     to bind the underlying knowledge base to a set of Python classes.
+
+    :type  session: :py:class:`session.Session`
+    :param session: KB session used for mapping the classes
+
     '''
     def __init__(self, session):
-        '''
-        Create a knowledge base class container.
-
-        :type  schema: L{session.Session}
-        :param schema: DB schema used for mapping the classes
-
-        '''
         import session as kb_session
         assert(isinstance(session, kb_session.Session))
 
@@ -64,14 +61,14 @@ class Classes(object):
     Contains the knowledge base Attribute classes mapped to a
     working session.
 
-    :type: attributes.Attributes
+    :type: :py:class:`attributes.Attributes`
     '''
 
     session = property(lambda self: self._session)
     '''
     The knowledge base session with which the attributes are bound
 
-    :type: L{session.Session}
+    :type: :py:class:`session.Session`
     '''
 
 

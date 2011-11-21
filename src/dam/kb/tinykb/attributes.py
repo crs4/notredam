@@ -43,20 +43,11 @@ class Attributes(object):
     '''
     Container for the Python classes representing KB class attributes,
     mapped to a knowledge base working session.
+
+    :type  classes: :py:class:`classes.Classes`
+    :param classes: KB classes which will be associated to the attributes
     '''
     def __init__(self, classes):
-        '''
-        Create a knowledge base class attributes container.
-
-        :type  classes: L{classes.Classes}
-        :param classes: contains the
-                        KB classes which will be associated to the
-                        contained attributes
-
-        :type  schema: L{schema.Schema}
-        :param schema: DB schema used for mapping the attribute classes
-
-        '''
         import classes as kb_classes
         assert(isinstance(classes, kb_classes.Classes))
 
@@ -68,7 +59,7 @@ class Attributes(object):
     '''
     The knowledge base classes with which the attributes are bound
 
-    :type: L{classes.Classes}
+    :type: :py:class:`classes.Classes`
     '''
 
 
