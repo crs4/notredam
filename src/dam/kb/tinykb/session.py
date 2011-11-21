@@ -41,11 +41,15 @@ class Session(object):
     :type  connstr_or_engine: SQLAlchemy connection string or engine
     :param connstr_or_engine: used to access the knowledge base SQL DB
 
+    :type  id_: string
+    :param id_: an unique identifier for distinguishing the session.
+                If not given, it will be auto-generated.
+
     :type  db_prefix: string
     :param db_prefix: prefix used for naming the SQL DB schema objects
                       managed by the KB (tables, constraints...).
     '''
-    def __init__(self, connstr_or_engine, db_prefix='kb_',
+    def __init__(self, connstr_or_engine, id_=None, db_prefix='kb_',
                  _duplicate_from=None):
         if isinstance(connstr_or_engine, str):
             self._engine = sqlalchemy.create_engine(connstr_or_engine)
@@ -54,6 +58,11 @@ class Session(object):
         else:
             raise TypeError('Unsupported type for Session initialization: '
                              % (connstr_or_engine, ))
+
+        if id_ is None:
+            id_ = '%x' % (id(self), )
+        assert(isinstance(id_, str))
+        self._id = id_
 
         self.session = sa_orm.Session(bind=self._engine)
 
@@ -66,6 +75,13 @@ class Session(object):
 
             self._schema = _duplicate_from._schema
             self._orm = _duplicate_from._orm
+
+    id_ = property(lambda self: self._id)
+    '''
+    The session unique identifier
+
+    :type: string
+    '''
 
     engine = property(lambda self: self._engine)
     '''
