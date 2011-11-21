@@ -37,19 +37,16 @@ class Session(object):
     '''
     A working session of the knowledge base, which handles SQL DB
     connection and object-relational mapping details.
+
+    :type  connstr_or_engine: SQLAlchemy connection string or engine
+    :param connstr_or_engine: used to access the knowledge base SQL DB
+
+    :type  db_prefix: string
+    :param db_prefix: prefix used for naming the SQL DB schema objects
+                      managed by the KB (tables, constraints...).
     '''
     def __init__(self, connstr_or_engine, db_prefix='kb_',
                  _duplicate_from=None):
-        '''
-        Create a knowledge base session instance.
-
-        :type  connstr_or_engine: SQLAlchemy connection string or engine
-        :param connstr_or_engine: used to access the knowledge base SQL DB
-
-        :type  db_prefix: string
-        :param db_prefix: prefix used for naming the SQL DB schema objects
-                          managed by the KB (tables, constraints...).
-        '''
         if isinstance(connstr_or_engine, str):
             self._engine = sqlalchemy.create_engine(connstr_or_engine)
         elif isinstance(connstr_or_engine, sa_base.Engine):
@@ -81,7 +78,7 @@ class Session(object):
     '''
     The SQL DB schema instance bound to the session
 
-    :type: L{schema.Schema}
+    :type: :py:class:`schema.Schema`
     '''
 
     orm = property(lambda self: self._orm)
@@ -90,7 +87,7 @@ class Session(object):
     knowledge base classes can be accessed as attributes of this
     property, almost like a dynamic namespace.
 
-    :type: L{classes.Classes}
+    :type: :py:class:`classes.Classes`
     '''
 
     def duplicate(self):
@@ -110,7 +107,8 @@ class Session(object):
         Add an object to the knowledge base session, ready for later
         commit.
 
-        :type  obj: one of the classes accessible through the L{orm} property
+        :type  obj: one of the classes accessible through the
+               :py:attr:`orm` property
         :param obj: object to be added
         '''
         self.session.add(obj)
@@ -121,7 +119,7 @@ class Session(object):
         later commit.
 
         :type  obj: list of instances, whose class must be accessible
-               through the L{orm} property
+               through the :py:attr:`orm` property
         :param obj: object to be added
         '''
         self.session.add_all(obj_list)
@@ -132,8 +130,8 @@ class Session(object):
         session.
 
         :type obj: object
-        :param obj: an object instance (previously added with L{add}() or
-                    L{add_all}())
+        :param obj: an object instance (previously added with :py:meth:`add`
+                    or :py:meth:`add_all`)
         '''
         if isinstance(obj, list):
             for o in obj:
@@ -152,7 +150,7 @@ class Session(object):
         '''
         Start a nested transaction.
 
-        This method creates a savepoint in case of L{rollback}.
+        This method creates a savepoint in case of :py:meth:`rollback`.
         '''
         self.session.begin_nested()
 
@@ -183,7 +181,7 @@ class Session(object):
         Undo the effects of the current transaction on the knowledge
         base SQL DB.
 
-        If L{begin_nested}() was used, the rollback will stop at the last
+        If :py:meth:`begin_nested` was used, the rollback will stop at the last
         savepoint.
         '''
         self.session.rollback()

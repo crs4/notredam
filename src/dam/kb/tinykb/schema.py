@@ -40,16 +40,13 @@ class Schema(object):
     '''
     Container for the SQL DB schema used during a knowledge base
     working session.
+
+    :type  prefix: string
+    :param prefix: prefix used for naming the SQL DB schema objects
+                   managed by the KB (tables, constraints...).
     '''
     # FIXME: document table names, and expose them as read-only properties
     def __init__(self, prefix='kb_'):
-        '''
-        Create a knowledge base SQL DB schema.
-
-        :type  prefix: string
-        :param prefix: prefix used for naming the SQL DB schema objects
-                       managed by the KB (tables, constraints...).
-        '''
         self._metadata = MetaData()
         self._prefix = prefix
 
