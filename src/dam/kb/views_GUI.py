@@ -152,20 +152,28 @@ def get_object_attributes_hierarchy(request):
 
 def get_object_attributes(request):
 
-    print 'get_object_attributes'
+    print 'get_object_attributes------'
     class_id = request.POST.getlist('class_id')[0]
     obj_id = request.POST.getlist('obj_id')[0]
-    cls_obj = views_kb.object_get(request, request.session['workspace'].pk,obj_id)
-    cls_obj = simplejson.loads(cls_obj.content)
-    print 'obj------'
-    print cls_obj['attributes']
+    print 'obj_id'
+    print obj_id
+    if (obj_id):
+        cls_obj = views_kb.object_get(request, request.session['workspace'].pk,obj_id)
+        cls_obj = simplejson.loads(cls_obj.content)
+        print 'obj------'
+        print cls_obj['attributes']
     cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
     cls_dicts = simplejson.loads(cls_dicts.content) 
+    print 'cls------'
+    print cls_dicts['attributes']
     rtr = {"rows":[]}
     for attribute in cls_dicts['attributes']:
         tmp = {}
         tmp['id'] = attribute
-        tmp['value'] = cls_obj['attributes'][attribute]
+        if (obj_id):
+            tmp['value'] = cls_obj['attributes'][attribute]
+        else:
+            tmp['value'] = None
         for specific_field in cls_dicts['attributes'][attribute]:
             tmp[specific_field] = cls_dicts['attributes'][attribute][specific_field]
         rtr['rows'].append(tmp)
