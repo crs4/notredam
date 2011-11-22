@@ -374,7 +374,6 @@ def object_get(request, ws_id, object_id):
 
     return HttpResponse(simplejson.dumps(_kbobject_to_dict(obj, ses)))
 
-
 def object_post(request, ws_id, object_id):
     try:
         obj_dict = _assert_return_json_data(request)

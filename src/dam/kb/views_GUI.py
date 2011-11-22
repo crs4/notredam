@@ -39,11 +39,7 @@ def _get_root_tree(request,ws_id):
     cls_dicts = simplejson.loads(cls_dicts.content)   
 
     for n in cls_dicts:
-        allowDrag = True
-        editable = False
-        if n['superclass']:
-            spr.append({'namesuper':n['superclass']}) 
-        else:
+        if not n['superclass']:
             tmp = {'text' : n['name'],  
                'id': n['id'], 
                'leaf': False,
@@ -68,23 +64,22 @@ def _get_child_cls_obj(request,ws_id, parent):
                        'leaf': False,
                     }  
                 result.append(tmp)
-        print "class result"
-        print result
+        logger.debug("class result")
+        logger.debug(result)
     except Exception, ex:
         logger.debug(ex)
 
     obj_dicts = views_kb.object_index_get(request, ws_id)
     obj_dicts = simplejson.loads(obj_dicts.content)   
     for o in obj_dicts:
-        if parent.lower() == o['class'].lower():
+        if parent.lower() == o['class_id'].lower():
             tmp = {'text' : o['name'],  
                    'id': o['id'], 
                    'leaf': True,
                 }  
             result.append(tmp)
     
-    print "result---:  %s" %result
-    #result = _verify_leaf(result,spr)
+    logger.info("result---:  %s" %result)
             
     return result
 
@@ -124,14 +119,22 @@ def _add_attribute(name, value, groupname):
           }
     return tmp
 
-def _put_attributes(cls_obj,rtr):
+def _put_attributes(cls_obj, rtr):
     rtr['rows'].append(_add_attribute('notes', cls_obj['notes'],cls_obj['name']))
     for c in cls_obj['attributes']:
         tmp = _add_attribute(c,cls_obj['attributes'][c],cls_obj['name'])
         rtr['rows'].append(tmp)
 
-def get_object_attributes(request):
-    
+def get_specific_info_obj(request, obj_id):
+    ses = views_kb._kb_session()
+    ws = ses.workspace(request.session['workspace'].pk)
+    cls = ses.object(obj_id, ws=ws)
+    rtr = {"rows":[]}
+    rtr['rows'].append(views_kb._kbobject_to_dict(cls, ses))
+    resp = simplejson.dumps(rtr)
+    return HttpResponse(resp)
+
+def get_object_attributes_hierarchy(request):
     nodes = tree_view._get_item_nodes(request.POST.getlist('items'))
     ses = views_kb._kb_session()
     rtr = {"rows":[]}
@@ -139,7 +142,7 @@ def get_object_attributes(request):
         n = Node.objects.get(pk = node.id)
         while n.parent_id:
             if n.kb_object_id:
-                cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id))
+                cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id), ses)
                 _put_attributes(cls,rtr)
             n = Node.objects.get(pk = n.parent_id)
     logger.debug(rtr)
@@ -147,3 +150,62 @@ def get_object_attributes(request):
     
     return HttpResponse(resp)
 
+def get_object_attributes(request):
+
+    print 'get_object_attributes------'
+    class_id = request.POST.getlist('class_id')[0]
+    obj_id = request.POST.getlist('obj_id')[0]
+    print 'obj_id'
+    print obj_id
+    if (obj_id):
+        cls_obj = views_kb.object_get(request, request.session['workspace'].pk,obj_id)
+        cls_obj = simplejson.loads(cls_obj.content)
+        print 'obj------'
+        print cls_obj['attributes']
+    cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
+    cls_dicts = simplejson.loads(cls_dicts.content) 
+    print 'cls------'
+    print cls_dicts['attributes']
+    rtr = {"rows":[]}
+    for attribute in cls_dicts['attributes']:
+        tmp = {}
+        tmp['id'] = attribute
+        if (obj_id):
+            tmp['value'] = cls_obj['attributes'][attribute]
+        else:
+            tmp['value'] = None
+        for specific_field in cls_dicts['attributes'][attribute]:
+            tmp[specific_field] = cls_dicts['attributes'][attribute][specific_field]
+        rtr['rows'].append(tmp)
+        #
+#    if request.POST.getlist('obj_id'):
+#        #edit obj
+#    else:
+#        #new obj
+    logger.debug(rtr)
+    resp = simplejson.dumps(rtr)
+    
+    return HttpResponse(resp)
+
+def get_class_attributes(request, class_id):
+    cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
+    cls_dicts = simplejson.loads(cls_dicts.content) 
+    rtr = {"rows":[]}
+    for attribute in cls_dicts['attributes']:
+        tmp = {}
+        tmp['id'] = attribute
+        for specific_field in cls_dicts['attributes'][attribute]:
+            tmp[specific_field] = cls_dicts['attributes'][attribute][specific_field]
+        rtr['rows'].append(tmp)
+    resp = simplejson.dumps(rtr)
+    return HttpResponse(resp)
+    
+    
+def get_specific_info_class(request, class_id):
+    cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
+    cls_dicts = simplejson.loads(cls_dicts.content) 
+    rtr = {"rows":[]}
+    rtr['rows'].append(cls_dicts)
+    resp = simplejson.dumps(rtr)
+    return HttpResponse(resp)
+    

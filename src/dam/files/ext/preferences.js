@@ -24,8 +24,7 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
         fields: ['id','name','caption','name_component', 'type', 'value', 'choices'],
         listeners: {        
             load: function() {
-    			
-    			
+
                 var generated_prefs = generate_pref_forms(this, save_url, undefined, on_success );
               	
                 if (extra_tabs)
@@ -111,8 +110,6 @@ var account_prefs = new Ext.FormPanel({
         text: 'Cancel',
         handler: function() {
             win.close();
-            
-           
         }
     }],
     items:[

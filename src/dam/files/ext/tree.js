@@ -593,19 +593,22 @@ var treeAction = function(tree_action){
     	Ext.getCmp('tree_form_obj').getForm().submit({
             clientValidation: true,
             params:params,
-            //params: {newStatus: 'delivered'},
-            //url: '/add_node/',
             waitMsg: gettext('Saving...'),
             success: function(form, action) {
                 if(!sel_node.length) {
             		console.log(tree_loader);
-                    tree_loader.clearOnLoad = false;
-                    tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
-                    tree_loader.load(sel_node,function(){
-                        tree_loader.clearOnLoad = true;
-                        tree_loader.baseParams = {};
-                        sel_node.expand();
-                    });
+            		if((tree_action.text == gettext('Add')) || (tree_action.text == gettext('Object Reference'))){
+        				tree_loader.clearOnLoad = false;
+	                    tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
+	                    tree_loader.load(sel_node,function(){
+	                        tree_loader.clearOnLoad = true;
+	                        tree_loader.baseParams = {};
+	                        sel_node.expand();
+	                    });
+            		}else{
+            			console.log('ELSEEEE');
+	                    tree_loader.load();
+            		}
                 }
                 win.close();
             },
@@ -817,6 +820,8 @@ var treeAction = function(tree_action){
     	console.log(sel_node);
     	console.log('selNode.attributes.text');
     	console.log(sel_node.attributes.text);
+    	console.log('tree_action.text');
+    	console.log(tree_action.text);
     	var fields = [];
     	var node_id, type;
         var height_form= 370;
@@ -829,26 +834,41 @@ var treeAction = function(tree_action){
         var url = '/' + action.toLowerCase() + '_node/';
     	var add_option_droppable = new Ext.form.Checkbox({
             id: 'check_drop_option_id',
-            fieldLabel: 'can drop item',
+            fieldLabel: 'Object as Keyword',
             name: 'check_drop_option'
         });
-    	if (sel_node.attributes.iconCls == 'object-keyword'){
+    	if (sel_node.attributes.iconCls == 'object-keyword' && tree_action.text  == gettext('Edit')){
     		add_option_droppable.setValue(true);
     	}
     	var label = new Ext.form.TextField({
-            fieldLabel: 'label',
+            fieldLabel: 'Node selected',
             name: 'label',
             id:'node_label_obj',                            
             allowBlank:false,
+            cls:'node_label_obj_cls',
             readOnly: true
         });
-    	if (tree_action.text == gettext("Edit")){
-    		label.setValue(sel_node.attributes.text);
-    	}
 
-    	fields.push(label);
-        fields.push(add_option_droppable);
-     
+    	var label_bis = new Ext.form.Label({
+            name: 'label',
+            id:'node_label_obj_bis',
+            text:'Select an object:',
+            allowBlank:false
+        });
+        var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
+            text: gettext('All items'),
+            id:'root_obj_tree',
+            expanded: true,
+            allowDrag:false,
+            allowDrop:true,
+            editable: false,
+            type:'object',
+            iconCls:'category',
+/*            text		: 'My Root Node',
+            draggable	: false,
+            id		: '0'                  // this IS the id of the startnode
+*/        });
+
         // SET the root node.
         var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
             text: gettext('All items'),
@@ -870,33 +890,53 @@ var treeAction = function(tree_action){
 
 	  var tree_obj_reference = new Ext.tree.TreePanel({
 	            id:'obj_reference_tree',
-	            animate:true,
+//	            animate:true,
 	            containerScroll: true,
 	            height: 290,
 	            layout: 'fit',
-//	            split:true,
 	            title:'Vocabulary',
 	            autoScroll:true,
 	            loader: tree_loader_obj,
 	            rootVisible: false,
-	            selModel: new Ext.tree.DefaultSelectionModel({
+/*	            listeners:{
+			         	"afterrender": {
+		  				fn : setNode,
+		  				scope: this
+			      		}
+		  
+	  			},
+*/	            selModel: new Ext.tree.DefaultSelectionModel({
 	                listeners:{
-	                    selectionchange: {fn:function(sel, node){
+	                    "selectionchange": {fn:function(sel, node){
 	            								//console.log(sel);console.log(nodes);
 	            								if (node.leaf == true){
 	            									Ext.getCmp('node_label_obj').setValue(node.text);
 	            								}
 	                    					 }
-	            		}
-	                }
+	            		}	            		
+	                },
 	            })
 	    });  
 	  	tree_obj_reference.setRootNode(Tree_Obj_Root);
+
+	  	/*		function setNode(){//FIXME tree is not generated all, so it's impossibile search Node in this way. 
+				console.log('0');
+		    	Ext.getCmp('obj_reference_tree').getSelectionModel().select(Ext.getCmp('obj_reference_tree').getRootNode());
+		    	console.log('1');
+		    	while(Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode().attributes.text != sel_node.attributes.text && Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode()!= null){
+		        	Ext.getCmp('obj_reference_tree').getSelectionModel().selectNext();
+		    	}
+		    	console.log(Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode());
+}
+*/			  	
+	  	fields.push(label);
+        fields.push(add_option_droppable);
+    	fields.push(label_bis);
 	  	fields.push(tree_obj_reference);
 	  	console.log('URL: '+ url);
 	  	var tree_form_obj = new Ext.FormPanel({
             id:'tree_form_obj',
-            labelWidth: 80, // label settings here cascade unless overridden
+            labelWidth: 110, // label settings here cascade unless overridden
             frame:true,
             height: height_form,
             bodyStyle:'padding:5px 5px 0',              
@@ -916,13 +956,17 @@ var treeAction = function(tree_action){
                 }
             }]
         });
+        if (tree_action.text == gettext("Edit")){
+        	add_option_droppable.setDisabled(true);
+        	//label.setValue(sel_node.attributes.text);
+    	}
         
         win = new Ext.Window({
             title: 'Add Object Reference',
             constrain: true,
             layot: 'fit',
-            width       : width_win,
-            height      : height_win,
+            width : width_win,
+            height: height_win,
             modal: true,
             resizable: false,
             items:[ 
@@ -930,7 +974,13 @@ var treeAction = function(tree_action){
             ],
             listeners:{
                 afterrender: function() {
-                    var node_l = Ext.getCmp('node_label');
+                    var node_l = Ext.getCmp('node_label_obj');
+                    console.log('node_l');
+                    console.log(node_l);
+                 	console.log('0');
+                	Ext.getCmp('obj_reference_tree').getSelectionModel().select(Ext.getCmp('obj_reference_tree').getRootNode());
+                	console.log('1');
+
                     if(node_l) {
                         node_l.focus(false, 100);
                     }
@@ -1233,6 +1283,10 @@ contextMenuShow = function(node_menu,e){
                     if (node.id == 'fake') {
                         return false;
                     }
+                },
+                contextmenu: function(e) {
+                	// Init your context menu
+                	console.log('CONTEXT MENU');
                 }
             }
         });
