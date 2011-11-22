@@ -230,6 +230,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			name: 'min_date',
 			id  : 'id_min',
 			fieldLabel: 'Min date',
+			format: 'Y-m-d',
 			value: min_date_value,
 	        allowBlank:true
 		});
@@ -237,12 +238,14 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			name: 'max_date',
 			id  : 'id_max',
 			fieldLabel: 'Max date',
+			format: 'Y-m-d',
 			value: max_date_value,
 	        allowBlank:true
 		});
 		var default_value = new Ext.form.DateField({
 			name: 'default_value',
 			id  : 'id_default_value',
+			format: 'Y-m-d',
 			fieldLabel: 'Default value',
 			value: default_v,
 	        allowBlank:true
@@ -255,15 +258,16 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 				name: 'Insert value',
 				id  : 'id_record_value',
 				fieldLabel: 'Insert value',
+				format: 'Y-m-d',
 		        allowBlank:true
 			});
 			min_date.disable();
 			max_date.disable();
 			default_value.disable();
+			if (data.value){
+				record_value.setValue(data.value);
+			}
 			attribute_detail_panel.add(record_value);
-		}
-		if (data.value){
-			record_value.setValue(data.value);
 		}
 	}else if (value == 'string' || value == 'uri'){
 		console.log('Stringa o uri');
@@ -286,10 +290,10 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		        allowBlank:true
 			});
 			max_length.disable();
+			if (data.value){
+				record_value.setValue(data.value);
+			}
 			attribute_detail_panel.add(record_value);
-		}
-		if (data.value){
-			record_value.setValue(data.value);
 		}
 	}else if (value == 'objref'){
 		console.log('OBJREF');
@@ -345,7 +349,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	            new Ext.data.SimpleStore({
 	              fields: ['id','name'],
 	              data: [
-	                ["true","True"],["false","false"]]
+	                ["true","True"],["false","False"]]
 	          }), // end of Ext.data.SimpleStore
 	        hiddenName: 'type',
 	        width: 130,
@@ -454,7 +458,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			default_value.disable();
 			attribute_detail_panel.add(record_value);
 			if (data.value){
-				//record_value.setValue(data.value);
+				//FIXME check row .
 				console.log('aaaaa');
 			}
 		}
@@ -599,13 +603,26 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        		},{
 	        		    name: 'target_class'
 	        		}]);
-	        		if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue()}else{default_value = null}
-	        		console.log('default_value: '+default_value);
-	        		if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue()}else{min_value = null}
-	        		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue()}else{max_value = null}
-	        		if (Ext.getCmp('id_max_length')){max_length = Ext.getCmp('id_max_length').getValue()}else{max_length = null}
-	        		if (Ext.getCmp('id_choices')){choices = Ext.getCmp('id_choices').getValue()}else{choices = null}
-	        		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null}
+	        		
+        			if (type_combo.getValue() == 'date'){//fit date format
+        				if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue().format('Y-m-d');}else{min_value = null;}
+    	        		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue().format('Y-m-d');}else{max_value = null;}
+            			if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue().format('Y-m-d');}else{default_value = null;}
+        			}else{
+        				if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue();}else{min_value = null;}
+    	        		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue();}else{max_value = null;}
+            			if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue();}else{default_value = null;}
+        			}
+	        		if (Ext.getCmp('id_max_length')){max_length = Ext.getCmp('id_max_length').getValue();}else{max_length = null;}
+	        		if (Ext.getCmp('id_choices')){//string list
+	        			choices = Ext.getCmp('id_choices').getValue().split(',');
+	        			if (choices[choices.length-1] == ""){
+	        				delete(choices[choices.length-1]);
+	        				choices.splice(choices.length-1, 1);
+	        			}
+	        		}else{choices = null;}
+	        		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
+
 	        		if (this.text == gettext('Edit')){
 	        			attributes_grid.getSelectionModel().getSelected().set('id',name_textField.getValue().replace(/ /g, "_"));
 	        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
@@ -634,14 +651,17 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		        			length		: max_length,
 		        			choices		: choices,
 		        			target_class: target_class
-		        			
 		        		}));
 	        		}
         		}else{ // obj scope
         			if(Ext.getCmp('id_record_value').getValue()!=""){
-        				attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue());
+        				console.log('----');
+        				if (attributes_grid.getSelectionModel().getSelected().data.type == 'date'){
+        					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue().format('Y-m-d'));
+        				}else{
+        					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue());
+        				}
         			}
-        			console.log('Whatsapp');
         		}
         		win_att_class.close();
             }
@@ -942,6 +962,7 @@ function load_detail_class(class_data, id_class, add_class){
 	                    success: function(response){
 	                    	Ext.getCmp('obj_reference_tree').root.reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+	                    	Ext.getCmp('details_panel_class').removeAll();
 	                    },
 	                    failure:function(response){
 	                    	Ext.Msg.alert('Failure', response.responseText);
@@ -958,10 +979,10 @@ function load_detail_class(class_data, id_class, add_class){
 	                    success: function(response){
 	                    	Ext.getCmp('obj_reference_tree').root.reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-	                    	Ext.getCmp('obj_reference_tree').root.reload();
+	                    	Ext.getCmp('details_panel_class').removeAll();
 	                    },
 	                    failure:function(response){
-	                    	Ext.Msg.alert('Failure');
+	                    	Ext.Msg.alert('Failure', response.responseText);
 	                    }
 	        		});
         		}
@@ -1004,6 +1025,8 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		class_id_textField_value = obj_data.getAt(0).data.class_id;
 		store_attributes_grid_obj = store_get_obj_attributes(obj_data.getAt(0).data.class_id, obj_id);
 		var title = "Edit object " + name_textField_value;
+		var method_request='POST';
+		var url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+obj_id
 	}else{
 		console.log('class_id: '+class_id);
 		id_textField_value = null;
@@ -1012,6 +1035,8 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		class_id_textField_value = class_id;
 		store_attributes_grid_obj = store_get_obj_attributes(class_id, null);
 		var title = "Add new object";
+		var method_request='PUT';
+		var url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/';
 	}
 	
 	var id_textField = new Ext.form.TextField({
@@ -1050,10 +1075,9 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	fields.push(notes_textField);
 	
     //attributes
-	console.log('STORE EditorGridPanel');
-	console.log(store_attributes_grid_obj);
     var attributes_grid = new Ext.grid.EditorGridPanel({
-        store: store_attributes_grid_obj,
+        id:'attribute_grid_obj_id',
+    	store: store_attributes_grid_obj,
         title:'Attributes',
         sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
         cm: new Ext.grid.ColumnModel([
@@ -1082,8 +1106,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         labelWidth: 110, // label settings here cascade unless overridden
         frame:true,
         bodyStyle:'padding:5px 5px 0',              
-        url: '/PUT/',
-//        items: fields,
+        url: method_request,
         items: [{
         	layout:'column',
         	items:[{
@@ -1101,12 +1124,70 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
             text: gettext('Save'),
             type: 'submit',
             handler: function(){
-        		console.log('submit');
+        		params = {};
+        		params['name'] = name_textField.getValue();
+        		params['notes'] = notes_textField.getValue();
+
+        		if (id_textField.getValue()){
+        			params['id'] = id_textField.getValue();
+        		}else{
+        			params['id'] = name_textField.getValue().replace(/ /g, "_");
+        		}
+        		params['class_id'] = class_id_textField.getValue();
+        		var attribute;
+        		params['attributes'] = {};
+        		for (var i=0; i < Ext.getCmp('attribute_grid_obj_id').getStore().getCount(); i++){
+        			attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
+        			console.log('ATTRIBUTE');
+        			console.log(attribute);
+        			if (attribute.multivalued == true){ // list of type
+        				console.log(attribute);
+        				params['attributes'][attribute.id] = attribute.value;
+        			}else{ // only one value
+        				params['attributes'][attribute.id] = attribute.value;
+        			}
+        		}
+        		if (add_obj){
+	        		Ext.Ajax.request({
+	        			url:url_submit,
+	        			jsonData: params,
+	        			method: method_request,
+	        			headers: {'Content-Type': 'application/json;charset=utf-8'},
+	                    clientValidation: true,
+	                    waitMsg: 'Saving...',
+	                    success: function(response){
+	                    	Ext.getCmp('obj_reference_tree').root.reload();
+	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+	                    	Ext.getCmp('details_panel_class').removeAll();
+	                    },
+	                    failure:function(response){
+	                    	Ext.Msg.alert('Failure', response.responseText);
+	                    }
+	        		});
+        		}else{
+	        		Ext.Ajax.request({
+	        			url:url_submit,
+	        			jsonData: params,
+	        			method: method_request,
+	        			headers: {'Content-Type': 'application/json;charset=utf-8'},
+	                    clientValidation: true,
+	                    waitMsg: 'Saving...',
+	                    success: function(response){
+	                    	Ext.getCmp('obj_reference_tree').root.reload();
+	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+	                    	Ext.getCmp('details_panel_class').removeAll();
+	                    },
+	                    failure:function(response){
+	                    	Ext.Msg.alert('Failure', response.responseText);
+	                    }
+	        		});
+        		}
             }
         },{
             text: gettext('Cancel'),
             handler: function(){
             	//clear form
+        		console.log('clear');
             }
         }]
     });
