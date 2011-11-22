@@ -342,16 +342,14 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		if (data){
 			default_v = data.default_value;
 		}
+		var TF_store = new Ext.data.SimpleStore({
+            fields: ['id','name'],
+            data: [
+              [true,"True"],[false,"False"]]
+        });
 		var default_value = new Ext.form.ComboBox({
-			name: 'default_value',
 			id  : 'id_default_value',
-	        store: 
-	            new Ext.data.SimpleStore({
-	              fields: ['id','name'],
-	              data: [
-	                ["true","True"],["false","False"]]
-	          }), // end of Ext.data.SimpleStore
-	        hiddenName: 'type',
+	        store: TF_store,// end of Ext.data.SimpleStore
 	        width: 130,
 	        emptyText: 'Select ...',
 	        displayField: 'name',
@@ -360,28 +358,23 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	        editable: false,
 			value: default_v,
 			fieldLabel: 'Default value',
-	        allowBlank:true
+	        allowBlank:true,
+	        triggerAction: 'all'
 		});
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
 			var record_value = new Ext.form.ComboBox({
-				name: 'record_value',
 				id  : 'id_record_value',
-		        store: 
-		            new Ext.data.SimpleStore({
-		              fields: ['id','name'],
-		              data: [
-		                ["true","True"],["false","false"]]
-		          }), // end of Ext.data.SimpleStore
-		        fieldLabel: 'Select value',
-		        hiddenName: 'type',
+		        store: TF_store, // end of Ext.data.SimpleStore
+		        fieldLabel: 'Select value ...',
 		        width: 130,
 		        emptyText: 'Select ...',
 		        displayField: 'name',
 		        valueField: 'id',
 		        mode: 'local',
 		        editable: false,
-		        allowBlank:true
+		        allowBlank:true,
+		        triggerAction: 'all'
 			});
 			default_value.disable();
 			attribute_detail_panel.add(record_value);
@@ -466,6 +459,12 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	attribute_detail_panel.doLayout();
 }
 
+function isEmpty(obj) {
+	if (typeof obj == 'undefined' || obj === null || obj === '') return true;
+	if (typeof obj == 'number' && isNaN(obj)) return true;
+	if (obj instanceof Date && isNaN(Number(obj))) return true;
+	return false;
+}
 
 function add_single_attribute(edit, attributes_grid, insert_value){
 	console.log('add_single_attribute');
@@ -502,7 +501,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
                 ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["uri","Url"],["choice","Choice"],["objref","Object References"]]
           }), // end of Ext.data.SimpleStore
         fieldLabel: 'Type',
-        hiddenName: 'type',
         width: 130,
         emptyText: 'Select a type...',
         displayField: 'name',
@@ -624,7 +622,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
 
 	        		if (this.text == gettext('Edit')){
-	        			attributes_grid.getSelectionModel().getSelected().set('id',name_textField.getValue().replace(/ /g, "_"));
+//	        			attributes_grid.getSelectionModel().getSelected().set('id',name_textField.getValue().replace(/ /g, "_"));
 	        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
 	        			attributes_grid.getSelectionModel().getSelected().set('order','0');
@@ -654,11 +652,14 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		        		}));
 	        		}
         		}else{ // obj scope
-        			if(Ext.getCmp('id_record_value').getValue()!=""){
+        			console.log(isEmpty(Ext.getCmp('id_record_value').getValue()));
+        			if(!isEmpty(Ext.getCmp('id_record_value').getValue())){
         				console.log('----');
         				if (attributes_grid.getSelectionModel().getSelected().data.type == 'date'){
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue().format('Y-m-d'));
         				}else{
+            				console.log('*****');
+        					console.log(Ext.getCmp('id_record_value').getValue());
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue());
         				}
         			}
@@ -753,21 +754,10 @@ function load_detail_class(class_data, id_class, add_class){
                                 {id:'description',header: "Description", width: 160, sortable: true, dataIndex: 'description'}
         ]),
         listeners:{
-        	afterrender: {fn:function(grid){//FIXME
-        		console.log('test after render');
-        		console.log(grid);
-        		console.log(ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk);
-        		console.log(grid.getSelectionModel());
-        		console.log(grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk));
-        		console.log('*');
+        	afterrender: {fn:function(grid){//FIXME auto select current ws
         		var i = grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk); 
-        		console.log('-');
         		grid.getSelectionModel().selectRow(i);
-        		console.log('--');
         		grid.getSelectionModel().selectAll();
-        		console.log('---');
-        		Ext.getCmp('id_ws_admin_grid').getSelectionModel().selectAll();
-        		console.log('fine');
         	}}
         },
         height: 150
@@ -908,8 +898,6 @@ function load_detail_class(class_data, id_class, add_class){
 
         		if (id_textField.getValue()){
         			params['id'] = id_textField.getValue();
-        		}else{
-        			params['id'] = name_textField.getValue().replace(/ /g, "_");
         		}
         		params['superclass'] = superclass_textField.getValue();
         		console.log('get selected workspaces');
@@ -1130,8 +1118,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 
         		if (id_textField.getValue()){
         			params['id'] = id_textField.getValue();
-        		}else{
-        			params['id'] = name_textField.getValue().replace(/ /g, "_");
         		}
         		params['class_id'] = class_id_textField.getValue();
         		var attribute;
