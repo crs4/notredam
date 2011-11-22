@@ -431,7 +431,7 @@ def _init_base_classes(o):
             :param workspace: the workspace to configure
             '''
             # We actually ask for the permissions to our root class
-            return self._root.workspace_permission(workspace)
+            return self.root.workspace_permission(workspace)
 
         def __lt__(self, kb_cls):
             if not isinstance(kb_cls, KBClass):
@@ -652,12 +652,12 @@ def _init_base_classes(o):
                                                      schema.class_t.c.root],
                                         post_update=True,
                                         cascade='all'),
-            '_root' : relationship(KBRootClass,
-                                   primaryjoin=(schema.class_t.c.root
-                                                ==schema.class_t.c.id),
-                                   remote_side=[schema.class_t.c.id],
-                                   post_update=True,
-                                   cascade='all'),
+            'root' : relationship(KBRootClass,
+                                  primaryjoin=(schema.class_t.c.root
+                                               ==schema.class_t.c.id),
+                                  remote_side=[schema.class_t.c.id],
+                                  post_update=True,
+                                  cascade='all'),
             'attributes' : relationship(o._attributes.Attribute,
                                         back_populates='_class',
                                         cascade='save-update')
