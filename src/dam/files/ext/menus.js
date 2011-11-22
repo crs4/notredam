@@ -149,7 +149,11 @@ Ext.onReady(function(){
                                 method: 'POST',
                                 url: '/get_available_users/'
                             }),
-                            autoLoad: true
+                            autoLoad: true,
+                            sortInfo: {
+                                field: 'name',
+                                direction: 'ASC'
+                                }
                         });
 
                         var list_users = new Ext.ListView({
@@ -159,7 +163,7 @@ Ext.onReady(function(){
                             columns: [{
                                 header: 'Username',
                                 dataIndex: 'name'
-                            }]
+                            }],
                         }); 
 
                         var permissions_form = new Ext.form.FormPanel({
