@@ -265,7 +265,9 @@ def _init_base_attributes(o):
                     t = Table(self._multivalue_table, metadata,
                               Column('object', sa.types.String(128),
                                      ForeignKey('%s.id'
-                                                % (owner_table.name, )),
+                                                % (owner_table.name, ),
+                                                onupdate='CASCADE',
+                                                ondelete='CASCADE'),
                                      nullable=False),
                               Column('order', sa.types.Integer,
                                      nullable=False),
@@ -724,7 +726,9 @@ def _init_base_attributes(o):
         def _raw_ddl(self):
             colname = self.column_name()
             return [Column(colname, sa.types.String(128),
-                           ForeignKey('%s.id' % (self._target_table, )),
+                           ForeignKey('%s.id' % (self._target_table, ),
+                                      onupdate='CASCADE',
+                                      ondelete='CASCADE'),
                            nullable=self.maybe_empty and not self.multivalued)]
 
         # Override the default internal method, configuring a KB object
