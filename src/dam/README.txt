@@ -14,9 +14,14 @@ BUG FIXING
 ===============================================================================
 
 1.
+Fixed the wellknown bug in the user preferences window
+
 
 ===============================================================================
 OTHER THINGS
 ===============================================================================
 
 1.
+Added 404.html and 500.html templates, but remember to set DEBUG to false in
+settings.py otherwise the error page will appear anycase.
+
