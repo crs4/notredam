@@ -315,10 +315,10 @@ def _init_base_classes(o):
 
             return attrs_tbl_list
 
-        def create_table(self):
+        def realize(self):
             if self.is_bound():
                 ## We are already bound to a table
-                raise AttributeError('%s is already bound to a SQL table (%s)'
+                raise AttributeError('%s is already realized (SQL table: %s)'
                                      % (self, self._sqlalchemy_table.name))
 
             parent_table = self._get_parent_table()

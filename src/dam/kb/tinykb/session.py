@@ -184,7 +184,7 @@ class Session(object):
         for c in new_kb_cls:
             if not c.is_bound():
                 # FIXME: really do it automatically?  Or raise an error?
-                c.create_table()
+                c.realize()
         
         try:
             self.session.commit()
@@ -244,7 +244,7 @@ class Session(object):
             query = self._add_ws_filter(query, ws)
         return query
 
-    def create_table(self, class_):
+    def realize(self, class_):
         '''
         Create the SQL table(s) necessary for storing instances of the
         given KB class.
@@ -258,7 +258,7 @@ class Session(object):
         '''
         assert(isinstance(class_, self.orm.KBClass))
         self.add(class_)
-        class_.create_table()
+        class_.realize()
 
     def python_class(self, id_, ws=None):
         '''
