@@ -253,7 +253,7 @@ function showFullscreen(view, index, node, e){
 			height:img_height + 30,
 			resizable: false,
 			constrain: true,
-			title: 'fullscreen',
+			title: 'Fullscreen - ' + data.name,
 			html: '<div id="fullscreen"><img width="'+img_width +'" height="'+img_height+'" src="' +  data.url_fullscreen+'"></img></div>',
 
 			listeners:{
