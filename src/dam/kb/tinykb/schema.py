@@ -121,14 +121,14 @@ class Schema(object):
         :rtype: SQLAlchemy table
         :returns: the new SQLAlchemy table object
         '''
-        newtable = self._build_object_table(table_name, parent_table_name,
-                                            attrs_ddl)
+        newtable = self._get_or_build_object_table(table_name,
+                                                   parent_table_name,
+                                                   attrs_ddl)
         newtable.create(engine)
 
         return newtable
 
-    def get_object_table(self, table_name, parent_table_name, attrs_ddl,
-                         engine):
+    def get_object_table(self, table_name, parent_table_name, attrs_ddl):
         '''
         Return the table used for storing KB objects, raising an error
         if the expected table does not exist yet, or does not match
@@ -145,16 +145,12 @@ class Schema(object):
         :type  attrs_ddl: list of SQLAlchemy DDL objects
         :param attrs_ddl: describes the fields of the object table
 
-
-        :type  engine: SQLALchemy engine
-        :param engine: used for creating the table on the SQL DB
-
         :rtype: SQLAlchemy table
         :returns: the SQLAlchemy table object
         '''
-        newtable = self._build_object_table(table_name, parent_table_name,
-                                            attrs_ddl, engine=engine,
-                                            load_existing=True)
+        newtable = self._get_or_build_object_table(table_name,
+                                                   parent_table_name,
+                                                   attrs_ddl)
         return newtable
 
     def create_attr_tables(self, add_tables, engine):
@@ -168,14 +164,14 @@ class Schema(object):
         :rtype: list of SQLAlchemy tables
         :returns: the list of new SQLAlchemy table objects
         '''
-        newtables = self._build_attr_tables(add_tables, engine)
+        newtables = self._build_attr_tables(add_tables)
 
         for t in newtables:
             t.create(engine)
 
         return newtables
 
-    def get_attr_tables(self, add_tables, engine):
+    def get_attr_tables(self, add_tables):
         '''
         Retrieve the additional tables used for storing KB object
         attributes (e.g. multivalued ones).
@@ -186,8 +182,7 @@ class Schema(object):
         :rtype: list of SQLAlchemy tables
         :returns: the list of new SQLAlchemy table objects
         ''' 
-        newtables = self._build_attr_tables(add_tables, engine,
-                                            load_existing=True)
+        newtables = self._build_attr_tables(add_tables)
         return newtables
 
     def create_tables(self, connstr_or_engine, tables):
@@ -208,21 +203,22 @@ class Schema(object):
     # Internal functions
     ###########################################################################
 
-    def _build_object_table(self, table_name, parent_table, attrs_ddl,
-                            engine=None, load_existing=False):
-        if load_existing:
-            # FIXME: try to use class attributes to check table columns
-            # FIXME: raise an error if the table does not exist yet
-            return Table(table_name, self._metadata, autoload=True,
-                         autoload_with=engine)
-        else:
-            return Table(table_name, self._metadata,
-                         Column('id', String(128),
-                                ForeignKey('%s.id' % (parent_table, )),
-                                primary_key=True),
-                         *attrs_ddl)
+    def _get_or_build_object_table(self, table_name, parent_table, attrs_ddl):
+        # FIXME: this function should be split!
+        for t in self._metadata.sorted_tables:
+            if table_name == t.name:
+                # The table still exists in the metadata
+                return t
 
-    def _build_attr_tables(self, add_tables, engine=None, load_existing=False):
+        return Table(table_name, self._metadata,
+                     Column('id', String(128),
+                            ForeignKey('%s.id' % (parent_table, ),
+                                       onupdate='CASCADE',
+                                       ondelete='CASCADE'),
+                            primary_key=True),
+                     *attrs_ddl)
+
+    def _build_attr_tables(self, add_tables):
         '''
         Create additional table(s) for class attribute storage.  The list
         must contain constructors expecting to be called with a mandatory
@@ -231,13 +227,8 @@ class Schema(object):
         '''
         newtables = []
 
-        if load_existing:
-            for t in add_tables:
-                newtables.append(t(self._metadata, autoload=True,
-                                   autoload_with=engine))
-        else:
-            for t in add_tables:
-                newtables.append(t(self._metadata))
+        for t in add_tables:
+            newtables.append(t(self._metadata))
 
         return newtables
 

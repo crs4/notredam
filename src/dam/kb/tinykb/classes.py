@@ -346,15 +346,14 @@ def _init_base_classes(o):
             try:
                 self._sqlalchemy_table = schema.get_object_table(self.table,
                                                                  parent_table,
-                                                                 attrs_ddl,
-                                                                 engine)
+                                                                 attrs_ddl)
 
                 # The following call is going to require
                 # self.sqlalchemy_table (set above)
                 attrs_tables = self._get_attributes_tables()
 
                 self.additional_sqlalchemy_tables = schema.get_attr_tables(
-                    attrs_tables, engine)
+                    attrs_tables)
             except exc.InvalidRequestError:
                 # FIXME: raise a meaningful (non SQLAlchemy-related)
                 # exception here

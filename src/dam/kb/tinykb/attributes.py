@@ -33,7 +33,7 @@ import sqlalchemy.orm as sa_orm
 import sqlalchemy.ext.associationproxy as sa_proxy
 import sqlalchemy.ext.orderinglist as sa_order
 from sqlalchemy import (event, Column, CheckConstraint, ForeignKey,
-                        PrimaryKeyConstraint, Table)
+                        ForeignKeyConstraint, PrimaryKeyConstraint, Table)
 from sqlalchemy.orm import mapper, relationship
 
 import errors as kb_exc
@@ -243,35 +243,32 @@ def _init_base_attributes(o):
 
             owner_table = getattr(self, 'class').sqlalchemy_table
 
-            def table_builder(metadata, autoload=False, **kwargs):
+            def table_builder(metadata, **kwargs):
                 if self._multivalue_table is None:
                     raise RuntimeError('BUG: Attribute.additional_tables() '
                                        'was invoked on attribute "%s" before '
                                        'associating the attribute to a KB '
                                        'class (class_id = %s)'
                                        % (self.id, str(self._class_id)))
-                if autoload:
-                    t = Table(self._multivalue_table, metadata, autoload=True,
-                              **kwargs)
-                else:
-                    raw_ddl = self._raw_ddl()
-                    # We will also configure a primary key composed by all
-                    # the columns of the multivalue table.  It will ensure
-                    # uniqueness and (if necessary) allow external references
-                    pk_cols = (['object'] # See table definition below
-                               + [c.name for c in raw_ddl
-                                  if isinstance(c, Column)])
-                    raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
-                    t = Table(self._multivalue_table, metadata,
-                              Column('object', sa.types.String(128),
-                                     ForeignKey('%s.id'
-                                                % (owner_table.name, ),
-                                                onupdate='CASCADE',
-                                                ondelete='CASCADE'),
-                                     nullable=False),
-                              Column('order', sa.types.Integer,
-                                     nullable=False),
-                              *raw_ddl_pk, **kwargs)
+                # FIXME: move MV table construction details in schema.py
+                raw_ddl = self._raw_ddl()
+                # We will configure a primary key composed by all
+                # the columns of the multivalue table.  It will ensure
+                # uniqueness and (if necessary) allow external references
+                pk_cols = (['object'] # See table definition below
+                           + [c.name for c in raw_ddl
+                              if isinstance(c, Column)])
+                raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
+                t = Table(self._multivalue_table, metadata,
+                          Column('object', sa.types.String(128),
+                                 ForeignKey('%s.id'
+                                            % (owner_table.name, ),
+                                            onupdate='CASCADE',
+                                            ondelete='CASCADE'),
+                                 nullable=False),
+                          Column('order', sa.types.Integer,
+                                 nullable=False),
+                          *raw_ddl_pk, **kwargs)
 
                 # When this table constructor closure is executed, it will
                 # also update the object reference to the SQLAlchemy table
@@ -739,11 +736,12 @@ def _init_base_attributes(o):
                     colname # ...and use "original" colname as a relationship
                     : relationship(target_pyclass,
                                    backref=('references_%s_%s'
-                                            % (self.target.id,
+                                            % (self._class_id,
                                                colname)),
                                    cascade='all',
                                    primaryjoin=(obj_table.c[colname]
-                                                == target_table.c.id))}
+                                                == target_table.c.id),
+                                   remote_side=[target_table.c.id])}
 
         # Override the default internal method, configuring a KB object
         # relationship for the 'value' attribute of the multivalue table
@@ -756,14 +754,15 @@ def _init_base_attributes(o):
             target_table = self.target.sqlalchemy_table
 
             return {'_object' : mvtable.c.object, # 'object' used as backref
-                    '_value'  : mvtable.c.value,  # "Hide" object id
+                    '_value'  : mvtable.c.value,  # "Hide" table field name
                     'value'   : relationship(target_pyclass,
                                              backref=('references_%s_%s'
                                                       % (self._class_id,
                                                          self.id)),
                                              cascade='all',
                                              primaryjoin=(mvtable.c.value
-                                                          == target_table.c.id))}
+                                                          == target_table.c.id),
+                                             remote_side=target_table.c.id)}
 
         def validate(self, value):
             if self.maybe_empty and not self.multivalued and value is None:
