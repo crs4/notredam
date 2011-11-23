@@ -891,9 +891,3 @@ def _init_base_schema(o, metadata, prefix):
                              Column('id', ForeignKey(_p+'object.id'),
                                     primary_key=True)
                              )
-
-    # Category: almost like keyword, but it cannot catalog objects
-    o.object_category = Table(_p+'object_category', metadata,
-                              Column('id', ForeignKey(_p+'object.id'),
-                                     primary_key=True)
-                              )
