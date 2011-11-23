@@ -60,9 +60,8 @@ def test_create_object_classes(connstring=CONNSTRING):
         ses.add(w1)
 
     ## Retrieve the 'Keyword' class, which must exists
-    KeywordClass = ses.class_('keyword')
-
-    Keyword = KeywordClass.python_class
+    # KeywordClass = ses.class_('keyword')
+    # Keyword = KeywordClass.python_class
 
     class1 = classes.KBRootClass('Building', explicit_id='building',
                                  notes='Generic building',
@@ -95,23 +94,24 @@ def test_create_object_classes(connstring=CONNSTRING):
     # it2.add_to_workspace(w1)
     # it3.add_to_workspace(w2)
 
-    kw1 = Keyword('key1', 'Just a keyword', explicit_id='key1')
-    kw2 = Keyword('key2', explicit_id='key2')
+    # kw1 = Keyword('key1', 'Just a keyword', explicit_id='key1')
+    # kw2 = Keyword('key2', explicit_id='key2')
 
-    catalog1 = classes.RootCatalogEntry(kw1)
-    catalog2 = classes.RootCatalogEntry(kw2)
-    catalog3 = classes.CatalogEntry(kw1, catalog2)
+    # catalog1 = classes.RootCatalogEntry(kw1)
+    # catalog2 = classes.RootCatalogEntry(kw2)
+    # catalog3 = classes.CatalogEntry(kw1, catalog2)
 
     # catalog1.add_to_workspace(w1)
     # catalog2.add_to_workspace(w2)
 
     all_objs = [w1,
-                KeywordClass,
+                #KeywordClass,
                 class1, class2, class3,
                 #u1, u2,
                 #it1, it2, it3,
-                kw1, kw2,
-                catalog1, catalog2, catalog3]
+                #kw1, kw2,
+                #catalog1, catalog2, catalog3
+                ]
 
     ses.add_all(all_objs)
     ses.commit()
@@ -123,14 +123,14 @@ def test_create_derived_classes(connstring=CONNSTRING):
     attrs = ses.orm.attributes
 
     ## Retrieve the 'Keyword' class, which must exists
-    KeywordClass = ses.class_('keyword')
+    #KeywordClass = ses.class_('keyword')
 
     # The Keyword Python class must exist in order to create a
     # reference (see below)
-    # FIXME: is it possible to automate it?
-    Keyword = KeywordClass.python_class
+    #Keyword = KeywordClass.python_class
 
     class1 = ses.class_('building')
+    Building = class1.python_class
 
     class4 = classes.KBClass('Church',  explicit_id='church',
                              superclass=class1, notes='A church',
@@ -141,7 +141,7 @@ def test_create_derived_classes(connstring=CONNSTRING):
                                                        'Three or more'],
                                                       default='Two'),
                                          attrs.ObjectReference(
-                                             'Tags', KeywordClass,
+                                             'Nearby buildings', Building,
                                              multivalued=True)])
     class4.realize()
     Church = class4.python_class
@@ -149,7 +149,7 @@ def test_create_derived_classes(connstring=CONNSTRING):
     class5 = classes.KBClass('Castle',  explicit_id='castle',
                              superclass=class1,
                              notes='A castle (possibly with a dragon)',
-                             attributes=[attrs.ObjectReference('Nearby church',
+                             attributes=[attrs.ObjectReference('Local church',
                                                                Church)]) 
     class5.realize()
     Castle = class5.python_class
@@ -166,17 +166,15 @@ def test_create_derived_class_objects(connstring=CONNSTRING):
     Church = ses.python_class('church')
     Castle = ses.python_class('castle')
 
-    kw1 = ses.object('key1')
-    kw2 = ses.object('key2')
-
     church1 = Church('Cute little church', 'Unknown church near Siliqua')
     castle1 = Castle('Acquafredda', 'Castle of Siliqua')
+    castle2 = Castle('Eleonora d\'Arborea', 'Castle of Sanluri')
 
     # Here we use the standard mangling rules for attribute names:
     # lowercase, spaces converted to underscores
-    castle1.nearby_church = church1
-    church1.tags.append(kw1)
-    church1.tags.append(kw2)
+    castle1.local_church = church1
+    church1.nearby_buildings.append(castle1)
+    church1.nearby_buildings.append(castle2)
     church1.websites.append('http://www.google.com/')
     church1.websites.append('http://www.xkcd.com/')
     

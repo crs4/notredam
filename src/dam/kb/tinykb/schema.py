@@ -266,17 +266,20 @@ class Schema(object):
 
     def _init_default_classes(self, engine):
         default_classes = [
-            # Keyword
-            {'id'          : 'keyword',
-             'root'        : 'keyword',
-             'parent'      : 'keyword',
-             'parent_root' : 'keyword',
-             'name'        : 'Keyword',
-             'table'       : self.object_keyword.name,
-             'notes'       : 'Simple keyword without attributes',
-             'is_root'     : True}]
+            # Keyword: this will be a default class if (when) the KB
+            # will be fully implemented
+            # {'id'          : 'keyword',
+            #  'root'        : 'keyword',
+            #  'parent'      : 'keyword',
+            #  'parent_root' : 'keyword',
+            #  'name'        : 'Keyword',
+            #  'table'       : self.object_keyword.name,
+            #  'notes'       : 'Simple keyword without attributes',
+            #  'is_root'     : True}
+            ]
 
-        engine.execute(self.class_t.insert(), default_classes)
+        if len(default_classes) > 0: # Just to shut up SQLAlchemy warnings
+            engine.execute(self.class_t.insert(), default_classes)
 
 
 ###############################################################################
@@ -887,7 +890,8 @@ def _init_base_schema(o, metadata, prefix):
     #          - object.id = Building.id = Church.id = Cathedral.id
 
     # Simple keyword (without attributes)
-    o.object_keyword = Table(_p+'object_keyword', metadata,
-                             Column('id', ForeignKey(_p+'object.id'),
-                                    primary_key=True)
-                             )
+    # This will be a default class if (when) the KB will be fully implemented
+    # o.object_keyword = Table(_p+'object_keyword', metadata,
+    #                          Column('id', ForeignKey(_p+'object.id'),
+    #                                 primary_key=True)
+    #                          )
