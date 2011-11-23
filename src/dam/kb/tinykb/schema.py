@@ -40,16 +40,13 @@ class Schema(object):
     '''
     Container for the SQL DB schema used during a knowledge base
     working session.
+
+    :type  prefix: string
+    :param prefix: prefix used for naming the SQL DB schema objects
+                   managed by the KB (tables, constraints...).
     '''
     # FIXME: document table names, and expose them as read-only properties
     def __init__(self, prefix='kb_'):
-        '''
-        Create a knowledge base SQL DB schema.
-
-        :type  prefix: string
-        :param prefix: prefix used for naming the SQL DB schema objects
-                       managed by the KB (tables, constraints...).
-        '''
         self._metadata = MetaData()
         self._prefix = prefix
 
@@ -341,11 +338,11 @@ def _init_base_schema(o, metadata, prefix):
                               Column('damworkspace_id',
                                      ForeignKey('dam_workspace_workspace.id',
                                                 onupdate='CASCADE',
-                                                ondelete='RESTRICT')),
+                                                ondelete='CASCADE')),
                               Column('item_id',
                                      ForeignKey('item.id',
                                                 onupdate='CASCADE',
-                                                ondelete='RESTRICT')),
+                                                ondelete='CASCADE')),
                               Column('access',
                                      Enum(*access_enum,
                                            name=_p+'workspace_damworkspace_items_access_enum'),
@@ -363,7 +360,7 @@ def _init_base_schema(o, metadata, prefix):
                       Column('id', String(128), primary_key=True),
                       Column('root', ForeignKey(_p+'class.id',
                                                 onupdate='CASCADE',
-                                                ondelete='RESTRICT'),
+                                                ondelete='CASCADE'),
                              nullable=False),
                       Column('parent', String(128), nullable=False),
                       Column('parent_root', String(128), nullable=False),
@@ -402,7 +399,7 @@ def _init_base_schema(o, metadata, prefix):
                                Column('workspace',
                                       ForeignKey('dam_workspace_workspace.id',
                                                  onupdate='CASCADE',
-                                                 ondelete='RESTRICT'),
+                                                 ondelete='CASCADE'),
                                       primary_key=True),
                                Column('class', String(128), primary_key=True),
                                Column('class_root', String(128)),
@@ -459,7 +456,7 @@ def _init_base_schema(o, metadata, prefix):
                               ForeignKeyConstraint(['class', 'class_root'],
                                                    [_p+'class.id', _p+'class.root'],
                                                    onupdate='CASCADE',
-                                                   ondelete='RESTRICT')
+                                                   ondelete='CASCADE')
                               )
 
     ###########################################################################
@@ -481,7 +478,7 @@ def _init_base_schema(o, metadata, prefix):
                                                          _p+'class_attribute.class_root',
                                                          _p+'class_attribute.id'],
                                                         onupdate='CASCADE',
-                                                        ondelete='RESTRICT'),
+                                                        ondelete='CASCADE'),
                                    )
 
 
@@ -502,7 +499,7 @@ def _init_base_schema(o, metadata, prefix):
                                                         _p+'class_attribute.class_root',
                                                         _p+'class_attribute.id'],
                                                        onupdate='CASCADE',
-                                                       ondelete='RESTRICT'),
+                                                       ondelete='CASCADE'),
                                   CheckConstraint('"min" IS NULL '
                                                   'OR ("default" >= "min")',
                                                   name=_p+'class_attr_int_min_constr'),
@@ -532,7 +529,7 @@ def _init_base_schema(o, metadata, prefix):
                                                          _p+'class_attribute.class_root',
                                                          _p+'class_attribute.id'],
                                                         onupdate='CASCADE',
-                                                        ondelete='RESTRICT'),
+                                                        ondelete='CASCADE'),
 
                                    CheckConstraint('"precision" >= 0',
                                                    name=_p+'class_attr_real_precision_gt0_constr'),
@@ -561,7 +558,7 @@ def _init_base_schema(o, metadata, prefix):
                                                            _p+'class_attribute.class_root',
                                                            _p+'class_attribute.id'],
                                                           onupdate='CASCADE',
-                                                          ondelete='RESTRICT'),
+                                                          ondelete='CASCADE'),
 
                                      CheckConstraint('length >= 0',
                                                      name=_p+'class_attr_string_length_gt0_constr')
@@ -584,7 +581,7 @@ def _init_base_schema(o, metadata, prefix):
                                                          _p+'class_attribute.class_root',
                                                          _p+'class_attribute.id'],
                                                         onupdate='CASCADE',
-                                                        ondelete='RESTRICT'),
+                                                        ondelete='CASCADE'),
 
                                    CheckConstraint('"min" IS NULL '
                                                    'OR ("default" >= "min")',
@@ -611,7 +608,7 @@ def _init_base_schema(o, metadata, prefix):
                                                         _p+'class_attribute.class_root',
                                                         _p+'class_attribute.id'],
                                                        onupdate='CASCADE',
-                                                       ondelete='RESTRICT'),
+                                                       ondelete='CASCADE'),
 
                                   CheckConstraint('length >= 0',
                                                   name=_p+'class_attr_uri_length_gt0_constr')
@@ -636,7 +633,7 @@ def _init_base_schema(o, metadata, prefix):
                                                            _p+'class_attribute.class_root',
                                                            _p+'class_attribute.id'],
                                                           onupdate='CASCADE',
-                                                          ondelete='RESTRICT'),
+                                                          ondelete='CASCADE'),
 
                                      # Very simple check to ensure that the
                                      # default choice is somehow contained
@@ -663,7 +660,7 @@ def _init_base_schema(o, metadata, prefix):
                                                            _p+'class_attribute.class_root',
                                                            _p+'class_attribute.id'],
                                                           onupdate='CASCADE',
-                                                          ondelete='RESTRICT'),
+                                                          ondelete='CASCADE'),
 
                                      ForeignKeyConstraint(['target_class',
                                                            'target_class_root'],
@@ -700,7 +697,7 @@ def _init_base_schema(o, metadata, prefix):
                             Column('id', String(128), primary_key=True),
                             Column('root', ForeignKey(_p+'catalog_entry.id',
                                                       onupdate='CASCADE',
-                                                      ondelete='RESTRICT'),
+                                                      ondelete='CASCADE'),
                                    nullable=False),
                             Column('parent', String(128), nullable=False),
                             Column('parent_root', String(128), nullable=False),
@@ -744,7 +741,7 @@ def _init_base_schema(o, metadata, prefix):
                                                  [_p+'catalog_entry.id',
                                                   _p+'catalog_entry.root'],
                                                  onupdate='CASCADE',
-                                                 ondelete='RESTRICT'),
+                                                 ondelete='CASCADE'),
 
                             # Ensure that a root class does not have a parent,
                             # and vice versa:   (root = id) <=> (parent = id)
@@ -760,7 +757,7 @@ def _init_base_schema(o, metadata, prefix):
                                       Column('workspace',
                                              ForeignKey('dam_workspace_workspace.id',
                                                         onupdate='CASCADE',
-                                                        ondelete='RESTRICT'),
+                                                        ondelete='CASCADE'),
                                              primary_key=True,
                                              nullable=False),
                                       Column('catalog_entry', String(128),
@@ -788,7 +785,7 @@ def _init_base_schema(o, metadata, prefix):
                                                             _p+'catalog_entry.root',
                                                             _p+'catalog_entry.object_class_root'],
                                                            onupdate='CASCADE',
-                                                           ondelete='RESTRICT'),
+                                                           ondelete='CASCADE'),
 
                                       # Ensure that the catalog entry class
                                       # is actually visible on the target
@@ -801,7 +798,7 @@ def _init_base_schema(o, metadata, prefix):
                                                            [_p+'class_visibility.workspace',
                                                             _p+'class_visibility.class_root'],
                                                            onupdate='CASCADE',
-                                                           ondelete='RESTRICT'),
+                                                           ondelete='CASCADE'),
 
                                       # Ensure that we only give visibility to
                                       # root catalog entries
@@ -833,14 +830,14 @@ def _init_base_schema(o, metadata, prefix):
                                               [_p+'workspace_damworkspace_items.item_id',
                                                _p+'workspace_damworkspace_items.damworkspace_id'],
                                               onupdate='CASCADE',
-                                              ondelete='RESTRICT'),
+                                              ondelete='CASCADE'),
 
                          ForeignKeyConstraint(['catalog_entry_root',
                                                'workspace'],
                                               [_p+'catalog_tree_visibility.catalog_entry_root',
                                                _p+'catalog_tree_visibility.workspace'],
                                               onupdate='CASCADE',
-                                              ondelete='RESTRICT'),
+                                              ondelete='CASCADE'),
 
                          ForeignKeyConstraint(['catalog_entry',
                                                'catalog_entry_object',
@@ -849,7 +846,7 @@ def _init_base_schema(o, metadata, prefix):
                                                _p+'catalog_entry.object',
                                                _p+'catalog_entry.object_class_root'],
                                               onupdate='CASCADE',
-                                              ondelete='RESTRICT'),
+                                              ondelete='CASCADE'),
 
                          ForeignKeyConstraint(['workspace',
                                                'catalog_entry_object_class_root'],
