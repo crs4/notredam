@@ -62,7 +62,7 @@ def test_create_object_classes(connstring=CONNSTRING):
     ## Retrieve the 'Keyword' class, which must exists
     KeywordClass = ses.class_('keyword')
 
-    Keyword = KeywordClass.make_python_class(ses)
+    Keyword = KeywordClass.python_class
 
     class1 = classes.KBRootClass('Building', explicit_id='building',
                                  notes='Generic building',
@@ -75,9 +75,9 @@ def test_create_object_classes(connstring=CONNSTRING):
     class2 = classes.KBRootClass('Apple')
     class3 = classes.KBRootClass('Orange')
 
-    class1.create_table(ses) # FIXME: automatically build parent tables?
-    class2.create_table(ses)
-    class3.create_table(ses)
+    class1.realize() # FIXME: automatically build parent tables?
+    class2.realize()
+    class3.realize()
 
     ## Ensure that the Keyword class is visible in all workspaces
     ## FIXME: it should be done automatically
@@ -128,7 +128,7 @@ def test_create_derived_classes(connstring=CONNSTRING):
     # The Keyword Python class must exist in order to create a
     # reference (see below)
     # FIXME: is it possible to automate it?
-    Keyword = KeywordClass.make_python_class()
+    Keyword = KeywordClass.python_class
 
     class1 = ses.class_('building')
 
@@ -143,16 +143,16 @@ def test_create_derived_classes(connstring=CONNSTRING):
                                          attrs.ObjectReference(
                                              'Tags', KeywordClass,
                                              multivalued=True)])
-    class4.create_table(ses)
-    Church = class4.make_python_class(ses)
+    class4.realize()
+    Church = class4.python_class
     
     class5 = classes.KBClass('Castle',  explicit_id='castle',
                              superclass=class1,
                              notes='A castle (possibly with a dragon)',
                              attributes=[attrs.ObjectReference('Nearby church',
                                                                Church)]) 
-    class5.create_table(ses)
-    Castle = class5.make_python_class(ses)
+    class5.realize()
+    Castle = class5.python_class
 
     all_objs = [class4, class5]
 

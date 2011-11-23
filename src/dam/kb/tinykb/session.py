@@ -37,19 +37,20 @@ class Session(object):
     '''
     A working session of the knowledge base, which handles SQL DB
     connection and object-relational mapping details.
+
+    :type  connstr_or_engine: SQLAlchemy connection string or engine
+    :param connstr_or_engine: used to access the knowledge base SQL DB
+
+    :type  id_: string
+    :param id_: an unique identifier for distinguishing the session.
+                If not given, it will be auto-generated.
+
+    :type  db_prefix: string
+    :param db_prefix: prefix used for naming the SQL DB schema objects
+                      managed by the KB (tables, constraints...).
     '''
-    def __init__(self, connstr_or_engine, db_prefix='kb_',
+    def __init__(self, connstr_or_engine, id_=None, db_prefix='kb_',
                  _duplicate_from=None):
-        '''
-        Create a knowledge base session instance.
-
-        :type  connstr_or_engine: SQLAlchemy connection string or engine
-        :param connstr_or_engine: used to access the knowledge base SQL DB
-
-        :type  db_prefix: string
-        :param db_prefix: prefix used for naming the SQL DB schema objects
-                          managed by the KB (tables, constraints...).
-        '''
         if isinstance(connstr_or_engine, str):
             self._engine = sqlalchemy.create_engine(connstr_or_engine)
         elif isinstance(connstr_or_engine, sa_base.Engine):
@@ -57,6 +58,11 @@ class Session(object):
         else:
             raise TypeError('Unsupported type for Session initialization: '
                              % (connstr_or_engine, ))
+
+        if id_ is None:
+            id_ = '%x' % (id(self), )
+        assert(isinstance(id_, str))
+        self._id = id_
 
         self.session = sa_orm.Session(bind=self._engine)
 
@@ -70,6 +76,13 @@ class Session(object):
             self._schema = _duplicate_from._schema
             self._orm = _duplicate_from._orm
 
+    id_ = property(lambda self: self._id)
+    '''
+    The session unique identifier
+
+    :type: string
+    '''
+
     engine = property(lambda self: self._engine)
     '''
     The SQLAlchemy engine used for connecting to the DBMS
@@ -81,7 +94,7 @@ class Session(object):
     '''
     The SQL DB schema instance bound to the session
 
-    :type: L{schema.Schema}
+    :type: :py:class:`schema.Schema`
     '''
 
     orm = property(lambda self: self._orm)
@@ -90,7 +103,7 @@ class Session(object):
     knowledge base classes can be accessed as attributes of this
     property, almost like a dynamic namespace.
 
-    :type: L{classes.Classes}
+    :type: :py:class:`classes.Classes`
     '''
 
     def duplicate(self):
@@ -110,7 +123,8 @@ class Session(object):
         Add an object to the knowledge base session, ready for later
         commit.
 
-        :type  obj: one of the classes accessible through the L{orm} property
+        :type  obj: one of the classes accessible through the
+               :py:attr:`orm` property
         :param obj: object to be added
         '''
         self.session.add(obj)
@@ -121,7 +135,7 @@ class Session(object):
         later commit.
 
         :type  obj: list of instances, whose class must be accessible
-               through the L{orm} property
+               through the :py:attr:`orm` property
         :param obj: object to be added
         '''
         self.session.add_all(obj_list)
@@ -132,8 +146,8 @@ class Session(object):
         session.
 
         :type obj: object
-        :param obj: an object instance (previously added with L{add}() or
-                    L{add_all}())
+        :param obj: an object instance (previously added with :py:meth:`add`
+                    or :py:meth:`add_all`)
         '''
         if isinstance(obj, list):
             for o in obj:
@@ -152,7 +166,7 @@ class Session(object):
         '''
         Start a nested transaction.
 
-        This method creates a savepoint in case of L{rollback}.
+        This method creates a savepoint in case of :py:meth:`rollback`.
         '''
         self.session.begin_nested()
 
@@ -170,7 +184,7 @@ class Session(object):
         for c in new_kb_cls:
             if not c.is_bound():
                 # FIXME: really do it automatically?  Or raise an error?
-                c.create_table()
+                c.realize()
         
         try:
             self.session.commit()
@@ -183,7 +197,7 @@ class Session(object):
         Undo the effects of the current transaction on the knowledge
         base SQL DB.
 
-        If L{begin_nested}() was used, the rollback will stop at the last
+        If :py:meth:`begin_nested` was used, the rollback will stop at the last
         savepoint.
         '''
         self.session.rollback()
@@ -230,7 +244,7 @@ class Session(object):
             query = self._add_ws_filter(query, ws)
         return query
 
-    def create_table(self, class_):
+    def realize(self, class_):
         '''
         Create the SQL table(s) necessary for storing instances of the
         given KB class.
@@ -244,7 +258,7 @@ class Session(object):
         '''
         assert(isinstance(class_, self.orm.KBClass))
         self.add(class_)
-        class_.create_table()
+        class_.realize()
 
     def python_class(self, id_, ws=None):
         '''

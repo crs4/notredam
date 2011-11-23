@@ -20,7 +20,15 @@ import sys, os
 #sys.path.append(os.path.abspath('.'))
 sys.path.append(os.path.abspath('../..'))
 
-print sys.path
+# Create a temporary KB session, which will be used for documenting
+# the dynamically-generated modules
+import session
+ses = session.Session('sqlite:///:memory:/', id_='doc_session')
+sys.modules['orm'] = ses.orm
+sys.modules['orm.attributes'] = ses.orm.attributes
+
+print ses.orm
+print ses.orm.attributes
 
 # -- General configuration -----------------------------------------------------
 

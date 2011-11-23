@@ -611,6 +611,17 @@ def _kb_dict_attrs_map(attr_type_str, ses):
         return kb_attrs.ObjectReference(target_class=target_class,
                                         **(_std_attr_dict_fields(d)))
 
+    def _kb_dict_choice_fn(d, ses, ws):
+        choices = d['choices']
+        if (not isinstance(choices, list)
+            or not all([(isinstance(x, str) or isinstance(x, unicode))
+                        for x in choices])):
+            raise ValueError('expected list of strings as choices, got "%s"'
+                             % unicode(choices))
+        return kb_attrs.Choice(list_of_choices=choices,
+                               default=d.get('default_value'),
+                               **(_std_attr_dict_fields(d)))
+        
     str_fn_map = {'bool' : lambda d, _ses, _ws:
                       kb_attrs.Boolean(default=d.get('default_value'),
                                        **(_std_attr_dict_fields(d))),
@@ -637,10 +648,7 @@ def _kb_dict_attrs_map(attr_type_str, ses):
                       kb_attrs.Uri(length=d['length'],
                                    default=d.get('default_value'),
                                    **(_std_attr_dict_fields(d))),
-                  'choice' : lambda d, _ses, _ws:
-                      kb_attrs.Choice(list_of_choices=d['choices'],
-                                      default=d.get('default_value'),
-                                      **(_std_attr_dict_fields(d))),
+                  'choice' : _kb_dict_choice_fn,
                   'objref' : _kb_dict_objref_fn
                   }
     return str_fn_map[attr_type_str]
