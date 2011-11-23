@@ -178,7 +178,7 @@ def test_create_derived_class_objects(connstring=CONNSTRING):
     church1.websites.append('http://www.google.com/')
     church1.websites.append('http://www.xkcd.com/')
     
-    all_objs = [church1, castle1]
+    all_objs = [church1, castle1, castle2]
 
     ses.add_all(all_objs)
     ses.commit()
