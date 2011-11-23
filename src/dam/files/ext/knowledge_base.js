@@ -174,7 +174,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	console.log('add option');
 	
 	if (value == 'int'){
-		console.log('Integer');
 		if (data){
 			min_number_value = data.min;
 			max_number_value = data.max;
@@ -220,7 +219,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'date'){
-		console.log('Date');
 		if (data){
 			min_date_value = data.min;
 			max_date_value = data.max;
@@ -270,7 +268,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'string' || value == 'uri'){
-		console.log('Stringa o uri');
 		if (data){
 			max_length_value = data.length;
 		}
@@ -296,7 +293,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'objref'){
-		console.log('OBJREF');
 		if (data){
 			target_class_value = data.target_class;
 		}
@@ -390,7 +386,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		var choices = new Ext.form.TextField({
 			name: 'choices',
 			id  : 'id_choices',
-			emptyText:'Separates the choices by ,',
+			emptyText:'Separates by ,',
 			fieldLabel: 'Choices',
 			value: choices_value,
 	        allowBlank:false
@@ -548,7 +544,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         labelWidth: 80, // label settings here cascade unless overridden
         frame:true,
         bodyStyle:'padding:5px 5px 0', 
-//        items: fields,
         items: [{
         	layout:'column',
         	items:[{
@@ -622,7 +617,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
 
 	        		if (this.text == gettext('Edit')){
-//	        			attributes_grid.getSelectionModel().getSelected().set('id',name_textField.getValue().replace(/ /g, "_"));
 	        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
 	        			attributes_grid.getSelectionModel().getSelected().set('order','0');
@@ -652,13 +646,10 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		        		}));
 	        		}
         		}else{ // obj scope
-        			console.log(isEmpty(Ext.getCmp('id_record_value').getValue()));
-        			if(!isEmpty(Ext.getCmp('id_record_value').getValue())){
-        				console.log('----');
+        			if(isEmpty(Ext.getCmp('id_record_value').getValue())){
         				if (attributes_grid.getSelectionModel().getSelected().data.type == 'date'){
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue().format('Y-m-d'));
         				}else{
-            				console.log('*****');
         					console.log(Ext.getCmp('id_record_value').getValue());
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue());
         				}
@@ -705,7 +696,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		
 function load_detail_class(class_data, id_class, add_class){
 	// class_data store
-	//id_class id class
+	// id_class id class
 	// add_class true if add new class false otherwise
 	var fields = [];
 	
@@ -1185,6 +1176,46 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	pnl.doLayout();
 }
 
+/**
+ * Context menu
+ */	
+	function init_contextMenuVocabulary(){
+		var add_class =  new Ext.menu.Item({
+			id: 'id_addClass',
+			text: gettext('Class'),
+			listeners:{
+				click: function(item){
+					console.log('add_class item');
+					init_store_class_data(item.parentMenu.parentMenu.contextNode.attributes.id, true);
+				}
+			}
+		});
+		var add_object =  new Ext.menu.Item({
+			id: 'id_addObject', 
+			text: gettext('Object'),
+			listeners:{
+				click: function(item){
+					console.log('add_obj item');
+					load_detail_obj(null, null, true, item.parentMenu.parentMenu.contextNode.attributes.id);
+				}
+			}
+		});
+		var add_node = new Ext.menu.Item({
+			id: 'id_add', 
+			text: gettext('Add'), 
+			menu: [add_class, add_object]			
+		});
+		var delete_node = new Ext.menu.Item({id: 'id_delete_cls_obj', text: gettext('Delete')});
+		var contextMenuVocabulary = new Ext.menu.Menu({
+			id:'contextMenuVocabulary',
+			autoDestroy : true,
+			items:[
+			    add_node,
+			    delete_node
+			]
+		});
+		return contextMenuVocabulary
+	}
 
 function open_knowledgeBase(){        
 
@@ -1198,7 +1229,6 @@ function open_knowledgeBase(){
 	    region:'center',
 	    layout:'fit'
 	});
-
 	
 /**
  * Tree Panel
@@ -1208,25 +1238,11 @@ function open_knowledgeBase(){
     
     var Tree_Obj_Root = get_AsyncTreeNode();
 
-/*	var tree_loader_obj = new Ext.tree.TreeLoader({
-        dataUrl:'/kb/get_nodes_real_obj/',
-        draggable: false
-    });
-    
-    var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
-        text: gettext('All'),
-        id:'root_obj_tree',
-        expanded: true,
-        allowDrag:false,
-        allowDrop:true,
-        editable: false,
-        type:'object'
-    });
-*/    
 	var tree_obj_reference = new Ext.tree.TreePanel({
 		id:'obj_reference_tree',
 		title:'Classes and Objects',
         region:'west',
+        autoDestroy : true,
 		containerScroll: true,
 		width: 200,
 		autoScroll:true,
@@ -1240,13 +1256,9 @@ function open_knowledgeBase(){
 					console.log('listeners contextmenu');
 					node.select();
 		            var c = node.getOwnerTree().contextMenu;
-		            if (node.attributes.leaf == true){
-		            	c.find('text',gettext('Add'))[0].disable()
-		            }else{
-		            	c.find('text',gettext('Add'))[0].enable()
-		            }
 		            c.contextNode = node;
 		            c.showAt(e.getXY());
+		            console.log('end listeners contextmenu');
 	        }
 	    },
 		selModel: new Ext.tree.DefaultSelectionModel({
@@ -1260,8 +1272,6 @@ function open_knowledgeBase(){
 	    						init_store_class_data(node.attributes.id, false);
 							}else{
 								console.log('obj part');
-								console.log(sel);
-								console.log(node.attributes.id);
 								if (node.attributes.id != 'root_obj_tree'){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
@@ -1281,87 +1291,9 @@ function open_knowledgeBase(){
              },
           })
 	});
-	//tree_obj_reference.on('contextmenu', contextMenuShow);
 
 	tree_obj_reference.setRootNode(Tree_Obj_Root);
 
-/**
- * Context menu
- */	
-	function init_contextMenuVocabulary(){
-		console.log('Init context menu');
-		var add_class =  new Ext.menu.Item({
-			id: 'id_addClass',
-			text: gettext('Class'),
-			listeners:{
-				click: function(item){
-					console.log('add_class item');
-					console.log(item.parentMenu.parentMenu.contextNode.attributes.id);
-					init_store_class_data(item.parentMenu.parentMenu.contextNode.attributes.id, true);
-				}
-			}
-		});
-		
-		var add_object =  new Ext.menu.Item({
-			id: 'id_addObject', 
-			text: gettext('Object'),
-			listeners:{
-				click: function(item){
-					console.log('add_obj item');
-					var n = item.parentMenu.parentMenu.contextNode;
-					load_detail_obj(null, null, true, item.parentMenu.parentMenu.contextNode.attributes.id);
-				}
-			}
-		});
-	
-		var add_node = new Ext.menu.Item({
-			id: 'id_add', 
-			text: gettext('Add'), 
-			menu: [add_class, add_object]			
-		});
-		var edit_node = new Ext.menu.Item({id: 'id_edit_cls_obj', text: gettext('Edit')});
-		var delete_node = new Ext.menu.Item({id: 'id_delete_cls_obj', text: gettext('Delete')});
-	
-		var contextMenuVocabulary = new Ext.menu.Menu({
-			id:'contextMenuVocabulary',
-			items:[
-			    add_node,
-			    edit_node,
-			    delete_node
-			],
-	        listeners: {
-	            itemclick: function(item) {
-						console.log('ItemClick');
-						console.log(item);
-						console.log(item.id);
-		                switch (item.id) {
-		                    case 'id_add':
-		                    	console.log('add');
-		                    	var n = item.parentMenu.contextNode;
-		                    	break;
-		                    case 'id_addClass':
-		                    	console.log('addClass');
-		                    	var n = item.parentMenu.contextNode;
-		                    	console.log(n);
-		                        break;
-		                    case 'id_edit_cls_obj':
-		                    	console.log('edit_cls_obj');
-		                    	var n = item.parentMenu.contextNode;
-		                    	console.log(n);
-		                        break;
-		                    case 'id_delete_cls_obj':
-		                    	console.log('delete_cls_obj');
-		                    	var n = item.parentMenu.contextNode;
-		                    	console.log(n);
-		                        break;
-		                    default: 
-		                        console.log('default!');
-		                }
-		            }
-	        }
-		});
-		return contextMenuVocabulary
-	}
 /**
  * Content Windows 
  */	
@@ -1371,8 +1303,8 @@ function open_knowledgeBase(){
 		defaults: {               // defaults are applied to items, not the container
 		    autoScroll:true
 		},
-        width	: 850,
-        height	: 500,
+        width	: 950,
+        height	: 550,
         title	:'Vocabulary',
         modal	: true,
       	items	:[details_panel,
@@ -1382,7 +1314,12 @@ function open_knowledgeBase(){
             text: 'Close',
             handler: function() {
         	win_knowledge_base.close();
+        	},
+        listeners:{
+        	beforedestroy:function(){
+        		Ext.getCmp('contextMenuVocabulary').destroy();
         	}
+        }
         }]
     });
 	var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
