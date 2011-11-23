@@ -372,7 +372,8 @@ def _init_base_attributes(o):
                                          'got "%s"' % (str(value), ))
 
         def __repr__(self):
-            return '<Boolean(default=%s)>' % (self.default)
+            return '<Boolean(class=%s, default=%s)>' % (getattr(self, 'class'),
+                                                        self.default)
 
     o.Boolean = Boolean
 
@@ -439,9 +440,9 @@ def _init_base_attributes(o):
             return int(value)
 
         def __repr__(self):
-            return '<Integer(min=%s, max=%s, default=%s)>' % (self.min,
-                                                              self.max,
-                                                              self.default)
+            return ('<Integer(class=%s, min=%s, max=%s, default=%s)>'
+                    % (getattr(self, 'class'),
+                       self.min, self.max, self.default))
 
     o.Integer = Integer
 
@@ -509,9 +510,9 @@ def _init_base_attributes(o):
             return decimal.Decimal(value)
 
         def __repr__(self):
-            return '<Real(min=%s, max=%s, default=%s)>' % (self.min,
-                                                           self.max,
-                                                           self.default)
+            return ('<Real(class=%s, min=%s, max=%s, default=%s)>'
+                    % (getattr(self, 'class'),
+                       self.min, self.max, self.default))
 
     o.Real = Real
 
@@ -546,8 +547,8 @@ def _init_base_attributes(o):
             return unicode(value)
 
         def __repr__(self):
-            return "<String(length=%d, default='%s')>" % (self.length,
-                                                          self.default)
+            return ("<String(class=%s, length=%d, default='%s')>"
+                    % (getattr(self, 'class'), self.length, self.default))
 
     o.String = String
 
@@ -609,16 +610,12 @@ def _init_base_attributes(o):
             return value
 
         def __repr__(self):
-            return '<Date(min=%s, max=%s, default=%s)>' % (self.min,
-                                                           self.max,
-                                                           self.default)
+            return ('<Date(class=%s, min=%s, max=%s, default=%s)>'
+                    % (getattr(self, 'class'),
+                       self.min, self.max, self.default))
     o.Date = Date
 
     class Uri(String):
-        def __repr__(self):
-            return "<Uri(length=%d, default='%s')>" % (self.length,
-                                                       self.default)
-
         def validate(self, value):
             if self.maybe_empty and not self.multivalued and value is None:
                 return value
@@ -633,6 +630,10 @@ def _init_base_attributes(o):
 
             # FIXME: actually perform URI validation
             return unicode(value)
+
+        def __repr__(self):
+            return ("<Uri(class=%s, length=%d, default='%s')>"
+                    % (getattr(self, 'class'), self.length, self.default))
 
     o.Uri = Uri
 
@@ -690,8 +691,8 @@ def _init_base_attributes(o):
             return value
 
         def __repr__(self):
-            return "<Choice(choices=%s, default='%s')>" % (self.choices,
-                                                           self.default)
+            return ("<Choice(class=%s, choices=%s, default='%s')>"
+                    % (getattr(self, 'class'), self.choices, self.default))
 
     o.Choice = Choice
 
@@ -779,7 +780,8 @@ def _init_base_attributes(o):
             return value
 
         def __repr__(self):
-            return "<ObjectReference(target_class=%s)>" % (self.target, )
+            return ("<ObjectReference(class=%s, target_class=%s)>"
+                    % (getattr(self, 'class'), self.target))
 
     o.ObjectReference = ObjectReference
 
