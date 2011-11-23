@@ -659,7 +659,7 @@ def _init_base_classes(o):
                                   post_update=True,
                                   cascade='all'),
             'attributes' : relationship(o._attributes.Attribute,
-                                        back_populates='_class',
+                                        back_populates='class',
                                         cascade='save-update')
             })
 
