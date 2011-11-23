@@ -91,6 +91,7 @@ class SettingManager(models.Manager):
         for key in request.POST.keys():
             if key.startswith('pref__'):
                 setting_id = key.split("__")[1]
+                dcs = DAMComponentSetting.objects.get(pk = setting_id)
                 setting = self.get(pk=setting_id)
                 self.clear_preferences(obj, setting)
             
@@ -100,7 +101,7 @@ class SettingManager(models.Manager):
                     if setting_value :
                         logger.debug('setting_value %s'%setting_value)
                         #choice = setting.choices.get(name = setting_value)
-                        choice = SettingValue.objects.get(name = setting_value)
+                        choice = SettingValue.objects.get(name = setting_value, choices = setting)
                         choices.append(choice)
                         value = choice.name
     
