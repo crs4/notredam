@@ -180,7 +180,7 @@ def _init_base_attributes(o):
             if not hasattr(self, '_mvclass'):
                 # The following code can be executed only once per
                 # Attribute instance
-                table = self._class.sqlalchemy_table
+                table = getattr(self, 'class').sqlalchemy_table
                 if mvtable is None:
                     raise RuntimeError('BUG: Attribute.mapper_properties() '
                                        'cannot be called before '
@@ -241,7 +241,7 @@ def _init_base_attributes(o):
             if not self.multivalued:
                 return []
 
-            owner_table = self._class.sqlalchemy_table
+            owner_table = getattr(self, 'class').sqlalchemy_table
 
             def table_builder(metadata, autoload=False, **kwargs):
                 if self._multivalue_table is None:
@@ -729,7 +729,7 @@ def _init_base_attributes(o):
         def _objtable_mapper_properties(self):
             assert(not self.multivalued)
 
-            obj_table = self._class.sqlalchemy_table
+            obj_table = getattr(self, 'class').sqlalchemy_table
             target_pyclass = self.target.python_class
             target_table = self.target.sqlalchemy_table
             colname = self.column_name()
@@ -758,7 +758,7 @@ def _init_base_attributes(o):
                     '_value'  : mvtable.c.value,  # "Hide" object id
                     'value'   : relationship(target_pyclass,
                                              backref=('references_%s_%s'
-                                                      % (self._class.id,
+                                                      % (self._class_id,
                                                          self.id)),
                                              cascade='all',
                                              primaryjoin=(mvtable.c.value
@@ -792,36 +792,66 @@ def _init_base_attributes(o):
            properties={
             '_class_id' : schema.class_attribute.c['class'],
             '_class_root_id' : schema.class_attribute.c.class_root,
-            '_class' : relationship(classes.KBClass,
+            'class' : relationship(classes.KBClass,
                                     back_populates='attributes',
                                     cascade='all'),
             '_multivalue_table' : schema.class_attribute.c.multivalue_table
             })
 
     mapper(Boolean, schema.class_attribute_bool, inherits=Attribute,
-           polymorphic_identity='bool')
+           polymorphic_identity='bool',
+           properties={
+            '__class_id' : schema.class_attribute_bool.c['class'],
+            '__class_root_id' : schema.class_attribute_bool.c.class_root
+            })
 
     mapper(Integer, schema.class_attribute_int, inherits=Attribute,
-           polymorphic_identity='int')
+           polymorphic_identity='int',
+           properties={
+            '__class_id' : schema.class_attribute_int.c['class'],
+            '__class_root_id' : schema.class_attribute_int.c.class_root
+            })
 
     mapper(Real, schema.class_attribute_real, inherits=Attribute,
-           polymorphic_identity='real')
+           polymorphic_identity='real',
+           properties={
+            '__class_id' : schema.class_attribute_real.c['class'],
+            '__class_root_id' : schema.class_attribute_real.c.class_root
+            },)
 
     mapper(String, schema.class_attribute_string, inherits=Attribute,
-           polymorphic_identity='string')
+           polymorphic_identity='string',
+           properties={
+            '__class_id' : schema.class_attribute_string.c['class'],
+            '__class_root_id' : schema.class_attribute_string.c.class_root
+            })
 
     mapper(Date, schema.class_attribute_date, inherits=Attribute,
-           polymorphic_identity='date')
+           polymorphic_identity='date',
+           properties={
+            '__class_id' : schema.class_attribute_date.c['class'],
+            '__class_root_id' : schema.class_attribute_date.c.class_root
+            })
 
     mapper(Uri, schema.class_attribute_uri, inherits=Attribute,
-           polymorphic_identity='uri')
+           polymorphic_identity='uri',
+           properties={
+            '__class_id' : schema.class_attribute_uri.c['class'],
+            '__class_root_id' : schema.class_attribute_uri.c.class_root
+            })
 
     mapper(Choice, schema.class_attribute_choice, inherits=Attribute,
-           polymorphic_identity='choice')
+           polymorphic_identity='choice',
+           properties={
+            '__class_id' : schema.class_attribute_choice.c['class'],
+            '__class_root_id' : schema.class_attribute_choice.c.class_root
+            })
 
     mapper(ObjectReference, schema.class_attribute_objref, inherits=Attribute,
            polymorphic_identity='objref',
            properties={
+            '__class_id' : schema.class_attribute_objref.c['class'],
+            '__class_root_id' : schema.class_attribute_objref.c.class_root,
             'target' : relationship(classes.KBClass, backref='references',
                                     cascade='all')
             })
