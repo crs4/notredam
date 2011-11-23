@@ -82,7 +82,6 @@ def save_pref(request):
     """
     Save user preference
     """
-
     try:
         user = User.objects.get(pk=request.session['_auth_user_id'])
         
@@ -94,7 +93,6 @@ def save_pref(request):
                 if str(p[6:]) == str(s.id) and s.name == "application_supported_languages":
 	                request.session['django_language'] = request.POST[p][:2]
 	                request.session.save()
-	                print 'in request session: ',request.session['django_language']
 
         return HttpResponse(simplejson.dumps({'success': True}))
     except Exception,  ex:
@@ -173,7 +171,7 @@ def account_prefs(request):
                 logger.debug('valid new password')
                 request.user.set_password(new_password)
             else:
-                logger.error('INvalid new password')
+                logger.error('Invalid new password')
                 return HttpResponse(simplejson.dumps({'success': False, 'errors': [{'name':'new_password', 'msg':'new password is invalid'}]}))
             
         else:
