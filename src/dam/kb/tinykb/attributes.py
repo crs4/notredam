@@ -251,31 +251,38 @@ def _init_base_attributes(o):
                                        'class (class_id = %s)'
                                        % (self.id, str(self._class_id)))
                 # FIXME: move MV table construction details in schema.py
-                raw_ddl = self._raw_ddl()
-                # We will configure a primary key composed by all
-                # the columns of the multivalue table.  It will ensure
-                # uniqueness and (if necessary) allow external references
-                pk_cols = (['object'] # See table definition below
-                           + [c.name for c in raw_ddl
-                              if isinstance(c, Column)])
-                raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
-                t = Table(self._multivalue_table, metadata,
-                          Column('object', sa.types.String(128),
-                                 ForeignKey('%s.id'
-                                            % (owner_table.name, ),
-                                            onupdate='CASCADE',
-                                            ondelete='CASCADE'),
-                                 nullable=False),
-                          Column('order', sa.types.Integer,
-                                 nullable=False),
-                          *raw_ddl_pk, **kwargs)
+                mvt = None
+                for t in metadata.sorted_tables:
+                    if self._multivalue_table == t.name:
+                        # The table still exists in the metadata
+                        mvt = t
+                        break
+                if mvt is None:
+                    raw_ddl = self._raw_ddl()
+                    # We will configure a primary key composed by all
+                    # the columns of the multivalue table.  It will ensure
+                    # uniqueness and (if necessary) allow external references
+                    pk_cols = (['object'] # See table definition below
+                               + [c.name for c in raw_ddl
+                                  if isinstance(c, Column)])
+                    raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
+                    mvt = Table(self._multivalue_table, metadata,
+                                Column('object', sa.types.String(128),
+                                       ForeignKey('%s.id'
+                                                  % (owner_table.name, ),
+                                                  onupdate='CASCADE',
+                                                  ondelete='CASCADE'),
+                                       nullable=False),
+                                Column('order', sa.types.Integer,
+                                       nullable=False),
+                                *raw_ddl_pk, **kwargs)
 
                 # When this table constructor closure is executed, it will
                 # also update the object reference to the SQLAlchemy table
                 # object (which will be needed by self.mapper_properties())
-                self._sqlalchemy_mv_table = t
+                self._sqlalchemy_mv_table = mvt
 
-                return t
+                return mvt
 
             return [table_builder]
 
