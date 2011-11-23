@@ -699,17 +699,10 @@ def _init_base_attributes(o):
         def __init__(self, name, target_class, maybe_empty=True, order=0,
                      multivalued=False, notes=None):
             if isinstance(target_class, classes.KBClass):
-                self._target_table = target_class.table
                 self.target = target_class
             else:
-                sa_mapper = sa.orm.class_mapper(target_class)
-                ## FIXME: is it correct to take the first table below?
-                # if len(sa_mapper.tables) > 1:
-                #     raise ValueError('Target class %s is mapped to multiple'
-                #                      ' tables: %s' % (target_class,
-                #                                       sa_mapper.tables))
-                self._target_table = sa_mapper.tables[0].name
                 self.target = target_class.__kb_class__
+            self._target_table = self.target.table
 
             Attribute.__init__(self, name, maybe_empty=maybe_empty,
                                order=order, multivalued=multivalued,
