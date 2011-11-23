@@ -15,7 +15,9 @@ BUG FIXING
 
 1.
 Fixed the wellknown bug in the user preferences window
-
+2.
+Sorted the list of members available in
+Workspace->Configure->Members in case of 'Add member'
 
 ===============================================================================
 OTHER THINGS

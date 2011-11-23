@@ -260,6 +260,7 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
                 forceSelection:true,
                 triggerAction:'all',
                 hiddenName: pref.data.id,
+                name :pref.data.id,
                 fieldLabel: pref.data.caption,
                 displayField: 'desc',
                 valueField: 'id',
@@ -335,6 +336,7 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
             
             var grid = new Ext.grid.GridPanel({
                 title: pref.data.caption,
+                name :pref.data.id,
                 store: new Ext.data.ArrayStore({
                     fields: ["id", "desc"],
                     data: pref.data.choices
