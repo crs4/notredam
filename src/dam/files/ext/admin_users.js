@@ -184,7 +184,7 @@ var open_user_ws_win = function(current, my_stores) {
     
     var win_title = 'Edit Membership';
     
-    var default_perms = {admin: false, edit_metadata: false,  edit_taxonomy: false, add_item: false, remove_item:false };
+    var default_perms = {admin: false, edit_metadata: false,  edit_taxonomy: false, add_item: false, remove_item:false, edit_vocabulary:false };
     
     if (current) {
         if (!current.length) {
@@ -224,6 +224,11 @@ var open_user_ws_win = function(current, my_stores) {
         name: 'edit_taxonomy',
         id: 'perm_edit_taxonomy',
         checked: default_perms['edit_taxonomy']
+    }, {
+        boxLabel: 'Can edit vocabulary?',
+        name: 'edit_vocabulary',
+        id: 'perm_edit_vocabulary',
+        checked: default_perms['edit_vocabulary']
     }];
 
     var form_height = 0;

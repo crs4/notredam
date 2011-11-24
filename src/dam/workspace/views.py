@@ -1000,7 +1000,8 @@ def get_ws_members(request):
 
     members = ws.get_members()
     
-    available_permissions = WorkspacePermission.objects.all()    
+    available_permissions = WorkspacePermission.objects.all()
+    print available_permissions
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
     
     

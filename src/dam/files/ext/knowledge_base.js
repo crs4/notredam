@@ -65,7 +65,7 @@ function store_get_obj_attributes(class_id, obj_id){
 }
 
 var ws_admin_store = new Ext.data.JsonStore({
-    url: '/get_admin_workspaces/',
+    url: '/kb/get_workspaces_with_edit_vocabulary/',
     id:'id_ws_admin_store',
     autoLoad:true,
     root: 'workspaces',
@@ -744,13 +744,12 @@ function load_detail_class(class_data, id_class, add_class){
                                 {id:'name',header: "Name", width: 110, sortable: true, dataIndex: 'name'},
                                 {id:'description',header: "Description", width: 160, sortable: true, dataIndex: 'description'}
         ]),
-        listeners:{
-        	afterrender: {fn:function(grid){//FIXME auto select current ws
-        		var i = grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk); 
-        		grid.getSelectionModel().selectRow(i);
-        		grid.getSelectionModel().selectAll();
-        	}}
-        },
+        viewConfig: { // to select current ws in this grid
+    		afterRender: function(){
+    			this.constructor.prototype.afterRender.call(this);
+        		this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk));
+    		}
+    	},
         height: 150
     });
     //attributes
@@ -787,7 +786,13 @@ function load_detail_class(class_data, id_class, add_class){
 			superclass_textField.setValue(Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.attributes.id);
 		}
 		var method_request='PUT';
+		//only root class can be shared
+		if(id_class != 'root_obj_tree'){
+			ws_admin_grid.disable();
+		}
 	}
+	
+	
 
     var attributes_grid = new Ext.grid.GridPanel({
     	id: 'attribute_grid_id',
@@ -920,14 +925,10 @@ function load_detail_class(class_data, id_class, add_class){
         				params['attributes'][attribute.id]['max'] = attribute.max;
         			}else if (attribute.type == 'string' || attribute.type == 'uri'){ //if type string or uri {'length'}
         				params['attributes'][attribute.id]['length'] = attribute.length;
-        			}else if (attribute.type == 'choice'){ //FIXME if type choice {'choices'}
-        				console.log('choices');
-        				console.log(params['attributes'][attribute.id]);
-        				console.log(attribute.choices);
+        			}else if (attribute.type == 'choice'){ 
         				params['attributes'][attribute.id]['choices'] = attribute.choices;
-        			}else if (attribute.type == 'objref'){ //FIXME if type objref {'target_class'}
+        			}else if (attribute.type == 'objref'){ 
         				params['attributes'][attribute.id]['target_class'] = attribute.target_class;
-        				console.log('objref');
         			}
         		}
 	        	if(add_class){ 
@@ -973,6 +974,9 @@ function load_detail_class(class_data, id_class, add_class){
             }
         }]
     });
+	if (ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+		details_panel_class.disable();
+	}
 
 	var pnl = Ext.getCmp('details_panel');
 	pnl.removeAll();
@@ -1168,6 +1172,9 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
             }
         }]
     });
+	if (ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+		details_panel_obj.disable();
+	}
 
 	var pnl = Ext.getCmp('details_panel');
 	pnl.removeAll();
@@ -1219,6 +1226,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 
 function open_knowledgeBase(){        
 
+	ws_permissions_store.load();
 /**
  * Detail Panel
  */	
@@ -1254,8 +1262,17 @@ function open_knowledgeBase(){
 //	          Register the context node with the menu so that a Menu Item's handler function can access
 //	          it via its parentMenu property.
 					console.log('listeners contextmenu');
-					node.select();
 		            var c = node.getOwnerTree().contextMenu;
+					if (ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+						c.find('text',gettext('Add'))[0].disable();
+						c.find('text',gettext('Delete'))[0].disable();
+					}else{
+						if (node.attributes.leaf == true){
+							c.find('text',gettext('Add'))[0].disable();
+						}else{
+							c.find('text',gettext('Add'))[0].enable();
+						}
+					}
 		            c.contextNode = node;
 		            c.showAt(e.getXY());
 		            console.log('end listeners contextmenu');

@@ -23,10 +23,13 @@ from django.utils import simplejson
 import tinykb.session as kb_ses
 import tinykb.errors as kb_exc
 import util
+from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionsGroup, WorkspacePermissionAssociation
 from dam.workspace.models import DAMWorkspace as Workspace
 import dam.kb.views as views_kb
 import dam.treeview.views as tree_view
 from dam.treeview.models import Node
+from django.contrib.auth.models import User
+
 
 import logging
 logger = logging.getLogger('dam')
@@ -103,7 +106,6 @@ def get_nodes_real_obj(request):
    }]
     '''
     parent = request.POST.get('node',  'root')
-#        print "node_id %s" %parent
     if parent == 'root_obj_tree':
         result = _get_root_tree(request,request.session['workspace'].pk)
     else:
@@ -152,20 +154,13 @@ def get_object_attributes_hierarchy(request):
 
 def get_object_attributes(request):
 
-    print 'get_object_attributes------'
     class_id = request.POST.getlist('class_id')[0]
     obj_id = request.POST.getlist('obj_id')[0]
-    print 'obj_id'
-    print obj_id
     if (obj_id):
         cls_obj = views_kb.object_get(request, request.session['workspace'].pk,obj_id)
         cls_obj = simplejson.loads(cls_obj.content)
-        print 'obj------'
-        print cls_obj['attributes']
     cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
     cls_dicts = simplejson.loads(cls_dicts.content) 
-    print 'cls------'
-    print cls_dicts['attributes']
     rtr = {"rows":[]}
     for attribute in cls_dicts['attributes']:
         tmp = {}
@@ -177,12 +172,6 @@ def get_object_attributes(request):
         for specific_field in cls_dicts['attributes'][attribute]:
             tmp[specific_field] = cls_dicts['attributes'][attribute][specific_field]
         rtr['rows'].append(tmp)
-        #
-#    if request.POST.getlist('obj_id'):
-#        #edit obj
-#    else:
-#        #new obj
-    logger.debug(rtr)
     resp = simplejson.dumps(rtr)
     
     return HttpResponse(resp)
@@ -208,4 +197,23 @@ def get_specific_info_class(request, class_id):
     rtr['rows'].append(cls_dicts)
     resp = simplejson.dumps(rtr)
     return HttpResponse(resp)
-    
+
+def get_workspaces_with_edit_vocabulary(request):
+# return all ws for specific user where user can edit vocabulary.    
+    user = User.objects.get(pk=request.session['_auth_user_id'])
+
+    wp = WorkspacePermission.objects.get(name= 'edit vocabulary')
+
+    ws_all = Workspace.objects.all()
+    rtr = {"workspaces":[]}
+    for ws in ws_all:
+        ws_tmp = {}
+        if (ws.has_permission(user, 'edit_vocabulary')):
+            ws_tmp = {
+                'pk': ws.pk,
+                'name': ws.name,
+                'description': ws.description
+            }
+            rtr['workspaces'].append(ws_tmp)
+        
+    return HttpResponse(simplejson.dumps(rtr))    
