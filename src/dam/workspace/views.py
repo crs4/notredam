@@ -694,13 +694,14 @@ def load_items(request, view_type=None, unlimited=False):
         items_info = []
         thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
         thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+        fullscreen_caption_setting = DAMComponentSetting.objects.get(name='fullscreen_caption')
+        fullscreen_caption = fullscreen_caption_setting.get_user_setting(user, workspace)
         default_language = get_metadata_default_language(user, workspace)    
-        
         
         check_deleted = request.POST.has_key('show_deleted')
 
         for item in items:
-            tmp = item.get_info(workspace, thumb_caption, default_language, check_deleted = check_deleted)
+            tmp = item.get_info(workspace, thumb_caption, default_language, check_deleted = check_deleted, fullscreen_caption = fullscreen_caption)
             if item.pk in basket_items:
                 tmp['item_in_basket'] = 1
             else:
