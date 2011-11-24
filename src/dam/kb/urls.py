@@ -32,6 +32,7 @@ urlpatterns = patterns('kb',
     (r'^get_specific_info_obj/(?P<obj_id>\w+)/?$$', 'views_GUI.get_specific_info_obj'),
     (r'^get_class_attributes/(?P<class_id>\w+)/?$', 'views_GUI.get_class_attributes'),
     (r'^get_obj_attributes/$', 'views_GUI.get_object_attributes'),
+    (r'^get_workspaces_with_edit_vocabulary/$', 'views_GUI.get_workspaces_with_edit_vocabulary'),
     
 )
 
