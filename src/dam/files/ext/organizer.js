@@ -253,7 +253,7 @@ function showFullscreen(view, index, node, e){
 			height:img_height + 30,
 			resizable: false,
 			constrain: true,
-			title: 'Fullscreen - ' + data.name,
+			title: 'Fullscreen - ' + data.fullscreen_caption,
 			html: '<div id="fullscreen"><img width="'+img_width +'" height="'+img_height+'" src="' +  data.url_fullscreen+'"></img></div>',
 
 			listeners:{
@@ -621,7 +621,8 @@ var createStore = function(config) {
                 {name: 'inprogress', mapping: 'status', convert: function(status){
                 	return status == 'in_progress'
                 }},
-                'state'
+                'state',
+                'fullscreen_caption'
             ],
         listeners:{
     		load: function(){start_audio_player(this.panel_id);}
@@ -801,7 +802,6 @@ function createMediaPanel(config, autoLoad) {
         			pending: inprogress.length,
         			failed: 0
         		};
-        		console.log(data);
         		update_task_status(data);
         		
         	}
@@ -969,7 +969,6 @@ function createMediaPanel(config, autoLoad) {
             var store = Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore();
             store.baseParams.order_by = this.query;
             store.baseParams.order_mode = this.order_mode;
-            console.log('store.baseParams.order_mode ' + store.baseParams.order_mode);
             store.load();
                         
             
@@ -1074,7 +1073,6 @@ function createMediaPanel(config, autoLoad) {
 	    	close: function(){
 	    		
 	    		var media_tabs = Ext.getCmp('media_tabs');
-	    		console.log('media_tabs.getActiveTab().title ' + media_tabs.getActiveTab().title);
 	    		
 	    		if (media_tabs.items.items.length == 2){
 	    			
@@ -1430,7 +1428,6 @@ Ext.onReady(function(){
                 params: params,
                 
                 success: function(data){    
-                	console.log(data);
 //                    set_status_bar_busy();
                     data = Ext.decode(data.responseText);
                     if (data.scripts){
@@ -1454,7 +1451,6 @@ Ext.onReady(function(){
                             	var i = info.pk;
                                 if (store.findExact('pk', i) != -1) {
                                     var item_data = store.getAt(store.findExact('pk', i));
-                                    console.log('i ' + i);
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = info['thumb'];
                                     for (var key in info) {
