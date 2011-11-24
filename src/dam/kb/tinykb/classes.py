@@ -346,15 +346,14 @@ def _init_base_classes(o):
             try:
                 self._sqlalchemy_table = schema.get_object_table(self.table,
                                                                  parent_table,
-                                                                 attrs_ddl,
-                                                                 engine)
+                                                                 attrs_ddl)
 
                 # The following call is going to require
                 # self.sqlalchemy_table (set above)
                 attrs_tables = self._get_attributes_tables()
 
                 self.additional_sqlalchemy_tables = schema.get_attr_tables(
-                    attrs_tables, engine)
+                    attrs_tables)
             except exc.InvalidRequestError:
                 # FIXME: raise a meaningful (non SQLAlchemy-related)
                 # exception here
@@ -431,7 +430,7 @@ def _init_base_classes(o):
             :param workspace: the workspace to configure
             '''
             # We actually ask for the permissions to our root class
-            return self._root.workspace_permission(workspace)
+            return self.root.workspace_permission(workspace)
 
         def __lt__(self, kb_cls):
             if not isinstance(kb_cls, KBClass):
@@ -652,14 +651,14 @@ def _init_base_classes(o):
                                                      schema.class_t.c.root],
                                         post_update=True,
                                         cascade='all'),
-            '_root' : relationship(KBRootClass,
-                                   primaryjoin=(schema.class_t.c.root
-                                                ==schema.class_t.c.id),
-                                   remote_side=[schema.class_t.c.id],
-                                   post_update=True,
-                                   cascade='all'),
+            'root' : relationship(KBRootClass,
+                                  primaryjoin=(schema.class_t.c.root
+                                               ==schema.class_t.c.id),
+                                  remote_side=[schema.class_t.c.id],
+                                  post_update=True,
+                                  cascade='all'),
             'attributes' : relationship(o._attributes.Attribute,
-                                        back_populates='_class',
+                                        back_populates='class',
                                         cascade='save-update')
             })
 

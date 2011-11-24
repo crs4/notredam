@@ -447,6 +447,6 @@ class Session(object):
         # FIXME: the following alias should really be inferred by SQLAlchemy
         rootcls_alias = sa_orm.aliased(self.orm.KBRootClass)
         return query.join(rootcls_alias,
-                          self.orm.KBClass._root).join(
+                          self.orm.KBClass.root).join(
             self.orm.KBClassVisibility).filter(
                               self.orm.KBClassVisibility.workspace == ws)
