@@ -464,14 +464,17 @@ function isEmpty(obj) {
 
 function add_single_attribute(edit, attributes_grid, insert_value){
 	console.log('add_single_attribute');
+	var name_textField_value, empty_chekbox_value, empty_chekbox_value, multivalued_chekbox_value, notes_textField_value, title, text_button, max_value_slider;
 	
 	if (edit){
 		name_textField_value = attributes_grid.getSelectionModel().getSelected().data.name;
 		empty_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.maybe_empty;
 		multivalued_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.multivalued;
-		notes_textField_value = attributes_grid.getSelectionModel().getSelected().data.notes
+		notes_textField_value = attributes_grid.getSelectionModel().getSelected().data.notes;
+		//FIXME order order_slider
 		title = "Edit attribute";
 		text_button = gettext('Edit');
+		max_value_slider = Ext.getCmp('attribute_grid_id').getStore().getCount()-1;
 	}else{
 		name_textField_value = null;
 		empty_chekbox_value = false;
@@ -479,6 +482,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		notes_textField_value = null;
 		title = "Add new attribute";
 		text_button = gettext('Add');
+		max_value_slider = Ext.getCmp('attribute_grid_id').getStore().getCount();
 	}
 	var name_textField = new Ext.form.TextField({
         fieldLabel: 'Name',
@@ -538,7 +542,15 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         value: notes_textField_value, 
         id:'id_notes_attribute'
     });
-
+    var order_slider = new Ext.slider.SingleSlider({
+    	fieldLabel: 'Order',
+    	id:'slider_order',
+        width: 130,
+        increment: 1,
+        minValue: 0,
+        maxValue: max_value_slider,
+        plugins: new Ext.ux.SliderTip()
+    });
 	var attribute_detail_panel = new Ext.FormPanel({
         id:'attribute_detail_panel',
         labelWidth: 80, // label settings here cascade unless overridden
@@ -549,14 +561,21 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         	items:[{
         		columnWidth:.5,
                 layout: 'form',
-                items: [name_textField, type_combo]
+                items: [name_textField
+                        ,type_combo
+                        ,{
+          		  			xtype: 'spacer',
+          		  			height: 10
+                		}
+                		,order_slider]
         	},{
         		columnWidth:.5,
                 layout: 'form',
                 items: [empty_chekbox, multivalued_chekbox, notes_textField]
         	}]
         },{
-        	xtype: 'spacer'
+        	xtype: 'spacer',
+	  		height: 10
         },{
         	xtype:'panel',
         	id:'id_option_attribute_panel', 
@@ -633,7 +652,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		        			id			: name_textField.getValue().replace(/ /g, "_"),
 		        			name		: name_textField.getValue(),
 		        			default_value: default_value,
-		        			order		: '0',
+		        			order		: order_slider.getValue(),
 		        			notes		: notes_textField.getValue(),
 		        			type		: type_combo.getValue(),
 		        			multivalued : multivalued_chekbox.getValue(),
@@ -646,6 +665,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		        		}));
 	        		}
         		}else{ // obj scope
+        			// FIXME case choice and multivalued is different
         			if(isEmpty(Ext.getCmp('id_record_value').getValue())){
         				if (attributes_grid.getSelectionModel().getSelected().data.type == 'date'){
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue().format('Y-m-d'));
@@ -699,6 +719,7 @@ function load_detail_class(class_data, id_class, add_class){
 	// id_class id class
 	// add_class true if add new class false otherwise
 	var fields = [];
+	var i; // counter for loop
 	
 	var id_textField = new Ext.form.TextField({
         allowBlank:true,
@@ -724,7 +745,7 @@ function load_detail_class(class_data, id_class, add_class){
         width: 130,
         name: 'notes',
         id:'notes_class'
-    });
+    });	
 	//workspaces
 	var sm_ws_admin = new Ext.grid.CheckboxSelectionModel();
 	// create the grid
@@ -874,12 +895,15 @@ function load_detail_class(class_data, id_class, add_class){
         	items:[{
         		columnWidth:.5,
                 layout: 'form',
-                items: [id_textField, name_textField, superclass_textField, /*can_catalog_chekbox,*/ notes_textField]
+                items: [id_textField, name_textField, superclass_textField, notes_textField]
         	},{
         		columnWidth:.5,
                 layout: 'form',
                 items: [ws_admin_grid]
         	}]
+        },{
+        	xtype: 'spacer',
+	  		height: 10
         },attributes_grid
         ],
         buttons: [{
@@ -896,16 +920,21 @@ function load_detail_class(class_data, id_class, add_class){
         			params['id'] = id_textField.getValue();
         		}
         		params['superclass'] = superclass_textField.getValue();
-        		console.log('get selected workspaces');
-        		console.log(ws_admin_grid.getSelectionModel().getSelected());
         		params['workspaces'] = {};
-        		//FIXME it is necessary generalize
-        		params['workspaces'][ws_admin_grid.getSelectionModel().getSelected().data.pk] = "owner";
-        		console.log('attributes');
-        		console.log(attributes_grid);
+        		//owner for current ws, read-write others
+        		//FIXME who is the owner?
+        		console.log('list');
+        		console.log(ws_admin_grid.getSelectionModel().getSelections().length);
+        		for (i=0; i < ws_admin_grid.getSelectionModel().getSelections().length; i++){
+        			if (ws_admin_grid.getSelectionModel().getSelections()[i].data.pk == ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk){ //owner
+        				params['workspaces'][ws_admin_grid.getSelectionModel().getSelections()[i].data.pk] = "owner";
+        			}else{
+        				params['workspaces'][ws_admin_grid.getSelectionModel().getSelections()[i].data.pk] = "read-write";
+        			}
+        		}
         		var attribute;
         		params['attributes'] = {};
-        		for (var i=0; i < Ext.getCmp('attribute_grid_id').getStore().getCount(); i++){
+        		for (i=0; i < Ext.getCmp('attribute_grid_id').getStore().getCount(); i++){
         			attribute = Ext.getCmp('attribute_grid_id').getStore().getAt(i).data;
         			console.log('ATTRIBUTE');
         			console.log(attribute);
@@ -919,11 +948,10 @@ function load_detail_class(class_data, id_class, add_class){
         				'order': attribute.order,
         				'notes': attribute.notes
         			};
-        			//if type int od data {'min', 'max'}
         			if (attribute.type == 'int' || attribute.type == 'data'){
         				params['attributes'][attribute.id]['min'] = attribute.min;
         				params['attributes'][attribute.id]['max'] = attribute.max;
-        			}else if (attribute.type == 'string' || attribute.type == 'uri'){ //if type string or uri {'length'}
+        			}else if (attribute.type == 'string' || attribute.type == 'uri'){
         				params['attributes'][attribute.id]['length'] = attribute.length;
         			}else if (attribute.type == 'choice'){ 
         				params['attributes'][attribute.id]['choices'] = attribute.choices;
@@ -1056,7 +1084,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         id:'notes_class'
     });
 	fields.push(notes_textField);
-	
     //attributes
     var attributes_grid = new Ext.grid.EditorGridPanel({
         id:'attribute_grid_obj_id',
