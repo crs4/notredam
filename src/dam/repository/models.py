@@ -540,13 +540,16 @@ class Item(AbstractItem):
     
         return caption
         
-    def get_info(self, workspace,  caption = None, default_language = None, check_deleted = False):        
+    def get_info(self, workspace,  caption = None, default_language = None, check_deleted = False, fullscreen_caption = None):        
         from dam.geo_features.models import GeoInfo
         if caption and default_language: 
            caption = self._get_caption(caption, default_language)
         else:
             caption = ''
-
+        if fullscreen_caption and default_language: 
+           fullscreen_caption = self._get_caption(fullscreen_caption, default_language)
+        else:
+            fullscreen_caption = ''
 
 #        now = '?t=' + str(time.time());
         t = time.mktime(self.get_last_update(workspace).utctimetuple())
@@ -585,7 +588,8 @@ class Item(AbstractItem):
             'url_preview':preview_url,
 			'url_fullscreen': fullscreen_url,
 #            'preview_available': False,
-            'geotagged': geotagged
+            'geotagged': geotagged,
+            'fullscreen_caption': fullscreen_caption
             }
         
         if check_deleted: #performance can be improved here
