@@ -683,8 +683,6 @@ def load_items(request, view_type=None, unlimited=False):
         tasks_pending_obj = []
         tasks_pending = []
                 
-        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
-        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
 
         default_language = get_metadata_default_language(user, workspace)
 
@@ -697,9 +695,7 @@ def load_items(request, view_type=None, unlimited=False):
         fullscreen_caption_setting = DAMComponentSetting.objects.get(name='fullscreen_caption')
         fullscreen_caption = fullscreen_caption_setting.get_user_setting(user, workspace)
         default_language = get_metadata_default_language(user, workspace)    
-        
         check_deleted = request.POST.has_key('show_deleted')
-
         for item in items:
             tmp = item.get_info(workspace, thumb_caption, default_language, check_deleted = check_deleted, fullscreen_caption = fullscreen_caption)
             if item.pk in basket_items:
@@ -853,12 +849,19 @@ def upload_status(request):
             processes_info = _script_monitor(workspace)
             resp['scripts'] = processes_info 
             
+        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+        fullscreen_caption_setting = DAMComponentSetting.objects.get(name='fullscreen_caption')
+        fullscreen_caption = fullscreen_caption_setting.get_user_setting(user, workspace)
+        default_language = get_metadata_default_language(user, workspace)    
+        check_deleted = request.POST.has_key('show_deleted')
         for item_id in items_in_progress:
             try:
 
         
                 item = Item.objects.get(pk = int(item_id)) 
-                tmp = item.get_info(workspace, user)
+                #tmp = item.get_info(workspace, user)
+                tmp = item.get_info(workspace, thumb_caption, default_language, check_deleted = check_deleted, fullscreen_caption = fullscreen_caption)
 #                if item_id not in completed_targets:
 #                    tmp['status'] = 'in_progress'
 #                else:
@@ -911,13 +914,21 @@ def get_status(request):
             from dam.scripts.views import _script_monitor
             processes_info = _script_monitor(workspace)
             resp['scripts'] = processes_info 
+
+        thumb_caption_setting = DAMComponentSetting.objects.get(name='thumbnail_caption')
+        thumb_caption = thumb_caption_setting.get_user_setting(user, workspace)
+        fullscreen_caption_setting = DAMComponentSetting.objects.get(name='fullscreen_caption')
+        fullscreen_caption = fullscreen_caption_setting.get_user_setting(user, workspace)
+        default_language = get_metadata_default_language(user, workspace)    
+        check_deleted = request.POST.has_key('show_deleted')
             
         for item_id in items_in_progress:
             try:
 
         
                 item = Item.objects.get(pk = int(item_id)) 
-                tmp = item.get_info(workspace, user)
+                #tmp = item.get_info(workspace, user)
+                tmp = item.get_info(workspace, thumb_caption, default_language, check_deleted = check_deleted, fullscreen_caption = fullscreen_caption)
 #                if item_id not in completed_targets:
 #                    tmp['status'] = 'in_progress'
 #                else:
