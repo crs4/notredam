@@ -747,7 +747,7 @@ function load_detail_class(class_data, id_class, add_class){
         id:'notes_class'
     });	
 	//workspaces
-	var sm_ws_admin = new Ext.grid.CheckboxSelectionModel();
+	var sm_ws_admin = new Ext.grid.CheckboxSelectionModel({singleSelect:false});
 	// create the grid
     var ws_admin_grid = new Ext.grid.GridPanel({
         id:'id_ws_admin_grid',
@@ -767,8 +767,15 @@ function load_detail_class(class_data, id_class, add_class){
         ]),
         viewConfig: { // to select current ws in this grid
     		afterRender: function(){
-    			this.constructor.prototype.afterRender.call(this);
-        		this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk));
+        		this.constructor.prototype.afterRender.call(this);
+        		if(id_class == 'root_obj_tree'){//adding a new root class
+    				this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk));
+    			}else{  //adding a new class but not root_class or edit class
+					var p = eval(class_data.getAt(0).data.workspaces);
+					for(var k in p){
+	    				this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',parseInt(k)), true);
+					}
+    			}
     		}
     	},
         height: 150
@@ -805,12 +812,9 @@ function load_detail_class(class_data, id_class, add_class){
 		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'; 
 		if (id_class != 'root_obj_tree'){
 			superclass_textField.setValue(Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.attributes.id);
+			ws_admin_grid.disable();		//only root class can be shared
 		}
 		var method_request='PUT';
-		//only root class can be shared
-		if(id_class != 'root_obj_tree'){
-			ws_admin_grid.disable();
-		}
 	}
 	
 	
@@ -919,7 +923,9 @@ function load_detail_class(class_data, id_class, add_class){
         		if (id_textField.getValue()){
         			params['id'] = id_textField.getValue();
         		}
-        		params['superclass'] = superclass_textField.getValue();
+        		if(id_class != 'root_obj_tree'){
+        			params['superclass'] = superclass_textField.getValue();
+        		}
         		params['workspaces'] = {};
         		//owner for current ws, read-write others
         		//FIXME who is the owner?
@@ -1239,7 +1245,57 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 			text: gettext('Add'), 
 			menu: [add_class, add_object]			
 		});
-		var delete_node = new Ext.menu.Item({id: 'id_delete_cls_obj', text: gettext('Delete')});
+		var delete_node = new Ext.menu.Item({
+			id: 'id_delete_cls_obj', 
+			text: gettext('Delete'),
+			listeners:{
+				click: function(item){
+					console.log('delete item');
+					console.log(item.parentMenu.contextNode.attributes);
+					if (item.parentMenu.contextNode.attributes.leaf == false){// delete an class
+		        		Ext.Msg.confirm('Class Deletion', 'Class deletion cannot be undone, do you want to proceed?', 
+		    	                function(btn){
+		    	                    if (btn == 'yes')
+		    			        		Ext.Ajax.request({
+		    			        			url:'/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'+item.parentMenu.contextNode.attributes.id,
+		    			        			method: 'DELETE',
+		    			                    clientValidation: true,
+		    			                    waitMsg: 'Saving...',
+		    			                    success: function(response){
+		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
+		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+		    			                    	Ext.getCmp('details_panel_class').removeAll();
+		    			                    },
+		    			                    failure:function(response){
+		    			                    	Ext.Msg.alert('Failure', response.responseText);
+		    			                    }
+		    			        		});
+		    	                }
+		            		);
+					}else{// delete an obj
+		        		Ext.Msg.confirm('Object Deletion', 'Object deletion cannot be undone, do you want to proceed?', 
+		    	                function(btn){
+		    	                    if (btn == 'yes')
+		    			        		Ext.Ajax.request({
+		    			        			url:'/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+item.parentMenu.contextNode.attributes.id,
+		    			        			method: 'DELETE',
+		    			                    clientValidation: true,
+		    			                    waitMsg: 'Saving...',
+		    			                    success: function(response){
+		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
+		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+		    			                    	Ext.getCmp('details_panel_class').removeAll();
+		    			                    },
+		    			                    failure:function(response){
+		    			                    	Ext.Msg.alert('Failure', response.responseText);
+		    			                    }
+		    			        		});
+		    	                }
+		            		);
+					}
+				}
+			}
+		});
 		var contextMenuVocabulary = new Ext.menu.Menu({
 			id:'contextMenuVocabulary',
 			autoDestroy : true,
@@ -1302,7 +1358,6 @@ function open_knowledgeBase(){
 					}
 		            c.contextNode = node;
 		            c.showAt(e.getXY());
-		            console.log('end listeners contextmenu');
 	        }
 	    },
 		selModel: new Ext.tree.DefaultSelectionModel({
@@ -1310,7 +1365,6 @@ function open_knowledgeBase(){
 				"selectionchange": {
 					fn:function(sel, node){
 						console.log('selection change');
-						console.log(node);
 						if (node){
 							if (node.attributes.leaf == false){
 	    						init_store_class_data(node.attributes.id, false);
@@ -1335,7 +1389,6 @@ function open_knowledgeBase(){
              },
           })
 	});
-
 	tree_obj_reference.setRootNode(Tree_Obj_Root);
 
 /**
@@ -1367,7 +1420,7 @@ function open_knowledgeBase(){
         }]
     });
 	var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
-	console.log('current workspace');
-	console.log(ws_record.data.pk);
+//	console.log('current workspace');
+//	console.log(ws_record.data.pk);
 	win_knowledge_base.show();  
 }
