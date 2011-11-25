@@ -246,7 +246,8 @@ function showFullscreen(view, index, node, e){
 		img_height = tmp[1];
 		img.width = img_width; 
 		img.height= img_height;
-		
+	        console.log('inside image onload function, fullscreen caption: ' + data.fullscreen_caption);	
+	        console.log('inside image onload function, thumbnail caption: ' + data.name);	
 		var win = new Ext.Window({
 			modal: true,
 			width:img_width + 15 ,
@@ -1453,12 +1454,16 @@ Ext.onReady(function(){
                                     var item_data = store.getAt(store.findExact('pk', i));
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = info['thumb'];
+                                    console.log('info thumb is: ' + info['thumb']);
                                     for (var key in info) {
+                                        console.log('key : ' + key);
+                                        console.log('info key : ' + info[key]);
                                         if (key == 'url') {
                                           
                                             if (!previous_thumb_ready) {
                                                 
                                                 var new_thumb = info[key];
+                                                console.log('new_thumb is: ' + new_thumb);
                                                 var img_to_load = new Image();
                                                 
                                                 img_to_load.onload = function(){
