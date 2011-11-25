@@ -543,11 +543,11 @@ class Item(AbstractItem):
     def get_info(self, workspace,  caption = None, default_language = None, check_deleted = False, fullscreen_caption = None):        
         from dam.geo_features.models import GeoInfo
         if caption and default_language: 
-           caption = self._get_caption(caption, default_language)
+            caption = self._get_caption(caption, default_language)
         else:
             caption = ''
         if fullscreen_caption and default_language: 
-           fullscreen_caption = self._get_caption(fullscreen_caption, default_language)
+            fullscreen_caption = self._get_caption(fullscreen_caption, default_language)
         else:
             fullscreen_caption = ''
 
