@@ -49,7 +49,7 @@ function init_store_obj_data_edit(obj_id, add_obj){
 	obj_store.load();
 }
 
-function store_get_obj_attributes(class_id, obj_id){
+function get_store_obj_attributes(class_id, obj_id){
 	//obj_id == null new obj else edit exixting obj 
 	//var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
 	return new Ext.data.JsonStore({
@@ -474,7 +474,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		//FIXME order order_slider
 		title = "Edit attribute";
 		text_button = gettext('Edit');
-		max_value_slider = Ext.getCmp('attribute_grid_id').getStore().getCount()-1;
+		max_value_slider = attributes_grid.getStore().getCount()-1;
 	}else{
 		name_textField_value = null;
 		empty_chekbox_value = false;
@@ -482,7 +482,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		notes_textField_value = null;
 		title = "Add new attribute";
 		text_button = gettext('Add');
-		max_value_slider = Ext.getCmp('attribute_grid_id').getStore().getCount();
+		max_value_slider = attributes_grid.getStore().getCount();
 	}
 	var name_textField = new Ext.form.TextField({
         fieldLabel: 'Name',
@@ -665,11 +665,14 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        		}
         		}else{ // obj scope
         			// FIXME case choice and multivalued is different
-        			if(isEmpty(Ext.getCmp('id_record_value').getValue())){
+        			console.log('insert value');
+        			if(!isEmpty(Ext.getCmp('id_record_value').getValue())){
+    					console.log(Ext.getCmp('id_record_value').getValue());
         				if (attributes_grid.getSelectionModel().getSelected().data.type == 'date'){
+        					console.log('data');
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue().format('Y-m-d'));
         				}else{
-        					console.log(Ext.getCmp('id_record_value').getValue());
+        					console.log('else');
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue());
         				}
         			}
@@ -691,6 +694,8 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		empty_chekbox.disable();
 		multivalued_chekbox.disable();
 		notes_textField.disable();
+		order_slider.setValue(attributes_grid.getSelectionModel().getSelected().data.order);
+		order_slider.disable();
 		title = 'Insert value for this attribute';
 		Ext.getCmp('attribute_detail_panel').buttons[0].text=gettext('Done');
 	}
@@ -1039,7 +1044,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		name_textField_value = obj_data.getAt(0).data.name;
 		notes_textField_value = obj_data.getAt(0).data.notes;
 		class_id_textField_value = obj_data.getAt(0).data.class_id;
-		store_attributes_grid_obj = store_get_obj_attributes(obj_data.getAt(0).data.class_id, obj_id);
+		store_attributes_grid_obj = get_store_obj_attributes(obj_data.getAt(0).data.class_id, obj_id);
 		var title = "Edit object " + name_textField_value;
 		var method_request='POST';
 		var url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+obj_id
@@ -1049,7 +1054,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		name_textField_value = null;
 		notes_textField_value = null;
 		class_id_textField_value = class_id;
-		store_attributes_grid_obj = store_get_obj_attributes(class_id, null);
+		store_attributes_grid_obj = get_store_obj_attributes(class_id, null);
 		var title = "Add new object";
 		var method_request='PUT';
 		var url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/';
@@ -1104,7 +1109,8 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
                                 {id:'value',header: "Value", width: 90, dataIndex: 'value'},
                                 {id:'maybe_empty',header: "Empty", width: 50, sortable: true, dataIndex: 'maybe_empty'},
                                 {id:'choices',header: "Choices", width: 50, sortable: true, dataIndex: 'choices'},
-                                {id:'target_class',header: "Target class", width: 50, sortable: true, dataIndex: 'target_class'}
+                                {id:'target_class',header: "Target class", width: 50, sortable: true, dataIndex: 'target_class'},
+                                {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'}
         ]),
         listeners: {
             'rowdblclick': function(grid, rowIndex, e){
