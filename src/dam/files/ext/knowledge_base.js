@@ -634,7 +634,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        			}
 	        		}else{choices = null;}
 	        		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
-
 	        		if (this.text == gettext('Edit')){
 	        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
@@ -1008,7 +1007,7 @@ function load_detail_class(class_data, id_class, add_class){
             }
         }]
     });
-	if (ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+	if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 		details_panel_class.disable();
 	}
 
@@ -1205,7 +1204,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
             }
         }]
     });
-	if (ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+	if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 		details_panel_obj.disable();
 	}
 
@@ -1345,8 +1344,10 @@ function open_knowledgeBase(){
 //	          Register the context node with the menu so that a Menu Item's handler function can access
 //	          it via its parentMenu property.
 					console.log('listeners contextmenu');
+					console.log(ws_permissions_store.find('name', 'edit_vocabulary'));
+					console.log(ws_permissions_store.find('name', 'admin'));
 		            var c = node.getOwnerTree().contextMenu;
-					if (ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+					if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 						c.find('text',gettext('Add'))[0].disable();
 						c.find('text',gettext('Delete'))[0].disable();
 					}else{
