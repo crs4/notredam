@@ -44,3 +44,15 @@ class ValidationError(Exception):
 
     def __str__(self):
         return repr(self.parameter)
+
+
+class PendingReferences(Exception):
+    '''
+    Raised when trying to delete an element which is referenced by
+    other objects, classes, etc.
+    '''
+    def __init__(self, value):
+        self.parameter = value
+
+    def __str__(self):
+        return repr(self.parameter)
