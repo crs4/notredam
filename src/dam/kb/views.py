@@ -31,6 +31,8 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
 from django.utils import simplejson
 
 from dam.core.dam_workspace.decorators import permission_required
+from dam.treeview.models import Node as TreeviewNode
+from models import Object as DjangoKBObject
 
 import tinykb.access as kb_access
 import tinykb.session as kb_ses
@@ -355,7 +357,8 @@ def object_(request, ws_id, object_id):
     DELETE: delete and existing object from the knowledge base.
     '''
     return _dispatch(request, {'GET' :  object_get,
-                               'POST' : object_post},
+                               'POST' : object_post,
+                               'DELETE' : object_delete},
                      {'ws_id' : int(ws_id),
                       'object_id' : object_id})
 
@@ -408,6 +411,34 @@ def object_post(request, ws_id, object_id):
     ses.add(obj)
     ses.commit()
 
+    return HttpResponse('ok')
+
+
+def object_delete(request, ws_id, object_id):
+    ses = _kb_session()
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        obj = ses.object(object_id, ws=ws)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    # Before deleting, check whether the object is referenced from the catalog
+    dj_obj = DjangoKBObject.objects.get(id=object_id)
+    catalog_refs_cnt = TreeviewNode.objects.filter(kb_object=dj_obj).count()
+    if catalog_refs_cnt > 0:
+        return HttpResponseBadRequest('Cannot delete object referenced from '
+                                      'the catalog')
+
+    try:
+        ses.delete(obj)
+    except kb_exc.PendingReferences:
+        return HttpResponseBadRequest('Cannot delete object referenced from '
+                                      'other KB objects')
+    ses.commit()
     return HttpResponse('ok')
 
 
