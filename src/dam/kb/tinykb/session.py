@@ -27,6 +27,7 @@ import sqlalchemy.orm as sa_orm
 import sqlalchemy.engine.base as sa_base
 import sqlalchemy.orm.exc as sa_exc
 import sqlalchemy.schema as sa_schema
+from sqlalchemy.sql.expression import and_
 
 import attributes as kb_attrs
 import classes as kb_cls
@@ -139,7 +140,70 @@ class Session(object):
         :param obj: object to be added
         '''
         self.session.add_all(obj_list)
-    
+
+    def delete(self, obj_or_cls):
+        '''
+        Mark the given object or class for deletion from the knowledge
+        base.
+
+        This method will raise a py:exc:`errors.PendingReferences`
+        exception if the given element is referenced by other KB
+        classes, objects, etc.
+
+        .. note:: the actual delection will be performed when
+                  :py:meth:`commit` is invoked.
+
+        :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
+        :param obj_or_cls: KB object or class to be deleted
+        '''
+        if isinstance(obj_or_cls, self.orm.KBObject):
+            cls = getattr(obj_or_cls, 'class')
+
+            # Check whether the class or one of its ancestors appears in
+            # an object reference attribute
+            orm_attrs = self.orm.attributes
+            cls_lst = [cls] + cls.ancestors()
+
+            # FIXME: in_() not yet supported for relationships
+            # Check whether it will change in the next versions of SQLAlchemy
+            # cls_refs = self.session.query(orm_attrs.ObjectReference).filter(
+            #     orm_attrs.ObjectReference.target.in_(cls_lst))
+            cls_lst = [c.id for c in cls_lst]
+            cls_refs = self.session.query(orm_attrs.ObjectReference).filter(
+               and_((self.schema.class_attribute_objref.c.target_class_root
+                     == cls.root.id),
+                    (self.schema.class_attribute_objref.c.target_class.in_(
+                            cls_lst))))
+
+            # For each KB class with a reference to the object class
+            # (or one of its ancestors), check whether one of the
+            # instances contains an actual reference to the object
+            # itself
+            obj_refs_cnt = 0
+            for r in cls_refs:
+                referencing_cls = getattr(r, 'class').python_class
+                if r.multivalued:
+                    ref_attr = getattr(referencing_cls, r.id)
+                    mv_table = r._sqlalchemy_mv_table # FIXME: encapsulation!
+                    obj_refs_cnt = self.session.query(referencing_cls).filter(
+                        ref_attr.any(mv_table.c.value == obj_or_cls.id)
+                        ).count()
+                else:
+                    ref_attr = getattr(referencing_cls, r.column_name())
+                    obj_refs_cnt = self.session.query(referencing_cls).filter(
+                        ref_attr == obj_or_cls).count()
+
+                if obj_refs_cnt > 0:
+                    raise kb_exc.PendingReferences('Object is referenced')
+            
+            self.session.delete(obj_or_cls)
+
+        elif isinstance(obj_or_cls, self.orm.KBClass):
+            cls = obj_or_cls
+        else:
+            raise TypeError('expected KB object or class, got "%s" (type: %s)'
+                            % (obj_or_cls, type(obj_or_cls)))
+
     def expunge(self, obj):
         '''
         Remove an object from the set handled by the knowledge base

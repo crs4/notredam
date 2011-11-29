@@ -27,9 +27,6 @@ ses = session.Session('sqlite:///:memory:/', id_='doc_session')
 sys.modules['orm'] = ses.orm
 sys.modules['orm.attributes'] = ses.orm.attributes
 
-print ses.orm
-print ses.orm.attributes
-
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions

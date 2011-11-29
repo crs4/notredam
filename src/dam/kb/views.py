@@ -31,6 +31,8 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseNotFound,
 from django.utils import simplejson
 
 from dam.core.dam_workspace.decorators import permission_required
+from dam.treeview.models import Node as TreeviewNode
+from models import Object as DjangoKBObject
 
 import tinykb.access as kb_access
 import tinykb.session as kb_ses
@@ -355,7 +357,8 @@ def object_(request, ws_id, object_id):
     DELETE: delete and existing object from the knowledge base.
     '''
     return _dispatch(request, {'GET' :  object_get,
-                               'POST' : object_post},
+                               'POST' : object_post,
+                               'DELETE' : object_delete},
                      {'ws_id' : int(ws_id),
                       'object_id' : object_id})
 
@@ -373,6 +376,7 @@ def object_get(request, ws_id, object_id):
         return HttpResponseNotFound()
 
     return HttpResponse(simplejson.dumps(_kbobject_to_dict(obj, ses)))
+
 
 def object_post(request, ws_id, object_id):
     try:
@@ -404,9 +408,36 @@ def object_post(request, ws_id, object_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    ses.add(obj)
     ses.commit()
 
+    return HttpResponse('ok')
+
+
+def object_delete(request, ws_id, object_id):
+    ses = _kb_session()
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        obj = ses.object(object_id, ws=ws)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    # Before deleting, check whether the object is referenced from the catalog
+    dj_obj = DjangoKBObject.objects.get(id=object_id)
+    catalog_refs_cnt = TreeviewNode.objects.filter(kb_object=dj_obj).count()
+    if catalog_refs_cnt > 0:
+        return HttpResponseBadRequest('Cannot delete object referenced from '
+                                      'the catalog')
+
+    try:
+        ses.delete(obj)
+    except kb_exc.PendingReferences:
+        return HttpResponseBadRequest('Cannot delete object referenced from '
+                                      'other KB objects')
+    ses.commit()
     return HttpResponse('ok')
 
 
@@ -796,26 +827,25 @@ def _assert_update_object_attrs(obj, obj_dict, ses):
                 # Let's remove all the list elements.  We'll later
                 # re-add them
                 obj_l = getattr(obj, a.id)
-                orig_l = [x for x in obj_l] # Read-only copy
-                for x in orig_l:
-                    obj_l.remove(x)
 
                 if (type(a) == kb_attrs.ObjectReference):
                     # We need to retrieve the referred objects by
-                    # their ID, in order to spot errors
-                    obj_lst = []
-                    for xid in val:
+                    # their ID, in order to spot errors.
+                    
+                    # Determine new objects
+                    new_obj_lst = []
+                    for xid in [x for x in val]:
                         try:
-                            obj_lst.append(ses.object(xid))
+                            new_obj_lst.append(ses.object(xid))
                         except kb_exc.NotFound:
                             raise ValueError('Unknown object id reference: %s'
                                              % xid)
-                    newlst = obj_lst
-                else:
-                    newlst = val
+                    val = new_obj_lst
 
                 # Time to re-add the elements to the list
-                for x in newlst:
+                for _i in range(0, len(obj_l)):
+                    obj_l.pop() # Cleanup old list
+                for x in val:
                     obj_l.append(x)
             else: # not a.multivalued
                 if type(a) == kb_attrs.ObjectReference:
