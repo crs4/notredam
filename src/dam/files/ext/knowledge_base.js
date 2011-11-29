@@ -113,7 +113,12 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
 		selModel: sm
 	});	
 	
-	tree_vocabulary_to_obj_ref.setRootNode(Tree_Obj_Root);	
+	tree_vocabulary_to_obj_ref.setRootNode(Tree_Obj_Root);
+	
+	new Ext.tree.TreeSorter(tree_vocabulary_to_obj_ref, {
+	    dir: "ASC",
+	    folderSort: true
+	});
 
 	var win_select_class_target = new Ext.Window({
         id		:'id_win_select_class_target',
@@ -300,7 +305,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			name: 'target_class',
 			id  : 'id_target_class',
 			fieldLabel: 'Insert target class',
-	        allowBlank:true,
+	        allowBlank:false,
 	        readOnly:false,
 	        value: target_class_value,
 	        handleMouseEvents: true,
@@ -471,7 +476,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		empty_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.maybe_empty;
 		multivalued_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.multivalued;
 		notes_textField_value = attributes_grid.getSelectionModel().getSelected().data.notes;
-		//FIXME order order_slider
 		title = "Edit attribute";
 		text_button = gettext('Edit');
 		max_value_slider = attributes_grid.getStore().getCount()-1;
@@ -665,8 +669,15 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        		}
         		}else{ // obj scope
         			// FIXME case choice and multivalued is different
-        			console.log('insert value');
-        			if(!isEmpty(Ext.getCmp('id_record_value').getValue())){
+        			console.log('insert value---');
+        			if(attributes_grid.getSelectionModel().getSelected().data.type == 'choice'){//case where choice is multivalued
+        				var txt = "";
+        				for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
+        					console.log(Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name);
+        					txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name+',';
+        				}
+        				attributes_grid.getSelectionModel().getSelected().set('value',txt);
+        			}else if(!isEmpty(Ext.getCmp('id_record_value').getValue())){
     					console.log(Ext.getCmp('id_record_value').getValue());
         				if (attributes_grid.getSelectionModel().getSelected().data.type == 'date'){
         					console.log('data');
@@ -1038,6 +1049,8 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	// class_id id class
 	
 	var fields = [];
+	var choices, title, method_request, url_submit, id_textField_value, name_textField_value, notes_textField_value, class_id_textField_value;
+	var store_attributes_grid_obj;
 	if (!add_obj){
 //		console.log(obj_data.getAt(0).data);
 		id_textField_value = obj_data.getAt(0).data.id;
@@ -1045,9 +1058,9 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		notes_textField_value = obj_data.getAt(0).data.notes;
 		class_id_textField_value = obj_data.getAt(0).data.class_id;
 		store_attributes_grid_obj = get_store_obj_attributes(obj_data.getAt(0).data.class_id, obj_id);
-		var title = "Edit object " + name_textField_value;
-		var method_request='POST';
-		var url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+obj_id
+		title = "Edit object " + name_textField_value;
+		method_request='POST';
+		url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+obj_id
 	}else{
 		console.log('class_id: '+class_id);
 		id_textField_value = null;
@@ -1055,9 +1068,9 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		notes_textField_value = null;
 		class_id_textField_value = class_id;
 		store_attributes_grid_obj = get_store_obj_attributes(class_id, null);
-		var title = "Add new object";
-		var method_request='PUT';
-		var url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/';
+		title = "Add new object";
+		method_request='PUT';
+		url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/';
 	}
 	
 	var id_textField = new Ext.form.TextField({
@@ -1159,10 +1172,16 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         			attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
         			console.log('ATTRIBUTE');
         			console.log(attribute);
-        			if (attribute.multivalued == true){ // list of type
+        			if (attribute.multivalued == true){//list of type
         				console.log(attribute);
-        				params['attributes'][attribute.id] = attribute.value;
-        			}else{ // only one value
+        				params['attributes'][attribute.id] = [];
+	        			choices = attribute.value.split(',');
+	        			if (choices[choices.length-1] == ""){
+	        				delete(choices[choices.length-1]);
+	        				choices.splice(choices.length-1, 1);
+	        			}
+        				params['attributes'][attribute.id] = choices;
+        			}else{//only one value
         				params['attributes'][attribute.id] = attribute.value;
         			}
         		}
@@ -1177,7 +1196,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	                    success: function(response){
 	                    	Ext.getCmp('obj_reference_tree').root.reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-	                    	Ext.getCmp('details_panel_class').removeAll();
+	                    	Ext.getCmp('details_panel_obj').removeAll();
 	                    },
 	                    failure:function(response){
 	                    	Ext.Msg.alert('Failure', response.responseText);
@@ -1194,7 +1213,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	                    success: function(response){
 	                    	Ext.getCmp('obj_reference_tree').root.reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-	                    	Ext.getCmp('details_panel_class').removeAll();
+	                    	Ext.getCmp('details_panel_obj').removeAll();
 	                    },
 	                    failure:function(response){
 	                    	Ext.Msg.alert('Failure', response.responseText);
@@ -1372,6 +1391,7 @@ function open_knowledgeBase(){
 				"selectionchange": {
 					fn:function(sel, node){
 						console.log('selection change');
+						console.log(node);
 						if (node){
 							if (node.attributes.leaf == false){
 	    						init_store_class_data(node.attributes.id, false);
@@ -1397,6 +1417,11 @@ function open_knowledgeBase(){
           })
 	});
 	tree_obj_reference.setRootNode(Tree_Obj_Root);
+	
+	new Ext.tree.TreeSorter(tree_obj_reference, {
+	    dir: "ASC",
+	    folderSort: true
+	});
 
 /**
  * Content Windows 
