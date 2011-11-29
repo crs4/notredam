@@ -827,26 +827,25 @@ def _assert_update_object_attrs(obj, obj_dict, ses):
                 # Let's remove all the list elements.  We'll later
                 # re-add them
                 obj_l = getattr(obj, a.id)
-                orig_l = [x for x in obj_l] # Read-only copy
-                for x in orig_l:
-                    obj_l.remove(x)
 
                 if (type(a) == kb_attrs.ObjectReference):
                     # We need to retrieve the referred objects by
-                    # their ID, in order to spot errors
-                    obj_lst = []
-                    for xid in val:
+                    # their ID, in order to spot errors.
+                    
+                    # Determine new objects
+                    new_obj_lst = []
+                    for xid in [x for x in val]:
                         try:
-                            obj_lst.append(ses.object(xid))
+                            new_obj_lst.append(ses.object(xid))
                         except kb_exc.NotFound:
                             raise ValueError('Unknown object id reference: %s'
                                              % xid)
-                    newlst = obj_lst
-                else:
-                    newlst = val
+                    val = new_obj_lst
 
                 # Time to re-add the elements to the list
-                for x in newlst:
+                for _i in range(0, len(obj_l)):
+                    obj_l.pop() # Cleanup old list
+                for x in val:
                     obj_l.append(x)
             else: # not a.multivalued
                 if type(a) == kb_attrs.ObjectReference:
