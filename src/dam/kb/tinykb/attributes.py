@@ -209,7 +209,7 @@ def _init_base_attributes(o):
                     self._mvclass, backref='object',
                     collection_class=sa_order.ordering_list('order'),
                     order_by=[mvtable.c.order],
-                    cascade='all')}
+                    cascade='all, delete-orphan')}
 
         # Internal routine for building properties related to the
         # attribute column on the KB object table.  This implementation
