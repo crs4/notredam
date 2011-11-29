@@ -776,7 +776,7 @@ function load_detail_class(class_data, id_class, add_class){
         title:'Select workspaces',
         cm: new Ext.grid.ColumnModel([
                                 sm_ws_admin,
-                                {id:'pk',header: "pk", width: 30, sortable: true, dataIndex: 'pk'},
+                                {id:'pk',header: "pk", width: 30, sortable: true, dataIndex: 'pk', hidden:true},
                                 {id:'name',header: "Name", width: 110, sortable: true, dataIndex: 'name'},
                                 {id:'description',header: "Description", width: 160, sortable: true, dataIndex: 'description'}
         ]),
@@ -801,8 +801,10 @@ function load_detail_class(class_data, id_class, add_class){
 		listeners:{
 			rowselect: {fn:function(sm){
 				console.log(Ext.getCmp('id_edit_attributes_class'));
-				Ext.getCmp('id_edit_attributes_class').enable();
-				Ext.getCmp('id_remove_attributes_class').enable();
+				if (add_class){
+					Ext.getCmp('id_edit_attributes_class').enable();
+					Ext.getCmp('id_remove_attributes_class').enable();
+				}
 			}},
 			rowdeselect: {fn:function(sm){
 				Ext.getCmp('id_edit_attributes_class').disable();
@@ -827,7 +829,7 @@ function load_detail_class(class_data, id_class, add_class){
 		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'; 
 		if (id_class != 'root_obj_tree'){
 			superclass_textField.setValue(Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.attributes.id);
-			ws_admin_grid.disable();		//only root class can be shared
+			ws_admin_grid.disable();//only root class can be shared
 		}
 		var method_request='PUT';
 	}
@@ -841,10 +843,11 @@ function load_detail_class(class_data, id_class, add_class){
         title:'Attributes',
         cm: new Ext.grid.ColumnModel([
                                 sm_attributes_grid,
-                                {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id'},
+                                {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id', hidden:true},
                                 {id:'name',header: "Name", width: 110, sortable: true, dataIndex: 'name'},
                                 {id:'type',header: "Type", width: 50, sortable: true, dataIndex: 'type'},
                                 {id:'multivalued',header: "Multivalued", width: 70, sortable: false, dataIndex: 'multivalued'},
+                                {id:'maybe_empty',header: "Empty", width: 50, sortable: false, dataIndex: 'maybe_empty'},
                                 {id:'default_value',header: "Default", width: 60, sortable: false, dataIndex: 'default_value'},
                                 {id:'min',header: "Min", width: 60, sortable: false, dataIndex: 'min'},
                                 {id:'max',header: "Max", width: 60, sortable: false, dataIndex: 'max'},
@@ -852,11 +855,11 @@ function load_detail_class(class_data, id_class, add_class){
                                 {id:'choices',header: "Choices", width: 60, sortable: false, dataIndex: 'choices'},
                                 {id:'target_class',header: "Target Class", width: 60, sortable: false, dataIndex: 'target_class'},
                                 {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'},
-                                {id:'notes',header: "Notes", width: 150, sortable: false, dataIndex: 'notes'},
-                                {id:'maybe_empty',header: "Empty", width: 50, sortable: false, dataIndex: 'maybe_empty'}
+                                {id:'notes',header: "Notes", width: 150, sortable: false, dataIndex: 'notes'}
         ]),
         bbar:[{
             text:'Add',
+            id: 'id_add_attributes_class',
             tooltip:'Add a new attribute',
             iconCls:'add_icon',
             handler: function() {
@@ -892,8 +895,11 @@ function load_detail_class(class_data, id_class, add_class){
     	height: 180
     });
     
-    if (!add_class){//FIXME
-    	attributes_grid.disable();
+    if (!add_class){
+    	console.log(attributes_grid);
+		Ext.getCmp('id_edit_attributes_class').disable();
+		Ext.getCmp('id_remove_attributes_class').disable();
+		Ext.getCmp('id_add_attributes_class').disable();
     }
 	
     fields.push(superclass_textField);
@@ -1114,13 +1120,13 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         title:'Attributes',
         sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
         cm: new Ext.grid.ColumnModel([
-                                {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id'},
+                                {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id', hidden:true},
                                 {id:'name',header: "Name", width: 80, sortable: true, dataIndex: 'name'},
-                                {id:'default_value',header: "Default", width: 70, sortable: true, dataIndex: 'default_value'},
                                 {id:'type',header: "Type", width: 50, sortable: true, dataIndex: 'type'},
                                 {id:'multivalued',header: "Multivalued", width: 50, sortable: true, dataIndex: 'multivalued'},
-                                {id:'value',header: "Value", width: 90, dataIndex: 'value'},
                                 {id:'maybe_empty',header: "Empty", width: 50, sortable: true, dataIndex: 'maybe_empty'},
+                                {id:'value',header: "Value", width: 90, dataIndex: 'value'},
+                                {id:'default_value',header: "Default", width: 70, sortable: true, dataIndex: 'default_value'},
                                 {id:'choices',header: "Choices", width: 50, sortable: true, dataIndex: 'choices'},
                                 {id:'target_class',header: "Target class", width: 50, sortable: true, dataIndex: 'target_class'},
                                 {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'}
@@ -1432,7 +1438,7 @@ function open_knowledgeBase(){
 		defaults: {               // defaults are applied to items, not the container
 		    autoScroll:true
 		},
-        width	: 950,
+        width	: 1000,
         height	: 550,
         title	:'Vocabulary',
         modal	: true,
