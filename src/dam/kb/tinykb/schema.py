@@ -32,9 +32,12 @@ from sqlalchemy.types import *
 
 from sqlalchemy.sql.expression import insert
 
+import access as kb_access
+
 # Ammissible values for classes and catalog entries visibility in
 # workspaces
-access_enum = ['owner', 'read-only', 'read-write']
+access_enum = [kb_access.OWNER, kb_access.READ_ONLY, kb_access.READ_WRITE,
+               kb_access.READ_WRITE_OBJECTS]
 
 class Schema(object):
     '''
