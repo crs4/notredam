@@ -649,21 +649,24 @@ def _init_base_classes(o):
                                                            ==schema.class_t.c.root))),
                                         remote_side=[schema.class_t.c.id,
                                                      schema.class_t.c.root],
-                                        post_update=True,
-                                        cascade='all'),
+                                        post_update=True),
             'root' : relationship(KBRootClass,
                                   primaryjoin=(schema.class_t.c.root
                                                ==schema.class_t.c.id),
                                   remote_side=[schema.class_t.c.id],
-                                  post_update=True,
-                                  cascade='all'),
+                                  post_update=True),
             'attributes' : relationship(o._attributes.Attribute,
                                         back_populates='class',
                                         cascade='save-update')
             })
 
     mapper(KBRootClass, inherits=KBClass,
-           polymorphic_identity=True)
+           polymorphic_identity=True,
+           properties={
+            'visibility' : relationship(KBClassVisibility,
+                                        back_populates='class',
+                                        cascade='all')
+            })
 
     mapper(KBClassVisibility, schema.class_visibility,
            properties={
@@ -671,7 +674,7 @@ def _init_base_classes(o):
             '_class_id' : schema.class_visibility.c['class'],
             '_class_root' : schema.class_visibility.c.class_root,
             'class' : relationship(KBRootClass,
-                                   backref='visibility', cascade='all')
+                                   back_populates='visibility')
             })
 
     mapper(KBObject, schema.object_t,
@@ -679,7 +682,7 @@ def _init_base_classes(o):
            properties={
             '_class' : schema.object_t.c['class'],
             '_class_root' : schema.object_t.c.class_root,
-            'class' : relationship(KBClass, backref='objects', cascade='all')
+            'class' : relationship(KBClass, backref='objects')
             })
 
     # Former Keyword and Category mappers

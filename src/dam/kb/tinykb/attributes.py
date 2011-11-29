@@ -771,7 +771,6 @@ def _init_base_attributes(o):
                                              backref=('references_%s_%s'
                                                       % (self._class_id,
                                                          self.id)),
-                                             cascade='all',
                                              primaryjoin=(mvtable.c.value
                                                           == target_table.c.id),
                                              remote_side=target_table.c.id)}
