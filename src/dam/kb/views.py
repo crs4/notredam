@@ -408,7 +408,6 @@ def object_post(request, ws_id, object_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    ses.add(obj)
     ses.commit()
 
     return HttpResponse('ok')
