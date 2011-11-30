@@ -180,15 +180,20 @@ def _init_base_attributes(o):
             if not hasattr(self, '_mvclass'):
                 # The following code can be executed only once per
                 # Attribute instance
-                table = getattr(self, 'class').sqlalchemy_table
+                cls = getattr(self, 'class')
+                table = cls.sqlalchemy_table
                 if mvtable is None:
                     raise RuntimeError('BUG: Attribute.mapper_properties() '
                                        'cannot be called before '
                                        'Attribute.additional_tables()')
 
                 class MVClass(object):
-                    def __init__(self, value):
-                        self.value = value
+                    def __init__(self2, value):
+                        self2.value = value
+
+                    def __repr__(self2):
+                        return ('<MVClass for %s.%s: object=%s, value=%s>'
+                                % (cls, self.id, self2.object, self2.value))
 
                 mapper(MVClass, mvtable,
                        properties=self._mvtable_mapper_properties())
@@ -766,7 +771,6 @@ def _init_base_attributes(o):
                                              backref=('references_%s_%s'
                                                       % (self._class_id,
                                                          self.id)),
-                                             cascade='all',
                                              primaryjoin=(mvtable.c.value
                                                           == target_table.c.id),
                                              remote_side=target_table.c.id)}
