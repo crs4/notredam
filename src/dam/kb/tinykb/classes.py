@@ -282,6 +282,20 @@ def _init_base_classes(o):
                 c = c.superclass
             return ancestors
 
+        def descendants(self):
+            '''
+            Retrieve a list of all the descendant
+            :py:class:`KBClass`'es, starting from the immediate
+            children (if any)
+
+            :rtype: list of :py:class:`KBClass` instances
+            :returns: the descendant KB classes
+            '''
+            children = o.session.session.query(KBClass).filter(
+                and_(KBClass.id != self.id,
+                     KBClass.superclass == self)).all()
+            return children + [d for c in children for d in c.descendants()]
+
         def is_bound(self):
             return self._sqlalchemy_table is not None
 
