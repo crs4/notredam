@@ -21,6 +21,8 @@ Workspace->Configure->Members in case of 'Add member'
 3.
 Fixed the bug in DAMComponentSetting, when two SettingValue related to 
 different DAMComponentSetting had the same name (issue 45).
+4.
+Fixed a bug in xmp_embedding, now it works again (issue 47)
 ===============================================================================
 OTHER THINGS
 ===============================================================================
