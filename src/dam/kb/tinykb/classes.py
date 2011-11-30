@@ -58,7 +58,8 @@ class Classes(types.ModuleType):
 
         _init_base_classes(self)
 
-        self.__all__ = ['KBClass', 'KBRootClass', 'User', 'Workspace']
+        self.__all__ = ['KBClass', 'KBRootClass', 'KBObject',
+                        'User', 'Workspace']
 
 
     # self._attributes is set in _init_base_classes
