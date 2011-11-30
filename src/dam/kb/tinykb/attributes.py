@@ -176,12 +176,12 @@ def _init_base_attributes(o):
             # intermediate mapper class to use with an SQLAlchemy
             # Association Proxy.  It will allow to handle the multivalued
             # attribute of the Python class as a simple list of values
+            cls = getattr(self, 'class')
+            obj_table = cls.sqlalchemy_table
             mvtable = self._sqlalchemy_mv_table
             if not hasattr(self, '_mvclass'):
                 # The following code can be executed only once per
                 # Attribute instance
-                cls = getattr(self, 'class')
-                table = cls.sqlalchemy_table
                 if mvtable is None:
                     raise RuntimeError('BUG: Attribute.mapper_properties() '
                                        'cannot be called before '
@@ -208,6 +208,9 @@ def _init_base_attributes(o):
             return {hidden_id : relationship(
                     self._mvclass, backref='object',
                     collection_class=sa_order.ordering_list('order'),
+                    primaryjoin=(obj_table.c.id
+                                 == mvtable.c['object']),
+                    remote_side=[mvtable.c['object']],
                     order_by=[mvtable.c.order],
                     cascade='all, delete-orphan')}
 
