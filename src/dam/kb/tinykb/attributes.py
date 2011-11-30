@@ -753,7 +753,6 @@ def _init_base_attributes(o):
                                    backref=('references_%s_%s'
                                             % (self._class_id,
                                                colname)),
-                                   cascade='all',
                                    primaryjoin=(obj_table.c[colname]
                                                 == target_table.c.id),
                                    remote_side=[target_table.c.id])}
