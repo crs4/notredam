@@ -156,12 +156,13 @@ class Session(object):
         :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
         :param obj_or_cls: KB object or class to be deleted
         '''
+        orm_attrs = self.orm.attributes
+
         if isinstance(obj_or_cls, self.orm.KBObject):
             cls = getattr(obj_or_cls, 'class')
 
             # Check whether the class or one of its ancestors appears in
             # an object reference attribute
-            orm_attrs = self.orm.attributes
             cls_lst = [cls] + cls.ancestors()
 
             # FIXME: in_() not yet supported for relationships
@@ -197,9 +198,31 @@ class Session(object):
                     raise kb_exc.PendingReferences('Object is referenced')
             
             self.session.delete(obj_or_cls)
-
         elif isinstance(obj_or_cls, self.orm.KBClass):
-            cls = obj_or_cls
+            # Check whether the class has instances
+            pyclass = obj_or_cls.python_class
+            objs = self.session.query(pyclass)
+            if objs.count() > 0:
+                raise kb_exc.PendingReferences('Class has instances')
+
+            # Check whether the class or one of its descendants
+            # appears in an object reference attribute
+            cls_lst = [obj_or_cls] + obj_or_cls.descendants()
+
+            # FIXME: in_() not yet supported for relationships
+            # Check whether it will change in the next versions of SQLAlchemy
+            # cls_refs = self.session.query(orm_attrs.ObjectReference).filter(
+            #     orm_attrs.ObjectReference.target.in_(cls_lst))
+            cls_lst = [c.id for c in cls_lst]
+            cls_refs = self.session.query(orm_attrs.ObjectReference).filter(
+               and_((self.schema.class_attribute_objref.c.target_class_root
+                     == obj_or_cls.root.id),
+                    (self.schema.class_attribute_objref.c.target_class.in_(
+                            cls_lst))))
+
+            if cls_refs.count() > 0:
+                raise kb_exc.PendingReferences('Class is referenced by other '
+                                               'classes')
         else:
             raise TypeError('expected KB object or class, got "%s" (type: %s)'
                             % (obj_or_cls, type(obj_or_cls)))
