@@ -1415,7 +1415,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		    			                    success: function(response){
 		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
 		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-		    			                    	Ext.getCmp('details_panel_class').removeAll();
+		    			                    	Ext.getCmp('details_panel').removeAll();
 		    			                    },
 		    			                    failure:function(response){
 		    			                    	Ext.Msg.alert('Failure', response.responseText);
@@ -1435,7 +1435,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		    			                    success: function(response){
 		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
 		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-		    			                    	Ext.getCmp('details_panel_class').removeAll();
+		    			                    	Ext.getCmp('details_panel').removeAll();
 		    			                    },
 		    			                    failure:function(response){
 		    			                    	Ext.Msg.alert('Failure', response.responseText);
