@@ -7,13 +7,13 @@ def inspect(workspace):
    
     media_types = get_ext_by_type('image')
     variants = get_variants(workspace, 'image')
+    
     #output_variants = get_variants(workspace, 'image', auto_generated = True)
 #    source_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = False)]
 #    output_variants = [[variant.name] for variant in Variant.objects.filter(Q(workspace = workspace) | Q(workspace__isnull = True), auto_generated = True, hidden = False)]
      
     return {
         'name': __name__,
-       
         
         'params':[
             {   
@@ -98,6 +98,36 @@ def inspect(workspace):
                 
               ]
               },
+               {
+              'xtype': 'movablecbfieldset',
+              'title': 'Rotate',
+              'name': 'rotate',              
+              'order_field_name': 'actions',
+              'order_field_value': 'rotate', 
+              'items':[{
+                    'xtype':'combo',
+                    'name': 'rotation', # this name must be the same as the name of the parameter passed to run method !
+                    'allowBlank': 'false',
+                    'autoSelect': 'true',
+                    'width': 50,
+                    'editable':'false',
+                    'triggerAction':'all',
+                    'lazyRender':'true',
+                    'forceSelection':'true',
+                    'fieldLabel': 'rotation',                    
+                    'store':['0', '+90','-90'],
+                    'mode':'local',
+                    'description': '90 degree clockwise/counterclockwise rotation',
+                    'help': 'performs a 90 degree clockwise/counterclockwise rotation'
+                },
+                
+                
+              ]
+              },
+
+
+
+
               {
               'xtype': 'watermarkfieldset',
               'title': 'Watermark',

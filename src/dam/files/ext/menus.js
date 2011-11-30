@@ -158,7 +158,11 @@ Ext.onReady(function(){
                                 method: 'POST',
                                 url: '/get_available_users/'
                             }),
-                            autoLoad: true
+                            autoLoad: true,
+                            sortInfo: {
+                                field: 'name',
+                                direction: 'ASC'
+                                }
                         });
 
                         var list_users = new Ext.ListView({
@@ -168,7 +172,7 @@ Ext.onReady(function(){
                             columns: [{
                                 header: 'Username',
                                 dataIndex: 'name'
-                            }]
+                            }],
                         }); 
 
                         var permissions_form = new Ext.form.FormPanel({
@@ -389,7 +393,7 @@ Ext.onReady(function(){
             }
 
 			Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().reload();
-            Ext.MessageBox.alert(gettext('Success'), gettext('Object(s) deleted successfully.'));
+            Ext.MessageBox.alert(gettext('Message'), gettext('Item(s) deleted.'));
 
 		};
 
@@ -523,7 +527,45 @@ Ext.onReady(function(){
         id:'states_menu',
         items: []        
     });    
-            
+           
+    var rotate_image = function() {
+                        var tab = Ext.getCmp('media_tabs').getActiveTab();  
+                        var view = tab.getComponent(0);
+                       	var items_selected = view.getSelectedRecords();
+			var items = [];
+
+                       	if (items_selected.length){
+                        			Ext.each(items_selected, function(i){
+                        			items.push(i.data.pk);
+                        			});
+                        
+                        		var ajax_params = {
+                            			items: items,
+                            			rotation: this.id,
+              				};    
+					Ext.Ajax.request({
+                        			url: '/get_rotation_script/',
+                        			params:ajax_params,
+                        			success: function(){
+                        			Ext.Msg.alert('','Rotation started successfully.', function(){
+                                                        if (Ext.getCmp('dynamic_input_window')) {
+							    Ext.getCmp('dynamic_input_window').close();
+                                                        }
+						});
+                        			var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
+                        			var view = media_tabs.getComponent(0);
+                        			view.getStore().reload();
+                        		
+                        			},
+                        			failure: function(){
+                        			Ext.Msg.alert('', 'Rotation failed, a server side error occurred.');
+                       		 		}
+                        
+                        		});	
+			}
+                    };
+
+ 
     var ws_menu =  function() {
 //        switch_menu = new Ext.menu.Menu({
 //            id: 'switch_ws_menu',
@@ -561,7 +603,7 @@ Ext.onReady(function(){
                 
                  {
                     id: 'preferences_menu',
-                    text: gettext('Configuration'),
+                    text: gettext('Configure'),
                     menu:{
                         items:[{
                                 text: gettext('Descriptors'),
@@ -607,8 +649,29 @@ Ext.onReady(function(){
                     Ext.getCmp('media_tabs').getActiveTab().getComponent(0).clearSelections();
 
                 }
-            }
-           
+            },
+            {
+                text: gettext('90 clockwise'),
+                icon: '/files/images/icons/arrow_turn_right.png',
+                id: '90',
+                disabled: true,
+                handler: rotate_image,
+            },            
+            {
+                text: gettext('90 counterclockwise'),
+                icon: '/files/images/icons/arrow_turn_left.png',
+                id: '-90',
+                disabled: true,
+                handler: rotate_image,
+            },            
+            {
+                text: gettext('180 rotation'),
+                icon: '/files/images/icons/arrow_180.png',
+                id: '180',
+                disabled: true,
+                handler: rotate_image,
+            },            
+
             ]
         }
     );
