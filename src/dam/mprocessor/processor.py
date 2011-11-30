@@ -229,18 +229,21 @@ class Batch:
         if action:
             item, schedule = task['item'], task['schedule']
             method, params = self.scripts[action]
-            #log.debug('target %s: executing action %s' % (item.target_id, action))
             try:
                 item_params = loads(item.params)
-                #log.debug('item_params %s'%item_params)
-                #log.debug('params %s'%params)
+
+                # tmp bug fixing starts here
+                for k in params.keys():
+                    if params[k] == '' and (k in item_params[action]):
+                        params[k] = item_params[action][k]
+                # tmp bug fixing ends here
+
                 params.update(item_params.get('*', {}))
                 x = re.compile('^[a-z_]+' ) # cut out digits from action name
                 params.update(item_params.get(x.match(action).group(), {}))
                 self.outstanding += 1
-                log.debug('calling method with params ws=%s, id=%s, params=%s' % (self.process.workspace.pk, item.target_id, params))
+                #params = {u'source_variant_name': u'original'}
                 d = method(self.process.workspace, item.target_id, **params)
-                log.debug('past %s' % str(method))
             except Exception, e:
                 log.error('ERROR in %s: %s %s' % (str(method), type(e), str(e)))
                 self._handle_err(str(e), item, schedule, action, params)
