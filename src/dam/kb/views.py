@@ -192,7 +192,8 @@ def class_(request, ws_id, class_id):
     DELETE: delete and existing class from the knowledge base.
     '''
     return _dispatch(request, {'GET'  : class_get,
-                               'POST' : class_post},
+                               'POST' : class_post,
+                               'DELETE' : class_delete},
                      {'ws_id' : int(ws_id),
                       'class_id' : class_id})
 
@@ -262,6 +263,31 @@ def class_post(request, ws_id, class_id):
     ses.add(cls)
     ses.commit()
 
+    return HttpResponse('ok')
+
+
+def class_delete(request, ws_id, class_id):
+    ses = _kb_session()
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        cls = ses.class_(class_id, ws=ws)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    perm = cls.workspace_permission(ws)
+    if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
+        return HttpResponseForbidden()
+
+    try:
+        ses.delete(cls)
+    except kb_exc.PendingReferences:
+        return HttpResponseBadRequest('Cannot delete class referenced from '
+                                      'other KB classes and/or objects')
+    ses.commit()
     return HttpResponse('ok')
 
 
