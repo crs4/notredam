@@ -203,6 +203,7 @@ def _run_script(pipe, user, workspace, items = None, run_again = False, dynamic_
 @login_required
 def run_script(request):
     from dam.repository.models import Item
+    logger.error('inside run_script request.POST is: %s' % request.POST)
     script_id = request.POST['script_id']
     script = Pipeline.objects.get(pk = script_id)
     dynamic_params = request.POST.get('dynamic_params', {})
