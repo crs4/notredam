@@ -141,7 +141,7 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
 	        	}]);
         		if (textField_id == 'id_target_class'){
             		if (Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode && Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.leaf == false){
-            			Ext.getCmp('id_target_class').store.add(new Attribute({name: Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id}));
+            			Ext.getCmp('id_target_class').setValue(Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id);
             			win_select_class_target.close();
             		}else{
             			Ext.Msg.alert('Status', 'Select an class.');
@@ -194,7 +194,7 @@ function check_add_button_add_option(){
 	console.log('check_add_button_add_option');
 	console.log(Ext.getCmp('id_record_value').getStore().getCount());
 	console.log(Ext.getCmp('id_record_value').store.getCount());
-	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false & Ext.getCmp('id_record_value').getStore().getCount() > 0){
+	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false && Ext.getCmp('id_record_value').getStore().getCount() > 0){
 		console.log('if');
 		Ext.getCmp('id_add_attributes_class').disable();
 	}else{
@@ -434,43 +434,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			
 			target_class.disable();
 			attribute_detail_panel.add(record_value);			
-				/*				app= new Array();
-				for(i=0; i<choices_value.length;i++){
-					app1= new Array();
-					console.log('dentro');
-					console.log(choices_value[i]);
-					app1.push(choices_value[i]);
-					app.push(app1);
-				}
-				//select item in grid
-				var st_choices_value = new Ext.data.ArrayStore({
-			        fields: [
-			           {name: 'name'},
-			        ]
-			    });
-			}
-			st_choices_value.loadData(app);
-			
-			var record_value = new Ext.form.TextArea({
-				name: 'Insert value',
-				id  : 'id_record_value',
-				fieldLabel: 'Insert value',
-		        allowBlank:true,
-		        editable:false,
-		        width:130,
-		        handleMouseEvents: true,
-		        listeners: {'render': function(cmp) { 
-		            cmp.getEl().on('dblclick', function( event, el ) {
-		            	view_tree_vocabulary_to_obj_ref('id_record_value', Ext.getCmp('id_multivalued_chekbox').getValue());
-		            });            
-		          }
-				}
-			});
-			target_class.disable();
-			attribute_detail_panel.add(record_value);
-			if (data.value){
-				record_value.setValue(data.value);
-			}*/
 		}
 	}else if(value == 'bool'){
 		if (data){
@@ -953,10 +916,8 @@ function load_detail_class(class_data, id_class, add_class){
 		}
 		var method_request='PUT';
 	}
-	
-	
 
-    var attributes_grid = new Ext.grid.GridPanel({
+	var attributes_grid = new Ext.grid.GridPanel({
     	id: 'attribute_grid_id',
         store: store_attributes_grid,
         sm: sm_attributes_grid,
@@ -1149,7 +1110,7 @@ function load_detail_class(class_data, id_class, add_class){
             }
         }]
     });
-	if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+	if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 		details_panel_class.disable();
 	}
 
@@ -1356,7 +1317,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
             }
         }]
     });
-	if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+	if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 		details_panel_obj.disable();
 	}
 
@@ -1499,7 +1460,8 @@ function open_knowledgeBase(){
 					console.log(ws_permissions_store.find('name', 'edit_vocabulary'));
 					console.log(ws_permissions_store.find('name', 'admin'));
 		            var c = node.getOwnerTree().contextMenu;
-					if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+					console.log(node);
+					if (Ext.getCmp('obj_reference_tree').getSelectionModel().isSelected() == true || (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0)){
 						c.find('text',gettext('Add'))[0].disable();
 						c.find('text',gettext('Delete'))[0].disable();
 					}else{
@@ -1508,6 +1470,7 @@ function open_knowledgeBase(){
 						}else{
 							c.find('text',gettext('Add'))[0].enable();
 						}
+						c.find('text',gettext('Delete'))[0].enable();
 					}
 		            c.contextNode = node;
 		            c.showAt(e.getXY());
