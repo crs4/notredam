@@ -1150,8 +1150,10 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                         	params:ajax_params,
                         	success: function(){
                         		Ext.Msg.alert('','Script started successfully.', function(){
+                                              if (Ext.getCmp('dynamic_input_window')) {
 									Ext.getCmp('dynamic_input_window').close();
-								});
+                                                     };
+					});
                         		var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
                         		var view = media_tabs.getComponent(0);
                         		view.getStore().reload();
