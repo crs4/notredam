@@ -657,19 +657,18 @@ def _init_base_classes(o):
             '_parent_id' : schema.class_t.c.parent,
             '_parent_root' : schema.class_t.c.parent_root,
             '_is_root' : schema.class_t.c.is_root,
-            'superclass' : relationship(KBClass, backref='subclasses',
-                                        primaryjoin=(and_((schema.class_t.c.parent
-                                                           ==schema.class_t.c.id),
-                                                          (schema.class_t.c.parent_root
-                                                           ==schema.class_t.c.root))),
-                                        remote_side=[schema.class_t.c.id,
-                                                     schema.class_t.c.root],
-                                        post_update=True),
+            'superclass' : relationship(KBClass,
+                                        backref=backref('subclasses',
+                                                        cascade='all, delete-orphan'),
+                                        primaryjoin=(schema.class_t.c.parent
+                                                     ==schema.class_t.c.id),
+                                        remote_side=[schema.class_t.c.id],
+                                        viewonly=True),
             'root' : relationship(KBRootClass,
                                   primaryjoin=(schema.class_t.c.root
                                                ==schema.class_t.c.id),
                                   remote_side=[schema.class_t.c.id],
-                                  post_update=True),
+                                  viewonly=True),
             'attributes' : relationship(o._attributes.Attribute,
                                         back_populates='class',
                                         cascade='all, delete-orphan')
