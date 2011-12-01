@@ -807,8 +807,7 @@ def _init_base_attributes(o):
             '_class_id' : schema.class_attribute.c['class'],
             '_class_root_id' : schema.class_attribute.c.class_root,
             'class' : relationship(classes.KBClass,
-                                    back_populates='attributes',
-                                    cascade='all'),
+                                   back_populates='attributes'),
             '_multivalue_table' : schema.class_attribute.c.multivalue_table
             })
 
@@ -866,7 +865,6 @@ def _init_base_attributes(o):
            properties={
             '__class_id' : schema.class_attribute_objref.c['class'],
             '__class_root_id' : schema.class_attribute_objref.c.class_root,
-            'target' : relationship(classes.KBClass, backref='references',
-                                    cascade='all')
+            'target' : relationship(classes.KBClass, backref='references')
             })
 
