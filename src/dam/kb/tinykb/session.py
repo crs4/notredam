@@ -196,8 +196,6 @@ class Session(object):
 
                 if obj_refs_cnt > 0:
                     raise kb_exc.PendingReferences('Object is referenced')
-            
-            self.session.delete(obj_or_cls)
         elif isinstance(obj_or_cls, self.orm.KBClass):
             # Check whether the class has instances
             pyclass = obj_or_cls.python_class
@@ -226,6 +224,9 @@ class Session(object):
         else:
             raise TypeError('expected KB object or class, got "%s" (type: %s)'
                             % (obj_or_cls, type(obj_or_cls)))
+
+        # Finally, perform the actual KB class/object deletion
+        self.session.delete(obj_or_cls)
 
     def expunge(self, obj):
         '''
