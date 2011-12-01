@@ -1103,6 +1103,7 @@ var open_dynamic_params_window = function(dynamic_params, _run_script){
 	
 };
 
+
 var scripts_jsonstore = new Ext.data.JsonStore({
 	url: '/get_scripts/',
 	root: 'scripts',
@@ -1136,6 +1137,11 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                             items: items,
                             script_id: record.data.id
                         };    
+                        console.log('record data id ' + record.data.id);
+                        console.log('record data name ' + record.data.name);
+                        console.log('record data params ' + record.data.params);
+                        console.log('lista di items ' + items);
+
                         if (dynamic_params)
                             ajax_params.dynamic_params = Ext.encode(dynamic_params);
                         
@@ -1144,8 +1150,10 @@ var scripts_jsonstore = new Ext.data.JsonStore({
                         	params:ajax_params,
                         	success: function(){
                         		Ext.Msg.alert('','Script started successfully.', function(){
+                                              if (Ext.getCmp('dynamic_input_window')) {
 									Ext.getCmp('dynamic_input_window').close();
-								});
+                                                     };
+					});
                         		var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
                         		var view = media_tabs.getComponent(0);
                         		view.getStore().reload();

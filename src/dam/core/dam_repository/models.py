@@ -98,7 +98,7 @@ class AbstractItem(models.Model):
     uploader = models.ForeignKey(User, related_name='uploaded_items', null=True, blank=True)
     type =  models.ForeignKey(Type)  # used to create new components when the type is not specified
     creation_time = models.DateTimeField(auto_now_add = True)
-    #update_time = models.DateTimeField(auto_now = True)
+    update_time = models.DateTimeField(auto_now = True)
     objects = ItemManager()
 
     class Meta:
