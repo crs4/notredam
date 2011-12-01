@@ -632,21 +632,21 @@ def _init_base_classes(o):
 
     mapper(ItemVisibility, schema.item_visibility,
            properties={
-            'item' : relationship(Item, backref='visibility', cascade='all')
+            'item' : relationship(Item, backref='visibility')
             })
 
     mapper(Workspace, schema.workspace,
            properties={
             '_creator_id' : schema.workspace.c.creator_id,
-            'creator' : relationship(User, backref='workspaces', cascade='all'),
+            'creator' : relationship(User, backref='workspaces'),
             'visible_items' : relationship(ItemVisibility, backref='workspace',
-                                           cascade='all'),
+                                           cascade='all, delete-orphan'),
             'visible_catalog_trees' : relationship(CatalogTreeVisibility,
                                                    backref='workspace',
-                                                   cascade='all'),
+                                                   cascade='all, delete-orphan'),
             'visible_root_classes' : relationship(KBClassVisibility,
                                                   backref='workspace',
-                                                  cascade='all')
+                                                  cascade='all, delete-orphan')
             })
 
     mapper(KBClass, schema.class_t,
@@ -672,7 +672,7 @@ def _init_base_classes(o):
                                   post_update=True),
             'attributes' : relationship(o._attributes.Attribute,
                                         back_populates='class',
-                                        cascade='save-update')
+                                        cascade='all, delete-orphan')
             })
 
     mapper(KBRootClass, inherits=KBClass,
@@ -680,7 +680,7 @@ def _init_base_classes(o):
            properties={
             'visibility' : relationship(KBClassVisibility,
                                         back_populates='class',
-                                        cascade='all')
+                                        cascade='all, delete-orphan')
             })
 
     mapper(KBClassVisibility, schema.class_visibility,
@@ -720,10 +720,8 @@ def _init_base_classes(o):
             'parent' : relationship(CatalogEntry, backref='children',
                                       primaryjoin=(schema.catalog_entry.c.parent
                                                    ==schema.catalog_entry.c.id),
-                                      remote_side=[schema.catalog_entry.c.id],
-                                      cascade='all'),
-            'object' : relationship(KBObject, backref='catalog_entries',
-                                    cascade='all')
+                                      remote_side=[schema.catalog_entry.c.id]),
+            'object' : relationship(KBObject, backref='catalog_entries')
             })
 
     mapper(RootCatalogEntry, inherits=CatalogEntry,
@@ -736,10 +734,9 @@ def _init_base_classes(o):
             '_catalog_entry_root' : schema.catalog_tree_visibility.c.catalog_entry_root,
             '_catalog_entry_object_class_root' : schema.catalog_tree_visibility.c.catalog_entry_object_class_root,
             'catalog_entry' : relationship(RootCatalogEntry,
-                                           backref='visibility', cascade='all'),
+                                           backref='visibility'),
             'root_class_visibility' : relationship(KBClassVisibility,
-                                                   backref='catalog_tree_visibilities',
-                                                   cascade='all')
+                                                   backref='catalog_tree_visibilities')
             })
 
 
