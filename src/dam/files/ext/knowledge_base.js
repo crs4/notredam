@@ -105,10 +105,14 @@ function show_win_single_attribute(params, title){
 		    autoScroll:true
 		},
         width	: 300,
-        height	: 150,
+        height	: 120,
         title	: title,
         modal	: true,
-      	items	:[params],
+      	items	:[{
+	  				xtype: 'spacer',
+		  			height: 5
+    			}
+    			,params],
         buttons	:[{
             text: 'Done',
             handler: function() {
@@ -465,7 +469,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			id  : 'id_max_length',
 			fieldLabel: 'Max length',
 			value: max_length_value,
-	        allowBlank:true
+	        allowBlank:false
 		});
 		attribute_detail_panel.add(max_length);
 		if (insert_value){
@@ -843,7 +847,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		    autoScroll:true
 		},
         width	: 500,
-        height	: 500,
+        height	: 450,
         title	: title,
         modal	: true,
       	items	:[attribute_detail_panel]
@@ -1064,7 +1068,6 @@ function load_detail_class(class_data, id_class, add_class){
         		params = {};
         		params['name'] = name_textField.getValue();
         		params['notes'] = notes_textField.getValue();
-
         		if (id_textField.getValue()){
         			params['id'] = id_textField.getValue();
         		}
@@ -1095,19 +1098,19 @@ function load_detail_class(class_data, id_class, add_class){
         				'type': attribute.type,
         				'multivalued': attribute.multivalued,
         				'maybe_empty': attribute.maybe_empty,
-        				'default_value': attribute.default_value,
+        				'default_value': (isEmpty(attribute.default_value)) ? null : attribute.default_value,
         				'order': attribute.order,
         				'notes': attribute.notes
         			};
         			if (attribute.type == 'int' || attribute.type == 'data'){
-        				params['attributes'][attribute.id]['min'] = attribute.min;
-        				params['attributes'][attribute.id]['max'] = attribute.max;
+        				params['attributes'][attribute.id]['min'] = (isEmpty(attribute.min)) ? null : attribute.min;
+        				params['attributes'][attribute.id]['max'] = (isEmpty(attribute.max)) ? null : attribute.max;
         			}else if (attribute.type == 'string' || attribute.type == 'uri'){
-        				params['attributes'][attribute.id]['length'] = attribute.length;
+        				params['attributes'][attribute.id]['length'] = (isEmpty(attribute.length)) ? null : attribute.length;
         			}else if (attribute.type == 'choice'){ 
-        				params['attributes'][attribute.id]['choices'] = attribute.choices;
+        				params['attributes'][attribute.id]['choices'] = (isEmpty(attribute.choices)) ? null : attribute.choices;
         			}else if (attribute.type == 'objref'){ 
-        				params['attributes'][attribute.id]['target_class'] = attribute.target_class;
+        				params['attributes'][attribute.id]['target_class'] = attribute.target_class; // it is mandatory
         			}
         		}
 	        	if(add_class){ 
