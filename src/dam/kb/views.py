@@ -805,11 +805,13 @@ def _std_attr_dict_fields(d):
     that, when used as **kwargs, will give a value to the keyword
     arguments common to each Attribute sub-class constructor
     '''
-    return {'name' : d['name'],
-            'maybe_empty' : d.get('maybe_empty', True),
-            'order' : d.get('order', 0),
-            'multivalued' : d.get('multivalued', False),
-            'notes' : d.get('notes')}
+    v = _kb_dict_validate_param # Just a shorthand
+    return {'name' : v(d, 'name', [unicode, str],
+                       [('length > 0', lambda x: len(x) > 0)]),
+            'maybe_empty' : v(d, 'maybe_empty', [bool], default=True),
+            'order' : v(d, 'order', [NoneType, int], default=0),
+            'multivalued' : v(d, 'maybe_empty', [bool], default=False),
+            'notes' : v(d, 'notes', [NoneType, unicode, str])}
 
 
 def _kbobject_to_dict(obj, ses):
