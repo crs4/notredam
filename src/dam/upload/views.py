@@ -479,6 +479,8 @@ def upload_item(request):
         
         if request.GET: #passing file in request.raw_post_data, other params in GET
             file_name = unquote(request.META['HTTP_X_FILE_NAME'])
+            if not isinstance(file_name, unicode):
+                file_name = unicode(file_name, 'utf-8')
             session = request.GET['session']
             check_dir_session(session)
             variant_name = request.GET['variant']

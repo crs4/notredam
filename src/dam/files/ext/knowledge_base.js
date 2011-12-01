@@ -60,7 +60,7 @@ function get_store_obj_attributes(class_id, obj_id){
 			obj_id : obj_id
 		},
 	    root: 'rows',
-	    fields:['id','name','type','multivalued','maybe_empty','default_value','order','notes', 'value', 'choices', 'target_class']
+	    fields:['id','name','type','multivalued','maybe_empty','default_value','order','notes', 'value', 'choices', 'target_class', 'min', 'max','length', 'notes']
 	});	
 }
 
@@ -136,20 +136,19 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
             handler: function() {
 	            console.log('textField_id');
 	        	console.log(textField_id);
+	        	var Attribute = Ext.data.Record.create([{
+	        		name: 'name'
+	        	}]);
         		if (textField_id == 'id_target_class'){
             		if (Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode && Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.leaf == false){
-            			Ext.getCmp(textField_id).setValue(Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id);
+            			Ext.getCmp('id_target_class').setValue(Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id);
             			win_select_class_target.close();
             		}else{
             			Ext.Msg.alert('Status', 'Select an class.');
             		}
         		}else{
             		if (Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode && Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.leaf == true){
-            			if (multivalued && Ext.getCmp(textField_id).getValue()!=""){
-            				Ext.getCmp(textField_id).setValue(Ext.getCmp(textField_id).getValue()+','+Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id);
-            			}else{
-                			Ext.getCmp(textField_id).setValue(Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id);
-            			}
+        	        	Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id}));
             			win_select_class_target.close();
             		}else{
             			Ext.Msg.alert('Status', 'Select an object.');
@@ -165,6 +164,50 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
     });
 	win_select_class_target.show();
 }
+
+function get_store_grid_insert(data_list){
+	// input list (['aaa','aaaa'])and return storage for grid (list of list ([['aaaa'],['aaaa']]) it is necessary for grid)
+	var data_objref, app1;
+	data_objref= new Array();
+	if (data_list && typeof (data_list) == "object"){
+		for(i=0; i<data_list.length;i++){
+			app1 = new Array();
+			app1.push(data_list[i]);
+			data_objref.push(app1);
+		}
+	}else if (typeof (data_list) == "string"){
+		app1 = new Array();
+		app1.push(data_list);
+		data_objref.push(app1);
+	}
+	var st_value = new Ext.data.ArrayStore({
+        fields: [
+           {name: 'name'},
+        ]
+    });
+	st_value.loadData(data_objref);
+	
+	return st_value
+}
+
+function check_add_button_add_option(){
+	console.log('check_add_button_add_option');
+	console.log(Ext.getCmp('id_record_value').getStore().getCount());
+	console.log(Ext.getCmp('id_record_value').store.getCount());
+	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false && Ext.getCmp('id_record_value').getStore().getCount() > 0){
+		console.log('if');
+		Ext.getCmp('id_add_attributes_class').disable();
+	}else{
+		console.log('else');
+		Ext.getCmp('id_add_attributes_class').enable();
+	}
+}
+
+function check_remove_button_add_option(){
+	if (Ext.getCmp('id_record_value').getStore().getCount() == 0){
+		Ext.getCmp('id_remove_attributes_class').disable();
+	}
+}
 function add_option(value, attribute_detail_panel, data, insert_value){
 	//initializing
 	attribute_detail_panel.removeAll();
@@ -176,6 +219,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	var max_length_value = null;
 	var choices_value = null;
 	var target_class_value=null;
+	var i;
 	console.log('add option');
 	
 	if (value == 'int'){
@@ -318,26 +362,76 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		});
 		attribute_detail_panel.add(target_class);
 		if (insert_value){//possono essere selezionati solo ed esclusivamente oggetti.
-			var record_value = new Ext.form.TextArea({
-				name: 'Insert value',
-				id  : 'id_record_value',
-				fieldLabel: 'Insert value',
-		        allowBlank:true,
-		        editable:false,
-		        width:130,
-		        handleMouseEvents: true,
-		        listeners: {'render': function(cmp) { 
-		            cmp.getEl().on('dblclick', function( event, el ) {
-		            	view_tree_vocabulary_to_obj_ref('id_record_value', Ext.getCmp('id_multivalued_chekbox').getValue());
-		            });            
-		          }
+			console.log(data.value);
+			var st_objref_value = get_store_grid_insert(data.value);
+			var sm_objref_value = new Ext.grid.CheckboxSelectionModel({
+				singleSelect: true,
+				listeners:{
+					rowselect: {fn:function(sm){
+						Ext.getCmp('id_remove_attributes_class').enable();
+					}},
+					rowdeselect: {fn:function(sm){
+						Ext.getCmp('id_remove_attributes_class').disable();
+					}}
 				}
 			});
+			// create the grid
+			var record_value = new Ext.grid.GridPanel({
+		        id:'id_record_value',
+		    	store: st_objref_value,
+		        sm: sm_objref_value,
+		        autoExpandColumn: 'name',
+		        defaults: {
+		            sortable: true,
+		            menuDisabled: true,
+		            width: 100
+		        },
+		        title:'Select objects references',
+		        cm: new Ext.grid.ColumnModel([
+		                                sm_objref_value,
+		                                {id:'name',header: "Value", width: 110, sortable: true, dataIndex: 'name'},
+		        ]),
+		        bbar:[{
+		            text:'Add',
+		            id: 'id_add_attributes_class',
+		            tooltip:'Add a new attribute',
+		            iconCls:'add_icon',
+		            handler: function() {
+		            	view_tree_vocabulary_to_obj_ref('id_record_value', Ext.getCmp('id_multivalued_chekbox').getValue());
+		            	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//FIXME getStore().getCount() not update in realtime
+		            		Ext.getCmp('id_add_attributes_class').disable();
+		            	}
+//		            	check_add_button_add_option();
+		        	}
+		        },'-',{
+		            text:'Remove',
+		            id: 'id_remove_attributes_class',
+		            tooltip:'Remove the selected item',
+		            iconCls:'clear_icon',
+		            disabled:true,
+		            handler: function() {
+		        		Ext.Msg.confirm('Attribute Deletion', 'Attribute deletion cannot be undone, do you want to proceed?', 
+			                function(btn){
+			                    if (btn == 'yes')
+			                        var sel=record_value.getSelectionModel().getSelected();
+			                    	record_value.store.remove(sel);
+			                    	check_remove_button_add_option();
+					            	check_add_button_add_option();
+			                }
+		        		);
+		        	}
+		        }],
+		        listeners:{
+		        	afterrender: { fn:function(){
+		        			check_add_button_add_option();
+		        			check_remove_button_add_option();
+		        		}
+		        	}
+		        },
+		        height: 150
+		    });
 			target_class.disable();
-			attribute_detail_panel.add(record_value);
-			if (data.value){
-				record_value.setValue(data.value);
-			}
+			attribute_detail_panel.add(record_value);			
 		}
 	}else if(value == 'bool'){
 		if (data){
@@ -406,23 +500,8 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		attribute_detail_panel.add(choices);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
-			// choices_value is a list.
-			// create store
-			app= new Array();
-			for (var i=0; i<choices_value.length;i++){
-				app1= new Array();
-				console.log('dentro');
-				console.log(choices_value[i]);
-				app1.push(choices_value[i]);
-				app.push(app1);
-			}
-			//select item in grid
-			var st_choices_value = new Ext.data.ArrayStore({
-		        fields: [
-		           {name: 'name'},
-		        ]
-		    });
-			st_choices_value.loadData(app);
+			// choices_value is a list, creating store
+			st_choices_value = get_store_grid_insert(choices_value);
 			
 			if(Ext.getCmp('id_multivalued_chekbox').getValue()){
 				var sm_choices_value = new Ext.grid.CheckboxSelectionModel({});
@@ -668,22 +747,26 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		        		}));
 	        		}
         		}else{ // obj scope
-        			// FIXME case choice and multivalued is different
-        			console.log('insert value---');
         			if(attributes_grid.getSelectionModel().getSelected().data.type == 'choice'){//case where choice is multivalued
         				var txt = "";
         				for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
         					console.log(Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name);
-        					txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name+',';
+        					txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name + ',';
+        				}
+        				txt = txt.substring(0,txt.length-1);
+        				attributes_grid.getSelectionModel().getSelected().set('value',txt);
+        			}else if(attributes_grid.getSelectionModel().getSelected().data.type == 'objref' && Ext.getCmp('id_multivalued_chekbox').getValue() == true){//case where objref and multivalued
+        				var txt = new Array();
+        				for(i=0; i < Ext.getCmp('id_record_value').getStore().getCount(); i++){
+        					txt.push(Ext.getCmp('id_record_value').getStore().getAt(i).data.name);
         				}
         				attributes_grid.getSelectionModel().getSelected().set('value',txt);
-        			}else if(!isEmpty(Ext.getCmp('id_record_value').getValue())){
-    					console.log(Ext.getCmp('id_record_value').getValue());
+        			}else if (attributes_grid.getSelectionModel().getSelected().data.type == 'objref'  && Ext.getCmp('id_multivalued_chekbox').getValue() == false){//objref multivalued false
+    					if (Ext.getCmp('id_record_value').getStore().getCount() == 1){attributes_grid.getSelectionModel().getSelected().set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);}
+    				}else if(!isEmpty(Ext.getCmp('id_record_value').getValue())){
         				if (attributes_grid.getSelectionModel().getSelected().data.type == 'date'){
-        					console.log('data');
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue().format('Y-m-d'));
         				}else{
-        					console.log('else');
         					attributes_grid.getSelectionModel().getSelected().set('value',Ext.getCmp('id_record_value').getValue());
         				}
         			}
@@ -833,10 +916,8 @@ function load_detail_class(class_data, id_class, add_class){
 		}
 		var method_request='PUT';
 	}
-	
-	
 
-    var attributes_grid = new Ext.grid.GridPanel({
+	var attributes_grid = new Ext.grid.GridPanel({
     	id: 'attribute_grid_id',
         store: store_attributes_grid,
         sm: sm_attributes_grid,
@@ -1029,7 +1110,7 @@ function load_detail_class(class_data, id_class, add_class){
             }
         }]
     });
-	if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+	if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 		details_panel_class.disable();
 	}
 
@@ -1114,7 +1195,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     });
 	fields.push(notes_textField);
     //attributes
-    var attributes_grid = new Ext.grid.EditorGridPanel({
+    var attributes_grid = new Ext.grid.GridPanel({
         id:'attribute_grid_obj_id',
     	store: store_attributes_grid_obj,
         title:'Attributes',
@@ -1129,7 +1210,12 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
                                 {id:'default_value',header: "Default", width: 70, sortable: true, dataIndex: 'default_value'},
                                 {id:'choices',header: "Choices", width: 50, sortable: true, dataIndex: 'choices'},
                                 {id:'target_class',header: "Target class", width: 50, sortable: true, dataIndex: 'target_class'},
-                                {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'}
+                                {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'},
+                                {id:'min',header: "Min", width: 60, sortable: false, dataIndex: 'min'},
+                                {id:'max',header: "Max", width: 60, sortable: false, dataIndex: 'max'},
+                                {id:'length',header: "Length", width: 60, sortable: false, dataIndex: 'length'},
+                                {id:'notes',header: "Notes", width: 150, sortable: false, dataIndex: 'notes'}
+                                
         ]),
         listeners: {
             'rowdblclick': function(grid, rowIndex, e){
@@ -1179,18 +1265,28 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         			console.log('ATTRIBUTE');
         			console.log(attribute);
         			if (attribute.multivalued == true){//list of type
-        				console.log(attribute);
-        				params['attributes'][attribute.id] = [];
-	        			choices = attribute.value.split(',');
-	        			if (choices[choices.length-1] == ""){
-	        				delete(choices[choices.length-1]);
-	        				choices.splice(choices.length-1, 1);
-	        			}
-        				params['attributes'][attribute.id] = choices;
+        				if (attribute.type == 'choice'){
+        					params['attributes'][attribute.id] = [];
+		        			choices = attribute.value.split(',');
+		        			if (choices[choices.length-1] == ""){
+		        				delete(choices[choices.length-1]);
+		        				choices.splice(choices.length-1, 1);
+		        			}
+	        				params['attributes'][attribute.id] = choices;
+        				}else if (attribute.type == 'objref'){
+        					params['attributes'][attribute.id] = attribute.value;
+        				}else{// string like this "test, tests, yts" it is necessary delete space and after create list.
+        					var app;
+        					app = attribute.value.replace(" ", "");
+        					app = app.split(',');
+        					params['attributes'][attribute.id] = app;
+        				}
         			}else{//only one value
-        				params['attributes'][attribute.id] = attribute.value;
+            				params['attributes'][attribute.id] = attribute.value;
+            			}
         			}
-        		}
+        		console.log('PARAMS');
+        		console.log(params);
         		if (add_obj){
 	        		Ext.Ajax.request({
 	        			url:url_submit,
@@ -1235,7 +1331,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
             }
         }]
     });
-	if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+	if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 		details_panel_obj.disable();
 	}
 
@@ -1294,7 +1390,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		    			                    success: function(response){
 		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
 		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-		    			                    	Ext.getCmp('details_panel_class').removeAll();
+		    			                    	Ext.getCmp('details_panel').removeAll();
 		    			                    },
 		    			                    failure:function(response){
 		    			                    	Ext.Msg.alert('Failure', response.responseText);
@@ -1314,7 +1410,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		    			                    success: function(response){
 		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
 		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-		    			                    	Ext.getCmp('details_panel_class').removeAll();
+		    			                    	Ext.getCmp('details_panel').removeAll();
 		    			                    },
 		    			                    failure:function(response){
 		    			                    	Ext.Msg.alert('Failure', response.responseText);
@@ -1378,7 +1474,8 @@ function open_knowledgeBase(){
 					console.log(ws_permissions_store.find('name', 'edit_vocabulary'));
 					console.log(ws_permissions_store.find('name', 'admin'));
 		            var c = node.getOwnerTree().contextMenu;
-					if (ws_permissions_store.find('name', 'admin') < 0 & ws_permissions_store.find('name', 'edit_vocabulary') < 0){
+					console.log(node);
+					if (Ext.getCmp('obj_reference_tree').getSelectionModel().isSelected() == true || (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0)){
 						c.find('text',gettext('Add'))[0].disable();
 						c.find('text',gettext('Delete'))[0].disable();
 					}else{
@@ -1387,6 +1484,7 @@ function open_knowledgeBase(){
 						}else{
 							c.find('text',gettext('Add'))[0].enable();
 						}
+						c.find('text',gettext('Delete'))[0].enable();
 					}
 		            c.contextNode = node;
 		            c.showAt(e.getXY());

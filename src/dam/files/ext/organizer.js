@@ -246,14 +246,13 @@ function showFullscreen(view, index, node, e){
 		img_height = tmp[1];
 		img.width = img_width; 
 		img.height= img_height;
-		
 		var win = new Ext.Window({
 			modal: true,
 			width:img_width + 15 ,
 			height:img_height + 30,
 			resizable: false,
 			constrain: true,
-			title: 'fullscreen',
+			title: 'Fullscreen - ' + data.fullscreen_caption,
 			html: '<div id="fullscreen"><img width="'+img_width +'" height="'+img_height+'" src="' +  data.url_fullscreen+'"></img></div>',
 
 			listeners:{
@@ -519,10 +518,25 @@ var showDetails = function(view){
         if (admin | remove_item){
             Ext.getCmp('mvto').enable();
             Ext.getCmp('remove_from_ws').enable();
+            var mytab = Ext.getCmp('media_tabs').getActiveTab();
+            var myview = mytab.getComponent(0);
+            var items_selected = myview.getSelectedRecords();
+            for(var j=0; j<items_selected.length; j ++){
+               if (items_selected[j].data.type == 'image') {
+                   Ext.getCmp('90').enable();
+                   Ext.getCmp('-90').enable();
+                   Ext.getCmp('180').enable();
+                   break;
+               }
+            }
+            
         
         }
         else{
             Ext.getCmp('mvto').disable();
+            Ext.getCmp('90').disable();
+            Ext.getCmp('-90').disable();
+            Ext.getCmp('180').disable();
             Ext.getCmp('remove_from_ws').disable();
         }
         
@@ -587,6 +601,9 @@ var showDetails = function(view){
         Ext.getCmp('object_menu').menu.items.get('remove_from_ws').disable();
         Ext.getCmp('object_menu').menu.items.get('set_state_to').disable();
         Ext.getCmp('sync_xmp').disable();
+        Ext.getCmp('edit_menu').menu.items.get('90').disable();
+        Ext.getCmp('edit_menu').menu.items.get('-90').disable();
+        Ext.getCmp('edit_menu').menu.items.get('180').disable();
         
         
         Ext.getCmp('runscript').disable();
@@ -637,7 +654,8 @@ var createStore = function(config) {
                 {name: 'inprogress', mapping: 'status', convert: function(status){
                 	return status == 'in_progress'
                 }},
-                'state'
+                'state',
+                'fullscreen_caption'
             ],
         listeners:{
     		load: function(){start_audio_player(this.panel_id);}
@@ -984,7 +1002,6 @@ function createMediaPanel(config, autoLoad) {
             var store = Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore();
             store.baseParams.order_by = this.query;
             store.baseParams.order_mode = this.order_mode;
-            console.log('store.baseParams.order_mode ' + store.baseParams.order_mode);
             store.load();
                         
             
@@ -1089,8 +1106,6 @@ function createMediaPanel(config, autoLoad) {
 	    	close: function(){
 	    		
 	    		var media_tabs = Ext.getCmp('media_tabs');
-	    		console.log('media_tabs.getActiveTab().title ' + media_tabs.getActiveTab().title);
-	    		console.log('closeee ' + media_tabs.items.items.length);
 	    		
 	    		if (media_tabs.items.items.length == 2){
 	    			
@@ -1449,7 +1464,6 @@ Ext.onReady(function(){
                 params: params,
                 
                 success: function(data){    
-                	console.log(data);
 //                    set_status_bar_busy();
                     data = Ext.decode(data.responseText);
                     if (data.scripts){
@@ -1473,7 +1487,6 @@ Ext.onReady(function(){
                             	var i = info.pk;
                                 if (store.findExact('pk', i) != -1) {
                                     var item_data = store.getAt(store.findExact('pk', i));
-                                    console.log('i ' + i);
                                     var previous_thumb_ready = item_data.data.thumb;
                                     var thumb_ready = info['thumb'];
                                     for (var key in info) {
