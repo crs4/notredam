@@ -824,8 +824,8 @@ var treeAction = function(tree_action){
     	console.log(tree_action.text);
     	var fields = [];
     	var node_id, type;
-        var height_form= 370;
-        var height_win = 400;
+        var height_form= 95;
+        var height_win = 500;
         var width_win = 400;
         
     	node_id = sel_node.id;
@@ -848,13 +848,6 @@ var treeAction = function(tree_action){
             cls:'node_label_obj_cls',
             readOnly: true
         });
-
-    	var label_bis = new Ext.form.Label({
-            name: 'label',
-            id:'node_label_obj_bis',
-            text:'Select an object:',
-            allowBlank:false
-        });
         var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
             text: gettext('All items'),
             id:'root_obj_tree',
@@ -864,11 +857,7 @@ var treeAction = function(tree_action){
             editable: false,
             type:'object',
             iconCls:'category',
-/*            text		: 'My Root Node',
-            draggable	: false,
-            id		: '0'                  // this IS the id of the startnode
-*/        });
-
+        });
         // SET the root node.
         var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
             text: gettext('All items'),
@@ -877,12 +866,10 @@ var treeAction = function(tree_action){
             allowDrag:false,
             allowDrop:true,
             editable: false,
+    		containerScroll: true,
             type:'object',
             iconCls:'category',
-/*            text		: 'My Root Node',
-            draggable	: false,
-            id		: '0'                  // this IS the id of the startnode
-*/        });
+        });
         var tree_loader_obj = new Ext.tree.TreeLoader({
             dataUrl:'/kb/get_nodes_real_obj/',
             draggable: false
@@ -890,25 +877,17 @@ var treeAction = function(tree_action){
 
 	  var tree_obj_reference = new Ext.tree.TreePanel({
 	            id:'obj_reference_tree',
-//	            animate:true,
+	            region: 'center',
 	            containerScroll: true,
 	            height: 290,
 	            layout: 'fit',
-	            title:'Vocabulary',
+	            title:'Vocabulary. Select an object: ',
 	            autoScroll:true,
 	            loader: tree_loader_obj,
 	            rootVisible: false,
-/*	            listeners:{
-			         	"afterrender": {
-		  				fn : setNode,
-		  				scope: this
-			      		}
-		  
-	  			},
-*/	            selModel: new Ext.tree.DefaultSelectionModel({
+	            selModel: new Ext.tree.DefaultSelectionModel({
 	                listeners:{
 	                    "selectionchange": {fn:function(sel, node){
-	            								//console.log(sel);console.log(nodes);
 	            								if (node.leaf == true){
 	            									Ext.getCmp('node_label_obj').setValue(node.text);
 	            								}
@@ -931,23 +910,25 @@ var treeAction = function(tree_action){
 */			  	
 	  	fields.push(label);
         fields.push(add_option_droppable);
-    	fields.push(label_bis);
-	  	fields.push(tree_obj_reference);
-	  	console.log('URL: '+ url);
 	  	var tree_form_obj = new Ext.FormPanel({
             id:'tree_form_obj',
+            region: 'north',
             labelWidth: 110, // label settings here cascade unless overridden
             frame:true,
             height: height_form,
             bodyStyle:'padding:5px 5px 0',              
             url: url,
             baseParams:{node_id:node_id},
-            items: fields,
+            items: [fields],
             buttons: [{
                 text: gettext('Save'),
                 type: 'submit',
                 handler: function(){
-            		submit_tree_form_obj();
+	            	if (Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode().leaf == true){
+	            		submit_tree_form_obj();
+	            	}else{
+	            		Ext.Msg.alert('Status', 'Select an object.');
+	            	}
                 }
             },{
                 text: gettext('Cancel'),
@@ -964,13 +945,13 @@ var treeAction = function(tree_action){
         win = new Ext.Window({
             title: 'Add Object Reference',
             constrain: true,
-            layot: 'fit',
+            layout: 'border',
             width : width_win,
             height: height_win,
             modal: true,
             resizable: false,
             items:[ 
-            tree_form_obj 
+            tree_form_obj,tree_obj_reference 
             ],
             listeners:{
                 afterrender: function() {
