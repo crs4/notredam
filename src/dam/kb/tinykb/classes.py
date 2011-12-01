@@ -265,6 +265,21 @@ def _init_base_classes(o):
 
         sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
+        def __del__(self):
+            # When a KBClass object is garbage collected, check
+            # whether the DB instance was deleted, and in this case
+            # also drop the related tables (by calling
+            # self.unrealize()).
+            #
+            # It should be safe to invoke self.unrealize() here: if
+            # this destructor is called, then this Python object is
+            # not (anymore) involved in a transaction, and thus the
+            # underlying tables should not be locked.
+
+            # FIXME: does SQLAlchemy allow to check whether we are deleted?
+            if hasattr(self, '__kb_deleted__'):
+                self.unrealize()
+        
         def is_root(self):
             return (self.id == self._root_id)
 
@@ -281,6 +296,20 @@ def _init_base_classes(o):
                 prev_c = c
                 c = c.superclass
             return ancestors
+
+        def descendants(self):
+            '''
+            Retrieve a list of all the descendant
+            :py:class:`KBClass`'es, starting from the immediate
+            children (if any)
+
+            :rtype: list of :py:class:`KBClass` instances
+            :returns: the descendant KB classes
+            '''
+            children = o.session.session.query(KBClass).filter(
+                and_(KBClass.id != self.id,
+                     KBClass.superclass == self)).all()
+            return children + [d for c in children for d in c.descendants()]
 
         def is_bound(self):
             return self._sqlalchemy_table is not None
@@ -335,6 +364,29 @@ def _init_base_classes(o):
 
             self.additional_sqlalchemy_tables = schema.create_attr_tables(
                 add_tables, engine)
+
+        def unrealize(self):
+            '''
+            Remove the SQL tables created with :py:meth:realize.
+
+            .. warning:: Maybe you should not call this method
+             directly (it is automatically invoked when a KB class is
+             deleted from the session, and the related Python object
+             is garbage collected).  It may cause a deadlock if the
+             tables being dropped are being used in the current
+             transaction.
+            '''
+            if not self.is_bound():
+                self.bind_to_table()
+
+            # Drop all the tables related to our attributes (if any)...
+            for t in self.additional_sqlalchemy_tables:
+                schema.metadata.remove(t)
+                t.drop(engine)
+
+            # ...and finally drop the main KB class table
+            schema.metadata.remove(self._sqlalchemy_table)
+            self._sqlalchemy_table.drop(engine)
 
         def bind_to_table(self):
             parent_table = self._get_parent_table()
@@ -618,21 +670,21 @@ def _init_base_classes(o):
 
     mapper(ItemVisibility, schema.item_visibility,
            properties={
-            'item' : relationship(Item, backref='visibility', cascade='all')
+            'item' : relationship(Item, backref='visibility')
             })
 
     mapper(Workspace, schema.workspace,
            properties={
             '_creator_id' : schema.workspace.c.creator_id,
-            'creator' : relationship(User, backref='workspaces', cascade='all'),
+            'creator' : relationship(User, backref='workspaces'),
             'visible_items' : relationship(ItemVisibility, backref='workspace',
-                                           cascade='all'),
+                                           cascade='all, delete-orphan'),
             'visible_catalog_trees' : relationship(CatalogTreeVisibility,
                                                    backref='workspace',
-                                                   cascade='all'),
+                                                   cascade='all, delete-orphan'),
             'visible_root_classes' : relationship(KBClassVisibility,
                                                   backref='workspace',
-                                                  cascade='all')
+                                                  cascade='all, delete-orphan')
             })
 
     mapper(KBClass, schema.class_t,
@@ -643,22 +695,21 @@ def _init_base_classes(o):
             '_parent_id' : schema.class_t.c.parent,
             '_parent_root' : schema.class_t.c.parent_root,
             '_is_root' : schema.class_t.c.is_root,
-            'superclass' : relationship(KBClass, backref='subclasses',
-                                        primaryjoin=(and_((schema.class_t.c.parent
-                                                           ==schema.class_t.c.id),
-                                                          (schema.class_t.c.parent_root
-                                                           ==schema.class_t.c.root))),
-                                        remote_side=[schema.class_t.c.id,
-                                                     schema.class_t.c.root],
-                                        post_update=True),
+            'superclass' : relationship(KBClass,
+                                        backref=backref('subclasses',
+                                                        cascade='all, delete-orphan'),
+                                        primaryjoin=(schema.class_t.c.parent
+                                                     ==schema.class_t.c.id),
+                                        remote_side=[schema.class_t.c.id],
+                                        viewonly=True),
             'root' : relationship(KBRootClass,
                                   primaryjoin=(schema.class_t.c.root
                                                ==schema.class_t.c.id),
                                   remote_side=[schema.class_t.c.id],
-                                  post_update=True),
+                                  viewonly=True),
             'attributes' : relationship(o._attributes.Attribute,
                                         back_populates='class',
-                                        cascade='save-update')
+                                        cascade='all, delete-orphan')
             })
 
     mapper(KBRootClass, inherits=KBClass,
@@ -666,7 +717,7 @@ def _init_base_classes(o):
            properties={
             'visibility' : relationship(KBClassVisibility,
                                         back_populates='class',
-                                        cascade='all')
+                                        cascade='all, delete-orphan')
             })
 
     mapper(KBClassVisibility, schema.class_visibility,
@@ -706,10 +757,8 @@ def _init_base_classes(o):
             'parent' : relationship(CatalogEntry, backref='children',
                                       primaryjoin=(schema.catalog_entry.c.parent
                                                    ==schema.catalog_entry.c.id),
-                                      remote_side=[schema.catalog_entry.c.id],
-                                      cascade='all'),
-            'object' : relationship(KBObject, backref='catalog_entries',
-                                    cascade='all')
+                                      remote_side=[schema.catalog_entry.c.id]),
+            'object' : relationship(KBObject, backref='catalog_entries')
             })
 
     mapper(RootCatalogEntry, inherits=CatalogEntry,
@@ -722,10 +771,9 @@ def _init_base_classes(o):
             '_catalog_entry_root' : schema.catalog_tree_visibility.c.catalog_entry_root,
             '_catalog_entry_object_class_root' : schema.catalog_tree_visibility.c.catalog_entry_object_class_root,
             'catalog_entry' : relationship(RootCatalogEntry,
-                                           backref='visibility', cascade='all'),
+                                           backref='visibility'),
             'root_class_visibility' : relationship(KBClassVisibility,
-                                                   backref='catalog_tree_visibilities',
-                                                   cascade='all')
+                                                   backref='catalog_tree_visibilities')
             })
 
 
@@ -818,3 +866,9 @@ def _init_base_classes(o):
 
     event.listen(KBClass.attributes, 'remove',
                  kbclass_remove_attribute, propagate=True, retval=False)
+
+    # Take note when a KB class is deleted
+    # FIXME: maybe there is some other way (see KBClass.__del__() comments)
+    def kbclass_after_delete(_mapper, _connection, target):
+        target.__kb_deleted__ = True
+    event.listen(KBClass, 'after_delete', kbclass_after_delete, propagate=True)

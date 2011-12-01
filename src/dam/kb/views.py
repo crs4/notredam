@@ -97,6 +97,10 @@ def class_index_put(request, ws_id):
             return HttpResponseBadRequest('Unknown superclass id: "%s"'
                                           % (superclass_id, ))
 
+        perm = superclass.workspace_permission(ws)
+        if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
+            return HttpResponseForbidden()
+
     explicit_id = cls_dict.get('id', None)
     if explicit_id is not None:
         # Check for uniqueness
@@ -188,7 +192,8 @@ def class_(request, ws_id, class_id):
     DELETE: delete and existing class from the knowledge base.
     '''
     return _dispatch(request, {'GET'  : class_get,
-                               'POST' : class_post},
+                               'POST' : class_post,
+                               'DELETE' : class_delete},
                      {'ws_id' : int(ws_id),
                       'class_id' : class_id})
 
@@ -261,6 +266,35 @@ def class_post(request, ws_id, class_id):
     return HttpResponse('ok')
 
 
+def class_delete(request, ws_id, class_id):
+    ses = _kb_session()
+    try:
+        ws = ses.workspace(ws_id)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+
+    try:
+        cls = ses.class_(class_id, ws=ws)
+    except kb_exc.NotFound:
+        return HttpResponseNotFound()
+
+    perm = cls.workspace_permission(ws)
+    if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
+        return HttpResponseForbidden()
+
+    try:
+        ses.delete(cls)
+    except kb_exc.PendingReferences:
+        return HttpResponseBadRequest('Cannot delete class referenced from '
+                                      'other KB classes and/or objects')
+    ses.commit()
+
+    # FIXME: should happen automatically, but seems that cls is not collected
+    cls.unrealize()
+
+    return HttpResponse('ok')
+
+
 @login_required
 @permission_required('admin', False)
 def object_index(request, ws_id):
@@ -325,11 +359,17 @@ def object_index_put(request, ws_id):
             pass
 
     try:
-        ObjectClass = ses.python_class(object_class_id, ws=ws)
+        cls = ses.class_(object_class_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseBadRequest('Invalid object class: %s'
                                       % (object_class_id, ))
 
+    perm = cls.workspace_permission(ws)
+    if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
+                    kb_access.READ_WRITE_OBJECTS):
+        return HttpResponseForbidden()
+
+    ObjectClass = cls.python_class
     obj = ObjectClass(object_name, explicit_id=explicit_id)
 
     # FIXME: right now, we only support updating a few fields
@@ -399,6 +439,11 @@ def object_post(request, ws_id, object_id):
     except kb_exc.NotFound:
         return HttpResponseNotFound()
 
+    perm = obj.__kb_class__.workspace_permission(ws)
+    if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
+                    kb_access.READ_WRITE_OBJECTS):
+        return HttpResponseForbidden()
+
     # FIXME: right now, we only support updating a few fields
     updatable_fields = {'name'        : set([unicode, str]),
                         'notes'       : set([unicode, str])}
@@ -424,6 +469,11 @@ def object_delete(request, ws_id, object_id):
         obj = ses.object(object_id, ws=ws)
     except kb_exc.NotFound:
         return HttpResponseNotFound()
+
+    perm = obj.__kb_class__.workspace_permission(ws)
+    if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
+                    kb_access.READ_WRITE_OBJECTS):
+        return HttpResponseForbidden()
 
     # Before deleting, check whether the object is referenced from the catalog
     dj_obj = DjangoKBObject.objects.get(id=object_id)

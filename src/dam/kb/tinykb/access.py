@@ -27,3 +27,4 @@
 OWNER = 'owner'
 READ_ONLY = 'read-only'
 READ_WRITE = 'read-write'
+READ_WRITE_OBJECTS = 'read-write-objects'

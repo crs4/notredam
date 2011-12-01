@@ -176,12 +176,12 @@ def _init_base_attributes(o):
             # intermediate mapper class to use with an SQLAlchemy
             # Association Proxy.  It will allow to handle the multivalued
             # attribute of the Python class as a simple list of values
+            cls = getattr(self, 'class')
+            obj_table = cls.sqlalchemy_table
             mvtable = self._sqlalchemy_mv_table
             if not hasattr(self, '_mvclass'):
                 # The following code can be executed only once per
                 # Attribute instance
-                cls = getattr(self, 'class')
-                table = cls.sqlalchemy_table
                 if mvtable is None:
                     raise RuntimeError('BUG: Attribute.mapper_properties() '
                                        'cannot be called before '
@@ -208,6 +208,9 @@ def _init_base_attributes(o):
             return {hidden_id : relationship(
                     self._mvclass, backref='object',
                     collection_class=sa_order.ordering_list('order'),
+                    primaryjoin=(obj_table.c.id
+                                 == mvtable.c['object']),
+                    remote_side=[mvtable.c['object']],
                     order_by=[mvtable.c.order],
                     cascade='all, delete-orphan')}
 
@@ -750,7 +753,6 @@ def _init_base_attributes(o):
                                    backref=('references_%s_%s'
                                             % (self._class_id,
                                                colname)),
-                                   cascade='all',
                                    primaryjoin=(obj_table.c[colname]
                                                 == target_table.c.id),
                                    remote_side=[target_table.c.id])}
@@ -805,8 +807,7 @@ def _init_base_attributes(o):
             '_class_id' : schema.class_attribute.c['class'],
             '_class_root_id' : schema.class_attribute.c.class_root,
             'class' : relationship(classes.KBClass,
-                                    back_populates='attributes',
-                                    cascade='all'),
+                                   back_populates='attributes'),
             '_multivalue_table' : schema.class_attribute.c.multivalue_table
             })
 
@@ -864,7 +865,6 @@ def _init_base_attributes(o):
            properties={
             '__class_id' : schema.class_attribute_objref.c['class'],
             '__class_root_id' : schema.class_attribute_objref.c.class_root,
-            'target' : relationship(classes.KBClass, backref='references',
-                                    cascade='all')
+            'target' : relationship(classes.KBClass, backref='references')
             })
 
