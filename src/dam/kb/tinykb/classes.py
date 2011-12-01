@@ -265,6 +265,21 @@ def _init_base_classes(o):
 
         sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
+        def __del__(self):
+            # When a KBClass object is garbage collected, check
+            # whether the DB instance was deleted, and in this case
+            # also drop the related tables (by calling
+            # self.unrealize()).
+            #
+            # It should be safe to invoke self.unrealize() here: if
+            # this destructor is called, then this Python object is
+            # not (anymore) involved in a transaction, and thus the
+            # underlying tables should not be locked.
+
+            # FIXME: does SQLAlchemy allow to check whether we are deleted?
+            if hasattr(self, '__kb_deleted__'):
+                self.unrealize()
+        
         def is_root(self):
             return (self.id == self._root_id)
 
@@ -349,6 +364,29 @@ def _init_base_classes(o):
 
             self.additional_sqlalchemy_tables = schema.create_attr_tables(
                 add_tables, engine)
+
+        def unrealize(self):
+            '''
+            Remove the SQL tables created with :py:meth:realize.
+
+            .. warning:: Maybe you should not call this method
+             directly (it is automatically invoked when a KB class is
+             deleted from the session, and the related Python object
+             is garbage collected).  It may cause a deadlock if the
+             tables being dropped are being used in the current
+             transaction.
+            '''
+            if not self.is_bound():
+                self.bind_to_table()
+
+            # Drop all the tables related to our attributes (if any)...
+            for t in self.additional_sqlalchemy_tables:
+                schema.metadata.remove(t)
+                t.drop(engine)
+
+            # ...and finally drop the main KB class table
+            schema.metadata.remove(self._sqlalchemy_table)
+            self._sqlalchemy_table.drop(engine)
 
         def bind_to_table(self):
             parent_table = self._get_parent_table()
@@ -828,3 +866,9 @@ def _init_base_classes(o):
 
     event.listen(KBClass.attributes, 'remove',
                  kbclass_remove_attribute, propagate=True, retval=False)
+
+    # Take note when a KB class is deleted
+    # FIXME: maybe there is some other way (see KBClass.__del__() comments)
+    def kbclass_after_delete(_mapper, _connection, target):
+        target.__kb_deleted__ = True
+    event.listen(KBClass, 'after_delete', kbclass_after_delete, propagate=True)
