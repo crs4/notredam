@@ -731,7 +731,7 @@ def _kb_dict_attrs_map(attr_type_str, ses):
 # Some helper functions for _kb_dict_attr_mapps.  They are defined
 # here because they don't need the session parameter.
 
-def _kb_dict_validate_param(d, key, types, checks=[]):
+def _kb_dict_validate_param(d, key, types, checks=[], default=None):
     # Retrieve a key from the given dictionary, ensuring that the
     # value has a type included in the given set, and running the
     # given checks.
@@ -743,6 +743,10 @@ def _kb_dict_validate_param(d, key, types, checks=[]):
     # The function will return the value, or raise a meaningful
     # ValueError.
     val = d.get(key)
+
+    if val is None and default is not None:
+        return default
+
     val_type = type(val)
     if val_type not in types:
         raise ValueError('parameter "%s": got "%s" (type %s), '
