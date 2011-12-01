@@ -26,19 +26,27 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
             load: function() {
 
                 var generated_prefs = generate_pref_forms(this, save_url, undefined, on_success );
+                var my_items = generated_prefs;
               	
-                if (extra_tabs)
-                    var items = extra_tabs.concat(generated_prefs);
-                else
-                    var items = generated_prefs;
-		        
+                if (extra_tabs) {
+                    var my_account_prefs = generate_account_tab();
+                    my_items.splice(0, 0, my_account_prefs);
+                }
+                else {
+                    var my_items = generated_prefs;
+		}        
                 if (additional_item_func) {
                     var gen_item = additional_item_func();
-                    items.splice(0, 0, gen_item);
-                }
-            
+                    my_items.splice(0, 0, gen_item);
+                };
+
+           
+                if (Ext.getCmp('pref_win')) {
+                    Ext.getCmp('pref_win').close();
+                };
                 var win = new Ext.Window({
                     layout      : 'fit',
+                    id          : 'pref_win',
                     //constrain: true,
                     width       : 500,
                     height      : 350,
@@ -49,16 +57,15 @@ var get_pref_store = function(store_url, save_url, obj, on_success, additional_i
                                 autoTabs       : true,
                                 activeTab      : 0,
                               
-                                items: items
+                                items: my_items
                             })
                 });
-                console.log(win);
                 win.show();               
             
             }
         }
     });
-    
+     
     return my_store;
 
 };
@@ -71,7 +78,7 @@ var on_success = function(form, action) {
     if(ws_store && form.title == 'Media Types')
     	ws_store.reload();
     
-    Ext.MessageBox.alert('Save', 'Preferences saved successfully.');
+    Ext.MessageBox.alert('Save', 'Preferences saved successfully.'); //save workspace preferences
 };
 
 var get_general_form = function() {
@@ -82,7 +89,7 @@ var get_general_form = function() {
     return g_form;
 };
 
-
+var generate_account_tab = function() {
 var account_prefs = new Ext.FormPanel({
     id: 'account_form',
     frame: true,
@@ -92,7 +99,7 @@ var account_prefs = new Ext.FormPanel({
     url: '/account_prefs/',
     
     buttons: [{
-        text: 'Save',
+        text: 'Save', //save first tab of user account preferences
         type: 'submit',
         handler: function(){
             Ext.getCmp('account_form').getForm().submit({
@@ -109,7 +116,8 @@ var account_prefs = new Ext.FormPanel({
     },{
         text: 'Cancel',
         handler: function() {
-            win.close();
+                //Ext.getCmp('pref_win').hide();
+                Ext.getCmp('pref_win').close();
         }
     }],
     items:[
@@ -214,12 +222,13 @@ var account_prefs = new Ext.FormPanel({
         
     }
 });
-
-var pref_store = get_pref_store('/get_user_settings/', '/save_pref/', 'User', on_success, null, [account_prefs]);
+return account_prefs;
+};
+var my_account_prefs = generate_account_tab();
+var pref_store = get_pref_store('/get_user_settings/', '/save_pref/', 'User Account', on_success, null, [my_account_prefs]);
 var pref_ws_store = get_pref_store('/get_ws_settings/', '/save_ws_pref/', 'Workspace', on_success, get_general_form);
 
 var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_success_func) {
-    console.log('generate_pref_forms');
     var fields = {};
 
     pref_store.each(function(pref){
@@ -250,6 +259,7 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
                 forceSelection:true,
                 triggerAction:'all',
                 hiddenName: pref.data.id,
+                name :pref.data.id,
                 fieldLabel: pref.data.caption,
                 displayField: 'desc',
                 valueField: 'id',
@@ -325,6 +335,7 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
             
             var grid = new Ext.grid.GridPanel({
                 title: pref.data.caption,
+                name :pref.data.id,
                 store: new Ext.data.ArrayStore({
                     fields: ["id", "desc"],
                     data: pref.data.choices
@@ -357,13 +368,11 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
             items: fields[k],
             url: submit_url,
             buttons: [{
-                text: 'Save',
+                text: 'Save', // save from the second tab workspace preferences
                 type: 'submit',
                 handler: function(){
                 
-                    console.log('oh')
                     var my_form = this.findParentByType('form');  
-                    console.log(my_form);                  
                     var items = my_form.items.items;
                     
                     for (var i = 0;  i < items.length; i ++){
@@ -397,14 +406,15 @@ var generate_pref_forms = function(pref_store, submit_url, on_cancel_func, on_su
                     if (on_cancel_func) {
                         on_cancel_func();
                     }
-                    var my_win = this.findParentByType('window');
-                    my_win.close();  
+                    //var my_win = this.findParentByType('window');
+                    //my_win.close();  
+                    //Ext.getCmp('pref_win').hide();
+                    Ext.getCmp('pref_win').close();
                 }
             }]
         });             
         tabs.push(new_tab);
     }
-    console.log(tabs)
     return tabs;
 
 };

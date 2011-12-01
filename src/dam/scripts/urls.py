@@ -2,6 +2,7 @@ from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
     (r'^get_scripts/', 'dam.scripts.views.get_scripts'),
+    (r'^get_rotation_script/', 'dam.scripts.views.get_rotation_script'),
     (r'^edit_script/', 'dam.scripts.views.edit_script'),
     (r'^delete_script/', 'dam.scripts.views.delete_script'),
     (r'^get_actions/', 'dam.scripts.views.get_actions'),

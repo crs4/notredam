@@ -20,9 +20,15 @@ from dam.plugins.common.adapter import Adapter
 from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.adapt_image_idl import inspect
+from dam.metadata.models import MetadataProperty, MetadataValue
+from dam.variants.models import Variant
+from dam.repository.models import Item, Component
+from django.contrib.contenttypes.models import ContentType
 from twisted.internet import defer, reactor
-from mediadart import log
+#from mediadart import log
 
+import logging
+log = logging.getLogger('dam')
 
 def run(workspace,              # workspace object
         item_id,                # item primary key
@@ -41,6 +47,7 @@ def run(workspace,              # workspace object
         pos_x_percent = None,   # x-position of top-left corner of watermark placement
         pos_y_percent = None,   # y-position of top-left corner of watermark placement
         wm_id = None,           # repository-relative file name of watermark resource
+        rotation = 0,           # image rotation in sexagesimal degrees
         ):
 
     deferred = defer.Deferred()
@@ -48,7 +55,7 @@ def run(workspace,              # workspace object
     reactor.callLater(0, adapter.execute, output_variant_name, output_extension,
         actions=actions, resize_h=resize_h, resize_w=resize_w, crop_w=crop_w,
         crop_h=crop_h, crop_x=crop_x, crop_y=crop_y, crop_ratio=crop_ratio, 
-        pos_x_percent=pos_x_percent, pos_y_percent=pos_y_percent, wm_id=wm_id)
+        pos_x_percent=pos_x_percent, pos_y_percent=pos_y_percent, wm_id=wm_id, rotation=rotation)
     return deferred
 
 
@@ -59,7 +66,7 @@ class AdaptImage(Adapter):
 
     def get_cmdline(self, output_variant_name, output_extension, actions, resize_h,
                    resize_w, crop_w, crop_h, crop_x, crop_y, crop_ratio, pos_x_percent,
-                   pos_y_percent, wm_id):
+                   pos_y_percent, wm_id, rotation):
         if not isinstance(actions, list):
             actions = [actions]
 
@@ -71,6 +78,7 @@ class AdaptImage(Adapter):
                 
         features = self.source.get_features()
         argv = ""
+        new_rotation = 0
         for action in actions:
             if action == 'resize':
                 argv +=  '-auto-orient -resize %sx%s' % (resize_w, resize_h)
@@ -89,11 +97,25 @@ class AdaptImage(Adapter):
                 pos_x = int(float(pos_x_percent) * float(features.get_width())/100.)
                 pos_y = int(float(pos_y_percent) * float(features.get_height())/100.)
                 argv +=  ' -gravity NorthWest "file://%s" -geometry +%s+%s -composite' % (wm_id, pos_x, pos_y)
+            elif action == 'rotate':
+                new_rotation = int(rotation)
+                try:
+                    ws = self.workspace
+                    variant = Variant.objects.get(name= output_variant_name)
+                    component = self.item.get_variant(ws,variant)
+                    schema = MetadataProperty.objects.get(namespace__prefix='notreDAM', field_name = 'manual_rotation')
+                    last = component.get_metadata_values(schema)
+                    ctype = ContentType.objects.get_for_model(Component)
+                    if last != None:
+                        new_rotation += int(last)
+                    MetadataValue.objects.save_metadata_value([self.item], {schema.id:[int(new_rotation)]},output_variant_name, ws)
+                except Exception, err:
+                    log.exception("***===> Exception while setting manual_rotation metadata %s" % (err))
+                argv += ' -rotate %s' % (new_rotation)
         
         log.debug("calling adapter")
         self.out_file = get_storage_file_name(self.item.ID, self.workspace.pk, output_variant_name, output_extension)
         self.cmdline = '"file://%s[0]" %s "outfile://%s"' % (self.source.uri, argv, self.out_file)
-
 
 
 #
