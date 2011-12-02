@@ -31,3 +31,10 @@ OTHER THINGS
 Added 404.html and 500.html templates, but remember to set DEBUG to false in
 settings.py otherwise the error page will appear anycase.
 
+===============================================================================
+OPEN ISSUES
+===============================================================================
+
+1. 
+When a mediadart node crash down, its running processes should be deleted from 
+the application db.
