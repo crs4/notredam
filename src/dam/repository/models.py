@@ -709,6 +709,7 @@ class Component(AbstractComponent):
                 
         except Exception, ex:
             logger.exception(ex)
+            return url
         
         return url
 
