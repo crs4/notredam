@@ -422,13 +422,13 @@ def _init_base_attributes(o):
                           default=self.default)]
             if self.min is not None:
                 ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                           name=('%sclass_%s_attr_%s_min_constr'
+                                           name=('%sobject_%s_attr_%s_min_constr'
                                                  % (schema.prefix,
                                                     self._class_id,
                                                     self.id))))
             if self.max is not None:
                 ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                           name=('%sclass_%s_attr_%s_max_constr'
+                                           name=('%sobject_%s_attr_%s_max_constr'
                                                  % (schema.prefix,
                                                     self._class_id,
                                                     self.id))))
@@ -493,13 +493,13 @@ def _init_base_attributes(o):
                           default=self.default)]
             if self.min is not None:
                 ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                           name=('%sclass_%s_attr_%s_min_constr'
+                                           name=('%sobject_%s_attr_%s_min_constr'
                                                  % (schema.prefix,
                                                     self._class_id,
                                                     self.id))))
             if self.max is not None:
                 ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                           name=('%sclass_%s_attr_%s_max_constr'
+                                           name=('%sobject_%s_attr_%s_max_constr'
                                                  % (schema.prefix,
                                                     self._class_id,
                                                     self.id))))
@@ -585,13 +585,13 @@ def _init_base_attributes(o):
                           default=self.default)]
             if self.min is not None:
                 ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
-                                           name=('%sclass_%s_attr_%s_min_constr'
+                                           name=('%sobject_%s_attr_%s_min_constr'
                                                  % (schema.prefix,
                                                     self._class_id,
                                                     self.id))))
             if self.max is not None:
                 ret.append(CheckConstraint('"%s" <= %d' % (colname, self.max),
-                                           name=('%sclass_%s_attr_%s_max_constr'
+                                           name=('%sobject_%s_attr_%s_max_constr'
                                                  % (schema.prefix,
                                                     self._class_id,
                                                     self.id))))
@@ -688,7 +688,7 @@ def _init_base_attributes(o):
             colname = self.column_name()
             return [Column(colname,
                            sa.types.Enum(*self._list_of_choices,
-                                          name=('%sclass_%s_attr_%s_enum'
+                                          name=('%sobject_%s_attr_%s_enum'
                                                 % (schema.prefix,
                                                    self._class_id,
                                                    self.id))),
