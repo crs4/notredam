@@ -844,7 +844,7 @@ def _init_base_classes(o):
         # FIXME: ensure uniqueness!
         # FIXME: it would be better to prefix the owner table name
         if value.multivalued:
-            value._multivalue_table = ('%sclass_%s_attr_%s'
+            value._multivalue_table = ('%sobject_%s_attr_%s'
                                        % (schema.prefix,
                                           value._class_id,
                                           value.id))
