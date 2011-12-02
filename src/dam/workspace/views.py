@@ -880,6 +880,58 @@ def upload_status(request):
     except Exception,ex:
         logger.exception(ex)
         raise ex
+
+
+@login_required
+def stop_pending_processes(request):
+    """
+    Stop pending processes when required by the user with the button 'stop' in monitor window.
+    """
+    try:
+        workspace = request.session.get('workspace')
+        user = request.user
+        items_in_progress = request.POST.getlist('items')
+#was        logger.debug('items_in_progress %s'%items_in_progress)
+        logger.error('items_in_progress %s'%items_in_progress)
+        resp = {'items':[]}
+#### Added by orlando
+        logger.error('request.POST %s' % request.POST)
+        process_id = request.POST.get('process_id')
+        logger.error('process_id %s'%process_id)
+# get completed targets
+        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = True)
+        logger.error('completed_targets %s'%completed_targets)
+#        info = {}
+
+        process_in_progress = Process.objects.filter(end_date__isnull = True)
+        logger.error('process_in_progress %s'%process_in_progress)
+        if process_in_progress:
+            pending_items = ProcessTarget.objects.filter(process__in = process_in_progress, actions_todo__gt = 0)
+            logger.error(' A pending_items %s'%pending_items)
+            process_in_progress = Process.objects.filter(end_date__isnull = True)[0].delete()
+
+        for item_id in items_in_progress:
+            try:
+
+                item = Item.objects.get(pk = int(item_id)) 
+                #tmp = item.get_info(workspace, user)
+                tmp = item.delete_from_ws(request.user, [workspace])
+                #resp['items'].append(tmp)
+                
+            except ProcessTarget.DoesNotExist:
+                logger.debug('process target not found for item %s'%item)
+                continue
+
+
+       
+        resp = simplejson.dumps(resp)
+        return HttpResponse(resp)
+    except Exception,ex:
+        logger.exception(ex)
+        raise ex
+    
+
+
     
 @login_required
 def get_status(request):
@@ -894,9 +946,9 @@ def get_status(request):
         logger.debug('items_in_progress %s'%items_in_progress)
         resp = {'items':[]}
 #### Added by orlando
-#        process_id = request.POST.get('process_id')
+        #process_id = request.POST.get('process_id')
 # get completed targets
-#        completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = true)
+        #completed_targets = ProcessTarget.objects.filter(process__workspace = workspace, target_id__in=items_in_progress, actions_todo=0).values_list('target_id', flat = True)
 #        info = {}
 
         process_in_progress = Process.objects.filter(end_date__isnull = True)
