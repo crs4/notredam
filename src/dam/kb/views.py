@@ -145,7 +145,7 @@ def class_index_put(request, ws_id):
                                            + 'type: "%s"')
                                           % (attr_id, attr_type))
         try:
-            attr_obj = attr_fn(a, ses, ws)
+            attr_obj = attr_fn(attr_id, a, ses, ws)
         except KeyError as e:
             return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
                                            + 'a required field: "%s"')
@@ -657,7 +657,9 @@ def _kb_attrs_dict_map(attr_type, ses):
                          dict([['type',    'date'],
                                ['min',     a.min],
                                ['max',     a.max],
-                               ['default_value', a.default]]
+                               ['default_value', ((a.default is not None)
+                                                  and a.default.isoformat()
+                                                  or None)]]
                               + _std_attr_fields(a)),
                      kb_attrs.Uri  : lambda a:
                          dict([['type',    'uri'],
@@ -687,36 +689,42 @@ def _kb_dict_attrs_map(attr_type_str, ses):
     v = _kb_dict_validate_param # Just a shorthand
 
     # FIXME: missing checks: max >= min, max =< default =< min
-    str_fn_map = {'bool' : lambda d, _ses, _ws:
-                      kb_attrs.Boolean(default=d.get('default_value'),
+    str_fn_map = {'bool' : lambda attr_id, d, _ses, _ws:
+                      kb_attrs.Boolean(id_=attr_id,
+                                       default=d.get('default_value'),
                                        **(_std_attr_dict_fields(d))),
-                  'int' : lambda d, _ses, _ws:
-                      kb_attrs.Integer(min_=v(d, 'min', [NoneType, int]),
+                  'int' : lambda attr_id, d, _ses, _ws:
+                      kb_attrs.Integer(id_=attr_id,
+                                       min_=v(d, 'min', [NoneType, int]),
                                        max_=v(d, 'max', [NoneType, int]),
                                        default=v(d, 'default_value',
                                                  [NoneType, int]),
                                        **(_std_attr_dict_fields(d))),
-                  'real' : lambda d, _ses, _ws:
-                      kb_attrs.Real(min_=v(d, 'min', [NoneType, int, float]),
+                  'real' : lambda attr_id, d, _ses, _ws:
+                      kb_attrs.Real(id_=attr_id,
+                                    min_=v(d, 'min', [NoneType, int, float]),
                                     max_=v(d, 'max', [NoneType, int, float]),
                                     default=v(d, 'default_value',
                                               [NoneType, int, float]),
                                     **(_std_attr_dict_fields(d))),
-                  'string' : lambda d, _ses, _ws:
-                      kb_attrs.String(length=v(d, 'length', [unicode, str],
+                  'string' : lambda attr_id, d, _ses, _ws:
+                      kb_attrs.String(id_=attr_id,
+                                      length=v(d, 'length', [unicode, str],
                                                [NoneType, int, float],
                                                [('>= 0', lambda x: x >= 0)]),
                                       default=v(d, 'default_value',
                                                 [NoneType, unicode, str]),
                                       **(_std_attr_dict_fields(d))),
-                  'date' : lambda d, _ses, _ws:
-                      kb_attrs.Date(min_=v(d, 'min', [NoneType, unicode, str]),
+                  'date' : lambda attr_id, d, _ses, _ws:
+                      kb_attrs.Date(id_=attr_id,
+                                    min_=v(d, 'min', [NoneType, unicode, str]),
                                     max_=v(d, 'max', [NoneType, unicode, str]),
                                     default=v(d, 'default_value',
                                               [NoneType, unicode, str]),
                                     **(_std_attr_dict_fields(d))),
-                  'uri' : lambda d, _ses, _ws:
-                      kb_attrs.Uri(length=v(d, 'length',
+                  'uri' : lambda attr_id, d, _ses, _ws:
+                      kb_attrs.Uri(id_=attr_id,
+                                   length=v(d, 'length',
                                             [NoneType, int, float],
                                             [('>= 0', lambda x: x >= 0)]),
                                    default=v(d, 'default_value',
@@ -731,7 +739,7 @@ def _kb_dict_attrs_map(attr_type_str, ses):
 # Some helper functions for _kb_dict_attr_mapps.  They are defined
 # here because they don't need the session parameter.
 
-def _kb_dict_validate_param(d, key, types, checks=[]):
+def _kb_dict_validate_param(d, key, types, checks=[], default=None):
     # Retrieve a key from the given dictionary, ensuring that the
     # value has a type included in the given set, and running the
     # given checks.
@@ -743,6 +751,10 @@ def _kb_dict_validate_param(d, key, types, checks=[]):
     # The function will return the value, or raise a meaningful
     # ValueError.
     val = d.get(key)
+
+    if val is None and default is not None:
+        return default
+
     val_type = type(val)
     if val_type not in types:
         raise ValueError('parameter "%s": got "%s" (type %s), '
@@ -754,7 +766,7 @@ def _kb_dict_validate_param(d, key, types, checks=[]):
                              '"%s"' % (key, name))
     return val
 
-def _kb_dict_choice_fn(d, ses, ws):
+def _kb_dict_choice_fn(attr_id, d, ses, ws):
     kb_attrs = ses.orm.attributes
     choices = d['choices']
     if (not isinstance(choices, list)
@@ -762,17 +774,19 @@ def _kb_dict_choice_fn(d, ses, ws):
                     for x in choices])):
         raise ValueError('expected list of strings as choices, got "%s"'
                          % unicode(choices))
-    return kb_attrs.Choice(list_of_choices=choices,
+    return kb_attrs.Choice(id_=attr_id,
+                           list_of_choices=choices,
                            default=d.get('default_value'),
                            **(_std_attr_dict_fields(d)))
 
-def _kb_dict_objref_fn(d, ses, ws):
+def _kb_dict_objref_fn(attr_id, d, ses, ws):
     kb_attrs = ses.orm.attributes
     cls_id = d['target_class']
     try: target_class = ses.class_(cls_id, ws=ws)
     except kb_exc.NotFound: raise ValueError('invalid class id: %s'
                                              % (cls_id, ))
-    return kb_attrs.ObjectReference(target_class=target_class,
+    return kb_attrs.ObjectReference(id_=attr_id,
+                                    target_class=target_class,
                                     **(_std_attr_dict_fields(d)))
 
 
@@ -801,11 +815,13 @@ def _std_attr_dict_fields(d):
     that, when used as **kwargs, will give a value to the keyword
     arguments common to each Attribute sub-class constructor
     '''
-    return {'name' : d['name'],
-            'maybe_empty' : d.get('maybe_empty', True),
-            'order' : d.get('order', 0),
-            'multivalued' : d.get('multivalued', False),
-            'notes' : d.get('notes')}
+    v = _kb_dict_validate_param # Just a shorthand
+    return {'name' : v(d, 'name', [unicode, str],
+                       [('length > 0', lambda x: len(x) > 0)]),
+            'maybe_empty' : v(d, 'maybe_empty', [bool], default=True),
+            'order' : v(d, 'order', [NoneType, int], default=0),
+            'multivalued' : v(d, 'maybe_empty', [bool], default=False),
+            'notes' : v(d, 'notes', [NoneType, unicode, str])}
 
 
 def _kbobject_to_dict(obj, ses):
