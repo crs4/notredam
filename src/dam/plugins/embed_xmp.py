@@ -4,22 +4,28 @@ from dam.core.dam_metadata.models import XMPStructure
 from dam.plugins.embed_xmp_idl import inspect
 from dam.variants.models import Variant
 from dam.repository.models import Item, Component
+from dam.plugins.common.utils import get_source_rendition
+import logging
+log = logging.getLogger('dam')
+
+
 
 # Entry point
 def run(workspace, item_id, source_variant_name):
     deferred = defer.Deferred()
-    embedder = EmbedXMP(deferred, workspace)
-    reactor.callLater(0, embedder.execute, item_id, source_variant_name)
+    embedder = EmbedXMP(deferred, workspace, item_id, source_variant_name)
+    reactor.callLater(0, embedder.execute)
     return deferred
 
 
 class EmbedXMP:
-    def __init__(self, deferred, workspace):
+    def __init__(self, deferred, workspace, item_id, variant_name):
         self.deferred = deferred
         self.workspace = workspace
         self.proxy = Proxy('XMPEmbedder') 
-        self.item = None
-        self.component = None
+        self.item = Item.objects.get(pk = item_id)
+        self.item, self.component = get_source_rendition(item_id, variant_name, workspace)
+
 
     def _reset_modified_flag(self):
         """
@@ -71,26 +77,10 @@ class EmbedXMP:
         self.deferred.errback(failure)
         return failure
 
-    def execute(self, item_id, variant_name):
-        try:
-            self.item = Item.objects.get(pk = item_id)
-            source_variant = Variant.objects.get(name = variant_name)
-        except Exception, e:
-            e.message = '%s: %s' % (self.__class__.__name__, e.message)
-            self.deferred.errback(e)
-
-        try:
-            self.component = self.item.get_variant(self.workspace, source_variant)
-        except Exception, e:
-            self.deferred.callback('variant %s not present in item %s' % item_id)
-            return
-
-        try:
-            metadata_dict = self._synchronize_metadata()
-            d = self.proxy.metadata_synch(self.component.uri, metadata_dict)
-            d.addCallback(self._cb_embed_reset_xmp)
-            d.addErrback(self._cb_error)
-        except Exception, e:
-            e.message = '%s: %s' % (self.__class__.__name__, e.message)
-            self.deferred.errback(e)
+    def execute(self):
+        metadata_dict = self._synchronize_metadata()
+        d = self.proxy.metadata_synch(self.component.uri, metadata_dict)
+        d.addCallbacks(self._cb_embed_reset_xmp, self._cb_error)
+        return d
+       
         
