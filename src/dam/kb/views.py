@@ -657,7 +657,9 @@ def _kb_attrs_dict_map(attr_type, ses):
                          dict([['type',    'date'],
                                ['min',     a.min],
                                ['max',     a.max],
-                               ['default_value', a.default]]
+                               ['default_value', ((a.default is not None)
+                                                  and a.default.isoformat()
+                                                  or None)]]
                               + _std_attr_fields(a)),
                      kb_attrs.Uri  : lambda a:
                          dict([['type',    'uri'],
