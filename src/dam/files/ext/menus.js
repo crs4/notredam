@@ -1182,7 +1182,39 @@ Ext.onReady(function(){
 								    id: 'run_scripts_menu',
 								    items:[]
 								})
-                            }
+                            },
+                            { 
+                            	text    : gettext('Stop all'),
+                            	handler : function(){
+                                               var items = [];
+                                               var params = {};
+                                               var tab = Ext.getCmp('media_tabs').getActiveTab();
+                                               if (tab) {
+                                                     var view = tab.getComponent(0);
+                                                     if (view) {
+                                                         var store = view.getStore();
+                                                         items_in_progress = store.query('status','in_progress').items;
+                                                         Ext.each(items_in_progress, function(i){
+                    	                                        items.push(i.data.pk);
+                                                         });
+                            	                     }
+                                                     if (items.length > 0) {
+                                                         params.items = items;
+                                                         Ext.Ajax.request({
+                                                             url: '/stop_pending_processes/',
+                                                             params: params,
+                                                             success: function() {
+                                                             Ext.MessageBox.alert(gettext('Success'), gettext('All pending processes successfully stopped.'));
+                                                             },
+					                     failure: function() {
+							               Ext.MessageBox.alert(gettext('Error'), gettext('An error occured while stopping pending processes.'));
+						             },
+                                                         });
+                                                    }
+                                              
+                                              }
+                             }
+                          }
                             
                         ]
                     
@@ -1285,7 +1317,6 @@ Ext.onReady(function(){
                                     
                                     },
                                 success: function() {
-                                	
                                     Ext.MessageBox.alert(gettext('Success'), gettext('Item(s) shared successfully.'));
                                 }
                                 

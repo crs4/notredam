@@ -608,7 +608,6 @@ def get_metadata(request):
         metadata_view = False
 
     try:
-    
         item_media_types = set(Item.objects.filter(pk__in=item_list).values_list('type__name', flat=True))
     
         if metadata_view:
