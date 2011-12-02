@@ -110,7 +110,7 @@ function show_win_single_attribute(params, title){
         modal	: true,
       	items	:[{
 	  				xtype: 'spacer',
-		  			height: 5
+		  			height: 8
     			}
     			,params],
         buttons	:[{
@@ -119,7 +119,11 @@ function show_win_single_attribute(params, title){
 	        	var Attribute = Ext.data.Record.create([{
 	        		name: 'name'
 	        	}]);
-	        	Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_record_value_single_box').getValue()}));
+    			if (Ext.getCmp('type_comb_class').getValue() == 'date'){//fit date format
+	        		Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_record_value_single_box').getValue().format('Y-m-d')}));
+	        	}else{
+	        		Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_record_value_single_box').getValue()}));
+	        	}
 	        	win_select_class_target.close();
         	}
         },{
