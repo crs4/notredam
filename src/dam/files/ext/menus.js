@@ -25,7 +25,7 @@ Ext.onReady(function(){
         var current_ws = ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk;
 
         var members_store = new Ext.data.JsonStore({
-            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", 'edit_scripts', 'run_scripts'],
+            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", 'edit_scripts', 'run_scripts', 'edit_vocabulary'],
             root: 'elements',
             baseParams: {ws_id: current_ws},
             proxy : new Ext.data.HttpProxy({
@@ -126,6 +126,15 @@ Ext.onReady(function(){
                 trueText: 'Yes',
                 falseText: 'No',
                 editor: booleditor
+            },
+             {
+                header: 'edit vocabulary',
+                dataIndex: 'edit_vocabulary',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
             }
             
             
@@ -205,6 +214,11 @@ Ext.onReady(function(){
                                 fieldLabel: 'Can run scripts',
                                 name: 'run_scripts',
                                 xtype: 'checkbox'       
+                            },
+                            {
+                                fieldLabel: 'edit vocabulary',
+                                name: 'edit_vocabulary',
+                                xtype: 'checkbox'       
                             }
                             
                             
@@ -233,7 +247,7 @@ Ext.onReady(function(){
                                 text: gettext('Save'),
                                 handler: function() {
                                     var values = Ext.getCmp('new_user_permissions').getForm().getFieldValues();                                    
-                                    var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_taxonomy: 0};
+                                    var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_taxonomy: 0, edit_vocabulary: 0};
                                     if (values.admin) {
                                         perm_values.admin = 1;
                                     }
@@ -249,14 +263,14 @@ Ext.onReady(function(){
                                     if (values.edit_taxonomy) {
                                         perm_values.edit_taxonomy = 1;
                                     }
-                                    
-                                    
                                     if (values.run_scripts) {
                                         perm_values.run_scripts = 1;
                                     }
-                                    
-                                     if (values.edit_scripts) {
+                                    if (values.edit_scripts) {
                                         perm_values.edit_scripts = 1;
+                                    }
+                                    if (values.edit_vocabulary) {
+                                        perm_values.edit_vocabulary = 1;
                                     }
                                     var selected = Ext.getCmp('available_users').getSelectedRecords();
                                     if (selected.length == 0) {
@@ -606,6 +620,9 @@ Ext.onReady(function(){
                         { text: gettext('Renditions'),                                                      
                             handler: variants_prefs 
                             
+                            },
+                            { text: gettext('Vocabulary'),                                                      
+                                handler: function(){ open_knowledgeBase(); }
                             }
                         ]
                     }
