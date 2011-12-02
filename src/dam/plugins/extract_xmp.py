@@ -137,6 +137,8 @@ class ExtractXMP:
             save_type(ctype, self.component)
         except Exception, e:
             log.error("Failed to save component format as DC:Format: %s" % (str(e)))
+            self.deferred.errback(e)
+            return
 
         try:
             xmp_metadata_list, xmp_delete_list = self._read_xmp_features(features)
