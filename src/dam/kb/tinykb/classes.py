@@ -597,6 +597,14 @@ def _init_base_classes(o):
             self.name = name
             self.notes = notes
 
+            # Give a default value to all attributes (when possible)
+            for a in getattr(self, 'class').all_attributes():
+                if hasattr(a, 'default'):
+                    val = a.default
+                    if (val is not None) or a.maybe_empty:
+                        if not a.multivalued:
+                            setattr(self, a.id, val)
+
         def __repr__(self):
             return "<KBObject(%s, '%s')>" % (self.__class__, self.name)
 
