@@ -261,7 +261,7 @@ def get_variants(request):
             
 #            info_list.append({'caption': 'File Size', 'value': '%s' % comp.format_filesize()})
         except Exception,  ex:
-            logger.error("get_variants: %s" % str(ex))
+            logger.debug("get_variants: %s" % str(ex))
             work_in_progress =  True
           
             resp['variants'].append({'pk': v.pk, 
