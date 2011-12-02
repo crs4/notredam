@@ -701,7 +701,11 @@ def upload_session_finished(request):
             item_in_progress = 0
             for process in processes:
                 item_in_progress += process.processtarget_set.all().count()
-            os.rmdir(tmp_dir)
+            try:
+                os.rmdir(tmp_dir)
+            except Exception, ex:
+                logger.exception(ex)
+ 
             return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress, 'inbox': inbox_label}))
         else:
             return HttpResponse(simplejson.dumps({'success': False}))

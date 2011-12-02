@@ -110,7 +110,7 @@ class AdaptImage(Adapter):
                         new_rotation += int(last)
                     MetadataValue.objects.save_metadata_value([self.item], {schema.id:[int(new_rotation)]},output_variant_name, ws)
                 except Exception, err:
-                    log.exception("***===> Exception while setting manual_rotation metadata %s" % (err))
+                    log.debug("***===> Exception while setting manual_rotation metadata %s" % (err))
                 argv += ' -rotate %s' % (new_rotation)
         
         log.debug("calling adapter")
