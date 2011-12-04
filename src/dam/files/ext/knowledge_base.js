@@ -110,7 +110,7 @@ function show_win_single_attribute(params, title){
         modal	: true,
       	items	:[{
 	  				xtype: 'spacer',
-		  			height: 5
+		  			height: 8
     			}
     			,params],
         buttons	:[{
@@ -119,7 +119,11 @@ function show_win_single_attribute(params, title){
 	        	var Attribute = Ext.data.Record.create([{
 	        		name: 'name'
 	        	}]);
-	        	Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_record_value_single_box').getValue()}));
+    			if (Ext.getCmp('type_comb_class').getValue() == 'date'){//fit date format
+	        		Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_record_value_single_box').getValue().format('Y-m-d')}));
+	        	}else{
+	        		Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_record_value_single_box').getValue()}));
+	        	}
 	        	win_select_class_target.close();
         	}
         },{
@@ -489,6 +493,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			fieldLabel: 'Insert target class',
 	        allowBlank:false,
 	        readOnly:false,
+			emptyText:'Double click here',
 	        value: target_class_value,
 	        handleMouseEvents: true,
 	        listeners: {'render': function(cmp) { 
@@ -1320,12 +1325,20 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		        			}
 	        				params['attributes'][attribute.id] = choices;
         				}else{
-        					params['attributes'][attribute.id] = attribute.value;
+        					if (attribute.value != null){
+            					params['attributes'][attribute.id] = attribute.value;
+        					}else{
+                				delete(params['attributes'][attribute.id]);
+        					}
         				}
         			}else{//only one value
-            				params['attributes'][attribute.id] = attribute.value;
-            			}
-        			}
+    					if (attribute.value != null){
+    						params['attributes'][attribute.id] = attribute.value;
+    					}else if(attribute.default_value != null){
+    						params['attributes'][attribute.id] = attribute.default_value;
+    					}
+            		}
+        		}
         		console.log('PARAMS');
         		console.log(params);
         		if (add_obj){
