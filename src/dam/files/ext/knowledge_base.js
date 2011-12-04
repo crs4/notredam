@@ -493,6 +493,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			fieldLabel: 'Insert target class',
 	        allowBlank:false,
 	        readOnly:false,
+			emptyText:'Double click here',
 	        value: target_class_value,
 	        handleMouseEvents: true,
 	        listeners: {'render': function(cmp) { 
@@ -1324,12 +1325,20 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		        			}
 	        				params['attributes'][attribute.id] = choices;
         				}else{
-        					params['attributes'][attribute.id] = attribute.value;
+        					if (attribute.value != null){
+            					params['attributes'][attribute.id] = attribute.value;
+        					}else{
+                				delete(params['attributes'][attribute.id]);
+        					}
         				}
         			}else{//only one value
-            				params['attributes'][attribute.id] = attribute.value;
-            			}
-        			}
+    					if (attribute.value != null){
+    						params['attributes'][attribute.id] = attribute.value;
+    					}else if(attribute.default_value != null){
+    						params['attributes'][attribute.id] = attribute.default_value;
+    					}
+            		}
+        		}
         		console.log('PARAMS');
         		console.log(params);
         		if (add_obj){
