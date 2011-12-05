@@ -87,7 +87,7 @@ function get_treeLoader_vocabulary(){
 
 function get_AsyncTreeNode(){
 	return new Ext.tree.AsyncTreeNode({
-        text: gettext('All'),
+        text: gettext('Base Classes'),
         id:'root_obj_tree',
         expanded: true,
         allowDrag:false,
