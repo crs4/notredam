@@ -710,7 +710,7 @@ def _kb_dict_attrs_map(attr_type_str, ses):
                   'string' : lambda attr_id, d, _ses, _ws:
                       kb_attrs.String(id_=attr_id,
                                       length=v(d, 'length', [int],
-                                               [('>= 0', lambda x: x >= 0)]),
+                                               [('> 0', lambda x: x > 0)]),
                                       default=v(d, 'default_value',
                                                 [NoneType, unicode, str]),
                                       **(_std_attr_dict_fields(d))),
@@ -724,7 +724,7 @@ def _kb_dict_attrs_map(attr_type_str, ses):
                   'uri' : lambda attr_id, d, _ses, _ws:
                       kb_attrs.Uri(id_=attr_id,
                                    length=v(d, 'length', [int],
-                                            [('>= 0', lambda x: x >= 0)]),
+                                            [('> 0', lambda x: x > 0)]),
                                    default=v(d, 'default_value',
                                              [NoneType, unicode, str]),
                                    **(_std_attr_dict_fields(d))),
