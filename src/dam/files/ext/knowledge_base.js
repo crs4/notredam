@@ -1550,14 +1550,8 @@ function open_knowledgeBase(){
 								if (node.attributes.id != 'root_obj_tree'){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
-									if(Ext.getCmp('details_panel_class')){//if the panel would be been empty removeAll command raise an error.
-										Ext.getCmp('details_panel_class').removeAll();
-										Ext.getCmp('details_panel_class').setTitle('Class Objects');
-									}
-									if (Ext.getCmp('details_panel_obj')){
-										Ext.getCmp('details_panel_obj').removeAll();
-										Ext.getCmp('details_panel_obj').setTitle('Class Objects');
-									}
+									Ext.getCmp('details_panel').removeAll();
+									Ext.getCmp('details_panel_class').setTitle('Class Objects');
 								}
 							}
 						}
