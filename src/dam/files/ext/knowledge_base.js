@@ -634,7 +634,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
             new Ext.data.SimpleStore({
               fields: ['id','name'],
               data: [
-                ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["uri","Url"],["choice","Choice"],["objref","Object References"]]
+                ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["uri","Url"],["choice","Choice"],["objref","Object Reference"]]
           }), // end of Ext.data.SimpleStore
         fieldLabel: 'Type',
         width: 130,
