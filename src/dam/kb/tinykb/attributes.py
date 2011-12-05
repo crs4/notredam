@@ -437,9 +437,9 @@ def _init_base_attributes(o):
         def validate(self, value):
             if self.maybe_empty and not self.multivalued and value is None:
                 return value
-            if not (isinstance(value, int) or (isinstance(value,
-                                                          decimal.Decimal)
-                                               and value == int(value))):
+            if not (isinstance(value, int) or isinstance(value, long)
+                    or (isinstance(value, decimal.Decimal)
+                     and value == int(value))):
                 raise kb_exc.ValidationError(('expected an integer-like value,'
                                               + ' got "%s" (type: %s)')
                                              % (str(value), type(value)))
