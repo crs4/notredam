@@ -441,8 +441,8 @@ def _init_base_attributes(o):
                                                           decimal.Decimal)
                                                and value == int(value))):
                 raise kb_exc.ValidationError(('expected an integer-like value,'
-                                              + ' got "%s"')
-                                             % (str(value), ))
+                                              + ' got "%s" (type: %s)')
+                                             % (str(value), type(value)))
 
             in_range = ((self.min is None or (value >= self.min))
                         and (self.max is None or (value <= self.max)))
