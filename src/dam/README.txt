@@ -9,6 +9,9 @@ Image rotation during uploading, according to exif:Orientation (issue 12)
 2.
 Manual images rotation from NotreDAM application Edit menu.
 
+3.
+Stop all in script menu to stop all pending processes.
+
 ===============================================================================
 BUG FIXING
 ===============================================================================
@@ -23,6 +26,9 @@ Fixed the bug in DAMComponentSetting, when two SettingValue related to
 different DAMComponentSetting had the same name (issue 45).
 4.
 Fixed a bug in xmp_embedding, now it works again (issue 47)
+5.
+Fixed problem in uploading of many files when one of them fails. Now uploading completes successfully for all on the application side, but the notification window worns about the number of failed uploading (issue 44).
+
 ===============================================================================
 OTHER THINGS
 ===============================================================================
