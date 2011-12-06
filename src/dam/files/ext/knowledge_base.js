@@ -1049,7 +1049,6 @@ function load_detail_class(class_data, id_class, add_class){
     fields.push(attributes_grid);
     var details_panel_class = new Ext.FormPanel({
         id:'details_panel_class',
-        title: title,
         header : false,
         labelWidth: 110, // label settings here cascade unless overridden
         frame:true,
