@@ -93,7 +93,8 @@ function get_AsyncTreeNode(){
         allowDrag:false,
         allowDrop:true,
         editable: false,
-        type:'object'
+        type:'object',
+        iconCls: 'object-class'
     });
 }
 
@@ -1551,7 +1552,7 @@ function open_knowledgeBase(){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
 									Ext.getCmp('details_panel').removeAll();
-									Ext.getCmp('details_panel_class').setTitle('Class Objects');
+									//Ext.getCmp('details_panel_class').setTitle('Class Objects');
 								}
 							}
 						}
