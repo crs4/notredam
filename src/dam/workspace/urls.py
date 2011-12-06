@@ -44,6 +44,7 @@ urlpatterns = patterns('',
     (r'^get_status/', 'dam.workspace.views.get_status'),
     (r'^stop_pending_processes/', 'dam.workspace.views.stop_pending_processes'),
     (r'^get_permissions/', 'dam.workspace.views.get_permissions'),
+    (r'^get_admin_workspaces/', 'dam.workspace.views.get_admin_workspaces'),
 
     (r'^get_ws_members/', 'dam.workspace.views.get_ws_members'),
     (r'^get_available_permissions/', 'dam.workspace.views.get_available_permissions'),
