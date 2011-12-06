@@ -41,13 +41,20 @@ def generate_unique(used_ids, length=8):
 
     count = 0
     while count < LIMIT:
-        id = generate(length)
-        if id not in used_ids:
+        id_ = generate(length)
+        if id_ not in used_ids:
             break
         count += 1
-        id = ''
-    return id
 
+    if count == LIMIT:
+        raise RuntimeError('Unable to generate new unique ID after %d trials'
+                           % (LIMIT, ))
+    return id_
+
+
+_valid_chars = ' _-' + string.digits + string.ascii_letters
+_all_chars = string.maketrans('', '')
+DELETIONS = ''.join(set(_all_chars) - set(_valid_chars))
 
 def niceid(base, extra_chars=8):
     '''
@@ -58,7 +65,7 @@ def niceid(base, extra_chars=8):
     if isinstance(base, unicode):
         base = unicodedata.normalize('NFKD', base).encode('ascii',
                                                           'ignore')
-    safe_base = string.translate(base, None, deletions)
+    safe_base = string.translate(base, None, DELETIONS)
     safe_base = safe_base.replace(' ', '_').lower()
 
     # Remove all pairs of underscores until the string is "normalized"
@@ -78,12 +85,15 @@ def niceid(base, extra_chars=8):
 if __name__ == '__main__':
     from sets import Set
 
-    print 'Some sample unique IDs:'
+    print '*** Some sample unique IDs:'
     used_ids = Set()
     for i in xrange(50):
-        id = generate_unique(used_ids)
-        if not id:
-            print 'Something broke'
-            break
+        id_ = generate_unique(used_ids)
         used_ids.add(id)
-        print id
+        print id_
+
+    base = u'A Nasty & StrING    \xda\xd0Fk\xfb'
+    print '*** Some sample IDs with base "%s":' % (base, )
+    for i in xrange(50):
+        id_ = niceid(base)
+        print id_
