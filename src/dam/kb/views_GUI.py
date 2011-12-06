@@ -46,6 +46,7 @@ def _get_root_tree(request,ws_id):
             tmp = {'text' : n['name'],  
                'id': n['id'], 
                'leaf': False,
+               'iconCls' : 'object-class',
             }  
             result.append(tmp)
     
@@ -65,6 +66,8 @@ def _get_child_cls_obj(request,ws_id, parent):
                 tmp = {'text' : n['name'],  
                        'id': n['id'], 
                        'leaf': False,
+                       'iconCls' : 'object-class',
+
                     }  
                 result.append(tmp)
         logger.debug("class result")
