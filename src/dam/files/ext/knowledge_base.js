@@ -256,6 +256,8 @@ function check_add_button_add_option(){
 function check_remove_button_add_option(){
 	if (Ext.getCmp('id_record_value').getStore().getCount() == 0){
 		Ext.getCmp('id_remove_attributes_class').disable();
+		Ext.getCmp('id_movedown_attributes_class').disable();
+		Ext.getCmp('id_moveup_attributes_class').disable();
 	}
 }
 
@@ -267,9 +269,14 @@ function get_grid_insert_value(value, type, title){
 		listeners:{
 			rowselect: {fn:function(sm){
 				Ext.getCmp('id_remove_attributes_class').enable();
+				Ext.getCmp('id_movedown_attributes_class').enable();
+				Ext.getCmp('id_moveup_attributes_class').enable();
+
 			}},
 			rowdeselect: {fn:function(sm){
 				Ext.getCmp('id_remove_attributes_class').disable();
+				Ext.getCmp('id_movedown_attributes_class').disable();
+				Ext.getCmp('id_moveup_attributes_class').disable();
 			}}
 		}
 	});
@@ -617,6 +624,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		title = "Edit attribute";
 		text_button = gettext('Edit');
 		max_value_slider = attributes_grid.getStore().getCount()-1;
+		slider_value = attributes_grid.getSelectionModel().getSelected().data.order;
 	}else{
 		name_textField_value = null;
 		empty_chekbox_value = false;
@@ -625,6 +633,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		title = "New attribute";
 		text_button = gettext('Add');
 		max_value_slider = attributes_grid.getStore().getCount();
+		slider_value = attributes_grid.getStore().getCount();
 	}
 	var name_textField = new Ext.form.TextField({
         fieldLabel: 'Name',
@@ -685,12 +694,13 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         id:'id_notes_attribute'
     });
     var order_slider = new Ext.slider.SingleSlider({
-    	fieldLabel: 'Order',
     	id:'slider_order',
         width: 130,
         increment: 1,
         minValue: 0,
         maxValue: max_value_slider,
+        value: slider_value,
+        hidden: true,
         plugins: new Ext.ux.SliderTip()
     });
 	var attribute_detail_panel = new Ext.FormPanel({
@@ -759,9 +769,9 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        		}]);
 	        		
         			if (type_combo.getValue() == 'date'){//fit date format
-        				if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue().format('Y-m-d');}else{min_value = null;}
-    	        		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue().format('Y-m-d');}else{max_value = null;}
-            			if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue().format('Y-m-d');}else{default_value = null;}
+        				if (Ext.getCmp('id_min').getValue()){min_value = Ext.getCmp('id_min').getValue().format('Y-m-d');}else{min_value = null;}
+    	        		if (Ext.getCmp('id_max').getValue()){max_value = Ext.getCmp('id_max').getValue().format('Y-m-d');}else{max_value = null;}
+            			if (Ext.getCmp('id_default_value').getValue()){default_value = Ext.getCmp('id_default_value').getValue().format('Y-m-d');}else{default_value = null;}
         			}else{
         				if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue();}else{min_value = null;}
     	        		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue();}else{max_value = null;}
@@ -779,7 +789,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	        		if (this.text == gettext('Edit')){
 	        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
-	        			attributes_grid.getSelectionModel().getSelected().set('order','0');
+	        			attributes_grid.getSelectionModel().getSelected().set('order',order_slider.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('notes',notes_textField.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('type',type_combo.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('multivalued',multivalued_chekbox.getValue());
@@ -864,6 +874,38 @@ function add_single_attribute(edit, attributes_grid, insert_value){
     win_att_class.show();  
     
 }
+
+function moveSelectedRow(grid, direction) {
+	var record = grid.getSelectionModel().getSelected();
+	var bis_record;
+	if (!record) {
+		return;
+	}
+	var index = grid.getStore().indexOf(record);
+	if (direction < 0) {
+		index--;
+		if (index < 0) {
+			return;
+		}else{
+			bis_record = grid.getStore().getAt(index)
+			bis_record.data.order = index + 1;
+		}
+	} else {
+		index++;
+		if (index >= grid.getStore().getCount()) {
+			return;
+		}else{
+			bis_record = grid.getStore().getAt(index)
+			bis_record.data.order = index - 1;
+		}
+	}
+	grid.getStore().remove(bis_record);
+	grid.getStore().insert(index, bis_record);
+	grid.getStore().remove(record);
+	record.data.order = index;
+	grid.getStore().insert(index, record);
+	grid.getSelectionModel().selectRow(index, true);
+}
 /**
  * Detail Class Panel
  */	
@@ -943,11 +985,16 @@ function load_detail_class(class_data, id_class, add_class){
 				if (add_class){
 					Ext.getCmp('id_edit_attributes_class').enable();
 					Ext.getCmp('id_remove_attributes_class').enable();
+					Ext.getCmp('id_movedown_attributes_class').enable();
+					Ext.getCmp('id_moveup_attributes_class').enable();
+
 				}
 			}},
 			rowdeselect: {fn:function(sm){
 				Ext.getCmp('id_edit_attributes_class').disable();
 				Ext.getCmp('id_remove_attributes_class').disable();
+				Ext.getCmp('id_movedown_attributes_class').disable();
+				Ext.getCmp('id_moveup_attributes_class').disable();
 			}}
 		}
 	});
@@ -980,6 +1027,7 @@ function load_detail_class(class_data, id_class, add_class){
         store: store_attributes_grid,
         sm: sm_attributes_grid,
         title:'Attributes',
+    	height: 180,
         cm: new Ext.grid.ColumnModel([
                                 sm_attributes_grid,
                                 {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id', hidden:true},
@@ -1005,10 +1053,10 @@ function load_detail_class(class_data, id_class, add_class){
             	console.log('not implemented yet');
             	add_single_attribute(false, attributes_grid, false);
         	}
-        }, '-', {
+        },'-',{
             text:'Edit',
             id: 'id_edit_attributes_class',
-            tooltip:'Edit attribute',
+            tooltip:'Edit the selected row',
             iconCls:'edit_icon',
             disabled:true,
             handler: function() {
@@ -1018,7 +1066,7 @@ function load_detail_class(class_data, id_class, add_class){
         },'-',{
             text:'Remove',
             id: 'id_remove_attributes_class',
-            tooltip:'Remove the selected item',
+            tooltip:'Remove the selected row',
             iconCls:'clear_icon',
             disabled:true,
             handler: function() {
@@ -1030,14 +1078,33 @@ function load_detail_class(class_data, id_class, add_class){
 	                }
         		);
         	}
-        }],
-    	height: 180
+        },'-',{
+            text:'Move up',
+            id: 'id_moveup_attributes_class',
+            tooltip:'Move up the selected row',
+            iconCls:'clear_icon',
+            disabled:true,
+            handler: function() {
+                    moveSelectedRow(attributes_grid,-1);
+        	}
+        },'-',{
+            text:'Move down',
+            id: 'id_movedown_attributes_class',
+            tooltip:'Move down the selected row',
+            iconCls:'clear_icon',
+            disabled:true,
+            handler: function() {
+                    moveSelectedRow(attributes_grid,1);
+        	}
+        }]
     });
     
     if (!add_class){
     	console.log(attributes_grid);
 		Ext.getCmp('id_edit_attributes_class').disable();
 		Ext.getCmp('id_remove_attributes_class').disable();
+		Ext.getCmp('id_movedown_attributes_class').disable();
+		Ext.getCmp('id_moveup_attributes_class').disable();
 		Ext.getCmp('id_add_attributes_class').disable();
     }
 	
