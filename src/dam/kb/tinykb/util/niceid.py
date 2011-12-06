@@ -61,6 +61,14 @@ def niceid(base, extra_chars=8):
     safe_base = string.translate(base, None, deletions)
     safe_base = safe_base.replace(' ', '_').lower()
 
+    # Remove all pairs of underscores until the string is "normalized"
+    normalized = False
+    old_safe_base = safe_base
+    while not normalized:
+        safe_base = safe_base.replace('__', '_')
+        normalized = (old_safe_base == safe_base)
+        old_safe_base = safe_base
+
     if (0 == extra_chars):
         return safe_base
     else:
