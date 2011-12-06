@@ -17,31 +17,20 @@
 #
 #########################################################################
 
-## Friendly Readable ID Strings (Python recipe)
-## Published by Robin Parmar on 2007 under the terms of the PSF License
-##
-## Original code: http://code.activestate.com/recipes/526619/
-## 
-## Slightly modified by Alceste Scalas <alceste@crs4.it>:
-##   function name changes, lenght option, niceid() function
-from random import choice
+import random
 import string
 import unicodedata
 
-valid_chars = ' _-' + string.digits + string.ascii_letters
-all_chars = string.maketrans('', '')
-deletions = ''.join(set(all_chars) - set(valid_chars))
+random.seed()
+VALID_CHARS = string.ascii_lowercase + string.digits
 
 def generate(length=8):
-    '''
-    Create an ID string we can recognise.
-    Think Italian or Japanese or Native American.)
-    '''
-    v = 'aeiou'
-    c = 'bdfghklmnprstvw'
-    
-    return ''.join([choice(v if i%2 else c) for i in range(length)])
-
+    id_ = ''
+    i = 0
+    while i < length:
+        id_ += VALID_CHARS[random.randint(0, len(VALID_CHARS) - 1)]
+        i += 1
+    return id_
 
 def generate_unique(used_ids, length=8):
     '''
@@ -63,7 +52,7 @@ def generate_unique(used_ids, length=8):
 def niceid(base, extra_chars=8):
     '''
     Create a nice ID based on the given string, eventually adding
-    extra random (human-readable) characters
+    extra random characters
     '''
     # Convert Unicode into string, strip forbidden chars, replace spaces
     if isinstance(base, unicode):
