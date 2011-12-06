@@ -584,9 +584,9 @@ var treeAction = function(tree_action){
     function submit_tree_form_obj(){
     	var params;
     	if (Ext.getCmp('check_drop_option_id').getValue()){
-    		params = {cls: "object-keyword"};
+    		params = {cls: "object-category"};
     	}else{
-    		params = { cls: "object-category"};
+    		params = {cls: "object-keyword"};
     	}
     	params.kb_object = Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.id;
     	params.type = 'object';
@@ -597,7 +597,7 @@ var treeAction = function(tree_action){
             success: function(form, action) {
                 if(!sel_node.length) {
             		console.log(tree_loader);
-            		if((tree_action.text == gettext('Add')) || (tree_action.text == gettext('Object Reference'))){
+            		if((tree_action.text == gettext('Add')) || (tree_action.text == gettext('Object'))){
         				tree_loader.clearOnLoad = false;
 	                    tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
 	                    tree_loader.load(sel_node,function(){
@@ -606,7 +606,6 @@ var treeAction = function(tree_action){
 	                        sel_node.expand();
 	                    });
             		}else{
-            			console.log('ELSEEEE');
 	                    tree_loader.load();
             		}
                 }
@@ -813,7 +812,7 @@ var treeAction = function(tree_action){
         search.setValue(path);
         set_query_on_store({query: path, show_associated_items: true});
     }
-    else if (tree_action.text == gettext("Object Reference") || 
+    else if (tree_action.text == gettext("Object") || 
     		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-category') ||
     		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-keyword')){
     	console.log('selNode: ');
@@ -830,11 +829,11 @@ var treeAction = function(tree_action){
         
     	node_id = sel_node.id;
     	type = 'ObjReference';
-        var action = (tree_action.text  == gettext('Add') || tree_action.text  == gettext('Object Reference')) ? 'Add': 'Edit' ;
+        var action = (tree_action.text  == gettext('Add') || tree_action.text  == gettext('Object')) ? 'Add': 'Edit' ;
         var url = '/' + action.toLowerCase() + '_node/';
     	var add_option_droppable = new Ext.form.Checkbox({
             id: 'check_drop_option_id',
-            fieldLabel: 'Object as Keyword',
+            fieldLabel: 'Use object as a category',
             name: 'check_drop_option'
         });
     	if (sel_node.attributes.iconCls == 'object-keyword' && tree_action.text  == gettext('Edit')){
@@ -856,7 +855,7 @@ var treeAction = function(tree_action){
             allowDrop:true,
             editable: false,
             type:'object',
-            iconCls:'category',
+            iconCls:'object-category',
         });
         // SET the root node.
         var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
@@ -868,7 +867,7 @@ var treeAction = function(tree_action){
             editable: false,
     		containerScroll: true,
             type:'object',
-            iconCls:'category',
+            iconCls:'object-category',
         });
         var tree_loader_obj = new Ext.tree.TreeLoader({
             dataUrl:'/kb/get_nodes_real_obj/',
@@ -913,7 +912,7 @@ var treeAction = function(tree_action){
 	  	var tree_form_obj = new Ext.FormPanel({
             id:'tree_form_obj',
             region: 'north',
-            labelWidth: 110, // label settings here cascade unless overridden
+            labelWidth: 150, // label settings here cascade unless overridden
             frame:true,
             height: height_form,
             bodyStyle:'padding:5px 5px 0',              
@@ -943,7 +942,7 @@ var treeAction = function(tree_action){
     	}
         
         win = new Ext.Window({
-            title: 'Add Object Reference',
+            title: 'Add Object',
             constrain: true,
             layout: 'border',
             width : width_win,
@@ -1113,7 +1112,7 @@ var treeAction = function(tree_action){
 
 var add_keyword =  new Ext.menu.Item({id: 'addKeyword',text: gettext('Keyword')});
 var add_category =  new Ext.menu.Item({id: 'addCategory', text: gettext('Category')});
-var add_obj_reference =  new Ext.menu.Item({id: 'addObjReference', text: gettext('Object Reference')});
+var add_obj_reference =  new Ext.menu.Item({id: 'addObjReference', text: gettext('Object')});
 
 var add_node = new Ext.menu.Item({text: gettext('Add'), menu: [add_keyword, add_category, add_obj_reference]});
 var edit_node = new Ext.menu.Item({text: gettext('Edit')});

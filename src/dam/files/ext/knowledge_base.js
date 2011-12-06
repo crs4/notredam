@@ -87,13 +87,14 @@ function get_treeLoader_vocabulary(){
 
 function get_AsyncTreeNode(){
 	return new Ext.tree.AsyncTreeNode({
-        text: gettext('All'),
+        text: gettext('Base classes'),
         id:'root_obj_tree',
         expanded: true,
         allowDrag:false,
         allowDrop:true,
         editable: false,
-        type:'object'
+        type:'object',
+        iconCls: 'object-class'
     });
 }
 
@@ -101,6 +102,7 @@ function show_win_single_attribute(params, title){
 	var win_select_class_target = new Ext.Window({
         id		:'id_win_select_class_target',
 		layout	: 'form',
+		resizable : false,
 		defaults: {               // defaults are applied to items, not the container
 		    autoScroll:true
 		},
@@ -170,6 +172,7 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
 		defaults: {               // defaults are applied to items, not the container
 		    autoScroll:true
 		},
+		resizable : false,
         width	: 220,
         height	: 320,
         title	:'Vocabulary',
@@ -637,7 +640,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
             new Ext.data.SimpleStore({
               fields: ['id','name'],
               data: [
-                ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["uri","Url"],["choice","Choice"],["objref","Object References"]]
+                ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["uri","Url"],["choice","Choice"],["objref","Object Reference"]]
           }), // end of Ext.data.SimpleStore
         fieldLabel: 'Type',
         width: 130,
@@ -848,6 +851,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
     var win_att_class = new Ext.Window({
         id		:'id_win_add_attribute',
 		layout	: 'fit',
+		resizable : false,
 		defaults: {               // defaults are applied to items, not the container
 		    autoScroll:true
 		},
@@ -915,7 +919,7 @@ function load_detail_class(class_data, id_class, add_class){
                                 {id:'name',header: "Name", width: 110, sortable: true, dataIndex: 'name'},
                                 {id:'description',header: "Description", width: 160, sortable: true, dataIndex: 'description'}
         ]),
-        viewConfig: { // to select current ws in this grid
+        viewConfig: { //to select current ws in this grid
     		afterRender: function(){
         		this.constructor.prototype.afterRender.call(this);
         		if(id_class == 'root_obj_tree'){//adding a new root class
@@ -957,7 +961,9 @@ function load_detail_class(class_data, id_class, add_class){
 		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'+id_class;
 		superclass_textField.setValue(class_data.getAt(0).data.superclass);
 		var method_request='POST';
-		ws_admin_grid.disable();
+		if(Ext.getCmp('obj_reference_tree').getNodeById(id_class).parentNode.attributes.id != 'root_obj_tree'){
+			ws_admin_grid.disable();
+		}
 	}else{
 		var title = "Add new class";
 		var store_attributes_grid = [];
@@ -1558,14 +1564,8 @@ function open_knowledgeBase(){
 								if (node.attributes.id != 'root_obj_tree'){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
-									if(Ext.getCmp('details_panel_class')){//if the panel would be been empty removeAll command raise an error.
-										Ext.getCmp('details_panel_class').removeAll();
-										Ext.getCmp('details_panel_class').setTitle('Class Objects');
-									}
-									if (Ext.getCmp('details_panel_obj')){
-										Ext.getCmp('details_panel_obj').removeAll();
-										Ext.getCmp('details_panel_obj').setTitle('Class Objects');
-									}
+									Ext.getCmp('details_panel').removeAll();
+									//Ext.getCmp('details_panel_class').setTitle('Class Objects');
 								}
 							}
 						}
@@ -1594,6 +1594,7 @@ function open_knowledgeBase(){
         height	: 550,
         title	:'Vocabulary',
         modal	: true,
+		resizable : false,
       	items	:[details_panel,
       	     	  tree_obj_reference
         ],

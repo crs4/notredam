@@ -124,7 +124,6 @@ def add(request = None,  workspace = None,  name = None, parent_id = None):
         parent_id = request.POST['node_id']
 
     node  = Node.objects.get(pk = parent_id) 
-
     try:
         if node.type == 'keyword':
             new_node= _add_keyword(request, node,  name,  workspace)    
@@ -236,13 +235,11 @@ def get_nodes(request):
         can_edit = workspace.has_permission(user, 'edit_collection')
 
     for n in nodes:
-#        logger.debug("n--")
-#        loger.debug(n.cls)
         if (n.cls == 'object-category'):
             allowDrag = False
             editable = True
             n.is_drop_target = True
-            allowDrop = False
+            allowDrop = True
         elif (n.cls == 'object-keyword'):
             allowDrag = True
             editable = True
@@ -261,10 +258,10 @@ def get_nodes(request):
         
         if n.type == 'keyword':
             tmp['add_metadata_parent'] = n.associate_ancestors        
-        
-#        if n.type == 'keyword':
-        if n.cls != 'category' and n.cls != 'new_keyword' and n.cls!= 'no_keyword' and n.type != 'inbox' :
-            
+        if n.cls == 'object-category':
+            tmp['isCategory'] = True
+
+        if n.cls != 'object-category' and n.cls != 'category' and n.cls != 'new_keyword' and n.cls!= 'no_keyword' and n.type != 'inbox' :
             n_items = n.items.filter(pk__in = items) 
             n_items_count = n_items.count()
             tmp['checked'] =  n_items_count > 0
