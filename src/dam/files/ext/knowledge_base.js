@@ -622,7 +622,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		empty_chekbox_value = false;
 		multivalued_chekbox_value = false;
 		notes_textField_value = null;
-		title = "Add new attribute";
+		title = "New attribute";
 		text_button = gettext('Add');
 		max_value_slider = attributes_grid.getStore().getCount();
 	}
@@ -956,7 +956,7 @@ function load_detail_class(class_data, id_class, add_class){
 		id_textField.setValue(class_data.getAt(0).data.id);
 		name_textField.setValue(class_data.getAt(0).data.name);
 		notes_textField.setValue(class_data.getAt(0).data.notes);
-		var title = "Edit class " + name_textField.getValue();
+		Ext.getCmp('details_panel').setTitle('Edit '+name_textField.getValue()+' [class]');
 		var store_attributes_grid = store_get_class_attributes(id_class);
 		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'+id_class;
 		superclass_textField.setValue(class_data.getAt(0).data.superclass);
@@ -965,7 +965,7 @@ function load_detail_class(class_data, id_class, add_class){
 			ws_admin_grid.disable();
 		}
 	}else{
-		var title = "Add new class";
+		Ext.getCmp('details_panel').setTitle('New class');
 		var store_attributes_grid = [];
 		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'; 
 		if (id_class != 'root_obj_tree'){
@@ -1050,6 +1050,7 @@ function load_detail_class(class_data, id_class, add_class){
     var details_panel_class = new Ext.FormPanel({
         id:'details_panel_class',
         title: title,
+        header : false,
         labelWidth: 110, // label settings here cascade unless overridden
         frame:true,
         bodyStyle:'padding:5px 5px 0',              
@@ -1193,7 +1194,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	// class_id id class
 	
 	var fields = [];
-	var choices, title, method_request, url_submit, id_textField_value, name_textField_value, notes_textField_value, class_id_textField_value;
+	var choices, method_request, url_submit, id_textField_value, name_textField_value, notes_textField_value, class_id_textField_value;
 	var store_attributes_grid_obj;
 	if (!add_obj){
 //		console.log(obj_data.getAt(0).data);
@@ -1202,7 +1203,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		notes_textField_value = obj_data.getAt(0).data.notes;
 		class_id_textField_value = obj_data.getAt(0).data.class_id;
 		store_attributes_grid_obj = get_store_obj_attributes(obj_data.getAt(0).data.class_id, obj_id);
-		title = "Edit object " + name_textField_value;
+		Ext.getCmp('details_panel').setTitle('Edit '+name_textField_value+' [object]');
 		method_request='POST';
 		url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+obj_id
 	}else{
@@ -1212,7 +1213,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		notes_textField_value = null;
 		class_id_textField_value = class_id;
 		store_attributes_grid_obj = get_store_obj_attributes(class_id, null);
-		title = "Add new object";
+		Ext.getCmp('details_panel').setTitle('New object');
 		method_request='PUT';
 		url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/';
 	}
@@ -1285,7 +1286,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     fields.push(attributes_grid);
     var details_panel_obj = new Ext.FormPanel({
         id:'details_panel_obj',
-        title: title,
+        header: false,
         labelWidth: 110, // label settings here cascade unless overridden
         frame:true,
         bodyStyle:'padding:5px 5px 0',              
@@ -1565,7 +1566,7 @@ function open_knowledgeBase(){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
 									Ext.getCmp('details_panel').removeAll();
-									//Ext.getCmp('details_panel_class').setTitle('Class Objects');
+									Ext.getCmp('details_panel').setTitle('Select an class or object to show details.');
 								}
 							}
 						}
