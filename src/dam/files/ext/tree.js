@@ -606,7 +606,7 @@ var treeAction = function(tree_action){
 	                        sel_node.expand();
 	                    });
             		}else{
-	                    tree_loader.load();
+            			sel_node.setText(form.getValues().label);
             		}
                 }
                 win.close();
@@ -836,7 +836,7 @@ var treeAction = function(tree_action){
             fieldLabel: 'Use object as a category',
             name: 'check_drop_option'
         });
-    	if (sel_node.attributes.iconCls == 'object-keyword' && tree_action.text  == gettext('Edit')){
+    	if (sel_node.attributes.iconCls == 'object-category' && tree_action.text  == gettext('Edit')){
     		add_option_droppable.setValue(true);
     	}
     	var label = new Ext.form.TextField({

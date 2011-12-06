@@ -126,7 +126,6 @@ class NodeManager(models.Manager):
         root = Node.objects.get_or_create(workspace=  owner, label='root', parent__isnull = True)[0]         
            
         nodes = root.get_branch()
-#        print nodes
         return nodes
    
 class Category(models.Model):
@@ -175,9 +174,9 @@ class Node(AbstractNode):
             self.reassoc_node(label, workspace, kb_object_id)
             self.save()
         if kb_object_id and new_cls:
-            print 'AAAAAAAAAAAAAAAAA %s' %new_cls
             self.kb_object = KBObject.objects.get(pk = kb_object_id)
             self.cls = new_cls
+            self.rename_node(label, workspace)
             self.save()
 
     def remove_keyword_association(self, items):
