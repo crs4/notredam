@@ -676,7 +676,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	var empty_chekbox = new Ext.form.Checkbox({
         id: 'id_empty_chekbox',
         allowBlank:false,
-        fieldLabel: 'Empty value',
+        fieldLabel: 'Maybe empty',
         checked:empty_chekbox_value, 
         name: 'empty_checkbox'
     });
