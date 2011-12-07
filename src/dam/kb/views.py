@@ -818,7 +818,7 @@ def _std_attr_dict_fields(d):
                        [('length > 0', lambda x: len(x) > 0)]),
             'maybe_empty' : v(d, 'maybe_empty', [bool], default=True),
             'order' : v(d, 'order', [NoneType, int], default=0),
-            'multivalued' : v(d, 'maybe_empty', [bool], default=False),
+            'multivalued' : v(d, 'multivalued', [bool], default=False),
             'notes' : v(d, 'notes', [NoneType, unicode, str])}
 
 
