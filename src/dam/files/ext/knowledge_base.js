@@ -256,8 +256,10 @@ function check_add_button_add_option(){
 function check_remove_button_add_option(){
 	if (Ext.getCmp('id_record_value').getStore().getCount() == 0){
 		Ext.getCmp('id_remove_attributes_class').disable();
-		Ext.getCmp('id_movedown_attributes_class').disable();
-		Ext.getCmp('id_moveup_attributes_class').disable();
+		if(Ext.getCmp('id_movedown_attributes_class')){
+			Ext.getCmp('id_movedown_attributes_class').disable();
+			Ext.getCmp('id_moveup_attributes_class').disable();
+		}
 	}
 }
 
