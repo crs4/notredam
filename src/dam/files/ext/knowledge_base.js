@@ -131,6 +131,8 @@ function show_win_single_attribute(params, title){
         },{
             text: 'Close',
             handler: function() {
+				check_add_button_add_option();
+				check_remove_button_add_option();
         		win_select_class_target.close();
         	}
         }]
@@ -150,7 +152,7 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
 	
     var tree_vocabulary_to_obj_ref = new Ext.tree.TreePanel({
 		id:'id_tree_vocabulary_to_obj_ref',
-		title:'Select target classes',
+		title:gettext('Select target classes'),
 		containerScroll: true,
 		width: 100,
 		autoScroll:true,
@@ -175,7 +177,7 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
 		resizable : false,
         width	: 220,
         height	: 320,
-        title	:'Vocabulary',
+        title	:gettext('Vocabulary'),
         modal	: true,
       	items	:[tree_vocabulary_to_obj_ref],
         buttons	:[{
@@ -248,7 +250,7 @@ function check_add_button_add_option(){
 		console.log('if');
 		Ext.getCmp('id_add_attributes_class').disable();
 	}else{
-		console.log('else');
+		console.log('else - enable add');
 		Ext.getCmp('id_add_attributes_class').enable();
 	}
 }
@@ -271,14 +273,9 @@ function get_grid_insert_value(value, type, title){
 		listeners:{
 			rowselect: {fn:function(sm){
 				Ext.getCmp('id_remove_attributes_class').enable();
-				Ext.getCmp('id_movedown_attributes_class').enable();
-				Ext.getCmp('id_moveup_attributes_class').enable();
-
 			}},
 			rowdeselect: {fn:function(sm){
 				Ext.getCmp('id_remove_attributes_class').disable();
-				Ext.getCmp('id_movedown_attributes_class').disable();
-				Ext.getCmp('id_moveup_attributes_class').disable();
 			}}
 		}
 	});
@@ -310,9 +307,9 @@ function get_grid_insert_value(value, type, title){
         			var record_value = new Ext.form.ComboBox({
         				id  : 'id_record_value_single_box',
         		        store: get_TF_store(), // end of Ext.data.SimpleStore
-        		        fieldLabel: 'Select value ...',
+        		        fieldLabel: gettext('Select value ...'),
         		        width: 130,
-        		        emptyText: 'Select ...',
+        		        emptyText: gettext('Select ...'),
         		        displayField: 'name',
         		        valueField: 'id',
         		        mode: 'local',
@@ -325,7 +322,7 @@ function get_grid_insert_value(value, type, title){
         			var record_value = new Ext.form.TextField({
         				name: 'Insert value',
         				id  : 'id_record_value_single_box',
-        				fieldLabel: 'Insert value',
+        				fieldLabel: gettext('Insert value'),
         		        allowBlank:true
         			});
         			show_win_single_attribute(record_value, 'Insert Value');
@@ -333,7 +330,7 @@ function get_grid_insert_value(value, type, title){
         			var record_value = new Ext.form.DateField({
         				name: 'Insert value',
         				id  : 'id_record_value_single_box',
-        				fieldLabel: 'Insert value',
+        				fieldLabel: gettext('Insert value'),
         				format: 'Y-m-d',
         		        allowBlank:true
         			});
@@ -342,7 +339,7 @@ function get_grid_insert_value(value, type, title){
         			var record_value = new Ext.form.NumberField({
         				name: 'Insert value',
         				id  : 'id_record_value_single_box',
-        				fieldLabel: 'Insert value',
+        				fieldLabel: gettext('Insert value'),
         		        allowBlank:true
         			});
     				show_win_single_attribute(record_value, 'Insert Value');
@@ -404,21 +401,21 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		var min_number = new Ext.form.NumberField({
 			name: 'min_number',
 			id  : 'id_min',
-			fieldLabel: 'Min value',
+			fieldLabel: gettext('Min value'),
 			value: min_number_value,
 	        allowBlank:true
 		});
 		var max_number = new Ext.form.NumberField({
 			name: 'max_number',
 			id  : 'id_max',
-			fieldLabel: 'Max value',
+			fieldLabel: gettext('Max value'),
 			value: max_number_value,
 	        allowBlank:true
 		});
 		var default_value = new Ext.form.NumberField({
 			name: 'default_value',
 			id  : 'id_default_value',
-			fieldLabel: 'Default value',
+			fieldLabel: gettext('Default value'),
 			value: default_v,
 	        allowBlank:true
 		});
@@ -443,7 +440,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		var min_date = new Ext.form.DateField({
 			name: 'min_date',
 			id  : 'id_min',
-			fieldLabel: 'Min date',
+			fieldLabel: gettext('Min date'),
 			format: 'Y-m-d',
 			value: min_date_value,
 	        allowBlank:true
@@ -451,7 +448,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		var max_date = new Ext.form.DateField({
 			name: 'max_date',
 			id  : 'id_max',
-			fieldLabel: 'Max date',
+			fieldLabel: gettext('Max date'),
 			format: 'Y-m-d',
 			value: max_date_value,
 	        allowBlank:true
@@ -460,7 +457,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			name: 'default_value',
 			id  : 'id_default_value',
 			format: 'Y-m-d',
-			fieldLabel: 'Default value',
+			fieldLabel: gettext('Default value'),
 			value: default_v,
 	        allowBlank:true
 		});
@@ -483,7 +480,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		var max_length = new Ext.form.NumberField({
 			name: 'max_length',
 			id  : 'id_max_length',
-			fieldLabel: 'Max length',
+			fieldLabel: gettext('Max length'),
 			value: max_length_value,
 	        allowBlank:false
 		});
@@ -502,10 +499,10 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		var target_class = new Ext.form.TextField({
 			name: 'target_class',
 			id  : 'id_target_class',
-			fieldLabel: 'Insert target class',
+			fieldLabel: gettext('Insert target class'),
 	        allowBlank:false,
 	        readOnly:false,
-			emptyText:'Double click here',
+			emptyText:gettext('Double click here'),
 	        value: target_class_value,
 	        handleMouseEvents: true,
 	        listeners: {'render': function(cmp) { 
@@ -530,13 +527,13 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			id  : 'id_default_value',
 	        store: get_TF_store(),// end of Ext.data.SimpleStore
 	        width: 130,
-	        emptyText: 'Select ...',
+	        emptyText: gettext('Select ...'),
 	        displayField: 'name',
 	        valueField: 'id',
 	        mode: 'local',
 	        editable: false,
 			value: default_v,
-			fieldLabel: 'Default value',
+			fieldLabel: gettext('Default value'),
 	        allowBlank:true,
 	        triggerAction: 'all'
 		});
@@ -554,15 +551,15 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		var choices = new Ext.form.TextField({
 			name: 'choices',
 			id  : 'id_choices',
-			emptyText:'Separates by ,',
-			fieldLabel: 'Choices',
+			emptyText:gettext('Separates by ,'),
+			fieldLabel: gettext('Choices'),
 			value: choices_value,
 	        allowBlank:false
 		});
 		var default_value = new Ext.form.TextField({
 			name: 'default_value',
 			id  : 'id_default_value',
-			fieldLabel: 'Default value',
+			fieldLabel: gettext('Default value'),
 			value: default_v,
 	        allowBlank:true
 		});
@@ -588,7 +585,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		            menuDisabled: true,
 		            width: 100
 		        },
-		        title:'Select values',
+		        title:gettext('Select values'),
 		        cm: new Ext.grid.ColumnModel([
 		                                sm_choices_value,
 		                                {id:'name',header: "Value", width: 110, sortable: true, dataIndex: 'name'},
@@ -598,10 +595,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			choices.disable();
 			default_value.disable();
 			attribute_detail_panel.add(record_value);
-			if (data.value){
-				//FIXME check row on grid.
-				console.log('aaaaa');
-			}
 		}
 	}
 	attribute_detail_panel.doLayout();
@@ -623,7 +616,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		empty_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.maybe_empty;
 		multivalued_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.multivalued;
 		notes_textField_value = attributes_grid.getSelectionModel().getSelected().data.notes;
-		title = "Edit attribute";
+		title = gettext("Edit attribute");
 		text_button = gettext('Edit');
 		max_value_slider = attributes_grid.getStore().getCount()-1;
 		slider_value = attributes_grid.getSelectionModel().getSelected().data.order;
@@ -632,13 +625,13 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		empty_chekbox_value = false;
 		multivalued_chekbox_value = false;
 		notes_textField_value = null;
-		title = "New attribute";
+		title = gettext("New attribute");
 		text_button = gettext('Add');
 		max_value_slider = attributes_grid.getStore().getCount();
 		slider_value = attributes_grid.getStore().getCount();
 	}
 	var name_textField = new Ext.form.TextField({
-        fieldLabel: 'Name',
+        fieldLabel: gettext('Name'),
         allowBlank:false,
         name: 'name',
         value: name_textField_value, 
@@ -653,9 +646,9 @@ function add_single_attribute(edit, attributes_grid, insert_value){
               data: [
                 ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["uri","Url"],["choice","Choice"],["objref","Object Reference"]]
           }), // end of Ext.data.SimpleStore
-        fieldLabel: 'Type',
+        fieldLabel: gettext('Type'),
         width: 130,
-        emptyText: 'Select a type...',
+        emptyText: gettext('Select a type...'),
         displayField: 'name',
         valueField: 'id',
         mode: 'local',
@@ -676,19 +669,19 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 	var empty_chekbox = new Ext.form.Checkbox({
         id: 'id_empty_chekbox',
         allowBlank:false,
-        fieldLabel: 'Maybe empty',
+        fieldLabel: gettext('Maybe empty'),
         checked:empty_chekbox_value, 
         name: 'empty_checkbox'
     });
 	var multivalued_chekbox = new Ext.form.Checkbox({
         id: 'id_multivalued_chekbox',
         allowBlank:false,
-        fieldLabel: 'Multivalued',
+        fieldLabel: gettext('Multivalued'),
         checked:multivalued_chekbox_value, 
         name: 'multivalued_chekbox'
     });
 	var notes_textField = new Ext.form.TextArea({
-        fieldLabel: 'Notes',
+        fieldLabel: gettext('Notes'),
         allowBlank:true,
         width: 130,
         name: 'notes',
@@ -817,7 +810,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		        			target_class: target_class
 		        		}));
 	        		}
-        		}else{ // obj scope
+        		}else{ //obj scope
         			if(attributes_grid.getSelectionModel().getSelected().data.type == 'choice'){//case where choice is multivalued
         				var txt = "";
         				for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
@@ -835,7 +828,11 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         			}else if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//objref multivalued false
     					console.log('multivalued false');
     					console.log(Ext.getCmp('id_record_value'));
-        				if (Ext.getCmp('id_record_value').getStore().getCount() == 1){attributes_grid.getSelectionModel().getSelected().set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);}
+        				if (Ext.getCmp('id_record_value').getStore().getCount() == 1){
+        					attributes_grid.getSelectionModel().getSelected().set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);
+        				}else{
+        					attributes_grid.getSelectionModel().getSelected().set('value', null);
+        				}
     				}
         		}
         		win_att_class.close();
@@ -857,7 +854,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		notes_textField.disable();
 		order_slider.setValue(attributes_grid.getSelectionModel().getSelected().data.order);
 		order_slider.disable();
-		title = 'Insert value for this attribute';
+		title = gettext('Insert value for this attribute');
 		Ext.getCmp('attribute_detail_panel').buttons[0].text=gettext('Done');
 	}
     var win_att_class = new Ext.Window({
@@ -926,7 +923,7 @@ function load_detail_class(class_data, id_class, add_class){
         hidden:true
     });
 	var name_textField = new Ext.form.TextField({
-        fieldLabel: 'Name',
+        fieldLabel: gettext('Name'),
         allowBlank:false,
         name: 'name',
         id:'name_class'
@@ -938,7 +935,7 @@ function load_detail_class(class_data, id_class, add_class){
         hidden:true
     });
 	var notes_textField = new Ext.form.TextArea({
-        fieldLabel: 'Notes',
+        fieldLabel: gettext('Notes'),
         allowBlank:true,
         width: 130,
         name: 'notes',
@@ -956,7 +953,7 @@ function load_detail_class(class_data, id_class, add_class){
             menuDisabled: true,
             width: 100
         },
-        title:'Select workspaces',
+        title:gettext('Select workspaces'),
         cm: new Ext.grid.ColumnModel([
                                 sm_ws_admin,
                                 {id:'pk',header: "pk", width: 30, sortable: true, dataIndex: 'pk', hidden:true},
@@ -1005,7 +1002,7 @@ function load_detail_class(class_data, id_class, add_class){
 		id_textField.setValue(class_data.getAt(0).data.id);
 		name_textField.setValue(class_data.getAt(0).data.name);
 		notes_textField.setValue(class_data.getAt(0).data.notes);
-		Ext.getCmp('details_panel').setTitle('Edit '+name_textField.getValue()+' [class]');
+		Ext.getCmp('details_panel').setTitle(gettext('Edit ')+name_textField.getValue()+gettext(' [class]'));
 		var store_attributes_grid = store_get_class_attributes(id_class);
 		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'+id_class;
 		superclass_textField.setValue(class_data.getAt(0).data.superclass);
@@ -1014,7 +1011,7 @@ function load_detail_class(class_data, id_class, add_class){
 			ws_admin_grid.disable();
 		}
 	}else{
-		Ext.getCmp('details_panel').setTitle('New class');
+		Ext.getCmp('details_panel').setTitle(gettext('New class'));
 		var store_attributes_grid = [];
 		var url_submit = '/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'; 
 		if (id_class != 'root_obj_tree'){
@@ -1028,7 +1025,7 @@ function load_detail_class(class_data, id_class, add_class){
     	id: 'attribute_grid_id',
         store: store_attributes_grid,
         sm: sm_attributes_grid,
-        title:'Attributes',
+        title:gettext('Attributes'),
     	height: 180,
         cm: new Ext.grid.ColumnModel([
                                 sm_attributes_grid,
@@ -1271,7 +1268,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		notes_textField_value = obj_data.getAt(0).data.notes;
 		class_id_textField_value = obj_data.getAt(0).data.class_id;
 		store_attributes_grid_obj = get_store_obj_attributes(obj_data.getAt(0).data.class_id, obj_id);
-		Ext.getCmp('details_panel').setTitle('Edit '+name_textField_value+' [object]');
+		Ext.getCmp('details_panel').setTitle(gettext('Edit ')+name_textField_value+gettext(' [object]'));
 		method_request='POST';
 		url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+obj_id
 	}else{
@@ -1281,7 +1278,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		notes_textField_value = null;
 		class_id_textField_value = class_id;
 		store_attributes_grid_obj = get_store_obj_attributes(class_id, null);
-		Ext.getCmp('details_panel').setTitle('New object');
+		Ext.getCmp('details_panel').setTitle(gettext('New object'));
 		method_request='PUT';
 		url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/';
 	}
@@ -1296,7 +1293,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	fields.push(id_textField);
 	
 	var name_textField = new Ext.form.TextField({
-        fieldLabel: 'Name',
+        fieldLabel: gettext('Name'),
         allowBlank:false,
         name: 'name',
         value:name_textField_value, 
@@ -1312,7 +1309,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     });
 	fields.push(class_id_textField);
 	var notes_textField = new Ext.form.TextArea({
-        fieldLabel: 'Notes',
+        fieldLabel: gettext('Notes'),
         allowBlank:true,
         width: 130,
         name: 'notes',
@@ -1324,7 +1321,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     var attributes_grid = new Ext.grid.GridPanel({
         id:'attribute_grid_obj_id',
     	store: store_attributes_grid_obj,
-        title:'Attributes',
+        title:gettext('Attributes'),
         sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
         cm: new Ext.grid.ColumnModel([
                                 {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id', hidden:true},
@@ -1571,7 +1568,7 @@ function open_knowledgeBase(){
 	// to start with empty form
 	var details_panel = new Ext.Panel({
 		id:'details_panel',
-		title:'Details',
+		title:gettext('Details'),
 	    region:'center',
 	    layout:'fit'
 	});
@@ -1586,7 +1583,7 @@ function open_knowledgeBase(){
 
 	var tree_obj_reference = new Ext.tree.TreePanel({
 		id:'obj_reference_tree',
-		title:'Classes and Objects',
+		title:gettext('Classes and Objects'),
         region:'west',
         autoDestroy : true,
 		containerScroll: true,
@@ -1634,7 +1631,7 @@ function open_knowledgeBase(){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
 									Ext.getCmp('details_panel').removeAll();
-									Ext.getCmp('details_panel').setTitle('Select an class or object to show details.');
+									Ext.getCmp('details_panel').setTitle(gettext('Select an class or object to show details.'));
 								}
 							}
 						}
@@ -1661,7 +1658,7 @@ function open_knowledgeBase(){
 		},
         width	: 1000,
         height	: 550,
-        title	:'Vocabulary',
+        title	:gettext('Vocabulary'),
         modal	: true,
 		resizable : false,
       	items	:[details_panel,
