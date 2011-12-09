@@ -104,7 +104,12 @@ Ext.ux.GMapPanel = Ext.extend(Ext.Panel, {
         this.markerManager = mgr;
         var conn = new Ext.data.Connection();
         var gmap = this;
-        var store_params = Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().lastOptions ? Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().lastOptions.params : {};
+        var store_params = {};
+        if (Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().lastOptions.params === undefined) {
+          var store_params = {};
+        } else {
+          var store_params = Ext.getCmp('media_tabs').getActiveTab().getComponent(0).getStore().lastOptions.params ;
+        }
         store_params['map_bounds'] = Ext.encode(map_bounds);
         store_params['zoom'] = this.gmap.getZoom();        
         
