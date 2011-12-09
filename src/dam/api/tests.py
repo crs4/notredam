@@ -73,6 +73,8 @@ from dam.workflow.views import _set_state
 from dam.mprocessor.models import Pipeline
 from dam.api.utils import _get_final_parameters
 from datetime import datetime
+import logging
+logger = logging.getLogger('dam')
 
 class MyTestCase(TestCase):
     """
@@ -114,7 +116,7 @@ class WSTestCase(MyTestCase):
         response = self.client.get('/api/workspace/get/',  params)        
         
         resp_dict = json.loads(response.content)        
-        print 'resp_dict ',  resp_dict        
+        #logger.debug( 'resp_dict %s' %  resp_dict)       
         wss_list = []
         for ws in self.user.workspaces.all():
             tmp = {'id':ws.pk,  'name': ws.name,  'description':ws.description,}
@@ -134,7 +136,7 @@ class WSTestCase(MyTestCase):
         params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/get_members/'%ws_pk,  params)                
         resp_dict = json.loads(response.content)        
-        print 'resp_dict ',  resp_dict        
+        logger.debug( 'resp_dict %s' %  resp_dict)       
         self.assertTrue(resp_dict == {'members': [{'username': 'admin', 'permissions': ['admin']}]})
         
         
