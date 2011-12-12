@@ -1148,7 +1148,13 @@ function createMediaPanel(config, autoLoad) {
 			   tooltip: gettext('Change to Map view'),
 			   handler: function() {
 			       var tab = Ext.getCmp('media_tabs').getActiveTab();			       
+                               if (google != undefined) {
 			       open_map();
+                               }
+                               else 
+                               {
+                             Ext.MessageBox.alert(gettext('Message'), gettext('You need a proper GOOGLE_KEY to get google maps.'));
+                               }
 			       
 			   }
 			}]
