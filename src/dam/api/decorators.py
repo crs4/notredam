@@ -130,7 +130,7 @@ def api_key_required(func):
         parameters = []
         for key,  value in args_dict.lists():
             if isinstance(value,  list):
-                logger.debug('key %s is a list'%key)
+                #logger.debug('key %s is a list'%key)
                 value.sort()
                 for el in value:
                     parameters.append(str(key)+str(el))
