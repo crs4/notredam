@@ -1,7 +1,6 @@
 /**
  * All Store
  */		
-
 function init_store_class_data(id_class, add_class){
 	//var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
 	if (id_class != 'root_obj_tree'){
@@ -41,7 +40,6 @@ function init_store_obj_data_edit(obj_id, add_obj){
 	    fields:['id','name','class_id','notes','attributes'],
         listeners:{
 			load: function() {
-				console.log('LOADDDD obj');
 				load_detail_obj(this, obj_id, add_obj, null);
 			}
 		}
@@ -63,6 +61,7 @@ function get_store_obj_attributes(class_id, obj_id){
 	    fields:['id','name','type','multivalued','maybe_empty','default_value','order','notes', 'value', 'choices', 'target_class', 'min', 'max','length', 'notes']
 	});	
 }
+
 function get_TF_store(){
 	return new Ext.data.SimpleStore({
         fields: ['id','name'],
@@ -70,13 +69,16 @@ function get_TF_store(){
           [true,"True"],[false,"False"]]
     });
 }
-var ws_admin_store = new Ext.data.JsonStore({
-    url: '/kb/get_workspaces_with_edit_vocabulary/',
-    id:'id_ws_admin_store',
-    autoLoad:true,
-    root: 'workspaces',
-    fields:['pk','name','description']
-});
+
+function get_ws_admin_store(){
+	return new Ext.data.JsonStore({
+	    url: '/kb/get_workspaces_with_edit_vocabulary/',
+	    id:'id_ws_admin_store',
+	    autoLoad:true,
+	    root: 'workspaces',
+	    fields:['pk','name','description']
+	});
+}
 
 function get_treeLoader_vocabulary(){
 	return new Ext.tree.TreeLoader({
@@ -103,7 +105,7 @@ function show_win_single_attribute(params, title){
         id		:'id_win_select_class_target',
 		layout	: 'form',
 		resizable : false,
-		defaults: {               // defaults are applied to items, not the container
+		defaults: {  // defaults are applied to items, not the container
 		    autoScroll:true
 		},
         width	: 300,
@@ -139,17 +141,13 @@ function show_win_single_attribute(params, title){
     });
 	win_select_class_target.show();
 }
+
 function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
 
-	console.log('dentro view_tree_vocabulary_to_obj_ref');
 	var text_app;
 	var tree_loader_obj = get_treeLoader_vocabulary();
-    
     var Tree_Obj_Root = get_AsyncTreeNode();
-    
-	
   	var sm = new Ext.tree.DefaultSelectionModel();
-	
     var tree_vocabulary_to_obj_ref = new Ext.tree.TreePanel({
 		id:'id_tree_vocabulary_to_obj_ref',
 		title:gettext('Select target classes'),
@@ -160,9 +158,7 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
 		rootVisible: true,
 		selModel: sm
 	});	
-	
 	tree_vocabulary_to_obj_ref.setRootNode(Tree_Obj_Root);
-	
 	new Ext.tree.TreeSorter(tree_vocabulary_to_obj_ref, {
 	    dir: "ASC",
 	    folderSort: true
@@ -183,8 +179,6 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
         buttons	:[{
             text: 'Done',
             handler: function() {
-	            console.log('textField_id');
-	        	console.log(textField_id);
 	        	var Attribute = Ext.data.Record.create([{
 	        		name: 'name'
 	        	}]);
@@ -243,14 +237,9 @@ function get_store_grid_insert(data_list){
 }
 
 function check_add_button_add_option(){
-	console.log('check_add_button_add_option');
-	console.log(Ext.getCmp('id_record_value').getStore().getCount());
-	console.log(Ext.getCmp('id_record_value').store.getCount());
 	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false && Ext.getCmp('id_record_value').getStore().getCount() > 0){
-		console.log('if');
 		Ext.getCmp('id_add_attributes_class').disable();
 	}else{
-		console.log('else - enable add');
 		Ext.getCmp('id_add_attributes_class').enable();
 	}
 }
@@ -279,7 +268,6 @@ function get_grid_insert_value(value, type, title){
 			}}
 		}
 	});
-
 	var grid_value = new Ext.grid.GridPanel({
         id:'id_record_value',
     	store: store_grid,
@@ -390,7 +378,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	var choices_value = null;
 	var target_class_value=null;
 	var i;
-	console.log('add option');
 	
 	if (value == 'int'){
 		if (data){
@@ -423,8 +410,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		attribute_detail_panel.add(max_number);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
-			console.log(data.value);
-			console.log('type: '+value);
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			min_number.disable();
 			max_number.disable();
@@ -465,8 +450,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		attribute_detail_panel.add(max_date);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
-			console.log(data.value);
-			console.log('type: '+value);
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			min_date.disable();
 			max_date.disable();
@@ -486,8 +469,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		});
 		attribute_detail_panel.add(max_length);
 		if (insert_value){
-			console.log(data.value);
-			console.log('type: '+value);
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			max_length.disable();
 			attribute_detail_panel.add(record_value);
@@ -514,7 +495,6 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		});
 		attribute_detail_panel.add(target_class);
 		if (insert_value){//can select only objects.
-			console.log(data.value);
 			record_value = get_grid_insert_value(data.value, value, 'Select objects references');
 			target_class.disable();
 			attribute_detail_panel.add(record_value);			
@@ -601,6 +581,10 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 }
 
 function isEmpty(obj) {
+	/*
+	 * Verify if the obj passed is empty on not.
+	 * @return true if it is empty else false
+	 */
 	if (typeof obj == 'undefined' || obj === null || obj === '') return true;
 	if (typeof obj == 'number' && isNaN(obj)) return true;
 	if (obj instanceof Date && isNaN(Number(obj))) return true;
@@ -608,7 +592,6 @@ function isEmpty(obj) {
 }
 
 function add_single_attribute(edit, attributes_grid, insert_value){
-	console.log('add_single_attribute');
 	var name_textField_value, empty_chekbox_value, empty_chekbox_value, multivalued_chekbox_value, notes_textField_value, title, text_button, max_value_slider;
 	
 	if (edit){
@@ -637,7 +620,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         value: name_textField_value, 
         id:'name_attribute'
     });
-	// create the combo instance
 	var type_combo = new Ext.form.ComboBox({
         id: 'type_comb_class',
         store: 
@@ -733,7 +715,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
             text: text_button,
             type: 'submit',
             handler: function(){
-        		console.log('submit');
         		if (!insert_value){ // class scope
         			var Attribute = Ext.data.Record.create([{
 	        		    name: 'id'
@@ -814,7 +795,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         			if(attributes_grid.getSelectionModel().getSelected().data.type == 'choice'){//case where choice is multivalued
         				var txt = "";
         				for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
-        					console.log(Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name);
         					txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name + ',';
         				}
         				txt = txt.substring(0,txt.length-1);
@@ -826,8 +806,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         				}
         				attributes_grid.getSelectionModel().getSelected().set('value',txt);
         			}else if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//objref multivalued false
-    					console.log('multivalued false');
-    					console.log(Ext.getCmp('id_record_value'));
         				if (Ext.getCmp('id_record_value').getStore().getCount() == 1){
         					attributes_grid.getSelectionModel().getSelected().set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);
         				}else{
@@ -835,12 +813,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         				}
     				}
         		}
-        		win_att_class.close();
-            }
-        },{
-            text: gettext('Cancel'),
-            handler: function(){
-            	//clear form
         		win_att_class.close();
             }
         }]
@@ -857,7 +829,8 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		title = gettext('Insert value for this attribute');
 		Ext.getCmp('attribute_detail_panel').buttons[0].text=gettext('Done');
 	}
-    var win_att_class = new Ext.Window({
+    
+	var win_att_class = new Ext.Window({
         id		:'id_win_add_attribute',
 		layout	: 'fit',
 		resizable : false,
@@ -871,7 +844,6 @@ function add_single_attribute(edit, attributes_grid, insert_value){
       	items	:[attribute_detail_panel]
     });
     win_att_class.show();  
-    
 }
 
 function moveSelectedRow(grid, direction) {
@@ -905,14 +877,17 @@ function moveSelectedRow(grid, direction) {
 	grid.getStore().insert(index, record);
 	grid.getSelectionModel().selectRow(index, true);
 }
+
 /**
  * Detail Class Panel
  */	
-		
 function load_detail_class(class_data, id_class, add_class){
-	// class_data store
-	// id_class id class
-	// add_class true if add new class false otherwise
+	/*
+	 * Load class data when class is selected on tree.
+	 * @class_data 	store
+	 * @id_class 	class id 
+	 * @add_class 	It's true if is going to add new class false otherwise 
+	 */
 	var fields = [];
 	var i; // counter for loop
 	
@@ -943,6 +918,7 @@ function load_detail_class(class_data, id_class, add_class){
     });	
 	//workspaces
 	var sm_ws_admin = new Ext.grid.CheckboxSelectionModel({singleSelect:false});
+	var ws_admin_store = get_ws_admin_store();
 	// create the grid
     var ws_admin_grid = new Ext.grid.GridPanel({
         id:'id_ws_admin_grid',
@@ -980,7 +956,6 @@ function load_detail_class(class_data, id_class, add_class){
 		singleSelect: true,
 		listeners:{
 			rowselect: {fn:function(sm){
-				console.log(Ext.getCmp('id_edit_attributes_class'));
 				if (add_class){
 					Ext.getCmp('id_edit_attributes_class').enable();
 					Ext.getCmp('id_remove_attributes_class').enable();
@@ -1049,7 +1024,6 @@ function load_detail_class(class_data, id_class, add_class){
             tooltip:'Add a new attribute',
             iconCls:'add_icon',
             handler: function() {
-            	console.log('not implemented yet');
             	add_single_attribute(false, attributes_grid, false);
         	}
         },'-',{
@@ -1059,7 +1033,6 @@ function load_detail_class(class_data, id_class, add_class){
             iconCls:'edit_icon',
             disabled:true,
             handler: function() {
-        		console.log('not implemented yet');
         		add_single_attribute(true, attributes_grid, false);
         	}
         },'-',{
@@ -1099,7 +1072,6 @@ function load_detail_class(class_data, id_class, add_class){
     });
     
     if (!add_class){
-    	console.log(attributes_grid);
 		Ext.getCmp('id_edit_attributes_class').disable();
 		Ext.getCmp('id_remove_attributes_class').disable();
 		Ext.getCmp('id_movedown_attributes_class').disable();
@@ -1140,7 +1112,6 @@ function load_detail_class(class_data, id_class, add_class){
             text: gettext('Save'),
             type: 'submit',
             handler: function(){
-        		console.log('submit');
         		var my_form = this.findParentByType('form');
         		params = {};
         		params['name'] = name_textField.getValue();
@@ -1154,8 +1125,6 @@ function load_detail_class(class_data, id_class, add_class){
         		params['workspaces'] = {};
         		//owner for current ws, read-write others
         		//FIXME who is the owner?
-        		console.log('list');
-        		console.log(ws_admin_grid.getSelectionModel().getSelections().length);
         		for (i=0; i < ws_admin_grid.getSelectionModel().getSelections().length; i++){
         			if (ws_admin_grid.getSelectionModel().getSelections()[i].data.pk == ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk){ //owner
         				params['workspaces'][ws_admin_grid.getSelectionModel().getSelections()[i].data.pk] = "owner";
@@ -1167,9 +1136,6 @@ function load_detail_class(class_data, id_class, add_class){
         		params['attributes'] = {};
         		for (i=0; i < Ext.getCmp('attribute_grid_id').getStore().getCount(); i++){
         			attribute = Ext.getCmp('attribute_grid_id').getStore().getAt(i).data;
-        			console.log('ATTRIBUTE');
-        			console.log(attribute);
-        			
         			params['attributes'][attribute.id] = {
         				'name': attribute.name,
         				'type': attribute.type,
@@ -1248,21 +1214,18 @@ function load_detail_class(class_data, id_class, add_class){
  * Detail Obj Panel
  */	
 
-/*function put_new_value(record){
-	
-}*/
 function load_detail_obj(obj_data, obj_id, add_obj, class_id){
-	console.log('load_detail_obj');
-	// obj_data store obj if edit otherwise null
-	// obj_id is null if add new obj else obj_id to view and edit
-	// add_obj is true if it is adding a new obj
-	// class_id id class
-	
+	/*
+	 * Load class data when class is selected on tree.
+	 * @obj_data 	store obj if edit otherwise null
+	 * @obj_id 		it is null if it is going to add new obj else obj_id to view and edit 
+	 * @add_obj 	is true if it is going to add a new obj
+	 * @class_id 	id class 
+	 */
 	var fields = [];
 	var choices, method_request, url_submit, id_textField_value, name_textField_value, notes_textField_value, class_id_textField_value;
 	var store_attributes_grid_obj;
 	if (!add_obj){
-//		console.log(obj_data.getAt(0).data);
 		id_textField_value = obj_data.getAt(0).data.id;
 		name_textField_value = obj_data.getAt(0).data.name;
 		notes_textField_value = obj_data.getAt(0).data.notes;
@@ -1272,7 +1235,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 		method_request='POST';
 		url_submit='/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+obj_id
 	}else{
-		console.log('class_id: '+class_id);
 		id_textField_value = null;
 		name_textField_value = null;
 		notes_textField_value = null;
@@ -1291,7 +1253,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         hidden: true
     });
 	fields.push(id_textField);
-	
 	var name_textField = new Ext.form.TextField({
         fieldLabel: gettext('Name'),
         allowBlank:false,
@@ -1385,8 +1346,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         		params['attributes'] = {};
         		for (var i=0; i < Ext.getCmp('attribute_grid_obj_id').getStore().getCount(); i++){
         			attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
-        			console.log('ATTRIBUTE');
-        			console.log(attribute);
         			if (attribute.multivalued == true){//list of type
         				if (attribute.type == 'choice'){
         					params['attributes'][attribute.id] = [];
@@ -1411,8 +1370,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     					}
             		}
         		}
-        		console.log('PARAMS');
-        		console.log(params);
         		if (add_obj){
 	        		Ext.Ajax.request({
 	        			url:url_submit,
@@ -1449,18 +1406,11 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	        		});
         		}
             }
-        },{
-            text: gettext('Cancel'),
-            handler: function(){
-            	//clear form
-        		console.log('clear');
-            }
         }]
     });
 	if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0){
 		details_panel_obj.disable();
 	}
-
 	var pnl = Ext.getCmp('details_panel');
 	pnl.removeAll();
 	pnl.doLayout();
@@ -1471,93 +1421,89 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 /**
  * Context menu
  */	
-	function init_contextMenuVocabulary(){
-		var add_class =  new Ext.menu.Item({
-			id: 'id_addClass',
-			text: gettext('Class'),
-			listeners:{
-				click: function(item){
-					console.log('add_class item');
-					init_store_class_data(item.parentMenu.parentMenu.contextNode.attributes.id, true);
+function init_contextMenuVocabulary(){
+	var add_class =  new Ext.menu.Item({
+		id: 'id_addClass',
+		text: gettext('Class'),
+		listeners:{
+			click: function(item){
+				init_store_class_data(item.parentMenu.parentMenu.contextNode.attributes.id, true);
+			}
+		}
+	});
+	var add_object =  new Ext.menu.Item({
+		id: 'id_addObject', 
+		text: gettext('Object'),
+		listeners:{
+			click: function(item){
+				load_detail_obj(null, null, true, item.parentMenu.parentMenu.contextNode.attributes.id);
+			}
+		}
+	});
+	var add_node = new Ext.menu.Item({
+		id: 'id_add', 
+		text: gettext('Add'), 
+		menu: [add_class, add_object]			
+	});
+	var delete_node = new Ext.menu.Item({
+		id: 'id_delete_cls_obj', 
+		text: gettext('Delete'),
+		listeners:{
+			click: function(item){
+				if (item.parentMenu.contextNode.attributes.leaf == false){// delete an class
+	        		Ext.Msg.confirm('Class Deletion', 'Class deletion cannot be undone, do you want to proceed?', 
+	    	                function(btn){
+	    	                    if (btn == 'yes')
+	    			        		Ext.Ajax.request({
+	    			        			url:'/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'+item.parentMenu.contextNode.attributes.id,
+	    			        			method: 'DELETE',
+	    			                    clientValidation: true,
+	    			                    waitMsg: 'Saving...',
+	    			                    success: function(response){
+	    			                    	Ext.getCmp('obj_reference_tree').root.reload();
+	    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+	    			                    	Ext.getCmp('details_panel').removeAll();
+	    			                    },
+	    			                    failure:function(response){
+	    			                    	Ext.Msg.alert('Failure', response.responseText);
+	    			                    }
+	    			        		});
+	    	                }
+	            		);
+				}else{// delete an obj
+	        		Ext.Msg.confirm('Object Deletion', 'Object deletion cannot be undone, do you want to proceed?', 
+	    	                function(btn){
+	    	                    if (btn == 'yes')
+	    			        		Ext.Ajax.request({
+	    			        			url:'/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+item.parentMenu.contextNode.attributes.id,
+	    			        			method: 'DELETE',
+	    			                    clientValidation: true,
+	    			                    waitMsg: 'Saving...',
+	    			                    success: function(response){
+	    			                    	Ext.getCmp('obj_reference_tree').root.reload();
+	    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+	    			                    	Ext.getCmp('details_panel').removeAll();
+	    			                    },
+	    			                    failure:function(response){
+	    			                    	Ext.Msg.alert('Failure', response.responseText);
+	    			                    }
+	    			        		});
+	    	                }
+	            		);
 				}
 			}
-		});
-		var add_object =  new Ext.menu.Item({
-			id: 'id_addObject', 
-			text: gettext('Object'),
-			listeners:{
-				click: function(item){
-					console.log('add_obj item');
-					load_detail_obj(null, null, true, item.parentMenu.parentMenu.contextNode.attributes.id);
-				}
-			}
-		});
-		var add_node = new Ext.menu.Item({
-			id: 'id_add', 
-			text: gettext('Add'), 
-			menu: [add_class, add_object]			
-		});
-		var delete_node = new Ext.menu.Item({
-			id: 'id_delete_cls_obj', 
-			text: gettext('Delete'),
-			listeners:{
-				click: function(item){
-					console.log('delete item');
-					console.log(item.parentMenu.contextNode.attributes);
-					if (item.parentMenu.contextNode.attributes.leaf == false){// delete an class
-		        		Ext.Msg.confirm('Class Deletion', 'Class deletion cannot be undone, do you want to proceed?', 
-		    	                function(btn){
-		    	                    if (btn == 'yes')
-		    			        		Ext.Ajax.request({
-		    			        			url:'/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/class/'+item.parentMenu.contextNode.attributes.id,
-		    			        			method: 'DELETE',
-		    			                    clientValidation: true,
-		    			                    waitMsg: 'Saving...',
-		    			                    success: function(response){
-		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
-		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-		    			                    	Ext.getCmp('details_panel').removeAll();
-		    			                    },
-		    			                    failure:function(response){
-		    			                    	Ext.Msg.alert('Failure', response.responseText);
-		    			                    }
-		    			        		});
-		    	                }
-		            		);
-					}else{// delete an obj
-		        		Ext.Msg.confirm('Object Deletion', 'Object deletion cannot be undone, do you want to proceed?', 
-		    	                function(btn){
-		    	                    if (btn == 'yes')
-		    			        		Ext.Ajax.request({
-		    			        			url:'/api/workspace/'+ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk+'/kb/object/'+item.parentMenu.contextNode.attributes.id,
-		    			        			method: 'DELETE',
-		    			                    clientValidation: true,
-		    			                    waitMsg: 'Saving...',
-		    			                    success: function(response){
-		    			                    	Ext.getCmp('obj_reference_tree').root.reload();
-		    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-		    			                    	Ext.getCmp('details_panel').removeAll();
-		    			                    },
-		    			                    failure:function(response){
-		    			                    	Ext.Msg.alert('Failure', response.responseText);
-		    			                    }
-		    			        		});
-		    	                }
-		            		);
-					}
-				}
-			}
-		});
-		var contextMenuVocabulary = new Ext.menu.Menu({
-			id:'contextMenuVocabulary',
-			autoDestroy : true,
-			items:[
-			    add_node,
-			    delete_node
-			]
-		});
-		return contextMenuVocabulary
-	}
+		}
+	});
+	var contextMenuVocabulary = new Ext.menu.Menu({
+		id:'contextMenuVocabulary',
+		autoDestroy : true,
+		items:[
+		    add_node,
+		    delete_node
+		]
+	});
+	return contextMenuVocabulary
+}
 
 function open_knowledgeBase(){        
 
@@ -1596,11 +1542,7 @@ function open_knowledgeBase(){
 	        contextmenu: function(node, e) {
 //	          Register the context node with the menu so that a Menu Item's handler function can access
 //	          it via its parentMenu property.
-					console.log('listeners contextmenu');
-					console.log(ws_permissions_store.find('name', 'edit_vocabulary'));
-					console.log(ws_permissions_store.find('name', 'admin'));
 		            var c = node.getOwnerTree().contextMenu;
-					console.log(node);
 					if (Ext.getCmp('obj_reference_tree').getSelectionModel().isSelected() == true || (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0)){
 						c.find('text',gettext('Add'))[0].disable();
 						c.find('text',gettext('Delete'))[0].disable();
@@ -1620,13 +1562,10 @@ function open_knowledgeBase(){
 			listeners:{
 				"selectionchange": {
 					fn:function(sel, node){
-						console.log('selection change');
-						console.log(node);
 						if (node){
 							if (node.attributes.leaf == false){
 	    						init_store_class_data(node.attributes.id, false);
 							}else{
-								console.log('obj part');
 								if (node.attributes.id != 'root_obj_tree'){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
@@ -1677,7 +1616,5 @@ function open_knowledgeBase(){
         }]
     });
 	var ws_record = ws_store.getAt(ws_store.findBy(find_current_ws_record));
-//	console.log('current workspace');
-//	console.log(ws_record.data.pk);
 	win_knowledge_base.show();  
 }
