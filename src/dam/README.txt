@@ -28,7 +28,11 @@ different DAMComponentSetting had the same name (issue 45).
 Fixed a bug in xmp_embedding, now it works again (issue 47)
 5.
 Fixed problem in uploading of many files when one of them fails. Now uploading completes successfully for all on the application side, but the notification window worns about the number of failed uploading (issue 44).
-
+6.
+Fixed the bug in google map loading when a proper GOOGLE_KEY is missing.
+A proper GOOGLE_KEY is still required, but now the user is informed about it and
+the application does not remain loading until the refresh is called in the browser.
+ 
 ===============================================================================
 OTHER THINGS
 ===============================================================================
@@ -37,10 +41,4 @@ OTHER THINGS
 Added 404.html and 500.html templates, but remember to set DEBUG to false in
 settings.py otherwise the error page will appear anycase.
 
-===============================================================================
-OPEN ISSUES
-===============================================================================
 
-1. 
-When a mediadart node crash down, its running processes should be deleted from 
-the application db.
