@@ -77,7 +77,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can edit metadata',
+                header: 'Edit metadata',
                 dataIndex: 'edit_metadata',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -85,7 +85,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can add item',
+                header: 'Add item',
                 dataIndex: 'add_item',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -93,7 +93,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can remove item',
+                header: 'Remove item',
                 dataIndex: 'remove_item',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -101,7 +101,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can edit catalogue',
+                header: 'Edit catalogue',
                 dataIndex: 'edit_taxonomy',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -110,7 +110,7 @@ Ext.onReady(function(){
                 editor: booleditor
             },             
              {
-                header: 'Can edit scripts',
+                header: 'Edit scripts',
                 dataIndex: 'edit_scripts',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -119,7 +119,7 @@ Ext.onReady(function(){
                 editor: booleditor
             },
              {
-                header: 'Can run scripts',
+                header: 'Run scripts',
                 dataIndex: 'run_scripts',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -128,7 +128,7 @@ Ext.onReady(function(){
                 editor: booleditor
             },
              {
-                header: 'edit vocabulary',
+                header: 'Edit vocabulary',
                 dataIndex: 'edit_vocabulary',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -189,34 +189,34 @@ Ext.onReady(function(){
                                 name: 'admin',                                
                                 xtype: 'checkbox'
                             }, {
-                                fieldLabel: 'Can edit metadata',
+                                fieldLabel: 'Edit metadata',
                                 name: 'edit_metadata',
                                 xtype: 'checkbox'       
                             }, {
-                                fieldLabel: 'Can add item',
+                                fieldLabel: 'Add item',
                                 name: 'add_item',
                                 xtype: 'checkbox'       
                             }, {
-                                fieldLabel: 'Can remove item',
+                                fieldLabel: 'Remove item',
                                 name: 'remove_item',
                                 xtype: 'checkbox'       
                             }, {
-                                fieldLabel: 'Can edit catalogue',
+                                fieldLabel: 'Edit catalogue',
                                 name: 'edit_taxonomy',
                                 xtype: 'checkbox'       
                             }, 
                             {
-                                fieldLabel: 'Can edit scripts',
+                                fieldLabel: 'Edit scripts',
                                 name: 'edit_scripts',
                                 xtype: 'checkbox'       
                             },
                             {
-                                fieldLabel: 'Can run scripts',
+                                fieldLabel: 'Run scripts',
                                 name: 'run_scripts',
                                 xtype: 'checkbox'       
                             },
                             {
-                                fieldLabel: 'edit vocabulary',
+                                fieldLabel: 'Edit vocabulary',
                                 name: 'edit_vocabulary',
                                 xtype: 'checkbox'       
                             }
