@@ -35,6 +35,9 @@ import logging
 logger = logging.getLogger('dam')
 
 def _get_root_tree(request,ws_id):
+    """
+    Return root tree for GUI
+    """
     result = []
     spr = []    
 
@@ -53,7 +56,9 @@ def _get_root_tree(request,ws_id):
     return result 
 
 def _get_child_cls_obj(request,ws_id, parent):
-
+    """
+    Get child for tree in GUI
+    """
     result = []
     spr = []
     try:
@@ -92,7 +97,7 @@ def _get_child_cls_obj(request,ws_id, parent):
 @login_required
 def get_nodes_real_obj(request):
     '''
-    Views to return data to viewstree.
+    Return data to tree in GUI follow the below example:
     treeloader needs :
     [{
         id: 1,
@@ -117,7 +122,9 @@ def get_nodes_real_obj(request):
     return HttpResponse(simplejson.dumps(result))
 
 def _add_attribute(name, value, groupname):
-    
+    """
+    Return dictionary.
+    """
     tmp = {'name'       :name,
            'value'      :value,
            'groupname'  :groupname
@@ -125,12 +132,19 @@ def _add_attribute(name, value, groupname):
     return tmp
 
 def _put_attributes(cls_obj, rtr):
+    """
+    Put all attributes for the Object passed.
+    """
+
     rtr['rows'].append(_add_attribute('notes', cls_obj['notes'],cls_obj['name']))
     for c in cls_obj['attributes']:
         tmp = _add_attribute(c,cls_obj['attributes'][c],cls_obj['name'])
         rtr['rows'].append(tmp)
 
 def get_specific_info_obj(request, obj_id):
+    """
+    Return all information about obj passed. It's passed obj's id.
+    """
     ses = views_kb._kb_session()
     ws = ses.workspace(request.session['workspace'].pk)
     cls = ses.object(obj_id, ws=ws)
@@ -140,6 +154,9 @@ def get_specific_info_obj(request, obj_id):
     return HttpResponse(resp)
 
 def get_object_attributes_hierarchy(request):
+    """
+    Return all information about obj passed. It's passed obj id.
+    """
     nodes = tree_view._get_item_nodes(request.POST.getlist('items'))
     ses = views_kb._kb_session()
     rtr = {"rows":[]}
@@ -156,7 +173,9 @@ def get_object_attributes_hierarchy(request):
     return HttpResponse(resp)
 
 def get_object_attributes(request):
-
+    """
+    Return all attributes for obj passed. It's passed obj id and class id.
+    """
     class_id = request.POST.getlist('class_id')[0]
     obj_id = request.POST.getlist('obj_id')[0]
     if (obj_id):
@@ -180,6 +199,9 @@ def get_object_attributes(request):
     return HttpResponse(resp)
 
 def get_class_attributes(request, class_id):
+    """
+    Return all attributes for class passed. It's passed the class id.
+    """
     cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
     cls_dicts = simplejson.loads(cls_dicts.content) 
     rtr = {"rows":[]}
@@ -194,6 +216,9 @@ def get_class_attributes(request, class_id):
     
     
 def get_specific_info_class(request, class_id):
+    """
+    Return all class information.
+    """
     cls_dicts = views_kb.class_get(request, request.session['workspace'].pk,class_id)
     cls_dicts = simplejson.loads(cls_dicts.content) 
     rtr = {"rows":[]}
@@ -202,7 +227,9 @@ def get_specific_info_class(request, class_id):
     return HttpResponse(resp)
 
 def get_workspaces_with_edit_vocabulary(request):
-# return all ws for specific user where user can edit vocabulary.    
+    """
+    Return all workspaces for specific user where user can edit vocabulary.
+    """
     user = User.objects.get(pk=request.session['_auth_user_id'])
 
     wp = WorkspacePermission.objects.get(name= 'edit vocabulary')
