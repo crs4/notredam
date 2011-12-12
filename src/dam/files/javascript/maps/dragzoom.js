@@ -151,9 +151,9 @@ function DragZoomControl(opts_boxStyle, opts_other, opts_callbacks) {
   }
   this.globals.callbacks = opts_callbacks;
 }
-
-DragZoomControl.prototype = new GControl();
-
+if (google != undefined) {
+DragZoomControl.prototype = new google.maps.Control();
+};
 /**
  * Methods
  */
@@ -306,10 +306,10 @@ DragZoomControl.prototype.initialize = function(map) {
 
 /**
  * Required by GMaps API for controls. 
- * @return {GControlPosition} Default location for control
+ * @return {google.maps.ControlPosition} Default location for control
  */
 DragZoomControl.prototype.getDefaultPosition = function() {
-  return new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(3, 120));
+  return new google.maps.ControlPosition(G_ANCHOR_TOP_LEFT, new GSize(3, 120));
 };
 
 /**
