@@ -70,15 +70,13 @@ function get_TF_store(){
     });
 }
 
-function get_ws_admin_store(){
-	return new Ext.data.JsonStore({
+var ws_admin_store = new Ext.data.JsonStore({
 	    url: '/kb/get_workspaces_with_edit_vocabulary/',
 	    id:'id_ws_admin_store',
 	    autoLoad:true,
 	    root: 'workspaces',
 	    fields:['pk','name','description']
 	});
-}
 
 function get_treeLoader_vocabulary(){
 	return new Ext.tree.TreeLoader({
@@ -918,7 +916,6 @@ function load_detail_class(class_data, id_class, add_class){
     });	
 	//workspaces
 	var sm_ws_admin = new Ext.grid.CheckboxSelectionModel({singleSelect:false});
-	var ws_admin_store = get_ws_admin_store();
 	// create the grid
     var ws_admin_grid = new Ext.grid.GridPanel({
         id:'id_ws_admin_grid',
@@ -938,13 +935,21 @@ function load_detail_class(class_data, id_class, add_class){
         ]),
         viewConfig: { //to select current ws in this grid
     		afterRender: function(){
+        		console.log('AAAA');
+        		console.log(eval(class_data.getAt(0).data.workspaces));
         		this.constructor.prototype.afterRender.call(this);
         		if(id_class == 'root_obj_tree'){//adding a new root class
     				this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk));
     			}else{  //adding a new class but not root_class or edit class
+    				console.log('dentroooo!!');
 					var p = eval(class_data.getAt(0).data.workspaces);
+					console.log(p);
 					for(var k in p){
+						console.log(k);
 	    				this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',parseInt(k)), true);
+	    				console.log('selected');
+	    				console.log(this.grid.getStore().findExact('pk',parseInt(k)));
+	    				console.log(this);
 					}
     			}
     		}
@@ -1145,7 +1150,7 @@ function load_detail_class(class_data, id_class, add_class){
         				'order': attribute.order,
         				'notes': attribute.notes
         			};
-        			if (attribute.type == 'int' || attribute.type == 'data'){
+        			if (attribute.type == 'int' || attribute.type == 'date'){
         				params['attributes'][attribute.id]['min'] = (isEmpty(attribute.min)) ? null : attribute.min;
         				params['attributes'][attribute.id]['max'] = (isEmpty(attribute.max)) ? null : attribute.max;
         			}else if (attribute.type == 'string' || attribute.type == 'uri'){
