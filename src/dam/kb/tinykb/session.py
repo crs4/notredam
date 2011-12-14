@@ -77,6 +77,24 @@ class Session(object):
             self._schema = _duplicate_from._schema
             self._orm = _duplicate_from._orm
 
+        # List of KB classes to be unrealized as soon as the current
+        # transaction is committed
+        self._kb_classes_pending_unrealize = []
+
+        def session_after_commit(_session):
+            # Unrealize classes after they've been deleted
+            for cls in self._kb_classes_pending_unrealize:
+                cls.unrealize()
+            self._kb_classes_pending_unrealize = []
+        sqlalchemy.event.listen(self.session, 'after_commit',
+                                session_after_commit)
+
+        def session_after_rollback(_session):
+            # Cleanup list of classes waiting to be unrealized
+            self._kb_classes_pending_unrealize = []
+        sqlalchemy.event.listen(self.session, 'after_rollback',
+                                session_after_rollback)
+
     id_ = property(lambda self: self._id)
     '''
     The session unique identifier
@@ -227,6 +245,11 @@ class Session(object):
 
         # Finally, perform the actual KB class/object deletion
         self.session.delete(obj_or_cls)
+
+        # Let's not forget to unrealize the class after the current
+        # transaction is committed
+        if isinstance(obj_or_cls, self.orm.KBClass):
+            self._kb_classes_pending_unrealize.append(obj_or_cls)
 
     def expunge(self, obj):
         '''
