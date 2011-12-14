@@ -31,6 +31,7 @@ class PermissionManager(models.Manager):
     """
     def with_permissions(self, user, permissions):
         """
+        FIXME don't work
         Finds the list of workspaces where the given user has the given permissions
         """
         wss_1= super(PermissionManager,  self).filter(workspacepermissionassociation__permission__in = permissions,  workspacepermissionassociation__users = user)        

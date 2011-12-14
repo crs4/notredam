@@ -629,6 +629,68 @@ Ext.grid.MetadataReader = new Ext.data.JsonReader({
 },
 Ext.grid.MetadataRecord);
 
+//----------------------------------------
+Ext.grid.MetadataRecordObj = Ext.data.Record.create([
+{
+    name: 'name'
+},
+{
+    name: 'value'
+},
+{
+    name: 'groupname'
+}
+]);
+
+Ext.grid.MetadataReaderObj = new Ext.data.JsonReader({
+    root: "rows"
+},
+Ext.grid.MetadataRecordObj);
+
+Ext.grid.MetadataStoreObj = function(grid) {
+    this.grid = grid;
+    this.store = new Ext.data.GroupingStore({
+        reader: Ext.grid.MetadataReaderObj,
+        sortInfo: {
+            field: 'name',
+            direction: "ASC"
+        },
+        groupField: 'groupname',
+        url: '/kb/get_hierarchy/',
+        recordType: Ext.grid.MetadataRecordObj,
+        listeners: {
+            beforeload: function(store, options) {
+                var metadata_grid = Ext.getCmp('obj_metadata_panel');
+                store.baseParams.obj = metadata_grid.variant;
+            }
+        }
+
+    });
+    Ext.grid.MetadataStoreObj.superclass.constructor.call(this);
+};
+
+Ext.extend(Ext.grid.MetadataStoreObj, Ext.util.Observable, {
+
+    // private
+    getProperty: function(row) {
+        return this.store.getAt(row);
+    },
+
+    // private
+    isEditableValue: function(val) {
+        return false;
+    },
+
+    // private
+    setValue: function(prop, value) {
+        this.store.getById(prop).set('value', value);
+    }
+
+});
+
+
+//-----------------------------
+
 Ext.grid.MetadataStore = function(grid, advanced) {
     this.grid = grid;
     this.store = new Ext.data.GroupingStore({
@@ -714,7 +776,6 @@ Ext.grid.MetadataStore = function(grid, advanced) {
                 store.baseParams.obj = metadata_grid.variant;
 
                 var event = store.saveChangedRecords(metadata_grid, options);
-    
                 return event;
             }
         }
@@ -1150,6 +1211,70 @@ Ext.ToolTip.prototype.onMouseMove =
         }
     });
 
+//---------------------------------------
+Ext.grid.MetadataGridObj = Ext.extend(Ext.grid.GridPanel, {
+
+    // private config overrides
+    enableColumnMove: false,
+    clicksToEdit: 1,
+    enableHdMenu: false,
+    loadMask: true,
+    language: 'en-US',
+    variant: 'original',
+    hideHeaders: true,
+    trackMouseOver: false,
+    stripeRows: true,
+    // private
+    initComponent: function() {
+        this.customEditors = this.customEditors || {};
+        this.lastEditRow = null;
+        var store = new Ext.grid.MetadataStoreObj(this);
+        this.propStore = store;
+		this.expander = new Ext.ux.grid.RowExpander({
+	        tpl : new Ext.XTemplate(
+				'<tpl for=".">',
+				'<br/>',
+				'<tpl for=".">',				
+			    '<p style="padding-left: 15px; padding-bottom: 2px;"><b>',
+                                '{[gettext(values.caption)]}',
+                                ':</b>',
+				'<span>{value}</span></p>',
+				'</tpl>',
+				'</tpl>'
+	        ),
+			listeners: {
+				beforeexpand: function(re, record, body, rowIndex) {
+					if (!record.get('type') in metadata_structures) {
+						return false;
+					}
+					else {
+						if (record.get('value') == '') {
+							return false;
+						}
+					}
+				}
+			}
+	    });
+        var cm = new Ext.grid.MetadataColumnModel(this, store, this.expander);
+        this.cm = cm;
+        this.ds = store.store;
+		this.plugins = this.expander;
+        Ext.grid.MetadataGrid.superclass.initComponent.call(this);
+
+        this.selModel.on('beforecellselect',
+        function(sm, rowIndex, colIndex) {
+            if (colIndex === 0) {
+                this.startEditing.defer(200, this, [rowIndex, 1]);
+                return false;
+            }
+        },
+        this);
+    },
+    onRender: function() {
+        Ext.grid.EditorGridPanel.prototype.onRender.apply(this, arguments);
+    }
+});
+//---------------------------------------
 Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
 
     // private config overrides
@@ -1227,39 +1352,6 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
             }
         });
     },
-    saveMetadata: function(url, items, new_params) {
-        this.getEl().mask('Saving metadata...');
-        var values = this.getColumnModel().getMetadataValues();
-        var conn = new Ext.data.Connection();
-        var last_items;
-        if (items) {
-            last_items = items;
-        }
-        else {
-            last_items = this.getStore().lastOptions.params['items'];
-        }
-        var metadata_obj = this.variant;
-        var this_grid = this;
-        conn.request({
-            method:'POST', 
-            url: url,
-            params: {metadata: Ext.encode(values), items: last_items, obj:metadata_obj},
-            success: function(data, textStatus){
-                this_grid.getStore().commitChanges();
-                this_grid.getEl().unmask();
-                Ext.MessageBox.alert(gettext('Status'), gettext('Changes saved successfully.'));
-                if (new_params) {
-                    this_grid.customEditors = {};
-                    this_grid.getStore().load(new_params);
-                }
-            },
-            failure: function (XMLHttpRequest, textStatus, errorThrown) {
-                this_grid.getEl().unmask();
-                Ext.MessageBox.alert(gettext('Status'), gettext('Saving failed!'));
-            }            
-         });    
-    
-    },
     listeners: {
         render: function(g) {
             var grid_store = this.propStore;        
@@ -1279,46 +1371,8 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
                 }
             
             });
-        },
-        afteredit: function(e) {
-            var rowIndex = e.row;
-            var p = e.grid.getColumnModel().store.getProperty(rowIndex);
-            var multiple = p.data['multiplevalues'];
-            var type = p.data['type'];
-            var array = p.data['array'];
-            var n = p.data['id'];
-            if (multiple) {
-                if (!e.grid.customEditors[n] || (e.grid.customEditors[n] && type == 'close_choice' && array == false) || (e.grid.customEditors[n] && type == 'lang')) {
-                    Ext.MessageBox.show({
-                        title: 'Save Changes?',
-                        msg: gettext('You are changing this value for all the items selected. <br />Would you like to save your changes?'),
-                        buttons: Ext.MessageBox.YESNOCANCEL,
-                        fn: function(button) {
-                            if (button == 'no') {
-                                e.record.reject();
-                            }
-                            else if (button == 'yes') {
-                                e.record.set('multiplevalues', false);
-                            }
-                        },
-                        animEl: 'mb4',
-                        icon: Ext.MessageBox.QUESTION
-                    });
-
-                    return false;
-                }
-            }
-            else {
-                return true;
-            }
-        },
-        beforeedit: function() {
-            if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_metadata') < 0) {
-                return false;
-            }
-            return true;
         }
-
     }
 });
 Ext.reg("metadatagrid", Ext.grid.MetadataGrid);
+Ext.reg("metadatagridObj", Ext.grid.MetadataGridObj);

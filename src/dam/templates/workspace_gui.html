@@ -46,7 +46,7 @@
 		<script type="text/javascript" src="/files/ext/metadata_grid.js"></script>
 		<script type="text/javascript" src="/files/ext/variants.js"></script>
 		<script type="text/javascript" src="/files/ext/config_metadata.js"></script>
-	        <script type="text/javascript" src="/files/ext/scripts.js"></script>
+	    <script type="text/javascript" src="/files/ext/scripts.js"></script>
 		<script type="text/javascript" >var google;var G_DEFAULT_MAP_TYPES;</script>
 	
 		<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={{GOOGLE_KEY}}" type="text/javascript"></script>
@@ -57,6 +57,7 @@
 		<script type="text/javascript" src="/files/ext/gmap.js"></script>
 		<script src="/files/flowplayer/flowplayer-3.1.4.min.js"></script>
 		<script type="text/javascript" src="/files/ext/organizer.js"></script>
+        <script type="text/javascript" src="/files/ext/knowledge_base.js"></script>
 	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.js"></script-->
 	    <!--script type="text/javascript" src="/files/javascript/swfupload/swfupload.queue.js"></script-->
 	    <script type="text/javascript" src="/files/ext/FileUploadField.js"></script>
@@ -84,7 +85,7 @@
 		{%block prefs%}
 			| <a href='javascript:open_pref()' >preferences</a> 
 		{%endblock%}
-        
+
         {%if user.is_staff%}
             | <a href="/dam_admin/">admin</a>
         {%endif%}
