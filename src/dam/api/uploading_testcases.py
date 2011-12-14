@@ -1,13 +1,19 @@
 from django.test import TestCase
 from django.core.management import setup_environ
 from django.utils import simplejson as json
-import dam.settings
-setup_environ(dam.settings)
+import dam.settings as settings
+setup_environ(settings)
+from django.db.models.loading import get_apps
+get_apps() 
+
+
 from time import sleep
 
-from api.tests import _get_final_parameters
+from dam.api.utils import _get_final_parameters
 from django.test.client import Client
 from dam.api.models import *
+from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
+
 from dam.workspace.models import DAMWorkspace
 from dam.repository.models import Item,  Component
 from dam.variants.models import Variant
@@ -28,8 +34,8 @@ from dam.core.dam_repository.models import Type
 
 # the tests in this file are called from dam directory with the following:
 # python api/uploading_testcases.py
-
-INPUT_FILE = 'api/muffin_small.jpeg'
+import os
+INPUT_FILE = os.path.join(settings.ROOT_PATH, 'api/muffin_small.jpeg')
 
 def _get_final_parameters(api_key, secret, user_id, kwargs = None):
     if  not kwargs:
@@ -105,6 +111,8 @@ class MultiPurposeTestCase(TestCase):
         # 2 - remove ws_user_test_1
         ws_params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/delete/' % ws_pk, params)
+        if response.content != '':
+            print 'response content is:', response.content
         self.assertTrue(response.content == '')
         self.assertRaises(DAMWorkspace.DoesNotExist, DAMWorkspace.objects.get, pk = ws_pk)
         
@@ -132,6 +140,7 @@ class MultiPurposeTestCase(TestCase):
         #self.assertTrue(json_resp.has_key('id'))
 
         # 1 - login self.user using /api/login/
+        print '\n***\n- 1 - New user login'
         user = User.objects.get( pk = 1 )
         print 'username: ', user.username, ' psswd = ', user.password
         params = {'user_name':user.username, 'api_key':self.api_key,  'password': 'notredam' }
@@ -150,7 +159,8 @@ class MultiPurposeTestCase(TestCase):
 
         # 2 - test new ws creation
         name = 'ws_user_test_1'
-        print '\n\n&&&&&&&&&&&&&&&\napi ws new - username: ', user.username, ' \n\n&&&&&&&&&&&&&&&&&&&&&&'
+        #print '\n\n&&&&&&&&&&&&&&&\napi ws new - username: ', user.username, ' \n\n&&&&&&&&&&&&&&&&&&&&&&'
+        print '\n***\n- 2 -new workspace ws_user_test_1 creation'
         try:
             check_ws = DAMWorkspace.objects.get(name = name, creator = user)
             if check_ws.name == name : # it already exist, first delete it!
@@ -171,7 +181,7 @@ class MultiPurposeTestCase(TestCase):
         except Exception, err:
             print 'api workspace new err: ', err
         resp_dict = json.loads(response.content)        
-        print '\n api - ws - new, response dict: ', resp_dict 
+        #print '\n api - ws - new, response dict: ', resp_dict 
         ws_pk = resp_dict['id']
         ws = DAMWorkspace.objects.get(pk = ws_pk)
         self.assertTrue(ws.name == name)
@@ -179,17 +189,17 @@ class MultiPurposeTestCase(TestCase):
         self.assertTrue(resp_dict.get('name') == name)
 
         # 3 - self.user adds new_item in ws_user_test_1
-
+        print '\n***\n- 3 - self.user adds new_item in ws_user_test_1'
         params = {'workspace_id': ws_pk, 'media_type':'image/jpeg'}
         params = self.get_final_parameters(kwargs = params)        
-        print '\n api item new - params: ', params
+        #print '\n api item new - params: ', params
         try:
             response = self.client.post('/api/item/new/', params,)
         except Exception, err:
-            print 'error in api item new: ', err
+            print 'Could not create new item: ', err
         i_resp_dict = json.loads(response.content)
-        print '\napi item new -  i_resp_dict: ', i_resp_dict
-        print 'checks if new item was created'
+        #print '\napi item new -  i_resp_dict: ', i_resp_dict
+        #print 'checks if new item was created'
         new_item = Item.objects.get(pk = i_resp_dict['id'])
         new_item_id = i_resp_dict.get('id')
 
@@ -197,6 +207,7 @@ class MultiPurposeTestCase(TestCase):
         self.assertTrue(i_resp_dict['workspace_id'] == str(ws_pk))
 
         # 4 - upload content file for new item just created 
+        print '\n***\n- 4 - Uploading content file for new item just created'
         file = None
         try:
             file = open(INPUT_FILE)
@@ -207,44 +218,52 @@ class MultiPurposeTestCase(TestCase):
             return
         upload_params = self.get_final_parameters()        
         upload_params['rendition_id'] = 1
-        upload_params['Filedata.jpeg'] = file
+        upload_params['files_to_upload'] = file
         upload_params['workspace_id'] = ws_pk
-        print '\n api item upload - params: ', upload_params
-        print '\n api item upload - returns no response.'
+        #print '\n api item upload - params: ', upload_params
+        #print '\n api item upload - no response is expected.'
         try: 
             upload_response = self.client.post('/api/item/%s/upload/'% new_item_id, upload_params )            
         except Exception, err:
-            print 'error in api item upload : ', err
+            print 'error while uploading input file: ', err
 
         # now wait until uploading processes have completed
         processes = ws.get_active_processes()
         for i,p in enumerate(processes):
             while p.is_completed() == 0:
                 p = Process.objects.get(pk = p.pk)
-                print '\n\n********* i= ',i,'***********\np: ', p, ' is completed?', p.is_completed(), ' pk ', p.pk
+                print 'i= ',i,'*** process ', p, ' is completed?', p.is_completed(), ' pk ', p.pk
                 sleep(2)
+            if p.is_completed():
+                print 'uploading was completed'
         
         # 5 - add metadata to newly uploaded item 
-        
+        print '\n***\n- 5 - Adding metadata to the new item'
         metadata_dict = {'dc_title':{'en-US':'A muffin'}, 'dc_subject': ['muffin','topping', 'cake', 'good']}
         m_params = self.get_final_parameters(kwargs = {'metadata':json.dumps(metadata_dict)})
+        m_response = ''
             
         try:
             m_response = self.client.post('/api/item/%s/set_metadata/'% new_item_id,m_params,)
         except Exception, err:
             print 'error in api set_metadata: ', err
+
+
+        if m_response.content != '':
+            print 'response content was not empty: ', m_response.content
         self.assertTrue(m_response.content == '')
         title = new_item.metadata.get(schema__field_name = 'title')
         self.assertTrue(title.value == 'A muffin')
         subject = new_item.metadata.filter(schema__field_name = 'subject')
-        
-        self.assertTrue(subject[0].value == 'muffin')
-        self.assertTrue(subject[1].value == 'topping')
-        self.assertTrue(subject[2].value == 'cake')
-        self.assertTrue(subject[3].value == 'good')
+        print 'metadata 0 is:', subject[0].value
+        print 'metadata 1 is:', subject[1].value
+        print 'metadata 2 is:', subject[2].value
+        print 'metadata 3 is:', subject[3].value
+        print 'subject.count(): ', subject.count() 
+        self.assertTrue(subject.count() == 4)
 
 
-        print '<====== END. Now come back ======>\n'
+        print '\n\n<====== END of first part. Now destroy all things just created ======>\n'
         """
         # list files created in cache dir in order to check if they have been removed
         # when the item is deleted
@@ -262,29 +281,65 @@ class MultiPurposeTestCase(TestCase):
         
         #  The following steps are intended to have an application db restoring:
         # 6 - delete new_metadata from new_item
+        print '\n***\n- 6 - Deleting new metadata from new item'
         title_to_remove = {'namespace':'dc',  'name':'title'}
         params = self.get_final_parameters({ 'metadata':json.dumps([title_to_remove])})        
-        ir_response = self.client.post('/api/item/%s/remove_metadata/' % new_item_id, params, )        
+        it_response = self.client.post('/api/item/%s/remove_metadata/' % new_item_id, params, )        
+
+
+        if it_response.content != '':
+            print 'response content was not empty: ', json.loads(it_response.content)
+        self.assertTrue(it_response.content == '')        
+
         subject_to_remove = {'namespace':'dc',  'name':'subject'}
         params = self.get_final_parameters({ 'metadata':json.dumps([subject_to_remove])})        
         ir_response = self.client.post('/api/item/%s/remove_metadata/' % new_item_id, params, )        
+
+        if ir_response.content != '':
+            print 'response content was not empty: ', json.loads(ir_response.content)
         self.assertTrue(ir_response.content == '')        
         m = new_item.metadata.all()
+        if m.count() != 0:
+            print 'Error: ', m.count(), ' metadata still present'
         self.assertTrue(m.count() == 0)        
         
 
         
         # 7 - remove new_item from workspace (item and content)
+        print '\n***\n- 7 - Removing new item from workspace (item and content)'
         params = self.get_final_parameters({'workspace_id':ws_pk})
         id_response = self.client.get('/api/item/%s/delete_from_workspace/'%new_item_id, params,  ) 
-        self.assertTrue(id_response.content == '')               
+
+        processes = ws.get_active_processes()
+        for i,p in enumerate(processes):
+            while p.is_completed() == 0:
+                p = Process.objects.get(pk = p.pk)
+                print 'i= ',i,'*** process ', p, ' is completed?', p.is_completed(), ' pk ', p.pk
+                sleep(2)
+            if p.is_completed():
+                print 'new item was removed'
+        if id_response.content != '':
+            print 'response content was not empty: ', id_response.content
+        #self.assertTrue(id_response.content == '')               
         self.assertRaises(Item.DoesNotExist,  Item.objects.get,  pk = new_item_id)
         # now check if files have been removed from repository
         
 
         # 8 - remove ws_user_test_1
+        print '\n***\n- 8 - Removing workspace ws_user_test_1'
         ws_params = self.get_final_parameters({})
         response = self.client.get('/api/workspace/%s/delete/' % ws_pk, params)
+
+        processes = ws.get_active_processes()
+        for i,p in enumerate(processes):
+            while p.is_completed() == 0:
+                p = Process.objects.get(pk = p.pk)
+                print 'i= ',i,'*** process ', p, ' is completed?', p.is_completed(), ' pk ', p.pk
+                sleep(2)
+            if p.is_completed():
+                print 'new workspace was removed'
+        if response.content != '':
+            print 'response.content is: ', response.content
         self.assertTrue(response.content == '')
         self.assertRaises(DAMWorkspace.DoesNotExist, DAMWorkspace.objects.get, pk = ws_pk)
         # 9 - user logout (the api method does not exist!)
@@ -295,9 +350,14 @@ class MultiPurposeTestCase(TestCase):
 
 if __name__ == "__main__":
     import sys
-    import os
     import traceback
-    os.system('python manage.py loaddata api/fixtures/test_data.json')
+    TEST_DATA_FILE = os.path.join(settings.ROOT_PATH, 'api/fixtures/test_data.json')
+    load_data_cmd = 'python manage.py loaddata ' + TEST_DATA_FILE
+    try:
+        os.system(load_data_cmd)
+        print 'loaded fixture with secret api key'
+    except Exception, err:
+        print 'Error while loading fixture with secret api key: ', err
     if len(sys.argv) < 2:
         # the following code has to be repeated for each class in this file!
         try:
