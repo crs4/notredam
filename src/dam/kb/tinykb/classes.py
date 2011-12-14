@@ -376,6 +376,14 @@ def _init_base_classes(o):
              tables being dropped are being used in the current
              transaction.
             '''
+            # FIXME: does SQLAlchemy allow to check whether we are deleted?
+            if not hasattr(self, '__kb_deleted__'):
+                raise RuntimeError('Trying to unrealize a KB class before '
+                                   'deleting it: %s' % (self, ))
+
+            if hasattr(self, '__kb_unrealized__'):
+                return # Let's avoid unrealizing twice
+
             if not self.is_bound():
                 self.bind_to_table()
 
@@ -387,6 +395,8 @@ def _init_base_classes(o):
             # ...and finally drop the main KB class table
             schema.metadata.remove(self._sqlalchemy_table)
             self._sqlalchemy_table.drop(engine)
+
+            self.__kb_unrealized__ = True # Let's avoid unrealizing twice
 
         def bind_to_table(self):
             parent_table = self._get_parent_table()
