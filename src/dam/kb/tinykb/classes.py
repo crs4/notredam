@@ -40,15 +40,28 @@ from util import niceid
 class Classes(types.ModuleType):
     def __init__(self, session):
         doc = '''
-            Container for the Python classes mapped to a knowledge base
-            working session.
+            Each knowledge base :py:class:`Session <session.Session>`
+            instance provides a ``orm`` property: a dynamically
+            generated Python module giving access to several class
+            definitions, mapped to the knowledge base session itself.
+            Those classes are documented below.
 
-            When instantiated, this class configures the ORM machinery needed
-            to bind the underlying knowledge base to a set of Python classes.
+            For more examples on the session ``orm`` usage, see
+            :ref:`label-kb-root-class`.
 
-            :type  session: :py:class:`session.Session`
-            :param session: KB session used for mapping the classes
-            '''
+            Each ``orm`` session module also features two important
+            properties:
+
+                * **attributes**: a dynamically generated Python
+                  module providing access to KB class attribute types
+                  (with transparent mapping to the current KB
+                  session).  For more details, see
+                  :py:mod:`orm.attributes`.
+
+                * **session** : the knowledge base :py:class:`Session
+                  <session.Session>` with which the ``orm`` module is
+                  bound
+            '''    
         types.ModuleType.__init__(self, 'tinykb_%s_classes'
                                   % (session.id_, ), doc)
         import session as kb_session
@@ -58,25 +71,15 @@ class Classes(types.ModuleType):
 
         _init_base_classes(self)
 
-        self.__all__ = ['KBClass', 'KBRootClass', 'KBObject',
+        self.__all__ = ['attributes', 'session',
+                        'KBClass', 'KBRootClass', 'KBObject',
                         'User', 'Workspace']
 
 
     # self._attributes is set in _init_base_classes
     attributes = property(lambda self: self._attributes)
-    '''
-    Contains the knowledge base Attribute classes mapped to a
-    working session.
-
-    :type: :py:class:`attributes.Attributes`
-    '''
 
     session = property(lambda self: self._session)
-    '''
-    The knowledge base session with which the attributes are bound
-
-    :type: :py:class:`session.Session`
-    '''
 
 
 ###############################################################################
@@ -132,8 +135,8 @@ def _init_base_classes(o):
             :type class_: :py:class:`KBRootClass`
             :param class_: KB class to configure
 
-            :type access: :py:mod:access
-            :param access: access rule for the given class
+            :type access: :py:mod:`access`
+            :param access: Access rule for the given class
             '''
             if not class_.is_root():
                 ## Just in case someone set class_.superclass != None
@@ -211,14 +214,14 @@ def _init_base_classes(o):
         :type superclass: :py:class:`KBClass`
         :param superclass: parent class
 
-        :type attributes: :py:class:`attributes.Attribute`
+        :type attributes: list of :py:class:`attributes.Attribute`
         :param attributes: list of class attributes
 
         :type notes: string
         :param notes: descriptive text with miscellaneous notes
 
         :type explicit_id: string
-        :param explicit_id: ID to use with the KB class.  It must be unique,
+        :param explicit_id: KB class identifier.  It must be unique,
                             and it may be composed by ASCII letters, numbers
                             and underscores (i.e. the same characters which
                             are usually adopted for Python object attributes).
@@ -287,6 +290,9 @@ def _init_base_classes(o):
             '''
             Return a list of all the ancestor KBClass'es, starting from
             the immediate parent (if any).
+
+            :rtype: list of :py:class:`KBClass` instances
+            :returns: the ancestor KB classes
             '''
             c = self.superclass
             prev_c = self
@@ -318,6 +324,9 @@ def _init_base_classes(o):
             '''
             Return all the class attributes, including the ones of
             ancestor classes (if any)
+
+            :rtype: list of :py:class:`orm.attributes.Attribute` instances
+            :returns: all the class attributes
             '''
             classes = [self] + self.ancestors()
             nested_attrs = [c.attributes for c in classes]
@@ -346,6 +355,12 @@ def _init_base_classes(o):
             return attrs_tbl_list
 
         def realize(self):
+            '''
+            Create the SQL table(s) necessary for storing instances of
+            a KB class.
+
+            See also :py:meth:`session.Session.realize`.
+            '''
             if self.is_bound():
                 ## We are already bound to a table
                 raise AttributeError('%s is already realized (SQL table: %s)'
@@ -367,14 +382,14 @@ def _init_base_classes(o):
 
         def unrealize(self):
             '''
-            Remove the SQL tables created with :py:meth:realize.
+            Remove the SQL tables created with :py:meth:`realize`.
 
             .. warning:: Maybe you should not call this method
-             directly (it is automatically invoked when a KB class is
-             deleted from the session, and the related Python object
-             is garbage collected).  It may cause a deadlock if the
-             tables being dropped are being used in the current
-             transaction.
+                         directly, since it is automatically invoked
+                         when a KB class is deleted from a session.
+                         Furthermore, it may also cause a deadlock if
+                         the tables being dropped are actually used in
+                         the current transaction.
             '''
             # FIXME: does SQLAlchemy allow to check whether we are deleted?
             if not hasattr(self, '__kb_deleted__'):
@@ -424,10 +439,10 @@ def _init_base_classes(o):
 
         def _make_or_get_python_class(self):
             '''
-            Return the Python class associated to a KB class.  The
-            class will be built only once, and further calls will
-            always return the same result
+            The Python class associated to a KB class
             '''
+            # The class will be built only once, and further calls
+            # will always return the same result
             ret = getattr(self, '_cached_pyclass', None)
             if ret is not None:
                 return ret
@@ -533,8 +548,7 @@ def _init_base_classes(o):
             :type workspace:  :py:class:`Workspace`
             :param workspace: the workspace to configure
 
-            :type access:  Access mode (access.OWNER, access.READ_ONLY or
-                           access.READ_WRITE)
+            :type access:  :py:mod:`access`
             :param access: Access configuration for the class on the given
                            workspace
             '''
@@ -595,8 +609,14 @@ def _init_base_classes(o):
 
     o.KBClassVisibility = KBClassVisibility
 
-    ## Abstract base class for real objects
     class KBObject(object):
+        '''
+        Abstract base class for KB objects, sitting at the root of
+        Python classes generated from :py:class:`KBClass`.
+
+        .. note:: This constructor is only intended to be called
+                  internally.
+        '''
         def __init__(self, class_, name, notes=None, explicit_id=None):
             if explicit_id is None:
                 self.id = niceid.niceid(name) # FIXME: check uniqueness!

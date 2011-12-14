@@ -1,10 +1,5 @@
-The ``classes`` module
-======================
+The dynamically mapped ``orm`` module
+=====================================
 
-.. toctree::
-   :maxdepth: 2
-
-   mapped_classes
-
-.. automodule:: classes
+.. automodule:: orm
    :members:
