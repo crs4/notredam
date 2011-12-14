@@ -43,11 +43,17 @@ from util.niceid import niceid
 class Attributes(types.ModuleType):
     def __init__(self, classes):
         doc = '''
-            Container for the Python classes representing KB class attributes,
-            mapped to a knowledge base working session.
+            Each knowledge base :py:class:`Session <session.Session>`
+            instance provides a ``orm`` property: a dynamically
+            generated Python module giving access to several class
+            definitions, mapped to the knowledge base session itself.
+            Those classes are documented below.
 
-            :type  classes: :py:class:`classes.Classes`
-            :param classes: KB classes to associated with attributes
+            The ``orm`` module, in turn, provides the ``attributes``
+            property: another dynamically generated Python module
+            giving access to KB class attribute types definitions.
+
+            Those attribute types are described below.
             '''
         types.ModuleType.__init__(self, 'tinykb_%s_classes_attributes'
                                   % (classes.session.id_, ), doc)

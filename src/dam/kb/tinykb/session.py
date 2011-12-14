@@ -37,7 +37,7 @@ import schema as kb_schema
 class Session(object):
     '''
     A working session of the knowledge base, which handles SQL DB
-    connection and object-relational mapping details.
+    connection, transactions and object-relational mapping details.
 
     :type  connstr_or_engine: SQLAlchemy connection string or engine
     :param connstr_or_engine: used to access the knowledge base SQL DB
@@ -97,7 +97,7 @@ class Session(object):
 
     id_ = property(lambda self: self._id)
     '''
-    The session unique identifier
+    The session identifier
 
     :type: string
     '''
@@ -118,11 +118,12 @@ class Session(object):
 
     orm = property(lambda self: self._orm)
     '''
-    The ORM configuration associated to the session.  All the
-    knowledge base classes can be accessed as attributes of this
-    property, almost like a dynamic namespace.
+    A dynamically generated Python module with the object-relational
+    mapping associated to the session, providing access to the
+    underlying knowledge base classes and objects.  For more details,
+    see :py:mod:`orm`.
 
-    :type: :py:class:`classes.Classes`
+    :type: Dynamically generated Python module
     '''
 
     def duplicate(self):
@@ -140,7 +141,10 @@ class Session(object):
     def add(self, obj):
         '''
         Add an object to the knowledge base session, ready for later
-        commit.
+        :py:meth:`commit`.
+
+        .. note:: The object will be actually saved when
+                  :py:meth:`commit` is invoked.
 
         :type  obj: one of the classes accessible through the
                :py:attr:`orm` property
@@ -151,7 +155,10 @@ class Session(object):
     def add_all(self, obj_list):
         '''
         Add a list of objects to the knowledge base session, ready for
-        later commit.
+        later :py:meth:`commit`.
+
+        .. note:: The objects will be actually saved when
+                  :py:meth:`commit` is invoked.
 
         :type  obj: list of instances, whose class must be accessible
                through the :py:attr:`orm` property
@@ -164,11 +171,11 @@ class Session(object):
         Mark the given object or class for deletion from the knowledge
         base.
 
-        This method will raise a py:exc:`errors.PendingReferences`
+        This method will raise a :py:exc:`errors.PendingReferences`
         exception if the given element is referenced by other KB
         classes, objects, etc.
 
-        .. note:: the actual delection will be performed when
+        .. note:: The actual delection will be performed when
                   :py:meth:`commit` is invoked.
 
         :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
@@ -243,7 +250,7 @@ class Session(object):
             raise TypeError('expected KB object or class, got "%s" (type: %s)'
                             % (obj_or_cls, type(obj_or_cls)))
 
-        # Finally, perform the actual KB class/object deletion
+        # Perform the actual KB class/object deletion
         self.session.delete(obj_or_cls)
 
         # Let's not forget to unrealize the class after the current
@@ -253,12 +260,15 @@ class Session(object):
 
     def expunge(self, obj):
         '''
-        Remove an object from the set handled by the knowledge base
-        session.
+        Remove an object from the pending transaction managed by the
+        knowledge base session.
+
+        When :py:meth:`commit` is invoked after this method, the object
+        status in the knowledge base will not be altered.
 
         :type obj: object
-        :param obj: an object instance (previously added with :py:meth:`add`
-                    or :py:meth:`add_all`)
+        :param obj: an object instance (previously used with :py:meth:`add`
+                    or :py:meth:`add_all` or :py:meth:`delete`)
         '''
         if isinstance(obj, list):
             for o in obj:
@@ -268,8 +278,11 @@ class Session(object):
     
     def expunge_all(self):
         '''
-        Empty the set of objects handled by the knowledge base
-        session.
+        Remove all objects from the pending transaction managed by the
+        knowledge base session.
+
+        If :py:meth:`commit` is invoked after this method, it will
+        have no effects.
         '''
         self.session.expunge_all()
 
@@ -285,8 +298,11 @@ class Session(object):
         '''
         Commit the current transaction.
 
-        All the pending objects will be saved on the knowledge base
-        SQL DB.
+        Depending on their status, all the pending objects will be
+        created, updated or deleted to/from the knowledge base SQL DB.
+        Furthermore, all pending :py:class:`orm.KBClass` instances
+        will be realized (see :py:meth:`realize`) or unrealized as
+        necessary.
         '''
         # Before committing, ensure that all KBClass-derived objects
         # have an associated table
@@ -294,7 +310,6 @@ class Session(object):
                       if isinstance(a, self.orm.KBClass)]
         for c in new_kb_cls:
             if not c.is_bound():
-                # FIXME: really do it automatically?  Or raise an error?
                 c.realize()
         
         try:
@@ -308,24 +323,27 @@ class Session(object):
         Undo the effects of the current transaction on the knowledge
         base SQL DB.
 
-        If :py:meth:`begin_nested` was used, the rollback will stop at the last
-        savepoint.
+        .. note:: If :py:meth:`begin_nested` was used, the rollback
+                  will stop at the last savepoint.
         '''
         self.session.rollback()
 
     def class_(self, id_, ws=None):
         '''
-        Retrieve the KBClass instance with the given id from the
-        knowledge base SQL DB.
+        Retrieve the :py:class:`orm.KBClass` instance with the given
+        id from the knowledge base SQL DB.
 
         An exception will be raised if the given id is not used by any
         stored class.
 
         :type  id_: string
-        :param id_: the identifier of the required KBClass
+        :param id_: the identifier of the required KB class
 
-        :rtype: KBClass
-        :returns: a KBClass instance
+        :type  ws: :py:class:`orm.Workspace`
+        :param ws: KB workspace object used to filter classes (default: None)
+
+        :rtype: :py:class:`orm.KBClass`
+        :returns: a KB class
         '''
         query = self.session.query(self.orm.KBClass).filter(
             self.orm.KBClass.id == id_)
@@ -341,14 +359,14 @@ class Session(object):
 
     def classes(self, ws=None):
         '''
-        Return an iterator yielding all known KBClass instances from
-        the SQL DB.
+        Return an iterator yielding all known KB classes from the SQL
+        DB.
 
-        :type  ws: Workspace
+        :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter classes (default: None)
 
         :rtype: iterator
-        :returns: an iterator yielding KBClass instances
+        :returns: an iterator yielding :py:class:`orm.KBClass` instances
         '''
         query = self.session.query(self.orm.KBClass)
         if ws is not None:
@@ -360,12 +378,16 @@ class Session(object):
         Create the SQL table(s) necessary for storing instances of the
         given KB class.
 
-        The KBClass instance itself will be automatically added to the
-        set of objects managed by the Session.
+        The KB class itself will be automatically added to the set of
+        objects managed by the Session.
 
-        :type  class_: KBClass
-        :param class_: a knowledge base class instance, the tables of which
-                       will be created on the DB
+        .. note:: KB classes will be realized automatically when they
+                  are added to the session, and then :py:meth:`commit`
+                  is invoked.
+
+        :type  class_: :py:class:`orm.KBClass`
+        :param class_: a knowledge base class, the tables of which
+                       will be created on the SQL DB
         '''
         assert(isinstance(class_, self.orm.KBClass))
         self.add(class_)
@@ -373,7 +395,7 @@ class Session(object):
 
     def python_class(self, id_, ws=None):
         '''
-        Retrieve the Python class corresponding to the KBClass object
+        Retrieve the Python class corresponding to the KB class
         with the given identifier.
 
         The returned class will be ORM-mapped and ready to be used for
@@ -383,26 +405,27 @@ class Session(object):
         any stored class.
 
         :type  id_: string
-        :param id_: the identifier of the required KBClass
+        :param id_: the identifier of the required KB class
 
-        :type  ws: Workspace
+        :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter classes (default: None)
 
         :rtype: class
-        :returns: a Python class (inheriting from KBObject)
+        :returns: a Python class (inheriting from :py:class:`orm.KBObject`)
         '''
         return self.class_(id_, ws=ws).python_class
 
     def python_classes(self, ws=None):
         '''
         Retrieve a list of the Python classes corresponding to all the
-        KBClass objects stored on the SQL DB.
+        KB classes stored on the SQL DB.
 
-        :type  ws: Workspace
+        :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter classes (default: None)
 
         :rtype: list of classes
-        :returns: a list of Python classes (inheriting from KBObject)
+        :returns: a list of Python classes (inheriting from
+                  :py:class:`orm.KBObject`)
         '''
         return [c.python_class for c in self.classes(ws=ws)]
 
@@ -414,15 +437,15 @@ class Session(object):
         An exception will be raised if the given id doesn't refer to
         any stored object.
 
-        :type  ws: Workspace
+        :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter KB objects according to
                    the visibility of their class (default: None)
 
         :type  id_: string
-        :param id_: the identifier of the required KBObject
+        :param id_: the identifier of the required KB object
 
-        :rtype: object
-        :returns: a Python object
+        :rtype: :py:class:`orm.KBObject`
+        :returns: a Python object (mapped to the KB)
         '''
         # It will cause the Python classes to be instantiated and ORM-mapped
         self.python_classes()
@@ -444,11 +467,11 @@ class Session(object):
         Return an iterator yielding all known KBObject instances from
         the SQL DB.
 
-        :type  class_: class.KBObject
+        :type  class_: :py:class:`orm.KBObject`
         :param class_: the base class for selecting objects from SQL DB
-                       (default: None, meaning self.orm.KBObject)
+                       (default: None, meaning :py:class:`orm.KBObject`)
 
-        :type  ws: Workspace
+        :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter KB objects according to
                    the visibility of their class (default: None)
 
@@ -477,15 +500,15 @@ class Session(object):
 
     def user(self, id_):
         '''
-        Retrieve the User object with the given id.
+        Retrieve the user object with the given id.
 
         An exception will be raised if the given id doesn't refer to
         any stored user.
 
         :type  id_: string
-        :param id_: the identifier of the required User
+        :param id_: the identifier of the required user
 
-        :returns: an User object
+        :returns: an :py:class:`orm.User` object
         '''
         query = self.session.query(self.orm.User).filter(
             self.orm.User.id == id_)
@@ -507,7 +530,7 @@ class Session(object):
                             selecting users to be returned
 
         :rtype: iterator
-        :returns: an iterator yielding User objects
+        :returns: an iterator yielding :py:class:`orm.User` instances
         '''
         query = self.session.query(self.orm.User)
         if filter_expr is not None:
@@ -523,8 +546,8 @@ class Session(object):
         :type  id_: string
         :param id_: the identifier of the required Workspace
 
-        :rtype: iterator
-        :returns: a Workspace object
+        :rtype: :py:class:`orm.Workspace`
+        :returns: a workspace object
         '''
         try:
             return self.session.query(self.orm.Workspace).filter(
@@ -537,8 +560,8 @@ class Session(object):
         Return an iterator yielding all the workspaces for the given
         user (when provided).
 
-        :type  user: User
-        :param user: optional User object for filtering returned workspaces
+        :type  user: :py:class:`orm.User`
+        :param user: optional user object for filtering returned workspaces
 
         :rtype: iterator
         :returns: an iterator yielding Workspace objects

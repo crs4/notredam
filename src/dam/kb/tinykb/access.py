@@ -22,9 +22,36 @@
 #
 #########################################################################
 
+'''
+This module contains several constants describing in which way a
+:py:class:`Workspace <orm.Workspace>` is allowed to access a KB class
+hierarchy (starting from a :py:class:`KBRootClass <orm.KBRootClass>`
+instance).
+'''
+
+__all__ = ['OWNER', 'READ_ONLY', 'READ_WRITE', 'READ_WRITE_OBJECTS']
+
 ## Valid access types for items, class hierarchies and root catalog
 ## entries
 OWNER = 'owner'
+'''
+A workspace owns a class hierarchy, and thus it is allowed to delete
+it.
+'''
+
 READ_ONLY = 'read-only'
+'''
+A workspace can access a class hierarchy in read-only mode.
+'''
+
 READ_WRITE = 'read-write'
+'''
+A workspace can access a class hierarchy and modify it, but it is
+not allowed to delete it.
+'''
+
 READ_WRITE_OBJECTS = 'read-write-objects'
+'''
+A workspace can access a class hierarchy in read-only mode, but it is
+allowed to modify its objects.
+'''

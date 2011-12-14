@@ -1,5 +1,5 @@
-The ``attributes`` module
-=========================
+The dynamically mapped ``orm.attributes`` module
+=================================================
 
-.. automodule:: attributes
+.. automodule:: orm.attributes
    :members:

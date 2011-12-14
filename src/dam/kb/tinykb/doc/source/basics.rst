@@ -1,74 +1,75 @@
 Basic concepts and examples
 ===========================
 
-This section explains the basic concepts needed for unsing TinyKB,
-through some simple examples.
+This section explains the basic concepts of TinyKB, through some
+simple examples.
 
 
 The knowledge base session
 --------------------------
 
-TinyKB is centered around the :py:class:`Session` object, which
-handles the connection to the unerlying SQL DBMS, and offers some
-methods for exploring and modifying the contents of the knowledge
-base.
+TinyKB is centered around the :py:class:`Session <session.Session>`
+object, which handles the connection to the underlying SQL DBMS,
+manages transactions, and offers some methods for exploring and
+modifying the contents of the knowledge base.
 
 A working session can be created with::
 
     from tinykb.session import Session
     ses = Session('postgresql://tinykb:tinykb@localhost/tinykb')
 
-where the argument is a DBMS connection string, as supported by
-`SQLAlchemy`_.
+where the constructor argument is a DBMS connection string, as
+supported by `SQLAlchemy`_.
 
+.. _label-kb-root-class:
 
 Creating a knowledge base root class
 ------------------------------------
 
-The session object contains an ``orm`` property, which is a
-dynamically-generated module object, providing access the Python
+The session object contains an :py:mod:`orm` property, which is
+a dynamically-generated module object, providing access the Python
 classes mapped to the underlying knowledge base.  In particular,
 :py:class:`orm.KBClass` and :py:class:`orm.KBRootClass` can be used to
 define new KB classes bound to the session.
 
-Let's say, for example, that we need to define a KB class for
-representing buildings and their related information::
+Let's say, for example, that we want to define a KB class for
+representing buildings (with some related information)::
 
     orm = ses.orm
     attrs = ses.orm.attributes
-    building = orm.KBRootClass('Building', explicit_id='building',
-                               notes='Generic building',
-                               attributes=[attrs.Boolean('Open to the public',
-                                                         default=True,
-                                                         id_='is_open'),
-                                           attrs.Integer('Height', min_=0,
-					                 id_='height'),
-                                           attrs.String('Location',
-					                id_='location'),
-                                           attrs.Date('Date of completion',
-                                                      id_='completion')])
+    kb_building = orm.KBRootClass('Building', explicit_id='building',
+                                  notes='Generic building',
+                                  attributes=[attrs.Boolean('Open for visits',
+                                                            default=True,
+                                                            id_='is_open'),
+                                              attrs.Integer('Height', min_=0,
+                                                            id_='height'),
+                                              attrs.String('Location',
+                                                           id_='location'),
+                                              attrs.Date('Date of completion',
+                                                         id_='completion')])
 
-Here, the ``Building`` KB class is defined as a root class
+Here, the ``kb_building`` KB class is defined as a root class
 (i.e. placed at the top of the inheritance hierarchy) featuring a set
-of named *attributes* with different types.  Those attributes are
+of named attributes with different types.  Those attributes are
 themselves objects, whose classes are bound to the session throught
-the ``orm.attributes`` dynamically-generated module.  The optional
-``id_`` keyword argument provides an attribute identifier (if not
-provided, it will be auto-generated from the descriptive name).
+the :py:mod:`orm.attributes` dynamically-generated module.  The
+optional ``id_`` keyword argument provides an attribute identifier (if
+not provided, it will be auto-generated from the descriptive name).
 
 Once created, the new KB class can be *realized*, i.e. implemented in
 the underlying SQL DBMS::
 
-    building.realize()
+    ses.realize(kb_building)
 
 
 Creating knowledge base objects
 -------------------------------
 
-The ``python_class`` property of a realized KB classe provides the
+The ``python_class`` property of a realized KB class provides the
 corresponding Python class::
 
-    BuildingClass = building.python_class
+    BuildingClass = kb_building.python_class
 
 ``BuildingClass`` derives from :py:class:`orm.KBObject`, which is the base class for all dynamically-generated Python classes mapped to the KB.
 
@@ -90,8 +91,8 @@ Creating a derived class on the knowledge base
 
 It's also possible to define derived classes::
 
-    church = ses.orm.KBClass('Church',  explicit_id='church',
-                             superclass=building, notes='A church',
+    kb_church = ses.orm.KBClass('Church',  explicit_id='church',
+                             superclass=kb_building, notes='A church',
                              attributes=[attrs.Choice('Number of naves',
                                                       ['One', 'Two',
                                                        'Three or more'],
@@ -103,15 +104,15 @@ It's also possible to define derived classes::
 
 The derived class can be realized and used just like the root class::
 
-    church.realize()
+    ses.realize(kb_church)
     ChurchClass = church.python_class
 
 
-Objects ID generation and multivalued attributes
-------------------------------------------------
+Object/attribute ID generation and multivalued attributes
+---------------------------------------------------------
 
-Let's create a new ``ChurchClass`` object, giving a value to its
-attributes:
+Let's now create a new ``ChurchClass`` object, giving a value to its
+attributes::
 
     c = ChurchClass('A test church')
     c.is_open = False
@@ -121,9 +122,15 @@ attributes:
     c.number_of_naves = 'Two'
     c.nearby_buildings.append(b)
 
-In this example, the ``number_of_naves`` and ``nearby_buildings``
+In this example the ``c`` unique object identifier will be
+autogenerated, since the ``explicit_id`` constructor argument was not
+provided.
+
+Furthermore, the ``number_of_naves`` and ``nearby_buildings``
 attribute identifiers are autogenerated by their descreptive names
 (since ``id_`` was not provided when the attributes where defined).
+They resemble the respective attribute names, with some obvious
+normalization.
 
 It is also interesting to notice the behaviour of the
 ``nearby_buildings`` attribute: its type describes object references
@@ -154,27 +161,30 @@ session, and that we're opening a new one::
     from tinykb.session import Session
     ses = Session('postgresql://tinykb:tinykb@localhost/tinykb')
 
-    KBBuilding = ses.class_('building')
+    kb_building = ses.class_('building')
     ChurchClass = ses.python_class('church')
 
 Here, we've retrieved the same KB classes of the previous examples,
-using their ID: ``KBBuilding`` is a :py:class:`KBRootClass` object,
-while ``ChurchClass`` is a ready-to-use Python class.
+using their ID: thus, ``KBBuilding`` is a
+:py:class:`ses.orm.KBRootClass <orm.KBRootClass>` object, while
+``ChurchClass`` is a ready-to-use Python class mapped to the KB.
 
-Single objects can be retrieved using their ID::
+Single objects can be retrieved using their ID as well::
 
     b = ses.object('test_building')
 
-It's also possible to retrieve all objects belonging to a given class::
+It's also possible to collect all objects belonging to a given KB
+class::
 
     churches = ses.objects(ChurchClass)
 
-Here, ``churches`` is an iterator yielding al the ``Church``
+Here, ``churches`` is an iterator yielding all the ``Church``
 instances.  Since we know that there is one such instances (that we
 created above), we can use::
 
     c = churches.next()
 
+in order to retrieve it.
 
 Deleting KB objects
 -------------------
@@ -182,7 +192,7 @@ Deleting KB objects
 Objects can be deleted by invoking the :py:meth:`KBObject.delete`
 method, and committing the current transaction::
 
-    c.delete()
+    ses.delete(c)
     ses.commit()
 
 
@@ -193,13 +203,12 @@ KB classes can be deleted if (and only if) they are not referenced by
 other classes or instances.  Since we have deleted the only
 ``ChurchClass`` instance, we can now execute::
 
-    KBChurch = ses.class_('church')
-    KBChurch.delete()
+    kb_church = ses.class_('church')
+    ses.delete(kb_church)
     ses.commit()
 
-Finally, we also need to cleanup the SQL DB tables and structures
-which were created when we realized the KB class::
+After the commit, the class-related SQL DB tables and structures (the
+ones created with ``realize()``) will be cleaned up as well.
 
-    KBChurch.unrealize()
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/
