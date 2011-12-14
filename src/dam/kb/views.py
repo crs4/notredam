@@ -290,9 +290,6 @@ def class_delete(request, ws_id, class_id):
                                       'other KB classes and/or objects')
     ses.commit()
 
-    # FIXME: should happen automatically, but seems that cls is not collected
-    cls.unrealize()
-
     return HttpResponse('ok')
 
 
