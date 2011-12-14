@@ -2,10 +2,14 @@ from django.core.management import setup_environ
 from django.utils import simplejson
 import dam.settings as settings
 setup_environ(settings)
+from django.db.models.loading import get_apps
+get_apps() 
 
-from api.tests import _get_final_parameters
+from dam.api.utils import _get_final_parameters
 from django.test.client import Client
 from dam.api.models import *
+from dam.core.dam_workspace.models import WorkspacePermission, WorkspacePermissionAssociation
+
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item,  Component
 from dam.variants.models import Variant
@@ -53,6 +57,7 @@ class TestUpload(unittest.TestCase):
         
         response = client.post('/api/item/new/', params,)                
         resp_dict = simplejson.loads(response.content)
+        print 'so far so good! resp_dict is ', resp_dict
         item = Item.objects.get(pk = resp_dict['id'])
 
         file = open(file_path)
@@ -62,6 +67,7 @@ class TestUpload(unittest.TestCase):
         
         
         response = client.post('/api/item/%s/upload/'%item.pk, params, )            
+        print 'response after upload is:', response
         
        
         
