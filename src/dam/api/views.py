@@ -686,10 +686,10 @@ class WorkspaceResource(ModResource):
         
         logger.info("name:%s,Description:%s,user:%s" %(name, description, user))
         if (len(DAMWorkspace.objects.filter(name = name, creator = user))>0):
-            logger.info("ESISTE GIAAAAAA!!!!")
+            logger.info("user already present")
             raise
         else:
-            logger.info("NON ESISTE!!!!")
+            logger.info("new user")
         
         ws = DAMWorkspace.objects.create_workspace(name, description, user)
 
@@ -810,7 +810,7 @@ class WorkspaceResource(ModResource):
         
         workspace = Workspace.objects.get(pk = workspace_id)
         variants = request.GET.getlist('renditions')
-        logger.debug('variants %s'%variants)
+        logger.info('variants %s'%variants)
         
         items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)        
         
@@ -822,13 +822,12 @@ class WorkspaceResource(ModResource):
             #items = items.filter(stateitemassociation__state__name = state) 
         items = items.distinct()    
         item_res = ItemResource()
-        logger.debug('items %s '%items)
         for item in items:
             logger.debug(item)
             try:
                 resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, deletion_info = show_deleted, keywords_list = get_keywords))
             except Exception,ex:
-                logger.error(ex)
+                logger.info(ex)
     
         resp['totalCount'] = total_count
         json_resp = json.dumps(resp)
