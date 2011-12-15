@@ -1,5 +1,5 @@
-The ``schema`` module
-=====================
+:mod:`schema` --- SQL DB schema
+===============================
 
 .. automodule:: schema
    :members:

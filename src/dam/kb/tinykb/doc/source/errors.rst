@@ -1,5 +1,5 @@
-The ``errors`` module
-=====================
+:mod:`errors` --- Exceptions
+============================
 
 .. automodule:: errors
    :members:
