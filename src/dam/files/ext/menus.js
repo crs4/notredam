@@ -399,7 +399,6 @@ Ext.onReady(function(){
 
         var form_url = '/delete_item/';
 
-        console.log(selected);
 
         var buttons = [
             {
@@ -752,15 +751,11 @@ Ext.onReady(function(){
                                         query = '';
                                     
                                     var title = query || 'All Items';
-                                    console.log('title: ' + title);
                                     var tab_to_open;
                                     Ext.each(media_tabs.items.items, function(panel){
-                                        console.log('panel.title ' + panel.title);
                                         if (panel.title == title) 
                                             tab_to_open = panel;
                                     });
-                                    console.log('tab_to_open');
-                                    console.log(tab_to_open);
                                     if (tab_to_open){
                                         media_tabs.setActiveTab(tab_to_open.id);
                                         tab_to_open.reload();
