@@ -39,31 +39,8 @@ from util import niceid
 
 class Classes(types.ModuleType):
     def __init__(self, session):
-        doc = '''
-            Each knowledge base :py:class:`Session <session.Session>`
-            instance provides a ``orm`` property: a dynamically
-            generated Python module giving access to several class
-            definitions, mapped to the knowledge base session itself.
-            Those classes are documented below.
-
-            For more examples on the session ``orm`` usage, see
-            :ref:`label-kb-root-class`.
-
-            Each ``orm`` session module also features two important
-            properties:
-
-                * **attributes**: a dynamically generated Python
-                  module providing access to KB class attribute types
-                  (with transparent mapping to the current KB
-                  session).  For more details, see
-                  :py:mod:`orm.attributes`.
-
-                * **session** : the knowledge base :py:class:`Session
-                  <session.Session>` with which the ``orm`` module is
-                  bound
-            '''    
         types.ModuleType.__init__(self, 'tinykb_%s_classes'
-                                  % (session.id_, ), doc)
+                                  % (session.id_, ))
         import session as kb_session
         assert(isinstance(session, kb_session.Session))
 

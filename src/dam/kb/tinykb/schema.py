@@ -41,8 +41,13 @@ access_enum = [kb_access.OWNER, kb_access.READ_ONLY, kb_access.READ_WRITE,
 
 class Schema(object):
     '''
-    Container for the SQL DB schema used during a knowledge base
+    Container class for the SQL DB schema underlying a knowledge base
     working session.
+
+    The schema is "stateless", in the sense that it does not bind
+    itself to a specific :py:class:`Session <session.Session>`: all the
+    methods interacting with the DB expect to receive an explicit
+    connection string or engine in order to perform their tasks.
 
     :type  prefix: string
     :param prefix: prefix used for naming the SQL DB schema objects
@@ -304,7 +309,7 @@ def _init_base_schema(o, metadata, prefix):
     '''
     _p = prefix # Just a shorthand
 
-    # Django's user table placeholder
+    # DAM user (managed by Django)
     o.user = Table('auth_user', metadata,
                    Column('id', Integer, primary_key=True),
                    Column('username', String(30), nullable=False)
@@ -316,7 +321,7 @@ def _init_base_schema(o, metadata, prefix):
                    # FIXME: possibly consider other fields here
                    )
 
-    # Workspaces (the table funny name is due to Django model conventions)
+    # DAM workspaces (managed by Django, which also causes the funny name)
     o.workspace = Table('dam_workspace_workspace', metadata,
                         Column('id', Integer, primary_key=True),
                         Column('name', String(512), nullable=False),
@@ -887,7 +892,7 @@ def _init_base_schema(o, metadata, prefix):
     #
     #          - object.id = Building.id = Church.id = Cathedral.id
 
-    # Simple keyword (without attributes)
+    # Example: simple keyword (without attributes)
     # This will be a default class if (when) the KB will be fully implemented
     # o.object_keyword = Table(_p+'object_keyword', metadata,
     #                          Column('id', ForeignKey(_p+'object.id'),
