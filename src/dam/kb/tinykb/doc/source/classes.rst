@@ -1,5 +1,5 @@
-The dynamically mapped ``orm`` module
-=====================================
+:mod:`orm` --- Dynamically mapped module for KB classes
+=======================================================
 
 .. automodule:: orm
    :members:

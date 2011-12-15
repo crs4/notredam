@@ -14,7 +14,7 @@ The main user-visible modules are:
    access
    errors
 
-There are also several internal modules:
+If you're interested in the TinyKB internals, you can also see:
 
 .. toctree::
    :maxdepth: 2

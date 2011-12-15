@@ -47,13 +47,12 @@ class Attributes(types.ModuleType):
             instance provides a ``orm`` property: a dynamically
             generated Python module giving access to several class
             definitions, mapped to the knowledge base session itself.
-            Those classes are documented below.
 
             The ``orm`` module, in turn, provides the ``attributes``
             property: another dynamically generated Python module
             giving access to KB class attribute types definitions.
 
-            Those attribute types are described below.
+            Those attribute types are documented below.
             '''
         types.ModuleType.__init__(self, 'tinykb_%s_classes_attributes'
                                   % (classes.session.id_, ), doc)
@@ -64,7 +63,8 @@ class Attributes(types.ModuleType):
 
         _init_base_attributes(self)
 
-        self.__all__ = ['Attribute', 'Boolean', 'Integer', 'Real']
+        self.__all__ = ['Attribute', 'Boolean', 'Integer', 'Real', 'Choice',
+                        'String', 'Date', 'Uri', 'ObjectReference']
 
     classes = property(lambda self: self._classes)
     '''
@@ -90,7 +90,11 @@ def _init_base_attributes(o):
     # Base abstract class
     class Attribute(object):
         '''
-        Abstract base class representing a KB class attribute
+        Abstract base class representing a KB class attribute.
+
+        This constructor is not expected to be invoked directly, but
+        shares a number of parameters with concrete attribute type
+        constructors.
 
         :type name: string
         :param name: human-readable name
@@ -303,18 +307,17 @@ def _init_base_attributes(o):
             return [table_builder]
 
         def make_proxies_and_event_listeners(self, cls):
-            '''
-            Build one or more SQLAlchemy association proxies and/or event
-            listeners for the KB attribute, when it's used on the given
-            Python class.
+            # Build one or more SQLAlchemy association proxies and/or event
+            # listeners for the KB attribute, when it's used on the given
+            # Python class.
 
-            This method can only be called after the Python class the
-            attribute belongs to has been properly initialized
+            # This method can only be called after the Python class the
+            # attribute belongs to has been properly initialized
 
-            :type cls:  a Python class
-            :param cls: a class whose instances will contain KB attribute
-                        values
-            '''
+            # :type cls:  Python class
+            # :param cls: a class whose instances will contain KB attribute
+            #             values
+
             # The following default implementation should work most of the
             # times.  We'll react to the 'set' event, unless the attribute
             # is multivalued (in this case, we'll react to 'append')
@@ -354,7 +357,7 @@ def _init_base_attributes(o):
             return the value itself (possibly with some ad-hoc type
             casting) in case of success.
 
-            :type value:  a Python term
+            :type value:  Python term
             :param value: the value to check
             '''
             raise NotImplementedError
@@ -538,6 +541,16 @@ def _init_base_attributes(o):
     o.Real = Real
 
     class String(Attribute):
+        '''
+        String KB class attribute.  The constructor arguments are the
+        same of :py:class:`Attribute`, except for:
+
+        :type length: int
+        :param length: maximum length of the string
+
+        :type default: int
+        :param default: default attribute value
+        '''
         def __init__(self, name, id_=None, length=256, maybe_empty=True,
                      default=None, order=0, multivalued=False, notes=None):
             Attribute.__init__(self, name, id_=id_, maybe_empty=maybe_empty,
@@ -574,6 +587,19 @@ def _init_base_attributes(o):
     o.String = String
 
     class Date(Attribute):
+        '''
+        Date KB class attribute.  The constructor arguments are the
+        same of :py:class:`Attribute`, except for:
+
+        :type min_: datetime
+        :param min_: minimum value allowed for the attribute instances
+
+        :type max_: datetime
+        :param max_: maximum value allowed for the attribute instances
+
+        :type default: datetime
+        :param default: default attribute value
+        '''
         def __init__(self, name, id_=None, min_=None, max_=None,
                      maybe_empty=True, default=None, order=0,
                      multivalued=False, notes=None):
@@ -638,6 +664,9 @@ def _init_base_attributes(o):
     o.Date = Date
 
     class Uri(String):
+        '''
+        Integer KB class attribute.  Inherits from :py:class:`String`.
+        '''
         def validate(self, value):
             if self.maybe_empty and not self.multivalued and value is None:
                 return value
@@ -660,6 +689,20 @@ def _init_base_attributes(o):
     o.Uri = Uri
 
     class Choice(Attribute):
+        '''
+        String-like KB class attribute, restricted to predefined
+        choices.  The constructor arguments are the same of
+        :py:class:`Attribute`, except for:
+
+        :type list_of_choices: list of strings
+        :param list_of_choices: valid values for the attribute
+
+        :type default: string
+        
+        :param default: default attribute value (bust be contained in
+                        ``list_of_choices``)
+        '''
+
         def __init__(self, name, list_of_choices, id_=None, maybe_empty=True,
                      default=None, order=0, multivalued=False, notes=None):
             if default is not None:
@@ -719,6 +762,18 @@ def _init_base_attributes(o):
     o.Choice = Choice
 
     class ObjectReference(Attribute):
+        '''
+        KB class attribute referencing to another KB object.  The
+        constructor arguments are the same of :py:class:`Attribute`,
+        except for:
+
+        :type target_class: :py:class:`orm.KBClass` or Python class
+                            obtained via :py:class:`orm.KBClass.python_class`
+        :param target_class: class restriction for objects assigned
+                             to this attribute (i.e. it will only accept
+                             objects belonging to ``target_class`` or one
+                             of its descendants)
+        '''
         def __init__(self, name, target_class, id_=None, maybe_empty=True,
                      order=0, multivalued=False, notes=None):
             if isinstance(target_class, classes.KBClass):

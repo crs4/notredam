@@ -135,7 +135,7 @@ def _init_base_classes(o):
             :type class_: :py:class:`KBRootClass`
             :param class_: KB class to configure
 
-            :type access: :py:mod:`access`
+            :type access: :py:mod:`access` constant
             :param access: Access rule for the given class
             '''
             if not class_.is_root():
@@ -548,7 +548,7 @@ def _init_base_classes(o):
             :type workspace:  :py:class:`Workspace`
             :param workspace: the workspace to configure
 
-            :type access:  :py:mod:`access`
+            :type access:  :py:mod:`access` constant
             :param access: Access configuration for the class on the given
                            workspace
             '''
