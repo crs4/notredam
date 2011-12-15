@@ -3,7 +3,9 @@
 TinyKB documentation
 ====================
 
-Contents:
+.. only:: html
+
+   Contents:
 
 .. toctree::
    :maxdepth: 2
@@ -11,11 +13,3 @@ Contents:
    intro
    basics
    api
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-

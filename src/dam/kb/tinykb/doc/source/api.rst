@@ -1,9 +1,11 @@
 API documentation
 =================
 
-This chapter documents the TinyKB API.
+.. only:: html
 
-The main user-visible modules are:
+   This chapter documents the TinyKB API.
+
+   The main user-visible modules are:
 
 .. toctree::
    :maxdepth: 2
@@ -14,7 +16,9 @@ The main user-visible modules are:
    access
    errors
 
-If you're interested in the TinyKB internals, you can also see:
+.. only:: html
+
+   If you're interested in the TinyKB internals, you can also check:
 
 .. toctree::
    :maxdepth: 2
