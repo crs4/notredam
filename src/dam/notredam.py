@@ -45,25 +45,22 @@ def _run(cmdline,  file_name,  stdout = None):
     f = open(path, 'w')
     f.write(str(p.pid))
     f.close()
-    
 
 def check_db_created():
     installed = os.path.join(INSTALLATIONPATH,  'installed')
+    
     if not os.path.exists(installed):
         sys.path.append(INSTALLATIONPATH)
         import config
         if config.DATABASES['default']['ENGINE']== 'django.db.backends.mysql':
             print 'INSERT MYSQL ROOT PASSWORD'
             subprocess.call(['mysql',  '-uroot',  '-p', '-e', "create user %s identified by '%s'; GRANT ALL on *.* to '%s'"%(config.DATABASES['default']['USER'], config.DATABASES['default']['PASSWORD'], config.DATABASES['default']['USER'])])
-            subprocess.call(['mysql',  '-u%s'%config.DATABASES['default']['USER'], '-p%s'%config.DATABASES['default']['PASSWORD'],  '-e', 'create database %s character set utf8;'%config.DATABASES['default']['NAME']])
-            
-        subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'syncdb',  '--noinput'])
+            subprocess.call(['mysql',  '-u%s'%config.DATABASES['default']['USER'], '-p%s'%config.DATABASES['default']['PASSWORD'],  '-e', 'create database %s character set latin1;'%config.DATABASES['default']['NAME']])
+        p = subprocess.Popen(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'syncdb',  '--noinput'], stdout = None,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/mediadart/:/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'})
+        p.wait();
         subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'loaddata',  '/opt/notredam/dam/initial_data.json'])
         f = open(installed,  'w')
         f.close()
-
-
-        
 
 def run(runserver,  address):
     check_db_created()    
@@ -77,8 +74,7 @@ def run(runserver,  address):
         print 'running server'
     _run(['/usr/bin/python',  '/opt/notredam/dam/start_mediadart.py'],  'mediadart_processor')  
     print 'running batch processor'
-    
-    
+
 def kill_proc(name):    
     
     file_path = os.path.join(INSTALLATIONPATH,  name + '.pid')
@@ -107,6 +103,9 @@ def stop():
     
 def main():
     
+    os.environ['PYTHONPATH']='/opt/mediadart/:/opt/notredam/'
+    os.environ['DJANGO_SETTINGS_MODULE']='dam.settings'
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "runserver",  "address="])
     except getopt.error, msg:
