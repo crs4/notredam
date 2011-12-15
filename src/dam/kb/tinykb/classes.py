@@ -706,20 +706,23 @@ def _init_base_classes(o):
 
     mapper(Item, schema.item)
 
-    mapper(ItemVisibility, schema.item_visibility,
-           properties={
-            'item' : relationship(Item, backref='visibility')
-            })
+    # FIXME: unused right now
+    # mapper(ItemVisibility, schema.item_visibility,
+    #        properties={
+    #         'item' : relationship(Item, backref='visibility')
+    #         })
 
     mapper(Workspace, schema.workspace,
            properties={
             '_creator_id' : schema.workspace.c.creator_id,
             'creator' : relationship(User, backref='workspaces'),
-            'visible_items' : relationship(ItemVisibility, backref='workspace',
-                                           cascade='all, delete-orphan'),
-            'visible_catalog_trees' : relationship(CatalogTreeVisibility,
-                                                   backref='workspace',
-                                                   cascade='all, delete-orphan'),
+            # FIXME: unused right now
+            # 'visible_items' : relationship(ItemVisibility, backref='workspace',
+            #                                cascade='all, delete-orphan'),
+            # FIXME: unused right now
+            # 'visible_catalog_trees' : relationship(CatalogTreeVisibility,
+            #                                        backref='workspace',
+            #                                        cascade='all, delete-orphan'),
             'visible_root_classes' : relationship(KBClassVisibility,
                                                   backref='workspace',
                                                   cascade='all, delete-orphan')
@@ -775,70 +778,67 @@ def _init_base_classes(o):
             'class' : relationship(KBClass, backref='objects')
             })
 
-    # Former Keyword and Category mappers
-    # mapper(Keyword, schema.object_keyword, inherits=KBObject,
-    #        polymorphic_identity='keyword')
-    #
-    # mapper(Category, schema.object_category, inherits=KBObject,
-    #        polymorphic_identity='category')
+    # FIXME: unused right now
+    # mapper(CatalogEntry, schema.catalog_entry,
+    #        polymorphic_on=schema.catalog_entry.c.is_root,
+    #        polymorphic_identity=False,
+    #        properties={
+    #         '_root' : schema.catalog_entry.c.root,
+    #         '_parent_id' : schema.catalog_entry.c.parent,
+    #         '_parent_root' : schema.catalog_entry.c.parent_root,
+    #         '_object_id' : schema.catalog_entry.c.object,
+    #         '_object_class_root' : schema.catalog_entry.c.object_class_root,
+    #         '_is_root' : schema.catalog_entry.c.is_root,
+    #         'parent' : relationship(CatalogEntry, backref='children',
+    #                                   primaryjoin=(schema.catalog_entry.c.parent
+    #                                                ==schema.catalog_entry.c.id),
+    #                                   remote_side=[schema.catalog_entry.c.id]),
+    #         'object' : relationship(KBObject, backref='catalog_entries')
+    #         })
 
-    mapper(CatalogEntry, schema.catalog_entry,
-           polymorphic_on=schema.catalog_entry.c.is_root,
-           polymorphic_identity=False,
-           properties={
-            '_root' : schema.catalog_entry.c.root,
-            '_parent_id' : schema.catalog_entry.c.parent,
-            '_parent_root' : schema.catalog_entry.c.parent_root,
-            '_object_id' : schema.catalog_entry.c.object,
-            '_object_class_root' : schema.catalog_entry.c.object_class_root,
-            '_is_root' : schema.catalog_entry.c.is_root,
-            'parent' : relationship(CatalogEntry, backref='children',
-                                      primaryjoin=(schema.catalog_entry.c.parent
-                                                   ==schema.catalog_entry.c.id),
-                                      remote_side=[schema.catalog_entry.c.id]),
-            'object' : relationship(KBObject, backref='catalog_entries')
-            })
+    # FIXME: unused right now
+    # mapper(RootCatalogEntry, inherits=CatalogEntry,
+    #        polymorphic_identity=True)
 
-    mapper(RootCatalogEntry, inherits=CatalogEntry,
-           polymorphic_identity=True)
-
-    mapper(CatalogTreeVisibility, schema.catalog_tree_visibility,
-           properties={
-            '_workspace' : schema.catalog_tree_visibility.c.workspace,
-            '_catalog_entry' : schema.catalog_tree_visibility.c.catalog_entry,
-            '_catalog_entry_root' : schema.catalog_tree_visibility.c.catalog_entry_root,
-            '_catalog_entry_object_class_root' : schema.catalog_tree_visibility.c.catalog_entry_object_class_root,
-            'catalog_entry' : relationship(RootCatalogEntry,
-                                           backref='visibility'),
-            'root_class_visibility' : relationship(KBClassVisibility,
-                                                   backref='catalog_tree_visibilities')
-            })
+    # FIXME: unused right now
+    # mapper(CatalogTreeVisibility, schema.catalog_tree_visibility,
+    #        properties={
+    #         '_workspace' : schema.catalog_tree_visibility.c.workspace,
+    #         '_catalog_entry' : schema.catalog_tree_visibility.c.catalog_entry,
+    #         '_catalog_entry_root' : schema.catalog_tree_visibility.c.catalog_entry_root,
+    #         '_catalog_entry_object_class_root' : schema.catalog_tree_visibility.c.catalog_entry_object_class_root,
+    #         'catalog_entry' : relationship(RootCatalogEntry,
+    #                                        backref='visibility'),
+    #         'root_class_visibility' : relationship(KBClassVisibility,
+    #                                                backref='catalog_tree_visibilities')
+    #         })
 
 
     ###########################################################################
     # Events
     ###########################################################################
     # Update related fields when the parent of a catalog entry is changed
-    def catentry_update_parent_attrs(target, value, _oldvalue, _initiator):
-        if value is None:
-            target._root = target.id
-            target._parent_id = target.id
-            target._parent_root = target.id
-            target._is_root = True
-        else:
-            if isinstance(target, RootCatalogEntry):
-                raise AttributeError(
-                    'Cannot change the parent of a root catalog entry')
-            if not isinstance(value, CatalogEntry):
-                raise TypeError('Parent must be a CatalogEntry (received: %s)'
-                                % str(type(value)))
-            target._root = value._root
-            target._parent_id = value.id
-            target._parent_root = value._root
-            target._is_root = (target.id == value.id)
-
-    event.listen(CatalogEntry.parent, 'set', catentry_update_parent_attrs,
-                 propagate=True, retval=False)
+    # FIXME: unused right now
+    # def catentry_update_parent_attrs(target, value, _oldvalue, _initiator):
+    #     if value is None:
+    #         target._root = target.id
+    #         target._parent_id = target.id
+    #         target._parent_root = target.id
+    #         target._is_root = True
+    #     else:
+    #         if isinstance(target, RootCatalogEntry):
+    #             raise AttributeError(
+    #                 'Cannot change the parent of a root catalog entry')
+    #         if not isinstance(value, CatalogEntry):
+    #             raise TypeError('Parent must be a CatalogEntry (received: %s)'
+    #                             % str(type(value)))
+    #         target._root = value._root
+    #         target._parent_id = value.id
+    #         target._parent_root = value._root
+    #         target._is_root = (target.id == value.id)
+    #
+    # event.listen(CatalogEntry.parent, 'set', catentry_update_parent_attrs,
+    #              propagate=True, retval=False)
 
     # Update related fields when the parent of a KB class is changed
     def kbclass_update_superclass_attrs(target, value, _oldvalue, _initiator):

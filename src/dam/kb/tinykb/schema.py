@@ -328,29 +328,30 @@ def _init_base_schema(o, metadata, prefix):
                         )
 
     # Item visibility in different workspaces
-    o.item_visibility = Table(_p+'workspace_damworkspace_items', metadata,
-                              Column('id', Integer, primary_key=True),
-                              # FIXME: the actual field references the
-                              # "abstract" table workspace_damworkspace
-                              Column('damworkspace_id',
-                                     ForeignKey('dam_workspace_workspace.id',
-                                                onupdate='CASCADE',
-                                                ondelete='CASCADE')),
-                              Column('item_id',
-                                     ForeignKey('item.id',
-                                                onupdate='CASCADE',
-                                                ondelete='CASCADE')),
-                              Column('access',
-                                     Enum(*access_enum,
-                                           name=_p+'workspace_damworkspace_items_access_enum'),
-                                     nullable=False),
+    # FIXME: unused: maybe some day it will replace NotreDAM/Django machinery
+    # o.item_visibility = Table(_p+'workspace_damworkspace_items', metadata,
+    #                           Column('id', Integer, primary_key=True),
+    #                           # FIXME: the actual field references the
+    #                           # "abstract" table workspace_damworkspace
+    #                           Column('damworkspace_id',
+    #                                  ForeignKey('dam_workspace_workspace.id',
+    #                                             onupdate='CASCADE',
+    #                                             ondelete='CASCADE')),
+    #                           Column('item_id',
+    #                                  ForeignKey('item.id',
+    #                                             onupdate='CASCADE',
+    #                                             ondelete='CASCADE')),
+    #                           Column('access',
+    #                                  Enum(*access_enum,
+    #                                        name=_p+'workspace_damworkspace_items_access_enum'),
+    #                                  nullable=False),
 
-                              # Actual primary key (the 'id' field is
-                              # redundant, and only required by Django
-                              # model)
-                              UniqueConstraint('damworkspace_id', 'item_id',
-                                               name=_p+'workspace_items_actual_pkey_constr')
-                              )
+    #                           # Actual primary key (the 'id' field is
+    #                           # redundant, and only required by Django
+    #                           # model)
+    #                           UniqueConstraint('damworkspace_id', 'item_id',
+    #                                            name=_p+'workspace_items_actual_pkey_constr')
+    #                           )
 
     # User-defined class for real-world objects
     o.class_t = Table(_p+'class', metadata,
@@ -690,119 +691,121 @@ def _init_base_schema(o, metadata, prefix):
                        )
 
     # An entry in the catalog
-    o.catalog_entry = Table(_p+'catalog_entry', metadata,
-                            Column('id', String(128), primary_key=True),
-                            Column('root', ForeignKey(_p+'catalog_entry.id',
-                                                      onupdate='CASCADE',
-                                                      ondelete='CASCADE'),
-                                   nullable=False),
-                            Column('parent', String(128), nullable=False),
-                            Column('parent_root', String(128), nullable=False),
-                            Column('object', String(128), nullable=False),
-                            Column('object_class_root', String(128), nullable=False),
+    # FIXME: unused: maybe some day it will replace NotreDAM/Django machinery
+    # o.catalog_entry = Table(_p+'catalog_entry', metadata,
+    #                         Column('id', String(128), primary_key=True),
+    #                         Column('root', ForeignKey(_p+'catalog_entry.id',
+    #                                                   onupdate='CASCADE',
+    #                                                   ondelete='CASCADE'),
+    #                                nullable=False),
+    #                         Column('parent', String(128), nullable=False),
+    #                         Column('parent_root', String(128), nullable=False),
+    #                         Column('object', String(128), nullable=False),
+    #                         Column('object_class_root', String(128), nullable=False),
+    #
+    #                         # Redundant column which simplifies SQLAlchemy
+    #                         # inheritance mapping
+    #                         Column('is_root', Boolean, nullable=False),
+    #                         # is_root <=> (root = id)
+    #                         CheckConstraint('(NOT (root = id) OR is_root)'
+    #                                         ' AND (NOT is_root OR (root = id))',
+    #                                         name=_p+'catalog_is_root_value_constr'),
 
-                            # Redundant column which simplifies SQLAlchemy
-                            # inheritance mapping
-                            Column('is_root', Boolean, nullable=False),
-                            # is_root <=> (root = id)
-                            CheckConstraint('(NOT (root = id) OR is_root)'
-                                            ' AND (NOT is_root OR (root = id))',
-                                            name=_p+'catalog_is_root_value_constr'),
+    #                         # Redundant constraint needed for foreign
+    #                         # key references
+    #                         UniqueConstraint('id', 'root',
+    #                                          name=_p+'catalog_unique_id_root_constr'),
 
-                            # Redundant constraint needed for foreign
-                            # key references
-                            UniqueConstraint('id', 'root',
-                                             name=_p+'catalog_unique_id_root_constr'),
+    #                         # Redundant constraint needed for foreign
+    #                         # key references
+    #                         UniqueConstraint('id', 'root', 'object_class_root',
+    #                                          name=_p+'catalog_unique_id_root_obj_root_constr'),
 
-                            # Redundant constraint needed for foreign
-                            # key references
-                            UniqueConstraint('id', 'root', 'object_class_root',
-                                             name=_p+'catalog_unique_id_root_obj_root_constr'),
+    #                         # Redundant constraint needed for foreign
+    #                         # key references
+    #                         UniqueConstraint('id', 'object', 'object_class_root',
+    #                                          name=_p+'catalog_unique_id_obj_class_constr'),
 
-                            # Redundant constraint needed for foreign
-                            # key references
-                            UniqueConstraint('id', 'object', 'object_class_root',
-                                             name=_p+'catalog_unique_id_obj_class_constr'),
-
-                            # External reference to typing object (and its
-                            # root class)
-                            ForeignKeyConstraint(['object', 'object_class_root'],
-                                                 [_p+'object.id',
-                                                  _p+'object.class_root'],
-                                                 onupdate='CASCADE',
-                                                 ondelete='RESTRICT'),
-
-                            # Ensure that a catalog entry and its parent
-                            # share the same root node
-                            ForeignKeyConstraint(['parent', 'parent_root'],
-                                                 [_p+'catalog_entry.id',
-                                                  _p+'catalog_entry.root'],
-                                                 onupdate='CASCADE',
-                                                 ondelete='CASCADE'),
-
-                            # Ensure that a root class does not have a parent,
-                            # and vice versa:   (root = id) <=> (parent = id)
-                            CheckConstraint('((NOT (root = id))'
-                                            ' OR (parent = id))'
-                                            'AND ((NOT (parent = id))'
-                                            '     OR (root = id))',
-                                            name=_p+'catalog_root_iff_no_parent_constr')
-                            )
+    #                         # External reference to typing object (and its
+    #                         # root class)
+    #                         ForeignKeyConstraint(['object', 'object_class_root'],
+    #                                              [_p+'object.id',
+    #                                               _p+'object.class_root'],
+    #                                              onupdate='CASCADE',
+    #                                              ondelete='RESTRICT'),
+    #
+    #                         # Ensure that a catalog entry and its parent
+    #                         # share the same root node
+    #                         ForeignKeyConstraint(['parent', 'parent_root'],
+    #                                              [_p+'catalog_entry.id',
+    #                                               _p+'catalog_entry.root'],
+    #                                              onupdate='CASCADE',
+    #                                              ondelete='CASCADE'),
+    #
+    #                         # Ensure that a root class does not have a parent,
+    #                         # and vice versa:   (root = id) <=> (parent = id)
+    #                         CheckConstraint('((NOT (root = id))'
+    #                                         ' OR (parent = id))'
+    #                                         'AND ((NOT (parent = id))'
+    #                                         '     OR (root = id))',
+    #                                         name=_p+'catalog_root_iff_no_parent_constr')
+    #                         )
 
     # Class visibility in workspaces
-    o.catalog_tree_visibility = Table(_p+'catalog_tree_visibility', metadata,
-                                      Column('workspace',
-                                             ForeignKey('dam_workspace_workspace.id',
-                                                        onupdate='CASCADE',
-                                                        ondelete='CASCADE'),
-                                             primary_key=True,
-                                             nullable=False),
-                                      Column('catalog_entry', String(128),
-                                             primary_key=True,
-                                             nullable=False),
-                                      Column('catalog_entry_root', String(128),
-                                             nullable=False),
-                                      Column('catalog_entry_object_class_root',
-                                             String(128), nullable=False),
-                                      Column('access',
-                                             Enum(*access_enum,
-                                                   name=_p+'class_visibility_access_enum'),
-                                             nullable=False),
-
-                                      # Redundant constraint needed for foreign
-                                      # key references
-                                      UniqueConstraint('catalog_entry_root',
-                                                       'workspace',
-                                                       name=_p+'catalog_tree_visibility_unique_catalog_root_ws_constr'),
-
-                                      ForeignKeyConstraint(['catalog_entry',
-                                                            'catalog_entry_root',
-                                                            'catalog_entry_object_class_root'],
-                                                           [_p+'catalog_entry.id',
-                                                            _p+'catalog_entry.root',
-                                                            _p+'catalog_entry.object_class_root'],
-                                                           onupdate='CASCADE',
-                                                           ondelete='CASCADE'),
-
-                                      # Ensure that the catalog entry class
-                                      # is actually visible on the target
-                                      # workspace (NOTE: it does not forbid
-                                      # child catalog entries to be
-                                      # associated with non-visible
-                                      # classes)
-                                      ForeignKeyConstraint(['workspace',
-                                                            'catalog_entry_object_class_root'],
-                                                           [_p+'class_visibility.workspace',
-                                                            _p+'class_visibility.class_root'],
-                                                           onupdate='CASCADE',
-                                                           ondelete='CASCADE'),
-
-                                      # Ensure that we only give visibility to
-                                      # root catalog entries
-                                      CheckConstraint('catalog_entry'
-                                                      ' = catalog_entry_root',
-                                                      name=_p+'catalog_parent_root_constr')
-                                      )
+    # FIXME: unused: maybe some day it will replace NotreDAM/Django machinery
+    # o.catalog_tree_visibility = Table(_p+'catalog_tree_visibility', metadata,
+    #                                   Column('workspace',
+    #                                          ForeignKey('dam_workspace_workspace.id',
+    #                                                     onupdate='CASCADE',
+    #                                                     ondelete='CASCADE'),
+    #                                          primary_key=True,
+    #                                          nullable=False),
+    #                                   Column('catalog_entry', String(128),
+    #                                          primary_key=True,
+    #                                          nullable=False),
+    #                                   Column('catalog_entry_root', String(128),
+    #                                          nullable=False),
+    #                                   Column('catalog_entry_object_class_root',
+    #                                          String(128), nullable=False),
+    #                                   Column('access',
+    #                                          Enum(*access_enum,
+    #                                                name=_p+'class_visibility_access_enum'),
+    #                                          nullable=False),
+    #
+    #                                   # Redundant constraint needed for foreign
+    #                                   # key references
+    #                                   UniqueConstraint('catalog_entry_root',
+    #                                                    'workspace',
+    #                                                    name=_p+'catalog_tree_visibility_unique_catalog_root_ws_constr'),
+    #
+    #                                   ForeignKeyConstraint(['catalog_entry',
+    #                                                         'catalog_entry_root',
+    #                                                         'catalog_entry_object_class_root'],
+    #                                                        [_p+'catalog_entry.id',
+    #                                                         _p+'catalog_entry.root',
+    #                                                         _p+'catalog_entry.object_class_root'],
+    #                                                        onupdate='CASCADE',
+    #                                                        ondelete='CASCADE'),
+    #
+    #                                   # Ensure that the catalog entry class
+    #                                   # is actually visible on the target
+    #                                   # workspace (NOTE: it does not forbid
+    #                                   # child catalog entries to be
+    #                                   # associated with non-visible
+    #                                   # classes)
+    #                                   ForeignKeyConstraint(['workspace',
+    #                                                         'catalog_entry_object_class_root'],
+    #                                                        [_p+'class_visibility.workspace',
+    #                                                         _p+'class_visibility.class_root'],
+    #                                                        onupdate='CASCADE',
+    #                                                        ondelete='CASCADE'),
+    #
+    #                                   # Ensure that we only give visibility to
+    #                                   # root catalog entries
+    #                                   CheckConstraint('catalog_entry'
+    #                                                   ' = catalog_entry_root',
+    #                                                   name=_p+'catalog_parent_root_constr')
+    #                                   )
 
     # Cataloging information.  Only associate items and catalog entries when:
     #
@@ -811,47 +814,48 @@ def _init_base_schema(o, metadata, prefix):
     #
     #    2. both the item and the catalog entry class are visibile in the
     #       same workspace.
-    o.cataloging = Table(_p+'cataloging', metadata,
-                         Column('item', Integer,
-                                primary_key=True),
-                         Column('workspace', Integer,
-                                primary_key=True),
-                         Column('catalog_entry', String(128),
-                                primary_key=True),
-                         Column('catalog_entry_root', String(128)),
-                         Column('catalog_entry_object', String(128),
-                                primary_key=True),
-                         Column('catalog_entry_object_class_root', String(128)),
+    # FIXME: unused: maybe some day it will replace NotreDAM/Django machinery
+    # o.cataloging = Table(_p+'cataloging', metadata,
+    #                      Column('item', Integer,
+    #                             primary_key=True),
+    #                      Column('workspace', Integer,
+    #                             primary_key=True),
+    #                      Column('catalog_entry', String(128),
+    #                             primary_key=True),
+    #                      Column('catalog_entry_root', String(128)),
+    #                      Column('catalog_entry_object', String(128),
+    #                             primary_key=True),
+    #                      Column('catalog_entry_object_class_root', String(128)),
 
-                         ForeignKeyConstraint(['item', 'workspace'],
-                                              [_p+'workspace_damworkspace_items.item_id',
-                                               _p+'workspace_damworkspace_items.damworkspace_id'],
-                                              onupdate='CASCADE',
-                                              ondelete='CASCADE'),
+    #                      ForeignKeyConstraint(['item', 'workspace'],
+    #                                           [_p+'workspace_damworkspace_items.item_id',
+    #                                            _p+'workspace_damworkspace_items.damworkspace_id'],
+    #                                           onupdate='CASCADE',
+    #                                           ondelete='CASCADE'),
 
-                         ForeignKeyConstraint(['catalog_entry_root',
-                                               'workspace'],
-                                              [_p+'catalog_tree_visibility.catalog_entry_root',
-                                               _p+'catalog_tree_visibility.workspace'],
-                                              onupdate='CASCADE',
-                                              ondelete='CASCADE'),
+    #                      ForeignKeyConstraint(['catalog_entry_root',
+    #                                            'workspace'],
+    #                                           [_p+'catalog_tree_visibility.catalog_entry_root',
+    #                                            _p+'catalog_tree_visibility.workspace'],
+    #                                           onupdate='CASCADE',
+    #                                           ondelete='CASCADE'),
 
-                         ForeignKeyConstraint(['catalog_entry',
-                                               'catalog_entry_object',
-                                               'catalog_entry_object_class_root'],
-                                              [_p+'catalog_entry.id',
-                                               _p+'catalog_entry.object',
-                                               _p+'catalog_entry.object_class_root'],
-                                              onupdate='CASCADE',
-                                              ondelete='CASCADE'),
+    #                      ForeignKeyConstraint(['catalog_entry',
+    #                                            'catalog_entry_object',
+    #                                            'catalog_entry_object_class_root'],
+    #                                           [_p+'catalog_entry.id',
+    #                                            _p+'catalog_entry.object',
+    #                                            _p+'catalog_entry.object_class_root'],
+    #                                           onupdate='CASCADE',
+    #                                           ondelete='CASCADE'),
 
-                         ForeignKeyConstraint(['workspace',
-                                               'catalog_entry_object_class_root'],
-                                              [_p+'class_visibility.workspace',
-                                               _p+'class_visibility.class_root'],
-                                              onupdate='CASCADE',
-                                              ondelete='RESTRICT')
-                         )
+    #                      ForeignKeyConstraint(['workspace',
+    #                                            'catalog_entry_object_class_root'],
+    #                                           [_p+'class_visibility.workspace',
+    #                                            _p+'class_visibility.class_root'],
+    #                                           onupdate='CASCADE',
+    #                                           ondelete='RESTRICT')
+    #                      )
 
     ###########################################################################
     # Predefined object classes
