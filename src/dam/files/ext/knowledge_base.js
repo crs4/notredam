@@ -293,9 +293,9 @@ function get_grid_insert_value(value, type, title){
         			var record_value = new Ext.form.ComboBox({
         				id  : 'id_record_value_single_box',
         		        store: get_TF_store(), // end of Ext.data.SimpleStore
-        		        fieldLabel: gettext('Select value ...'),
+        		        fieldLabel: gettext('Select value ..'),
         		        width: 130,
-        		        emptyText: gettext('Select ...'),
+        		        emptyText: gettext('Select ..'),
         		        displayField: 'name',
         		        valueField: 'id',
         		        mode: 'local',
@@ -505,7 +505,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			id  : 'id_default_value',
 	        store: get_TF_store(),// end of Ext.data.SimpleStore
 	        width: 130,
-	        emptyText: gettext('Select ...'),
+	        emptyText: gettext('Select ..'),
 	        displayField: 'name',
 	        valueField: 'id',
 	        mode: 'local',
@@ -628,7 +628,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
           }), // end of Ext.data.SimpleStore
         fieldLabel: gettext('Type'),
         width: 130,
-        emptyText: gettext('Select a type...'),
+        emptyText: gettext('Select a type ..'),
         displayField: 'name',
         valueField: 'id',
         mode: 'local',
