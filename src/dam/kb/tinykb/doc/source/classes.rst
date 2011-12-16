@@ -26,7 +26,13 @@ Each ``orm`` session module features one important property:
    :py:mod:`orm` session module.  The actual implementation is
    restricted to the portion within the green dashed line, while the
    rest of the diagram shows not-yet-implemented classes planned for
-   better NotreDAM integration.
+   better NotreDAM integration.  The blue dashed arrows indicate that
+   ``KBObject_1``, ``KBObject_2`` and ``KBObject_n`` (which inherit
+   from :py:class:`KBObject`) are dynamically generated from
+   :py:class:`KBClass` instances.  Those dynamic classes, in turn, can
+   be cross-referenced through the
+   :py:class:`orm.attributes.ObjectReference` attributes defined in
+   their generating KBClass.
 
 
 .. automodule:: orm

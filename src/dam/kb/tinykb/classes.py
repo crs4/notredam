@@ -49,8 +49,8 @@ class Classes(types.ModuleType):
         _init_base_classes(self)
 
         self.__all__ = ['attributes', 'session',
-                        'KBClass', 'KBRootClass', 'KBObject',
-                        'User', 'Workspace']
+                        'KBClass', 'KBRootClass', 'KBClassVisibility',
+                        'KBObject', 'User', 'Workspace']
 
 
     # self._attributes is set in _init_base_classes
@@ -78,7 +78,7 @@ def _init_base_classes(o):
         Knowledge base workspace.
 
         .. warning:: This class is mapped to NotreDAM workspaces, and
-                     it's handled by Django through its models.
+                     it's also handled by Django through its models.
 
         :type name: string
         :param name: workspace name
@@ -139,7 +139,7 @@ def _init_base_classes(o):
         User which could own one or more workspaces.
 
         .. warning:: This class is mapped to NotreDAM users, and
-                     it's handled by Django through its models.
+                     it's also handled by Django through its models.
 
         :type username: string
         :param username: user name
@@ -366,7 +366,9 @@ def _init_base_classes(o):
                          when a KB class is deleted from a session.
                          Furthermore, it may also cause a deadlock if
                          the tables being dropped are actually used in
-                         the current transaction.
+                         the current transaction.  As a safer
+                         alternative, you may simply delete a KBClass
+                         using :py:meth:`session.Session.delete`.
             '''
             # FIXME: does SQLAlchemy allow to check whether we are deleted?
             if not hasattr(self, '__kb_deleted__'):
@@ -510,9 +512,13 @@ def _init_base_classes(o):
 
     class KBRootClass(KBClass):
         '''
-        Knowledge base class without a parent.  It is a special case
-        of :py:class:`KBClass`, and the constructor arguments are the
-        same.
+        Knowledge base class without a parent.  The constructor
+        arguments are the same of :py:class:`KBClass`.
+
+        Even if a ``KBRootClass`` instance is always at the top of
+        each KB classes hierarchy, from the object-oriented point of
+        view it is just a special case of :py:class:`KBClass` ---
+        thus, it is implemented as a derived class.
         '''
         def __init__(self, name, attributes=[], notes=None, explicit_id=None):
             KBClass.__init__(self, name, None, attributes=attributes,
@@ -572,6 +578,28 @@ def _init_base_classes(o):
     o.KBClassAttribute = KBClassAttribute
 
     class KBClassVisibility(object):
+        '''
+        Visibility configuration of a :py:class:`KBRootClass` on a
+        NotreDAM :py:class:`Workspace`.
+
+        .. warning:: This is class may be changed or removed in the
+           future.  Instead, you could (and should) use:
+
+            * :py:meth:`KBRootClass.setup_workspace`
+
+            * :py:meth:`KBRootClass.restrict_to_workspaces`
+
+            * :py:meth:`Workspace.setup_root_class`
+
+        :type class_:  :py:class:`KBRootClass`
+        :param class_: KB class to be made visible
+
+        :type workspace:  :py:class:`Workspace`
+        :param workspace: workspace on which ``class_`` will be exposed
+
+        :type access: :py:mod:`access` constant
+        :param access: access rule for the given class
+        '''
         def __init__(self, class_, workspace, access):
             setattr(self, 'class', class_)
             self.workspace = workspace
