@@ -37,6 +37,7 @@ from sqlalchemy import (event, Column, CheckConstraint, ForeignKey,
 from sqlalchemy.orm import mapper, relationship
 
 import errors as kb_exc
+import schema as kb_schema
 
 from util.niceid import niceid
 
@@ -287,7 +288,7 @@ def _init_base_attributes(o):
                                   if isinstance(c, Column)])
                     raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
                     mvt = Table(self._multivalue_table, metadata,
-                                Column('object', sa.types.String(128),
+                                Column('object', kb_schema.KeyString,
                                        ForeignKey('%s.id'
                                                   % (owner_table.name, ),
                                                   onupdate='CASCADE',
@@ -796,7 +797,7 @@ def _init_base_attributes(o):
 
         def _raw_ddl(self):
             colname = self.column_name()
-            return [Column(colname, sa.types.String(128),
+            return [Column(colname, kb_schema.KeyString,
                            ForeignKey('%s.id' % (self._target_table, ),
                                       onupdate='CASCADE',
                                       ondelete='CASCADE'),

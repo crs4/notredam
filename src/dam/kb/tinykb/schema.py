@@ -34,6 +34,16 @@ from sqlalchemy.sql.expression import insert
 
 import access as kb_access
 
+# Workaround for this long-standing MySQL bug:
+#
+#     http://bugs.mysql.com/bug.php?id=4541
+#
+# We ensure that the string columns involved in indexes (unique constraints,
+# foreign keys, etc) will *not* have a UTF-8 encoding on MySQL.
+from sqlalchemy.dialects import mysql
+KeyString = String(128).with_variant(mysql.VARCHAR(128, charset='ascii'),
+                                     'mysql')
+
 # Ammissible values for classes and catalog entries visibility in
 # workspaces
 access_enum = [kb_access.OWNER, kb_access.READ_ONLY, kb_access.READ_WRITE,
@@ -219,7 +229,7 @@ class Schema(object):
                 return t
 
         return Table(table_name, self._metadata,
-                     Column('id', String(128),
+                     Column('id', KeyString,
                             ForeignKey('%s.id' % (parent_table, ),
                                        onupdate='CASCADE',
                                        ondelete='CASCADE'),
@@ -360,15 +370,15 @@ def _init_base_schema(o, metadata, prefix):
 
     # User-defined class for real-world objects
     o.class_t = Table(_p+'class', metadata,
-                      Column('id', String(128), primary_key=True),
+                      Column('id', KeyString, primary_key=True),
                       Column('root', ForeignKey(_p+'class.id',
                                                 onupdate='CASCADE',
                                                 ondelete='CASCADE'),
                              nullable=False),
-                      Column('parent', String(128), nullable=False),
-                      Column('parent_root', String(128), nullable=False),
+                      Column('parent', KeyString, nullable=False),
+                      Column('parent_root', KeyString, nullable=False),
                       Column('name', String(64), nullable=False),
-                      Column('table', String(128), unique=True, nullable=False),
+                      Column('table', KeyString, unique=True, nullable=False),
                       Column('notes', String(4096)),
 
                       # Redundant column which simplifies SQLAlchemy
@@ -404,8 +414,8 @@ def _init_base_schema(o, metadata, prefix):
                                                  onupdate='CASCADE',
                                                  ondelete='CASCADE'),
                                       primary_key=True),
-                               Column('class', String(128), primary_key=True),
-                               Column('class_root', String(128)),
+                               Column('class', KeyString, primary_key=True),
+                               Column('class_root', KeyString),
                                Column('access',
                                       Enum(*access_enum,
                                             name=_p+'class_visibility_access_enum'),
@@ -432,19 +442,19 @@ def _init_base_schema(o, metadata, prefix):
 
     # Known attribute types
     o.attribute_type = Table(_p+'attribute_type', metadata,
-                             Column('name', String(128), primary_key=True),
+                             Column('name', KeyString, primary_key=True),
                              Column('notes', String(4096))
                              )
 
     # Generic class attributes
     o.class_attribute = Table(_p+'class_attribute', metadata,
-                              Column('class', String(128), nullable=False,
+                              Column('class', KeyString, nullable=False,
                                      primary_key=True),
-                              Column('class_root', String(128), nullable=False,
+                              Column('class_root', KeyString, nullable=False,
                                      primary_key=True),
-                              Column('id', String(128), nullable=False,
+                              Column('id', KeyString, nullable=False,
                                      primary_key=True),
-                              Column('name', String(128), nullable=False),
+                              Column('name', KeyString, nullable=False),
                               Column('type',
                                      ForeignKey(_p+'attribute_type.name',
                                                 onupdate='CASCADE',
@@ -452,7 +462,7 @@ def _init_base_schema(o, metadata, prefix):
                                      nullable=False),
                               Column('order', Integer, default=0, nullable=False),
                               Column('maybe_empty', Boolean, nullable=False),
-                              Column('multivalue_table', String(128),
+                              Column('multivalue_table', KeyString,
                                      default=None, unique=True, nullable=True),
                               Column('notes', String(4096)),
 
@@ -466,12 +476,12 @@ def _init_base_schema(o, metadata, prefix):
     # Type-specific class attribute tables
     ###########################################################################
     o.class_attribute_bool = Table(_p+'class_attribute_bool', metadata,
-                                   Column('class', String(128), nullable=False,
+                                   Column('class', KeyString, nullable=False,
                                           primary_key=True),
-                                   Column('class_root', String(128),
+                                   Column('class_root', KeyString,
                                           nullable=False,
                                           primary_key=True),
-                                   Column('id', String(128), nullable=False,
+                                   Column('id', KeyString, nullable=False,
                                           primary_key=True),
                                    Column('default', Boolean),
 
@@ -486,11 +496,11 @@ def _init_base_schema(o, metadata, prefix):
 
 
     o.class_attribute_int = Table(_p+'class_attribute_int', metadata,
-                                  Column('class', String(128), nullable=False,
+                                  Column('class', KeyString, nullable=False,
                                          primary_key=True),
-                                  Column('class_root', String(128), nullable=False,
+                                  Column('class_root', KeyString, nullable=False,
                                          primary_key=True),
-                                  Column('id', String(128), nullable=False,
+                                  Column('id', KeyString, nullable=False,
                                          primary_key=True),
                                   Column('min', Integer, default=None),
                                   Column('max', Integer, default=None),
@@ -512,11 +522,11 @@ def _init_base_schema(o, metadata, prefix):
                                   )
 
     o.class_attribute_real = Table(_p+'class_attribute_real', metadata,
-                                   Column('class', String(128), nullable=False,
+                                   Column('class', KeyString, nullable=False,
                                           primary_key=True),
-                                   Column('class_root', String(128),
+                                   Column('class_root', KeyString,
                                           nullable=False, primary_key=True),
-                                   Column('id', String(128), nullable=False,
+                                   Column('id', KeyString, nullable=False,
                                           primary_key=True),
                                    Column('precision', Integer, default=10),
                                    # FIXME: hardcoded Numeric precisions
@@ -545,11 +555,11 @@ def _init_base_schema(o, metadata, prefix):
                                    )
 
     o.class_attribute_string = Table(_p+'class_attribute_string', metadata,
-                                     Column('class', String(128), nullable=False,
+                                     Column('class', KeyString, nullable=False,
                                             primary_key=True),
-                                     Column('class_root', String(128),
+                                     Column('class_root', KeyString,
                                             nullable=False, primary_key=True),
-                                     Column('id', String(128), nullable=False,
+                                     Column('id', KeyString, nullable=False,
                                             primary_key=True),
                                      Column('length', Integer, default=128),
                                      # FIXME: hardcoded default value size
@@ -568,11 +578,11 @@ def _init_base_schema(o, metadata, prefix):
                                      )
 
     o.class_attribute_date = Table(_p+'class_attribute_date', metadata,
-                                   Column('class', String(128), nullable=False,
+                                   Column('class', KeyString, nullable=False,
                                           primary_key=True),
-                                   Column('class_root', String(128),
+                                   Column('class_root', KeyString,
                                           nullable=False, primary_key=True),
-                                   Column('id', String(128), nullable=False,
+                                   Column('id', KeyString, nullable=False,
                                           primary_key=True),
                                    Column('min', Date, default=None),
                                    Column('max', Date, default=None),
@@ -595,11 +605,11 @@ def _init_base_schema(o, metadata, prefix):
                                    )
 
     o.class_attribute_uri = Table(_p+'class_attribute_uri', metadata,
-                                  Column('class', String(128), nullable=False,
+                                  Column('class', KeyString, nullable=False,
                                          primary_key=True),
-                                  Column('class_root', String(128), nullable=False,
+                                  Column('class_root', KeyString, nullable=False,
                                          primary_key=True),
-                                  Column('id', String(128), nullable=False,
+                                  Column('id', KeyString, nullable=False,
                                          primary_key=True),
                                   Column('length', Integer, default=128),
                                   # FIXME: hardcoded default value size
@@ -618,17 +628,17 @@ def _init_base_schema(o, metadata, prefix):
                                   )
 
     o.class_attribute_choice = Table(_p+'class_attribute_choice', metadata,
-                                     Column('class', String(128), nullable=False,
+                                     Column('class', KeyString, nullable=False,
                                             primary_key=True),
-                                     Column('class_root', String(128),
+                                     Column('class_root', KeyString,
                                             nullable=False, primary_key=True),
-                                     Column('id', String(128), nullable=False,
+                                     Column('id', KeyString, nullable=False,
                                             primary_key=True),
                                      # FIXME: hardcoded string lengths
                                      # "choices" holds a JSON list of strings
                                      Column('choices', String(8192),
                                             nullable=False),
-                                     Column('default', String(128)),
+                                     Column('default', KeyString),
 
                                      ForeignKeyConstraint(['class', 'class_root',
                                                            'id'],
@@ -646,15 +656,15 @@ def _init_base_schema(o, metadata, prefix):
                                      )
 
     o.class_attribute_objref = Table(_p+'class_attribute_objref', metadata,
-                                     Column('class', String(128), nullable=False,
+                                     Column('class', KeyString, nullable=False,
                                             primary_key=True),
-                                     Column('class_root', String(128),
+                                     Column('class_root', KeyString,
                                             nullable=False, primary_key=True),
-                                     Column('id', String(128), nullable=False,
+                                     Column('id', KeyString, nullable=False,
                                             primary_key=True),
-                                     Column('target_class', String(128),
+                                     Column('target_class', KeyString,
                                             nullable=False),
-                                     Column('target_class_root', String(128),
+                                     Column('target_class_root', KeyString,
                                             nullable=False),
 
                                      ForeignKeyConstraint(['class', 'class_root',
@@ -675,10 +685,10 @@ def _init_base_schema(o, metadata, prefix):
 
     # Objects registry
     o.object_t = Table(_p+'object', metadata,
-                       Column('id', String(128), primary_key=True),
-                       Column('class', String(128), nullable=False),
-                       Column('class_root', String(128), nullable=False),
-                       Column('name', String(128), nullable=False),
+                       Column('id', KeyString, primary_key=True),
+                       Column('class', KeyString, nullable=False),
+                       Column('class_root', KeyString, nullable=False),
+                       Column('name', KeyString, nullable=False),
                        Column('notes', String(4096)),
 
                        # Redundant constraint needed for foreign key references
@@ -698,15 +708,15 @@ def _init_base_schema(o, metadata, prefix):
     # An entry in the catalog
     # FIXME: unused: maybe some day it will replace NotreDAM/Django machinery
     # o.catalog_entry = Table(_p+'catalog_entry', metadata,
-    #                         Column('id', String(128), primary_key=True),
+    #                         Column('id', KeyString, primary_key=True),
     #                         Column('root', ForeignKey(_p+'catalog_entry.id',
     #                                                   onupdate='CASCADE',
     #                                                   ondelete='CASCADE'),
     #                                nullable=False),
-    #                         Column('parent', String(128), nullable=False),
-    #                         Column('parent_root', String(128), nullable=False),
-    #                         Column('object', String(128), nullable=False),
-    #                         Column('object_class_root', String(128), nullable=False),
+    #                         Column('parent', KeyString, nullable=False),
+    #                         Column('parent_root', KeyString, nullable=False),
+    #                         Column('object', KeyString, nullable=False),
+    #                         Column('object_class_root', KeyString, nullable=False),
     #
     #                         # Redundant column which simplifies SQLAlchemy
     #                         # inheritance mapping
@@ -765,13 +775,13 @@ def _init_base_schema(o, metadata, prefix):
     #                                                     ondelete='CASCADE'),
     #                                          primary_key=True,
     #                                          nullable=False),
-    #                                   Column('catalog_entry', String(128),
+    #                                   Column('catalog_entry', KeyString,
     #                                          primary_key=True,
     #                                          nullable=False),
-    #                                   Column('catalog_entry_root', String(128),
+    #                                   Column('catalog_entry_root', KeyString,
     #                                          nullable=False),
     #                                   Column('catalog_entry_object_class_root',
-    #                                          String(128), nullable=False),
+    #                                          KeyString, nullable=False),
     #                                   Column('access',
     #                                          Enum(*access_enum,
     #                                                name=_p+'class_visibility_access_enum'),
@@ -825,12 +835,12 @@ def _init_base_schema(o, metadata, prefix):
     #                             primary_key=True),
     #                      Column('workspace', Integer,
     #                             primary_key=True),
-    #                      Column('catalog_entry', String(128),
+    #                      Column('catalog_entry', KeyString,
     #                             primary_key=True),
-    #                      Column('catalog_entry_root', String(128)),
-    #                      Column('catalog_entry_object', String(128),
+    #                      Column('catalog_entry_root', KeyString),
+    #                      Column('catalog_entry_object', KeyString,
     #                             primary_key=True),
-    #                      Column('catalog_entry_object_class_root', String(128)),
+    #                      Column('catalog_entry_object_class_root', KeyString),
 
     #                      ForeignKeyConstraint(['item', 'workspace'],
     #                                           [_p+'workspace_damworkspace_items.item_id',
