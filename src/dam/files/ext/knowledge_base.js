@@ -935,21 +935,13 @@ function load_detail_class(class_data, id_class, add_class){
         ]),
         viewConfig: { //to select current ws in this grid
     		afterRender: function(){
-        		console.log('AAAA');
-        		console.log(eval(class_data.getAt(0).data.workspaces));
         		this.constructor.prototype.afterRender.call(this);
         		if(id_class == 'root_obj_tree'){//adding a new root class
     				this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk));
     			}else{  //adding a new class but not root_class or edit class
-    				console.log('dentroooo!!');
 					var p = eval(class_data.getAt(0).data.workspaces);
-					console.log(p);
 					for(var k in p){
-						console.log(k);
 	    				this.grid.getSelectionModel().selectRow(this.grid.getStore().findExact('pk',parseInt(k)), true);
-	    				console.log('selected');
-	    				console.log(this.grid.getStore().findExact('pk',parseInt(k)));
-	    				console.log(this);
 					}
     			}
     		}
