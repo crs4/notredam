@@ -48,6 +48,7 @@ class Attributes(types.ModuleType):
             instance provides a ``orm`` property: a dynamically
             generated Python module giving access to several class
             definitions, mapped to the knowledge base session itself.
+            For more details, see the :py:mod:`orm` module documentation.
 
             The ``orm`` module, in turn, provides the ``attributes``
             property: another dynamically generated Python module
@@ -102,15 +103,15 @@ def _init_base_attributes(o):
 
         :type maybe_empty: bool
         :param maybe_empty: establishes whether the attribute may be left empty
-                            in the instances of the related KB class
+                            in instances of the related KB class
 
         :type order: int
         :param order: optional value used for ordering the attributes when
                       displaying their related KB class or objects
 
         :type multivalued: bool
-        :param multivalued: establishes whether the attribute is scalar, or
-                            it could hold a list of values
+        :param multivalued: establishes whether the attribute is scalar or
+                            vectorial (i.e. it could hold a list of values)
 
         :type notes: string
         :param notes: descriptive text with miscellaneous notes
@@ -351,15 +352,20 @@ def _init_base_attributes(o):
 
         def validate(self, value):
             '''
-            Check whether the given value is compatible with KB attribute
+            Check whether the given value is compatible with the KB attribute
             type and configuration, and thus whether it could be safely
             assigned/appended to the corresponding field of a Python
-            object.  Raise a ValidationError in case of mismatch, or just
-            return the value itself (possibly with some ad-hoc type
-            casting) in case of success.
+            object.
 
             :type value:  Python term
             :param value: the value to check
+
+            :rtype: Python term
+            :returns: the given value, possibly with some ad-hoc type casting
+                      (for better compatibility with the attribute)
+
+            :raises: :py:exc:`errors.ValidationError` in case of validation
+                     failure
             '''
             raise NotImplementedError
 
@@ -666,7 +672,8 @@ def _init_base_attributes(o):
 
     class Uri(String):
         '''
-        Integer KB class attribute.  Inherits from :py:class:`String`.
+        Integer KB class attribute.  Inherits from :py:class:`String`, and
+        shares its constructor arguments.
         '''
         def validate(self, value):
             if self.maybe_empty and not self.multivalued and value is None:
@@ -700,7 +707,7 @@ def _init_base_attributes(o):
 
         :type default: string
         
-        :param default: default attribute value (bust be contained in
+        :param default: default attribute value (bust be included in
                         ``list_of_choices``)
         '''
 
@@ -764,16 +771,17 @@ def _init_base_attributes(o):
 
     class ObjectReference(Attribute):
         '''
-        KB class attribute referencing to another KB object.  The
-        constructor arguments are the same of :py:class:`Attribute`,
-        except for:
+        KB class attribute referencing to another knowledge base
+        object.  The constructor arguments are the same of
+        :py:class:`Attribute`, except for:
 
         :type target_class: :py:class:`orm.KBClass` or Python class
                             obtained via :py:class:`orm.KBClass.python_class`
-        :param target_class: class restriction for objects assigned
-                             to this attribute (i.e. it will only accept
-                             objects belonging to ``target_class`` or one
-                             of its descendants)
+        :param target_class: class restriction for objects assigned to
+                             this attribute (i.e. class instances will
+                             only accept objects belonging to
+                             ``target_class`` or one of its
+                             descendants)
         '''
         def __init__(self, name, target_class, id_=None, maybe_empty=True,
                      order=0, multivalued=False, notes=None):

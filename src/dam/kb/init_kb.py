@@ -27,12 +27,13 @@ from tinykb import schema
 from tinykb import test as kb_test
 from util import notredam_connstring
 
-def preinit_notredam_kb():
+def preinit_notredam_kb(connstring=None):
     '''
     Create knowledge base tables which are required *before* creating
     Django tables
     '''
-    connstring = notredam_connstring()
+    if connstring is None:
+        connstring = notredam_connstring()
     # The 'object' table is also used by Django's models.Object, which
     # only references some columns.  Thus, we need to create the
     # complete table here --- and all the tables it depends from
@@ -42,21 +43,23 @@ def preinit_notredam_kb():
     s.create_tables(connstring, tables)
 
 
-def init_notredam_kb():
+def init_notredam_kb(connstring=None):
     '''
     Initialize the knowledge base assuming that it is going to
     populate a NotreDAM database
     '''
-    connstring = notredam_connstring()
+    if connstring is None:
+        connstring = notredam_connstring()
     s = schema.Schema()
     s.init_db(connstring)
 
 
-def populate_test_kb():
+def populate_test_kb(connstring=None):
     '''
     Create some testing KB classes and object on the NotreDAM database
     '''
-    connstring = notredam_connstring()
+    if connstring is None:
+        connstring = notredam_connstring()
     kb_test.test_create_object_classes(connstring)
     kb_test.test_create_derived_classes(connstring)
     kb_test.test_create_derived_class_objects(connstring)
@@ -69,7 +72,12 @@ import optparse
 if __name__ == '__main__':
     parser = optparse.OptionParser(
         description='Initialize NotreDAM knowledge base.')
-    parser.set_defaults(preinit=False, populate_with_test_data=False)
+    parser.set_defaults(connstring=None, preinit=False,
+                        populate_with_test_data=False)
+    parser.add_option('-c', '--connstring',
+                      dest='connstring', metavar='CONNSTRING',
+                      help=('Use CONNSTRING for accessing the SQL DBMS '
+                            + '(default: use NotreDAM connstring)'))
     parser.add_option('-p', '--preinit',
                       dest='preinit', action='store_true',
                       help=('Only perform KB pre-initialization, and exit '
@@ -87,12 +95,12 @@ if __name__ == '__main__':
 
     if options.preinit:
         print 'Pre-initializing knowledge base'
-        preinit_notredam_kb()
+        preinit_notredam_kb(options.connstring)
     else:
         if not options.skip_regular_init:
             print 'Initializing knowledge base'
-            init_notredam_kb()
+            init_notredam_kb(options.connstring)
 
         if options.populate_with_test_data:
             print 'Populating knowledge base with test classes and objects'
-            populate_test_kb()
+            populate_test_kb(options.connstring)

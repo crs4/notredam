@@ -13,7 +13,8 @@ For some examples of the session ``orm`` usage, see
 Each ``orm`` session module features one important property:
 
 .. attribute:: orm.attributes
-
+    :noindex:
+    
     Dynamically generated Python module providing access to KB class
     attribute types (with transparent mapping to the current KB
     session).  For more details, see :py:mod:`orm.attributes`.
@@ -28,11 +29,11 @@ Each ``orm`` session module features one important property:
    rest of the diagram shows not-yet-implemented classes planned for
    better NotreDAM integration.  The blue dashed arrows indicate that
    ``KBObject_1``, ``KBObject_2`` and ``KBObject_n`` (which inherit
-   from :py:class:`KBObject`) are dynamically generated from
-   :py:class:`KBClass` instances.  Those dynamic classes, in turn, can
-   be cross-referenced through the
-   :py:class:`orm.attributes.ObjectReference` attributes defined in
-   their generating KBClass.
+   from :py:class:`orm.KBObject`) are dynamically generated from
+   :py:class:`orm.KBClass` instances.  Those dynamic classes, in turn,
+   can be cross-referenced through
+   :py:class:`orm.attributes.ObjectReference` attributes (as defined
+   in their respective :py:class:`orm.KBClass`'es).
 
 
 .. automodule:: orm
