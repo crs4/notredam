@@ -126,7 +126,7 @@ class Session(object):
     :type: Dynamically generated Python module
     '''
 
-    def duplicate(self):
+    def duplicate(self, id_=None):
         '''
         Create a new Session object sharing the schema and ORM
         machinery with the original one.
@@ -134,7 +134,7 @@ class Session(object):
         :rtype: Session
         :returns: a new Session instance
         '''
-        return Session(self._engine, self._schema.prefix,
+        return Session(self._engine, id_=id_, db_prefix=self._schema.prefix,
                        _duplicate_from=self)
 
 
