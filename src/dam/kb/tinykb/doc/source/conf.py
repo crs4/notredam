@@ -172,11 +172,16 @@ htmlhelp_basename = 'TinyKBdoc'
 
 # -- Options for LaTeX output --------------------------------------------------
 
+latex_elements = {}
+
 # The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
+latex_elements['paper_size'] = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
+latex_elements['font_size'] = '11pt'
+
+# Additional stuff for the LaTeX preamble.
+#latex_elements['preamble'] = ''
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
@@ -193,11 +198,14 @@ latex_documents = [
 # not chapters.
 #latex_use_parts = False
 
-# Additional stuff for the LaTeX preamble.
-#latex_preamble = ''
-
 # Documents to append as an appendix to all manuals.
 #latex_appendices = []
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+# Show page references in LaTeX output (PDF or PS)
+latex_show_pagerefs = True
+
+# Control whether to display URL addresses
+latex_show_urls = 'footnote'

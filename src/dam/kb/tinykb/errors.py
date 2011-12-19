@@ -24,8 +24,7 @@
 
 class NotFound(Exception):
     '''
-    Raised when a specific class or object is not found in the
-    knowledge base.
+    Raised when a class or object is not found in the knowledge base.
     '''
     def __init__(self, value):
         self.parameter = value

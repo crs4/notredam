@@ -44,20 +44,21 @@ from sqlalchemy.dialects import mysql
 KeyString = String(128).with_variant(mysql.VARCHAR(128, charset='ascii'),
                                      'mysql')
 
-# Ammissible values for classes and catalog entries visibility in
+# Admissible values for classes and catalog entries visibility in
 # workspaces
 access_enum = [kb_access.OWNER, kb_access.READ_ONLY, kb_access.READ_WRITE,
                kb_access.READ_WRITE_OBJECTS]
 
 class Schema(object):
     '''
-    Container class for the SQL DB schema underlying a knowledge base
+    Container for the SQL DB schema underlying a knowledge base
     working session.
 
     The schema is "stateless", in the sense that it does not bind
-    itself to a specific :py:class:`Session <session.Session>`: all the
-    methods interacting with the DB expect to receive an explicit
-    connection string or engine in order to perform their tasks.
+    itself to a specific :py:class:`Session <session.Session>`: all
+    the methods interacting with the SQLDB expect to receive an
+    explicit SQLAlchemy connection string or engine in order to
+    perform their tasks.
 
     :type  prefix: string
     :param prefix: prefix used for naming the SQL DB schema objects
@@ -89,7 +90,7 @@ class Schema(object):
         '''
         Initialize the KB database.  This function will check whether
         the KB tables still exist on the DB, and won't try to alter
-        them if they do.
+        them.
 
         :type  connstr_or_engine: SQLAlchemy connection string or engine
         :param connstr_or_engine: used to access the knowledge base SQL DB
@@ -125,8 +126,7 @@ class Schema(object):
         :param table_name: name of the new table (must be unique)
 
         :type  parent_table_name: string
-        :param parent_table_name: name of the parent table, referred to the
-                                  object parent class, and used for building
+        :param parent_table_name: name of the parent table used for building
                                   foreign key references
 
         :type  attrs_ddl: list of SQLAlchemy DDL objects
@@ -147,41 +147,41 @@ class Schema(object):
         return newtable
 
     def get_object_table(self, table_name, parent_table_name, attrs_ddl):
-        '''
-        Return the table used for storing KB objects, raising an error
-        if the expected table does not exist yet, or does not match
-        the given description.
-
-        :type  table_name: string
-        :param table_name: name of the new table (must be unique)
-
-        :type  parent_table_name: string
-        :param parent_table_name: name of the parent table, referred to the
-                                  object parent class, and used in foreign
-                                  key references
-
-        :type  attrs_ddl: list of SQLAlchemy DDL objects
-        :param attrs_ddl: describes the fields of the object table
-
-        :rtype: SQLAlchemy table
-        :returns: the SQLAlchemy table object
-        '''
+        # '''
+        # Return the table used for storing KB objects, raising an error
+        # if the expected table does not exist yet, or does not match
+        # the given description.
+        #
+        # :type  table_name: string
+        # :param table_name: name of the new table (must be unique)
+        #
+        # :type  parent_table_name: string
+        # :param parent_table_name: name of the parent table, referred to the
+        #                           object parent class, and used in foreign
+        #                           key references
+        #
+        # :type  attrs_ddl: list of SQLAlchemy DDL objects
+        # :param attrs_ddl: describes the fields of the object table
+        #
+        # :rtype: SQLAlchemy table
+        # :returns: the SQLAlchemy table object
+        # '''
         newtable = self._get_or_build_object_table(table_name,
                                                    parent_table_name,
                                                    attrs_ddl)
         return newtable
 
     def create_attr_tables(self, add_tables, engine):
-        '''
-        Create additional tables for storing KB object attributes
-        (e.g. multivalued ones).
-
-        :type  add_tables: list of functions of type ``f(MetaData, **kwargs)``
-        :param add_tables: list of table DDL constructor functions
-
-        :rtype: list of SQLAlchemy tables
-        :returns: the list of new SQLAlchemy table objects
-        '''
+        # '''
+        # Create additional tables for storing KB object attributes
+        # (e.g. multivalued ones).
+        #
+        # :type  add_tables: list of functions of type ``f(MetaData, **kwargs)``
+        # :param add_tables: list of table DDL constructor functions
+        #
+        # :rtype: list of SQLAlchemy tables
+        # :returns: the list of new SQLAlchemy table objects
+        # '''
         newtables = self._build_attr_tables(add_tables)
 
         for t in newtables:
@@ -190,16 +190,16 @@ class Schema(object):
         return newtables
 
     def get_attr_tables(self, add_tables):
-        '''
-        Retrieve the additional tables used for storing KB object
-        attributes (e.g. multivalued ones).
-
-        :type  add_tables: list of functions of type ``f(MetaData, **kwargs)``
-        :param add_tables: list of table DDL constructor functions
-
-        :rtype: list of SQLAlchemy tables
-        :returns: the list of new SQLAlchemy table objects
-        ''' 
+        # '''
+        # Retrieve the additional tables used for storing KB object
+        # attributes (e.g. multivalued ones).
+        #
+        # :type  add_tables: list of functions of type ``f(MetaData, **kwargs)``
+        # :param add_tables: list of table DDL constructor functions
+        #
+        # :rtype: list of SQLAlchemy tables
+        # :returns: the list of new SQLAlchemy table objects
+        # ''' 
         newtables = self._build_attr_tables(add_tables)
         return newtables
 

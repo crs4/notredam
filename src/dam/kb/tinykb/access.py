@@ -27,6 +27,9 @@ This module contains several constants describing in which way a
 :py:class:`Workspace <orm.Workspace>` is allowed to access a KB class
 hierarchy (starting from a :py:class:`KBRootClass <orm.KBRootClass>`
 instance).
+
+.. note:: The access rules are not enforced by TinyKB: they are
+          merely stored an retrieved to/from the knowledge base.
 '''
 
 __all__ = ['OWNER', 'READ_ONLY', 'READ_WRITE', 'READ_WRITE_OBJECTS']
