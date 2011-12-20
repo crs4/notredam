@@ -500,6 +500,7 @@ class Session(object):
             class_ = self.orm.KBObject
 
         # It will cause the Python classes to be instantiated and ORM-mapped
+        # FIXME: not good! Try to load the minimum set of required classes!
         self.python_classes()
 
         query = self.session.query(class_)
