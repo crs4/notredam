@@ -33,7 +33,7 @@ Each ``orm`` session module features one important property:
    :py:class:`orm.KBClass` instances.  Those dynamic classes, in turn,
    can be cross-referenced through
    :py:class:`orm.attributes.ObjectReference` attributes (as defined
-   in their respective :py:class:`orm.KBClass`'es).
+   in their respective :py:class:`orm.KBClass`).
 
 
 .. automodule:: orm

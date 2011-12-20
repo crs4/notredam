@@ -257,6 +257,23 @@ After the commit, the class-related SQL DB tables and structures
 <orm.KBClass.realize>`) will be cleaned up as well.
 
 
+Advanced knowledge base queries
+-------------------------------
+
+TinyKB classes and objects are handled through the `SQLAlchemy
+object-relational mapper`_, and thus they can be used
+with its `query language`_.  This capability is
+only partly exposed through the TinyKB :py:class:`Session
+<session.Session>` API, but it is expected to be more widely supported
+(and documented) in the next releases.  In the mean time, if you're
+interested in advanced knowledge base queries, you can refer to the
+``session.py`` source code for some hints.
+
+.. _SQLAlchemy object-relational mapper: http://www.sqlalchemy.org/docs/orm/
+
+.. _query language: http://www.sqlalchemy.org/docs/orm/tutorial.html#querying
+
+
 NotreDAM integration: workspaces and users
 ------------------------------------------
 
