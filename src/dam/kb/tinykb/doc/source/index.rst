@@ -1,15 +1,16 @@
 .. TinyKB documentation master file
 
-TinyKB documentation
-====================
+TinyKB: a dynamic class/object store and ORM for Python
+=======================================================
 
 .. only:: html
 
-   Contents:
+   **Contents:**
 
 .. toctree::
    :maxdepth: 2
 
+   abstract
    intro
    basics
    api

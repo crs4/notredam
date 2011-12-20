@@ -47,6 +47,11 @@ TinyKB is integrated (and distributed with) `NotreDAM`_, but it could
 be easily readapted into a stand-alone product (NotreDAM-specific parts
 are outlined throughout this documentation).
 
+This manual illustrates the main TinyKB concepts through several
+examples (see :doc:`basics`) and then documents the API of the main
+modules.  The last chapter, in particular, explains some details about
+design and extension of the SQL DB schema (see :doc:`schema`).
+
 .. warning:: this is an initial release of the documentation for
              TinyKB |version|, as distributed with NotreDAM 1.08rc1.
              The package is still evolving, and its API may still
