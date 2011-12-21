@@ -14,8 +14,8 @@ DB tables used for storing the knowledge base.  The tables follow the
    while the rest of the diagram shows not-yet-implemented relations
    planned for better NotreDAM integration.  The root class identifier
    is reported in several places in order to simplify inheritance and
-   class visibility checks (see
-   :py:meth:`orm.Workspace.setup_root_class`).
+   class visibility checks, enforcing them at the SQL schema level
+   (see :py:meth:`orm.Workspace.setup_root_class`).
 
 
 SQL schema extension principles
@@ -37,7 +37,7 @@ following rules:
        reference to the ``object`` table;
 
     2. if a CSO table is related to a derived class, then it *shall
-       also* feature a foreign key constraint with the CSO table
+       also* feature a foreign key constraint against the CSO table
        representing the parent class in the inheritance hierarchy.
 
 For example, let's consider the following class hierarchy::
@@ -51,13 +51,13 @@ For example, let's consider the following class hierarchy::
 where ``Building`` is the base class.  Then:
 
     * the ``Building`` CSO table *shall* have a foreign key constraint
-      with the ``object`` table (rule 1);
+      against the ``object`` table (rule 1);
 
     * the ``Church`` CSO table *shall also* have a foreign key
-      constraint with the ``Building`` CSO table (rule 2);
+      constraint against the ``Building`` CSO table (rule 2);
 
     * the ``Cathedral`` CSO table *shall also* have a foreign key
-      constraint with the ``Church`` CSO table (rule 2).
+      constraint against the ``Church`` CSO table (rule 2).
 
 When a new ``Cathedral`` object is added to the knowledge base, then
 its attribute values will be stored in the ``Building``, ``Church``
@@ -78,7 +78,7 @@ This approach ensures that:
 .. rubric:: Footnotes
 
 .. [#] Multivalued attributes, instead, will result in the creation of
-       additional tables, with proper foreign key constraints with the
+       additional tables, with proper foreign key constraints against the
        CSO table.
 
 

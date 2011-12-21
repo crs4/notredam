@@ -261,13 +261,13 @@ Advanced knowledge base queries
 -------------------------------
 
 TinyKB classes and objects are handled through the `SQLAlchemy
-object-relational mapper`_, and thus they can be used
-with its `query language`_.  This capability is
-only partly exposed through the TinyKB :py:class:`Session
-<session.Session>` API, but it is expected to be more widely supported
-(and documented) in the next releases.  In the mean time, if you're
-interested in advanced knowledge base queries, you can refer to the
-``session.py`` source code for some hints.
+object-relational mapper`_, and thus they can be used with its `query
+language`_.  Right now, his capability is only partially exposed
+through the TinyKB :py:class:`Session <session.Session>` API, but it
+is expected to be more widely supported (and documented) in the next
+releases.  In the mean time, if you're interested in advanced
+knowledge base queries, you can refer to the ``session.py`` source
+code for some hints.
 
 .. _SQLAlchemy object-relational mapper: http://www.sqlalchemy.org/docs/orm/
 

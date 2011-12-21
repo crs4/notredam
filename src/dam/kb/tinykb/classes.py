@@ -209,9 +209,18 @@ def _init_base_classes(o):
         .. data:: <, <=, >=, >
 
             KB classes form a partial order based on their inheritance
-            relations.  For example, if both ``c2`` and ``c3`` inherit
-            from ``c1``, then both ``c1 <= c2`` and ``c1 <= c3`` hold.
-            However, neither ``c2 <= c3`` nor ``c3 <= c2`` hold.
+            relations.  For example, consider the following inheritance
+            hierarchy::
+
+                c1
+                 |
+                 +---- c2
+                 |
+                 +---- c3
+
+            where ``c2`` and ``c3`` inherit from ``c1``.  Then both
+            ``c1 <= c2`` and ``c1 <= c3`` hold --- however, neither
+            ``c2 <= c3`` nor ``c3 <= c2`` hold.
         '''
         def __init__(self, name, superclass, attributes=[], notes=None,
                      explicit_id=None):
