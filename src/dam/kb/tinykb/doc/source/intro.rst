@@ -11,7 +11,7 @@ programming languages: they are defined with a set of strongly-typed
 attributes, and support single inheritance; furthermore, they can be
 used to dynamically generate Python classes, which in turn can
 instantiate Python objects.  Both those Python classes and objects are
-automatically mapped to a SQL data base.
+automatically mapped and stored into a SQL data base.
 
 TinyKB tries to leverage the full power of the SQL language and DBMSs,
 avoiding the "key/value" approach usually adopted when the data schema
@@ -39,9 +39,10 @@ This approach brings three advantages:
        power of SQL, avoiding excessive ``JOIN`` usage.
 
 TinyKB provides a developer-friendly API which hides its SQL
-machinery.  Under the hood, Python metaprogramming and other run-time
-features are used to dynamically generate modules and classes, thus
-offering a transparent mapping to the underlying knowledge base.
+machinery.  Under the hood, `SQLAlchemy`_, Python metaprogramming and
+other run-time features are used to dynamically generate modules and
+classes, thus offering a transparent mapping to the underlying
+knowledge base.
 
 TinyKB is integrated (and distributed with) `NotreDAM`_, but it could
 be easily readapted into a stand-alone product (NotreDAM-specific parts
@@ -56,5 +57,7 @@ design and extension of the SQL DB schema (see :doc:`schema`).
              TinyKB |version|, as distributed with NotreDAM 1.08rc1.
              The package is still evolving, and its API may still
              change in backward-incompatible ways.
+
+.. _SQLAlchemy: http://www.sqlalchemy.org/
 
 .. _NotreDAM: http://www.notredam.org/
