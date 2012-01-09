@@ -30,8 +30,8 @@ from hashlib import sha1
 from optparse import OptionParser
 
 from ndutils import ImportExport, Exporter, Importer
-import logging
-logger = logging.getLogger('dam')
+import logging as logger
+#logger = logging.getLogger('dam')
 
 
 def usage():
