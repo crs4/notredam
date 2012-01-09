@@ -65,6 +65,42 @@
         margin-top:-3px !important;
     }
 
+    .x-tree-node-collapsed .object-class{
+    background-image: url(/files/images/object-class-folder.gif) !important;
+    }
+    
+    .x-tree-node-expanded .object-class{
+    background-image: url(/files/images/object-class-folder-open.gif) !important;
+    }
+    
+    .x-tree-node-leaf .object-class{
+    background-image: url(/files/images/object-class-folder.gif) !important;
+    }
+
+    .x-tree-node-collapsed .object-category{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-expanded .object-category{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-leaf .object-category{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+
+    .x-tree-node-collapsed .object-keyword{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-expanded .object-keyword{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-leaf .object-keyword{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
     .x-tree-node-collapsed .category{
     background-image: url(/files/images/keyword-folder.gif) !important;
     }
