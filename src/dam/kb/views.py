@@ -601,7 +601,8 @@ def _kbclass_to_dict(cls, ses):
                'superclass'  : superclass,
                'notes'       : cls.notes,
                'attributes'  : clsattrs,
-               'workspaces'  : _kb_class_visibility_to_dict(cls, ses)}
+               'workspaces'  : _kb_class_visibility_to_dict(cls, ses),
+               'subclasses'  : [c.id for c in cls.descendants(depth=1)]}
 
     return clsdict
 
