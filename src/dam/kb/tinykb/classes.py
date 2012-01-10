@@ -297,19 +297,36 @@ def _init_base_classes(o):
                 c = c.superclass
             return ancestors
 
-        def descendants(self):
+        def descendants(self, depth=None):
             '''
             Retrieve a list of all the descendant
             :py:class:`KBClass`'es, starting from the immediate
-            children (if any)
+            children (if any).
+
+            :type  depth: int or None
+            :param depth: number of inheritance levels to descend.  When None,
+                          all the descendants will be retrieved.
 
             :rtype: list of :py:class:`KBClass` instances
             :returns: the descendant KB classes
             '''
+            assert((depth is None)
+                   or (isinstance(depth, int) and (depth >= 0)))
+
+            if depth == 0:
+                return []
+
             children = o.session.session.query(KBClass).filter(
                 and_(KBClass.id != self.id,
                      KBClass.superclass == self)).all()
-            return children + [d for c in children for d in c.descendants()]
+
+            if depth is None:
+                nextdepth = None
+            else:
+                nextdepth = depth - 1
+
+            return children + [d for c in children
+                               for d in c.descendants(depth=nextdepth)]
 
         def is_bound(self):
             return self._sqlalchemy_table is not None
