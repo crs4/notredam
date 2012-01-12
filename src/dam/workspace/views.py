@@ -905,6 +905,7 @@ def upload_status(request):
 
 
 @login_required
+@permission_required('admin', False)
 def stop_pending_processes(request):
     """
     Stop pending processes when required by the user with the button 'stop' in monitor window.

@@ -513,6 +513,7 @@ var showDetails = function(view){
         if(admin | run_scripts){
             Ext.getCmp('object_menu').menu.items.get('addto').enable();
             Ext.getCmp('runscript').enable();
+            Ext.getCmp('stop_all').enable();
         }
         
         if (admin | remove_item){
