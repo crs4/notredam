@@ -1196,6 +1196,8 @@ Ext.onReady(function(){
 								})
                             },
                             { 
+                            	id: 'stop_all',
+                            	disabled: true,
                             	text    : gettext('Stop all'),
                             	handler : function(){
                                                var items = [];
