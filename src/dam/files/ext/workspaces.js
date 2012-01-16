@@ -59,6 +59,7 @@ var ws_permissions_store = new Ext.data.JsonStore({
                     Ext.getCmp('preferences_menu').enable();
                     Ext.getCmp('delete_ws_menu').enable();
                     Ext.getCmp('preferences_scripts').enable();
+                    Ext.getCmp('new_ws_menu').enable();
 
                     if(ws_state_store.getCount()) {
                         Ext.getCmp('set_state_to').show();
@@ -75,6 +76,7 @@ var ws_permissions_store = new Ext.data.JsonStore({
                 }
                 Ext.getCmp('preferences_menu').disable();
                 Ext.getCmp('delete_ws_menu').disable();             
+                Ext.getCmp('new_ws_menu').disable();
                 
                 var add_item = ws_permissions_store.find('name', 'add_item') > -1;
                 var edit_metadata = ws_permissions_store.find('name', 'edit_metadata') > -1;
