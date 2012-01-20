@@ -617,23 +617,23 @@ def restore_rendition(current_item,id_workspace,rendition_ws,id_item,file_name,s
             frendition = custom_open_file(current_item, 'rendition.json')
             
             for rendition in fitem['renditions']:
-                param = {}
-                param['workspace_id'] = id_workspace
-                param['uri'] = fitem['renditions'][rendition]['url']
-                param['file_name'] = fitem['renditions'][rendition]['file_name']
-                #file_name can be NULL
-                if not param['file_name']:
-                    param['file_name'] = fitem['renditions']['original']['file_name']
-                param['file_name'].decode('latin-1')
-                param['rendition_id'] = search_id_rendition(current_item,rendition,rendition_ws)
-                if string.lower(rendition) == 'original':
-                    param_orig = param
-                    logger.info("param_orig %s" %param_orig)
-                    i._item_add_component(id_item,param_orig)
-                elif len(param['uri'])>0:
-                        logger.info("params %s" %param)
-                        i._item_add_component(id_item,param)
-
+                if fitem['renditions'][rendition]['url']:
+                    param = {}
+                    param['workspace_id'] = id_workspace
+                    param['uri'] = fitem['renditions'][rendition]['url']
+                    param['file_name'] = fitem['renditions'][rendition]['file_name']
+                    #file_name can be NULL
+                    if not param['file_name']:
+                        param['file_name'] = fitem['renditions']['original']['file_name']
+                    param['file_name'].decode('latin-1')
+                    param['rendition_id'] = search_id_rendition(current_item,rendition,rendition_ws)
+                    if string.lower(rendition) == 'original':
+                        param_orig = param
+                        logger.info("param_orig %s" %param_orig)
+                        i._item_add_component(id_item,param_orig)
+                    elif len(param['uri'])>0:
+                            logger.info("params %s" %param)
+                            i._item_add_component(id_item,param)
                 
             logger.info("/n/n param %s" %param)
         
@@ -732,10 +732,11 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
     
                     #create item
                     logger.info('\n\n\n\n paramitem %s' %paramitem)
+                    print('\n\n\n\n paramitem %s' %paramitem)
                     resp_new_item = i._item_new(paramitem)
                     
                     #update equivalent id_item_old con id_item_new
-                    id_orig_itemToid_new_item[paramitem['id']] = resp_new_item['id']
+                    id_orig_itemToid_new_item[paramitem['pk']] = resp_new_item['id']
            
                     #logger.debug("id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
     
@@ -763,7 +764,7 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         resp_new_item = i._item_new(paramitem)
         
                         #aggiorno corrispettivo id_item_old con id_item_new
-                        id_orig_itemToid_new_item[paramitem['id']] = resp_new_item['id']
+                        id_orig_itemToid_new_item[paramitem['pk']] = resp_new_item['id']
     
                         #add_to_workspace di questo item nel current_ws
                         if int(paramitem['workspaces'][0]) != int(paramitem['upload_workspace']):
@@ -781,27 +782,27 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         set_metadata(resp_new_item['id'],paramitem)
                     else:
 
-                        logger.debug('---condiviso nessuna NEW itemid %s---- paramworkspace[id] %s' %(paramitem['id'],paramworkspace['id']))
-                        if id_orig_itemToid_new_item.has_key(paramitem['id']):
+                        logger.debug('---condiviso nessuna NEW itemid %s---- paramworkspace[id] %s' %(paramitem['pk'],paramworkspace['id']))
+                        if id_orig_itemToid_new_item.has_key(paramitem['pk']):
                             if int(paramitem['upload_workspace']) != int(paramworkspace['id']):
-                                    add_to_ws(ws_origTows_new,paramworkspace['id'],id_orig_itemToid_new_item[paramitem['id']])
+                                    add_to_ws(ws_origTows_new,paramworkspace['id'],id_orig_itemToid_new_item[paramitem['pk']])
                             #upload delle renditioni
-                            if int(paramitem['workspace_id']) == int(ws_origTows_new[str(paramitem['workspaces'][len(paramitem['workspaces'])-1])]) and id_orig_itemToid_new_item.has_key(paramitem['id']):
+                            if int(paramitem['workspace_id']) == int(ws_origTows_new[str(paramitem['workspaces'][len(paramitem['workspaces'])-1])]) and id_orig_itemToid_new_item.has_key(paramitem['pk']):
                                 #nell'ultimo della lista devo fare l'upload dell'original
                                 if not metadata_only:
-                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,True)
                                 else:
-                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,True)
                                 #set_metadata
-                                set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
+                                set_metadata(id_orig_itemToid_new_item[paramitem['pk']],paramitem)
                             else:
                                 if not metadata_only:
-                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,False)
                                 else:
-                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,False)
                             
                             #set_metadata
-                            set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
+                            set_metadata(id_orig_itemToid_new_item[paramitem['pk']],paramitem)
                         else:
                             logger.error("item not recognized")
                         
