@@ -1245,15 +1245,20 @@ class ItemResource(ModResource):
                 #logger.error('skipping %s'%ex)
                 pass
                 
-        logger.debug('variants %s'%variants)
+        logger.info('variants %s'%variants)
         if variants: 
             tmp['renditions'] = {}
             
-        for variant in variants:            
+        for variant in variants: 
             try:                
-                component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
-                url  = component.get_url()                
+                logger.info("variant : %s" %(variant))                
+                logger.info("item : %s" %(item.pk))                
+                logger.info("workspace : %s" %(workspace))                
+                component = Component.objects.get(item = item,  workspace__pk = int(workspace),  variant__name = variant) 
+                logger.info("component : %s" %(component.get_url()))                
+                url  = component.get_url()
                 tmp['renditions'][variant] = {'url':url}                
+                logger.info("variant : %s" %(tmp['renditions'][variant]))                
                 if rendition_file_name:
                     tmp['renditions'][variant]['file_name'] = component.file_name                
             except Exception, ex:
@@ -1488,12 +1493,14 @@ class ItemResource(ModResource):
         
         if not request.GET.has_key('workspace'):
             raise MissingArgs, 'workspace is a required argument'
-        
+        if not request.GET.has_key('renditions'):
+            raise MissingArgs, 'renditions is a required argument'
+            
         workspace = request.GET['workspace']
         variants = request.GET.getlist('renditions')
         
         item = Item.objects.get(pk = item_id)
-        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = False, upload_workspace = True)
+        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = True, upload_workspace = True)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
