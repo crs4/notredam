@@ -146,6 +146,9 @@ class Node(AbstractNode):
     workspace = models.ForeignKey('workspace.DAMWorkspace', related_name='tree_nodes')
     objects = NodeManager()
     items = models.ManyToManyField('repository.Item')
+    representative_item = models.ForeignKey('repository.Item',
+                                            related_name='represented_nodes',
+                                            null=True, default=None)
     metadata_schema = models.ManyToManyField('metadata.MetadataProperty',  through = 'NodeMetadataAssociation',  blank=True, null=True)
     associate_ancestors = models.BooleanField(default = False)
     
