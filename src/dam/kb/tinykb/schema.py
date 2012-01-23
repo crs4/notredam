@@ -271,7 +271,13 @@ class Schema(object):
              'notes' : 'Typed object reference'}
             ]
 
-        engine.execute(self.attribute_type.insert(), default_attr_types)
+        # Insert attribute types, avoiding duplications
+        for a in default_attr_types:
+            cnt = engine.execute(self.attribute_type.count(
+                    self.attribute_type.c.name == a['name'])).first()[0]
+            assert((cnt == 0) or (cnt == 1))
+            if cnt == 0:
+                engine.execute(self.attribute_type.insert(), [a])
 
     def _init_default_classes(self, engine):
         default_classes = [
