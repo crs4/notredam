@@ -2229,7 +2229,7 @@ class KeywordsResource(ModResource):
         if (type in ('object-category', 'object-keyword')):
             # The KB object name will override the label
             # FIXME: check that the provided label is equal to obj name?
-            obj = KBObjects.object.get(id=request.POST['kb_object'])
+            obj = KBObjects.objects.get(id=request.POST['kb_object'])
             label = obj.name
         new_node = Node.objects.filter(parent = node_parent, label = label)
         if new_node.count() > 0:
