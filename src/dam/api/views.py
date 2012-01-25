@@ -2026,6 +2026,9 @@ class KeywordsResource(ModResource):
                 'id': kw.pk,  
                 'label': label,   
                 'kb_object': kb_object_id,
+                'representative_item': ((kw.representative_item is not None
+                                         and kw.representative_item.pk)
+                                        or None),
                 'workspace':kw.workspace.pk, 
                 'type': kw.cls, 
                 'associate_ancestors': kw.associate_ancestors,  
@@ -2163,6 +2166,7 @@ class KeywordsResource(ModResource):
             - parameters: 
                 - label (required)
                 - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
+                - representative_item: optional, the id of the representative item
                 - workspace_id: optional, it allows to create a keyword at the top level
                 - parent_id optional, required if no workspace_id is passed
                 - type: 'category', 'keyword', 'object-category' or 'object-keyword'
@@ -2232,10 +2236,17 @@ class KeywordsResource(ModResource):
             obj = KBObjects.objects.get(id=request.POST['kb_object'])
             label = obj.name
         new_node = Node.objects.filter(parent = node_parent, label = label)
+
+        repr_item_id = request.POST.get('representative_item')
+        if repr_item_id is None:
+            repr_item = None
+        else:
+            repr_item = Item.objects.get(pk=repr_item_id)
+
         if new_node.count() > 0:
             new_node = new_node[0]
         else:
-            new_node = Node.objects.add_node(node_parent, label,  ws, type, associate_ancestors, kb_object=obj)
+            new_node = Node.objects.add_node(node_parent, label,  ws, type, associate_ancestors, kb_object=obj, representative_item=repr_item)
             if len(metadata_schema) > 0:
                 new_node.save_metadata_mapping(metadata_schema)
         
@@ -2256,6 +2267,7 @@ class KeywordsResource(ModResource):
             - parameters: 
                 - label                 
                 - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
+                - representative_item: optional, the id of the representative item
                 - associate_ancestors: boolean, valid only if type is 'keyword'
                 - metadata_schema: optional. JSON list of dictionaries containing namespace, name and value for the metadata schemas  to associate to the new keyword. Example: [{"namespace": 'dublin core','name': 'title',   "value": 'test'}]
                 
@@ -2275,7 +2287,9 @@ class KeywordsResource(ModResource):
         metadata_schema = self._prepare_metadata_schema(request)
         
         
-        node.edit_node(label,  metadata_schema, associate_ancestors,  ws)
+        node.edit_node(label,  metadata_schema, associate_ancestors,  ws,
+                       kb_object_id=request.POST.get('kb_object'),
+                       representative_item_id=request.POST.get('representative_item'))
         
         return HttpResponse('') 
     

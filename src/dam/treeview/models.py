@@ -47,7 +47,7 @@ class SiblingsWithSameLabel(Exception):
 
 class NodeManager(models.Manager):
 
-    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None, kb_object = None):
+    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None, kb_object = None, representative_item=None):
     #    if not node.parent:
     #        raise InvalidNode
             
@@ -63,7 +63,7 @@ class NodeManager(models.Manager):
     #    else:
     #        cls = node.cls
             
-        new_node = self.create(workspace= workspace, label = label,  type = node.type, kb_object = kb_object)
+        new_node = self.create(workspace= workspace, label = label,  type = node.type, kb_object = kb_object, representative_item = representative_item)
         if cls:
             new_node.cls = cls
         
@@ -110,7 +110,7 @@ class NodeManager(models.Manager):
             else:
                 parent = relation_node[node.parent.pk]
                     
-            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent, kb_object = node.kb_object)
+            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent, kb_object = node.kb_object, representative_item = None)
             new_node.type.add(*node.type.all())
             relation_node[node.pk] = new_node
         new_root.save()
@@ -164,7 +164,7 @@ class Node(AbstractNode):
         if self.workspace != ws:
             raise WrongWorkspace
 
-    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace, kb_object_id=None, new_cls=None):    
+    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace, kb_object_id=None, new_cls=None, representative_item_id=None):    
         if label and not kb_object_id:
             self.rename_node(label, workspace)
         if self.cls == 'keyword':
@@ -173,6 +173,14 @@ class Node(AbstractNode):
                 self.save_metadata()
             self.associate_ancestors = associate_ancestors
             self.save()
+
+        if representative_item_id is None:
+            representative_item = None
+        else:
+            representative_item = Item.objects.get(pk=representative_item_id)
+
+        self.set_representative_item(representative_item)
+
         if kb_object_id and new_cls == None:
             self.reassoc_node(label, workspace, kb_object_id)
             self.save()
@@ -343,6 +351,23 @@ class Node(AbstractNode):
 #        return nodes.order_by('lft').distinct().exclude(pk = self.pk)
         return nodes.order_by('lft').distinct()
     
+    def set_representative_item(self, item):
+        '''
+        Set the representative item for the node.  If the given item is not
+        among the node items, a ValueError exception will be raised.
+        '''
+        if item is None:
+            self.representative_item = None
+            return
+
+        items = self.items.all()
+        if item not in items:
+            raise ValueError('Representative item "%s" not included in %s'
+                             % (item, items))
+        
+        self.representative_item = item
+        self.save()
+
     def delete(self,  *args,  **kwargs):
         super(Node, self).delete(*args,  **kwargs)
         root = Node.objects.filter(depth= 0,  workspace = self.workspace,  type = self.type)

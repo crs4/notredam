@@ -75,7 +75,7 @@ def edit_node(request):
         resp = {'success':True}
         for node in nodes:
             if node.type == 'keyword':
-                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace, request.POST.get('kb_object',  False), request.POST.get('cls',  False))
+                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace, request.POST.get('kb_object',  False), request.POST.get('cls',  False), request.POST.get('representative_item', None))
                 
             elif node.type == 'collection':
                 rename_collection(request, node, label, workspace)
@@ -104,7 +104,17 @@ def _add_keyword(request, node, label, workspace):
         obj = KBObject.objects.get(id=request.POST['kb_object'])
         label = obj.name
 
-    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False), kb_object=obj)
+    repr_item_id = request.POST.get('representative_item', None)
+    if repr_item_id is not None:
+        representative_item = Item.objects.get(pk=repr_item_id)
+    else:
+        representative_item = None
+
+    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False), kb_object=obj, representative_item=None)
+
+    # Just to trigger possible errors
+    node.set_representative_item(representative_item)
+
     node.save_metadata_mapping(metadata_schemas)
     
     return node
@@ -114,7 +124,8 @@ def _add_collection(request, node,  label,  workspace):
     return Node.objects.add_node(node, label, workspace)
 
 @login_required
-def add(request = None,  workspace = None,  name = None, parent_id = None):
+def add(request = None,  workspace = None,  name = None, parent_id = None,
+        representative_item = None):
     """
     Adds a new node to an existing one
     """
@@ -269,6 +280,10 @@ def get_nodes(request):
                 tmp['tristate'] = True
                 tmp['items'] = [item.pk for item in n_items]
         
+        tmp['representative_item'] = ((n.representative_item is not None
+                                       and n.representative_item.pk)
+                                      or None)
+
         result.append(tmp)
     return HttpResponse(simplejson.dumps(result))
     
@@ -407,4 +422,3 @@ def delete_smart_folder(request):
     sm_fold = SmartFolder.objects.get(pk = smart_folder_id)
     sm_fold.delete()
     return HttpResponse(simplejson.dumps({'success': True}))
-    
