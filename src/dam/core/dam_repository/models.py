@@ -30,12 +30,15 @@ class MimeError(Exception):
 
 class TypeManager(models.Manager):
     def get_by_mime(self, mime_type):
+        logger.debug("$$$$$$$$$$$$$$$ INSIDE get_by_mime mime_type is %s" % mime_type)
         name, subname = mime_type.split('/')
         return self.filter(name=name, subname=subname)
 
     def get_or_create_by_mime(self, mime_type, extension=None):
-        "Returns just the type, not the tuple (type, created) and get_or_create"
+        """Returns just the type, not the tuple (type, created) and get_or_create"""
+        logger.debug('$$$$$$$$$$$$$$in get or create mime_type is %s' % mime_type)
         standard_exts = supported_extensions(mime_type)        
+        logger.debug('$$$$$$$$$$$$$$ in get or create standard_exts are %s' % standard_exts)
         if not standard_exts:
             raise MimeError("Type %s is not supported" % mime_type)
         if extension: 
@@ -55,11 +58,13 @@ class TypeManager(models.Manager):
         return t
 
     def get_or_create_by_filename(self, filename):
+        """Return a type registered in notre dam for use. Create a type if does not exists"""
+        logger.debug("$$$$$$$$$$$$$$$ in get_or_create_by_filename filename is %s" % filename)
         filename = filename.lower()
-        "Return a type registered in notre dam for use. Create a type if does not exists"
-        logger.debug("filename %s" %filename)
         mime_type = guess_file_type(filename)
+        logger.debug("$$$$$$$$$$$$$ in get_or_create_by_filename mime_type is %s" % mime_type)
         basename, ext = os.path.splitext(filename)
+        logger.debug("$$$$$$$$$$$$$$$$ in get_or_create_by_filename basename is %s ext is %s" % (basename, ext))
         if mime_type is None:
             raise MimeError('Unrecognized file type: %s' % filename)
         return self.get_or_create_by_mime(mime_type, ext.lower())
