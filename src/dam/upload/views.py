@@ -35,6 +35,7 @@ from dam.mprocessor.models import Pipeline, Process
 from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
 from dam.core.dam_repository.models import Type, MimeError
 from dam.metadata.models import MetadataDescriptorGroup, MetadataDescriptor, MetadataValue, MetadataProperty
+from dam.supported_types import supported_types
 from dam.variants.models import Variant
 from dam.treeview.models import Node
 #from dam.batch_processor.models import MachineState, Machine, Action
@@ -137,6 +138,14 @@ def _save_uploaded_component(request, res_id, file_name, variant, item, user, wo
         comp.file_name = file_name
         comp._id = res_id
         
+        mimetypes.add_type('video/flv','.flv')
+        mimetypes.add_type('video/ts','.ts')
+        mimetypes.add_type('video/mpeg4','.m4v')
+        mimetypes.add_type('video/dv','.dv')
+        mimetypes.add_type('doc/pdf','.pdf')
+        mimetypes.add_type('image/nikon', '.nef')
+        mimetypes.add_type('image/canon', '.cr2')
+        mimetypes.add_type('image/digitalnegative', '.dng')
         mime_type = mimetypes.guess_type(file_name)[0]
             
         ext = mime_type.split('/')[1]
@@ -269,7 +278,23 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
     process_pipe = {}
     for item in items:
         for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
-            if pipe.is_compatible(item.type):
+            logger.debug('item type: %s' % item.type)
+            logger.debug('pipe: %s' % pipe)
+            logger.debug('pipe name: %s' % pipe.name)
+            myt = pipe.name.split(' ')[0]
+            logger.debug('myt = %s'% myt)
+            mytypes = Type.objects.filter(name=myt)        
+            logger.debug('mytypes: %s' % mytypes)
+            for t in mytypes:
+                logger.debug('type is %s' % t)        
+                logger.debug('type name is %s' % t.name)        
+                logger.debug('subname is %s' % t.subname)        
+            logger.debug('answer %s' % (str(item.type) == (t.name + '/' + t.subname)))
+            logger.debug('is supported? %s' % (str(item.type) in supported_types.keys()))
+            logger.debug('pipe all media types: %s' % pipe.media_type.all())
+            logger.debug('compatible? =========> %s' % pipe.is_compatible(item.type))
+            #if pipe.is_compatible(item.type) or (str(item.type) in supported_types.keys()):
+            if pipe.is_compatible(item.type) or (str(item.type) == (t.name + '/' + t.subname)):
                 if not process_pipe.has_key(pipe):
                     process_pipe[pipe] = process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
 
@@ -650,6 +675,7 @@ def guess_media_type (file):
     mimetypes.add_type('video/flv','.flv')
     mimetypes.add_type('video/ts','.ts')
     mimetypes.add_type('video/mpeg4','.m4v')
+    mimetypes.add_type('video/dv','.dv')
     mimetypes.add_type('doc/pdf','.pdf')
     mimetypes.add_type('image/nikon', '.nef')
     mimetypes.add_type('image/canon', '.cr2')
@@ -687,10 +713,14 @@ def upload_session_finished(request):
 
             uploaded = workspace.tree_nodes.get(depth = 1, label = 'Uploaded', type = 'inbox')
             try:
-                inbox = Node.objects.get(parent = uploaded, items = processes[0].processtarget_set.all()[0].target_id)
+                logger.error('processi : %s' % len(processes))
+                if len(processes) > 0:
+                    inbox = Node.objects.get(parent = uploaded, items = processes[0].processtarget_set.all()[0].target_id)
                 
-                logger.debug('----------------------inbox %s'%inbox)
-                inbox_label = inbox.label
+                    logger.debug('----------------------inbox %s'%inbox)
+                    inbox_label = inbox.label
+                else: 
+                    inbox_label = None
             
             except Exception, ex:
                 logger.exception(ex)
