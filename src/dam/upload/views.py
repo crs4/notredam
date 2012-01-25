@@ -279,22 +279,13 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
     for item in items:
         for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
             logger.debug('item type: %s' % item.type)
-            logger.debug('pipe: %s' % pipe)
             logger.debug('pipe name: %s' % pipe.name)
             myt = pipe.name.split(' ')[0]
-            logger.debug('myt = %s'% myt)
             mytypes = Type.objects.filter(name=myt)        
-            logger.debug('mytypes: %s' % mytypes)
-            for t in mytypes:
-                logger.debug('type is %s' % t)        
-                logger.debug('type name is %s' % t.name)        
-                logger.debug('subname is %s' % t.subname)        
-            logger.debug('answer %s' % (str(item.type) == (t.name + '/' + t.subname)))
-            logger.debug('is supported? %s' % (str(item.type) in supported_types.keys()))
-            logger.debug('pipe all media types: %s' % pipe.media_type.all())
-            logger.debug('compatible? =========> %s' % pipe.is_compatible(item.type))
+            type_list = [t.name + '/' + t.subname for t in mytypes]
+            logger.debug('--> type_list: %s' % type_list)
             #if pipe.is_compatible(item.type) or (str(item.type) in supported_types.keys()):
-            if pipe.is_compatible(item.type) or (str(item.type) == (t.name + '/' + t.subname)):
+            if pipe.is_compatible(item.type) or (str(item.type) in type_list):
                 if not process_pipe.has_key(pipe):
                     process_pipe[pipe] = process = Process.objects.create(pipeline=pipe, workspace=workspace, launched_by=user)
 
