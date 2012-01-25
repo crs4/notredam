@@ -10,7 +10,7 @@ logger = logging.getLogger('dam')
 supported_types  = {
    'audio/flac': ['.flac'],
    'audio/midi': ['.mid', '.midi', '.midi', '.kar', '.mid'],
-   'audio/mpeg': ['.mp3', '.mpega', '.mp2', '.mpga'],       # no aac here
+   'audio/mpeg': ['.mp3', '.mpega', '.mp2', '.mpga', '.vob'],       # no aac here
    'audio/ogg': ['.oga', '.ogg', '.spx'],
    'audio/x-m4a': ['.m4a', '.aac'],
    'audio/x-ms-wma': ['.wma'],
@@ -34,6 +34,7 @@ supported_types  = {
    'video/x-m4v': ['.m4v','.mts'],
    'video/x-matroska': ['.mpv', '.mkv','.vob'],
    'video/x-msvideo': ['.avi', '.mov'],
+   'video/dv' : ['.dv'],
    'audio/x-pn-realaudio' : ['.rm'],
    'audio/x-aiff' : ['.aiff'],
    'image/x-photoshop' : ['.psd'],
@@ -66,6 +67,7 @@ mime_types_by_ext = get_types_by_ext(supported_types)
 mime_types_by_type = get_types_by_type(supported_types)
 
 def supported_extensions(mime_type):
+    logger.debug("ECCO ECCO ECCO QUA! INSIDE supported_types supported_extensions is mime_type %s" % supported_types.get(mime_type, None))
     return supported_types.get(mime_type, None)
 
 

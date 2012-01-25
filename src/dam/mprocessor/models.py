@@ -33,8 +33,9 @@ class Pipeline(models.Model):
         return self.length
 
     def is_compatible(self, media_type):
-        "return True if no type is registered or if media_type is registered"
+        """return True if no type is registered or if media_type is registered"""
         types = self.media_type.all()
+        logger.debug('*** inside pipeline is_compatible, media_type is %s and types are %s' % (media_type, types))
         return (not types)  or (media_type in types)
 
     
