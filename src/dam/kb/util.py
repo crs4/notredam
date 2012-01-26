@@ -49,10 +49,11 @@ def notredam_connstring():
                                          db['PASSWORD'],
                                          django_db_host, db['NAME'])
     elif ('django.db.backends.mysql' == django_db_engine):
-        connstr = '%s://%s:%s@%s/%s' % ('mysql',
-                                         db['USER'],
-                                         db['PASSWORD'],
-                                         django_db_host, db['NAME'])
+        connstr = '%s://%s:%s@%s/%s?charset=utf8' % ('mysql',
+                                                     db['USER'],
+                                                     db['PASSWORD'],
+                                                     django_db_host,
+                                                     db['NAME'])
     elif ('django.db.backends.sqlite3' == django_db_engine):
         connstr = '%s:///%s' % ('sqlite', db['NAME'])
     else:
