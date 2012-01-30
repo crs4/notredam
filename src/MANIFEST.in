@@ -1,0 +1,17 @@
+recursive-include dam/files *
+recursive-include dam/templates *
+include dam/001-notredam.cfg
+include dam/LICENSE.TXT
+include dam/settings.py.default.dev
+include dam/settings.py.mysql
+include dam/workspace/fixtures/initial_data.json
+include dam/metadata/fixtures/initial_data.json
+include dam/appearance/fixtures/initial_data.json
+include dam/scripts/fixtures/initial_data.json
+include dam/eventmanager/fixtures/initial_data.json
+include dam/variants/fixtures/initial_data.json
+include dam/core/dam_repository/fixtures/initial_data.json
+include dam/core/dam_metadata/fixtures/initial_data.json
+include dam/initial_data.json
+include dam/treeview/fixtures/initial_data.json
+include dam/preferences/fixtures/initial_data.json
