@@ -221,13 +221,58 @@ knowledge base class::
 
     churches = ses.objects(ChurchClass)
 
-Here, ``churches`` is a query object yielding all the ``ChurchClass``
-instances.  Since we know that there is one such instances (i.e. the
-one we created previously), we can use::
+Here, ``churches`` is a SQLAlchemy query object yielding all the
+``ChurchClass`` instances.  Since we know that there is one such
+instances (i.e. the one we created previously), we can use::
 
     c = churches[0]
 
-in order to retrieve it.
+in order to retrieve it.  Otherwise::
+
+    lst = churches.all()
+
+will return a list containing all the ``ChurchClass`` instancess.
+
+
+Advanced knowledge base queries
+-------------------------------
+
+TinyKB is (partly) based on the `SQLAlchemy object-relational
+mapper`_, and thus it is possible to use its `query language`_ in order
+to explore and filter the contents of the knowledge base.
+
+For example, it is possible to select knowledge base objects according
+to the values of their fields.  The ``churches`` query object defined
+in the previous section may be used to build new queries, such as::
+
+    q1 = churches.filter(ChurchClass.height > 20)
+    q2 = churches.filter(ChurchClass.height > 40)
+
+Given the knowledge base built in the previous examples, ``q1.all()``
+will retrieve a list with one element, while ``q2.all()`` will return
+an empty list.
+
+It is also possible to use object cross-references for filtering.  If
+we need to retrieve all the churches with a nearby building completed
+after January 1st, 1901, we could execute something like::
+
+    from datetime import date
+    BuildingClass = kb_building.python_class
+
+    q3 = churches.filter(
+             ChurchClass.nearby_buildings.any(
+                 BuildingClass.completion > date(1901, 01, 01)))
+
+Right now, only a handful of SQLAlchemy query capabilities are exposed
+through the TinyKB :py:class:`Session <session.Session>` API, but this
+feature is expected to be more widely supported (and documented) in
+the next releases.  If you are interested in more advanced knowledge
+base queries, you can refer to the ``session.py`` source code for some
+hints.
+
+.. _SQLAlchemy object-relational mapper: http://www.sqlalchemy.org/docs/orm/
+
+.. _query language: http://www.sqlalchemy.org/docs/orm/tutorial.html#querying
 
 
 Deleting objects
@@ -255,23 +300,6 @@ have deleted the only ``ChurchClass`` instance, we can now execute::
 After the commit, the class-related SQL DB tables and structures
 (i.e. the ones created with :py:meth:`realize()
 <orm.KBClass.realize>`) will be cleaned up as well.
-
-
-Advanced knowledge base queries
--------------------------------
-
-TinyKB classes and objects are handled through the `SQLAlchemy
-object-relational mapper`_, and thus they can be used with its `query
-language`_.  Right now, his capability is only partially exposed
-through the TinyKB :py:class:`Session <session.Session>` API, but it
-is expected to be more widely supported (and documented) in the next
-releases.  In the mean time, if you're interested in advanced
-knowledge base queries, you can refer to the ``session.py`` source
-code for some hints.
-
-.. _SQLAlchemy object-relational mapper: http://www.sqlalchemy.org/docs/orm/
-
-.. _query language: http://www.sqlalchemy.org/docs/orm/tutorial.html#querying
 
 
 NotreDAM integration: workspaces and users
