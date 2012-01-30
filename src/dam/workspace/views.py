@@ -119,8 +119,8 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
         original = item.get_variant(current_ws, orig_variant)
         original.workspace.add(ws)
         return True
-    ws_item.deleted = False
-    ws_item.save()
+    item.deleted = False
+    item.save()
     return True
         #
 @permission_required('remove_item')
