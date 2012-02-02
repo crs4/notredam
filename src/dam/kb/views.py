@@ -39,9 +39,11 @@ import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.errors as kb_exc
 import util
+from decorators import http_basic_auth
 
 # FIXME: use the standard ModResource-based dispatch system here
 
+@http_basic_auth
 @login_required
 @permission_required('admin', False)
 def class_index(request, ws_id):
@@ -184,6 +186,7 @@ def class_index_put(request, ws_id):
     return HttpResponse(cls.id)
 
 
+@http_basic_auth
 @login_required
 @permission_required('admin', False)
 def class_(request, ws_id, class_id):
@@ -293,6 +296,7 @@ def class_delete(request, ws_id, class_id):
     return HttpResponse('ok')
 
 
+@http_basic_auth
 @login_required
 @permission_required('admin', False)
 def object_index(request, ws_id):
@@ -386,6 +390,7 @@ def object_index_put(request, ws_id):
     return HttpResponse(obj.id)
 
 
+@http_basic_auth
 @login_required
 @permission_required('admin', False)
 def object_(request, ws_id, object_id):
@@ -489,6 +494,7 @@ def object_delete(request, ws_id, object_id):
     return HttpResponse('ok')
 
 
+@http_basic_auth
 @login_required
 @permission_required('admin', False)
 def class_objects(request, ws_id, class_id):
