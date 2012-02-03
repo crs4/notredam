@@ -38,6 +38,7 @@ from models import Object as DjangoKBObject
 import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.errors as kb_exc
+from tinykb.util.niceid import niceid as kb_niceid
 import util
 from decorators import http_basic_auth
 
@@ -146,8 +147,12 @@ def class_index_put(request, ws_id):
             return HttpResponseBadRequest(('Attribute "%s" has an invalid '
                                            + 'type: "%s"')
                                           % (attr_id, attr_type))
+
+        # Make a "safe" id, i.e. only composed by ASCII chars
+        safe_attr_id = kb_niceid(attr_id, extra_chars=0)
+
         try:
-            attr_obj = attr_fn(attr_id, a, ses, ws)
+            attr_obj = attr_fn(safe_attr_id, a, ses, ws)
         except KeyError as e:
             return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
                                            + 'a required field: "%s"')
