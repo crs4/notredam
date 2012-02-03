@@ -483,6 +483,13 @@ var showDetails = function(view){
     for(i = 0; i < spans.length;i ++) {
         Ext.get(spans[i]).dom.className = 'tristate';
     }
+    if(selNodes && selNodes.length == 1){
+    	console.log('AA');
+    	//console.log(Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].enable());
+    }else{
+    	console.log('AA');
+    	//console.log(Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].disable());
+    }
     
     if(selNodes && selNodes.length > 0){
         cbs = Ext.DomQuery.select('input[class=x-tree-node-cb]');
@@ -619,7 +626,7 @@ var showDetails = function(view){
         var obj_store = Ext.getCmp('obj_metadata_panel').getStore();
         m_store.saveChangedRecords(Ext.getCmp('metadata_panel'));
         x_store.saveChangedRecords(Ext.getCmp('xmp_panel'));
-        obj_store.saveChangedRecords(Ext.getCmp('obj_metadata_panel'));
+//        obj_store.saveChangedRecords(Ext.getCmp('obj_metadata_panel'));
 
         Ext.getCmp('sync_xmp').disable();
 
