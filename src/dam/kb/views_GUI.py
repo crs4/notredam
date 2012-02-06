@@ -77,20 +77,20 @@ def _get_child_cls_obj(request,ws_id, parent):
                 result.append(tmp)
         logger.debug("class result")
         logger.debug(result)
+
+        obj_dicts = views_kb.object_index_get(request, ws_id)
+        obj_dicts = simplejson.loads(obj_dicts.content)   
+        for o in obj_dicts:
+            if parent.lower() == o['class_id'].lower():
+                tmp = {'text' : o['name'],  
+                       'id': o['id'], 
+                       'leaf': True,
+                    }  
+                result.append(tmp)
+        
+        logger.info("result---:  %s" %result)
     except Exception, ex:
         logger.debug(ex)
-
-    obj_dicts = views_kb.object_index_get(request, ws_id)
-    obj_dicts = simplejson.loads(obj_dicts.content)   
-    for o in obj_dicts:
-        if parent.lower() == o['class_id'].lower():
-            tmp = {'text' : o['name'],  
-                   'id': o['id'], 
-                   'leaf': True,
-                }  
-            result.append(tmp)
-    
-    logger.info("result---:  %s" %result)
             
     return result
 
