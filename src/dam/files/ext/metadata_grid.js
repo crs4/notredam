@@ -713,7 +713,6 @@ Ext.grid.MetadataStore = function(grid, advanced) {
             }
 
             if (this.getModifiedRecords().length > 0) {
-
                 var last_items;
 
                 if (options) {
@@ -1069,7 +1068,7 @@ Ext.extend(Ext.grid.MetadataColumnModel, Ext.grid.ColumnModel, {
                                 var field_struct = {};
 
                                 for (var f=0; f < r.fields.keys.length; f++) {
-                                    var r_value = r.get(r.fields.keys[f]);
+                                	var r_value = r.get(r.fields.keys[f]);
                                     if (Ext.isDate(r_value)) {
                                         r_value = r_value.dateFormat('m/d/Y');
                                     }
@@ -1079,6 +1078,9 @@ Ext.extend(Ext.grid.MetadataColumnModel, Ext.grid.ColumnModel, {
                                 tmp.push(field_struct);
 							}
 						}
+                        if(cell_store.getCount() == 0 && modified_list.length > 0){ // empty list for each metadata modified_list
+                        	metadata_values[n] = [];
+                        }
                     }
                 }
                 else {
