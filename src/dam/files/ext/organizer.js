@@ -484,11 +484,9 @@ var showDetails = function(view){
         Ext.get(spans[i]).dom.className = 'tristate';
     }
     if(selNodes && selNodes.length == 1){
-    	console.log('AA');
-    	//console.log(Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].enable());
+    	Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].enable();
     }else{
-    	console.log('AA');
-    	//console.log(Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].disable());
+    	Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].disable();
     }
     
     if(selNodes && selNodes.length > 0){
