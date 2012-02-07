@@ -713,7 +713,6 @@ Ext.grid.MetadataStore = function(grid, advanced) {
             }
 
             if (this.getModifiedRecords().length > 0) {
-
                 var last_items;
 
                 if (options) {
@@ -746,7 +745,7 @@ Ext.grid.MetadataStore = function(grid, advanced) {
                         }
                         if (button == 'yes') {
 
-                            grid.saveMetadata(save_url, last_items, params);
+                        	grid.saveMetadata(save_url, last_items, params);
                             
                         }
                     },
@@ -1069,7 +1068,7 @@ Ext.extend(Ext.grid.MetadataColumnModel, Ext.grid.ColumnModel, {
                                 var field_struct = {};
 
                                 for (var f=0; f < r.fields.keys.length; f++) {
-                                    var r_value = r.get(r.fields.keys[f]);
+                                	var r_value = r.get(r.fields.keys[f]);
                                     if (Ext.isDate(r_value)) {
                                         r_value = r_value.dateFormat('m/d/Y');
                                     }
@@ -1079,6 +1078,9 @@ Ext.extend(Ext.grid.MetadataColumnModel, Ext.grid.ColumnModel, {
                                 tmp.push(field_struct);
 							}
 						}
+                        if(cell_store.getCount() == 0 && modified_list.length > 0){ // empty list for each metadata modified_list
+                        	metadata_values[n] = [];
+                        }
                     }
                 }
                 else {
@@ -1351,6 +1353,39 @@ Ext.grid.MetadataGrid = Ext.extend(Ext.grid.EditorGridPanel, {
                 scope: this
             }
         });
+    },
+    saveMetadata: function(url, items, new_params) {
+        this.getEl().mask('Saving metadata...');
+        var values = this.getColumnModel().getMetadataValues();
+        var conn = new Ext.data.Connection();
+        var last_items;
+        if (items) {
+            last_items = items;
+        }
+        else {
+            last_items = this.getStore().lastOptions.params['items'];
+        }
+        var metadata_obj = this.variant;
+        var this_grid = this;
+        conn.request({
+            method:'POST', 
+            url: url,
+            params: {metadata: Ext.encode(values), items: last_items, obj:metadata_obj},
+            success: function(data, textStatus){
+                this_grid.getStore().commitChanges();
+                this_grid.getEl().unmask();
+                Ext.MessageBox.alert(gettext('Status'), gettext('Changes saved successfully.'));
+                if (new_params) {
+                    this_grid.customEditors = {};
+                    this_grid.getStore().load(new_params);
+                }
+            },
+            failure: function (XMLHttpRequest, textStatus, errorThrown) {
+                this_grid.getEl().unmask();
+                Ext.MessageBox.alert(gettext('Status'), gettext('Saving failed!'));
+            }            
+         });    
+    
     },
     listeners: {
         render: function(g) {
