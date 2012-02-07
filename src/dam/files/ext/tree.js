@@ -787,7 +787,25 @@ var treeAction = function(tree_action){
         
         
     }
-    
+    else if(tree_action.text == gettext('Add selected item as rappresentative item')){
+    	node_id = sel_node.id;
+        var item = get_selected_items();
+    	console.log('------ AAAAA ----');
+    	console.log('node.id: ' + node_id);
+    	console.log('selNode: ');
+    	console.log(sel_node);
+    	console.log('label ' + sel_node.attributes.text);
+    	console.log('cls ' + sel_node.attributes.iconCls);
+        console.log("item_id");
+        console.log(item[0]);
+        Ext.Ajax.request({
+            url: '/edit_node/',
+            params:{node_id:sel_node.id, cls: sel_node.attributes.iconCls, label:sel_node.attributes.text, representative_item:item[0]},
+            success: function(){
+                Ext.MessageBox.alert(gettext('Success'), gettext('Item associated.'));
+            }                        
+        });
+    }
     else if (tree_action.text == gettext('Add To Search Box')){
         var box = Ext.getCmp('search_box');
         var store = box.getStore();
@@ -796,8 +814,7 @@ var treeAction = function(tree_action){
             store.add(r);
         }
         
-    }
-    else if(tree_action.text == gettext('Show items with this keyword')){
+    }else if(tree_action.text == gettext('Show items with this keyword')){
         var path = get_final_node_path(sel_node);
         var tree = Ext.getCmp('keywords_tree');
         tree.getSelectionModel().suspendEvents();
@@ -897,16 +914,6 @@ var treeAction = function(tree_action){
 	    });  
 	  	tree_obj_reference.setRootNode(Tree_Obj_Root);
 
-	  	/*		function setNode(){//FIXME tree is not generated all, so it's impossibile search Node in this way. 
-				console.log('0');
-		    	Ext.getCmp('obj_reference_tree').getSelectionModel().select(Ext.getCmp('obj_reference_tree').getRootNode());
-		    	console.log('1');
-		    	while(Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode().attributes.text != sel_node.attributes.text && Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode()!= null){
-		        	Ext.getCmp('obj_reference_tree').getSelectionModel().selectNext();
-		    	}
-		    	console.log(Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode());
-}
-*/			  	
 	  	fields.push(label);
         fields.push(add_option_droppable);
 	  	var tree_form_obj = new Ext.FormPanel({
@@ -969,8 +976,9 @@ var treeAction = function(tree_action){
     });
     win.show();
     }
-    else{    	console.log('tree_action.text: '+tree_action.text);
-    		console.log(sel_node.attributes.iconCls);
+    else{    	
+    	console.log('tree_action.text: '+tree_action.text);
+    	console.log(sel_node.attributes.iconCls);
         var fields = []; 
         if  (tree_action.text == gettext("Add") || tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ||  tree_action.text == gettext("Edit")){
 	        
@@ -1120,7 +1128,7 @@ var delete_node = new Ext.menu.Item({text: gettext('Delete')});
 
 var search_box_node = new Ext.menu.Item({text: gettext('Add To Search Box')});
 var show_item_node = new Ext.menu.Item({text: gettext('Show items with this keyword')});
-
+var reppresentative_item = new Ext.menu.Item({text: gettext('Add selected item as rappresentative item'), disabled : true});
 
 var contextMenuKeywords = new Ext.menu.Menu({id:'mainContext'});
 contextMenuKeywords.add(
@@ -1128,7 +1136,8 @@ contextMenuKeywords.add(
     edit_node,
     delete_node,
     search_box_node,
-    show_item_node
+    show_item_node,
+    reppresentative_item
 );
 
 var contextMenuCollections = new Ext.menu.Menu({id:'mainContextCollections',
@@ -1142,8 +1151,13 @@ var contextMenuCollections = new Ext.menu.Menu({id:'mainContextCollections',
     {
         text: gettext('Delete')
     },
-    {text: gettext('Add To Search Box')}
-    
+    {
+    	text: gettext('Add To Search Box')
+    },
+    {
+    	text: gettext('Add selected item as rappresentative item'),
+    	disabled: true
+    }
     ]
 });
     
@@ -1205,6 +1219,7 @@ contextMenuShow = function(node_menu,e){
             contextMenu.find('text', gettext('Delete'))[0].setHandler(treeAction, node_menu);
             contextMenu.find('text', gettext('Edit'))[0].setHandler(treeAction, node_menu);
             contextMenu.find('text', gettext('Add To Search Box'))[0].setHandler(treeAction, node_menu);
+            contextMenu.find('text', gettext('Add selected item as rappresentative item'))[0].setHandler(treeAction, node_menu);
 
             if (!node_menu.attributes.editable){
                 contextMenu.find('text', gettext('Delete'))[0].disable();

@@ -81,7 +81,8 @@ def edit_node(request):
                 rename_collection(request, node, label, workspace)
             else:
                 resp = {'success': False}
-            
+        print "AAAAAAA"    
+        print resp
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
     except Exception,  ex:
