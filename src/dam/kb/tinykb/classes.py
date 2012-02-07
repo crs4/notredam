@@ -485,7 +485,8 @@ def _init_base_classes(o):
                 '__class_id__' : self.id,
                 '__class_root_id__': self._root_id
                 }
-            newclass = type(str(self.name), # FIXME: ensure valid class name
+            newclass = type(str(niceid.niceid(self.name,
+                                              extra_chars=0)),
                             (parent_class, ),
                             classdict)
 
