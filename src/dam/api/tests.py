@@ -1206,6 +1206,25 @@ class KeywordsTest(MyTestCase):
         response = self.client.post('/api/keyword/%s/remove_items/'%new_node.pk, params, )  
         self.assertTrue(item.node_set.filter(label = 'test').count() == 0)
 
+    def test_0053_add_items_set_repr_item(self):
+        workspace_id = 1
+        ws = DAMWorkspace.objects.get(pk = workspace_id)
+        node_parent = Node.objects.get(label = 'People',  workspace = ws)
+        item = Item.objects.all()[0]
+        item_id = item.pk
+        new_node = Node.objects.get(label = 'test')
+        
+        params = self.get_final_parameters({ 'items':item.pk})        
+        response = self.client.post('/api/keyword/%s/add_items/'%new_node.pk, params, )            
+        self.assertTrue(item.node_set.filter(label = 'test').count() == 1)
+
+        params = self.get_final_parameters({'representative_item':item_id})
+        response = self.client.post('/api/keyword/%s/edit/'%new_node.pk, params,  )                
+        
+        node = Node.objects.get(pk = new_node.pk)
+        self.assertTrue(node.label == 'test')
+        self.assertTrue(node.associate_ancestors == False)
+        self.assertTrue(node.representative_item == item)
 
 class TestLogin(MyTestCase):
     """

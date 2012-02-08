@@ -30,8 +30,8 @@ from hashlib import sha1
 from optparse import OptionParser
 
 from ndutils import ImportExport, Exporter, Importer
-import logging
-logger = logging.getLogger('dam')
+import logging as logger
+#logger = logging.getLogger('dam')
 
 
 def usage():
@@ -95,7 +95,8 @@ if __name__ == '__main__':
             workspacedir = os.path.join(basedir,'w_' + str(w['id']))
             os.mkdir(workspacedir)
             items = e._workspace_get_items(w['id'])
-    
+            print  "items"
+            print items
     
             logger.info("workspace.json")
             f = file(os.path.join(workspacedir, 'workspace.json'), 'w')
@@ -146,28 +147,40 @@ if __name__ == '__main__':
             
             #Backup items
             logger.info("items %s" %items)
-            for i in items:
+            for i in items['items']:
                 #Backup item's metadata
-                item = e._item_get(i, workspace_id=w['id'])
-               
-                logger.debug("===========")
-                logger.debug("%s" %item['id'])
-    
 
-                itemdir = os.path.join(workspacedir, 'i_' + str(item['id']))
+                #read item's rendition
+                rendition = e._item_rendition_get({'workspace_id': w['id']})
+
+                # prepare data to api call
+                param = []
+                for r in rendition['renditions']:
+                    param.append(('renditions',r['name']))
+
+                param.append(('workspace', w['id']))
+                print "param"
+                print param
+                #item = e._item_get(i['pk'], {'workspace':w['id'],'renditions': ['original']})
+                item = e._item_get(i['pk'], param)
+                print "item"
+                print item
+                logger.debug("===========")
+                logger.debug("%s" %item['pk'])
+
+                itemdir = os.path.join(workspacedir, 'i_' + str(item['pk']))
                 os.mkdir(itemdir)    
                 itemjson = json_enc.encode(item)
                 f = file(os.path.join(itemdir,'item.json'),'w')
                 f.write(itemjson)
                 f.close()
 
-                #read item's rendition
-                rendition = e._item_rendition_get({'workspace_id': w['id']})
+                #write rendition.json
                 renditionjson = json_enc.encode(rendition)
                 f = file(os.path.join(itemdir,'rendition.json'),'w')
                 f.write(renditionjson)
                 f.close()
-               
+
                 logger.info("%s" %item['renditions'])
                 if not options.metadata_only:
                     logger.info("Item's is saving soon.")

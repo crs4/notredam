@@ -207,6 +207,8 @@ INSTALLED_APPS = (
 	'dam.upload',
 	'dam.appearance',
     'dam.mprocessor',
+        'dam.kb',
+        'south'
 )
 
 # A sample logging configuration. The only tangible logging

@@ -25,7 +25,7 @@ Ext.onReady(function(){
         var current_ws = ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk;
 
         var members_store = new Ext.data.JsonStore({
-            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", 'edit_scripts', 'run_scripts'],
+            fields: ["id", "name", "admin", "edit_metadata", "add_item", "remove_item", "editable", "edit_taxonomy", 'edit_scripts', 'run_scripts', 'edit_vocabulary'],
             root: 'elements',
             baseParams: {ws_id: current_ws},
             proxy : new Ext.data.HttpProxy({
@@ -77,7 +77,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can edit metadata',
+                header: 'Edit metadata',
                 dataIndex: 'edit_metadata',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -85,7 +85,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can add item',
+                header: 'Add item',
                 dataIndex: 'add_item',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -93,7 +93,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can remove item',
+                header: 'Remove item',
                 dataIndex: 'remove_item',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -101,7 +101,7 @@ Ext.onReady(function(){
                 falseText: 'No',
                 editor: booleditor
             }, {
-                header: 'Can edit catalogue',
+                header: 'Edit catalogue',
                 dataIndex: 'edit_taxonomy',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -110,7 +110,7 @@ Ext.onReady(function(){
                 editor: booleditor
             },             
              {
-                header: 'Can edit scripts',
+                header: 'Edit scripts',
                 dataIndex: 'edit_scripts',
                 xtype: 'booleancolumn',
                 align: 'center',
@@ -119,8 +119,17 @@ Ext.onReady(function(){
                 editor: booleditor
             },
              {
-                header: 'Can run scripts',
+                header: 'Run scripts',
                 dataIndex: 'run_scripts',
+                xtype: 'booleancolumn',
+                align: 'center',
+                trueText: 'Yes',
+                falseText: 'No',
+                editor: booleditor
+            },
+             {
+                header: 'Edit vocabulary',
+                dataIndex: 'edit_vocabulary',
                 xtype: 'booleancolumn',
                 align: 'center',
                 trueText: 'Yes',
@@ -180,30 +189,35 @@ Ext.onReady(function(){
                                 name: 'admin',                                
                                 xtype: 'checkbox'
                             }, {
-                                fieldLabel: 'Can edit metadata',
+                                fieldLabel: 'Edit metadata',
                                 name: 'edit_metadata',
                                 xtype: 'checkbox'       
                             }, {
-                                fieldLabel: 'Can add item',
+                                fieldLabel: 'Add item',
                                 name: 'add_item',
                                 xtype: 'checkbox'       
                             }, {
-                                fieldLabel: 'Can remove item',
+                                fieldLabel: 'Remove item',
                                 name: 'remove_item',
                                 xtype: 'checkbox'       
                             }, {
-                                fieldLabel: 'Can edit catalogue',
+                                fieldLabel: 'Edit catalogue',
                                 name: 'edit_taxonomy',
                                 xtype: 'checkbox'       
                             }, 
                             {
-                                fieldLabel: 'Can edit scripts',
+                                fieldLabel: 'Edit scripts',
                                 name: 'edit_scripts',
                                 xtype: 'checkbox'       
                             },
                             {
-                                fieldLabel: 'Can run scripts',
+                                fieldLabel: 'Run scripts',
                                 name: 'run_scripts',
+                                xtype: 'checkbox'       
+                            },
+                            {
+                                fieldLabel: 'Edit vocabulary',
+                                name: 'edit_vocabulary',
                                 xtype: 'checkbox'       
                             }
                             
@@ -233,7 +247,7 @@ Ext.onReady(function(){
                                 text: gettext('Save'),
                                 handler: function() {
                                     var values = Ext.getCmp('new_user_permissions').getForm().getFieldValues();                                    
-                                    var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_taxonomy: 0};
+                                    var perm_values = {editable: true, admin: 0, edit_metadata: 0, add_item: 0, remove_item: 0, edit_taxonomy: 0, edit_vocabulary: 0};
                                     if (values.admin) {
                                         perm_values.admin = 1;
                                     }
@@ -249,14 +263,14 @@ Ext.onReady(function(){
                                     if (values.edit_taxonomy) {
                                         perm_values.edit_taxonomy = 1;
                                     }
-                                    
-                                    
                                     if (values.run_scripts) {
                                         perm_values.run_scripts = 1;
                                     }
-                                    
-                                     if (values.edit_scripts) {
+                                    if (values.edit_scripts) {
                                         perm_values.edit_scripts = 1;
+                                    }
+                                    if (values.edit_vocabulary) {
+                                        perm_values.edit_vocabulary = 1;
                                     }
                                     var selected = Ext.getCmp('available_users').getSelectedRecords();
                                     if (selected.length == 0) {
@@ -605,6 +619,9 @@ Ext.onReady(function(){
                         { text: gettext('Renditions'),                                                      
                             handler: variants_prefs 
                             
+                            },
+                            { text: gettext('Vocabulary'),                                                      
+                                handler: function(){ open_knowledgeBase(); }
                             }
                         ]
                     }
@@ -1179,6 +1196,8 @@ Ext.onReady(function(){
 								})
                             },
                             { 
+                            	id: 'stop_all',
+                            	disabled: true,
                             	text    : gettext('Stop all'),
                             	handler : function(){
                                                var items = [];
