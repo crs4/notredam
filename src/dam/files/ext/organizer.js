@@ -280,8 +280,8 @@ function _show_details(data, active_tab, view, selNode){
 //
 //        }
     var selNodes= view.getSelectedNodes();
-    
-    if(active_tab.id == 'metadata_panel' || active_tab.id == 'xmp_panel') {
+
+    if(active_tab.id == 'metadata_panel' || active_tab.id == 'xmp_panel' || active_tab.id == 'obj_metadata_panel') {
         store = active_tab.getStore();
         
         var items_param = get_selected_items();
@@ -300,10 +300,10 @@ function _show_details(data, active_tab, view, selNode){
             return;
         }
         
-        if (selNode == current_item_selected ) {
+/*        if (selNode == current_item_selected ) {
             return;
         }
-        
+*/        
         var items_param = data.pk;
         current_item_selected = selNode;        
         
@@ -361,12 +361,44 @@ function _show_details(data, active_tab, view, selNode){
 //            preview.slideIn('l', {stopFx:true,duration:.2});
         preview.fadeIn({stopFx:true,duration:0.4});
 
-        
-        
-        
-        
-        
+    }else if (active_tab.id == 'objects_preview_panel'){
+        var store = Ext.getCmp('obj_summary').getStore();
+        if( selNodes.length > 1){
+            store.removeAll();
+            var detail_tabs_panel = Ext.getCmp('detail_tabs');
+            var active_tab =  detail_tabs_panel.getActiveTab();
+            active_tab.hide();
+            current_item_selected = null;
+            return;
         }
+
+/*        if (selNode == current_item_selected ) {
+        return;
+    }
+*/           
+        var items_param = data.pk;
+        current_item_selected = selNode;        
+
+        Ext.Ajax.request({
+            url: '/get_basic_descriptors/',
+            params: {items: items_param},
+            success: function(data){
+                data = Ext.decode(data.responseText);
+                var basic_p = Ext.getCmp('obj_basic_panel').body;
+                basicTemplate.overwrite(basic_p, data);
+            }
+        });
+        
+        var state_id = data.state;
+        if (state_id){
+            var record = ws_state_store.query('pk', state_id);
+            var state_name = record.items[0].data.name;
+            data.state_name = state_name;
+            
+            
+            }
+    }
+    
 
     if(store) {
             var old_items_selected = store.lastOptions ? store.lastOptions.params.items : items_param ;
@@ -451,6 +483,11 @@ var showDetails = function(view){
     for(i = 0; i < spans.length;i ++) {
         Ext.get(spans[i]).dom.className = 'tristate';
     }
+    if(selNodes && selNodes.length == 1){
+    	Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].enable();
+    }else{
+    	Ext.getCmp('mainContext').find('text', gettext('Add selected item as rappresentative item'))[0].disable();
+    }
     
     if(selNodes && selNodes.length > 0){
         cbs = Ext.DomQuery.select('input[class=x-tree-node-cb]');
@@ -481,6 +518,7 @@ var showDetails = function(view){
         if(admin | run_scripts){
             Ext.getCmp('object_menu').menu.items.get('addto').enable();
             Ext.getCmp('runscript').enable();
+            Ext.getCmp('stop_all').enable();
         }
         
         if (admin | remove_item){
@@ -583,8 +621,10 @@ var showDetails = function(view){
         current_item_selected = null;
         var m_store = Ext.getCmp('metadata_panel').getStore();
         var x_store = Ext.getCmp('xmp_panel').getStore();
+        var obj_store = Ext.getCmp('obj_metadata_panel').getStore();
         m_store.saveChangedRecords(Ext.getCmp('metadata_panel'));
         x_store.saveChangedRecords(Ext.getCmp('xmp_panel'));
+//        obj_store.saveChangedRecords(Ext.getCmp('obj_metadata_panel'));
 
         Ext.getCmp('sync_xmp').disable();
 
@@ -1317,10 +1357,13 @@ Ext.onReady(function(){
                             var xmp_grid = Ext.getCmp('xmp_panel');
                             xmp_grid.language = r.data.code;
 
+                            var obj_metadata_grid = Ext.getCmp('obj_metadata_panel');
+                            obj_metadata_grid.language = r.data.code;
+
                             var detail_tabs_panel = Ext.getCmp('detail_tabs');
                             var active_tab =  detail_tabs_panel.getActiveTab().getId();
 
-                            if (active_tab == 'metadata_panel' || active_tab == 'xmp_panel') { 
+                            if (active_tab == 'metadata_panel' || active_tab == 'xmp_panel' || active_tab == 'obj_metadata_panel') { 
                                 var current_grid = Ext.getCmp(active_tab);
                                 var metadata_lang = current_grid.getStore().query('type', 'lang');
                                 for (var i=0; i < metadata_lang.items.length; i++) {
@@ -1898,7 +1941,7 @@ var search_box = {
                             tbar: metadata_tbar,
                             listeners: {
                                 tabchange: function(tab_panel, tab){
-                                    if (tab.getId() == 'preview_panel') {
+                                    if (tab.getId() == 'preview_panel' || tab.getId() == 'objects_preview_panel'  || tab.getId() == 'obj_metadata_panel') {
                                         metadata_tbar.hide();                                    
                                     }
                                     else {
@@ -1946,9 +1989,7 @@ var search_box = {
                                         store: new Ext.data.JsonStore({
                                                 root: 'variants',              
                                                 fields: ['pk','variant_name', 'data_basic','data_full', 'resource_url', 'abs_resource_url', 'imported', 'item_id', 'auto_generated', 'media_type', 'extension', 'work_in_progress', 'width', 'height'] ,
-                                            url: '/get_variants/'
-
-                                            
+                                                url: '/get_variants/'
                                         }),
                                      
                                         columns:[
@@ -1957,7 +1998,6 @@ var search_box = {
                                             header: 'variant_name',
                                             dataIndex: 'variant_name',
                                             cls: 'list-variant',
-                                            
                                                 tpl: new Ext.XTemplate(  
                                                 	'<div class="list-variant">',
                                                     '<b style="color:#3764A0;">{variant_name:capitalize()}</b>', 
@@ -1986,16 +2026,16 @@ var search_box = {
                                                             '<tpl for="data_basic">',
 								// i18n
                                                                 '<p><b>',
-								'{[gettext(values.caption)]}',
-								':</b>',
+																'{[gettext(values.caption)]}',
+																':</b>',
                                                                 '<tpl if="value.properties === undefined">',
                                                                     '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
                                                                 '</tpl>',
                                                                 '<tpl if="value.properties"><br/>',
                                                                     '<tpl for="value.properties">',
                                                                         '<b style="padding-left:20px;">',
-									'{[gettext(values.caption)]}',
-									':</b>',
+																		'{[gettext(values.caption)]}',
+																		':</b>',
                                                                         '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
                                                                     '</tpl></p>',
                                                                 '</tpl>',
@@ -2003,16 +2043,16 @@ var search_box = {
                                                         
                                                             '<tpl for="data_full">',
                                                                 '<p><b>',
-								'{[gettext(values.caption)]}',
-								':</b>',
+																'{[gettext(values.caption)]}',
+																':</b>',
                                                                 '<tpl if="value.properties === undefined">',
                                                                     '<span ext:qtip="{value}"> {value:ellipsis(20)}</span></p>',
                                                                 '</tpl>',
                                                                 '<tpl if="value.properties"><br/>',
                                                                     '<tpl for="value.properties">',
                                                                         '<b style="padding-left:20px;">',
-									'{[gettext(values.caption)]}',
-									':</b>',
+																		'{[gettext(values.caption)]}',
+																		':</b>',
                                                                         '<span style="padding-left:20px;" ext:qtip="{value}"> {value:ellipsis(20)}</span><br/>',      
                                                                     '</tpl></p>',
                                                                 '</tpl>',
@@ -2054,10 +2094,22 @@ var search_box = {
                                     })
                                 
                                 ]
-                            }, new Ext.grid.MetadataGrid({
-                    title: gettext('Descriptors'),
-                    id: 'metadata_panel',
-                    view: new Ext.grid.GroupingView({
+                            }, 
+                            new Ext.grid.MetadataGridObj({
+        	                    title: gettext('Objects'),
+        	                    id: 'obj_metadata_panel',
+        	                    view: new Ext.grid.GroupingView({
+                                forceFit:true,
+                                startCollapsed: true,
+                                hideGroupedColumn:true,
+                                showGroupName: false,
+                                groupTextTpl: '{text}'
+                            })
+                              }),
+                        new Ext.grid.MetadataGrid({
+	                    title: gettext('Descriptors'),
+	                    id: 'metadata_panel',
+	                    view: new Ext.grid.GroupingView({
                         forceFit:true,
                         startCollapsed: true,
                         hideGroupedColumn:true,
@@ -2079,7 +2131,7 @@ var search_box = {
                              }
                          }]
                       }), new Ext.grid.MetadataGrid({
-                    title: 'XMP',
+                    title: gettext('XMP'),
                     id: 'xmp_panel',
                     advanced: true,
                     view: new Ext.grid.GroupingView({

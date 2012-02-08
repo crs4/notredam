@@ -46,6 +46,7 @@ from dam.mprocessor.models import Pipeline
 from dam.workspace.views import _add_items_to_ws, _search
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
+from dam.kb.models import Object as KBObject
 from dam.upload.views import _upload_variant, _upload_resource_via_raw_post_data, _upload_resource_via_post
 from dam.workflow.views import _set_state 
 from dam.scripts.views import _edit_script, _get_scripts_info
@@ -1244,15 +1245,20 @@ class ItemResource(ModResource):
                 #logger.error('skipping %s'%ex)
                 pass
                 
-        logger.debug('variants %s'%variants)
+        logger.info('variants %s'%variants)
         if variants: 
             tmp['renditions'] = {}
             
-        for variant in variants:            
+        for variant in variants: 
             try:                
-                component = Component.objects.get(item = item,  workspace = workspace,  variant__name = variant)               
-                url  = component.get_url()                
+                logger.info("variant : %s" %(variant))                
+                logger.info("item : %s" %(item.pk))                
+                logger.info("workspace : %s" %(workspace))                
+                component = Component.objects.get(item = item,  workspace__pk = int(workspace),  variant__name = variant) 
+                logger.info("component : %s" %(component.get_url()))                
+                url  = component.get_url()
                 tmp['renditions'][variant] = {'url':url}                
+                logger.info("variant : %s" %(tmp['renditions'][variant]))                
                 if rendition_file_name:
                     tmp['renditions'][variant]['file_name'] = component.file_name                
             except Exception, ex:
@@ -1487,12 +1493,14 @@ class ItemResource(ModResource):
         
         if not request.GET.has_key('workspace'):
             raise MissingArgs, 'workspace is a required argument'
-        
+        if not request.GET.has_key('renditions'):
+            raise MissingArgs, 'renditions is a required argument'
+            
         workspace = request.GET['workspace']
         variants = request.GET.getlist('renditions')
         
         item = Item.objects.get(pk = item_id)
-        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = False, upload_workspace = True)
+        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = True, upload_workspace = True)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
@@ -2009,9 +2017,18 @@ class KeywordsResource(ModResource):
 #    @exception_handler
     def _read(self, user, workspace_id, node_id  = None, flag = False):
         def get_info(kw,  get_branch = False):
+            label = kw.label
+            kb_object_id = None
+            if kw.kb_object is not None:
+                label = kw.kb_object.name
+                kb_object_id = kw.kb_object.id
             kw_info = {
                 'id': kw.pk,  
-                'label': kw.label,   
+                'label': label,   
+                'kb_object': kb_object_id,
+                'representative_item': ((kw.representative_item is not None
+                                         and kw.representative_item.pk)
+                                        or None),
                 'workspace':kw.workspace.pk, 
                 'type': kw.cls, 
                 'associate_ancestors': kw.associate_ancestors,  
@@ -2148,9 +2165,11 @@ class KeywordsResource(ModResource):
         - method: POST
             - parameters: 
                 - label (required)
+                - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
+                - representative_item: optional, the id of the representative item
                 - workspace_id: optional, it allows to create a keyword at the top level
                 - parent_id optional, required if no workspace_id is passed
-                - type: 'category' or 'keyword'
+                - type: 'category', 'keyword', 'object-category' or 'object-keyword'
                 - associate_ancestors: boolean, valid only if type is 'keyword'
                 - metadata_schema: optional. JSON list of dictionaries containing namespace, name and value for the metadata schemas  to associate to the new keyword. Example: [{"namespace": 'dublin core','name': 'title',   "value": 'test'}]
                 
@@ -2179,7 +2198,7 @@ class KeywordsResource(ModResource):
         else:
             raise MissingArgs        
         
-        if type not in ['keyword',  'category']:
+        if type not in ['keyword',  'category', 'object-category', 'object-keyword']:
             raise ArgsValidationError
             
         if type == 'keyword':
@@ -2209,11 +2228,25 @@ class KeywordsResource(ModResource):
         user_id = request.POST.get('user_id') 
         _check_app_permissions(ws,  user_id,  ['admin',  'edit_taxonomy'])
         
-        new_node = Node.objects.filter(parent = node_parent, label = request.POST['label'])
+        obj = None
+        label = request.POST['label']
+        if (type in ('object-category', 'object-keyword')):
+            # The KB object name will override the label
+            # FIXME: check that the provided label is equal to obj name?
+            obj = KBObjects.objects.get(id=request.POST['kb_object'])
+            label = obj.name
+        new_node = Node.objects.filter(parent = node_parent, label = label)
+
+        repr_item_id = request.POST.get('representative_item')
+        if repr_item_id is None:
+            repr_item = None
+        else:
+            repr_item = Item.objects.get(pk=repr_item_id)
+
         if new_node.count() > 0:
             new_node = new_node[0]
         else:
-            new_node = Node.objects.add_node(node_parent, request.POST['label'],  ws, type, associate_ancestors)   
+            new_node = Node.objects.add_node(node_parent, label,  ws, type, associate_ancestors, kb_object=obj, representative_item=repr_item)
             if len(metadata_schema) > 0:
                 new_node.save_metadata_mapping(metadata_schema)
         
@@ -2233,6 +2266,8 @@ class KeywordsResource(ModResource):
         - method: POST
             - parameters: 
                 - label                 
+                - kb_object: optional, the id of the KB object associated with the catalog entry (if provided, will override the label)
+                - representative_item: optional, the id of the representative item
                 - associate_ancestors: boolean, valid only if type is 'keyword'
                 - metadata_schema: optional. JSON list of dictionaries containing namespace, name and value for the metadata schemas  to associate to the new keyword. Example: [{"namespace": 'dublin core','name': 'title',   "value": 'test'}]
                 
@@ -2252,7 +2287,9 @@ class KeywordsResource(ModResource):
         metadata_schema = self._prepare_metadata_schema(request)
         
         
-        node.edit_node(label,  metadata_schema, associate_ancestors,  ws)
+        node.edit_node(label,  metadata_schema, associate_ancestors,  ws,
+                       kb_object_id=request.POST.get('kb_object'),
+                       representative_item_id=request.POST.get('representative_item'))
         
         return HttpResponse('') 
     

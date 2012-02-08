@@ -31,8 +31,8 @@ from django.utils.simplejson.encoder import JSONEncoder
 from urllib_uploader import StandardUploader
 from ndutils import ImportExport, Exporter, Importer
 import time
-import logging
-logger = logging.getLogger('dam')
+import logging as logger
+#logger = logging.getLogger('dam')
 
 import string
 
@@ -84,9 +84,9 @@ def add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_orig
     return:
     """
    
-    logger.debug("-----ADD KEYWORD")
-
+    logger.debug("-----ADD KEYWORD ID OLD WS %s" %data['workspace'])
     data['workspace_id'] = ws_origTows_new[str(data['workspace'])]
+    logger.debug("-----new ID WS %s" %data['workspace_id'])
     items_flag = True
     data_app = dict(data)
     try:
@@ -122,9 +122,9 @@ def add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_orig
         param = []
         for item in data_app['items']:
             
-            logger.debug( "id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
+            #logger.debug( "id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
             
-            logger.debug( "id_orig_itemToid_new_item[item] %s" %id_orig_itemToid_new_item[item])
+            #logger.debug( "id_orig_itemToid_new_item[item] %s" %id_orig_itemToid_new_item[item])
             param.append(('items',id_orig_itemToid_new_item[item]))
 #        logger.debug( "param %s, returnkeywords['id'] %s" %(param,returnkeywords['id']))
         i._keyword_add(returnkeywords['id'], param)
@@ -324,9 +324,11 @@ def add_workspaces(i,e,users,path_extract,ws_origTows_new):
                 returnworkspace = i._workspace_new(paramworkspace)
                 #set creator
                 try:
-                    i._api_workspace_set_creator(returnworkspace['id'],{'creator_id' : users[paramworkspace['creator']]['id']})
+                    if paramworkspace['creator'] != 'admin':
+                        i._api_workspace_set_creator(returnworkspace['id'],{'creator_id' : users[paramworkspace['creator']]['id']})
                 except Exception, ex:
                     logger.error('error set creator for %s'%workspacedir)
+                    logger.error('creator value %s' %paramworkspace)
                     logger.error(ex)
             else:
                 #set di tutti i parametri necessari per ws_id =1
@@ -615,23 +617,23 @@ def restore_rendition(current_item,id_workspace,rendition_ws,id_item,file_name,s
             frendition = custom_open_file(current_item, 'rendition.json')
             
             for rendition in fitem['renditions']:
-                param = {}
-                param['workspace_id'] = id_workspace
-                param['uri'] = fitem['renditions'][rendition]['url']
-                param['file_name'] = fitem['renditions'][rendition]['file_name']
-                #file_name can be NULL
-                if not param['file_name']:
-                    param['file_name'] = fitem['renditions']['original']['file_name']
-                param['file_name'].decode('latin-1')
-                param['rendition_id'] = search_id_rendition(current_item,rendition,rendition_ws)
-                if string.lower(rendition) == 'original':
-                    param_orig = param
-                elif len(param['uri'])>0:
-                        logger.info("params %s" %param)
-                        i._item_add_component(id_item,param)
-
-            logger.info("param_orig %s" %param_orig)
-            i._item_add_component(id_item,param_orig)
+                if fitem['renditions'][rendition]['url']:
+                    param = {}
+                    param['workspace_id'] = id_workspace
+                    param['uri'] = fitem['renditions'][rendition]['url']
+                    param['file_name'] = fitem['renditions'][rendition]['file_name']
+                    #file_name can be NULL
+                    if not param['file_name']:
+                        param['file_name'] = fitem['renditions']['original']['file_name']
+                    param['file_name'].decode('latin-1')
+                    param['rendition_id'] = search_id_rendition(current_item,rendition,rendition_ws)
+                    if string.lower(rendition) == 'original':
+                        param_orig = param
+                        logger.info("param_orig %s" %param_orig)
+                        i._item_add_component(id_item,param_orig)
+                    elif len(param['uri'])>0:
+                            logger.info("params %s" %param)
+                            i._item_add_component(id_item,param)
                 
             logger.info("/n/n param %s" %param)
         
@@ -730,12 +732,13 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
     
                     #create item
                     logger.info('\n\n\n\n paramitem %s' %paramitem)
+                    print('\n\n\n\n paramitem %s' %paramitem)
                     resp_new_item = i._item_new(paramitem)
                     
                     #update equivalent id_item_old con id_item_new
-                    id_orig_itemToid_new_item[paramitem['id']] = resp_new_item['id']
+                    id_orig_itemToid_new_item[paramitem['pk']] = resp_new_item['id']
            
-                    logger.debug("id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
+                    #logger.debug("id_orig_itemToid_new_item %s" %id_orig_itemToid_new_item)
     
                     #rendition's upload
                     logger.debug("\n\n\n\nupload renditioni")
@@ -761,7 +764,7 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         resp_new_item = i._item_new(paramitem)
         
                         #aggiorno corrispettivo id_item_old con id_item_new
-                        id_orig_itemToid_new_item[paramitem['id']] = resp_new_item['id']
+                        id_orig_itemToid_new_item[paramitem['pk']] = resp_new_item['id']
     
                         #add_to_workspace di questo item nel current_ws
                         if int(paramitem['workspaces'][0]) != int(paramitem['upload_workspace']):
@@ -779,27 +782,27 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
                         set_metadata(resp_new_item['id'],paramitem)
                     else:
 
-                        logger.debug('---condiviso nessuna NEW itemid %s---- paramworkspace[id] %s' %(paramitem['id'],paramworkspace['id']))
-                        if id_orig_itemToid_new_item.has_key(paramitem['id']):
+                        logger.debug('---condiviso nessuna NEW itemid %s---- paramworkspace[id] %s' %(paramitem['pk'],paramworkspace['id']))
+                        if id_orig_itemToid_new_item.has_key(paramitem['pk']):
                             if int(paramitem['upload_workspace']) != int(paramworkspace['id']):
-                                    add_to_ws(ws_origTows_new,paramworkspace['id'],id_orig_itemToid_new_item[paramitem['id']])
+                                    add_to_ws(ws_origTows_new,paramworkspace['id'],id_orig_itemToid_new_item[paramitem['pk']])
                             #upload delle renditioni
-                            if int(paramitem['workspace_id']) == int(ws_origTows_new[str(paramitem['workspaces'][len(paramitem['workspaces'])-1])]) and id_orig_itemToid_new_item.has_key(paramitem['id']):
+                            if int(paramitem['workspace_id']) == int(ws_origTows_new[str(paramitem['workspaces'][len(paramitem['workspaces'])-1])]) and id_orig_itemToid_new_item.has_key(paramitem['pk']):
                                 #nell'ultimo della lista devo fare l'upload dell'original
                                 if not metadata_only:
-                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,True)
                                 else:
-                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,True)
+                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,True)
                                 #set_metadata
-                                set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
+                                set_metadata(id_orig_itemToid_new_item[paramitem['pk']],paramitem)
                             else:
                                 if not metadata_only:
-                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                                    upload_renditions(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,False)
                                 else:
-                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['id']],shortname_original,shortname_original,False)
+                                    restore_rendition(current_item,paramitem['workspace_id'],rendition_ws,id_orig_itemToid_new_item[paramitem['pk']],shortname_original,shortname_original,False)
                             
                             #set_metadata
-                            set_metadata(id_orig_itemToid_new_item[paramitem['id']],paramitem)
+                            set_metadata(id_orig_itemToid_new_item[paramitem['pk']],paramitem)
                         else:
                             logger.error("item not recognized")
                         
@@ -978,32 +981,53 @@ if __name__ == '__main__':
     
             keyColl_origTokeyColl_new = {}
             try:
+                logger.debug("custom_listdirs(path_extract)--- %s lunghezza %s" %(custom_listdirs(path_extract), len(custom_listdirs(path_extract))))
                 for workspacedir in custom_listdirs(path_extract):
+                    logger.debug("workspace____ %s" %workspacedir)
                     current_workspace = path_extract + '/' + workspacedir
                     #creation and assosiation of the keywords at the item
-                    paramkeywords = custom_open_file(current_workspace, 'keywords.json')
-                    
-                    #FIXME: read and after delete all. Maybe should to be avoided
-                    param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
-                    for data in param['keywords']:
-                        i._keyword_delete(data['id'])
-                    
-                    logger.info('keywords.json for %s' % workspacedir)
-                    for data in paramkeywords['keywords']:
-                        add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
-                    
-                    logger.info('collections.json for %s' % workspacedir)
-                    paramcollection = custom_open_file(current_workspace, 'collections.json')
-                    for data in paramcollection['collections']:
-                        add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+                    try:
+                        paramkeywords = custom_open_file(current_workspace, 'keywords.json')
+                        #FIXME: read and after delete all. Maybe should to be avoided
+                        param = e._keyword_get_list(ws_origTows_new[str(paramkeywords['keywords'][0]['workspace'])])
+                        for data in param['keywords']:
+                            i._keyword_delete(data['id'])
+                    except Exception, ex:
+                        logger.error('first step')
+                        logger.error(ex)
+                        
+
+                    try:
+                        logger.debug('keywords.json for %s' % workspacedir)
+                        for data in paramkeywords['keywords']:
+                            add_keywords(i,data, ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+                        logger.info('collections.json for %s' % workspacedir)
+                    except Exception, ex:
+                        logger.error('second step')
+                        logger.error(ex)
+                        
+
+                    try:
+                        paramcollection = custom_open_file(current_workspace, 'collections.json')
+                        for data in paramcollection['collections']:
+                            add_collections(i,data,ws_origTows_new, id_orig_itemToid_new_item,keyColl_origTokeyColl_new)
+                    except Exception, ex:
+                        logger.error('third step')
+                        logger.error(ex)
+                        
+
+                    try:
+                        logger.info('smartfolders.json for %s' % workspacedir)
+                        paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
         
-                    logger.info('smartfolders.json for %s' % workspacedir)
-                    paramsmartfolders = custom_open_file(current_workspace, 'smartfolders.json')
-    
-                    for data in paramsmartfolders['smartfolders']:
-                            add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
+                        for data in paramsmartfolders['smartfolders']:
+                                add_smartfolders(i,data,ws_origTows_new, keyColl_origTokeyColl_new)               
+                    except Exception, ex:
+                        logger.error('forth step')
+                        logger.error(ex)
 
             except Exception, ex:
+                logger.error('Critical Error, not all imported!')
                 logger.error(ex)
              
             logger.info("DONE")

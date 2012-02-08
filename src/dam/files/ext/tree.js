@@ -107,7 +107,6 @@ Ext.override(Ext.tree.TreeNodeUI, {
     }
 });
 
-
  var tree_loader = new Ext.tree.TreeLoader({
         dataUrl:'/get_nodes/',
         uiProviders: {
@@ -129,7 +128,6 @@ Ext.override(Ext.tree.TreeNodeUI, {
                 
             }
         }
-        
     });
 
 function move_node(source, dest){
@@ -365,8 +363,6 @@ function create_tree(title, id){
                         tristate = true;
                         cb.checked = true;
                         tri_span.addClass('tri_state_cb');
-                        
-                             
                          Ext.Ajax.request({
                             url:'/remove_association/',
                             params:{
@@ -387,9 +383,6 @@ function create_tree(title, id){
                         
                         
                     }
-                    
-                    
-                    
                 }
                 
                 
@@ -438,7 +431,8 @@ function create_tree(title, id){
                 this.getEl().on('contextmenu',
                 	
                     function(e){     
-                    	console.log('cm');
+                    	//console.log('cm');
+                    	//console.log(this.id)
                         if (this.id == 'keywords_tree') {
                             contextMenuShow(root_keywords,e);
                         }
@@ -584,18 +578,61 @@ function create_tree(title, id){
         
     }
 
-var treeAction = function( tree_action){
+var treeAction = function(tree_action){
     var sel_node = tree_action.scope;
+    
+    function submit_tree_form_obj(){
+    	var params;
+    	if (Ext.getCmp('check_drop_option_id').getValue()){
+    		params = {cls: "object-category"};
+    	}else{
+    		params = {cls: "object-keyword"};
+    	}
+    	params.kb_object = Ext.getCmp('obj_reference_tree').getSelectionModel().selNode.id;
+    	params.type = 'object';
+    	Ext.getCmp('tree_form_obj').getForm().submit({
+            clientValidation: true,
+            params:params,
+            waitMsg: gettext('Saving...'),
+            success: function(form, action) {
+                if(!sel_node.length) {
+            		console.log(tree_loader);
+            		if((tree_action.text == gettext('Add')) || (tree_action.text == gettext('Object'))){
+        				tree_loader.clearOnLoad = false;
+	                    tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
+	                    tree_loader.load(sel_node,function(){
+	                        tree_loader.clearOnLoad = true;
+	                        tree_loader.baseParams = {};
+	                        sel_node.expand();
+	                    });
+            		}else{
+            			sel_node.setText(form.getValues().label);
+            		}
+                }
+                win.close();
+            },
+            failure: function(form, action){
+            	switch (action.failureType) {
+	                case Ext.form.Action.CLIENT_INVALID:
+	                    Ext.Msg.alert('Failure', 'Form fields may not be submitted with invalid values');
+	                    break;
+	                case Ext.form.Action.CONNECT_FAILURE:
+	                    Ext.Msg.alert('Failure', 'Ajax communication failed');
+	                    break;
+	                case Ext.form.Action.SERVER_INVALID:
+	                   Ext.Msg.alert('Failure', action.result.msg);
+            	}
+           }
+        });
+    }
     
     function submit_tree_form(cls){                        
         var params = {cls: cls};
-        
         var cbs = Ext.DomQuery.select('input[class=cb_metadata]');
         var checked = [];
         var store_metadata, cb, id, row;
         if (cbs.length) {
             store_metadata = Ext.getCmp('metadata_list').getStore();
-            
         }
         for (i = 0; i < cbs.length; i++){
             cb = cbs[i];
@@ -608,23 +645,20 @@ var treeAction = function( tree_action){
                 
                 row = store_metadata.query('pk', id);
                 params.metadata.push(Ext.encode({id: id, value: row.itemAt(0).data.value}));
-                
             }                            
         }
         
         var form = Ext.getCmp('tree_form').getForm();
-        
+
         form.submit({
             clientValidation: true,
             params: params,
             waitMsg: gettext('Saving...'),
             success: function(form, action) {
-        		
                 if(!sel_node.length) {
                     if(tree_action.text == gettext('Add') ||  tree_action.text == gettext('Category') || tree_action.text == gettext('Keyword') ){
                             tree_loader.clearOnLoad = false;
                             tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label').getValue()};
-                            
                             tree_loader.load(sel_node,function(){
                                 tree_loader.clearOnLoad = true;
                                 tree_loader.baseParams = {};
@@ -665,7 +699,6 @@ var treeAction = function( tree_action){
             fieldLabel: 'associate ancestors',
             name: 'add_metadata_parent',    
             checked: checked
-            
         });
     }
     
@@ -734,9 +767,11 @@ var treeAction = function( tree_action){
             });
         
         }
-   console.log('----------------tree_action.text ' + tree_action.text); 
+   //console.log('----------------tree_action.text ' + tree_action.text); 
     if (tree_action.text == gettext("Delete")){
-        var _delete_node = function(btn){
+        console.log("Delete");
+        console.log(sel_node);
+    	var _delete_node = function(btn){
             if(btn == 'yes'){
                 Ext.Ajax.request({
                     url: '/delete_node/',
@@ -752,7 +787,25 @@ var treeAction = function( tree_action){
         
         
     }
-    
+    else if(tree_action.text == gettext('Add selected item as rappresentative item')){
+    	node_id = sel_node.id;
+        var item = get_selected_items();
+    	console.log('------ AAAAA ----');
+    	console.log('node.id: ' + node_id);
+    	console.log('selNode: ');
+    	console.log(sel_node);
+    	console.log('label ' + sel_node.attributes.text);
+    	console.log('cls ' + sel_node.attributes.iconCls);
+        console.log("item_id");
+        console.log(item[0]);
+        Ext.Ajax.request({
+            url: '/edit_node/',
+            params:{node_id:sel_node.id, cls: sel_node.attributes.iconCls, label:sel_node.attributes.text, representative_item:item[0]},
+            success: function(){
+                Ext.MessageBox.alert(gettext('Success'), gettext('Item associated.'));
+            }                        
+        });
+    }
     else if (tree_action.text == gettext('Add To Search Box')){
         var box = Ext.getCmp('search_box');
         var store = box.getStore();
@@ -761,8 +814,7 @@ var treeAction = function( tree_action){
             store.add(r);
         }
         
-    }
-    else if(tree_action.text == gettext('Show items with this keyword')){
+    }else if(tree_action.text == gettext('Show items with this keyword')){
         var path = get_final_node_path(sel_node);
         var tree = Ext.getCmp('keywords_tree');
         tree.getSelectionModel().suspendEvents();
@@ -777,9 +829,157 @@ var treeAction = function( tree_action){
         search.setValue(path);
         set_query_on_store({query: path, show_associated_items: true});
     }
-    else{
-        var fields = []; 
+    else if (tree_action.text == gettext("Object") || 
+    		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-category') ||
+    		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-keyword')){
+    	console.log('selNode: ');
+    	console.log(sel_node);
+    	console.log('selNode.attributes.text');
+    	console.log(sel_node.attributes.text);
+    	console.log('tree_action.text');
+    	console.log(tree_action.text);
+    	var fields = [];
+    	var node_id, type;
+        var height_form= 95;
+        var height_win = 500;
+        var width_win = 400;
         
+    	node_id = sel_node.id;
+    	type = 'ObjReference';
+        var action = (tree_action.text  == gettext('Add') || tree_action.text  == gettext('Object')) ? 'Add': 'Edit' ;
+        var url = '/' + action.toLowerCase() + '_node/';
+    	var add_option_droppable = new Ext.form.Checkbox({
+            id: 'check_drop_option_id',
+            fieldLabel: 'Use object as a category',
+            name: 'check_drop_option'
+        });
+    	if (sel_node.attributes.iconCls == 'object-category' && tree_action.text  == gettext('Edit')){
+    		add_option_droppable.setValue(true);
+    	}
+    	var label = new Ext.form.TextField({
+            fieldLabel: 'Node selected',
+            name: 'label',
+            id:'node_label_obj',                            
+            allowBlank:false,
+            cls:'node_label_obj_cls',
+            readOnly: true
+        });
+        var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
+            text: gettext('All items'),
+            id:'root_obj_tree',
+            expanded: true,
+            allowDrag:false,
+            allowDrop:true,
+            editable: false,
+            type:'object',
+            iconCls:'object-category',
+        });
+        // SET the root node.
+        var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
+            text: gettext('All items'),
+            id:'root_obj_tree',
+            expanded: true,
+            allowDrag:false,
+            allowDrop:true,
+            editable: false,
+    		containerScroll: true,
+            type:'object',
+            iconCls:'object-category',
+        });
+        var tree_loader_obj = new Ext.tree.TreeLoader({
+            dataUrl:'/kb/get_nodes_real_obj/',
+            draggable: false
+        });
+
+	  var tree_obj_reference = new Ext.tree.TreePanel({
+	            id:'obj_reference_tree',
+	            region: 'center',
+	            containerScroll: true,
+	            height: 290,
+	            layout: 'fit',
+	            title:'Vocabulary. Select an object: ',
+	            autoScroll:true,
+	            loader: tree_loader_obj,
+	            rootVisible: false,
+	            selModel: new Ext.tree.DefaultSelectionModel({
+	                listeners:{
+	                    "selectionchange": {fn:function(sel, node){
+	            								if (node.leaf == true){
+	            									Ext.getCmp('node_label_obj').setValue(node.text);
+	            								}
+	                    					 }
+	            		}	            		
+	                },
+	            })
+	    });  
+	  	tree_obj_reference.setRootNode(Tree_Obj_Root);
+
+	  	fields.push(label);
+        fields.push(add_option_droppable);
+	  	var tree_form_obj = new Ext.FormPanel({
+            id:'tree_form_obj',
+            region: 'north',
+            labelWidth: 150, // label settings here cascade unless overridden
+            frame:true,
+            height: height_form,
+            bodyStyle:'padding:5px 5px 0',              
+            url: url,
+            baseParams:{node_id:node_id},
+            items: [fields],
+            buttons: [{
+                text: gettext('Save'),
+                type: 'submit',
+                handler: function(){
+	            	if (Ext.getCmp('obj_reference_tree').getSelectionModel().getSelectedNode().leaf == true){
+	            		submit_tree_form_obj();
+	            	}else{
+	            		Ext.Msg.alert('Status', 'Select an object.');
+	            	}
+                }
+            },{
+                text: gettext('Cancel'),
+                handler: function(){
+                    win.close();
+                }
+            }]
+        });
+        if (tree_action.text == gettext("Edit")){
+        	add_option_droppable.setDisabled(true);
+        	//label.setValue(sel_node.attributes.text);
+    	}
+        
+        win = new Ext.Window({
+            title: 'Add Object',
+            constrain: true,
+            layout: 'border',
+            width : width_win,
+            height: height_win,
+            modal: true,
+            resizable: false,
+            items:[ 
+            tree_form_obj,tree_obj_reference 
+            ],
+            listeners:{
+                afterrender: function() {
+                    var node_l = Ext.getCmp('node_label_obj');
+                    console.log('node_l');
+                    console.log(node_l);
+                 	console.log('0');
+                	Ext.getCmp('obj_reference_tree').getSelectionModel().select(Ext.getCmp('obj_reference_tree').getRootNode());
+                	console.log('1');
+
+                    if(node_l) {
+                        node_l.focus(false, 100);
+                    }
+                }
+            }
+    });
+    win.show();
+    }
+    else{    	
+    	console.log('tree_action.text: '+tree_action.text);
+    	console.log(sel_node.attributes.iconCls);
+        var fields = []; 
         if  (tree_action.text == gettext("Add") || tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ||  tree_action.text == gettext("Edit")){
 	        
         	var node_id, type;
@@ -887,7 +1087,6 @@ var treeAction = function( tree_action){
                 handler: function(){
                     win.close();
                 }
-                
             }]
         });
         
@@ -921,14 +1120,15 @@ var treeAction = function( tree_action){
 
 var add_keyword =  new Ext.menu.Item({id: 'addKeyword',text: gettext('Keyword')});
 var add_category =  new Ext.menu.Item({id: 'addCategory', text: gettext('Category')});
+var add_obj_reference =  new Ext.menu.Item({id: 'addObjReference', text: gettext('Object')});
 
-var add_node = new Ext.menu.Item({text: gettext('Add'), menu: [add_keyword, add_category]});
+var add_node = new Ext.menu.Item({text: gettext('Add'), menu: [add_keyword, add_category, add_obj_reference]});
 var edit_node = new Ext.menu.Item({text: gettext('Edit')});
 var delete_node = new Ext.menu.Item({text: gettext('Delete')});
 
 var search_box_node = new Ext.menu.Item({text: gettext('Add To Search Box')});
 var show_item_node = new Ext.menu.Item({text: gettext('Show items with this keyword')});
-
+var reppresentative_item = new Ext.menu.Item({text: gettext('Add selected item as rappresentative item'), disabled : true});
 
 var contextMenuKeywords = new Ext.menu.Menu({id:'mainContext'});
 contextMenuKeywords.add(
@@ -936,7 +1136,8 @@ contextMenuKeywords.add(
     edit_node,
     delete_node,
     search_box_node,
-    show_item_node
+    show_item_node,
+    reppresentative_item
 );
 
 var contextMenuCollections = new Ext.menu.Menu({id:'mainContextCollections',
@@ -950,12 +1151,17 @@ var contextMenuCollections = new Ext.menu.Menu({id:'mainContextCollections',
     {
         text: gettext('Delete')
     },
-    {text: gettext('Add To Search Box')}
-    
+    {
+    	text: gettext('Add To Search Box')
+    },
+    {
+    	text: gettext('Add selected item as rappresentative item'),
+    	disabled: true
+    }
     ]
 });
     
-contextMenuShow = function( node_menu,e ){
+contextMenuShow = function(node_menu,e){
 		
         var admin = ws_permissions_store.find('name', 'admin') > - 1;
         var edit_taxonomy = ws_permissions_store.find('name', 'edit_taxonomy') > - 1;
@@ -993,23 +1199,18 @@ contextMenuShow = function( node_menu,e ){
            
         }
         else{ 
-             
-//        	console.log('node_menu.getDepth()  '+ node_menu.getDepth() );
-        	
+        	//console.log('node_menu.getDepth()  '+ node_menu.getDepth() );
         	if(node_menu.getDepth() == 0)
         		Ext.getCmp('addKeyword').disable();
         	else
         		Ext.getCmp('addKeyword').enable();
-        	
-            if (node_menu.attributes.type == 'keyword' || node_menu.attributes.type == 'category'  ){
-            	
-            	
-            	
+        	//console.log('node_menu.attributes.type: '+node_menu);
+            if (node_menu.attributes.type == 'keyword' || node_menu.attributes.type == 'category' || node_menu.attributes.type == 'objectreference'){
                 Ext.getCmp('addKeyword').setHandler(treeAction, node_menu);
                 Ext.getCmp('addCategory').setHandler(treeAction, node_menu);
+                Ext.getCmp('addObjReference').setHandler(treeAction, node_menu);
                 contextMenu.find('text', gettext('Show items with this keyword'))[0].enable();
                 contextMenu.find('text', gettext('Show items with this keyword'))[0].setHandler(treeAction, node_menu);
-
             }
             else{
                 contextMenu.find('text', gettext('Add'))[0].setHandler(treeAction, node_menu);
@@ -1018,6 +1219,7 @@ contextMenuShow = function( node_menu,e ){
             contextMenu.find('text', gettext('Delete'))[0].setHandler(treeAction, node_menu);
             contextMenu.find('text', gettext('Edit'))[0].setHandler(treeAction, node_menu);
             contextMenu.find('text', gettext('Add To Search Box'))[0].setHandler(treeAction, node_menu);
+            contextMenu.find('text', gettext('Add selected item as rappresentative item'))[0].setHandler(treeAction, node_menu);
 
             if (!node_menu.attributes.editable){
                 contextMenu.find('text', gettext('Delete'))[0].disable();
@@ -1050,8 +1252,6 @@ contextMenuShow = function( node_menu,e ){
                 contextMenu.find('text', gettext('Edit'))[0].disable();
             }
         }
-        
-                            
         e.stopEvent();
         contextMenu.show(node_menu.ui.getEl());
     };
@@ -1078,6 +1278,10 @@ contextMenuShow = function( node_menu,e ){
                     if (node.id == 'fake') {
                         return false;
                     }
+                },
+                contextmenu: function(e) {
+                	// Init your context menu
+                	console.log('CONTEXT MENU');
                 }
             }
         });
