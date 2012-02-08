@@ -24,6 +24,7 @@ from django.contrib.auth.models import User
 
 from dam.repository.models import Item
 from dam.core.dam_tree.models import AbstractNode
+from dam.kb.models import Object as KBObject
 
 import logging
 logger = logging.getLogger('dam')
@@ -46,7 +47,7 @@ class SiblingsWithSameLabel(Exception):
 
 class NodeManager(models.Manager):
 
-    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None):
+    def add_node(self, node, label, workspace, cls = 'collection', associate_ancestors = None, kb_object = None, representative_item=None):
     #    if not node.parent:
     #        raise InvalidNode
             
@@ -62,7 +63,7 @@ class NodeManager(models.Manager):
     #    else:
     #        cls = node.cls
             
-        new_node = self.create(workspace= workspace, label = label,  type = node.type)
+        new_node = self.create(workspace= workspace, label = label,  type = node.type, kb_object = kb_object, representative_item = representative_item)
         if cls:
             new_node.cls = cls
         
@@ -109,7 +110,7 @@ class NodeManager(models.Manager):
             else:
                 parent = relation_node[node.parent.pk]
                     
-            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent)
+            new_node = Node.objects.create(content_type = ctype, object_id = new_owner.pk, label = node.label, parent = parent, kb_object = node.kb_object, representative_item = None)
             new_node.type.add(*node.type.all())
             relation_node[node.pk] = new_node
         new_root.save()
@@ -125,7 +126,6 @@ class NodeManager(models.Manager):
         root = Node.objects.get_or_create(workspace=  owner, label='root', parent__isnull = True)[0]         
            
         nodes = root.get_branch()
-#        print nodes
         return nodes
    
 class Category(models.Model):
@@ -146,24 +146,48 @@ class Node(AbstractNode):
     workspace = models.ForeignKey('workspace.DAMWorkspace', related_name='tree_nodes')
     objects = NodeManager()
     items = models.ManyToManyField('repository.Item')
+    representative_item = models.ForeignKey('repository.Item',
+                                            related_name='represented_nodes',
+                                            null=True, default=None)
     metadata_schema = models.ManyToManyField('metadata.MetadataProperty',  through = 'NodeMetadataAssociation',  blank=True, null=True)
     associate_ancestors = models.BooleanField(default = False)
     
+    # Each catalog node has an optional reference to a knowledge base
+    # object.  When it is not None, the node label should be ignored,
+    # and the object name should be used instead (see, for example,
+    # the __str__() method below)
+    kb_object = models.ForeignKey(KBObject, related_name='catalog_nodes',
+                                  blank=True, null=True, default=None,
+                                  on_delete=models.SET_NULL)
+
     def check_ws(self, ws):
         if self.workspace != ws:
             raise WrongWorkspace
 
-    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace):
-    
-        if label :
+    def edit_node(self, label, metadata_schemas, associate_ancestors, workspace, kb_object_id=None, new_cls=None, representative_item_id=None):    
+        if label and not kb_object_id:
             self.rename_node(label, workspace)
-        
-        if self.cls != 'category':
+        if self.cls == 'keyword':
             if metadata_schemas:
                 self.save_metadata_mapping(metadata_schemas)        
                 self.save_metadata()
-            
             self.associate_ancestors = associate_ancestors
+            self.save()
+
+        if representative_item_id is None:
+            representative_item = None
+        else:
+            representative_item = Item.objects.get(pk=representative_item_id)
+
+        self.set_representative_item(representative_item)
+
+        if kb_object_id and new_cls == None:
+            self.reassoc_node(label, workspace, kb_object_id)
+            self.save()
+        if kb_object_id and new_cls:
+            self.kb_object = KBObject.objects.get(pk = kb_object_id)
+            self.cls = new_cls
+            self.rename_node(label, workspace)
             self.save()
 
     def remove_keyword_association(self, items):
@@ -265,8 +289,35 @@ class Node(AbstractNode):
             raise NotEditableNode
         self.check_ws(workspace)
         self.label = label
+
+        # When the label is changed, the catalog entry loses its
+        # association with a KB object (if any), and becomes a simple
+        # keyword-based node
+        self.kb_object = None
+
         self.save()
     
+    def reassoc_node(self, kb_object, workspace):
+        '''
+        Associate a node to the given KB object.
+
+        @type  kb_object: dam.kb.models.Object or string
+        @param kb_object: a KB object instance, or its id (a string)
+        '''
+        if not self.editable:
+            raise NotEditableNode
+        self.check_ws(workspace)
+
+        if not isinstance(kb_object, KBObject):
+            kb_object = KBObject.objects.get(id=kb_object)
+        self.kb_object = kb_object
+        
+        # Just for coherency: ensure that the node label reflects the
+        # object name
+        self.label = kb_object.name
+
+        self.save()
+
     def move_node(self, node_dest, workspace):
         if not self.parent :
             raise InvalidNode
@@ -300,6 +351,23 @@ class Node(AbstractNode):
 #        return nodes.order_by('lft').distinct().exclude(pk = self.pk)
         return nodes.order_by('lft').distinct()
     
+    def set_representative_item(self, item):
+        '''
+        Set the representative item for the node.  If the given item is not
+        among the node items, a ValueError exception will be raised.
+        '''
+        if item is None:
+            self.representative_item = None
+            return
+
+        items = self.items.all()
+        if item not in items:
+            raise ValueError('Representative item "%s" not included in %s'
+                             % (item, items))
+        
+        self.representative_item = item
+        self.save()
+
     def delete(self,  *args,  **kwargs):
         super(Node, self).delete(*args,  **kwargs)
         root = Node.objects.filter(depth= 0,  workspace = self.workspace,  type = self.type)
@@ -329,6 +397,14 @@ class Node(AbstractNode):
                 
     class Meta:        
         db_table = 'node'        
+
+    def __str__(self):
+        # If the node is associated to a KB object, then return its
+        # name (instead of the node label)
+        if self.kb_object is not None:
+            return unicode(self.kb_object.name)
+
+        return unicode(self.label)
 
 class NodeMetadataAssociation(models.Model):
     node = models.ForeignKey(Node)
