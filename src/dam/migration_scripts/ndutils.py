@@ -21,8 +21,8 @@ import urllib
 from hashlib import sha1 
 from django.utils.simplejson.decoder import JSONDecoder
 from django.utils.simplejson.encoder import JSONEncoder
-import logging
-logger = logging.getLogger('dam')
+import logging as logger
+#logger = logging.getLogger('dam')
 
 
 class ImportExport(object):
@@ -65,12 +65,12 @@ class ImportExport(object):
             p.extend(args)
             p.extend(kwargs.items())
             
-        logger.debug("params: %s " %p) 
-        logger.debug("%s" %url)
+        logger.error("params: %s " %p) 
+        logger.error("%s" %url)
 
         p = self._add_checksum_new(p)
         params = urllib.urlencode(p)
-        logger.debug("---------------params: %s" %params) 
+        logger.error("---------------params: %s" %params) 
         if method == 'POST':
             self.conn.request(method, url, params)
         elif method == 'GET':
@@ -193,14 +193,10 @@ class Exporter(ImportExport):
         return self._call_server('GET', '/api/workspace/%s/get_members/' % workspace_id)
     
     def _item_rendition_get(self, param):
-#        return self._call_server('GET', '/api/rendition/get/' ,**param)
         return self._call_server('GET', '/api/workspace/%s/get_renditions/' % param['workspace_id'],  **param)
 
-    def _item_get(self, item_id, workspace_id=None):
-        if workspace_id:
-            return self._call_server('GET', '/api/item/%s/get/' % item_id, renditions_workspace=workspace_id)
-        else:
-            return self._call_server('GET', '/api/item/%s/get/' % item_id)
+    def _item_get(self, item_id, param):
+        return self._call_server('GET', '/api/item/%s/get/' % item_id, *param)
 
     def _collection_get_list(self, workspace_id):
         return self._call_server('GET', '/api/workspace/%s/get_collections/'%workspace_id )

@@ -31,6 +31,7 @@ from dam.metadata.models import MetadataProperty,  MetadataValue
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.repository.models import Item, Component
 from dam.core.dam_repository.models import Type
+from dam.kb.models import Object as KBObject
 
 from django.utils import simplejson
 
@@ -38,7 +39,9 @@ import cPickle as pickle
 import logging
 logger = logging.getLogger('dam')
 
-    
+# Allowed values for the 'cls' field in JSON repr of catalog nodes
+valid_object_node_classes = ('object-keyword', 'object-category')
+
 @login_required
 @permission_required('edit_taxonomy')
 def move_node(request):
@@ -72,13 +75,14 @@ def edit_node(request):
         resp = {'success':True}
         for node in nodes:
             if node.type == 'keyword':
-                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace)
+                node.edit_node(label, request.POST.getlist('metadata'), request.POST.get('add_metadata_parent',  False),  workspace, request.POST.get('kb_object',  False), request.POST.get('cls',  False), request.POST.get('representative_item', None))
                 
             elif node.type == 'collection':
                 rename_collection(request, node, label, workspace)
             else:
                 resp = {'success': False}
-            
+        print "AAAAAAA"    
+        print resp
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
     except Exception,  ex:
@@ -89,17 +93,40 @@ def edit_node(request):
 def _add_keyword(request, node, label, workspace):
     metadata_schemas = request.POST.getlist('metadata')
     cls  = request.POST.get('cls')
-    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False))
+
+    # Ensure that metadata mappings are only provided for 'keyword' nodes
+    # FIXME: it's kludgy, heavy code refactoring would be advisable
+    assert((metadata_schemas == []) or (cls == 'keyword'))
+
+    obj = None
+    if (cls in valid_object_node_classes):
+        # The KB object name will override the label
+        # FIXME: check that the provided label is equal to obj name?
+        obj = KBObject.objects.get(id=request.POST['kb_object'])
+        label = obj.name
+
+    repr_item_id = request.POST.get('representative_item', None)
+    if repr_item_id is not None:
+        representative_item = Item.objects.get(pk=repr_item_id)
+    else:
+        representative_item = None
+
+    node = Node.objects.add_node(node, label, workspace, cls, request.POST.get('add_metadata_parent', False), kb_object=obj, representative_item=None)
+
+    # Just to trigger possible errors
+    node.set_representative_item(representative_item)
+
     node.save_metadata_mapping(metadata_schemas)
     
     return node
     
 @permission_required('edit_collection')
-def _add_collection(request, node,  label,  workspace):
+def _add_collection(request, node,  label,  workspace): 
     return Node.objects.add_node(node, label, workspace)
 
 @login_required
-def add(request = None,  workspace = None,  name = None, parent_id = None):
+def add(request = None,  workspace = None,  name = None, parent_id = None,
+        representative_item = None):
     """
     Adds a new node to an existing one
     """
@@ -109,7 +136,6 @@ def add(request = None,  workspace = None,  name = None, parent_id = None):
         parent_id = request.POST['node_id']
 
     node  = Node.objects.get(pk = parent_id) 
-
     try:
         if node.type == 'keyword':
             new_node= _add_keyword(request, node,  name,  workspace)    
@@ -202,7 +228,6 @@ def get_nodes(request):
         node = Node.objects.get(pk = node_id)
 #    nodes = node.get_branch(depth=1).exclude(pk = node.pk)
     nodes = node.children.all().extra(select={'leaf': 'rgt-lft=1'})
-    
 #    if last_added:
 #        nodes = [nodes[nodes.count()-1]]
     
@@ -222,21 +247,33 @@ def get_nodes(request):
         can_edit = workspace.has_permission(user, 'edit_collection')
 
     for n in nodes:
-        if can_edit:
+        if (n.cls == 'object-category'):
+            allowDrag = False
+            editable = True
+            n.is_drop_target = True
+            allowDrop = True
+        elif (n.cls == 'object-keyword'):
+            allowDrag = True
+            editable = True
+            n.is_drop_target = True
+            allowDrop = True
+        elif can_edit:
             allowDrag = n.is_draggable
             editable = n.editable
+            allowDrop = n.is_drop_target
         else:
             allowDrag = False
             editable = False
-            
-        tmp = {'text' : n.label,  'id':n.id, 'leaf': n.leaf,  'allowDrag':allowDrag,  'allowDrop': n.is_drop_target,  'editable': editable,  'type': n.type, 'iconCls': n.cls,'isCategory': n.cls == 'category', 'isNewKeywords': n.cls == 'new_keyword',  'isNoKeyword': n.cls == 'no_keyword', 'uiProvider': 'MyNodeUI', }
+            allowDrop = n.is_drop_target
+
+        tmp = {'text' : n.label,  'id':n.id, 'leaf': n.leaf,  'allowDrag':allowDrag,  'allowDrop': allowDrop,  'editable': editable,  'type': n.type, 'iconCls': n.cls,'isCategory': n.cls == 'category', 'isNewKeywords': n.cls == 'new_keyword',  'isNoKeyword': n.cls == 'no_keyword', 'uiProvider': 'MyNodeUI', }
         
         if n.type == 'keyword':
             tmp['add_metadata_parent'] = n.associate_ancestors        
-        
-#        if n.type == 'keyword':
-        if n.cls != 'category' and n.cls != 'new_keyword' and n.cls!= 'no_keyword' and n.type != 'inbox' :
-            
+        if n.cls == 'object-category':
+            tmp['isCategory'] = True
+
+        if n.cls != 'object-category' and n.cls != 'category' and n.cls != 'new_keyword' and n.cls!= 'no_keyword' and n.type != 'inbox' :
             n_items = n.items.filter(pk__in = items) 
             n_items_count = n_items.count()
             tmp['checked'] =  n_items_count > 0
@@ -244,6 +281,10 @@ def get_nodes(request):
                 tmp['tristate'] = True
                 tmp['items'] = [item.pk for item in n_items]
         
+        tmp['representative_item'] = ((n.representative_item is not None
+                                       and n.representative_item.pk)
+                                      or None)
+
         result.append(tmp)
     return HttpResponse(simplejson.dumps(result))
     
@@ -296,15 +337,19 @@ def get_metadataschema_keyword_target(request):
         resp['metadataschema'].append({'pk': schema.pk,  'name': '%s:%s'%(schema.namespace.prefix, schema.field_name), 'selected': selected,  'value':value})
         
     return HttpResponse(simplejson.dumps(resp))
-        
-@login_required    
-def get_item_nodes(request):
-    items = request.POST.getlist('items')
-    resp = {'nodes': []}
+
+def _get_item_nodes(items):
     item_ids = ','.join([ i for i in items])
     query = 'select count(*) from node_items where node_items.node_id = node.id and item_id in (%s)'%item_ids
     nodes = Node.objects.filter(items__pk__in = items).extra({'count': query})
-    
+
+    return nodes
+
+@login_required    
+def get_item_nodes(request):
+    items = request.POST.getlist('items')
+    nodes = _get_item_nodes(items)
+    resp = {'nodes': []}
     for node in nodes:
         node_info = {'id': node.id,  'type': node.type}
         node_items = node.items.all()
@@ -313,6 +358,7 @@ def get_item_nodes(request):
             node_info['items'] = [item.pk for item in node_items]
             
         resp['nodes'].append(node_info)    
+
     
     return HttpResponse(simplejson.dumps(resp))
 
@@ -377,5 +423,3 @@ def delete_smart_folder(request):
     sm_fold = SmartFolder.objects.get(pk = smart_folder_id)
     sm_fold.delete()
     return HttpResponse(simplejson.dumps({'success': True}))
-    
-    

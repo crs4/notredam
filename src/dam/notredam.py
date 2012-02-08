@@ -37,7 +37,7 @@ def _run(cmdline,  file_name,  stdout = None):
     if stdout is None:
         stdout = open(os.devnull, "w")
     
-    p = subprocess.Popen(cmdline, stdout = stdout,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/mediadart/:/opt/notredam/', 'HOME':os.getenv('HOME')})
+    p = subprocess.Popen(cmdline, stdout = stdout,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/mediadart/:/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'})
 #    p = subprocess.Popen(cmdline,  stdout=stdout, )
     path = os.path.join(INSTALLATIONPATH,  file_name  + '.pid',  )
     kill_proc(file_name)
@@ -45,26 +45,22 @@ def _run(cmdline,  file_name,  stdout = None):
     f = open(path, 'w')
     f.write(str(p.pid))
     f.close()
-    
 
 def check_db_created():
     installed = os.path.join(INSTALLATIONPATH,  'installed')
+    
     if not os.path.exists(installed):
         sys.path.append(INSTALLATIONPATH)
         import config
-        if config.DATABASE_ENGINE== 'mysql':
+        if config.DATABASES['default']['ENGINE']== 'django.db.backends.mysql':
             print 'INSERT MYSQL ROOT PASSWORD'
-            subprocess.call(['mysql',  '-uroot',  '-p', '-e', "create user %s identified by '%s'; GRANT ALL on *.* to '%s'"%(config.DATABASE_USER, config.DATABASE_PASSWORD, config.DATABASE_USER)])
-            #subprocess.call(['mysqladmin',  '-u%s'%config.DATABASE_USER,  'create', config.DATABASE_NAME , '-p%s'%config.DATABASE_PASSWORD, '--default-character-set=utf8'])
-            subprocess.call(['mysql',  '-u%s'%config.DATABASE_USER, '-p%s'%config.DATABASE_PASSWORD,  '-e', 'create database %s character set utf8;'%config.DATABASE_NAME])
-            
-        subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'syncdb',  '--noinput'])
+            subprocess.call(['mysql',  '-uroot',  '-p', '-e', "create user %s identified by '%s'; GRANT ALL on *.* to '%s'"%(config.DATABASES['default']['USER'], config.DATABASES['default']['PASSWORD'], config.DATABASES['default']['USER'])])
+            subprocess.call(['mysql',  '-u%s'%config.DATABASES['default']['USER'], '-p%s'%config.DATABASES['default']['PASSWORD'],  '-e', 'create database %s character set latin1;'%config.DATABASES['default']['NAME']])
+        p = subprocess.Popen(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'syncdb',  '--noinput'], stdout = None,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/mediadart/:/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'})
+        p.wait();
         subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'loaddata',  '/opt/notredam/dam/initial_data.json'])
         f = open(installed,  'w')
         f.close()
-
-
-        
 
 def run(runserver,  address):
     check_db_created()    
@@ -78,8 +74,7 @@ def run(runserver,  address):
         print 'running server'
     _run(['/usr/bin/python',  '/opt/notredam/dam/start_mediadart.py'],  'mediadart_processor')  
     print 'running batch processor'
-    
-    
+
 def kill_proc(name):    
     
     file_path = os.path.join(INSTALLATIONPATH,  name + '.pid')
@@ -108,6 +103,9 @@ def stop():
     
 def main():
     
+    os.environ['PYTHONPATH']='/opt/mediadart/:/opt/notredam/'
+    os.environ['DJANGO_SETTINGS_MODULE']='dam.settings'
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "runserver",  "address="])
     except getopt.error, msg:

@@ -24,7 +24,6 @@ var ws_store = new Ext.data.JsonStore({
             root: 'workspaces',
             idProperty: 'pk',
             fields:[{name:'pk', type:'int'}, 'name', 'description', 'root_id',  'inbox_root_id', 'media_type']
-        
         });
 
         
@@ -60,6 +59,7 @@ var ws_permissions_store = new Ext.data.JsonStore({
                     Ext.getCmp('preferences_menu').enable();
                     Ext.getCmp('delete_ws_menu').enable();
                     Ext.getCmp('preferences_scripts').enable();
+                    Ext.getCmp('new_ws_menu').enable();
 
                     if(ws_state_store.getCount()) {
                         Ext.getCmp('set_state_to').show();
@@ -76,6 +76,7 @@ var ws_permissions_store = new Ext.data.JsonStore({
                 }
                 Ext.getCmp('preferences_menu').disable();
                 Ext.getCmp('delete_ws_menu').disable();             
+                Ext.getCmp('new_ws_menu').disable();
                 
                 var add_item = ws_permissions_store.find('name', 'add_item') > -1;
                 var edit_metadata = ws_permissions_store.find('name', 'edit_metadata') > -1;
@@ -254,7 +255,6 @@ function switch_ws(current_record, ws_id){
         
         
     }
-    console.log( current_record);
     ws.id = current_record.data.pk;
     ws.name = current_record.data.name;
     ws.description= current_record.data.description;

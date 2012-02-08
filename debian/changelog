@@ -1,3 +1,12 @@
+notredam (1.0.8rc1) stable; urgency=low
+
+  * Add vocabulary and real-world objects support in the catalog
+  * Automatic and manual rotation of images
+  * Bug fixing
+  * Minor changes in the UI
+
+ -- Fabrizio Solinas <fabrizio.solinas@crs4.it>  Mon, 14 December 2011 15:30:20 +0100
+
 notredam (1.0.7rc2) stable; urgency=low
 
   * fixed upload bugs
