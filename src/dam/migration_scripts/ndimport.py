@@ -732,7 +732,6 @@ def add_items(e,i,current_workspace,paramworkspace,ws_origTows_new,id_orig_itemT
     
                     #create item
                     logger.info('\n\n\n\n paramitem %s' %paramitem)
-                    print('\n\n\n\n paramitem %s' %paramitem)
                     resp_new_item = i._item_new(paramitem)
                     
                     #update equivalent id_item_old con id_item_new
@@ -850,7 +849,7 @@ def rmgeneric(path, __func__):
       
         logger.debug( 'Removed %s' %path)
     except OSError, (errno, strerror):
-        print ERROR_STR % {'path' : path, 'error': strerror }
+        logger.debug(ERROR_STR % {'path' : path, 'error': strerror })
             
 def removeall(path):
     """

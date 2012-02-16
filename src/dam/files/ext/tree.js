@@ -664,7 +664,6 @@ var treeAction = function(tree_action){
                                 tree_loader.baseParams = {};
                                 sel_node.expand();
                                 });
-
                     }
                     else{
                         sel_node.setText(form.getValues().label);
@@ -787,22 +786,24 @@ var treeAction = function(tree_action){
         
         
     }
-    else if(tree_action.text == gettext('Add selected item as rappresentative item')){
+    else if(tree_action.text == gettext('Set selected item as representative item')){
     	node_id = sel_node.id;
         var item = get_selected_items();
-    	console.log('------ AAAAA ----');
-    	console.log('node.id: ' + node_id);
-    	console.log('selNode: ');
-    	console.log(sel_node);
-    	console.log('label ' + sel_node.attributes.text);
-    	console.log('cls ' + sel_node.attributes.iconCls);
-        console.log("item_id");
-        console.log(item[0]);
         Ext.Ajax.request({
             url: '/edit_node/',
             params:{node_id:sel_node.id, cls: sel_node.attributes.iconCls, label:sel_node.attributes.text, representative_item:item[0]},
-            success: function(){
-                Ext.MessageBox.alert(gettext('Success'), gettext('Item associated.'));
+            success: function(response){
+            	// TODO manca l'aggiornamento della url relativa a representative item.
+            	Ext.Ajax.request({
+            		async: false,
+            		url:'/get_representative_url/',
+            		params:{representative_item:item[0]},
+            	success: function(response){
+            			console.log(response);
+            			sel_node.attributes.representative_item = response.responseText;
+            			Ext.MessageBox.alert(gettext('Success'), gettext('Item associated.'));
+            	}
+            	});
             }                        
         });
     }
@@ -978,7 +979,7 @@ var treeAction = function(tree_action){
     }
     else{    	
     	console.log('tree_action.text: '+tree_action.text);
-    	console.log(sel_node.attributes.iconCls);
+    	console.log(sel_node.attributes);
         var fields = []; 
         if  (tree_action.text == gettext("Add") || tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ||  tree_action.text == gettext("Edit")){
 	        
@@ -1065,19 +1066,69 @@ var treeAction = function(tree_action){
 	
 	        if (add_parent_metadata)
 	        	fields.push(add_parent_metadata);
-	        fields.push(metadata_list);
+	        //fields.push(metadata_list);
 	    
 	    }
+	    if (action.toLowerCase() == "edit" && sel_node.attributes.representative_item != null){
+	    	var myRepresentative = new Ext.Component({
+	    	    id : 'representative_item',
+	    		autoEl: { tag: 'img', src: sel_node.attributes.representative_item, alt: 'representative item'}
+	    	});
+	    	myRepresentative.addClass('thumb-img');
+	    }else{
+	    	var myRepresentative = new Ext.Component({});
+	    }
     }
+
+        var tree_form = new Ext.FormPanel({
+        id:'tree_form',
+        labelWidth: 50, // label settings here cascade unless overridden
+        frame:true,
+        height: height_form,
+        url: url,
+        baseParams:{node_id:node_id},
+        bodyStyle:'padding:5px 5px 0',
+        items: [{
+            xtype: 'container',
+            anchor: '100%',
+            layout:'column',
+            items:[{
+                xtype: 'container',
+                columnWidth:.7,
+                layout: 'form',
+                items: [fields]
+            },{
+                xtype: 'container',
+                columnWidth:.3,
+                layout: 'anchor',
+                items: [myRepresentative]
+            }]
+        }, metadata_list],        
+        buttons: [{
+            text: gettext('Save'),
+            type: 'submit',
+            handler: function(){submit_tree_form(type);}
+        },{
+            text: gettext('Cancel'),
+            handler: function(){
+                win.close();
+            }
+        }]
+    });
+/*        
         var tree_form = new Ext.FormPanel({
             id:'tree_form',
-            labelWidth: 70, // label settings here cascade unless overridden
+            //labelWidth: 50, // label settings here cascade unless overridden
+            fieldDefaults: {
+                labelAlign: 'top',
+                msgTarget: 'side'
+            },
             frame:true,
             height: height_form,
             bodyStyle:'padding:5px 5px 0',              
             url: url,
             baseParams:{node_id:node_id},
-            items: fields,
+            items: [fields,metadata_list],
             buttons: [{
                 text: gettext('Save'),
                 type: 'submit',
@@ -1088,7 +1139,7 @@ var treeAction = function(tree_action){
                     win.close();
                 }
             }]
-        });
+        });*/
         
         
         win = new Ext.Window({
@@ -1128,7 +1179,7 @@ var delete_node = new Ext.menu.Item({text: gettext('Delete')});
 
 var search_box_node = new Ext.menu.Item({text: gettext('Add To Search Box')});
 var show_item_node = new Ext.menu.Item({text: gettext('Show items with this keyword')});
-var reppresentative_item = new Ext.menu.Item({text: gettext('Add selected item as rappresentative item'), disabled : true});
+var reppresentative_item = new Ext.menu.Item({text: gettext('Set selected item as representative item'), disabled : true});
 
 var contextMenuKeywords = new Ext.menu.Menu({id:'mainContext'});
 contextMenuKeywords.add(
@@ -1155,7 +1206,7 @@ var contextMenuCollections = new Ext.menu.Menu({id:'mainContextCollections',
     	text: gettext('Add To Search Box')
     },
     {
-    	text: gettext('Add selected item as rappresentative item'),
+    	text: gettext('Set selected item as representative item'),
     	disabled: true
     }
     ]
@@ -1219,7 +1270,7 @@ contextMenuShow = function(node_menu,e){
             contextMenu.find('text', gettext('Delete'))[0].setHandler(treeAction, node_menu);
             contextMenu.find('text', gettext('Edit'))[0].setHandler(treeAction, node_menu);
             contextMenu.find('text', gettext('Add To Search Box'))[0].setHandler(treeAction, node_menu);
-            contextMenu.find('text', gettext('Add selected item as rappresentative item'))[0].setHandler(treeAction, node_menu);
+            contextMenu.find('text', gettext('Set selected item as representative item'))[0].setHandler(treeAction, node_menu);
 
             if (!node_menu.attributes.editable){
                 contextMenu.find('text', gettext('Delete'))[0].disable();

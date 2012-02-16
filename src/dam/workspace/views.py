@@ -119,8 +119,8 @@ def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
         original = item.get_variant(current_ws, orig_variant)
         original.workspace.add(ws)
         return True
-    item.deleted = False
-    item.save()
+    ws_item.deleted = False
+    ws_item.save()
     return True
         #
 @permission_required('remove_item')
@@ -1066,7 +1066,6 @@ def get_ws_members(request):
     members = ws.get_members()
     
     available_permissions = WorkspacePermission.objects.all()
-    print available_permissions
     permissions_list = [{'pk': str(p.pk), 'name': str(p.name)} for p in available_permissions]
     
     
