@@ -81,8 +81,6 @@ def edit_node(request):
                 rename_collection(request, node, label, workspace)
             else:
                 resp = {'success': False}
-        print "AAAAAAA"    
-        print resp
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
     except Exception,  ex:
@@ -206,6 +204,22 @@ def save_association(request):
         
     return HttpResponse(resp)    
 
+def _get_representative_url(representative_item_pk, workspace):
+    component_list = Component.objects.filter(item__pk = representative_item_pk, workspace = workspace)
+    for c in component_list:
+        if c.get_variant().name == "thumbnail":
+            return c.get_url()
+
+def get_representative_url(request):
+    workspace = request.session['workspace']
+    representative_item = request.POST.get('representative_item', None)
+    try:
+        if representative_item:
+            return HttpResponse(_get_representative_url(long(representative_item), workspace))
+    except:
+        print "EXCEPTIUO"
+        return None
+
 def get_nodes(request):
     """
     Retrieves the requested nodes
@@ -280,10 +294,11 @@ def get_nodes(request):
             if len(items) > 1 and n_items_count > 0 and  n_items_count< len(items) :
                 tmp['tristate'] = True
                 tmp['items'] = [item.pk for item in n_items]
-        
-        tmp['representative_item'] = ((n.representative_item is not None
-                                       and n.representative_item.pk)
-                                      or None)
+
+        if n.representative_item:
+            tmp['representative_item'] = _get_representative_url(n.representative_item.pk, workspace)
+        else:
+            tmp['representative_item'] = None
 
         result.append(tmp)
     return HttpResponse(simplejson.dumps(result))

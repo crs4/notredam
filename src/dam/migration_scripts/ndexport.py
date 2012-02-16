@@ -95,8 +95,6 @@ if __name__ == '__main__':
             workspacedir = os.path.join(basedir,'w_' + str(w['id']))
             os.mkdir(workspacedir)
             items = e._workspace_get_items(w['id'])
-            print  "items"
-            print items
     
             logger.info("workspace.json")
             f = file(os.path.join(workspacedir, 'workspace.json'), 'w')
@@ -159,12 +157,8 @@ if __name__ == '__main__':
                     param.append(('renditions',r['name']))
 
                 param.append(('workspace', w['id']))
-                print "param"
-                print param
                 #item = e._item_get(i['pk'], {'workspace':w['id'],'renditions': ['original']})
                 item = e._item_get(i['pk'], param)
-                print "item"
-                print item
                 logger.debug("===========")
                 logger.debug("%s" %item['pk'])
 

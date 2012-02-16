@@ -29,6 +29,7 @@ import dam.kb.views as views_kb
 import dam.treeview.views as tree_view
 from dam.treeview.models import Node
 from django.contrib.auth.models import User
+from dam.repository.models import Component
 
 
 import logging
@@ -247,3 +248,32 @@ def get_workspaces_with_edit_vocabulary(request):
             rtr['workspaces'].append(ws_tmp)
         
     return HttpResponse(simplejson.dumps(rtr))    
+
+# don't used
+#def get_variant_url(request):
+#
+#    print "request"
+#    print request.POST
+#    try:
+#        item_id = long(request.POST.get('item_id'))
+#        variants_to_get = request.POST.get('variants_to_get')
+#        user = User.objects.get(pk=request.session['_auth_user_id'])
+#        workspace_id = request.session['workspace'].pk
+#        logger.debug(' workspace_id %s' %workspace_id)
+#        #ws = Workspace.objects.get(pk = workspace_id)        
+#        #workspace = Workspace.objects.get(pk = workspace_id)
+#        print(' workspace_id %s type %s; item_id %s type %s' %(workspace_id,type(workspace_id),item_id,type(item_id)))
+#        component_list = Component.objects.filter(item__pk = item_id, workspace__pk = workspace_id)
+#        print "component_list"
+#        print component_list
+#        if variants_to_get:
+#            print('-----------------------------------variants_to_get %s'%variants_to_get)
+#            for c in component_list:
+#                if c.get_variant().name == variants_to_get:
+#                    print('c.get_url %s'%c.get_url(True))
+#                    url  = c.get_url(True)        
+#    except Workspace.DoesNotExist,  ex:
+#        logger.exception(ex)
+#        url = ""
+#
+#    return HttpResponse(simplejson.dumps(url))    
