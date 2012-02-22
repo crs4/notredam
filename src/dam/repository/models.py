@@ -245,13 +245,22 @@ class Item(AbstractItem):
         @return: True if the item has been added, False if already in workspace
         """
         from workspace.models import WorkspaceItem
-        
-        ws_item, created = WorkspaceItem.objects.get_or_create(item = self, workspace = workspace)
+        try: 
+            ws_item, created = WorkspaceItem.objects.get_or_create(item = self, workspace = workspace)
+        except Exception, err:
+            logger.debug('item ws_item: %s - error during add_to_ws, err: %s - created: %s' % (ws_item,err, created))
         if created:
+            
             if item_creation:
-                self._add_to_inbox(workspace, 'uploaded')
+                try:
+                    self._add_to_inbox(workspace, 'uploaded')
+                except Exception, err:
+                    logger.debug('in case of item creation, error while adding to inbox uploaded, err: %s' % err)
             else:
-                self._add_to_inbox(workspace, 'imported')
+                try:
+                    self._add_to_inbox(workspace, 'imported')
+                except Exception, err:
+                    logger.debug('in case of item import, error while adding to inbox imported, err: %s' % err)
                 
         return created
         
@@ -289,32 +298,51 @@ class Item(AbstractItem):
         for c in self.component_set.filter(workspace__in = workspaces).exclude(variant__name = 'original'):                
             try:
                 os.remove(c.get_file_path())
-            except:
-                pass # maybe file does not exist
-            c.delete()
-              
-        ws_items = self.workspaceitem_set.filter(workspace__in = workspaces)
-        for ws_item in ws_items:
-            ws_item.deleted = True
-            ws_item.save()
+            except Exception, err:
+                logger.debug('Error during os remove  of file component %s - err: %s' % (c.get_file_path(),err))
+                #pass # maybe file does not exist
+            try:
+                c.delete()
+            except Exception, err:
+                logger.debug('Error while removing component %s  - err: %s' % (c,err))
+        try:      
+            ws_items = self.workspaceitem_set.filter(workspace__in = workspaces)
+            logger.debug('list of items to be deleted: %s' % ws_items)
+            for ws_item in ws_items:
+                ws_item.deleted = True
+                ws_item.save()
+        except Exception, err:
+            logger.debug('Error while deleting item from workspace - err: %s' % err)
+        logger.debug('number of  items shoud be 0: %s' % self.get_workspaces_count())
             
         if self.get_workspaces_count() == 0:
+            logger.debug('items in workspace are 0 so now it is possibile to remove the original')
             #REMOVING ORIGINAL FILE
             
             try:
                 orig = self.component_set.get(variant__name = 'original')
                 os.remove(orig.get_file_path())
                 orig.delete()
-            except:
-                pass #file maybe does not exist
-            
-            #self.delete()
+            except Exception, err:
+                logger.debug('Error during os remove  of file of the original resource %s - err: %s' % (orig.get_file_path(),err))
+                #pass #file maybe does not exist
+            logger.debug('before deleting item %s' % self._id) 
+            tmp_id = self._id
+            try:
+                self.delete()
+                logger.debug('item %s deleted' % tmp_id) 
+            except Exception, err:
+                logger.debug('An error occourred while deleting item item %s' % tmp_id) 
             
            
         else:
-            inboxes = self.node_set.filter(type = 'inbox',  workspace__in= workspaces)
-            for inbox in inboxes:
-                inbox.items.remove(self)
+            logger.debug('there is still some components in some workspaces')
+            try:
+                inboxes = self.node_set.filter(type = 'inbox',  workspace__in= workspaces)
+                for inbox in inboxes:
+                    inbox.items.remove(self)
+            except Exception, err:
+                    logger.debug('error while removing items from inbox - err: %s ' % err)
             
     def get_metadata_values(self, metadataschema=None):
         """
