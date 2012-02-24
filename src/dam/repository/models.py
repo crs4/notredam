@@ -92,12 +92,16 @@ class Item(AbstractItem):
         logger.debug('workspaces %s'%workspaces)
         
         if not workspaces:
+            logger.debug('here? workspaces = %s' % workspaces)
             ws_items = WorkspaceItem.objects.filter(item = self)
         else:
+            logger.debug('or here? workspaces = %s' % workspaces)
             ws_items = WorkspaceItem.objects.filter(item = self, workspace__in = workspaces)
         
         logger.debug('ws_items %s'%ws_items)
         for ws_item in ws_items:
+            logger.debug('ws_item workspace %s'%ws_item.workspace)
+            logger.debug('ws_item workspace items %s'%ws_item.workspace.items)
             ws_item.last_update = time
             ws_item.save()
     
@@ -253,14 +257,19 @@ class Item(AbstractItem):
             
             if item_creation:
                 try:
+                    # inbox uploaded must be updated only in case of uploading
                     self._add_to_inbox(workspace, 'uploaded')
                 except Exception, err:
                     logger.debug('in case of item creation, error while adding to inbox uploaded, err: %s' % err)
             else:
                 try:
+                    # inbox imported must be updated any time an item is added to a workspace, not when uploaded
                     self._add_to_inbox(workspace, 'imported')
                 except Exception, err:
                     logger.debug('in case of item import, error while adding to inbox imported, err: %s' % err)
+        else: #created is false
+            ws_item.deleted = False
+            ws_item.save()
                 
         return created
         
@@ -307,18 +316,14 @@ class Item(AbstractItem):
                 logger.debug('Error while removing component %s  - err: %s' % (c,err))
         try:      
             ws_items = self.workspaceitem_set.filter(workspace__in = workspaces)
-            logger.debug('list of items to be deleted: %s' % ws_items)
             for ws_item in ws_items:
                 ws_item.deleted = True
                 ws_item.save()
         except Exception, err:
             logger.debug('Error while deleting item from workspace - err: %s' % err)
-        logger.debug('number of  items shoud be 0: %s' % self.get_workspaces_count())
             
         if self.get_workspaces_count() == 0:
-            logger.debug('items in workspace are 0 so now it is possibile to remove the original')
             #REMOVING ORIGINAL FILE
-            
             try:
                 orig = self.component_set.get(variant__name = 'original')
                 os.remove(orig.get_file_path())
@@ -326,7 +331,6 @@ class Item(AbstractItem):
             except Exception, err:
                 logger.debug('Error during os remove  of file of the original resource %s - err: %s' % (orig.get_file_path(),err))
                 #pass #file maybe does not exist
-            logger.debug('before deleting item %s' % self._id) 
             tmp_id = self._id
             try:
                 self.delete()
