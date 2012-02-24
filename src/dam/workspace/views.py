@@ -114,13 +114,14 @@ def _admin_workspace(request,  ws):
 
 def _add_items_to_ws(item, ws, current_ws, remove = 'false' ):
     created = item.add_to_ws(ws)
+    logger.debug('INSIDE _add_items_to_ws created is: %s' % created)
     if created:
         orig_variant = Variant.objects.get(name = 'original')
         original = item.get_variant(current_ws, orig_variant)
         original.workspace.add(ws)
         return True
-    ws_item.deleted = False
-    ws_item.save()
+    #item.deleted = False
+    #item.save()
     return True
         #
 @permission_required('remove_item')
@@ -135,7 +136,11 @@ def _remove_items(request, ws, items):
 def add_items_to_ws(request):
     try:
         item_ids = request.POST.getlist('item_id')
-        ws_id = request.POST.get('ws_id')
+        try:
+            ws_id = request.POST.get('ws_id')
+        except Exception, err:
+            logger.debug('request POST get ws_id err:  %s' % err)
+            
         
         ws = Workspace.objects.get(pk = ws_id)
         user = request.user
