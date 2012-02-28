@@ -910,7 +910,7 @@ def upload_status(request):
 
 
 @login_required
-@permission_required('admin', False)
+@permission_required('add_item')
 def stop_pending_processes(request):
     """
     Stop pending processes when required by the user with the button 'stop' in monitor window.
@@ -931,24 +931,25 @@ def stop_pending_processes(request):
         logger.error('completed_targets %s'%completed_targets)
 #        info = {}
 
-        process_in_progress = Process.objects.filter(end_date__isnull = True)
+        process_in_progress = Process.objects.filter(launched_by= request.user, end_date__isnull = True)
         logger.error('process_in_progress %s'%process_in_progress)
         if process_in_progress:
             pending_items = ProcessTarget.objects.filter(process__in = process_in_progress, actions_todo__gt = 0)
             logger.error(' A pending_items %s'%pending_items)
-            process_in_progress = Process.objects.filter(end_date__isnull = True)[0].delete()
+            for p in process_in_progress:
+                p.delete()
 
-        for item_id in items_in_progress:
-            try:
-
-                item = Item.objects.get(pk = int(item_id)) 
-                #tmp = item.get_info(workspace, user)
-                tmp = item.delete_from_ws(request.user, [workspace])
-                #resp['items'].append(tmp)
+            for item_id in items_in_progress:
+                try:
+ 
+                    item = Item.objects.get(pk = int(item_id)) 
+                    #tmp = item.get_info(workspace, user)
+                    tmp = item.delete_from_ws(request.user, [workspace])
+                    #resp['items'].append(tmp)
                 
-            except ProcessTarget.DoesNotExist:
-                logger.debug('process target not found for item %s'%item)
-                continue
+                except ProcessTarget.DoesNotExist:
+                    logger.debug('process target not found for item with id %s'%item_id)
+                    continue
 
 
        
