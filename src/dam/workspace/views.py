@@ -896,8 +896,8 @@ def upload_status(request):
                 
                 resp['items'].append(tmp)
                 
-            except ProcessTarget.DoesNotExist:
-                logger.debug('process target not found for item %s'%item)
+            except Item.DoesNotExist:
+                logger.debug('process target not found for item %s'%item_id)
                 continue
 
 
@@ -939,20 +939,6 @@ def stop_pending_processes(request):
             for p in process_in_progress:
                 p.delete()
 
-            for item_id in items_in_progress:
-                try:
- 
-                    item = Item.objects.get(pk = int(item_id)) 
-                    #tmp = item.get_info(workspace, user)
-                    tmp = item.delete_from_ws(request.user, [workspace])
-                    #resp['items'].append(tmp)
-                
-                except ProcessTarget.DoesNotExist:
-                    logger.debug('process target not found for item with id %s'%item_id)
-                    continue
-
-
-       
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
     except Exception,ex:
@@ -1017,8 +1003,8 @@ def get_status(request):
                 
                 resp['items'].append(tmp)
                 
-            except ProcessTarget.DoesNotExist:
-                logger.debug('process target not found for item %s'%item)
+            except Item.DoesNotExist:
+                logger.debug('process target not found for item %s'%item_id)
                 continue
 
 
