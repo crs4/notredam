@@ -1162,8 +1162,14 @@ function load_detail_class(class_data, id_class, add_class){
 	                    clientValidation: true,
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
-	                    	Ext.getCmp('obj_reference_tree').root.reload();
-	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+	        				//Ext.getCmp('obj_reference_tree').root.reload();
+	        				//console.log(id_class);
+	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload());
+	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
+	        				//console.log(Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath()));
+	        				//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
+	        				Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload();
+	        				Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('details_panel_class').removeAll();
 	                    },
 	                    failure:function(response){
@@ -1179,7 +1185,13 @@ function load_detail_class(class_data, id_class, add_class){
 	                    clientValidation: true,
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
-	                    	Ext.getCmp('obj_reference_tree').root.reload();
+	        				//Ext.getCmp('obj_reference_tree').root.reload();
+	        				//console.log(id_class);
+	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class));
+	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
+	        				//console.log(Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath()));
+	        				//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
+	        				Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('details_panel_class').removeAll();
 	                    },
@@ -1376,7 +1388,10 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	                    clientValidation: true,
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
-	                    	Ext.getCmp('obj_reference_tree').root.reload();
+	        				//Ext.getCmp('obj_reference_tree').root.reload();
+	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
+	                    	//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
+	                    	Ext.getCmp('obj_reference_tree').getNodeById(class_id).reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('details_panel_obj').removeAll();
 	                    },
@@ -1393,7 +1408,10 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	                    clientValidation: true,
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
-	                    	Ext.getCmp('obj_reference_tree').root.reload();
+	        				//Ext.getCmp('obj_reference_tree').root.reload();
+	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
+	        				//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
+	                    	Ext.getCmp('obj_reference_tree').getNodeById(class_id).reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('details_panel_obj').removeAll();
 	                    },
@@ -1447,6 +1465,7 @@ function init_contextMenuVocabulary(){
 		text: gettext('Delete'),
 		listeners:{
 			click: function(item){
+				var parent_node = Ext.getCmp('obj_reference_tree').getNodeById(item.parentMenu.contextNode.attributes.id).parentNode;
 				if (item.parentMenu.contextNode.attributes.leaf == false){// delete an class
 	        		Ext.Msg.confirm('Class Deletion', 'Class deletion cannot be undone, do you want to proceed?', 
 	    	                function(btn){
@@ -1457,7 +1476,7 @@ function init_contextMenuVocabulary(){
 	    			                    clientValidation: true,
 	    			                    waitMsg: 'Saving...',
 	    			                    success: function(response){
-	    			                    	Ext.getCmp('obj_reference_tree').root.reload();
+	    			        				parent_node.reload();
 	    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	    			                    	Ext.getCmp('details_panel').removeAll();
 	    			                    },
@@ -1477,7 +1496,7 @@ function init_contextMenuVocabulary(){
 	    			                    clientValidation: true,
 	    			                    waitMsg: 'Saving...',
 	    			                    success: function(response){
-	    			                    	Ext.getCmp('obj_reference_tree').root.reload();
+	    			        				parent_node.reload();
 	    			                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	    			                    	Ext.getCmp('details_panel').removeAll();
 	    			                    },
