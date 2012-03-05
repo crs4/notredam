@@ -1186,12 +1186,6 @@ function load_detail_class(class_data, id_class, add_class){
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
 	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	        				//console.log(id_class);
-	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class));
-	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
-	        				//console.log(Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath()));
-	        				//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
-	        				Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('details_panel_class').removeAll();
 	                    },
@@ -1355,7 +1349,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         		params['attributes'] = {};
         		for (var i=0; i < Ext.getCmp('attribute_grid_obj_id').getStore().getCount(); i++){
         			attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
-        			if (attribute.multivalued == true){//list of type
+            		if (attribute.multivalued == true){//list of type
         				if (attribute.type == 'choice'){
         					params['attributes'][attribute.id] = [];
 		        			choices = attribute.value.split(',');
@@ -1376,9 +1370,12 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     						params['attributes'][attribute.id] = attribute.value;
     					}else if(attribute.default_value != null){
     						params['attributes'][attribute.id] = attribute.default_value;
+    					}else if(attribute.maybe_empty == true){
+    						params['attributes'][attribute.id] = null;
     					}
             		}
         		}
+
         		if (add_obj){
 	        		Ext.Ajax.request({
 	        			url:url_submit,
@@ -1409,9 +1406,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
 	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
-	        				//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
-	                    	Ext.getCmp('obj_reference_tree').getNodeById(class_id).reload();
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('details_panel_obj').removeAll();
 	                    },
