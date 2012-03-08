@@ -1349,6 +1349,8 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         		params['attributes'] = {};
         		for (var i=0; i < Ext.getCmp('attribute_grid_obj_id').getStore().getCount(); i++){
         			attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
+        			console.log("aaaaa");
+        			console.log(attribute);
             		if (attribute.multivalued == true){//list of type
         				if (attribute.type == 'choice'){
         					params['attributes'][attribute.id] = [];
@@ -1361,8 +1363,8 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         				}else{
         					if (attribute.value != null){
             					params['attributes'][attribute.id] = attribute.value;
-        					}else{
-                				delete(params['attributes'][attribute.id]);
+        					}else {
+        						params['attributes'][attribute.id] = [];
         					}
         				}
         			}else{//only one value
