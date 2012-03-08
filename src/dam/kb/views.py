@@ -664,8 +664,12 @@ def _kb_attrs_dict_map(attr_type, ses):
                               + _std_attr_fields(a)),
                      kb_attrs.Date    : lambda a:
                          dict([['type',    'date'],
-                               ['min',     a.min],
-                               ['max',     a.max],
+                               ['min',     (a.min is not None
+                                            and a.min.isoformat()
+                                            or None)],
+                               ['max',     (a.max is not None
+                                            and a.max.isoformat()
+                                            or None)],
                                ['default_value', ((a.default is not None)
                                                   and a.default.isoformat()
                                                   or None)]]
