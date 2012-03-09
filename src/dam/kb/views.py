@@ -58,16 +58,15 @@ def class_index(request, ws_id):
 
 
 def class_index_get(request, ws_id):
-    ses = _kb_session()
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+        cls_dicts = [_kbclass_to_dict(c, ses) for c in ses.classes(ws=ws)]
 
-    cls_dicts = [_kbclass_to_dict(c, ses) for c in ses.classes(ws=ws)]
-
-    return HttpResponse(simplejson.dumps(cls_dicts))
+        return HttpResponse(simplejson.dumps(cls_dicts))
 
 
 def class_index_put(request, ws_id):
@@ -80,115 +79,115 @@ def class_index_put(request, ws_id):
         return HttpResponseBadRequest('JSON class representation must be '
                                       'a dictionary')
 
-    ses = _kb_session()
-
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
-
-    class_name = cls_dict.get('name', None)
-    if class_name is None:
-        return HttpResponseBadRequest('Class representation lacks a '
-                                      +'"name" field')
-
-    superclass = None
-    superclass_id = cls_dict.get('superclass', None)
-    if superclass_id is not None:
+    with _kb_session() as ses:
         try:
-            superclass = ses.class_(superclass_id)
+            ws = ses.workspace(ws_id)
         except kb_exc.NotFound:
-            return HttpResponseBadRequest('Unknown superclass id: "%s"'
-                                          % (superclass_id, ))
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-        perm = superclass.workspace_permission(ws)
-        if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
-            return HttpResponseForbidden()
+        class_name = cls_dict.get('name', None)
+        if class_name is None:
+            return HttpResponseBadRequest('Class representation lacks a '
+                                          +'"name" field')
 
-    explicit_id = cls_dict.get('id', None)
-    if explicit_id is not None:
-        # Check for uniqueness
+        superclass = None
+        superclass_id = cls_dict.get('superclass', None)
+        if superclass_id is not None:
+            try:
+                superclass = ses.class_(superclass_id)
+            except kb_exc.NotFound:
+                return HttpResponseBadRequest('Unknown superclass id: "%s"'
+                                              % (superclass_id, ))
+
+            perm = superclass.workspace_permission(ws)
+            if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
+                return HttpResponseForbidden()
+
+        explicit_id = cls_dict.get('id', None)
+        if explicit_id is not None:
+            # Check for uniqueness
+            try:
+                ses.class_(explicit_id)
+                return HttpResponseBadRequest('Class id "%s" already in use'
+                                              % (explicit_id, ))
+            except kb_exc.NotFound:
+                pass
+
+        # Build the list of attributes of the class
+        json_attrs = cls_dict.get('attributes', [])
+
+        # Remove inherited attributes.  We may raise an error when
+        # inherited attribute IDs are are reused, but being more tolerant
+        # we allow to create new KB classes by cut'n'pasting (and slightly
+        # modifying) the JSON representation of existing ones
+        if superclass is not None:
+            inherited_attr_ids = [a.id for a in superclass.all_attributes()]
+            for xid in inherited_attr_ids:
+                if json_attrs.has_key(xid):
+                    # FIXME: raise an error if the attr does not match existing one
+                    del(json_attrs[xid])
+
+        attrs = []
+        for (attr_id, a) in json_attrs.iteritems():
+            if not isinstance(a, dict):
+                return HttpResponseBadRequest('Expected a dictionary for '
+                                              'representing attribute "%s", got '
+                                              '"%s"' % (attr_id, str(a)))
+            try:
+                attr_type = a['type']
+            except KeyError:
+                return HttpResponseBadRequest('Attribute "%s" lacks a "type" field'
+                                              % (attr_id, ))
+
+            try:
+                attr_fn = _kb_dict_attrs_map(attr_type, ses)
+            except KeyError:
+                return HttpResponseBadRequest(('Attribute "%s" has an invalid '
+                                               + 'type: "%s"')
+                                              % (attr_id, attr_type))
+
+            # Make a "safe" id, i.e. only composed by ASCII chars
+            safe_attr_id = kb_niceid(attr_id, extra_chars=0)
+
+            try:
+                attr_obj = attr_fn(safe_attr_id, a, ses, ws)
+            except KeyError as e:
+                return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
+                                               + 'a required field: "%s"')
+                                              % (attr_id, attr_type, str(e)))
+            except ValueError, e:
+                return HttpResponseBadRequest('Cannot create attribute "%s": %s'
+                                              % (attr_id, str(e)))
+
+            attrs.append(attr_obj)
+
+        if superclass is None:
+            cls = ses.orm.KBRootClass(class_name, explicit_id=explicit_id,
+                                      attributes=attrs)
+            # We also need to configure the visibility of the root class
+            # on DAM workspaces
+            resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict,
+                                                   ws)
+
+            if resp is not None:
+                # An error has occurred
+                return resp
+        else:
+            cls = ses.orm.KBClass(class_name, superclass=superclass,
+                                  explicit_id=explicit_id, attributes=attrs)
+
+        # FIXME: right now, we only support updating a few fields
+        updatable_fields = {'name'        : set([unicode, str]),
+                            'notes'       : set([unicode, str])}
         try:
-            ses.class_(explicit_id)
-            return HttpResponseBadRequest('Class id "%s" already in use'
-                                          % (explicit_id, ))
-        except kb_exc.NotFound:
-            pass
+            _assert_update_object_fields(cls, cls_dict, updatable_fields)
+        except ValueError as e:
+            return HttpResponseBadRequest(str(e))
 
-    # Build the list of attributes of the class
-    json_attrs = cls_dict.get('attributes', [])
+        ses.add(cls)
+        ses.commit()
 
-    # Remove inherited attributes.  We may raise an error when
-    # inherited attribute IDs are are reused, but being more tolerant
-    # we allow to create new KB classes by cut'n'pasting (and slightly
-    # modifying) the JSON representation of existing ones
-    if superclass is not None:
-        inherited_attr_ids = [a.id for a in superclass.all_attributes()]
-        for xid in inherited_attr_ids:
-            if json_attrs.has_key(xid):
-                # FIXME: raise an error if the attr does not match existing one
-                del(json_attrs[xid])
-
-    attrs = []
-    for (attr_id, a) in json_attrs.iteritems():
-        if not isinstance(a, dict):
-            return HttpResponseBadRequest('Expected a dictionary for '
-                                          'representing attribute "%s", got '
-                                          '"%s"' % (attr_id, str(a)))
-        try:
-            attr_type = a['type']
-        except KeyError:
-            return HttpResponseBadRequest('Attribute "%s" lacks a "type" field'
-                                          % (attr_id, ))
-
-        try:
-            attr_fn = _kb_dict_attrs_map(attr_type, ses)
-        except KeyError:
-            return HttpResponseBadRequest(('Attribute "%s" has an invalid '
-                                           + 'type: "%s"')
-                                          % (attr_id, attr_type))
-
-        # Make a "safe" id, i.e. only composed by ASCII chars
-        safe_attr_id = kb_niceid(attr_id, extra_chars=0)
-
-        try:
-            attr_obj = attr_fn(safe_attr_id, a, ses, ws)
-        except KeyError as e:
-            return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
-                                           + 'a required field: "%s"')
-                                          % (attr_id, attr_type, str(e)))
-        except ValueError, e:
-            return HttpResponseBadRequest('Cannot create attribute "%s": %s'
-                                          % (attr_id, str(e)))
-
-        attrs.append(attr_obj)
-
-    if superclass is None:
-        cls = ses.orm.KBRootClass(class_name, explicit_id=explicit_id,
-                                  attributes=attrs)
-        # We also need to configure the visibility of the root class
-        # on DAM workspaces
-        resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict, ws)
-
-        if resp is not None:
-            # An error has occurred
-            return resp
-    else:
-        cls = ses.orm.KBClass(class_name, superclass=superclass,
-                              explicit_id=explicit_id, attributes=attrs)
-
-    # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str])}
-    try:
-        _assert_update_object_fields(cls, cls_dict, updatable_fields)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-
-    ses.add(cls)
-    ses.commit()
-
-    return HttpResponse(cls.id)
+        return HttpResponse(cls.id)
 
 
 @http_basic_auth
@@ -208,18 +207,18 @@ def class_(request, ws_id, class_id):
 
 
 def class_get(request, ws_id, class_id):
-    ses = _kb_session()
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        cls = ses.class_(class_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
+        try:
+            cls = ses.class_(class_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
 
-    return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls, ses)))
+        return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls, ses)))
 
 
 def class_post(request, ws_id, class_id):
@@ -232,73 +231,74 @@ def class_post(request, ws_id, class_id):
         return HttpResponseBadRequest('JSON class representation must be '
                                       'a dictionary')
 
-    ses = _kb_session()
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        cls = ses.class_(class_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
+        try:
+            cls = ses.class_(class_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
 
-    perm = cls.workspace_permission(ws)
-    if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
-        return HttpResponseForbidden()
+        perm = cls.workspace_permission(ws)
+        if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
+            return HttpResponseForbidden()
 
-    # If the current workspace doesn't own the class root, then ignore
-    # the new workspaces access configuration (if any)
-    # FIXME: maybe check whether access rules were changed, and raise an err?
-    if perm != kb_access.OWNER:
-        cls_dict['workspaces'] = _kb_class_visibility_to_dict(cls)
+        # If the current workspace doesn't own the class root, then ignore
+        # the new workspaces access configuration (if any)
+        # FIXME: maybe check whether access rules changed, and raise an err?
+        if perm != kb_access.OWNER:
+            cls_dict['workspaces'] = _kb_class_visibility_to_dict(cls)
 
-    # In case we're dealing with a root class, also consider its
-    # visibility
-    if isinstance(cls, ses.orm.KBRootClass):
-        resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict, ws)
-        if resp is not None:
-            # An error has occurred
-            return resp
+        # In case we're dealing with a root class, also consider its
+        # visibility
+        if isinstance(cls, ses.orm.KBRootClass):
+            resp = _setup_kb_root_class_visibility(request, ses, cls, cls_dict,
+                                                   ws)
+            if resp is not None:
+                # An error has occurred
+                return resp
 
-    # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str])}
-    try:
-        _assert_update_object_fields(cls, cls_dict, updatable_fields)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
+        # FIXME: right now, we only support updating a few fields
+        updatable_fields = {'name'        : set([unicode, str]),
+                            'notes'       : set([unicode, str])}
+        try:
+            _assert_update_object_fields(cls, cls_dict, updatable_fields)
+        except ValueError as e:
+            return HttpResponseBadRequest(str(e))
 
-    ses.add(cls)
-    ses.commit()
+        ses.add(cls)
+        ses.commit()
 
-    return HttpResponse('ok')
+        return HttpResponse('ok')
 
 
 def class_delete(request, ws_id, class_id):
-    ses = _kb_session()
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        cls = ses.class_(class_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
+        try:
+            cls = ses.class_(class_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
 
-    perm = cls.workspace_permission(ws)
-    if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
-        return HttpResponseForbidden()
+        perm = cls.workspace_permission(ws)
+        if perm not in (kb_access.OWNER, kb_access.READ_WRITE):
+            return HttpResponseForbidden()
 
-    try:
-        ses.delete(cls)
-    except kb_exc.PendingReferences:
-        return HttpResponseBadRequest('Cannot delete class referenced from '
-                                      'other KB classes and/or objects')
-    ses.commit()
+        try:
+            ses.delete(cls)
+        except kb_exc.PendingReferences:
+            return HttpResponseBadRequest('Cannot delete class referenced from'
+                                          ' other KB classes and/or objects')
+        ses.commit()
 
-    return HttpResponse('ok')
+        return HttpResponse('ok')
 
 
 @http_basic_auth
@@ -315,16 +315,15 @@ def object_index(request, ws_id):
 
 
 def object_index_get(request, ws_id):
-    ses = _kb_session()
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+        obj_dicts = [_kbobject_to_dict(o, ses) for o in ses.objects(ws=ws)]
 
-    obj_dicts = [_kbobject_to_dict(o, ses) for o in ses.objects(ws=ws)]
-
-    return HttpResponse(simplejson.dumps(obj_dicts))
+        return HttpResponse(simplejson.dumps(obj_dicts))
 
 
 def object_index_put(request, ws_id):
@@ -337,62 +336,62 @@ def object_index_put(request, ws_id):
         return HttpResponseBadRequest('JSON object representation must be '
                                       'a dictionary')
 
-    ses = _kb_session()
-
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
-
-    object_class_id = obj_dict.get('class_id', None)
-    if object_class_id is None:
-        return HttpResponseBadRequest('Object representation lacks a '
-                                      +'"class_id" field')
-
-    object_name = obj_dict.get('name', None)
-    if object_name is None:
-        return HttpResponseBadRequest('Object representation lacks a '
-                                      +'"name" field')
-    
-    explicit_id = obj_dict.get('id', None)
-    
-    if explicit_id is not None:
-        # Check for uniqueness
+    with _kb_session() as ses:
         try:
-            ses.object(explicit_id)
-            return HttpResponseBadRequest('Object id "%s" already in use'
-                                          % (explicit_id, ))
+            ws = ses.workspace(ws_id)
         except kb_exc.NotFound:
-            pass
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        cls = ses.class_(object_class_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseBadRequest('Invalid object class: %s'
-                                      % (object_class_id, ))
+        object_class_id = obj_dict.get('class_id', None)
+        if object_class_id is None:
+            return HttpResponseBadRequest('Object representation lacks a '
+                                          +'"class_id" field')
 
-    perm = cls.workspace_permission(ws)
-    if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
-                    kb_access.READ_WRITE_OBJECTS):
-        return HttpResponseForbidden()
+        object_name = obj_dict.get('name', None)
+        if object_name is None:
+            return HttpResponseBadRequest('Object representation lacks a '
+                                          +'"name" field')
 
-    ObjectClass = cls.python_class
-    obj = ObjectClass(object_name, explicit_id=explicit_id)
+        explicit_id = obj_dict.get('id', None)
 
-    # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str])}
+        if explicit_id is not None:
+            # Check for uniqueness
+            try:
+                ses.object(explicit_id)
+                return HttpResponseBadRequest('Object id "%s" already in use'
+                                              % (explicit_id, ))
+            except kb_exc.NotFound:
+                pass
 
-    try:
-        _assert_update_object_fields(obj, obj_dict, updatable_fields)
-        _assert_update_object_attrs(obj, obj_dict.get('attributes', {}), ses)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
+        try:
+            cls = ses.class_(object_class_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseBadRequest('Invalid object class: %s'
+                                          % (object_class_id, ))
 
-    ses.add(obj)
-    ses.commit()
+        perm = cls.workspace_permission(ws)
+        if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
+                        kb_access.READ_WRITE_OBJECTS):
+            return HttpResponseForbidden()
 
-    return HttpResponse(obj.id)
+        ObjectClass = cls.python_class
+        obj = ObjectClass(object_name, explicit_id=explicit_id)
+
+        # FIXME: right now, we only support updating a few fields
+        updatable_fields = {'name'        : set([unicode, str]),
+                            'notes'       : set([unicode, str])}
+
+        try:
+            _assert_update_object_fields(obj, obj_dict, updatable_fields)
+            _assert_update_object_attrs(obj, obj_dict.get('attributes', {}),
+                                        ses)
+        except ValueError as e:
+            return HttpResponseBadRequest(str(e))
+
+        ses.add(obj)
+        ses.commit()
+
+        return HttpResponse(obj.id)
 
 
 @http_basic_auth
@@ -412,18 +411,18 @@ def object_(request, ws_id, object_id):
 
 
 def object_get(request, ws_id, object_id):
-    ses = _kb_session()
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        obj = ses.object(object_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
+        try:
+            obj = ses.object(object_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
 
-    return HttpResponse(simplejson.dumps(_kbobject_to_dict(obj, ses)))
+        return HttpResponse(simplejson.dumps(_kbobject_to_dict(obj, ses)))
 
 
 def object_post(request, ws_id, object_id):
@@ -436,67 +435,69 @@ def object_post(request, ws_id, object_id):
         return HttpResponseBadRequest('JSON object representation must be '
                                       'a dictionary')
 
-    ses = _kb_session()
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        obj = ses.object(object_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
+        try:
+            obj = ses.object(object_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
 
-    perm = obj.__kb_class__.workspace_permission(ws)
-    if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
-                    kb_access.READ_WRITE_OBJECTS):
-        return HttpResponseForbidden()
+        perm = obj.__kb_class__.workspace_permission(ws)
+        if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
+                        kb_access.READ_WRITE_OBJECTS):
+            return HttpResponseForbidden()
 
-    # FIXME: right now, we only support updating a few fields
-    updatable_fields = {'name'        : set([unicode, str]),
-                        'notes'       : set([unicode, str])}
-    try:
-        _assert_update_object_fields(obj, obj_dict, updatable_fields)
-        _assert_update_object_attrs(obj, obj_dict.get('attributes', {}), ses)
-    except ValueError as e:
-        return HttpResponseBadRequest(str(e))
+        # FIXME: right now, we only support updating a few fields
+        updatable_fields = {'name'        : set([unicode, str]),
+                            'notes'       : set([unicode, str])}
+        try:
+            _assert_update_object_fields(obj, obj_dict, updatable_fields)
+            _assert_update_object_attrs(obj, obj_dict.get('attributes', {}),
+                                        ses)
+        except ValueError as e:
+            return HttpResponseBadRequest(str(e))
 
-    ses.commit()
+        ses.commit()
 
-    return HttpResponse('ok')
+        return HttpResponse('ok')
 
 
 def object_delete(request, ws_id, object_id):
-    ses = _kb_session()
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        obj = ses.object(object_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
+        try:
+            obj = ses.object(object_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
 
-    perm = obj.__kb_class__.workspace_permission(ws)
-    if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
-                    kb_access.READ_WRITE_OBJECTS):
-        return HttpResponseForbidden()
+        perm = obj.__kb_class__.workspace_permission(ws)
+        if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
+                        kb_access.READ_WRITE_OBJECTS):
+            return HttpResponseForbidden()
 
-    # Before deleting, check whether the object is referenced from the catalog
-    dj_obj = DjangoKBObject.objects.get(id=object_id)
-    catalog_refs_cnt = TreeviewNode.objects.filter(kb_object=dj_obj).count()
-    if catalog_refs_cnt > 0:
-        return HttpResponseBadRequest('Cannot delete object referenced from '
-                                      'the catalog')
+        # Before deleting, check whether the object is referenced from
+        # the catalog
+        dj_obj = DjangoKBObject.objects.get(id=object_id)
+        catalog_refs_cnt =TreeviewNode.objects.filter(kb_object=dj_obj).count()
+        if catalog_refs_cnt > 0:
+            return HttpResponseBadRequest('Cannot delete object referenced '
+                                          'from the catalog')
 
-    try:
-        ses.delete(obj)
-    except kb_exc.PendingReferences:
-        return HttpResponseBadRequest('Cannot delete object referenced from '
-                                      'other KB objects')
-    ses.commit()
-    return HttpResponse('ok')
+        try:
+            ses.delete(obj)
+        except kb_exc.PendingReferences:
+            return HttpResponseBadRequest('Cannot delete object referenced '
+                                          'from other KB objects')
+        ses.commit()
+        return HttpResponse('ok')
 
 
 @http_basic_auth
@@ -512,21 +513,21 @@ def class_objects(request, ws_id, class_id):
 
 
 def class_objects_get(request, ws_id, class_id):
-    ses = _kb_session()
-    try:
-        ws = ses.workspace(ws_id)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
 
-    try:
-        cls = ses.class_(class_id, ws=ws)
-    except kb_exc.NotFound:
-        return HttpResponseNotFound()
+        try:
+            cls = ses.class_(class_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
 
-    objs = ses.objects(class_=cls.python_class)
-    obj_dicts = [_kbobject_to_dict(o, ses) for o in objs]
+        objs = ses.objects(class_=cls.python_class)
+        obj_dicts = [_kbobject_to_dict(o, ses) for o in objs]
 
-    return HttpResponse(simplejson.dumps(obj_dicts))
+        return HttpResponse(simplejson.dumps(obj_dicts))
 
 
 ###############################################################################
