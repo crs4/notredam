@@ -148,6 +148,28 @@ class Session(object):
                        _duplicate_from=self)
 
 
+    def close(self, invoke_gc=True):
+        '''
+        Close a Session, thus releasing the underlying SQL DBMS
+        connections and other resources.
+
+        :type  invoke_gc: bool
+        :param invoke_gc: tells whether the garbage collector will be
+                          explicitly invoked when closing the session
+                          (default: True)
+        '''
+        # Since we may be duplicated, we simply NULL-ify several
+        # resources, and then invoke the garbage collector
+        self._orm = None
+        self._engine = None
+        self._schema = None
+        self.session.close()
+        self.session = None
+
+        if invoke_gc:
+            import gc
+            gc.collect()
+
     def add(self, obj):
         '''
         Add an object to the knowledge base session, ready for later
@@ -589,6 +611,12 @@ class Session(object):
             query = query.filter(self.orm.Workspace.creator == user)
         return query
 
+    # Support 'with' statement
+    def __enter__(self):
+        return self
+    def __exit__(self, _type, _value, _traceback):
+        self.close()
+        return False
 
     ###########################################################################
     # Internal functions
