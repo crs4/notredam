@@ -1364,10 +1364,11 @@ Ext.onReady(function(){
                             var active_tab =  detail_tabs_panel.getActiveTab().getId();
 
                             if (active_tab == 'metadata_panel' || active_tab == 'xmp_panel' || active_tab == 'obj_metadata_panel') { 
-                                var current_grid = Ext.getCmp(active_tab);
+                            	var current_grid = Ext.getCmp(active_tab);
                                 var metadata_lang = current_grid.getStore().query('type', 'lang');
                                 for (var i=0; i < metadata_lang.items.length; i++) {
                                     var record = metadata_lang.items[i];
+                                    current_grid.getStore().rejectChanges(); // delete all changes
                                     current_grid.getStore().fireEvent('update', current_grid.getStore(), record, Ext.data.Record.EDIT);
                                     if (record.data.choices[current_grid.language]) {
                                         record.set('value', record.data.choices[current_grid.language]);
