@@ -68,6 +68,7 @@ urlpatterns = patterns('',
    url(r'^api/workspace/get/$', WorkspaceResource(permitted_methods=('GET',), ).get_list),  
    url(r'^api/workspace/(\d+)/get_keywords/$', WorkspaceResource(permitted_methods=('GET',), ).get_keywords),  
    url(r'^api/workspace/(\d+)/get_items/$', WorkspaceResource(permitted_methods=('GET',), ).get_items),  
+   url(r'^api/workspace/(\d+)/get_metadata_languages/$', WorkspaceResource(permitted_methods=('GET',), ).get_metadata_languages),  
      
    url(r'^api/workspace/(\d+)/get_renditions/$', WorkspaceResource(permitted_methods=('GET',), ).get_variants),  
    url(r'^api/workspace/(\d+)/get_collections/$', WorkspaceResource(permitted_methods=('GET',), ).get_collections),  
