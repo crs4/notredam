@@ -46,6 +46,7 @@ from dam.mprocessor.models import Pipeline
 from dam.workspace.views import _add_items_to_ws, _search
 from dam.api.models import Secret,  Application
 from dam.metadata.models import MetadataValue,  MetadataProperty,  MetadataLanguage
+from dam.preferences.views import get_lang_pref
 from dam.kb.models import Object as KBObject
 from dam.upload.views import _upload_variant, _upload_resource_via_raw_post_data, _upload_resource_via_post
 from dam.workflow.views import _set_state 
@@ -516,7 +517,31 @@ class WorkspaceResource(ModResource):
         return HttpResponse('')        
         
 #        TODO: check args everywhere
-    
+    @exception_handler
+    @api_key_required   
+    def get_metadata_languages(self, request, workspace_id): 
+
+        from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting
+        
+
+        user = request.POST.get('user_id')
+        workspace = Workspace.objects.get(pk = workspace_id)
+        logger.debug('user %s' % user)
+        # get all the available languages for the user
+        component=DAMComponent.objects.get(name__iexact='User Interface')
+        setting=DAMComponentSetting.objects.get(component=component, name__iexact='supported_languages')
+        comma_separated_languages = setting.get_user_setting(user, workspace)
+        list_of_languages = comma_separated_languages.split(',')
+        logger.debug('list_of_languages: %s' % list_of_languages)
+        # get user default language
+        component_def_lang =DAMComponent.objects.get(name__iexact='Language')
+        setting_def_lang=DAMComponentSetting.objects.get(component=component_def_lang, name__iexact='default_metadata_language')
+        user_def_language = setting_def_lang.get_user_setting(user, workspace)
+        # returns all available language and the default language, which is one of the available languages
+        resp = {'languages':list_of_languages, 'default':user_def_language}
+        return HttpResponse(json.dumps(resp))
+
+
     
     @exception_handler
     @api_key_required   
@@ -800,8 +825,11 @@ class WorkspaceResource(ModResource):
         
         start = request.GET.get('start')
         limit = request.GET.get('limit')
+        language = request.GET.get('language')
         show_deleted = request.GET.get('show_deleted', False)        
         metadata = request.GET.getlist('metadata')
+        logger.info('=====> metadata: %s ' % metadata)
+        logger.info('=====> language: %s ' % language)
         get_keywords = request.GET.has_key('get_keywords')
         
         media_type = request.GET.getlist('media_type')
@@ -810,6 +838,7 @@ class WorkspaceResource(ModResource):
         logger.debug('show_deleted %s'%show_deleted)
         
         workspace = Workspace.objects.get(pk = workspace_id)
+        
         variants = request.GET.getlist('renditions')
         logger.info('variants %s'%variants)
         
@@ -826,7 +855,7 @@ class WorkspaceResource(ModResource):
         for item in items:
             logger.debug(item)
             try:
-                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, deletion_info = show_deleted, keywords_list = get_keywords))
+                resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, language, deletion_info = show_deleted, keywords_list = get_keywords))
             except Exception,ex:
                 logger.info(ex)
     
@@ -834,6 +863,7 @@ class WorkspaceResource(ModResource):
         json_resp = json.dumps(resp)
         return HttpResponse(json_resp)
         
+
 class ItemResource(ModResource): 
     
     @exception_handler
@@ -1198,7 +1228,7 @@ class ItemResource(ModResource):
         logger.debug('resp %s'%resp)
         return resp
     
-    def _get_item_info(self, item, workspace, variants = [], metadata = None, deletion_info = False, workspaces_list = False, keywords_list = False, rendition_file_name = False, upload_workspace = False):
+    def _get_item_info(self, item, workspace, variants = [], metadata = None, language = None, deletion_info = False, workspaces_list = False, keywords_list = False, rendition_file_name = False, upload_workspace = False):
                 
         media_type = item.type.name            
         tmp = {
@@ -1225,25 +1255,43 @@ class ItemResource(ModResource):
         except Node.DoesNotExist:		
             pass
         
+        if language:
+            tmp['metadata_language'] = language    
+
         if metadata:
             tmp['metadata'] = {}    
-        
-        for m in metadata:
-            if m == '*':                
-                properties = MetadataProperty.objects.all()
-                for metadata_value in MetadataValue.objects.filter(item = item):
-                    tmp['metadata'][str(metadata_value.schema)] = metadata_value.value
-                break
+        if str(metadata[0]) == '*':
+
+                all_item_metadata = MetadataValue.objects.filter(item = item)
+                #logger.debug('all_item_metadata: %s' % all_item_metadata)
+                for metadata in all_item_metadata:
+                    if language != None and metadata.schema.type == 'lang': 
+                        mv = MetadataValue.objects.get(schema = metadata.schema, item = item, language = language)
+                        tmp['metadata'][metadata.schema.namespace.prefix + ':' + metadata.schema.field_name] = mv.value
+                    else:
+                        mvalues = MetadataValue.objects.filter(schema = metadata.schema, item = item)
+                        if len(mvalues) == 1:
+                            tmp['metadata'][metadata.schema.namespace.prefix + ':' + metadata.schema.field_name] = mvalues[0].value
+                        elif len(mvalues) > 1:
+                            tmp['metadata'][metadata.schema.namespace.prefix + ':' + metadata.schema.field_name] = []
+                            for mv in mvalues:
+                                tmp['metadata'][metadata.schema.namespace.prefix + ':' + metadata.schema.field_name].append(mv.value)
+ 
+        else: 
+
+            for m in metadata:
+                property_namespace, property_field_name = m.split(':')
                 
-            property_namespace, property_field_name = m.split(':')
-                
-            try:
-                property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
-                mv = MetadataValue.objects.get(schema = property, item = item)                
-                tmp['metadata'][m] = mv.value
-            except Exception, ex:
-                #logger.error('skipping %s'%ex)
-                pass
+                try:
+                    property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
+                    if language != None and property.type == 'lang':
+                        mv = MetadataValue.objects.get(schema = property, item = item, language = language)
+                    else:
+                        mv = MetadataValue.objects.get(schema = property, item = item)                
+                    tmp['metadata'][m] = mv.value
+                except Exception, ex:
+                    #logger.error('skipping %s'%ex)
+                    pass
                 
         logger.info('variants %s'%variants)
         if variants: 
@@ -1500,7 +1548,7 @@ class ItemResource(ModResource):
         variants = request.GET.getlist('renditions')
         
         item = Item.objects.get(pk = item_id)
-        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = True, upload_workspace = True)
+        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', language=None,deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = True, upload_workspace = True)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
