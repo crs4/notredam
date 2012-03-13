@@ -207,6 +207,23 @@ class WSTestCase(MyTestCase):
         self.assertTrue(u not in ws.members.all())
         self.assertTrue(WorkspacePermissionAssociation.objects.filter(users = u,  workspace__pk = ws_pk,  permission__name = 'admin').count() == 0)
         
+    def test_0080_get_languages(self):
+        """
+        Retrieve all the available languages available for the user
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        params = self.get_final_parameters({
+            'media_type': 'image', 
+            'start':0,
+            'limit':1,
+            'renditions': ['original', 'thumbnail']
+        })
+        response = self.client.get('/api/workspace/%s/get_metadata_languages/'%workspace.pk, params)   
+        print 'response: ', response
+        #resp_dict = json.loads(response.content)
+        #print 'resp_dict: ', resp_dict
+ 
+
     def test_0005_get_items(self):
         """
         Retrieve one of the images on ws 1, with some renditions info.
@@ -565,6 +582,24 @@ class WSTestCase(MyTestCase):
         
         self.assertTrue(resp_dict['items'][1]['metadata'].has_key('dc:title'))
         self.assertTrue(len(resp_dict['items'][1]['metadata'].keys()) == 1)        
+
+    def test_0081_get_items_with_metadata_language(self):
+        """
+        Search items retrieving a given metadata.        
+        """
+        workspace = DAMWorkspace.objects.get(pk = 1)
+        item = Item.objects.get(pk = 1)
+        item1 = Item.objects.get(pk = 2)
+        params = self.get_final_parameters({ 
+            'metadata': '*',
+            'language': 'en-US'
+        }) 
+        response = self.client.get('/api/workspace/%s/get_items/'%workspace.pk, params)   
+        resp_dict = json.loads(response.content)
+        logger.debug('resp_dict: %s' % resp_dict)
+        
+
+
         
     def test_get_items_with_all_metadata(self):
         """
