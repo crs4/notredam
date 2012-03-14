@@ -520,6 +520,16 @@ class WorkspaceResource(ModResource):
     @exception_handler
     @api_key_required   
     def get_metadata_languages(self, request, workspace_id): 
+        """
+        Allows. to get the metadata languages available for a workspace.
+        - Method: GET
+            - No parameters.
+        - returns:
+            - JSON example:{
+                     'languages':[ 'en-US', 'es-ES','fr-FR'],
+                     'default':'en-US'
+                    }        
+        """
 
         from dam.preferences.models import UserSetting, SettingValue, DAMComponent, DAMComponentSetting
         
@@ -799,6 +809,7 @@ class WorkspaceResource(ModResource):
                 - start: it indicates the initial index of the items set that will be returned.
                 - limit: how many items will be returned in the given page.
                 - metadata: optional, a list of metadata schemas you want to retrieve for each items returned. Metadata schemas must be formatted in this way: {metadata_schema}:{metadata_name}. For example dc:title will retrieve the Dublin Core title for each item returned. Use '*' for retrieving all metadata.
+                - language: optional, to retrieve only the values in the specified language for the metadata which have different values for each available language.
                 - renditions: optional, a list of renditions you want to retrieve for each items.
                 - show_deleted: optional, true if you want to retrieve also the items deleted from the given workspace
                 - creation_time: optional, retrieve all items created in the given date (expressed in dd/mm/yyyy hh:mm:ss or dd/mm/yyyy). You can use also creation_time>, creation_time<, creation_time>=, creation_time<=
