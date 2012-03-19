@@ -27,6 +27,7 @@ import datetime
 import decimal
 import json
 import types
+import weakref
 
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
@@ -61,14 +62,14 @@ class Attributes(types.ModuleType):
         import classes as kb_classes
         assert(isinstance(classes, kb_classes.Classes))
 
-        self._classes = classes
+        self._classes_ref = weakref.ref(classes)
 
         _init_base_attributes(self)
 
         self.__all__ = ['Attribute', 'Boolean', 'Integer', 'Real', 'Choice',
                         'String', 'Date', 'Uri', 'ObjectReference']
 
-    classes = property(lambda self: self._classes)
+    classes = property(lambda self: self._classes_ref())
     '''
     The knowledge base classes with which the attributes are bound
 
