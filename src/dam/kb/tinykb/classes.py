@@ -458,9 +458,11 @@ def _init_base_classes(o):
             '''
             # The class will be built only once, and further calls
             # will always return the same result
-            ret = getattr(self, '_cached_pyclass', None)
-            if ret is not None:
-                return ret
+            ref = getattr(self, '_cached_pyclass_ref', None)
+            if ref is not None:
+                cls = ref()
+                if cls is not None:
+                    return cls
 
             if not self.is_bound():
                 self.bind_to_table()
@@ -495,7 +497,7 @@ def _init_base_classes(o):
             # generating the SQLAlchemy ORM mapper, because it will
             # access to self.python_class again, thus causing an
             # infinite recursion
-            self._cached_pyclass = newclass
+            self._cached_pyclass_ref = weakref.ref(newclass)
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
