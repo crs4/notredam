@@ -22,6 +22,8 @@
 #
 #########################################################################
 
+import weakref
+
 import sqlalchemy
 import sqlalchemy.orm as sa_orm
 import sqlalchemy.engine.base as sa_base
@@ -85,8 +87,13 @@ class Session(object):
         # transaction is committed
         self._kb_classes_pending_unrealize = []
 
+        # Use self_ref in closures, in order to avoid circular dependencies
+        self_ref = weakref.ref(self)
+
         def session_after_commit(_session):
             # Unrealize classes after they've been deleted
+            self = self_ref()
+            assert(self is not None) # Just in case...
             for cls in self._kb_classes_pending_unrealize:
                 cls.unrealize()
             self._kb_classes_pending_unrealize = []
@@ -94,6 +101,8 @@ class Session(object):
                                 session_after_commit)
 
         def session_after_rollback(_session):
+            self = self_ref()
+            assert(self is not None) # Just in case...
             # Cleanup list of classes waiting to be unrealized
             self._kb_classes_pending_unrealize = []
         sqlalchemy.event.listen(self.session, 'after_rollback',
