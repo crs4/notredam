@@ -593,7 +593,6 @@ def _kb_session():
     '''
     Create a knowledge base session
     '''
-    connstr = util.notredam_connstring()
     return KB_SESSION.duplicate()
     
 
