@@ -24,6 +24,7 @@
 #########################################################################
 
 import types
+import weakref
 
 from sqlalchemy import ForeignKey, event
 import sqlalchemy.orm as orm
@@ -44,7 +45,7 @@ class Classes(types.ModuleType):
         import session as kb_session
         assert(isinstance(session, kb_session.Session))
 
-        self._session = session
+        self._session_ref = weakref.ref(session)
 
         _init_base_classes(self)
 
@@ -56,7 +57,7 @@ class Classes(types.ModuleType):
     # self._attributes is set in _init_base_classes
     attributes = property(lambda self: self._attributes)
 
-    session = property(lambda self: self._session)
+    session = property(lambda self: self._session_ref())
 
 
 ###############################################################################
