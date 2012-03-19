@@ -68,7 +68,8 @@ class Session(object):
         assert(isinstance(id_, str))
         self._id = id_
 
-        self.session = sa_orm.Session(bind=self._engine, autoflush=False)
+        self.session = sa_orm.scoped_session(
+            sa_orm.sessionmaker(bind=self._engine, autoflush=False))
         
         if _duplicate_from is None:
             self._schema = kb_schema.Schema(db_prefix)

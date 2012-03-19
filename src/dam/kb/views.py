@@ -586,7 +586,9 @@ def _infer_method(req):
 
 
 # Global KB session, based on NotreDAM DBMS connection parameters
-KB_SESSION = kb_ses.Session(util.notredam_connstring())
+import sqlalchemy
+KB_SQLALCHEMY_ENGINE = sqlalchemy.create_engine(util.notredam_connstring())
+KB_SESSION = kb_ses.Session(KB_SQLALCHEMY_ENGINE)
 def _kb_session():
     '''
     Create a knowledge base session
