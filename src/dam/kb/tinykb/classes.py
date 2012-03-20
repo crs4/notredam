@@ -74,6 +74,21 @@ def _init_base_classes(o):
     schema = o.session.schema
     engine = o.session.engine
 
+    # KBClass instance cache, used to keep the correspondence between
+    # static and dynamically-generated classes
+    o._kb_class_cache = {}
+    def cache_add(cls):
+        o._kb_class_cache[cls.id] = cls
+    o.cache_add = cache_add
+
+    def cache_get(cls_id):
+        return o._kb_class_cache.get(cls_id, None)
+    o.cache_get = cache_get
+
+    def cache_del(cls_id):
+        del o._kb_class_cache[cls_id]
+    o.cache_del = cache_del
+
     class Workspace(object):
         '''
         Knowledge base workspace.
