@@ -297,6 +297,10 @@ class Session(object):
         # Perform the actual KB class/object deletion
         self.session.delete(obj_or_cls)
 
+        if isinstance(obj_or_cls, self.orm.KBClass):
+            # Expunge the class from the ORM cache
+            self.orm.cache_del(obj_or_cls.id)
+
         # Let's not forget to unrealize the class after the current
         # transaction is committed
         if isinstance(obj_or_cls, self.orm.KBClass):
@@ -390,6 +394,14 @@ class Session(object):
                  ID does not exist in the knowledge base (or in the
                  specified workspace, when provided)
         '''
+        cls = self.orm.cache_get(id_)
+        if cls is not None:
+            if ws is not None:
+                pass # FIXME: check workspace permissions here!
+                #if cls.workspace_permission(ws) is None:
+                #    raise kb_exc.NotFound('class.id == %s' % (id_, ))
+            return cls
+
         query = self.session.query(self.orm.KBClass).filter(
             self.orm.KBClass.id == id_)
         if ws is not None:
@@ -399,6 +411,8 @@ class Session(object):
             cls = query.one()
         except sa_exc.NoResultFound:
             raise kb_exc.NotFound('class.id == %s' % (id_, ))
+
+        self.orm.cache_add(cls)
 
         return cls
 
