@@ -95,24 +95,26 @@ class Session(object):
         # transaction is committed
         self._kb_classes_pending_unrealize = []
 
-        # Use self_ref in closures, in order to avoid circular dependencies
-        self_ref = weakref.ref(self)
-
+        # Let's use a direct reference in the following closures, in
+        # order to avoid capturing 'self' in a reference cycle which
+        # may cause memory leaks
+        _kb_classes_pending_unrealize = self._kb_classes_pending_unrealize
         def session_after_commit(_session):
             # Unrealize classes after they've been deleted
-            self = self_ref()
-            assert(self is not None) # Just in case...
-            for cls in self._kb_classes_pending_unrealize:
-                cls.unrealize()
-            self._kb_classes_pending_unrealize = []
+            try:
+                while True:
+                    cls = _kb_classes_pending_unrealize.pop()
+                    cls.unrealize()
+            except IndexError: pass
         sqlalchemy.event.listen(self.session, 'after_commit',
                                 session_after_commit)
 
         def session_after_rollback(_session):
-            self = self_ref()
-            assert(self is not None) # Just in case...
             # Cleanup list of classes waiting to be unrealized
-            self._kb_classes_pending_unrealize = []
+            try:
+                while True:
+                    _kb_classes_pending_unrealize.pop()
+            except IndexError: pass
         sqlalchemy.event.listen(self.session, 'after_rollback',
                                 session_after_rollback)
 
