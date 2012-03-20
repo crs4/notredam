@@ -55,23 +55,31 @@ class Session(object):
     :param db_prefix: prefix used for naming the KB schema objects
                       on the SQL DB (tables, constraints...).
     '''
-    def __init__(self, connstr_or_engine, id_=None, db_prefix='kb_',
+    def __init__(self, sess_or_connstr_or_engine, id_=None, db_prefix='kb_',
                  _duplicate_from=None):
-        if isinstance(connstr_or_engine, str):
-            self._engine = sqlalchemy.create_engine(connstr_or_engine)
-        elif isinstance(connstr_or_engine, sa_base.Engine):
-            self._engine = connstr_or_engine
+        if isinstance(sess_or_connstr_or_engine, str):
+            self._engine = sqlalchemy.create_engine(sess_or_connstr_or_engine)
+            self.session = sa_orm.Session(bind=self._engine, autoflush=False)
+        elif isinstance(sess_or_connstr_or_engine, sa_base.Engine):
+            self._engine = sess_or_connstr_or_engine
+            self.session = sa_orm.Session(bind=self._engine, autoflush=False)
         else:
-            raise TypeError('Unsupported type for Session initialization: '
-                             % (connstr_or_engine, ))
+            # We assume that the parameter is a Session or ScopedSession
+            try:
+                self._engine = sess_or_connstr_or_engine.get_bind()
+                self.session = sess_or_connstr_or_engine
+            except:
+                # Something went wrong
+                # FIXME: we are masking the actual exception here
+                raise TypeError('Unsupported value for Session initialization:'
+                                ' %s (type: %s)'
+                                % (sess_or_connstr_or_engine,
+                                   type(sess_or_connstr_or_engine)))
 
         if id_ is None:
             id_ = '%x' % (id(self), )
         assert(isinstance(id_, str))
         self._id = id_
-
-        self.session = sa_orm.scoped_session(
-            sa_orm.sessionmaker(bind=self._engine, autoflush=False))
         
         if _duplicate_from is None:
             self._schema = kb_schema.Schema(db_prefix)
@@ -139,7 +147,7 @@ class Session(object):
     :type: Python module (dynamically generated)
     '''
 
-    def duplicate(self, id_=None):
+    def duplicate(self, sess_or_connstr_or_engine=None, id_=None):
         '''
         Create a new Session object sharing the same schema and
         :py:mod:`orm` attribute with the original one.
@@ -154,7 +162,11 @@ class Session(object):
         :rtype: Session
         :returns: a new Session instance
         '''
-        return Session(self._engine, id_=id_, db_prefix=self._schema.prefix,
+        if sess_or_connstr_or_engine is None:
+            sce = self._engine
+        else:
+            sce = sess_or_connstr_or_engine
+        return Session(sce, id_=id_, db_prefix=self._schema.prefix,
                        _duplicate_from=self)
 
 
