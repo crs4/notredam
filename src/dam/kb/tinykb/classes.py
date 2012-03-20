@@ -237,7 +237,7 @@ def _init_base_classes(o):
             # FIXME: handle these fields with a SQLAlchemy mapper property?
             if superclass is None:
                 self._root_id = self.id
-                self.superclass = weakref.proxy(self)
+                self.superclass = self
                 inherited_attr_ids = []
             else:
                 self.superclass = superclass
