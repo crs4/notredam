@@ -187,7 +187,6 @@ class Session(object):
         self._orm = None
         self._engine = None
         self._schema = None
-        self.session.close()
         self.session = None
 
         if invoke_gc:
