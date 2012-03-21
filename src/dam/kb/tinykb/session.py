@@ -22,6 +22,7 @@
 #
 #########################################################################
 
+import itertools
 import weakref
 
 import sqlalchemy
@@ -429,19 +430,20 @@ class Session(object):
 
     def classes(self, ws=None):
         '''
-        Return a query object yielding all known classes from the
+        Return an iterator yielding all known classes from the
         knowledge base.
 
         :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter classes (default: None)
 
-        :rtype: query object
-        :returns: a query object yielding :py:class:`orm.KBClass` instances
+        :rtype: iterator
+        :returns: an iterator yielding :py:class:`orm.KBClass` instances
         '''
-        query = self.session.query(self.orm.KBClass)
+        query = self.session.query(self.schema.class_t.c['id'])
         if ws is not None:
-            query = self._add_ws_filter(query, ws)
-        return query
+            query = self._add_ws_table_filter(query, ws)
+        return itertools.imap(lambda x: self.class_(x[0]),
+                              query)
 
     def realize(self, class_):
         '''
@@ -547,7 +549,7 @@ class Session(object):
 
     def objects(self, class_=None, ws=None, filter_expr=None):
         '''
-        Return a query object yielding all known :py:class:`orm.KBObject`
+        Return an iterator yielding all known :py:class:`orm.KBObject`
         instances from the knowledge base.
 
         :type  class_: :py:class:`orm.KBObject`
@@ -562,8 +564,8 @@ class Session(object):
         :param filter_expr: an optional SQLAlchemy filter expression for
                             selecting objects to be returned
 
-        :rtype: query object
-        :returns: a query object yielding Python objects
+        :rtype: iterator
+        :returns: an iterator yielding Python objects
         '''
         if class_ is None:
             class_ = self.orm.KBObject
@@ -580,7 +582,8 @@ class Session(object):
         if filter_expr is not None:
             query = query.filter(filter_expr)
 
-        return query
+        # Just to mask SQLAlchemy query object
+        return itertools.imap(lambda x: x, query)
 
     def user(self, id_):
         '''
