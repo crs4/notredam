@@ -75,7 +75,17 @@ def _init_base_classes(o):
     engine = o.session.engine
 
     # KBClass instance cache, used to keep the correspondence between
-    # static and dynamically-generated classes
+    # static and dynamically-generated classes.  The caching policy is:
+    #
+    #   1. KBClass'es retrieved from the DB will auto-cache themselves;
+    #
+    #   2. new KBClass'es will auto-cache themselves after they are saved;
+    #
+    #   3. the cache must be queried before accessing the underlying DB;
+    #
+    #   4. KBClass.python_class must first check the cache, and if an
+    #      equivalent istance is found, then the actual python class must
+    #      be retrieved from there
     o._kb_class_cache = {}
     def cache_add(cls):
         o._kb_class_cache[cls.id] = cls
@@ -275,23 +285,28 @@ def _init_base_classes(o):
         def __init_on_load__(self):
             self._sqlalchemy_table = None
             self.bind_to_table()
+            if cache_get(self.id) is None:
+                cache_add(self)
 
         sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
-        def __del__(self):
-            # When a KBClass object is garbage collected, check
-            # whether the DB instance was deleted, and in this case
-            # also drop the related tables (by calling
-            # self.unrealize()).
-            #
-            # It should be safe to invoke self.unrealize() here: if
-            # this destructor is called, then this Python object is
-            # not (anymore) involved in a transaction, and thus the
-            # underlying tables should not be locked.
-
-            # FIXME: does SQLAlchemy allow to check whether we are deleted?
-            if hasattr(self, '__kb_deleted__'):
-                self.unrealize()
+        # FIXME: __del__ makes this class end up in GC's 'garbage' list
+        # Anyway, this method is redundant, as long as the KB Session is
+        # used properly
+        # def __del__(self):
+        #     # When a KBClass object is garbage collected, check
+        #     # whether the DB instance was deleted, and in this case
+        #     # also drop the related tables (by calling
+        #     # self.unrealize()).
+        #     #
+        #     # It should be safe to invoke self.unrealize() here: if
+        #     # this destructor is called, then this Python object is
+        #     # not (anymore) involved in a transaction, and thus the
+        #     # underlying tables should not be locked.
+        #
+        #     # FIXME: does SQLAlchemy allow to check whether we are deleted?
+        #     if hasattr(self, '__kb_deleted__'):
+        #         self.unrealize()
         
         def is_root(self):
             return (self.id == self._root_id)
@@ -471,6 +486,13 @@ def _init_base_classes(o):
             The Python class associated to a KB class.  This property
             can only be accessed after :py:meth:`realize` was invoked.
             '''
+            # First of all, check whether an equivalent KBClass is still cached
+            c = cache_get(self.id)
+            if c is not None:
+                if c is not self:
+                    # FIXME: maybe raise a warning here?
+                    return c.python_class
+
             # The class will be built only once, and further calls
             # will always return the same result
             ref = getattr(self, '_cached_pyclass_ref', None)
