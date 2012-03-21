@@ -481,18 +481,11 @@ def _init_base_classes(o):
                 # exception here
                 raise
 
-        def _make_or_get_python_class(self):
+        def _make_or_get_python_class(self, _session=None):
             '''
             The Python class associated to a KB class.  This property
             can only be accessed after :py:meth:`realize` was invoked.
             '''
-            # First of all, check whether an equivalent KBClass is still cached
-            c = cache_get(self.id)
-            if c is not None:
-                if c is not self:
-                    # FIXME: maybe raise a warning here?
-                    return c.python_class
-
             # The class will be built only once, and further calls
             # will always return the same result
             ref = getattr(self, '_cached_pyclass_ref', None)
@@ -501,20 +494,37 @@ def _init_base_classes(o):
                 if cls is not None:
                     return cls
 
+            # Establish in which session we're working in (and pass it
+            # to further recursive calls)
+            if _session is None:
+                _session = Session.object_session(self)
+            sself = _session.merge(self)
+
+            # First of all, check whether an equivalent KBClass is still cached
+            c = cache_get(self.id)
+            if c is not None:
+                if c is not self:
+                    # FIXME: maybe raise a warning here?
+                    return c._make_or_get_python_class(_session=_session)
+
             if not self.is_bound():
                 self.bind_to_table()
 
             if not self.is_root():
-                parent_class = self.superclass.python_class
-                init_method = lambda instance, name, notes=None, explicit_id=None:(
+                supclass = _session.merge(sself.superclass)
+                parent_class = supclass._make_or_get_python_class(
+                    _session=_session)
+                init_method = lambda instance, name, notes=None, explicit_id=None, _rebind_session=None:(
                     parent_class.__init__(instance, name, notes=notes,
-                                          explicit_id=explicit_id))
+                                          explicit_id=explicit_id,
+                                          _rebind_session=_rebind_session))
             else:
                 parent_class = KBObject
-                init_method = lambda instance, name, notes=None, explicit_id=None:(
+                init_method = lambda instance, name, notes=None, explicit_id=None, _rebind_session=None:(
                     parent_class.__init__(instance, instance.__kb_class__,
                                           name, notes=notes,
-                                          explicit_id=explicit_id))
+                                          explicit_id=explicit_id,
+                                          _rebind_session=_rebind_session))
 
             classdict = {
                 '__init__' : init_method,
@@ -538,7 +548,10 @@ def _init_base_classes(o):
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
-            for r in self.attributes:
+            session_attrs = [_session.merge(a)
+                             for a in self.attributes]
+            for _a in session_attrs: _session.add(_a)
+            for r in session_attrs:
                 mapper_props.update(r.mapper_properties())
 
             mapper(newclass, self._sqlalchemy_table, inherits=parent_class,
@@ -547,7 +560,7 @@ def _init_base_classes(o):
 
             # Also add event listeners for validating assignments
             # according to attribute types
-            for a in self.attributes:
+            for a in session_attrs:
                 a.make_proxies_and_event_listeners(newclass)
 
             return newclass
@@ -634,7 +647,7 @@ def _init_base_classes(o):
                 self.visibility.remove(v)
 
         def workspace_permission(self, workspace):
-            acc = [v for v in self.visibility if v.workspace == workspace]
+            acc = [v for v in self.visibility if v._workspace == workspace.id]
             if len(acc) == 0:
                 # No access rules for the given workspace
                 return None
@@ -698,18 +711,25 @@ def _init_base_classes(o):
         .. note:: This constructor is only intended to be called
                   internally.
         '''
-        def __init__(self, class_, name, notes=None, explicit_id=None):
+        def __init__(self, class_, name, notes=None, explicit_id=None,
+                     _rebind_session=None):
             if explicit_id is None:
                 self.id = niceid.niceid(name) # FIXME: check uniqueness!
             else:
                 self.id = explicit_id
 
-            setattr(self, 'class', class_)
+            if _rebind_session is not None:
+                kbclass = _rebind_session.merge(class_)
+                _rebind_session.add(kbclass)
+            else:
+                kbclass = class_
+
+            setattr(self, 'class', kbclass)
             self.name = name
             self.notes = notes
 
             # Give a default value to all attributes (when possible)
-            for a in getattr(self, 'class').all_attributes():
+            for a in kbclass.all_attributes():
                 if hasattr(a, 'default'):
                     val = a.default
                     if (val is not None) or a.maybe_empty:
