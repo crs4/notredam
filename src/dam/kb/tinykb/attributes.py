@@ -326,8 +326,8 @@ def _init_base_attributes(o):
             # is multivalued (in this case, we'll react to 'append')
             if not self.multivalued:
                 event.listen(getattr(cls, self.id), 'set',
-                             lambda _target, val, _oldval, _init: (
-                                 self.validate(val)),
+                             lambda target, val, _oldval, _init: (
+                                 self.validate(target, val)),
                              propagate=True, retval=True)
                 return
 
@@ -348,15 +348,19 @@ def _init_base_attributes(o):
                     sa_proxy.association_proxy(hidden_id, 'value'))
 
             event.listen(self._mvclass.value, 'set',
-                         lambda _target, val, _oldval,_init:self.validate(val),
+                         lambda target, val, _oldval,_init:self.validate(target,
+                                                                         val),
                          propagate=True, retval=True)
 
-        def validate(self, value):
+        def validate(self, target, value):
             '''
             Check whether the given value is compatible with the KB attribute
             type and configuration, and thus whether it could be safely
             assigned/appended to the corresponding field of a Python
             object.
+
+            :type target:  Python object
+            :param target: the SQL-mapped object receiving the value
 
             :type value:  Python term
             :param value: the value to check
@@ -392,8 +396,13 @@ def _init_base_attributes(o):
                            nullable=self.maybe_empty and not self.multivalued,
                            default=self.default)]
 
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
             if isinstance(value, bool):
                 return value
@@ -451,8 +460,13 @@ def _init_base_attributes(o):
                                                     self.id))))
             return ret
 
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
             if not (isinstance(value, int) or isinstance(value, long)
                     or (isinstance(value, decimal.Decimal)
@@ -461,11 +475,11 @@ def _init_base_attributes(o):
                                               + ' got "%s" (type: %s)')
                                              % (str(value), type(value)))
 
-            in_range = ((self.min is None or (value >= self.min))
-                        and (self.max is None or (value <= self.max)))
+            in_range = ((sself.min is None or (value >= sself.min))
+                        and (sself.max is None or (value <= sself.max)))
             if not in_range:
-                str_min = (self.min is None and '-Inf') or str(self.min)
-                str_max = (self.max is None and 'Inf') or str(self.max)
+                str_min = (sself.min is None and '-Inf') or str(sself.min)
+                str_max = (sself.max is None and 'Inf') or str(sself.max)
                 raise kb_exc.ValidationError('Value %d is out of [%s,%s] range'
                                              % (value, str_min, str_max))
 
@@ -522,8 +536,13 @@ def _init_base_attributes(o):
                                                     self.id))))
             return ret
 
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
             if not (isinstance(value, float) or isinstance(value,
                                                            decimal.Decimal)):
@@ -531,11 +550,11 @@ def _init_base_attributes(o):
                                               + 'got "%s"')
                                              % (str(value), ))
 
-            in_range = ((self.min is None or (value >= self.min))
-                        and (self.max is None or (value <= self.max)))
+            in_range = ((sself.min is None or (value >= sself.min))
+                        and (sself.max is None or (value <= sself.max)))
             if not in_range:
-                str_min = (self.min is None and '-Inf') or str(self.min)
-                str_max = (self.max is None and 'Inf') or str(self.max)
+                str_min = (sself.min is None and '-Inf') or str(sself.min)
+                str_max = (sself.max is None and 'Inf') or str(sself.max)
                 raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
                                              % (value, str_min, str_max))
 
@@ -573,18 +592,23 @@ def _init_base_attributes(o):
                            nullable=self.maybe_empty and not self.multivalued,
                            default=self.default)]
 
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
             if not (isinstance(value, str) or isinstance(value, unicode)):
                 raise kb_exc.ValidationError(('expected a string-like value, '
                                               + 'got "%s"')
                                              % (str(value), ))
-            if len(value) > self.length:
+            if len(value) > sself.length:
                 raise kb_exc.ValidationError('string length (%d chars) is '
                                              'above the maximum limit '
                                              '(%d chars)'
-                                             % (len(value), self.length))
+                                             % (len(value), sself.length))
 
             return unicode(value)
 
@@ -640,8 +664,13 @@ def _init_base_attributes(o):
             return ret
 
 
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
             if (isinstance(value, str) or isinstance(value, unicode)):
                 try:
@@ -657,11 +686,11 @@ def _init_base_attributes(o):
                                               + 'got "%s"')
                                              % (unicode(value), ))
 
-            in_range = ((self.min is None or (value >= self.min))
-                        and (self.max is None or (value <= self.max)))
+            in_range = ((sself.min is None or (value >= sself.min))
+                        and (sself.max is None or (value <= sself.max)))
             if not in_range:
-                str_min = (self.min is None and '-Inf') or unicode(self.min)
-                str_max = (self.max is None and 'Inf') or unicode(self.max)
+                str_min = (sself.min is None and '-Inf') or unicode(sself.min)
+                str_max = (sself.max is None and 'Inf') or unicode(sself.max)
                 raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
                                              % (value, str_min, str_max))
 
@@ -678,17 +707,22 @@ def _init_base_attributes(o):
         Integer KB class attribute.  Inherits from :py:class:`String`, and
         shares its constructor arguments.
         '''
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
             if not (isinstance(value, str) or isinstance(value, unicode)):
                 raise kb_exc.ValidationError(('expected a URI-like value, '
                                               + 'got "%s"')
                                              % (str(value), ))
-            if len(value) > self.length:
+            if len(value) > sself.length:
                 raise kb_exc.ValidationError(('URI length (%d chars) is above '
                                               + 'the maximum limit (%d chars)')
-                                             % (len(value), self.length))
+                                             % (len(value), sself.length))
 
             # FIXME: actually perform URI validation
             return unicode(value)
@@ -755,15 +789,20 @@ def _init_base_attributes(o):
                            nullable=self.maybe_empty and not self.multivalued,
                            default=self.default)]
 
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
             value = unicode(value)
-            if value not in self._list_of_choices:
+            if value not in sself._list_of_choices:
                 raise kb_exc.ValidationError('"%s" is not a valid choice among'
                                              ' %s'
                                              % (value,
-                                                unicode(self._list_of_choices)))
+                                                unicode(sself._list_of_choices)))
             return value
 
         def __repr__(self):
@@ -841,7 +880,7 @@ def _init_base_attributes(o):
             mvtable = self._sqlalchemy_mv_table
             assert(mvtable is not None)
 
-            target_pyclass = self.target.python_class
+            target_pyclass = self.target._make_or_get_python_class()
             target_table = self.target.sqlalchemy_table
 
             return {'_object' : mvtable.c.object, # 'object' used as backref
@@ -854,11 +893,17 @@ def _init_base_attributes(o):
                                                           == target_table.c.id),
                                              remote_side=target_table.c.id)}
 
-        def validate(self, value):
-            if self.maybe_empty and not self.multivalued and value is None:
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            sself = sess.merge(self)
+            sess.add(sself)
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
 
-            target_pyclass = self.target.python_class
+            target_pyclass = sself.target._make_or_get_python_class(
+                _session=sess)
             if not isinstance(value, target_pyclass):
                 raise kb_exc.ValidationError(('expected a value of type "%s" '
                                               + '(or descendants), got "%s" '
