@@ -410,10 +410,9 @@ class Session(object):
         '''
         cls = self.orm.cache_get(id_)
         if cls is not None:
-            if ws is not None:
-                pass # FIXME: check workspace permissions here!
-                #if cls.workspace_permission(ws) is None:
-                #    raise kb_exc.NotFound('class.id == %s' % (id_, ))
+            if not self._check_class_ws_access(cls, ws):
+                raise kb_exc.NotFound('class.id == %s' % (id_, ))
+            self.session.merge(cls)
             return cls
 
         query = self.session.query(self.orm.KBClass).filter(
@@ -529,7 +528,10 @@ class Session(object):
 
         # ...and then retrieve and ORMap its class (after checking the cache)
         c = self.orm.cache_get(cls_id)
-        # FIXME: check class access rules here!
+        if c is not None:
+            if not self._check_class_ws_access(c, ws):
+                raise kb_exc.NotFound('object.id == %s' % (id_, ))
+            self.session.merge(c)
         if c is None:
             try:
                 c = self.python_class(cls_id, ws=ws)
@@ -675,3 +677,31 @@ class Session(object):
                           self.orm.KBClass.root).join(
             self.orm.KBClassVisibility).filter(
                               self.orm.KBClassVisibility.workspace == ws)
+
+    # Add a workspace filter to the given SQLAlchemy query object, but
+    # assuming that we are working on tables (thus bypassing the ORM)
+    def _add_ws_table_filter(self, query, ws):
+        return query.join(self.schema.class_visibility,
+                          self.schema.class_t.c.root
+                          == self.schema.class_visibility.c.class_root).filter(
+            self.schema.class_visibility.c.workspace
+            == ws.id)
+
+    # Check whether an access rule is defined for the given class ID
+    # on the given workspace
+    def _check_class_ws_access(self, cls, ws):
+        if ws is None:
+            return True
+
+        try:
+            self.session.query(
+                self.schema.class_visibility).filter(
+                and_((self.schema.class_visibility.c.class_root
+                      == cls._root_id),
+                     (self.schema.class_visibility.c.workspace
+                      == ws.id))).one()
+        except sa_exc.NoResultFound:
+            return False
+
+        return True
+        
