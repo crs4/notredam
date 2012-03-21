@@ -372,7 +372,8 @@ class Session(object):
         for c in new_kb_cls:
             if not c.is_bound():
                 c.realize()
-        
+                # FIXME: is it the best place to do it?
+                self.orm.cache_add(c)
         try:
             self.session.commit()
         except sqlalchemy.exc.IntegrityError:
@@ -424,8 +425,6 @@ class Session(object):
             cls = query.one()
         except sa_exc.NoResultFound:
             raise kb_exc.NotFound('class.id == %s' % (id_, ))
-
-        self.orm.cache_add(cls)
 
         return cls
 
@@ -520,18 +519,27 @@ class Session(object):
                  ID does not exist in the knowledge base (or in the
                  specified workspace, when provided)
         '''
-        # It will cause the Python classes to be instantiated and ORM-mapped
-        self.python_classes()
-
-        query = self.session.query(self.orm.KBObject).filter(
-            self.orm.KBObject.id == id_)
-        if ws is not None:
-            query = self._add_ws_filter(query.join(self.orm.KBClass), ws)
-            
+        # Retrieve the class id of the required object (if any)...
         try:
-            obj = query.one()
+            o = self.session.query(self.schema.object_t.c['class']).filter(
+                self.schema.object_t.c.id == id_).one()
         except sa_exc.NoResultFound:
             raise kb_exc.NotFound('object.id == %s' % (id_, ))
+        cls_id = o[0]
+
+        # ...and then retrieve and ORMap its class (after checking the cache)
+        c = self.orm.cache_get(cls_id)
+        # FIXME: check class access rules here!
+        if c is None:
+            try:
+                c = self.python_class(cls_id, ws=ws)
+            except kb_exc.NotFound:
+                # Maybe the class is not accessible in the given workspace
+                raise kb_exc.NotFound('object.id == %s' % (id_, ))
+
+        # We can now retrieve the actual object
+        obj = self.session.query(self.orm.KBObject).filter(
+            self.orm.KBObject.id == id_).one()
 
         return obj
 
