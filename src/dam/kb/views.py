@@ -184,7 +184,9 @@ def class_index_put(request, ws_id):
         except ValueError as e:
             return HttpResponseBadRequest(str(e))
 
-        ses.add(cls)
+        # FIXME: is it necessary to add the new KBClass instance to session?
+        # ses.add(cls)
+
         ses.commit()
 
         return HttpResponse(cls.id)
@@ -375,7 +377,9 @@ def object_index_put(request, ws_id):
             return HttpResponseForbidden()
 
         ObjectClass = cls.python_class
-        obj = ObjectClass(object_name, explicit_id=explicit_id)
+        # FIXME: avoid using _rebind_session here!
+        obj = ObjectClass(object_name, explicit_id=explicit_id,
+                          _rebind_session=ses.session)
 
         # FIXME: right now, we only support updating a few fields
         updatable_fields = {'name'        : set([unicode, str]),
