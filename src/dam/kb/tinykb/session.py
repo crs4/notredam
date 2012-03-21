@@ -411,22 +411,47 @@ class Session(object):
         '''
         cls = self.orm.cache_get(id_)
         if cls is not None:
-            if not self._check_class_ws_access(cls, ws):
+            cls2 = self.session.merge(cls)
+            self.session.add(cls2)
+
+            if not self._check_class_ws_access(cls2, ws):
                 raise kb_exc.NotFound('class.id == %s' % (id_, ))
-            self.session.merge(cls)
-            return cls
+            # Recursively ensure that class ancestors are bound to this session
+            parent_id = cls2._parent_id
+            if parent_id != id_:
+                self.class_(parent_id, ws=None) # Don't repeat ws check
+            return cls2
 
-        query = self.session.query(self.orm.KBClass).filter(
-            self.orm.KBClass.id == id_)
-        if ws is not None:
-            query = self._add_ws_filter(query, ws)
+        # Rebuild the class hierarchy, and then retrieve it starting
+        # from the root
+        hierarchy = []
+        curr_id = id_
+        while True:
+            query = self.session.query(self.schema.class_t.c.parent).filter(
+                self.schema.class_t.c.id == curr_id)
+            if (ws is not None) and (len(hierarchy) == 0):
+                # Just perform this check once
+                query = self._add_ws_table_filter(query, ws)
+        
+            try:
+                parent_id = query.one()[0]
+            except sa_exc.NoResultFound:
+                raise kb_exc.NotFound('class.id == %s' % (id_, ))
 
-        try:
-            cls = query.one()
-        except sa_exc.NoResultFound:
-            raise kb_exc.NotFound('class.id == %s' % (id_, ))
+            hierarchy.append(curr_id)
+            if parent_id == curr_id:
+                # We've reached the top of the hierarchy
+                break
+            curr_id = parent_id
 
-        return cls
+        # Now ensure that the whole class hierarchy is available in the sess
+        while True:
+            cls_id = hierarchy.pop()
+            if len(hierarchy) != 0:
+                self.class_(cls_id)
+            else:
+                return self.session.query(self.orm.KBClass).filter(
+                    self.orm.KBClass.id == id_).one()
 
     def classes(self, ws=None):
         '''
@@ -529,17 +554,10 @@ class Session(object):
         cls_id = o[0]
 
         # ...and then retrieve and ORMap its class (after checking the cache)
-        c = self.orm.cache_get(cls_id)
-        if c is not None:
-            if not self._check_class_ws_access(c, ws):
-                raise kb_exc.NotFound('object.id == %s' % (id_, ))
-            self.session.merge(c)
-        if c is None:
-            try:
-                c = self.python_class(cls_id, ws=ws)
-            except kb_exc.NotFound:
-                # Maybe the class is not accessible in the given workspace
-                raise kb_exc.NotFound('object.id == %s' % (id_, ))
+        try:
+            c = self.python_class(cls_id)
+        except kb_exc.NotFound:
+            raise kb_exc.NotFound('object.id == %s' % (id_, ))
 
         # We can now retrieve the actual object
         obj = self.session.query(self.orm.KBObject).filter(
