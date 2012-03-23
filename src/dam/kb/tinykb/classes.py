@@ -504,7 +504,7 @@ def _init_base_classes(o):
             # First of all, check whether an equivalent KBClass is still cached
             c = cache_get(sself.id)
             if c is not None:
-                if c is not sself:
+                if c is not self:
                     # FIXME: maybe raise a warning here?
                     return c._make_or_get_python_class(_session=_session)
 
