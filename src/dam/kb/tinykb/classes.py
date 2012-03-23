@@ -499,18 +499,19 @@ def _init_base_classes(o):
             if _session is None:
                 _session = Session.object_session(self)
             sself = _session.merge(self)
+            _session.add(sself)
 
             # First of all, check whether an equivalent KBClass is still cached
-            c = cache_get(self.id)
+            c = cache_get(sself.id)
             if c is not None:
-                if c is not self:
+                if c is not sself:
                     # FIXME: maybe raise a warning here?
                     return c._make_or_get_python_class(_session=_session)
 
-            if not self.is_bound():
-                self.bind_to_table()
+            if not sself.is_bound():
+                sself.bind_to_table()
 
-            if not self.is_root():
+            if not sself.is_root():
                 supclass = _session.merge(sself.superclass)
                 parent_class = supclass._make_or_get_python_class(
                     _session=_session)
@@ -529,11 +530,11 @@ def _init_base_classes(o):
             classdict = {
                 '__init__' : init_method,
                 '__repr__' : lambda instance: (
-                    "<%s('%s', '%s')>" % (self.name, instance.name,
+                    "<%s('%s', '%s')>" % (sself.name, instance.name,
                                           instance.id)),
-                '__kb_class__' : self,
-                '__class_id__' : self.id,
-                '__class_root_id__': self._root_id
+                '__kb_class__' : sself,
+                '__class_id__' : sself.id,
+                '__class_root_id__': sself._root_id
                 }
             newclass = type(str(niceid.niceid(self.name,
                                               extra_chars=0)),
@@ -544,18 +545,18 @@ def _init_base_classes(o):
             # generating the SQLAlchemy ORM mapper, because it will
             # access to self.python_class again, thus causing an
             # infinite recursion
-            self._cached_pyclass_ref = weakref.ref(newclass)
+            sself._cached_pyclass_ref = weakref.ref(newclass)
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
             session_attrs = [_session.merge(a)
-                             for a in self.attributes]
+                             for a in sself.attributes]
             for _a in session_attrs: _session.add(_a)
             for r in session_attrs:
                 mapper_props.update(r.mapper_properties())
 
-            mapper(newclass, self._sqlalchemy_table, inherits=parent_class,
-                   polymorphic_identity=self.id,
+            mapper(newclass, sself._sqlalchemy_table, inherits=parent_class,
+                   polymorphic_identity=sself.id,
                    properties = mapper_props)
 
             # Also add event listeners for validating assignments
