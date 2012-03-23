@@ -450,7 +450,7 @@ def object_post(request, ws_id, object_id):
         except kb_exc.NotFound:
             return HttpResponseNotFound()
 
-        perm = obj.__kb_class__.workspace_permission(ws)
+        perm = obj.workspace_permission(ws)
         if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
                         kb_access.READ_WRITE_OBJECTS):
             return HttpResponseForbidden()
@@ -482,7 +482,7 @@ def object_delete(request, ws_id, object_id):
         except kb_exc.NotFound:
             return HttpResponseNotFound()
 
-        perm = obj.__kb_class__.workspace_permission(ws)
+        perm = obj.workspace_permission(ws)
         if perm not in (kb_access.OWNER, kb_access.READ_WRITE,
                         kb_access.READ_WRITE_OBJECTS):
             return HttpResponseForbidden()
