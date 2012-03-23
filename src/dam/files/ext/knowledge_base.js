@@ -1334,7 +1334,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         }, attributes_grid
         ],
         buttons: [{
-            text: gettext('Save----'),
+            text: gettext('Save'),
             type: 'submit',
             handler: function(){
         		params = {};
@@ -1375,7 +1375,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     					}
             		}
         		}
-        		console.log('aaa--aaa');
         		if (add_obj){
 	        		Ext.Ajax.request({
 	        			url:url_submit,
