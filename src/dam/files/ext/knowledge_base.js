@@ -1334,7 +1334,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         }, attributes_grid
         ],
         buttons: [{
-            text: gettext('Save'),
+            text: gettext('Save----'),
             type: 'submit',
             handler: function(){
         		params = {};
@@ -1348,7 +1348,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         		var attribute;
         		params['attributes'] = {};
         		for (var i=0; i < Ext.getCmp('attribute_grid_obj_id').getStore().getCount(); i++){
-        			attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
+            		attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
             		if (attribute.multivalued == true){//list of type
         				if (attribute.type == 'choice'){
         					params['attributes'][attribute.id] = [];
@@ -1366,7 +1366,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         					}
         				}
         			}else{//only one value
-        				console.log(attribute.default_value.length);
     					if (attribute.value != null){
     						params['attributes'][attribute.id] = attribute.value;
     					}else if(attribute.default_value != null && attribute.default_value.length > 0){
@@ -1376,6 +1375,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     					}
             		}
         		}
+        		console.log('aaa--aaa');
         		if (add_obj){
 	        		Ext.Ajax.request({
 	        			url:url_submit,
