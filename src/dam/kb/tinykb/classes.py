@@ -512,8 +512,7 @@ def _init_base_classes(o):
                 sself.bind_to_table()
 
             if not sself.is_root():
-                supclass = _session.merge(sself.superclass)
-                parent_class = supclass._make_or_get_python_class(
+                parent_class = sself.superclass._make_or_get_python_class(
                     _session=_session)
                 init_method = lambda instance, name, notes=None, explicit_id=None, _rebind_session=None:(
                     parent_class.__init__(instance, name, notes=notes,
