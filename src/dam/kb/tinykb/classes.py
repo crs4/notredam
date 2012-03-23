@@ -736,6 +736,23 @@ def _init_base_classes(o):
                         if not a.multivalued:
                             setattr(self, a.id, val)
 
+        
+        def workspace_permission(self, ws):
+            '''
+            Return the access configuration of the object root class
+            for the given workspace, or None if nothing was set.
+
+            :type workspace:  :py:class:`orm.Workspace`
+            :param workspace: the workspace to configure
+            '''
+            # First of all, we need to ensure that our KBClass is
+            # bound to the same session we're using
+            session = Session.object_session(self)
+            self.__kb_class__ = session.merge(self.__kb_class__)
+            session.add(self.__kb_class__)
+            return self.__kb_class__.workspace_permission(ws)
+
+
         def __repr__(self):
             return "<KBObject(%s, '%s')>" % (self.__class__, self.name)
 
