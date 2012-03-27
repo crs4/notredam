@@ -399,8 +399,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
@@ -463,8 +466,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
@@ -539,8 +545,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
@@ -595,8 +604,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
@@ -667,8 +679,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
@@ -710,8 +725,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
@@ -792,8 +810,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
@@ -896,8 +917,11 @@ def _init_base_attributes(o):
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
             sess = sa_orm.Session.object_session(target)
-            sself = sess.merge(self)
-            sess.add(sself)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
 
             if sself.maybe_empty and not sself.multivalued and value is None:
                 return value
