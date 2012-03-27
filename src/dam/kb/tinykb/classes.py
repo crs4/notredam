@@ -539,7 +539,7 @@ def _init_base_classes(o):
                 '__class_id__' : sself.id,
                 '__class_root_id__': sself._root_id
                 }
-            newclass = type(str(niceid.niceid(self.name,
+            newclass = type(str(niceid.niceid(sself.name,
                                               extra_chars=0)),
                             (parent_class, ),
                             classdict)
