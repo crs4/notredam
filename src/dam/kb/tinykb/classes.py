@@ -496,10 +496,14 @@ def _init_base_classes(o):
 
             # Establish in which session we're working in (and pass it
             # to further recursive calls)
+            obj_session = Session.object_session(self)
             if _session is None:
-                _session = Session.object_session(self)
-            sself = _session.merge(self)
-            _session.add(sself)
+                _session = obj_session
+            if _session is obj_session:
+                sself = self
+            else:
+                sself = _session.merge(self)
+                _session.add(sself)
 
             # First of all, check whether an equivalent KBClass is still cached
             c = cache_get(sself.id)
@@ -548,10 +552,7 @@ def _init_base_classes(o):
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
-            session_attrs = [_session.merge(a)
-                             for a in sself.attributes]
-            for _a in session_attrs: _session.add(_a)
-            for r in session_attrs:
+            for r in sself.attributes:
                 mapper_props.update(r.mapper_properties())
 
             mapper(newclass, sself._sqlalchemy_table, inherits=parent_class,
@@ -560,7 +561,7 @@ def _init_base_classes(o):
 
             # Also add event listeners for validating assignments
             # according to attribute types
-            for a in session_attrs:
+            for a in sself.attributes:
                 a.make_proxies_and_event_listeners(newclass)
 
             return newclass
