@@ -421,42 +421,18 @@ class Session(object):
 
             if not self._check_class_ws_access(cls2, ws):
                 raise kb_exc.NotFound('class.id == %s' % (id_, ))
-            # Recursively ensure that class ancestors are bound to this session
-            parent_id = cls2._parent_id
-            if parent_id != id_:
-                self.class_(parent_id, ws=None) # Don't repeat ws check
             return cls2
 
-        # Rebuild the class hierarchy, and then retrieve it starting
-        # from the root
-        hierarchy = []
-        curr_id = id_
-        while True:
-            query = self.session.query(self.schema.class_t.c.parent).filter(
-                self.schema.class_t.c.id == curr_id)
-            if (ws is not None) and (len(hierarchy) == 0):
-                # Just perform this check once
-                query = self._add_ws_table_filter(query, ws)
-        
-            try:
-                parent_id = query.one()[0]
-            except sa_exc.NoResultFound:
-                raise kb_exc.NotFound('class.id == %s' % (id_, ))
+        query = self.session.query(self.orm.KBClass).filter(
+            self.orm.KBClass.id == id_)
+        if (ws is not None):
+            query = self._add_ws_filter(query, ws)
 
-            hierarchy.append(curr_id)
-            if parent_id == curr_id:
-                # We've reached the top of the hierarchy
-                break
-            curr_id = parent_id
+        try:
+            return query.one()
+        except sa_exc.NoResultFound:
+            raise kb_exc.NotFound('class.id == %s' % (id_, ))
 
-        # Now ensure that the whole class hierarchy is available in the sess
-        while True:
-            cls_id = hierarchy.pop()
-            if len(hierarchy) != 0:
-                self.class_(cls_id)
-            else:
-                return self.session.query(self.orm.KBClass).filter(
-                    self.orm.KBClass.id == id_).one()
 
     def classes(self, ws=None):
         '''
