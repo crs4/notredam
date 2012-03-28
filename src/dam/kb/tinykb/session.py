@@ -413,8 +413,11 @@ class Session(object):
         '''
         cls = self.orm.cache_get(id_)
         if cls is not None:
-            cls2 = self.session.merge(cls)
-            self.session.add(cls2)
+            if sa_orm.Session.object_session(cls) is not self.session:
+                cls2 = self.session.merge(cls)
+                self.session.add(cls2)
+            else:
+                cls2 = cls
 
             if not self._check_class_ws_access(cls2, ws):
                 raise kb_exc.NotFound('class.id == %s' % (id_, ))
