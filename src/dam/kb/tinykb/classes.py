@@ -861,13 +861,16 @@ def _init_base_classes(o):
                                         primaryjoin=(schema.class_t.c.parent
                                                      ==schema.class_t.c.id),
                                         remote_side=[schema.class_t.c.id],
+                                        lazy='immediate',
                                         viewonly=True),
             'root' : relationship(KBRootClass,
                                   primaryjoin=(schema.class_t.c.root
                                                ==schema.class_t.c.id),
                                   remote_side=[schema.class_t.c.id],
+                                  lazy='immediate',
                                   viewonly=True),
             'attributes' : relationship(o._attributes.Attribute,
+                                        lazy='immediate',
                                         back_populates='class',
                                         cascade='all, delete-orphan')
             })
@@ -876,6 +879,7 @@ def _init_base_classes(o):
            polymorphic_identity=True,
            properties={
             'visibility' : relationship(KBClassVisibility,
+                                        lazy='immediate',
                                         back_populates='class',
                                         cascade='all, delete-orphan')
             })
@@ -894,7 +898,9 @@ def _init_base_classes(o):
            properties={
             '_class' : schema.object_t.c['class'],
             '_class_root' : schema.object_t.c.class_root,
-            'class' : relationship(KBClass, backref='objects')
+            'class' : relationship(KBClass,
+                                   lazy='immediate',
+                                   backref='objects')
             })
 
     # FIXME: unused right now
