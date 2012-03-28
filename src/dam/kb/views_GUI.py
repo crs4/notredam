@@ -146,30 +146,30 @@ def get_specific_info_obj(request, obj_id):
     """
     Return all information about obj passed. It's passed obj's id.
     """
-    ses = views_kb._kb_session()
-    ws = ses.workspace(request.session['workspace'].pk)
-    cls = ses.object(obj_id, ws=ws)
-    rtr = {"rows":[]}
-    rtr['rows'].append(views_kb._kbobject_to_dict(cls, ses))
-    resp = simplejson.dumps(rtr)
-    return HttpResponse(resp)
+    with views_kb._kb_session() as ses:
+        ws = ses.workspace(request.session['workspace'].pk)
+        cls = ses.object(obj_id, ws=ws)
+        rtr = {"rows":[]}
+        rtr['rows'].append(views_kb._kbobject_to_dict(cls, ses))
+        resp = simplejson.dumps(rtr)
+        return HttpResponse(resp)
 
 def get_object_attributes_hierarchy(request):
     """
     Return all information about obj passed. It's passed obj id.
     """
     nodes = tree_view._get_item_nodes(request.POST.getlist('items'))
-    ses = views_kb._kb_session()
-    rtr = {"rows":[]}
-    for node in nodes:
-        n = Node.objects.get(pk = node.id)
-        while n.parent_id:
-            if n.kb_object_id:
-                cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id), ses)
-                _put_attributes(cls,rtr)
-            n = Node.objects.get(pk = n.parent_id)
-    logger.debug(rtr)
-    resp = simplejson.dumps(rtr)
+    with views_kb._kb_session() as ses:
+        rtr = {"rows":[]}
+        for node in nodes:
+            n = Node.objects.get(pk = node.id)
+            while n.parent_id:
+                if n.kb_object_id:
+                    cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id), ses)
+                    _put_attributes(cls,rtr)
+                    n = Node.objects.get(pk = n.parent_id)
+        logger.debug(rtr)
+        resp = simplejson.dumps(rtr)
     
     return HttpResponse(resp)
 
