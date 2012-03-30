@@ -49,6 +49,9 @@ KeyString = String(128).with_variant(mysql.VARCHAR(128, charset='ascii'),
 access_enum = [kb_access.OWNER, kb_access.READ_ONLY, kb_access.READ_WRITE,
                kb_access.READ_WRITE_OBJECTS]
 
+# Maximum length for a SQL table name
+SQL_TABLE_NAME_LEN_MAX = 64
+
 class Schema(object):
     '''
     Container for the SQL DB schema underlying a knowledge base
@@ -324,6 +327,9 @@ def _init_base_schema(o, metadata, prefix):
     creating the names of tables, constraints and other SQL DB objects
     '''
     _p = prefix # Just a shorthand
+
+    # Let's make this information accessible
+    o.SQL_TABLE_NAME_LEN_MAX = SQL_TABLE_NAME_LEN_MAX
 
     # DAM user (managed by Django)
     o.user = Table('auth_user', metadata,

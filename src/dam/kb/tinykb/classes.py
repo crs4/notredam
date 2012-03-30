@@ -250,13 +250,24 @@ def _init_base_classes(o):
         '''
         def __init__(self, name, superclass, attributes=[], notes=None,
                      explicit_id=None):
+            suffix = '_' + niceid.generate()
             if explicit_id is None:
-                self.id = niceid.niceid(name) # FIXME: check uniqueness!
+                clean_id = niceid.niceid(name, extra_chars=0)
+                # FIXME: check uniqueness!
+                self.id = '%s%s' % (clean_id, suffix)
             else:
+                clean_id = explicit_id.lower()
                 self.id = explicit_id
 
-            self.table = (schema.prefix + 'object_'
-                          + self.id).lower()
+            # Create a SQL table name, with proper prefixes and
+            # suffixes, whithin schema.SQL_TABLE_NAME_LEN_MAX chars
+            prefix = schema.prefix + 'object_'
+            base_table_name_len = (schema.SQL_TABLE_NAME_LEN_MAX
+                                   - len(prefix) - len(suffix))
+            self.table = prefix + clean_id[0:base_table_name_len] + suffix
+            print self.table
+            assert(len(self.table) <= schema.SQL_TABLE_NAME_LEN_MAX)
+
             self.name = name
 
             # FIXME: handle these fields with a SQLAlchemy mapper property?
