@@ -267,6 +267,9 @@ def _init_base_classes(o):
             self.table = prefix + clean_id[0:base_table_name_len] + suffix
             assert(len(self.table) <= schema.SQL_TABLE_NAME_LEN_MAX)
 
+            # Save suffix for later use (e.g. in attr table creation)
+            self._table_suffix = suffix
+
             self.name = name
 
             # FIXME: handle these fields with a SQLAlchemy mapper property?
@@ -1017,10 +1020,20 @@ def _init_base_classes(o):
         # FIXME: ensure uniqueness!
         # FIXME: it would be better to prefix the owner table name
         if value.multivalued:
-            value._multivalue_table = ('%sobject_%s_attr_%s'
-                                       % (schema.prefix,
-                                          value._class_id,
-                                          value.id))
+            # Create a SQL table name, with proper prefixes and
+            # suffixes, whithin schema.SQL_TABLE_NAME_LEN_MAX chars
+            prefix_max = min(len(target.table) - len(target._table_suffix),
+                             (schema.SQL_TABLE_NAME_LEN_MAX
+                              - (len(target._table_suffix) * 3)))
+            prefix = (('%sobject_%s' % (schema.prefix,
+                                       value._class_id))[0:prefix_max]
+                      + target._table_suffix)
+            table_name = ('%s_attr_%s' %
+                          (prefix, value.id))[0:schema.SQL_TABLE_NAME_LEN_MAX]
+            
+            # FIXME: another unique suffix may be needed for long attr names
+            value._multivalue_table = table_name
+
             # Will be assigned after invoking the attribute table constructor
             value._sqlalchemy_mv_table = None
 
