@@ -265,7 +265,6 @@ def _init_base_classes(o):
             base_table_name_len = (schema.SQL_TABLE_NAME_LEN_MAX
                                    - len(prefix) - len(suffix))
             self.table = prefix + clean_id[0:base_table_name_len] + suffix
-            print self.table
             assert(len(self.table) <= schema.SQL_TABLE_NAME_LEN_MAX)
 
             self.name = name
