@@ -383,7 +383,7 @@ def _init_base_schema(o, metadata, prefix):
                              nullable=False),
                       Column('parent', KeyString, nullable=False),
                       Column('parent_root', KeyString, nullable=False),
-                      Column('name', String(64), nullable=False),
+                      Column('name', String(512), nullable=False),
                       Column('table', KeyString, unique=True, nullable=False),
                       Column('notes', String(4096)),
 
@@ -460,7 +460,7 @@ def _init_base_schema(o, metadata, prefix):
                                      primary_key=True),
                               Column('id', KeyString, nullable=False,
                                      primary_key=True),
-                              Column('name', String(128), nullable=False),
+                              Column('name', String(512), nullable=False),
                               Column('type',
                                      ForeignKey(_p+'attribute_type.name',
                                                 onupdate='CASCADE',
@@ -694,7 +694,7 @@ def _init_base_schema(o, metadata, prefix):
                        Column('id', KeyString, primary_key=True),
                        Column('class', KeyString, nullable=False),
                        Column('class_root', KeyString, nullable=False),
-                       Column('name', String(128), nullable=False),
+                       Column('name', String(512), nullable=False),
                        Column('notes', String(4096)),
 
                        # Redundant constraint needed for foreign key references
