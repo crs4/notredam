@@ -325,8 +325,6 @@ def object_index_get(request, ws_id):
 
         obj_dicts = [_kbobject_to_dict(o, ses) for o in ses.objects(ws=ws)]
 
-        import gc; gc.collect()
-
         return HttpResponse(simplejson.dumps(obj_dicts))
 
 
