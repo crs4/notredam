@@ -434,7 +434,7 @@ class Session(object):
             raise kb_exc.NotFound('class.id == %s' % (id_, ))
 
 
-    def classes(self, ws=None):
+    def classes(self, ws=None, parent=None, recurse=True):
         '''
         Return an iterator yielding all known classes from the
         knowledge base.
@@ -442,10 +442,37 @@ class Session(object):
         :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter classes (default: None)
 
+        :type  parent: string or :py:class:`orm.KBClass` or None
+        :param parent: parent of the classes being retrieved.  When None
+                       (default), retrieval will start from root classes
+
+        :type  recurse: bool
+        :param recurse: also retrieve derived classes (default: True)
+
         :rtype: iterator
         :returns: an iterator yielding :py:class:`orm.KBClass` instances
         '''
         query = self.session.query(self.schema.class_t.c['id'])
+        if parent is None and recurse:
+            # Just retrieve all the classes
+            pass
+        elif parent is None and not recurse:
+            # Only retrieve root classes
+            query = query.filter(self.schema.class_t.c['id']
+                                 == self.schema.class_t.c['root'])
+        elif parent is not None and not recurse:
+            # Just get the derived classes (without recursion)
+            if isinstance(parent, self.orm.KBClass):
+                parent = parent.id
+            query = query.filter(and_((self.schema.class_t.c['parent']
+                                       == parent),
+                                      (self.schema.class_t.c['id']
+                                       != parent)))
+        else:
+            # Retrieve all the derived classes
+            raise NotImplementedError('Cannot recursively retrieve subclasses '
+                                      'of a given class (yet)')
+
         if ws is not None:
             query = self._add_ws_table_filter(query, ws)
         return itertools.imap(lambda x: self.class_(x[0]),
