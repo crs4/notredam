@@ -573,7 +573,8 @@ class Session(object):
 
         return obj
 
-    def objects(self, class_=None, ws=None, filter_expr=None):
+    def objects(self, class_=None, ws=None, recurse=True,
+                filter_expr=None):
         '''
         Return an iterator yielding all known :py:class:`orm.KBObject`
         instances from the knowledge base.
@@ -585,6 +586,9 @@ class Session(object):
         :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter KB objects according to
                    the visibility of their class (default: None)
+
+        :type  recurse: bool
+        :param recurse: retrieve objects of derived classes (default: True)
 
         :type  filter_expr: SQLAlchemy expression
         :param filter_expr: an optional SQLAlchemy filter expression for
@@ -604,6 +608,14 @@ class Session(object):
 
         if ws is not None:
             query = self._add_ws_filter(query.join(self.orm.KBClass), ws)
+
+        if not recurse:
+            # Limit retrieval to the specified class
+            if class_ is self.orm.KBObject:
+                raise TypeError('KBObject is an abstract class: cannot '
+                                'retrieve direct instances')
+            query = query.filter(self.orm.KBObject._class
+                                 == class_.__kb_class__.id)
 
         if filter_expr is not None:
             query = query.filter(filter_expr)
