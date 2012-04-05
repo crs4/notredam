@@ -188,6 +188,8 @@ class Session(object):
         self._orm = None
         self._engine = None
         self._schema = None
+
+        self.session.close()
         self.session = None
 
         if invoke_gc:
@@ -411,49 +413,28 @@ class Session(object):
         '''
         cls = self.orm.cache_get(id_)
         if cls is not None:
-            cls2 = self.session.merge(cls)
-            self.session.add(cls2)
+            if sa_orm.Session.object_session(cls) is not self.session:
+                cls2 = self.session.merge(cls)
+                self.session.add(cls2)
+            else:
+                cls2 = cls
 
             if not self._check_class_ws_access(cls2, ws):
                 raise kb_exc.NotFound('class.id == %s' % (id_, ))
-            # Recursively ensure that class ancestors are bound to this session
-            parent_id = cls2._parent_id
-            if parent_id != id_:
-                self.class_(parent_id, ws=None) # Don't repeat ws check
             return cls2
 
-        # Rebuild the class hierarchy, and then retrieve it starting
-        # from the root
-        hierarchy = []
-        curr_id = id_
-        while True:
-            query = self.session.query(self.schema.class_t.c.parent).filter(
-                self.schema.class_t.c.id == curr_id)
-            if (ws is not None) and (len(hierarchy) == 0):
-                # Just perform this check once
-                query = self._add_ws_table_filter(query, ws)
-        
-            try:
-                parent_id = query.one()[0]
-            except sa_exc.NoResultFound:
-                raise kb_exc.NotFound('class.id == %s' % (id_, ))
+        query = self.session.query(self.orm.KBClass).filter(
+            self.orm.KBClass.id == id_)
+        if (ws is not None):
+            query = self._add_ws_filter(query, ws)
 
-            hierarchy.append(curr_id)
-            if parent_id == curr_id:
-                # We've reached the top of the hierarchy
-                break
-            curr_id = parent_id
+        try:
+            return query.one()
+        except sa_exc.NoResultFound:
+            raise kb_exc.NotFound('class.id == %s' % (id_, ))
 
-        # Now ensure that the whole class hierarchy is available in the sess
-        while True:
-            cls_id = hierarchy.pop()
-            if len(hierarchy) != 0:
-                self.class_(cls_id)
-            else:
-                return self.session.query(self.orm.KBClass).filter(
-                    self.orm.KBClass.id == id_).one()
 
-    def classes(self, ws=None):
+    def classes(self, ws=None, parent=None, recurse=True):
         '''
         Return an iterator yielding all known classes from the
         knowledge base.
@@ -461,10 +442,37 @@ class Session(object):
         :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter classes (default: None)
 
+        :type  parent: string or :py:class:`orm.KBClass` or None
+        :param parent: parent of the classes being retrieved.  When None
+                       (default), retrieval will start from root classes
+
+        :type  recurse: bool
+        :param recurse: also retrieve derived classes (default: True)
+
         :rtype: iterator
         :returns: an iterator yielding :py:class:`orm.KBClass` instances
         '''
         query = self.session.query(self.schema.class_t.c['id'])
+        if parent is None and recurse:
+            # Just retrieve all the classes
+            pass
+        elif parent is None and not recurse:
+            # Only retrieve root classes
+            query = query.filter(self.schema.class_t.c['id']
+                                 == self.schema.class_t.c['root'])
+        elif parent is not None and not recurse:
+            # Just get the derived classes (without recursion)
+            if isinstance(parent, self.orm.KBClass):
+                parent = parent.id
+            query = query.filter(and_((self.schema.class_t.c['parent']
+                                       == parent),
+                                      (self.schema.class_t.c['id']
+                                       != parent)))
+        else:
+            # Retrieve all the derived classes
+            raise NotImplementedError('Cannot recursively retrieve subclasses '
+                                      'of a given class (yet)')
+
         if ws is not None:
             query = self._add_ws_table_filter(query, ws)
         return itertools.imap(lambda x: self.class_(x[0]),
@@ -565,7 +573,8 @@ class Session(object):
 
         return obj
 
-    def objects(self, class_=None, ws=None, filter_expr=None):
+    def objects(self, class_=None, ws=None, recurse=True,
+                filter_expr=None):
         '''
         Return an iterator yielding all known :py:class:`orm.KBObject`
         instances from the knowledge base.
@@ -577,6 +586,9 @@ class Session(object):
         :type  ws: :py:class:`orm.Workspace`
         :param ws: KB workspace object used to filter KB objects according to
                    the visibility of their class (default: None)
+
+        :type  recurse: bool
+        :param recurse: retrieve objects of derived classes (default: True)
 
         :type  filter_expr: SQLAlchemy expression
         :param filter_expr: an optional SQLAlchemy filter expression for
@@ -596,6 +608,14 @@ class Session(object):
 
         if ws is not None:
             query = self._add_ws_filter(query.join(self.orm.KBClass), ws)
+
+        if not recurse:
+            # Limit retrieval to the specified class
+            if class_ is self.orm.KBObject:
+                raise TypeError('KBObject is an abstract class: cannot '
+                                'retrieve direct instances')
+            query = query.filter(self.orm.KBObject._class
+                                 == class_.__kb_class__.id)
 
         if filter_expr is not None:
             query = query.filter(filter_expr)

@@ -250,13 +250,26 @@ def _init_base_classes(o):
         '''
         def __init__(self, name, superclass, attributes=[], notes=None,
                      explicit_id=None):
+            suffix = '_' + niceid.generate()
             if explicit_id is None:
-                self.id = niceid.niceid(name) # FIXME: check uniqueness!
+                clean_id = niceid.niceid(name, extra_chars=0)
+                # FIXME: check uniqueness!
+                self.id = '%s%s' % (clean_id, suffix)
             else:
+                clean_id = explicit_id.lower()
                 self.id = explicit_id
 
-            self.table = (schema.prefix + 'object_'
-                          + self.id).lower()
+            # Create a SQL table name, with proper prefixes and
+            # suffixes, whithin schema.SQL_TABLE_NAME_LEN_MAX chars
+            prefix = schema.prefix + 'object_'
+            base_table_name_len = (schema.SQL_TABLE_NAME_LEN_MAX
+                                   - len(prefix) - len(suffix))
+            self.table = prefix + clean_id[0:base_table_name_len] + suffix
+            assert(len(self.table) <= schema.SQL_TABLE_NAME_LEN_MAX)
+
+            # Save suffix for later use (e.g. in attr table creation)
+            self._table_suffix = suffix
+
             self.name = name
 
             # FIXME: handle these fields with a SQLAlchemy mapper property?
@@ -539,7 +552,7 @@ def _init_base_classes(o):
                 '__class_id__' : sself.id,
                 '__class_root_id__': sself._root_id
                 }
-            newclass = type(str(niceid.niceid(self.name,
+            newclass = type(str(niceid.niceid(sself.name,
                                               extra_chars=0)),
                             (parent_class, ),
                             classdict)
@@ -861,13 +874,16 @@ def _init_base_classes(o):
                                         primaryjoin=(schema.class_t.c.parent
                                                      ==schema.class_t.c.id),
                                         remote_side=[schema.class_t.c.id],
+                                        lazy='immediate',
                                         viewonly=True),
             'root' : relationship(KBRootClass,
                                   primaryjoin=(schema.class_t.c.root
                                                ==schema.class_t.c.id),
                                   remote_side=[schema.class_t.c.id],
+                                  lazy='immediate',
                                   viewonly=True),
             'attributes' : relationship(o._attributes.Attribute,
+                                        lazy='immediate',
                                         back_populates='class',
                                         cascade='all, delete-orphan')
             })
@@ -876,6 +892,7 @@ def _init_base_classes(o):
            polymorphic_identity=True,
            properties={
             'visibility' : relationship(KBClassVisibility,
+                                        lazy='immediate',
                                         back_populates='class',
                                         cascade='all, delete-orphan')
             })
@@ -894,7 +911,9 @@ def _init_base_classes(o):
            properties={
             '_class' : schema.object_t.c['class'],
             '_class_root' : schema.object_t.c.class_root,
-            'class' : relationship(KBClass, backref='objects')
+            'class' : relationship(KBClass,
+                                   lazy='immediate',
+                                   backref='objects')
             })
 
     # FIXME: unused right now
@@ -1001,10 +1020,20 @@ def _init_base_classes(o):
         # FIXME: ensure uniqueness!
         # FIXME: it would be better to prefix the owner table name
         if value.multivalued:
-            value._multivalue_table = ('%sobject_%s_attr_%s'
-                                       % (schema.prefix,
-                                          value._class_id,
-                                          value.id))
+            # Create a SQL table name, with proper prefixes and
+            # suffixes, whithin schema.SQL_TABLE_NAME_LEN_MAX chars
+            prefix_max = min(len(target.table) - len(target._table_suffix),
+                             (schema.SQL_TABLE_NAME_LEN_MAX
+                              - (len(target._table_suffix) * 3)))
+            prefix = (('%sobject_%s' % (schema.prefix,
+                                       value._class_id))[0:prefix_max]
+                      + target._table_suffix)
+            table_name = ('%s_attr_%s' %
+                          (prefix, value.id))[0:schema.SQL_TABLE_NAME_LEN_MAX]
+            
+            # FIXME: another unique suffix may be needed for long attr names
+            value._multivalue_table = table_name
+
             # Will be assigned after invoking the attribute table constructor
             value._sqlalchemy_mv_table = None
 
