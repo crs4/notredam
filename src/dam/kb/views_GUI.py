@@ -30,7 +30,7 @@ import dam.treeview.views as tree_view
 from dam.treeview.models import Node
 from django.contrib.auth.models import User
 from dam.repository.models import Component
-
+import time
 
 import logging
 logger = logging.getLogger('dam')
@@ -40,58 +40,67 @@ def _get_root_tree(request,ws_id):
     Return root tree for GUI
     """
     result = []
-    spr = []    
+    spr = [] 
+    try:
+        with views_kb._kb_session() as ses:
+            ws = ses.workspace(ws_id)
+            cls_dicts = [views_kb._kbclass_to_dict(o, ses) for o in ses.classes(ws=ws, parent=None, recurse=False)]
+        
+        for n in cls_dicts:
+            if not n['superclass']:
+                tmp = {'text' : n['name'],  
+                   'id': n['id'], 
+                   'leaf': False,
+                   'iconCls' : 'object-class',
+                }  
+                result.append(tmp)
+    except Exception, ex:
+        logger.debug(ex)
 
-    cls_dicts = views_kb.class_index_get(request, ws_id)
-    cls_dicts = simplejson.loads(cls_dicts.content)   
-
-    for n in cls_dicts:
-        if not n['superclass']:
-            tmp = {'text' : n['name'],  
-               'id': n['id'], 
-               'leaf': False,
-               'iconCls' : 'object-class',
-            }  
-            result.append(tmp)
-    
     return result 
 
+def _put_right_value_leaf(c, leaf):
+    tmp = {'text' : c["name"],#  non presente ho guardato il nome della classe FIXME chiedere ad alceste
+           'id': c["id"], 
+           'leaf': leaf, # sarebbe utile avere info a riguardo
+           'iconCls' : 'object-class',
+        }
+    
+    return tmp
+    
 def _get_child_cls_obj(request,ws_id, parent):
     """
     Get child for tree in GUI
     """
     result = []
     spr = []
+
     try:
-        cls_dicts = views_kb.class_index_get(request, ws_id)
-        cls_dicts = simplejson.loads(cls_dicts.content)   
-        for n in cls_dicts:
-            if n['superclass']:
-                spr.append({'namesuper':n['superclass']}) 
-            if parent.lower() == n['superclass']:
-                tmp = {'text' : n['name'],  
-                       'id': n['id'], 
-                       'leaf': False,
-                       'iconCls' : 'object-class',
-
-                    }  
-                result.append(tmp)
-        logger.debug("class result")
-        logger.debug(result)
-
-        obj_dicts = views_kb.object_index_get(request, ws_id)
-        obj_dicts = simplejson.loads(obj_dicts.content)   
+        with views_kb._kb_session() as ses:
+            ws = ses.workspace(ws_id)
+            cls_dicts = [views_kb._kbclass_to_dict(o, ses) for o in ses.classes(ws=ws, parent=parent, recurse=False)]
+            cls = ses.class_(parent, ws=ws)
+            objs = ses.objects(class_=cls.python_class, ws=ws, recurse=False)
+            obj_dicts = [views_kb._kbobject_to_dict(o, ses) for o in objs]
+            print "obj_dicts"
+            print obj_dicts
+                
+        for c in cls_dicts:
+            if len(c['subclasses'])>0:
+                tmp = _put_right_value_leaf(c, False)
+            else:
+                tmp = _put_right_value_leaf(c, False)
+            result.append(tmp)
+            
         for o in obj_dicts:
-            if parent.lower() == o['class_id'].lower():
-                tmp = {'text' : o['name'],  
-                       'id': o['id'], 
-                       'leaf': True,
-                    }  
-                result.append(tmp)
-        
-        logger.info("result---:  %s" %result)
+            tmp = {'text' : o['name'],  
+                   'id': o['id'], 
+                   'leaf': True,
+                } 
+            result.append(tmp)
     except Exception, ex:
         logger.debug(ex)
+    
             
     return result
 
