@@ -176,7 +176,7 @@ def get_object_attributes_hierarchy(request):
                 if n.kb_object_id:
                     cls = views_kb._kbobject_to_dict(ses.object(n.kb_object_id), ses)
                     _put_attributes(cls,rtr)
-                    n = Node.objects.get(pk = n.parent_id)
+                n = Node.objects.get(pk = n.parent_id)
         logger.debug(rtr)
         resp = simplejson.dumps(rtr)
     
