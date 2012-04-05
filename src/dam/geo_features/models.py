@@ -55,6 +55,7 @@ class GeoManager(models.Manager):
                 item.metadata.create(schema=m, value=latitude)
             for m in metadata_lng:
                 item.metadata.create(schema=m, value=longitude)
+            item.update_last_modified()
         else:
             logger.debug('Unsupported coordinates format. Latitude: %s, longitude: %s' % (lat, lng))
 

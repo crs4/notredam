@@ -299,6 +299,7 @@ class MetadataManager(models.Manager):
             properties = descriptor.properties.filter(media_type__name=item.type.name)
             logger.debug('properties %s'%properties)
             logger.debug('item.type %s'%item.type)
+            item.update_last_modified()
             for p in properties:
                 logger.debug('p.editable %s'%p.editable)
                 if not p.editable:
@@ -335,7 +336,7 @@ class MetadataManager(models.Manager):
             logger.debug('item.type %s'%item.type)
             properties = descriptor.properties.filter(media_type__name=item.type.name)
             logger.debug('properties %s'%properties)
-    
+            item.update_last_modified()
             for p in properties:
                 logger.debug(p)
                 logger.debug('p.editable %s'%p.editable)
