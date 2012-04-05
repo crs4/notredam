@@ -39,6 +39,8 @@ def _get_root_tree(request,ws_id):
     """
     Return root tree for GUI
     """
+    logger.debug("_get_root_tree")
+
     result = []
     spr = [] 
     try:
@@ -46,14 +48,15 @@ def _get_root_tree(request,ws_id):
             ws = ses.workspace(ws_id)
             cls_dicts = [views_kb._kbclass_to_dict(o, ses) for o in ses.classes(ws=ws, parent=None, recurse=False)]
         
+        logger.debug("Dictionary")
+        logger.debug(cls_dicts)
         for n in cls_dicts:
-            if not n['superclass']:
-                tmp = {'text' : n['name'],  
-                   'id': n['id'], 
-                   'leaf': False,
-                   'iconCls' : 'object-class',
-                }  
-                result.append(tmp)
+            tmp = {'text' : n['name'],  
+               'id': n['id'], 
+               'leaf': False,
+               'iconCls' : 'object-class',
+            }  
+            result.append(tmp)
     except Exception, ex:
         logger.debug(ex)
 
@@ -72,9 +75,9 @@ def _get_child_cls_obj(request,ws_id, parent):
     """
     Get child for tree in GUI
     """
+    logger.debug("_get_child_cls_obj")
     result = []
     spr = []
-
     try:
         with views_kb._kb_session() as ses:
             ws = ses.workspace(ws_id)
@@ -82,8 +85,8 @@ def _get_child_cls_obj(request,ws_id, parent):
             cls = ses.class_(parent, ws=ws)
             objs = ses.objects(class_=cls.python_class, ws=ws, recurse=False)
             obj_dicts = [views_kb._kbobject_to_dict(o, ses) for o in objs]
-            print "obj_dicts"
-            print obj_dicts
+            logger.debug("obj_dicts")
+            logger.debug(obj_dicts)
                 
         for c in cls_dicts:
             if len(c['subclasses'])>0:
