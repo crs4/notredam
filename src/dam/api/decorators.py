@@ -28,6 +28,7 @@ import logging
 logger = logging.getLogger('dam')
 
 from dam.api.models import  Secret,  Application
+from dam.settings import SAFE_MODE
 import hashlib
 
 from exceptions import *
@@ -95,7 +96,10 @@ def api_key_required(func):
     """Check if api_key and user_id passed are valid"""
     
     def check(self,  request, *args, **kwargs):	
-        if self.private:
+          
+        #if self.private:
+        if self.private or SAFE_MODE == True:
+            print '\n\nSAFE MODE!!!'
             return func(self,  request, *args, **kwargs)        
         raise_error = False        
 #        logger.debug('raw_post_data %s' %request.raw_post_data) 
