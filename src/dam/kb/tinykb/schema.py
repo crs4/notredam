@@ -49,6 +49,9 @@ KeyString = String(128).with_variant(mysql.VARCHAR(128, charset='ascii'),
 access_enum = [kb_access.OWNER, kb_access.READ_ONLY, kb_access.READ_WRITE,
                kb_access.READ_WRITE_OBJECTS]
 
+# Maximum length for a SQL table name
+SQL_TABLE_NAME_LEN_MAX = 64
+
 class Schema(object):
     '''
     Container for the SQL DB schema underlying a knowledge base
@@ -325,6 +328,9 @@ def _init_base_schema(o, metadata, prefix):
     '''
     _p = prefix # Just a shorthand
 
+    # Let's make this information accessible
+    o.SQL_TABLE_NAME_LEN_MAX = SQL_TABLE_NAME_LEN_MAX
+
     # DAM user (managed by Django)
     o.user = Table('auth_user', metadata,
                    Column('id', Integer, primary_key=True),
@@ -383,7 +389,7 @@ def _init_base_schema(o, metadata, prefix):
                              nullable=False),
                       Column('parent', KeyString, nullable=False),
                       Column('parent_root', KeyString, nullable=False),
-                      Column('name', String(64), nullable=False),
+                      Column('name', String(512), nullable=False),
                       Column('table', KeyString, unique=True, nullable=False),
                       Column('notes', String(4096)),
 
@@ -460,7 +466,7 @@ def _init_base_schema(o, metadata, prefix):
                                      primary_key=True),
                               Column('id', KeyString, nullable=False,
                                      primary_key=True),
-                              Column('name', String(128), nullable=False),
+                              Column('name', String(512), nullable=False),
                               Column('type',
                                      ForeignKey(_p+'attribute_type.name',
                                                 onupdate='CASCADE',
@@ -694,7 +700,7 @@ def _init_base_schema(o, metadata, prefix):
                        Column('id', KeyString, primary_key=True),
                        Column('class', KeyString, nullable=False),
                        Column('class_root', KeyString, nullable=False),
-                       Column('name', String(128), nullable=False),
+                       Column('name', String(512), nullable=False),
                        Column('notes', String(4096)),
 
                        # Redundant constraint needed for foreign key references
