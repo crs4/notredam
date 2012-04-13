@@ -261,6 +261,17 @@ def get_workspaces_with_edit_vocabulary(request):
         
     return HttpResponse(simplejson.dumps(rtr))    
 
+
+def update_assosiation_treeview(request):
+    kb_object_id = request.POST.get('id')
+    ws = request.session.get('workspace', None)
+    nodes= Node.objects.filter(kb_object = kb_object_id, workspace = request.session['workspace'].pk)
+
+    for node in nodes:
+        node.reassoc_node(kb_object_id,ws)
+
+    return HttpResponse(simplejson.dumps("Ok"))    
+
 # don't used
 #def get_variant_url(request):
 #
