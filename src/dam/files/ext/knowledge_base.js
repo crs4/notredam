@@ -1186,15 +1186,11 @@ function load_detail_class(class_data, id_class, add_class){
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
 	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	        				console.log('AAA');
-	        				console.log(id_class);
 	                		if(params['superclass'] != ""){
 	                			Ext.getCmp('obj_reference_tree').getNodeById(params['superclass']).reload();
 	                		}else{
 	                			Ext.getCmp('obj_reference_tree').getNodeById('root_obj_tree').reload();
 	                		}
-	        				console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class));
-	        				
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('details_panel_class').removeAll();
 	                    },
@@ -1428,7 +1424,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	                    waitMsg: 'Saving...',
 	                    success: function(response){
 	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	        				console.log('BBB');
 	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
 	                    	Ext.getCmp('obj_reference_tree').getNodeById(params['class_id']).reload();
 	                    	Ext.getCmp('details_panel_obj').removeAll();
