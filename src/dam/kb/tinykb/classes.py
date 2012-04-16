@@ -95,6 +95,10 @@ def _init_base_classes(o):
         return o._kb_class_cache.get(cls_id, None)
     o.cache_get = cache_get
 
+    def cache_update(cls):
+        o._kb_class_cache[cls.id] = cls
+    o.cache_update = cache_update
+
     def cache_del(cls_id):
         del o._kb_class_cache[cls_id]
     o.cache_del = cache_del
@@ -1058,3 +1062,8 @@ def _init_base_classes(o):
     def kbclass_after_delete(_mapper, _connection, target):
         target.__kb_deleted__ = True
     event.listen(KBClass, 'after_delete', kbclass_after_delete, propagate=True)
+
+    # Sync cache when a KB class is updated
+    def kbclass_after_update(_mapper, _connection, target):
+        cache_update(target)
+    event.listen(KBClass, 'after_update', kbclass_after_update, propagate=True)
