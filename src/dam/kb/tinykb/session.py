@@ -600,28 +600,33 @@ class Session(object):
         if class_ is None:
             class_ = self.orm.KBObject
 
-        # It will cause the Python classes to be instantiated and ORM-mapped
-        # FIXME: not good! Try to load the minimum set of required classes!
-        self.python_classes(ws=ws)
-
-        query = self.session.query(class_)
+        obj_query = self.session.query(class_)
+        cls_id_query = self.session.query(self.schema.object_t.c['class'])
 
         if ws is not None:
-            query = self._add_ws_filter(query.join(self.orm.KBClass), ws)
+            obj_query = self._add_ws_filter(obj_query.join(self.orm.KBClass),
+                                            ws)
+            cls_id_query = self._add_ws_table_filter(
+                cls_id_query.join(self.schema.class_t), ws)
 
         if not recurse:
             # Limit retrieval to the specified class
             if class_ is self.orm.KBObject:
                 raise TypeError('KBObject is an abstract class: cannot '
                                 'retrieve direct instances')
-            query = query.filter(self.orm.KBObject._class
-                                 == class_.__kb_class__.id)
+            obj_query = obj_query.filter(self.orm.KBObject._class
+                                         == class_.__kb_class__.id)
+        else:
+            # We may need to instantiate the involved Python classes
+            # before retrieving objects
+            for x in cls_id_query:
+                self.python_class(x[0])
 
         if filter_expr is not None:
-            query = query.filter(filter_expr)
+            obj_query = obj_query.filter(filter_expr)
 
         # Just to mask SQLAlchemy query object
-        return itertools.imap(lambda x: x, query)
+        return itertools.imap(lambda x: x, obj_query)
 
     def user(self, id_):
         '''
