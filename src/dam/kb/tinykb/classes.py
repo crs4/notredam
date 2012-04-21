@@ -565,7 +565,7 @@ def _init_base_classes(o):
             # generating the SQLAlchemy ORM mapper, because it will
             # access to self.python_class again, thus causing an
             # infinite recursion
-            sself._cached_pyclass_ref = weakref.ref(newclass)
+            self._cached_pyclass_ref = weakref.ref(newclass)
 
             # Let's now build the SQLAlchemy ORM mapper
             mapper_props = {}
