@@ -874,7 +874,8 @@ def _init_base_classes(o):
             '_is_root' : schema.class_t.c.is_root,
             'superclass' : relationship(KBClass,
                                         backref=backref('subclasses',
-                                                        cascade='all, delete-orphan'),
+                                                        cascade='all, delete-orphan',
+                                                        lazy='select'),
                                         primaryjoin=(schema.class_t.c.parent
                                                      ==schema.class_t.c.id),
                                         remote_side=[schema.class_t.c.id],
