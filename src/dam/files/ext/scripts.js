@@ -132,7 +132,7 @@ function edit_script(is_new){
 					
 				
 				});
-				console.log(available_actions);
+				
 				win = create_window(available_actions);
 				win.show();
 			

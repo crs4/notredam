@@ -72,7 +72,7 @@ var MDAction =  function(opts, layer) {
 	
 	
 	MDAction.superclass.constructor.call(this, opts, layer);
-    console.log(opts.title);
+  
 	layer.containers.push(this);
 
 }; 
@@ -161,11 +161,12 @@ Ext.extend(MDAction, WireIt.Container, {
 	 	var create_label = !this.no_label;
 	 	var action = this;
 	 	var params_objs = []
+        var form_id = Ext.id();
 	 	Ext.each(this.params, function(param){
 			
 			param.allow_dynamic = true;			
 			param.plugins = [Ext.ux.plugin_dynamic_field];
-			
+			param.form_id = form_id;
 			var param_obj = new Ext.ComponentMgr.types[param.xtype](param);
 			
 			param_obj.check_dynamic(action.dynamic);
@@ -173,7 +174,9 @@ Ext.extend(MDAction, WireIt.Container, {
 			
 		});
 	 	
+			
 	 	var form = new Ext.form.FormPanel({
+            id: form_id,
 //	 		renderTo: this.bodyEl,
 	 		bodyStyle: {paddingTop: 10},
 	 		autoHeight: true,
@@ -614,7 +617,7 @@ Ext.onReady(function(){
 							var action;
 							for (action_name in params){
 								if (action_name){
-
+                                    console.log('action_name ' + action_name);
 									action = params[action_name];
 									
 									var action_stored = store.query('name', action.script_name).items;
@@ -637,9 +640,11 @@ Ext.onReady(function(){
 											
 											
 										}, baseLayer);
-                                        console.log('action.params'); 
-                                        console.log(action.params); 
+                                                                          
                                         try{
+                                            console.log('setting values for action_box ' + action_box.id);
+                                            console.log('setting values for action_box ' + action.label);
+                                            console.log(action.params);
                                             action_box.form.getForm().setValues(action.params);
                                         }
                                         catch(e){
@@ -648,7 +653,8 @@ Ext.onReady(function(){
 										
 										
 										Ext.each(action_box.form.items.items, function(field){          						
-											if (field.data_loaded)
+											
+                                            if (field.data_loaded)
 												field.data_loaded(action.params);
 												
 										});
