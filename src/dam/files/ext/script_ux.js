@@ -329,7 +329,9 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 			
 			});
 		}
-		catch(e){}
+		catch(e){
+            console.error(e);
+        }
         
 		
 	}
@@ -700,12 +702,18 @@ Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
 				    	text: 'Select',
 				    	handler: function(){
 				    		var selected = Ext.getCmp('wm_dataview').getSelectedRecords();
-				    		if (selected.length > 0){
+				    		if (selected.length > 0 && Ext.getCmp('wm_id').isValid()){
 				    			var rendition = Ext.getCmp('rendition_select').getValue();
 				    			
-				    			Ext.getCmp('wm_id').setValue(String.format('/item/{0}/{1}/',selected[0].data._id, rendition ));
-				    			wm_win.close();
-				    		}
+							Ext.Ajax.request({
+							    url: String.format('/get_watermarks/{0}/{1}', selected[0].data._id, rendition),
+                                                            success: function(response){
+							        Ext.getCmp('wm_id').setValue(response.responseText);
+								wm_win.close();	
+                                                            }
+							});	
+				    			
+				    		} //else {alert...}
 				    		
 				    		
 				    	
@@ -777,7 +785,7 @@ Ext.reg('watermarkposition', Ext.ux.WatermarkPosition);
     
 
 Ext.ux.Select = function(config) {
-    console.log(config);
+   
  	//set_rendition_store(config);
  	this.values = config.values;
      	
@@ -824,7 +832,7 @@ Ext.extend(Ext.ux.Select, Ext.form.ComboBox, {
 Ext.reg('select', Ext.ux.Select);
 
 Ext.ux.RenditionSelect = function(config) {
-    console.log(config);
+   
  	set_rendition_store(config);
  	//this.values = config.values;
      	
@@ -887,6 +895,7 @@ Ext.ux.CBFieldSet = function(config) {
 	
 	Ext.ux.CBFieldSet.superclass.constructor.call(this, config);
 	this.collapsed = config.collapsed
+	//this.collapsed = false;
 	
 	
 };
@@ -1111,7 +1120,8 @@ Ext.extend(Ext.ux.MovableCBFieldSet, Ext.ux.CBFieldSet, {
  		container.doLayout();
  		
  		
- 		container.form.getForm().setValues(values);
+ 		Ext.getCmp(container.form_id).getForm().setValues(values);
+        new_obj.data_loaded(values);
  		if (new_obj.dynamic)
 			new_obj.expand();
 		else
@@ -1136,11 +1146,13 @@ Ext.reg('movablecbfieldset', Ext.ux.MovableCBFieldSet);
 
 Ext.ux.WatermarkFieldSet = function(config){
 	var pos_x_percent = new Ext.form.Hidden({
-		name: config.wm_x_name || 'pos_x_percent'
+		name: config.wm_x_name || 'pos_x_percent',
+        value: 0
 	});
 	
 	var pos_y_percent = new Ext.form.Hidden({
-		name: config.wm_x_name || 'pos_y_percent'
+		name: config.wm_x_name || 'pos_y_percent',
+        value: 0
 	});
 	
 		
@@ -1150,9 +1162,10 @@ Ext.ux.WatermarkFieldSet = function(config){
         'xtype':'textfield',
         'name': config.wm_id_name ||'wm_id',
         
-        
         'description': 'image',
-        'help': ''
+        'help': '',
+        allowBlank:false,
+        disabled: true
     }); 
 	
     var position = new Ext.ux.WatermarkPosition({
@@ -1160,8 +1173,9 @@ Ext.ux.WatermarkFieldSet = function(config){
     	 listeners: {
     	 	afterrender: function(){
                 
-                if(this.ownerCt.pos_x_percent.getValue() && this.ownerCt.pos_y_percent.getValue())
-					 this.ownerCt.watermarking(this.ownerCt._get_square(this.ownerCt.pos_x_percent.getValue(), this.ownerCt.pos_y_percent.getValue()));
+                //if(this.ownerCt.pos_x_percent.getValue() && this.ownerCt.pos_y_percent.getValue())
+                console.log('this.ownerCt.pos_x_percent.getValue() ' + this.ownerCt.pos_x_percent.getValue());
+                this.ownerCt.watermarking(this.ownerCt._get_square(this.ownerCt.pos_x_percent.getValue(), this.ownerCt.pos_y_percent.getValue()));
     	 		 
     	 		 
     	 	}
@@ -1173,6 +1187,7 @@ Ext.ux.WatermarkFieldSet = function(config){
         name: wm_id.name,
         fieldLabel: 'Image',
         wm_id : wm_id,
+        allowBlank: false,
         
         getValue: function(){
         	return this.wm_id.getValue();
@@ -1182,9 +1197,10 @@ Ext.ux.WatermarkFieldSet = function(config){
         	this.wm_id.setValue(value);
         },
         'items':[ wm_id, {
-                 'xtype': 'watermarkbrowsebutton',
-                 'text': 'Browse',
-                 values: config.renditions
+                 xtype: 'watermarkbrowsebutton',
+                 text: 'Browse',
+                 values: config.renditions,
+                 allowBlank:false
                 } ] }),
         position,        
         pos_x_percent,
@@ -1205,10 +1221,17 @@ Ext.ux.WatermarkFieldSet = function(config){
 
 Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
 	_set_hidden_position_percent: function(id){
+        console.log('id ' + id);
+        console.log('this.id');
+        console.log(this.id);
+       
         var pos_x = ((id-1) % 3) * 33 + 5;
         var pos_y = (parseInt((id-1) / 3)) * 33 + 5;
         this.pos_x_percent.setValue(parseInt(pos_x));
         this.pos_y_percent.setValue(parseInt(pos_y));
+        
+        
+        
 	},
 
     _get_square: function(xpercent, ypercent) {
@@ -1218,12 +1241,13 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
     },
 	
 	data_loaded: function(values){        
+		console.log('data_loaded');
+		console.log(values);
+        
 		
-		if(this.pos_x_percent && this.pos_y_percent){
-			this.watermarking(this._get_square(this.pos_x_percent.getValue(), this.pos_y_percent.getValue()));
-          
-        }
-			
+        this.watermarking(this._get_square(values.pos_x_percent, values.pos_y_percent));
+        //
+        //this.expand();
 		Ext.ux.WatermarkFieldSet.superclass.data_loaded.call(this, values);
 		
 	},
@@ -1242,7 +1266,8 @@ Ext.extend(Ext.ux.WatermarkFieldSet, Ext.ux.MovableCBFieldSet, {
 	    
 	},
 	
-	watermarking: function(id){    
+	watermarking: function(id){ 
+        console.log('watermarking id ' + id);   
         if(!id)
             return;
 	    this._reset_watermarking();
