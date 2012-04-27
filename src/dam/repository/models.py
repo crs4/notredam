@@ -836,7 +836,7 @@ class Component(AbstractComponent):
         from dam.metadata.views import format_filesize
         return format_filesize(self.size)
     
-    def get_metadata_values(self, metadataschema=None):
+    def get_metadata_values(self, metadataschema=None, language=None):
         """
         Returns the metadata values for the current component and the given
         XMP Property
