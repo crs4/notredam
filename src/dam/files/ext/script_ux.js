@@ -321,15 +321,17 @@ Ext.extend(Ext.ux.FieldSetContainer, Ext.Panel, {
 				item.data_loaded(values);
 		});
         
-        //try{
-			//Ext.each(this.items.items, function(item){
-				//var position = actions.indexOf(item.name);
-				//if (item.get_position() != position)
-					//item.move(position);
-			//
-			//});
-		//}
-		//catch(e){}
+        try{
+			Ext.each(this.items.items, function(item){
+				var position = actions.indexOf(item.name);
+				if (item.get_position() != position)
+					item.move(position);
+			
+			});
+		}
+		catch(e){
+            console.error(e);
+        }
         
 		
 	}
