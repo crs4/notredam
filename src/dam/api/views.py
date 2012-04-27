@@ -1557,9 +1557,10 @@ class ItemResource(ModResource):
             
         workspace = request.GET['workspace']
         variants = request.GET.getlist('renditions')
+        language = request.GET.get('language')
         
         item = Item.objects.get(pk = item_id)
-        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', language=None,deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = True, upload_workspace = True)
+        resp = ItemResource()._get_item_info(item, workspace, variants = variants, metadata = '*', language=language,deletion_info = False, workspaces_list = True, keywords_list = True, rendition_file_name = True, upload_workspace = True)
         
         logger.debug('resp %s'% resp)
         json_resp = json.dumps(resp)
@@ -2117,7 +2118,7 @@ class KeywordsResource(ModResource):
             else:
                 kw_info['children'] = [i.pk for i in kw.children.all()] 
             
-            logger.info('\n\n\n kw_info %s' %kw_info)
+            #logger.info('\n\n\n kw_info %s' %kw_info)
             return kw_info
         
 #        user_id = request.GET.get('user_id')        
