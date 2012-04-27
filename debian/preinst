@@ -1,0 +1,19 @@
+#!/bin/sh
+if [ "$1" = "upgrade" ]; then
+  # Show warning because there is not migration script for database and thus alla data could be lose 
+    EXIT_SUCCESS=0  #  By convention, an 'exit 0' indicates success
+    EXIT_FAILURE=1
+    echo "Warning: Actually NotreDAM is not compatible with previous version. There are not migration scripts, thus you will lose your data if you choose to continue. Do you want continue? [y/n]"
+    read resp
+    case $resp in
+      yes|y|Y|Yes|YES)
+        exit $EXIT_SUCCESS
+        ;;
+      no|n|N|NO)
+        exit $EXIT_FAILURE
+        ;;
+      *)
+        exit $EXIT_FAILURE
+        ;;
+    esac
+fi

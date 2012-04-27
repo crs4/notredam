@@ -1,0 +1,54 @@
+/*
+*
+* NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+* Email: labcontdigit@sardegnaricerche.it
+* Web: www.notre-dam.org
+*
+* This program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*/
+
+.add_icon {
+    background-image:url(/files/images/icons/fam/add.gif) !important;
+}
+.upload {
+    background-image:url(/files/images/icons/fam/plugin.gif) !important;
+}
+.clear_icon {
+    background-image:url(/files/images/icons/fam/delete.gif) !important;
+}
+.abort_icon {
+    background-image:url(/files/images/icons/fam/cross.gif) !important;
+}
+.save_icon {
+    background-image:url(/files/images/icons/save.gif) !important;
+}
+.edit_icon {
+    background-image:url(/files/images/icons/fam/pencil.png) !important;
+}
+.list_icon {
+background:transparent url(/files/images/icons/fam/application_view_list.png) no-repeat scroll 0pt !important;
+}
+
+.dynamic_input_hidden{
+/*
+	display: none;
+*/
+visibility: hidden;
+}
+
+.dummy_icon:{
+	background: transparent;
+}
+
+.form_container_hidden{
+	display: none;
+}
