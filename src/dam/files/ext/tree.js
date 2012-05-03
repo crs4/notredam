@@ -1345,10 +1345,8 @@ contextMenuShow = function(node_menu,e){
 
     tree_keywords.menu = contextMenuKeywords;
 
-    new Ext.tree.TreeSorter(tree_keywords, {
-	    dir: "ASC",
-	    folderSort: true
-	});     
+    var sorter = new Ext.tree.TreeSorter(tree_keywords, {folderSort: false});
+    sorter.doSort(tree_keywords.getRootNode());
 
     // add an inline editor for the nodes
     
