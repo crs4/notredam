@@ -23,6 +23,7 @@
 #
 #########################################################################
 
+import threading
 import types
 import weakref
 
@@ -36,7 +37,7 @@ from sqlalchemy.sql import and_
 
 import access
 
-from util import niceid
+from util import niceid, decorators
 
 class Classes(types.ModuleType):
     def __init__(self, session):
@@ -498,6 +499,10 @@ def _init_base_classes(o):
                 # exception here
                 raise
 
+        # Guard for Python class generation
+        o._pyclass_gen_lock = threading.RLock()
+
+        @decorators.synchronized(o._pyclass_gen_lock)
         def _make_or_get_python_class(self, _session=None):
             '''
             The Python class associated to a KB class.  This property
@@ -524,10 +529,11 @@ def _init_base_classes(o):
 
             # First of all, check whether an equivalent KBClass is still cached
             c = cache_get(sself.id)
-            if c is not None:
-                if c is not self:
-                    # FIXME: maybe raise a warning here?
-                    return c._make_or_get_python_class(_session=_session)
+            assert(c is not None) # The KBClass must have been cached
+
+            if c is not self:
+                # FIXME: maybe raise a warning here?
+                return c._make_or_get_python_class(_session=_session)
 
             if not sself.is_bound():
                 sself.bind_to_table()
