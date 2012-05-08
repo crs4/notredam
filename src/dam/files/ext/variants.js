@@ -1000,7 +1000,7 @@ function variants_prefs(){
     	win =new Ext.Window({
             layout      : 'fit',
             constrain: true,
-            title: '<p style="text-align:center">gettext(Add Rendition)</p>',
+            title: '<p style="text-align:center">Add Rendition</p>',
             width       : 350,
             height      : 200,
             modal: true,
