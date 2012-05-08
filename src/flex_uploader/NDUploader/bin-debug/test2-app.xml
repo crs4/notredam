@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<application xmlns="http://ns.adobe.com/air/application/2.0beta2">
+
+	<id>test2</id>
+
+	<filename>test2</filename>
+
+	<name>test2</name>
+
+	<version>v1</version>
+
+	<initialWindow>
+		<content>test2.swf</content>
+		<title>FileTile</title>
+		<systemChrome>none</systemChrome>
+		<transparent>false</transparent>
+		<visible>false</visible>
+		<!-- <minimizable></minimizable> -->
+		<!-- <maximizable></maximizable> -->
+		<resizable>false</resizable>
+		<width>800</width>
+		<height>600</height>
+		<!-- <x></x> -->
+		<!-- <y></y> -->
+		<minSize>800 600</minSize>
+		<!-- <maxSize></maxSize> -->
+	</initialWindow>
+	
+</application>
