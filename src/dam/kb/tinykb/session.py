@@ -411,17 +411,11 @@ class Session(object):
                  ID does not exist in the knowledge base (or in the
                  specified workspace, when provided)
         '''
-        cls = self.orm.cache_get(id_)
+        cls = self.orm.cache_get(id_, self.session)
         if cls is not None:
-            if sa_orm.Session.object_session(cls) is not self.session:
-                cls2 = self.session.merge(cls)
-                self.session.add(cls2)
-            else:
-                cls2 = cls
-
-            if not self._check_class_ws_access(cls2, ws):
+            if not self._check_class_ws_access(cls, ws):
                 raise kb_exc.NotFound('class.id == %s' % (id_, ))
-            return cls2
+            return cls
 
         query = self.session.query(self.orm.KBClass).filter(
             self.orm.KBClass.id == id_)

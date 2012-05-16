@@ -92,8 +92,18 @@ def _init_base_classes(o):
         o._kb_class_cache[cls.id] = cls
     o.cache_add = cache_add
 
-    def cache_get(cls_id):
-        return o._kb_class_cache.get(cls_id, None)
+    def cache_get(cls_id, session):
+        ret = o._kb_class_cache.get(cls_id, None)
+        if session is None:
+            # No need to fiddle with the session, just return the result
+            return ret
+        if ret is not None:
+            obj_session = Session.object_session(ret)
+            if obj_session is not session:
+                # Return a copy of the KBClass merged with the current session
+                return session.merge(ret)
+            else:
+                return ret
     o.cache_get = cache_get
 
     def cache_update(cls):
@@ -303,7 +313,7 @@ def _init_base_classes(o):
         def __init_on_load__(self):
             self._sqlalchemy_table = None
             self.bind_to_table()
-            if cache_get(self.id) is None:
+            if cache_get(self.id, Session.object_session(self)) is None:
                 cache_add(self)
 
         sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
@@ -528,7 +538,7 @@ def _init_base_classes(o):
                 _session.add(sself)
 
             # First of all, check whether an equivalent KBClass is still cached
-            c = cache_get(sself.id)
+            c = cache_get(sself.id, None)
             assert(c is not None) # The KBClass must have been cached
 
             if c is not self:
