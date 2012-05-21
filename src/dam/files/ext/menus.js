@@ -172,7 +172,7 @@ Ext.onReady(function(){
                             columns: [{
                                 header: 'Username',
                                 dataIndex: 'name'
-                            }],
+                            }]
                         }); 
 
                         var permissions_form = new Ext.form.FormPanel({
@@ -540,7 +540,7 @@ Ext.onReady(function(){
                         
                         		var ajax_params = {
                             			items: items,
-                            			rotation: this.id,
+                            			rotation: this.id
               				};    
 					Ext.Ajax.request({
                         			url: '/get_rotation_script/',
@@ -654,21 +654,21 @@ Ext.onReady(function(){
                 icon: '/files/images/icons/arrow_turn_right.png',
                 id: '90',
                 disabled: true,
-                handler: rotate_image,
+                handler: rotate_image
             },            
             {
                 text: gettext('90 counterclockwise'),
                 icon: '/files/images/icons/arrow_turn_left.png',
                 id: '-90',
                 disabled: true,
-                handler: rotate_image,
+                handler: rotate_image
             },            
             {
                 text: gettext('180 rotation'),
                 icon: '/files/images/icons/arrow_180.png',
                 id: '180',
                 disabled: true,
-                handler: rotate_image,
+                handler: rotate_image
             },            
 
             ]
@@ -699,7 +699,7 @@ Ext.onReady(function(){
                             var files_num = Ext.getCmp('files_list').getStore().getCount();
                     		Ext.Ajax.request({
 				            	url: '/upload_session_finished/',
-				            	params: {session: session_id,
+				            	params: {session: session_id
                                 
                                 },
 				            	failure: function(){
@@ -1113,7 +1113,7 @@ Ext.onReady(function(){
         items: [{
             text: gettext('Tutorial'),
             handler: function() {
-                window.open('http://www.opendam.org/NotreDAM/QuickGuide.html', 'tutorial');
+                window.open('http://www.notredam.org/documentation', 'tutorial');
             }
         }, {
             text: gettext('Info'),
@@ -1222,7 +1222,7 @@ Ext.onReady(function(){
                                                              },
 					                     failure: function() {
 							               Ext.MessageBox.alert(gettext('Error'), gettext('An error occured while stopping pending processes.'));
-						             },
+						             }
                                                          });
                                                     }
                                               
