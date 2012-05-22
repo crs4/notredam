@@ -873,7 +873,7 @@ var treeAction = function(tree_action){
             allowDrop:true,
             editable: false,
             type:'object',
-            iconCls:'object-category',
+            iconCls:'object-category'
         });
         // SET the root node.
         var Tree_Obj_Root = new Ext.tree.AsyncTreeNode({
@@ -885,7 +885,7 @@ var treeAction = function(tree_action){
             editable: false,
     		containerScroll: true,
             type:'object',
-            iconCls:'object-category',
+            iconCls:'object-category'
         });
         var tree_loader_obj = new Ext.tree.TreeLoader({
             dataUrl:'/kb/get_nodes_real_obj/',
@@ -910,7 +910,7 @@ var treeAction = function(tree_action){
 	            								}
 	                    					 }
 	            		}	            		
-	                },
+	                }
 	            })
 	    });  
 	  	tree_obj_reference.setRootNode(Tree_Obj_Root);
