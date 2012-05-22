@@ -1029,7 +1029,7 @@ var open_dynamic_params_window = function(dynamic_params, _run_script){
 								layout: 'fit',
 								border: false,
 								items: form_panel
-							}),
+							})
 							
 						});
 					});
@@ -1113,9 +1113,16 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 		load: function(store, records){			
 			var run_scripts_menu = Ext.getCmp('run_scripts_menu');
 			var edit_scripts_menu = Ext.getCmp('edit_scripts_menu');
-			
-			run_scripts_menu.removeAll();
-			edit_scripts_menu.removeAll();
+                        if (run_scripts_menu) {
+                        if (run_scripts_menu.length > 0) {
+			    run_scripts_menu.removeAll();
+                            }
+                        }
+                        if (edit_scripts_menu) {
+                            if (edit_scripts_menu.length > 0) {
+			    edit_scripts_menu.removeAll();
+                           }
+                        }
 			Ext.each(records, function(record){
 				run_scripts_menu.add({
 					
