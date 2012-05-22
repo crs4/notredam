@@ -1606,7 +1606,7 @@ function open_knowledgeBase(){
 						}
 					}
        			}	            		
-             },
+             }
           })
 	});
 	tree_obj_reference.setRootNode(Tree_Obj_Root);
