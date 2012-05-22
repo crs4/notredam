@@ -15,11 +15,10 @@
 *    GNU General Public License for more details.
 *
 */
-
-Ext.onReady(function(){
+Ext.onReady(function(){ 
     Ext.QuickTips.init();
     
-
+    
     var members_configuration = function() {
 
         var current_ws = ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk;
@@ -669,13 +668,13 @@ Ext.onReady(function(){
                 id: '180',
                 disabled: true,
                 handler: rotate_image
-            },            
+            }            
 
             ]
         }
     );
     
-    var menu = new Ext.menu.Menu({
+    var obj_menu = new Ext.menu.Menu({
         id: 'mainMenu',
         items: [
             {
@@ -1139,9 +1138,10 @@ Ext.onReady(function(){
 //        var style_tb = 'font-size: 12px; font-family: sans-serif';
         
         
-        tb.add({
+        tb.add(
+            {
                 text:'<span style="' + style_tb + '">' + gettext('Item') + '</span>',
-                menu: menu, 
+                menu: obj_menu, 
                 id: 'object_menu'
             }, '-',
             {
@@ -1285,10 +1285,11 @@ Ext.onReady(function(){
 //        	
 //        });
 //        switch_ws_tb.render('switch_ws_bar');
-    }
+    };
     
     
     create_toolbar();
+    
     
     
     ws_store.on('load', function(){
@@ -1433,6 +1434,5 @@ Ext.onReady(function(){
         set_state_to.hide();
     
     }, ws_state_store);
-    
 
 });
