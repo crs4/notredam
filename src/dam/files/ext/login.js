@@ -62,8 +62,15 @@ Ext.onReady(function() {
 
         items: [
             {
-                hidden: true,
-                contentEl: "hidden-csrf"
+                xtype: 'textfield',
+		name: 'csrfmiddlewaretoken',
+		hidden: true,
+		listeners:{
+		    	afterrender: function(){
+				this.setValue(Ext.util.Cookies.get('csrftoken'));
+			}
+		}
+               
             },
         
             {
