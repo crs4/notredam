@@ -463,11 +463,12 @@ def _upload_resource_via_post(request, use_session = True):
     logger.debug('request.FILES %s'%request.FILES)
     logger.debug('request.POST %s'%request.POST)
     
-    if use_session:
-        session = request.POST['session']
-        real_tmp_dir = get_tmp_dir(session) #since i cant acces to request before settings upload handler
-        os.rename(tmp_dir, real_tmp_dir)
-        tmp_dir = real_tmp_dir
+    if use_session and request.POST.get('session', False):
+        session = request.POST.get('session')
+        if session:
+            real_tmp_dir = get_tmp_dir(session) #since i cant acces to request before settings upload handler
+            os.rename(tmp_dir, real_tmp_dir)
+            tmp_dir = real_tmp_dir
     return tmp_dir
     
 def get_tmp_dir(session):

@@ -11,14 +11,14 @@ function upload_dialog(cfg){
         accept: []
 	}, cfg);
 	
-    console.log('config.url '+ config.url);
 	Ext.apply(this, config);
 	
 	this.upload_file = function(){
 		var files_store = Ext.getCmp('files_list').getStore();
 		var files_num = files_store.getCount();
-		if (files_num == 0)
+		if (files_num === 0) {
 			return;
+                }
 		files = files_store.data.items;
 	
 		
@@ -58,12 +58,28 @@ function upload_dialog(cfg){
 			
 			params.counter = i + 1;
 			var final_params = Ext.urlEncode(params);
-			var xhr = new XMLHttpRequest();
+                        var xhr;
+	                try { 
+			    xhr = new XMLHttpRequest(); // FF, Chrome, IE7 or greater
+                        } catch(e0) {
+                             console.log(' \n==> Exception in new xhr e0: ' + e0);
+                             try {
+			       xhr = new ActiveXObject("MSXML2.XMLHTTP");
+                             } catch(e1) {
+                               try {
+                                   console.log(' \n==> Exception in new xhr e1: ' + e1);
+			           xhr = new ActiveXObject("Microsoft.XMLHTTP");
+                                } catch(e2) {
+                                     xhr = false;
+                                     console.log(' \n==> Exception in new xhr e2: ' + e2);
+                                }
+                             }
+                        }
 			xhr.file_id = files[i].data.id;
 			xhr.onreadystatechange = function(){
 				
 				var file_record = Ext.getCmp('files_list').getStore().query('id', this.file_id).items[0];
-				console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
+				//console.log('onreadystatechange '+ this.file_id + ': ' + xhr.readyState);
 	            if (xhr.readyState == 4){
 		        	if (xhr.status == 200){					        		
 //		        		file_record.set('status', 'ok');
@@ -82,7 +98,7 @@ function upload_dialog(cfg){
 		        	
 		    	
 	        };
-	        
+	        if (!Ext.isIE) { 
 	        xhr.upload.onprogress = function(evt){
 	        	if (evt.lengthComputable) {
 	        		var complete = evt.loaded / evt.total;
@@ -91,6 +107,9 @@ function upload_dialog(cfg){
 	        	}
 	        	
 	        };
+                } else {
+                Ext.getCmp('progress_0').updateProgress(1, '100%');
+                } 
 	        
 			
 	        var progressbar = Ext.getCmp('progress_' + i);
@@ -100,7 +119,6 @@ function upload_dialog(cfg){
 	        	}
 	        	
 	        	
-			
 			xhr.open("POST", this.url + '?'+ final_params, true);
 	        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 	        xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
@@ -142,7 +160,19 @@ function upload_dialog(cfg){
 			//formData.append("accountnum", 123456);
 			//formData.append("pics", file);
 			//xhr.send(formData);
+            //console.log('xhr send: ' + xhr.send());
+	     if (!Ext.isIE) { 
             xhr.send(file);
+             } else {
+		 var mysession = user + '_' + new Date().getTime();
+                 Ext.getCmp('form_upload').getForm().submit({
+                 	params:{session:mysession},
+			success: function(){
+				cfg.after_upload(mysession);
+			}
+			
+			});
+             }
 
 	        //xhr.send('\r\n--gc0p4Jq0M2Yt08jU534c0p' + 'Content-Disposition: form-data; name="paramname"; filename="foo.txt" Content-Type: text/plain\r\n ... file contents here ...' + '--gc0p4Jq0M2Yt08jU534c0p--');
 	
@@ -154,11 +184,10 @@ function upload_dialog(cfg){
 	var file_counter = 0;
 	
     var progressbar_renderer = function(value, meta, rec, row, col, store){
-		console.log(rec.data.status);
     	
     	
 	    var id = Ext.id();
-	    var is_int = parseInt(value)
+	    var is_int = parseInt(value);
 	    var text;
 	    
 	    if (isNaN(is_int)) {
@@ -249,8 +278,6 @@ function upload_dialog(cfg){
                                                 var inner_accepted = false;
                                                 Ext.each(self.accept, function (ext){
                                                     var regexp = new RegExp('\.'+ ext+'$');
-                                                    console.log(' file.name ' + file.name);
-                                                    console.log(' regexp.test(file.name) ' + regexp.test(file.name));
                                                     if (regexp.test(file.name)){
                                                         
                                                         inner_accepted = true;
@@ -269,17 +296,36 @@ function upload_dialog(cfg){
                                             }
                                                 
                                         }    
-                                        Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
-                                            
-                                            size = parseInt(file.size/1024) + ' KB';
-                                            files.push({
-                                                id: file_counter,
-                                                file: file,
-                                                filename: file.name,
-                                                size: size,
-                                                status: 'to_upload',
-                                                progress: 0
-                                            });
+                                        if (Ext.isIE) {
+                                            my_files = v.replace(/^.*[\\\/]/, '');
+                                        } else {
+                                            my_files = Ext.get('files_to_upload-file').dom.files;
+                                        }
+              
+                                        //Ext.each(Ext.get('files_to_upload-file').dom.files, function(file){
+                                        Ext.each(my_files, function(file){
+                                            if (Ext.isIE) {
+                                                var my_size = 1000;
+                                                var afile = {'name': my_files, 'size' : my_size};
+                                                files.push({
+                                                    id: file_counter,
+                                                    file: afile,
+                                                    filename: my_files,
+                                                    size: 1000,
+                                                    status: 'to_upload',
+                                                    progress: 0
+                                               });
+                                            } else { 
+                                                size = parseInt(file.size/1024) + ' KB';
+                                                files.push({
+                                                    id: file_counter,
+                                                    file: file,
+                                                    filename: file.name,
+                                                    size: size,
+                                                    status: 'to_upload',
+                                                    progress: 0
+                                                });
+                                            }
                                             file_counter += 1;				        				
                                         });
                                         
@@ -306,9 +352,9 @@ function upload_dialog(cfg){
             	icon: '/files/images/icons/fam/delete.gif',
             	handler: function(){
             		var files_num = Ext.getCmp('files_list').getStore().getCount();
-            		for(var i = 0; i<files_num; i++)
+            		for(var i = 0; i<files_num; i++) {
             			Ext.getCmp('progress_'+i).updateProgress(1, 'aborted');
-            		
+            		}
             			
             	
             		
