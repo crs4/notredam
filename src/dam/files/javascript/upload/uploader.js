@@ -169,8 +169,8 @@ function upload_dialog(cfg){
                  	params:{session:mysession},
 			success: function(){
 				cfg.after_upload(mysession);
-			}
-			
+			},
+		        failure: function() {Ext.Msg.alert('Error','An upload error occurs server side, sorry.');}	
 			});
              }
 
