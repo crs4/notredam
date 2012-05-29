@@ -681,6 +681,7 @@ Ext.onReady(function(){
                 id:'new_item_menu',
                 text: gettext('New'),
                 handler: function() {
+                    console.log('before upload_dialog calling');
                     calculatePageSize();
 
                     upload_dialog({
@@ -696,6 +697,7 @@ Ext.onReady(function(){
                             tmp_win.show();
                             
                             var files_num = Ext.getCmp('files_list').getStore().getCount();
+                            console.log('in menu upload_dialog files_num is: ' + files_num);
                     		Ext.Ajax.request({
 				            	url: '/upload_session_finished/',
 				            	params: {session: session_id
@@ -747,13 +749,16 @@ Ext.onReady(function(){
                                          
                                     }
                                     else
+                                    {
                                         query = '';
-                                    
+                                    }
                                     var title = query || 'All Items';
                                     var tab_to_open;
                                     Ext.each(media_tabs.items.items, function(panel){
                                         if (panel.title == title) 
+                                        {
                                             tab_to_open = panel;
+                                        }
                                     });
                                     if (tab_to_open){
                                         media_tabs.setActiveTab(tab_to_open.id);
@@ -775,7 +780,7 @@ Ext.onReady(function(){
                                     
                                     
 
-									var buttons = []
+					var buttons = [];
 
 							        buttons.push({
 							            	text: 'Upload more files',
@@ -951,10 +956,11 @@ Ext.onReady(function(){
                         singleSelect: false,
                         listeners:{
                         	selectionchange: function(){
-                        		if (this.getCount() >0)
+                        		if (this.getCount() >0) {
                         			Ext.getCmp('download_rendition_button').enable();
-                        		else
+                        		} else {
                         			Ext.getCmp('download_rendition_button').disable();
+                                        }
                         	}
                         }
                     });
@@ -996,7 +1002,7 @@ Ext.onReady(function(){
                                     }
                                 );
                                 
-                                if (post.items.length > 0 && post.renditions.length > 0)
+                                if (post.items.length > 0 && post.renditions.length > 0) {
                                     Ext.Ajax.request({
                                         url: '/download_renditions/',
                                         params: post,
@@ -1007,6 +1013,7 @@ Ext.onReady(function(){
                                         }
                                         
                                     });
+                                }
                                 Ext.getCmp('download_win').close();
                             }
                         }],
@@ -1285,7 +1292,7 @@ Ext.onReady(function(){
 //        	
 //        });
 //        switch_ws_tb.render('switch_ws_bar');
-    };
+    }
     
     
     create_toolbar();
@@ -1430,8 +1437,9 @@ Ext.onReady(function(){
             
             }, states_menu);
     }
-    else
+    else {
         set_state_to.hide();
+    }
     
     }, ws_state_store);
 
