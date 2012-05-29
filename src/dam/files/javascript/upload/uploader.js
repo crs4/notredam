@@ -170,9 +170,6 @@ function upload_dialog(cfg){
 			success: function(){
 				cfg.after_upload(mysession);
 			}
-			failure: function(){
-                                Ext.MessageBox.alert(gettext('Error'), gettext('File uploading failed'));
-			}
 			
 			});
              }
