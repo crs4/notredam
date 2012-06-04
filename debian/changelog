@@ -5,11 +5,14 @@ notredam (1.0.9rc1) stable; urgency=high
   * IE compliant (limit of one uploading at a time)
   * Added file wsgi.py to make easy apache server set up
   * More supported file format for uploading (.mov, .mod, .mts, .mxf)
+  * Added DateLikeString attribute to real-world objects to store BC dates as well.
   * Fixed bug in item sharing with another workspace
   * Fixed bug in moving items to a different workspace
   * Fixed bug in metadata saving
   * Fixed bug in preferences widget
   * Other minor bug fixing
+
+ -- Maria Laura Clemente <clem@crs4.it>  Fri, 1 June 2012 15:30:20 +0100
 
 notredam (1.0.8rc1) stable; urgency=low
 
