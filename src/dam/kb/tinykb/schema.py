@@ -271,7 +271,9 @@ class Schema(object):
             {'name'  : 'choice',
              'notes' : 'Selection among multiple values'},
             {'name'  : 'objref',
-             'notes' : 'Typed object reference'}
+             'notes' : 'Typed object reference'},
+            {'name'  : 'date-like-string',
+             'notes' : 'Date-like string'}
             ]
 
         # Insert attribute types, avoiding duplications
