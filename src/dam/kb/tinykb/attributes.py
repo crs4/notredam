@@ -42,6 +42,13 @@ import schema as kb_schema
 
 from util.niceid import niceid
 
+# Used for DateLikeString validation (see below)
+import re
+DATE_LIKE_RE = re.compile(
+    '^(?P<s>[\+-]?)(?P<y>\d{1,9})-(?P<m>\d{2})-(?P<d>\d{2})$')
+
+
+
 class Attributes(types.ModuleType):
     def __init__(self, classes):
         doc = '''
@@ -943,6 +950,64 @@ def _init_base_attributes(o):
 
     o.ObjectReference = ObjectReference
 
+
+    class DateLikeString(String):
+        '''
+        Date-like field.  Inherits from :py:class:`String`, and shares
+        its constructor arguments.
+        '''
+        def __init__(self, name, id_=None, maybe_empty=True, default=None,
+                     order=0, multivalued=False, notes=None):
+            # We are actually a 16-characters string field
+            String.__init__(self, name, id_=id_, length=16,
+                            maybe_empty=maybe_empty, default=default,
+                            order=order, multivalued=multivalued, notes=notes)
+
+        def validate(self, target, value):
+            # Let's use the SQLAlchemy session of the target
+            sess = sa_orm.Session.object_session(target)
+            if sess is not None:
+                sself = sess.merge(self)
+                sess.add(sself)
+            else:
+                sself = self
+
+            if sself.maybe_empty and not sself.multivalued and value is None:
+                return value
+            if not (isinstance(value, str) or isinstance(value, unicode)):
+                raise kb_exc.ValidationError(('expected a date-like string, '
+                                              + 'got "%s"')
+                                             % (str(value), ))
+            if len(value) > sself.length:
+                raise kb_exc.ValidationError(('Date length (%d chars) is above '
+                                              + 'the maximum limit (%d chars)')
+                                             % (len(value), sself.length))
+
+            is_valid = False
+            match = DATE_LIKE_RE.match(value)
+            if match is not None:
+                (sign, year, month, day) = match.group('s', 'y', 'm', 'd')
+                (year, month, day) = (int(year), int(month), int(day))
+                if (month > 0) and (month < 13) and (day > 0) and (day < 32):
+                    is_valid = True
+
+            if not is_valid:
+                raise kb_exc.ValidationError(('"%s" does not appear to be '
+                                              'a valid date')
+                                             % (value, ))
+
+            # Let's normalize a bit more, i.e. by stripping redundant
+            # zero's and the leading "+" sign
+            if sign == '+':
+                sign = ''
+            return u'%s%d-%02d-%02d' % (sign, year, month, day)
+
+        def __repr__(self):
+            return ("<Uri(class=%s, length=%d, default='%s')>"
+                    % (getattr(self, 'class'), self.length, self.default))
+
+    o.DateLikeString = DateLikeString
+
     ###########################################################################
     ## Mappers
     ###########################################################################
@@ -1014,3 +1079,9 @@ def _init_base_attributes(o):
             'target' : relationship(classes.KBClass, backref='references')
             })
 
+    mapper(DateLikeString, schema.class_attribute_uri, inherits=Attribute,
+           polymorphic_identity='date-like-string',
+           properties={
+            '__class_id' : schema.class_attribute_uri.c['class'],
+            '__class_root_id' : schema.class_attribute_uri.c.class_root
+            })
