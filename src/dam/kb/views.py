@@ -558,10 +558,24 @@ def _dispatch(request, method_fun_dict, kwargs=None):
     # GET or POST variables
     request._vars = mvars
 
+    # FIXME: try to fine-tune the Python garbage collector
+    # It seems that, on slow systems, the GC is not triggered frequently
+    # enough, and this function in particular makes memory usage grow
+    # rapidly.  This temporary fix eases the problem, but it is
+    # definitely a workaround.
+    import gc
+    gc.disable()
+
     if kwargs is None:
-        return method_fun_dict[method](request)
+        res = method_fun_dict[method](request)
     else:
-        return method_fun_dict[method](request, **kwargs)
+        res = method_fun_dict[method](request, **kwargs)
+
+    gc.enable()
+    #gc.collect()
+
+    return res
+
 
 
 def _infer_method(req):
@@ -696,6 +710,10 @@ def _kb_attrs_dict_map(attr_type, ses):
                      kb_attrs.ObjectReference : lambda a:
                          dict([['type',         'objref'],
                                ['target_class', a.target.id]]
+                              + _std_attr_fields(a)),
+                     kb_attrs.DateLikeString  : lambda a:
+                         dict([['type',    'date-like-string'],
+                               ['default_value', a.default]]
                               + _std_attr_fields(a))
                      }
     return type_dict_map[attr_type]
@@ -751,7 +769,13 @@ def _kb_dict_attrs_map(attr_type_str, ses):
                                              [NoneType, unicode, str]),
                                    **(_std_attr_dict_fields(d))),
                   'choice' : _kb_dict_choice_fn,
-                  'objref' : _kb_dict_objref_fn
+                  'objref' : _kb_dict_objref_fn,
+                  'date-like-string' : lambda attr_id, d, _ses, _ws:
+                      kb_attrs.DateLikeString(id_=attr_id,
+                                      default=v(d, 'default_value',
+                                                [NoneType, unicode, str]),
+                                      **(_std_attr_dict_fields(d))),
+
                   }
     return str_fn_map[attr_type_str]
 
@@ -883,7 +907,8 @@ def _kb_objattrs_dict_map(attr_type, ses):
                    kb_attrs.String  : _std_dict_fn,
                    kb_attrs.Uri     : _std_dict_fn,
                    kb_attrs.Choice  : _std_dict_fn,
-                   kb_attrs.ObjectReference: _objref_dict_fn
+                   kb_attrs.ObjectReference: _objref_dict_fn,
+                   kb_attrs.DateLikeString : _std_dict_fn
                    }
     return type_fn_map[attr_type]
 
