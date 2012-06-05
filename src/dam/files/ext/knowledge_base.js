@@ -98,6 +98,56 @@ function get_AsyncTreeNode(){
     });
 }
 
+
+function show_win_single_attribute_date_string(year_value, month_value, day_value, check_period, title){
+	var win_select_class_target = new Ext.Window({
+        id		:'id_win_define_date_string',
+		layout	: 'form',
+		resizable : false,
+		defaults: {  // defaults are applied to items, not the container
+		    autoScroll:true
+		},
+        width	: 400,
+        height	: 200,
+        title	: title,
+        modal	: true,
+      	items	:[{
+	  				xtype: 'spacer',
+		  			height: 8
+    			}
+    			,year_value, month_value, day_value, check_period],
+        buttons	:[{
+            text: 'Done',
+            handler: function() {
+	        	if (Ext.getCmp('id_year_value').getValue() && Ext.getCmp('id_month_value').getValue() && Ext.getCmp('id_day_value').getValue()){
+	        		var str_final = Ext.getCmp('id_check_period').getValue().inputValue +
+									Ext.getCmp('id_year_value').getValue() + "-"+
+									Ext.getCmp('id_month_value').getValue() + "-"+
+									Ext.getCmp('id_day_value').getValue();
+					var Attribute = Ext.data.Record.create([{
+		        		name: 'name'
+		        	}]);
+					Ext.getCmp('id_record_value').store.add(new Attribute({name: str_final}));
+		        	win_select_class_target.close();
+	        	}else{
+	        		Ext.Msg.alert('Warning', 'You have to insert some value.');
+	        	}
+        	}
+        },{
+            text: 'Close',
+            handler: function() {
+				check_add_button_add_option();
+				check_remove_button_add_option();
+        		win_select_class_target.close();
+        	}
+        }]
+    });
+	win_select_class_target.show();	
+}
+
+
+
+
 function show_win_single_attribute(params, title){
 	var win_select_class_target = new Ext.Window({
         id		:'id_win_select_class_target',
@@ -329,6 +379,70 @@ function get_grid_insert_value(value, type, title){
         		        allowBlank:true
         			});
     				show_win_single_attribute(record_value, 'Insert Value');
+
+
+            	}else if(type == 'date-like-string'){ 
+
+            		var year_value = new Ext.form.NumberField({
+        				name: 'Insert value',
+        				id  : 'id_year_value',
+        				fieldLabel: gettext('Insert year'),
+        		        allowBlank:false
+        			});
+
+        			var month_value = new Ext.form.ComboBox({
+        				id  : 'id_month_value',
+        		        store: new Ext.data.SimpleStore({
+        		            fields: ['id','name'],
+        		            data: [
+        		              ["01","01"],["02","02"],["03","03"],["04","04"],["05","05"],["06","06"],["07","07"],["08","08"],["09","09"],["10","10"],["11","11"],["12","12"]]
+        		        }), // end of Ext.data.SimpleStore
+        		        fieldLabel: gettext('Select month'),
+        		        width: 130,
+        		        emptyText: gettext('Select ..'),
+        		        displayField: 'name',
+        		        valueField: 'id',
+        		        mode: 'local',
+        		        editable: false,
+        		        allowBlank:false,
+        		        triggerAction: 'all'
+        			});
+
+        			var day_value = new Ext.form.ComboBox({
+        				id  : 'id_day_value',
+        		        store: new Ext.data.SimpleStore({
+        		            fields: ['id','name'],
+        		            data: [
+        		              ["01","01"],["02","02"],["03","03"],["04","04"],["05","05"],["06","06"],["07","07"],["08","08"],["09","09"],["10","10"],
+        		              ["11","11"],["12","12"],["13","13"],["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],["19","19"],["20","20"],
+        		              ["21","21"],["22","22"],["23","23"],["24","24"],["25","25"],["26","26"],["27","27"],["28","28"],["29","29"],["30","30"],
+        		              ["31","31"]]
+        		        }), // end of Ext.data.SimpleStore
+        		        fieldLabel: gettext('Select day'),
+        		        width: 130,
+        		        emptyText: gettext('Select ..'),
+        		        displayField: 'name',
+        		        valueField: 'id',
+        		        mode: 'local',
+        		        editable: false,
+        		        allowBlank:false,
+        		        triggerAction: 'all'
+        			});
+
+        			var check_period = new Ext.form.RadioGroup({
+        				id  : 'id_check_period',
+        				columns: 1,
+        				fieldLabel: 'Choise period',
+        				items:[
+        	                    {boxLabel: 'After Christ', name: 'rb-cristo', inputValue: '+', checked: true},
+        	                    {boxLabel: 'Before Christ', name: 'rb-cristo', inputValue: '-'} 
+        	            ]
+        			});
+
+                	show_win_single_attribute_date_string(year_value, month_value, day_value, check_period, 'Insert Value');
+
+
+
             	}
             	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//FIXME getStore().getCount() not update in realtime
             		Ext.getCmp('id_add_attributes_class').disable();
@@ -574,6 +688,14 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			default_value.disable();
 			attribute_detail_panel.add(record_value);
 		}
+
+	}else if (value == 'date-like-string'){
+		if (insert_value){
+			record_value = get_grid_insert_value(data.value, value, 'Insert values');
+			attribute_detail_panel.add(record_value);
+		}
+
+
 	}
 	attribute_detail_panel.doLayout();
 }
@@ -624,7 +746,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
             new Ext.data.SimpleStore({
               fields: ['id','name'],
               data: [
-                ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["uri","Url"],["choice","Choice"],["objref","Object Reference"]]
+                ["bool","Boolean"],["int","Integer"],["string","String"],["date","Date"],["date-like-string","Date Like String"],["uri","Url"],["choice","Choice"],["objref","Object Reference"]]
           }), // end of Ext.data.SimpleStore
         fieldLabel: gettext('Type'),
         width: 130,
@@ -1387,7 +1509,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         			}else{//only one value
     					if (attribute.value != null){
     						params['attributes'][attribute.id] = attribute.value;
-    					}else if(attribute.default_value != null && attribute.default_value.length > 0){
+    					}else if(attribute.default_value != null ){
     						params['attributes'][attribute.id] = attribute.default_value;
     					}else if(attribute.maybe_empty == true){
     						params['attributes'][attribute.id] = null;
