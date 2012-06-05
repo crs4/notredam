@@ -67,12 +67,10 @@ mime_types_by_ext = get_types_by_ext(supported_types)
 mime_types_by_type = get_types_by_type(supported_types)
 
 def supported_extensions(mime_type):
-    logger.debug("ECCO ECCO ECCO QUA! INSIDE supported_types supported_extensions is mime_type %s" % supported_types.get(mime_type, None))
     return supported_types.get(mime_type, None)
 
 
 def guess_file_type(filename):
-    logger.debug("guess_file_type")
     ext = os.path.splitext(os.path.normpath(filename))[1]
     logger.debug("ext:: %s" %ext)
     logger.debug("get_types_by_ext(supported_types)(ext, None):: %s" %get_types_by_ext(supported_types))
