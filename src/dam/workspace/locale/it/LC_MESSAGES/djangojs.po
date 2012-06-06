@@ -1062,6 +1062,6 @@ msgid "Details"
 msgstr "Dettagli"
 msgid "Classes and Objects"
 msgstr "Classi e oggetti"
-msgid "Select an class or object to show details."
+msgid "Select a class or object to show details."
 msgstr "Seleziona una classe o un oggetto per visualizzare i dettagli."
 
