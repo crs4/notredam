@@ -235,7 +235,7 @@ function view_tree_vocabulary_to_obj_ref(textField_id, multivalued){
             			Ext.getCmp('id_target_class').setValue(Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.id);
             			win_select_class_target.close();
             		}else{
-            			Ext.Msg.alert('Status', 'Select an class.');
+            			Ext.Msg.alert('Status', 'Select a class.');
             		}
         		}else{
             		if (Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode && Ext.getCmp('id_tree_vocabulary_to_obj_ref').getSelectionModel().selNode.attributes.leaf == true){
@@ -1602,7 +1602,7 @@ function init_contextMenuVocabulary(){
 		listeners:{
 			click: function(item){
 				var parent_node = Ext.getCmp('obj_reference_tree').getNodeById(item.parentMenu.contextNode.attributes.id).parentNode;
-				if (item.parentMenu.contextNode.attributes.leaf == false){// delete an class
+				if (item.parentMenu.contextNode.attributes.leaf == false){// delete a class
 	        		Ext.Msg.confirm('Class Deletion', 'Class deletion cannot be undone, do you want to proceed?', 
 	    	                function(btn){
 	    	                    if (btn == 'yes')
@@ -1722,7 +1722,7 @@ function open_knowledgeBase(){
 									init_store_obj_data_edit(node.attributes.id, false);
 								}else{
 									Ext.getCmp('details_panel').removeAll();
-									Ext.getCmp('details_panel').setTitle(gettext('Select an class or object to show details.'));
+									Ext.getCmp('details_panel').setTitle(gettext('Select a class or object to show details.'));
 								}
 							}
 						}
