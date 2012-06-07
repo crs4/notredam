@@ -1,4 +1,4 @@
-Version 1.0.9rc1
+Version 1.0.9
 
 
 ========================
@@ -49,17 +49,13 @@ NEW FEATURES
 ===============================================================================
 
 1.
-IE compliant (tested with versions greater than IE7), although there is the
-IE limitation to upload one file at a time.
-
-2.
-Optimization and bug fixing in vocabulary and real-world objects
-
-3.
 Added file wsgi.py to make easy apache server set up
 
-4.
-More supported file format for uploading (.mov, .mod, .mts, .mxf)
+2.
+More supported file formats for uploading (.mov, .mod, .mxf)
+
+3.
+Added DateLikeString attribute to real-world objects, which is a specific field required for storing BC dates (negative dates are not supported by most of Databases)
 
 ===============================================================================
 BUG FIXING
@@ -75,6 +71,13 @@ Fixed bug in moving items to a different workspace
 Fixed bug in metadata saving
 
 4.
+IE compliant (tested with versions greater than IE7), although there is the
+IE limitation to upload one file at a time.
+
+5.
+Optimization and bug fixing in vocabulary and real-world objects
+
+6.
 Other minor bug fixing
  
 ===============================================================================
