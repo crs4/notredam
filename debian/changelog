@@ -1,18 +1,18 @@
-notredam (1.0.9rc1) stable; urgency=high
+notredam (1.0.9) stable; urgency=high
 
   * Added required libraries dependencies (mediainfo, django-south)
-  * Optimization and bug fixing in vocabulary and real-world objects
-  * IE compliant (limit of one uploading at a time)
   * Added file wsgi.py to make easy apache server set up
-  * More supported file format for uploading (.mov, .mod, .mts, .mxf)
-  * Added DateLikeString attribute to real-world objects to store BC dates as well.
+  * More supported file formats for uploading (.mov, .mod, .mts, .mxf)
+  * Added DateLikeString attribute to real-world objects to store BC dates as well (negative dates are not supported by most of databases).
   * Fixed bug in item sharing with another workspace
   * Fixed bug in moving items to a different workspace
   * Fixed bug in metadata saving
+  * Optimization and bug fixing in vocabulary and real-world objects
+  * IE compliant (limit of one uploading at a time)
   * Fixed bug in preferences widget
   * Other minor bug fixing
 
- -- Maria Laura Clemente <clem@crs4.it>  Fri, 1 June 2012 15:30:20 +0100
+ -- Maria Laura Clemente <clem@crs4.it>  Thu, 7 June 2012 15:30:20 +0100
 
 notredam (1.0.8rc1) stable; urgency=low
 
