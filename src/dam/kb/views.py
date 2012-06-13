@@ -574,6 +574,10 @@ def _dispatch(request, method_fun_dict, kwargs=None):
     gc.enable()
     #gc.collect()
 
+    # Remove contextual SQLAlchemy session
+    # FIXME: not very clean
+    KB_SQLALCHEMY_SCOPED_SESSION_CLS.remove()
+
     return res
 
 
@@ -608,7 +612,9 @@ import sqlalchemy, sqlalchemy.orm as sa_orm
 KB_SQLALCHEMY_ENGINE = sqlalchemy.create_engine(util.notredam_connstring())
 KB_SQLALCHEMY_SESSION_CLS = sa_orm.sessionmaker(bind=KB_SQLALCHEMY_ENGINE,
                                                 autoflush=False)
-KB_SESSION = kb_ses.Session(sa_orm.scoped_session(KB_SQLALCHEMY_SESSION_CLS))
+KB_SQLALCHEMY_SCOPED_SESSION_CLS = sa_orm.scoped_session(
+    KB_SQLALCHEMY_SESSION_CLS)
+KB_SESSION = kb_ses.Session(KB_SQLALCHEMY_SCOPED_SESSION_CLS)
 def _kb_session():
     '''
     Create a knowledge base session
