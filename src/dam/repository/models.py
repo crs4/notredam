@@ -252,7 +252,7 @@ class Item(AbstractItem):
         try: 
             ws_item, created = WorkspaceItem.objects.get_or_create(item = self, workspace = workspace)
         except Exception, err:
-            logger.debug('error during add_to_ws, err: %s - created: %s' % (err, created))
+            logger.debug('error during add_to_ws, err: %s' % err)
         if created:
             
             if item_creation:
