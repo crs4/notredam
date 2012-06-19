@@ -249,6 +249,7 @@ class Item(AbstractItem):
         @return: True if the item has been added, False if already in workspace
         """
         from workspace.models import WorkspaceItem
+        created = None
         try: 
             ws_item, created = WorkspaceItem.objects.get_or_create(item = self, workspace = workspace)
         except Exception, err:
@@ -267,10 +268,6 @@ class Item(AbstractItem):
                     self._add_to_inbox(workspace, 'imported')
                 except Exception, err:
                     logger.debug('in case of item import, error while adding to inbox imported, err: %s' % err)
-        else: #created is false
-            ws_item.deleted = False
-            ws_item.save()
-                
         return created
         
     
