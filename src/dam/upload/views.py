@@ -247,6 +247,16 @@ def _create_variant(file_name, uri, media_type, item, workspace, variant):
     
     comp.file_name = file_name
     comp.uri = uri        
+    if variant.name == 'original':
+        my_schema = MetadataProperty.objects.filter(namespace__prefix='notreDAM', field_name='FileName')
+        my_schema_id = str(my_schema[0].pk)
+        my_metadata = {my_schema_id.decode('utf-8'):[file_name.decode('utf-8')] }
+        try:
+            MetadataValue.objects.save_metadata_value([item], my_metadata, 'original', workspace)
+        except Exception, ex:
+            logger.exception('Error while saving file_name in NotreDAM FileName, error: %s' % ex)
+
+
     #mime_type = mimetypes.guess_type(file_name)[0]
     #ext = mime_type.split('/')[1]
     comp.format = media_type.ext   # bad bad
