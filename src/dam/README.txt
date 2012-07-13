@@ -35,6 +35,8 @@ Please note: since version 1.08rc2, NotreDAM requires South 0.7.3
                python manage.py migrate --fake treeview 0001
                python manage.py migrate --no-initial-data
 
+	3. add SAFE_MODE=False to the your settings.py
+
     That's it!  Your old installation is now upgraded.
 
 ===================
