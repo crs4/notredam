@@ -29,8 +29,9 @@ Please note: since version 1.08rc2, NotreDAM requires South 0.7.3
 
         1. add 'south' to the INSTALLED_APPS of your settings.py
 
-        2. execute the following three commands:
+        2. execute the following four commands:
 
+	       find . -type f -name "initial_data.json" -exec rm {} \;
                python manage.py syncdb --noinput
                python manage.py migrate --fake treeview 0001
                python manage.py migrate --no-initial-data
