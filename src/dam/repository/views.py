@@ -146,17 +146,15 @@ def get_resource(request, resource_name):
     from django.views.static import serve
     from settings import MEDIADART_STORAGE
     download = request.GET.get('download')
-    #logger.info('resource_name inside get_resource: %s' % resource_name)
-    comp = Component.objects.filter(uri = resource_name)
-    original_file_name = comp[0].item.get_file_name()
-    variant_name = comp[0].variant.name
-    download_file_name = original_file_name.replace('.', ('_' + variant_name + '.'))
-    #logger.info('download file name inside get_resource: %s' % resource_name)
-    
-    # the following is the part for resource downloading
     response = serve(request, resource_name, document_root = MEDIADART_STORAGE)
-    if download:    
+    if download: # downloading of single resources from subpanel on the right   
         # the following is to provide a resource name other than the one in repository
+        comp = Component.objects.filter(uri = resource_name)
+        original_file_name = comp[0].item.get_file_name()
+        variant_name = comp[0].variant.name
+        download_file_name = original_file_name.replace('.', ('_' + variant_name + '.'))
+        #logger.info('download file name inside get_resource: %s' % resource_name)
         response['Content-Disposition'] = 'attachment; filename=%s'%download_file_name
+        
     
     return response
