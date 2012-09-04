@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #########################################################################
 #
 # NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
@@ -235,9 +236,12 @@ def _create_item(user, workspace, res_id, media_type, original_filename):
 #    return media_type
 
 def _create_variant(file_name, uri, media_type, item, workspace, variant):
-    logger.debug('####### create_variant#########')
-    logger.debug('file_name %s'%file_name)
-    logger.debug('uri %s'%uri)
+    logger.info('####### create_variant#########')
+    logger.info('BEFORE file_name %s'%file_name)
+    logger.info('uri %s'%uri)
+    if not isinstance(file_name, unicode):
+        file_name = unicode(file_name, 'utf-8')
+        logger.info('AFTER: file_name %s'%file_name)
     
     comp = item.create_variant(variant, workspace, media_type)        
     if not item.type:
@@ -250,7 +254,7 @@ def _create_variant(file_name, uri, media_type, item, workspace, variant):
     if variant.name == 'original':
         my_schema = MetadataProperty.objects.filter(namespace__prefix='notreDAM', field_name='FileName')
         my_schema_id = str(my_schema[0].pk)
-        my_metadata = {my_schema_id.decode('utf-8'):[file_name.decode('utf-8')] }
+        my_metadata = {my_schema_id.decode('utf-8'):[comp.file_name] }
         try:
             MetadataValue.objects.save_metadata_value([item], my_metadata, 'original', workspace)
         except Exception, ex:
