@@ -444,7 +444,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                 smart_folder_node = SmartFolder.objects.get(pk = smart_folder_id)
                 queries.append(search_smart_folder(smart_folder_node, items))
 #Text query        
-        logger.debug('queries %s'%queries)
         if query:
             processes =  re.findall('\s*process:(\w+):(\w+)\s*', query,  re.U)
             
@@ -485,7 +484,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
             
             
             logger.debug('metadata_query %s'%metadata_query)
-            logger.debug('queries %s'%queries)
             for metadata_q in metadata_query:
                 
                 key, value = metadata_q.split('=')
@@ -503,7 +501,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                     queries.append(Item.objects.none())
             
             logger.debug('processes %s'%processes)
-            logger.debug('queries %s'%queries)
             for process in processes:
                 process_id = process[0]
                 type = process[1]
@@ -517,7 +514,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                 queries.append(q)
                 
             logger.debug('inbox %s'%inbox)
-            logger.debug('queries %s'%queries)
             for inbox_el in inbox:
                 logger.debug('path %s'%inbox_el)
                 node = Node.objects.get_from_path(inbox_el, workspace,   'inbox')
@@ -525,7 +521,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                 queries.append(items.filter(node = node))
                 
             logger.debug('keywords %s'%keywords)
-            logger.debug('queries %s'%queries)
             for keyword in keywords:
                 if keyword: 
                     logger.debug('keyword: %s'%keyword)
@@ -542,7 +537,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                 
             
             logger.debug('collections %s'%collections)
-            logger.debug('queries %s'%queries)
             for coll  in collections:
                 
                 logger.debug('path %s'%coll)
@@ -551,14 +545,12 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                 queries.append(items.filter(node = node))
                 
             logger.debug('smart_folder %s'%smart_folder )
-            logger.debug('queries %s'%queries)
             if smart_folder:               
                 
                 smart_folder_node = SmartFolder.objects.get(workspace = workspace,  label = smart_folder[0])
                 queries.append(search_smart_folder(smart_folder_node, items))
 
             logger.debug('geo %s'%geo)
-            logger.debug('queries %s'%queries)
             for coords in geo:
                 ne_lat = coords[0]
                 ne_lng = coords[1]
@@ -570,7 +562,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                     queries.append(items.filter(Q(geoinfo__longitude__gte=sw_lng) | Q(geoinfo__longitude__lte=ne_lng), geoinfo__latitude__lte=ne_lat, geoinfo__latitude__gte=sw_lat))
             
             logger.debug('words %s'%words)
-            logger.debug('queries %s'%queries)
             for word in words:
                 logger.debug('word %s'%word)
                 if DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
@@ -582,11 +573,9 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                     queries.append(items.filter(q))
                 
             logger.debug('multi_words %s'%multi_words)
-            logger.debug('queries %s'%queries)
             for words in multi_words:
                 tmp = re.findall('\s*(.+)\s*', words,  re.U)
                 logger.debug('multi words %s'%tmp)
-                logger.debug('queries %s'%queries)
                 if DATABASES['default']['ENGINE'] == 'sqlite3':
                     words_joined = '\s+'.join(tmp)
                     words_joined = words_joined.strip() 
@@ -602,7 +591,6 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
                     queries.append(items.filter(q))
 
         if queries:
-            logger.debug('queries %s'%queries)
             if len(queries) == 1:
                 items = queries[0]
                 
