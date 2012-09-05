@@ -444,7 +444,12 @@ def import_dir(dir_name, user, workspace, variant_name = 'original', trigger = '
 def _write_file(input_file, output_file_path):
     from io import FileIO, BufferedWriter
     try:
-        with BufferedWriter( FileIO( output_file_path, "wb" ) ) as dest:
+        output_file_path = FileIO(unicode(output_file_path), "wb")
+    except Exception, ex:
+        logger.exception(ex)
+        raise ex
+    try:
+        with BufferedWriter( output_file_path) as dest:
             
             buffer = input_file.read(1024)
             logger.debug('reading')
@@ -463,9 +468,9 @@ def _write_file(input_file, output_file_path):
 def _upload_item(file_name, file_raw,  variant, user, tmp_dir, workspace, session_finished = False):
     logger.debug('_upload_item %s in %s'%(file_name, tmp_dir))
     file_name = new_id() + '_' + file_name    
-    file_name=  os.path.join(tmp_dir, file_name)
-    if not isinstance(file_name, unicode):
-        file_name = unicode(file_name, 'utf-8')
+    file_name =  os.path.join(tmp_dir, file_name)
+    if not isinstance(file_name , unicode):
+        file_name = unicode(file_name , 'utf-8')
     _write_file(file_raw, file_name)
     
 
@@ -758,6 +763,8 @@ def upload_archive(request):
         file_name = unquote(request.META['HTTP_X_FILE_NAME'])
         output_file_path = os.path.join('/tmp/', new_id())
         
+        if not isinstance(output_file_path, unicode):
+            file_name = unicode(output_file_path, 'utf-8')
         _write_file(request, output_file_path)
         if file_name.endswith('.zip'):
             import zipfile
