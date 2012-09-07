@@ -144,15 +144,27 @@ def _add_attribute(name, value, groupname):
           }
     return tmp
 
+def _test_duplicate(groupname, rtr):
+    """
+    test to avoid duplicate key
+    """
+    flag = False
+    for item in rtr['rows']:
+        if item['groupname'] == groupname:
+            flag = True
+
+    return flag
+
 def _put_attributes(cls_obj, rtr):
     """
     Put all attributes for the Object passed.
     """
-
-    rtr['rows'].append(_add_attribute('notes', cls_obj['notes'],cls_obj['name']))
-    for c in cls_obj['attributes']:
-        tmp = _add_attribute(c,cls_obj['attributes'][c],cls_obj['name'])
-        rtr['rows'].append(tmp)
+    if len(rtr['rows'])==0 or _test_duplicate(cls_obj['name'],rtr) == False:
+        rtr['rows'].append(_add_attribute('notes', cls_obj['notes'],cls_obj['name']))
+        for c in cls_obj['attributes']:
+            tmp = _add_attribute(c,cls_obj['attributes'][c],cls_obj['name'])
+            rtr['rows'].append(tmp)
+    
 
 def get_specific_info_obj(request, obj_id):
     """
