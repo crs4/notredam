@@ -89,6 +89,8 @@ def _init_base_classes(o):
     #      be retrieved from there
     o._kb_class_cache = {}
     def cache_add(cls):
+        # The class must not have been cached in advance
+        assert(o._kb_class_cache.get(cls.id) is None)
         o._kb_class_cache[cls.id] = cls
     o.cache_add = cache_add
 
