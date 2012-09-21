@@ -657,8 +657,9 @@ def _kbclass_to_dict(cls, ses):
     Create a JSON'able dictionary representation of the given KB class
     '''
     clsattrs = {}
+    own_attrs = cls.attributes
     for a in cls.all_attributes():
-        clsattrs[a.id] = _kbattr_to_dict(a, ses)
+        clsattrs[a.id] = _kbattr_to_dict(a, ses, a not in own_attrs)
 
     if (cls.superclass.id == cls.id):
         superclass = None
@@ -697,29 +698,29 @@ def _kb_class_visibility_to_dict(cls, ses):
 
 # Mapping between attribute type and functions returning a JSON'able
 # dictionary representation of the attribute itself
-def _kb_attrs_dict_map(attr_type, ses):
+def _kb_attrs_dict_map(attr_type, ses, inherited):
     kb_attrs = ses.orm.attributes
     type_dict_map = {kb_attrs.Boolean : lambda a:
                          dict([['type',   'bool'],
                                ['default_value', a.default]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.Integer : lambda a:
                          dict([['type',    'int'],
                                ['min',     a.min],
                                ['max',     a.max],
                                ['default_value', a.default]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.Real    : lambda a:
                          dict([['type',    'real'],
                                ['min',     a.min],
                                ['max',     a.max],
                                ['default_value', a.default]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.String  : lambda a:
                          dict([['type',    'string'],
                                ['length',  a.length],
                                ['default_value', a.default]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.Date    : lambda a:
                          dict([['type',    'date'],
                                ['min',     (a.min is not None
@@ -731,25 +732,25 @@ def _kb_attrs_dict_map(attr_type, ses):
                                ['default_value', ((a.default is not None)
                                                   and a.default.isoformat()
                                                   or None)]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.Uri  : lambda a:
                          dict([['type',    'uri'],
                                ['length',  a.length],
                                ['default_value', a.default]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.Choice  : lambda a:
                          dict([['type',    'choice'],
                                ['choices', simplejson.loads(a.choices)],
                                ['default_value', a.default]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.ObjectReference : lambda a:
                          dict([['type',         'objref'],
                                ['target_class', a.target.id]]
-                              + _std_attr_fields(a)),
+                              + _std_attr_fields(a, inherited)),
                      kb_attrs.DateLikeString  : lambda a:
                          dict([['type',    'date-like-string'],
                                ['default_value', a.default]]
-                              + _std_attr_fields(a))
+                              + _std_attr_fields(a, inherited))
                      }
     return type_dict_map[attr_type]
 
@@ -869,14 +870,14 @@ def _kb_dict_objref_fn(attr_id, d, ses, ws):
                                     **(_std_attr_dict_fields(d)))
 
 
-def _kbattr_to_dict(attr, ses):
+def _kbattr_to_dict(attr, ses, inherited):
     '''
     Create a string representation of a KB class attribute descriptor
     '''
-    return _kb_attrs_dict_map(type(attr), ses)(attr)
+    return _kb_attrs_dict_map(type(attr), ses, inherited)(attr)
 
 
-def _std_attr_fields(a):
+def _std_attr_fields(a, inherited):
     '''
     Return the standard fields present in each KB attribute object
     (non-null, notes, etc.)
@@ -885,7 +886,8 @@ def _std_attr_fields(a):
             ['maybe_empty', a.maybe_empty],
             ['order',       a.order],
             ['multivalued', a.multivalued],
-            ['notes',       a.notes]] 
+            ['notes',       a.notes],
+            ['inherited',   inherited]]
 
 
 def _std_attr_dict_fields(d):
