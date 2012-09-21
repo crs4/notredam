@@ -287,7 +287,8 @@ def class_post(request, ws_id, class_id):
 
         # FIXME: right now, we only support updating a few fields
         updatable_attr_fields = {'name'        : set([unicode, str]),
-                                 'notes'       : set([NoneType, unicode, str])}
+                                 'notes'       : set([NoneType, unicode, str]),
+                                 'order'       : set([int])}
         for attr_id in edited_attrs:
             attr_obj = [a for a in cls.attributes if a.id == attr_id][0]
             try:
