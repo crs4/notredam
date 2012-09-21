@@ -286,13 +286,29 @@ def class_post(request, ws_id, class_id):
                                                     edited_attrs)
 
         # FIXME: right now, we only support updating a few fields
+        # FIXME: the min, max, default, length attr fields are kludgy!
+        # If the wrong type is provided in the JSON class attr representation,
+        # a 500 error page (possibly with a traceback) will be
+        # displayed.  The underlying KB data is safe, though
         updatable_attr_fields = {'name'        : set([unicode, str]),
                                  'notes'       : set([NoneType, unicode, str]),
-                                 'order'       : set([int])}
+                                 'order'       : set([int]),
+                                 'min'         : set([NoneType, unicode, str,
+                                                      int]),
+                                 'max'         : set([NoneType, unicode, str,
+                                                      int]),
+                                 'default'     : set([NoneType, unicode, str,
+                                                      int, bool]),
+                                 'length'      : set([NoneType, int])}
         for attr_id in edited_attrs:
             attr_obj = [a for a in cls.attributes if a.id == attr_id][0]
+            # FIXME: kludge to deal with 'default'/'default_field' mismatch
+            attr_dict = attrs_dict[attr_id]
+            if 'default_value' in attr_dict:
+                # Let's mirror the 'default_value' field into 'default'
+                attr_dict['default'] = attr_dict['default_value']
             try:
-                _assert_update_object_fields(attr_obj, attrs_dict[attr_id],
+                _assert_update_object_fields(attr_obj, attr_dict,
                                              updatable_attr_fields)
             except ValueError as e:
                 return HttpResponseBadRequest(str(e))
@@ -982,6 +998,11 @@ def _assert_update_object_fields(obj, obj_dict, updatable_fields):
     informative message).
     '''
     for f in updatable_fields:
+        if not hasattr(obj, f):
+            # FIXME: this is part of the min/max/... kludge in class_post()
+            # Ideally, updatable_fields should only contain fields that belong
+            # for sure to the object being updated (depending on its class)
+            continue
         val = obj_dict.get(f, getattr(obj, f))
         expected_types = updatable_fields[f]
         if not type(val) in expected_types:
