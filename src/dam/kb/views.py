@@ -178,7 +178,7 @@ def class_index_put(request, ws_id):
 
         # FIXME: right now, we only support updating a few fields
         updatable_fields = {'name'        : set([unicode, str]),
-                            'notes'       : set([unicode, str])}
+                            'notes'       : set([NoneType, unicode, str])}
         try:
             _assert_update_object_fields(cls, cls_dict, updatable_fields)
         except ValueError as e:
@@ -265,7 +265,7 @@ def class_post(request, ws_id, class_id):
 
         # FIXME: right now, we only support updating a few fields
         updatable_fields = {'name'        : set([unicode, str]),
-                            'notes'       : set([unicode, str])}
+                            'notes'       : set([NoneType, unicode, str])}
         try:
             _assert_update_object_fields(cls, cls_dict, updatable_fields)
         except ValueError as e:
@@ -411,7 +411,7 @@ def object_index_put(request, ws_id):
 
         # FIXME: right now, we only support updating a few fields
         updatable_fields = {'name'        : set([unicode, str]),
-                            'notes'       : set([unicode, str])}
+                            'notes'       : set([NoneType, unicode, str])}
 
         try:
             _assert_update_object_fields(obj, obj_dict, updatable_fields)
@@ -485,7 +485,7 @@ def object_post(request, ws_id, object_id):
 
         # FIXME: right now, we only support updating a few fields
         updatable_fields = {'name'        : set([unicode, str]),
-                            'notes'       : set([unicode, str])}
+                            'notes'       : set([NoneType, unicode, str])}
         try:
             _assert_update_object_fields(obj, obj_dict, updatable_fields)
             _assert_update_object_attrs(obj, obj_dict.get('attributes', {}),
