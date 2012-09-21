@@ -271,6 +271,34 @@ def class_post(request, ws_id, class_id):
         except ValueError as e:
             return HttpResponseBadRequest(str(e))
 
+        # Let's now handle class attribute updates
+        attrs_dict = cls_dict.get('attributes')
+        client_attrs = set(attrs_dict.keys())
+        existing_attrs = set(a.id for a in cls.attributes)
+        existing_all_attrs = set(a.id for a in cls.all_attributes())
+        
+        new_attrs = client_attrs - existing_all_attrs
+        removed_attrs = existing_all_attrs - client_attrs
+        # Only edit attributes belonging to this class, ignoring its ancestors
+        edited_attrs = existing_attrs.intersection(client_attrs)
+
+        print 'new: %s; removed: %s; edited: %s' % (new_attrs, removed_attrs,
+                                                    edited_attrs)
+
+        # FIXME: right now, we only support updating a few fields
+        updatable_attr_fields = {'name'        : set([unicode, str]),
+                                 'notes'       : set([NoneType, unicode, str])}
+        for attr_id in edited_attrs:
+            attr_obj = [a for a in cls.attributes if a.id == attr_id][0]
+            try:
+                _assert_update_object_fields(attr_obj, attrs_dict[attr_id],
+                                             updatable_attr_fields)
+            except ValueError as e:
+                return HttpResponseBadRequest(str(e))
+            ses.add(attr_obj)
+        
+        # FIXME: here we should handle new_attrs and removed_attrs, too
+
         ses.add(cls)
         ses.commit()
 
