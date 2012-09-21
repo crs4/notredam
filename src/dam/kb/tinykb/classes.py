@@ -80,7 +80,7 @@ def _init_base_classes(o):
     #
     #   1. KBClass'es retrieved from the DB will auto-cache themselves;
     #
-    #   2. new KBClass'es will auto-cache themselves after they are saved;
+    #   2. new KBClass'es will auto-cache themselves after they are realized;
     #
     #   3. the cache must be queried before accessing the underlying DB;
     #
@@ -424,6 +424,10 @@ def _init_base_classes(o):
 
             return attrs_tbl_list
 
+        # Guard for KBClass (un)realization
+        o._pyclass_realize_lock = threading.RLock()
+
+        @decorators.synchronized(o._pyclass_realize_lock)
         def realize(self):
             '''
             Create the SQL table(s) necessary for storing instances of
@@ -450,6 +454,10 @@ def _init_base_classes(o):
             self.additional_sqlalchemy_tables = schema.create_attr_tables(
                 add_tables, engine)
 
+            # Finally, let's add ourselves to the class cache
+            cache_add(self)
+
+        @decorators.synchronized(o._pyclass_realize_lock)
         def unrealize(self):
             '''
             Remove the SQL tables created with :py:meth:`realize`.
