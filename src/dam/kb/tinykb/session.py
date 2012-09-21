@@ -375,8 +375,6 @@ class Session(object):
         for c in new_kb_cls:
             if not c.is_bound():
                 c.realize()
-                # FIXME: is it the best place to do it?
-                self.orm.cache_add(c)
         try:
             self.session.commit()
         except sqlalchemy.exc.IntegrityError:
