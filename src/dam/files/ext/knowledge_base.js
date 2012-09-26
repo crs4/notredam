@@ -27,7 +27,7 @@ function store_get_class_attributes(id_class){
 	    url: '/kb/get_class_attributes/'+id_class+'/',
 	    autoLoad:true,
 	    root: 'rows',
-	    fields:['id','name','type','maybe_empty','default_value','order','notes','min','max','length','choices', 'multivalued', 'target_class']
+	    fields:['id','name','type','maybe_empty','default_value','order','notes','min','max','length','choices', 'multivalued', 'target_class', 'inherited']
 	});
 }
 
@@ -478,7 +478,13 @@ function get_grid_insert_value(value, type, title){
 	
 	return grid_value
 }
-function add_option(value, attribute_detail_panel, data, insert_value){
+
+function check_add_class(add_class, record_value){
+	if (!add_class){
+		record_value.disabled = true;
+	}
+}
+function add_option(value, attribute_detail_panel, data, insert_value, add_class){
 	//initializing
 	attribute_detail_panel.removeAll();
 	var min_number_value = null;
@@ -518,6 +524,9 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			value: default_v,
 	        allowBlank:true
 		});
+		check_add_class(add_class, min_number);
+		check_add_class(add_class, max_number);
+		check_add_class(add_class, default_value);
 		attribute_detail_panel.add(min_number);
 		attribute_detail_panel.add(max_number);
 		attribute_detail_panel.add(default_value);
@@ -526,6 +535,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			min_number.disable();
 			max_number.disable();
 			default_value.disable();
+			check_add_class(add_class, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'date'){
@@ -558,6 +568,9 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			value: default_v,
 	        allowBlank:true
 		});
+		check_add_class(add_class, min_date);
+		check_add_class(add_class, max_date);
+		check_add_class(add_class, default_value);
 		attribute_detail_panel.add(min_date);
 		attribute_detail_panel.add(max_date);
 		attribute_detail_panel.add(default_value);
@@ -566,6 +579,7 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			min_date.disable();
 			max_date.disable();
 			default_value.disable();
+			check_add_class(add_class, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'string' || value == 'uri'){
@@ -579,10 +593,12 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			value: max_length_value,
 	        allowBlank:false
 		});
+		check_add_class(add_class, max_length);
 		attribute_detail_panel.add(max_length);
 		if (insert_value){
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			max_length.disable();
+			check_add_class(add_class, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'objref'){
@@ -605,10 +621,12 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	          }
 			}
 		});
+		check_add_class(add_class, target_class);
 		attribute_detail_panel.add(target_class);
 		if (insert_value){//can select only objects.
 			record_value = get_grid_insert_value(data.value, value, 'Select objects references');
 			target_class.disable();
+			check_add_class(add_class, record_value);
 			attribute_detail_panel.add(record_value);			
 		}
 	}else if(value == 'bool'){
@@ -629,10 +647,12 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 	        allowBlank:true,
 	        triggerAction: 'all'
 		});
+		check_add_class(add_class, default_value);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
 			var record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			default_value.disable();
+			check_add_class(add_class, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if(value == 'choice'){
@@ -655,6 +675,8 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 			value: default_v,
 	        allowBlank:true
 		});
+		check_add_class(add_class, choices);
+		check_add_class(add_class, default_value);
 		attribute_detail_panel.add(choices);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
@@ -686,12 +708,14 @@ function add_option(value, attribute_detail_panel, data, insert_value){
 		    });
 			choices.disable();
 			default_value.disable();
+			check_add_class(add_class, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 
 	}else if (value == 'date-like-string'){
 		if (insert_value){
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
+			check_add_class(add_class, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 
@@ -711,7 +735,7 @@ function isEmpty(obj) {
 	return false;
 }
 
-function add_single_attribute(edit, attributes_grid, insert_value){
+function add_single_attribute(edit, attributes_grid, insert_value, add_class){
 	var name_textField_value, empty_chekbox_value, empty_chekbox_value, multivalued_chekbox_value, notes_textField_value, title, text_button, max_value_slider;
 	
 	if (edit){
@@ -720,7 +744,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		multivalued_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.multivalued;
 		notes_textField_value = attributes_grid.getSelectionModel().getSelected().data.notes;
 		title = gettext("Edit attribute");
-		text_button = gettext('Edit');
+		text_button = gettext('Apply');
 		max_value_slider = attributes_grid.getStore().getCount()-1;
 		slider_value = attributes_grid.getSelectionModel().getSelected().data.order;
 	}else{
@@ -729,7 +753,7 @@ function add_single_attribute(edit, attributes_grid, insert_value){
 		multivalued_chekbox_value = false;
 		notes_textField_value = null;
 		title = gettext("New attribute");
-		text_button = gettext('Add');
+		text_button = gettext('Apply');
 		max_value_slider = attributes_grid.getStore().getCount();
 		slider_value = attributes_grid.getStore().getCount();
 	}
@@ -758,12 +782,12 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         triggerAction: 'all',
         listeners:{ 
 			select:{ fn:function(combo, ewVal, oldVal){
-				add_option(ewVal.data.id, Ext.getCmp('id_option_attribute_panel'), null, insert_value);
+				add_option(ewVal.data.id, Ext.getCmp('id_option_attribute_panel'), null, insert_value, add_class);
 			}},
 			render:{fn:function(combo){
 				if (edit){
 					combo.setValue(attributes_grid.getSelectionModel().getSelected().data.type);
-					add_option(attributes_grid.getSelectionModel().getSelected().data.type, Ext.getCmp('id_option_attribute_panel'), attributes_grid.getSelectionModel().getSelected().data, insert_value);
+					add_option(attributes_grid.getSelectionModel().getSelected().data.type, Ext.getCmp('id_option_attribute_panel'), attributes_grid.getSelectionModel().getSelected().data, insert_value, add_class);
 				}
 			}}
       	}        
@@ -800,6 +824,13 @@ function add_single_attribute(edit, attributes_grid, insert_value){
         hidden: true,
         plugins: new Ext.ux.SliderTip()
     });
+    
+    if(!add_class){
+    	order_slider.disabled = true;
+    	multivalued_chekbox.disabled = true;
+    	empty_chekbox.disabled = true;
+    	type_combo.disabled = true;
+    }
 	var attribute_detail_panel = new Ext.FormPanel({
         id:'attribute_detail_panel',
         labelWidth: 80, // label settings here cascade unless overridden
@@ -1075,20 +1106,22 @@ function load_detail_class(class_data, id_class, add_class){
 		singleSelect: true,
 		listeners:{
 			rowselect: {fn:function(sm){
-				if (add_class){
+				Ext.getCmp('id_remove_attributes_class').enable();
+				Ext.getCmp('id_movedown_attributes_class').enable();
+				Ext.getCmp('id_moveup_attributes_class').enable();
+				if (sm.getSelected().data.inherited == false ){
 					Ext.getCmp('id_edit_attributes_class').enable();
-					Ext.getCmp('id_remove_attributes_class').enable();
-					Ext.getCmp('id_movedown_attributes_class').enable();
-					Ext.getCmp('id_moveup_attributes_class').enable();
-
+				}else{
+					Ext.getCmp('id_edit_attributes_class').disable();
 				}
+
 			}},
 			rowdeselect: {fn:function(sm){
 				Ext.getCmp('id_edit_attributes_class').disable();
 				Ext.getCmp('id_remove_attributes_class').disable();
 				Ext.getCmp('id_movedown_attributes_class').disable();
 				Ext.getCmp('id_moveup_attributes_class').disable();
-			}}
+			} }
 		}
 	});
 
@@ -1135,7 +1168,8 @@ function load_detail_class(class_data, id_class, add_class){
                                 {id:'choices',header: "Choices", width: 60, sortable: false, dataIndex: 'choices'},
                                 {id:'target_class',header: "Target Class", width: 60, sortable: false, dataIndex: 'target_class'},
                                 {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'},
-                                {id:'notes',header: "Notes", width: 150, sortable: false, dataIndex: 'notes'}
+                                {id:'notes',header: "Notes", width: 150, sortable: false, dataIndex: 'notes'},
+                                {id:'inherited',header: "Inherited", width: 150, sortable: false, dataIndex: 'inherited'}
         ]),
         bbar:[{
             text:'Add',
@@ -1143,16 +1177,16 @@ function load_detail_class(class_data, id_class, add_class){
             tooltip:'Add a new attribute',
             iconCls:'add_icon',
             handler: function() {
-            	add_single_attribute(false, attributes_grid, false);
+            	add_single_attribute(false, attributes_grid, false, add_class);
         	}
         },'-',{
             text:'Edit',
             id: 'id_edit_attributes_class',
-            tooltip:'Edit the selected row',
+            tooltip:'Edit the selected row (if inherited is false)',
             iconCls:'edit_icon',
             disabled:true,
             handler: function() {
-        		add_single_attribute(true, attributes_grid, false);
+        		add_single_attribute(true, attributes_grid, false, add_class);
         	}
         },'-',{
             text:'Remove',
@@ -1190,14 +1224,6 @@ function load_detail_class(class_data, id_class, add_class){
         }]
     });
     
-    if (!add_class){
-		Ext.getCmp('id_edit_attributes_class').disable();
-		Ext.getCmp('id_remove_attributes_class').disable();
-		Ext.getCmp('id_movedown_attributes_class').disable();
-		Ext.getCmp('id_moveup_attributes_class').disable();
-		Ext.getCmp('id_add_attributes_class').disable();
-    }
-	
     fields.push(superclass_textField);
 	fields.push(id_textField);
 	fields.push(name_textField);
@@ -1448,7 +1474,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         listeners: {
             'rowdblclick': function(grid, rowIndex, e){
 		        var record = grid.getStore().getAt(rowIndex);  
-	        	add_single_attribute(true, grid, true)
+	        	add_single_attribute(true, grid, true, add_class)
             }
         },
     	height: 220
