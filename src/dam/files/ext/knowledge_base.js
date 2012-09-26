@@ -753,8 +753,10 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class){
 		multivalued_chekbox_value = false;
 		notes_textField_value = null;
 		title = gettext("New attribute");
-		text_button = gettext('Apply');
+		text_button = gettext('Add');
 		max_value_slider = attributes_grid.getStore().getCount();
+		console.log('slider_value');
+		console.log(attributes_grid.getStore().getCount());
 		slider_value = attributes_grid.getStore().getCount();
 	}
 	var name_textField = new Ext.form.TextField({
@@ -913,7 +915,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class){
 	        			}
 	        		}else{choices = null;}
 	        		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
-	        		if (this.text == gettext('Edit')){
+	        		if (this.text == gettext('Apply')){
 	        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
 	        			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
 	        			attributes_grid.getSelectionModel().getSelected().set('order',order_slider.getValue());
