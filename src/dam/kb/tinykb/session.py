@@ -241,6 +241,32 @@ class Session(object):
         :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
         :param obj_or_cls: KB object or class to be deleted
         '''
+        if self.has_references(obj_or_cls):
+            raise kb_exc.PendingReferences('Class/object is referenced '
+                                           'within the knowledge base')
+
+        # Perform the actual KB class/object deletion
+        self.session.delete(obj_or_cls)
+
+        if isinstance(obj_or_cls, self.orm.KBClass):
+            # Expunge the class from the ORM cache
+            self.orm.cache_del(obj_or_cls.id)
+
+        # Let's not forget to unrealize the class after the current
+        # transaction is committed
+        if isinstance(obj_or_cls, self.orm.KBClass):
+            self._kb_classes_pending_unrealize.append(obj_or_cls)
+
+    '''
+    Check whether the given class is references within the knowledge base
+
+    :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
+    :param obj_or_cls: KB object or class to be checked for references
+    
+    :rtype: bool
+    :returns: True if references are found, False otherwise
+    '''
+    def has_references(self, obj_or_cls):
         orm_attrs = self.orm.attributes
 
         if isinstance(obj_or_cls, self.orm.KBObject):
@@ -280,18 +306,17 @@ class Session(object):
                         ref_attr == obj_or_cls).count()
 
                 if obj_refs_cnt > 0:
-                    raise kb_exc.PendingReferences('Object is referenced')
+                    return True
         elif isinstance(obj_or_cls, self.orm.KBClass):
-            # Check whether the class has instances
             pyclass = obj_or_cls.python_class
             objs = self.session.query(pyclass)
             if objs.count() > 0:
-                raise kb_exc.PendingReferences('Class has instances')
-
+                return True
+    
             # Check whether the class or one of its descendants
             # appears in an object reference attribute
             cls_lst = [obj_or_cls] + obj_or_cls.descendants()
-
+    
             # FIXME: in_() not yet supported for relationships
             # Check whether it will change in the next versions of SQLAlchemy
             # cls_refs = self.session.query(orm_attrs.ObjectReference).filter(
@@ -302,25 +327,12 @@ class Session(object):
                      == obj_or_cls.root.id),
                     (self.schema.class_attribute_objref.c.target_class.in_(
                             cls_lst))))
-
             if cls_refs.count() > 0:
-                raise kb_exc.PendingReferences('Class is referenced by other '
-                                               'classes')
+                return True
         else:
             raise TypeError('expected KB object or class, got "%s" (type: %s)'
                             % (obj_or_cls, type(obj_or_cls)))
-
-        # Perform the actual KB class/object deletion
-        self.session.delete(obj_or_cls)
-
-        if isinstance(obj_or_cls, self.orm.KBClass):
-            # Expunge the class from the ORM cache
-            self.orm.cache_del(obj_or_cls.id)
-
-        # Let's not forget to unrealize the class after the current
-        # transaction is committed
-        if isinstance(obj_or_cls, self.orm.KBClass):
-            self._kb_classes_pending_unrealize.append(obj_or_cls)
+        return False
 
     def expunge(self, obj):
         '''
