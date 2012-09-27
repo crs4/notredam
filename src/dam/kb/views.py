@@ -129,36 +129,10 @@ def class_index_put(request, ws_id):
 
         attrs = []
         for (attr_id, a) in json_attrs.iteritems():
-            if not isinstance(a, dict):
-                return HttpResponseBadRequest('Expected a dictionary for '
-                                              'representing attribute "%s", got '
-                                              '"%s"' % (attr_id, str(a)))
-            try:
-                attr_type = a['type']
-            except KeyError:
-                return HttpResponseBadRequest('Attribute "%s" lacks a "type" field'
-                                              % (attr_id, ))
-
-            try:
-                attr_fn = _kb_dict_attrs_map(attr_type, ses)
-            except KeyError:
-                return HttpResponseBadRequest(('Attribute "%s" has an invalid '
-                                               + 'type: "%s"')
-                                              % (attr_id, attr_type))
-
-            # Make a "safe" id, i.e. only composed by ASCII chars
-            safe_attr_id = kb_niceid(attr_id, extra_chars=0)
-
-            try:
-                attr_obj = attr_fn(safe_attr_id, a, ses, ws)
-            except KeyError as e:
-                return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
-                                               + 'a required field: "%s"')
-                                              % (attr_id, attr_type, str(e)))
-            except ValueError, e:
-                return HttpResponseBadRequest('Cannot create attribute "%s": %s'
-                                              % (attr_id, str(e)))
-
+            attr_obj = _validate_build_attr_obj(attr_id, a, ses, ws)
+            if not isinstance(attr_obj, ses.orm.attributes.Attribute):
+                # Attribute build failed - we have been returned an error
+                return attr_obj
             attrs.append(attr_obj)
 
         if superclass is None:
@@ -714,6 +688,41 @@ def _kb_class_visibility_to_dict(cls, ses):
         vis_dict[v.workspace.id] = access_str_map[v.access]
 
     return vis_dict
+
+# Try to build an Attribute object.  Return it when building is
+# successful, or an error if something goes wrong.
+def _validate_build_attr_obj(attr_id, a, ses, ws):
+    if not isinstance(a, dict):
+        return HttpResponseBadRequest('Expected a dictionary for '
+                                      'representing attribute "%s", got '
+                                      '"%s"' % (attr_id, str(a)))
+    try:
+        attr_type = a['type']
+    except KeyError:
+        return HttpResponseBadRequest('Attribute "%s" lacks a "type" field'
+                                      % (attr_id, ))
+    
+    try:
+        attr_fn = _kb_dict_attrs_map(attr_type, ses)
+    except KeyError:
+        return HttpResponseBadRequest(('Attribute "%s" has an invalid '
+                                       + 'type: "%s"')
+                                      % (attr_id, attr_type))
+
+    # Make a "safe" id, i.e. only composed by ASCII chars
+    safe_attr_id = kb_niceid(attr_id, extra_chars=0)
+    
+    try:
+        attr_obj = attr_fn(safe_attr_id, a, ses, ws)
+    except KeyError as e:
+        return HttpResponseBadRequest(('Attribute "%s" (type %s) lacks '
+                                       + 'a required field: "%s"')
+                                      % (attr_id, attr_type, str(e)))
+    except ValueError, e:
+        return HttpResponseBadRequest('Cannot create attribute "%s": %s'
+                                      % (attr_id, str(e)))
+
+    return attr_obj
 
 
 # Mapping between attribute type and functions returning a JSON'able
