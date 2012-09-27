@@ -251,13 +251,17 @@ def class_post(request, ws_id, class_id):
         existing_attrs = set(a.id for a in cls.attributes)
         existing_all_attrs = set(a.id for a in cls.all_attributes())
         
-        new_attrs = client_attrs - existing_all_attrs
-        removed_attrs = existing_all_attrs - client_attrs
-        # Only edit attributes belonging to this class, ignoring its ancestors
-        edited_attrs = existing_attrs.intersection(client_attrs)
+        new_attr_ids = client_attrs - existing_all_attrs
+        removed_attr_ids = existing_all_attrs - client_attrs
 
-        print 'new: %s; removed: %s; edited: %s' % (new_attrs, removed_attrs,
-                                                    edited_attrs)
+        if ses.has_references(cls) and not ((len(new_attr_ids) == 0)
+                                            or (len(removed_attr_ids) == 0)):
+            return HttpResponseBadRequest('Cannot add/remove attributes '
+                                          'to/from a class which is already '
+                                          'referenced in the knowledge base')
+
+        # Only edit attributes belonging to this class, ignoring its ancestors
+        edited_attr_ids = existing_attrs.intersection(client_attrs)
 
         # FIXME: right now, we only support updating a few fields
         # FIXME: the min, max, default, length attr fields are kludgy!
@@ -278,7 +282,7 @@ def class_post(request, ws_id, class_id):
         #                          'default'     : set([NoneType, unicode, str,
         #                                               int, bool]),
         #                          'length'      : set([NoneType, int])}
-        for attr_id in edited_attrs:
+        for attr_id in edited_attr_ids:
             attr_obj = [a for a in cls.attributes if a.id == attr_id][0]
             # FIXME: kludge to deal with 'default'/'default_field' mismatch
             attr_dict = attrs_dict[attr_id]
@@ -292,7 +296,20 @@ def class_post(request, ws_id, class_id):
                 return HttpResponseBadRequest(str(e))
             ses.add(attr_obj)
         
-        # FIXME: here we should handle new_attrs and removed_attrs, too
+        # Let's now handle new attibutes
+        new_attrs = []
+        for new_attr_id in new_attr_ids:
+            new_attr_dict = attrs_dict[new_attr_id]
+            new_attr_obj = _validate_build_attr_obj(new_attr_id, new_attr_dict,
+                                                    ses, ws)
+            if not isinstance(new_attr_obj, ses.orm.attributes.Attribute):
+                # Attribute build failed - we have been returned an error
+                return new_attr_obj
+            new_attrs.append(new_attr_obj)
+        for a in new_attrs:
+            cls.add_attribute(a)
+            
+        # FIXME: here we should handle removed_attr_ids, too
 
         ses.add(cls)
         ses.commit()

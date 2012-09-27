@@ -392,6 +392,23 @@ def _init_base_classes(o):
         def is_bound(self):
             return self._sqlalchemy_table is not None
 
+        def add_attribute(self, attr):
+            '''
+            Add an attribute to the KB class.
+
+            :type  attr: :py:class:`orm.attributes.Attribute`
+            :param attr: the attribute to be added
+            '''
+            if attr.id in [a.id for a in self.all_attributes()]:
+                raise RuntimeError('Cannot add already existing attribute'
+                                   ' "%s"' % (attr.id, ))
+
+            self.attributes.append(attr)
+            
+            if not hasattr(self, '_new_attributes'):
+                self._new_attributes = []
+            self._new_attributes.append(attr)
+            
         def all_attributes(self):
             '''
             Return all the class attributes, including the ones of
@@ -598,15 +615,17 @@ def _init_base_classes(o):
             for r in sself.attributes:
                 mapper_props.update(r.mapper_properties())
 
-            mapper(newclass, sself._sqlalchemy_table, inherits=parent_class,
-                   polymorphic_identity=sself.id,
-                   properties = mapper_props)
+            m = mapper(newclass, sself._sqlalchemy_table,
+                       inherits=parent_class,
+                       polymorphic_identity=sself.id,
+                       properties = mapper_props)
 
             # Also add event listeners for validating assignments
             # according to attribute types
             for a in sself.attributes:
                 a.make_proxies_and_event_listeners(newclass)
 
+            newclass.__kb_mapper__ = weakref.ref(m)
             return newclass
 
         python_class = property(_make_or_get_python_class)
@@ -1090,7 +1109,29 @@ def _init_base_classes(o):
         target.__kb_deleted__ = True
     event.listen(KBClass, 'after_delete', kbclass_after_delete, propagate=True)
 
-    # Sync cache when a KB class is updated
+    # Look for new attributes, and sync cache when a KB class is updated
     def kbclass_after_update(_mapper, _connection, target):
+        if hasattr(target, '_new_attributes'):
+            assert(target.is_bound()) # Should be always true after INSERT
+            pyclass = target.python_class
+            pyclass_mapper = pyclass.__kb_mapper__()
+            assert(pyclass_mapper is not None)
+            for a in target._new_attributes:
+                props = a.mapper_properties()
+                pyclass_mapper.add_properties(props)
+
+            # Finally add event listeners for validating assignments
+            # according to attribute types
+            for a in target._new_attributes:
+                a.make_proxies_and_event_listeners(pyclass)
+
+            del target._new_attributes
         cache_update(target)
+    event.listen(KBClass, 'after_update', kbclass_after_update, propagate=True)
+
+    # Cleanup new attributes
+    def kbclass_after_insert(_mapper, _connection, target):
+        if hasattr(target, '_new_attributes'):
+            # New attributes are only meaningful after KB class updates
+            del target._new_attributes
     event.listen(KBClass, 'after_update', kbclass_after_update, propagate=True)
