@@ -257,16 +257,16 @@ class Session(object):
         if isinstance(obj_or_cls, self.orm.KBClass):
             self._kb_classes_pending_unrealize.append(obj_or_cls)
 
-    '''
-    Check whether the given class is references within the knowledge base
-
-    :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
-    :param obj_or_cls: KB object or class to be checked for references
-    
-    :rtype: bool
-    :returns: True if references are found, False otherwise
-    '''
     def has_references(self, obj_or_cls):
+        '''
+        Check whether the given class is references within the knowledge base
+
+        :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
+        :param obj_or_cls: KB object or class to be checked for references
+        
+        :rtype: bool
+        :returns: True if references are found, False otherwise
+        '''
         orm_attrs = self.orm.attributes
 
         if isinstance(obj_or_cls, self.orm.KBObject):
