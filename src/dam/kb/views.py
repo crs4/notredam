@@ -292,14 +292,18 @@ def class_post(request, ws_id, class_id):
         # displayed.  The underlying KB data is safe, though
         updatable_attr_fields = {'name'        : set([unicode, str]),
                                  'notes'       : set([NoneType, unicode, str]),
-                                 'order'       : set([int]),
-                                 'min'         : set([NoneType, unicode, str,
-                                                      int]),
-                                 'max'         : set([NoneType, unicode, str,
-                                                      int]),
-                                 'default'     : set([NoneType, unicode, str,
-                                                      int, bool]),
-                                 'length'      : set([NoneType, int])}
+                                 'order'       : set([int])}
+        # FIXME: we disable min/max/default/length editing for now
+        # Their update is non trivial, and we leave it for the future.
+        # When the time comes, it is just necessary to uncomment the
+        # following dictionary keys
+        #                          'min'         : set([NoneType, unicode, str,
+        #                                               int]),
+        #                          'max'         : set([NoneType, unicode, str,
+        #                                               int]),
+        #                          'default'     : set([NoneType, unicode, str,
+        #                                               int, bool]),
+        #                          'length'      : set([NoneType, int])}
         for attr_id in edited_attrs:
             attr_obj = [a for a in cls.attributes if a.id == attr_id][0]
             # FIXME: kludge to deal with 'default'/'default_field' mismatch
