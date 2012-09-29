@@ -1134,4 +1134,4 @@ def _init_base_classes(o):
         if hasattr(target, '_new_attributes'):
             # New attributes are only meaningful after KB class updates
             del target._new_attributes
-    event.listen(KBClass, 'after_update', kbclass_after_update, propagate=True)
+    event.listen(KBClass, 'after_insert', kbclass_after_insert, propagate=True)
