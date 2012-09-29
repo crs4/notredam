@@ -240,11 +240,10 @@ def _init_base_attributes(o):
         # attribute column on the KB object table.  This implementation
         # should work for most of the derived classes
         def _objtable_mapper_properties(self):
-            # Since the column is a "pure" value, it can be mapped by
-            # SQLAlchemy without further issues
             assert(not self.multivalued)
-
-            return {}
+            cls = getattr(self, 'class')
+            obj_table = cls.sqlalchemy_table
+            return {self.id : obj_table.c[self.id]}
 
         # Internal routine for building properties for the multivalue
         # table.  This implementation should work for most of the derived
