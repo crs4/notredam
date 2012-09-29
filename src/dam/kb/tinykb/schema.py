@@ -135,7 +135,6 @@ class Schema(object):
         :type  attrs_ddl: list of SQLAlchemy DDL objects
         :param attrs_ddl: describes the fields of the object table
 
-
         :type  engine: SQLALchemy engine
         :param engine: used for creating the table on the SQL DB
 
@@ -149,6 +148,44 @@ class Schema(object):
 
         return newtable
 
+    def extend_object_table(self, table_name, attrs_ddl, connection):
+        '''
+        Extend the given table with new columns.
+
+        :type  table_name: string
+        :param table_name: table to be extended
+        
+        :type  attrs_ddl: list of SQLAlchemy DDL objects
+        :param attrs_ddl: describes the new fields of the object table
+        
+        :type  connection: SQLALchemy connection
+        :param connection: used for creating the table on the SQL DB
+        '''
+
+        from alembic.migration import MigrationContext
+        from alembic.operations import Operations
+
+        ctx = MigrationContext.configure(connection)
+        op = Operations(ctx)
+
+        # FIXME: streamline the following internal API
+        # We are assuming that the table already exists in the metadata
+        table = self._get_or_build_object_table(table_name, None, None)
+        for a in attrs_ddl:
+            if isinstance(a, Column):
+                op.add_column(table.name, a)
+                table.append_column(a.copy())
+            elif isinstance(a, CheckConstraint):
+                # FIXME: TODO
+                pass
+            elif isinstance(a, UniqueConstraint):
+                # FIXME: TODO
+                pass
+            else:
+                raise RuntimeError('BUG: unsupported object while adding '
+                                   'column: ' + unicode(a))
+
+
     def get_object_table(self, table_name, parent_table_name, attrs_ddl):
         # '''
         # Return the table used for storing KB objects, raising an error
@@ -156,7 +193,7 @@ class Schema(object):
         # the given description.
         #
         # :type  table_name: string
-        # :param table_name: name of the new table (must be unique)
+        # :param table_name: name of the table
         #
         # :type  parent_table_name: string
         # :param parent_table_name: name of the parent table, referred to the
@@ -228,7 +265,7 @@ class Schema(object):
         # FIXME: this function should be split!
         for t in self._metadata.sorted_tables:
             if table_name == t.name:
-                # The table still exists in the metadata
+                # The table already exists in the metadata
                 return t
 
         return Table(table_name, self._metadata,
