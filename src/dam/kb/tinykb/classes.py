@@ -627,12 +627,14 @@ def _init_base_classes(o):
                        polymorphic_identity=sself.id,
                        properties = mapper_props)
 
+            # Also add the mapper to the class dictionary, as weak ref
+            newclass.__sql_mapper__ = weakref.ref(m)
+
             # Also add event listeners for validating assignments
             # according to attribute types
             for a in sself.attributes:
                 a.make_proxies_and_event_listeners(newclass)
 
-            newclass.__kb_mapper__ = weakref.ref(m)
             return newclass
 
         python_class = property(_make_or_get_python_class)
@@ -1118,15 +1120,36 @@ def _init_base_classes(o):
     event.listen(KBClass, 'after_delete', kbclass_after_delete, propagate=True)
 
     # Look for new attributes, and sync cache when a KB class is updated
-    def kbclass_after_update(_mapper, _connection, target):
+    def kbclass_after_update(_mapper, connection, target):
         if hasattr(target, '_new_attributes'):
             assert(target.is_bound()) # Should be always true after INSERT
             pyclass = target.python_class
-            pyclass_mapper = pyclass.__kb_mapper__()
+            pyclass_mapper = pyclass.__sql_mapper__()
             assert(pyclass_mapper is not None)
+            table = pyclass_mapper.local_table
+            assert(table.name == target.table)
+
+            # Create additional tables (when needed)
+            tbl_nested_lst = [attr.additional_tables()
+                              for attr in target._new_attributes]
+            add_tables = [t for l in tbl_nested_lst for t in l] # Flatten
+
+            target.additional_sqlalchemy_tables += schema.create_attr_tables(
+                add_tables, connection)
+            print '----', target.additional_sqlalchemy_tables
+
+            # Extend the SQL object table
+            attr_nested_lst = [a.ddl() for a in target._new_attributes]
+            attrs_ddl_lst = [d for l in attr_nested_lst for d in l] # Flatten
+            schema.extend_object_table(table.name, attrs_ddl_lst, connection)
+
             for a in target._new_attributes:
                 props = a.mapper_properties()
                 pyclass_mapper.add_properties(props)
+
+            # FIXME: maybe it is not necessary, but it should do no harm
+            # Update SQLAlchemy mappers configuration
+            orm.configure_mappers()
 
             # Finally add event listeners for validating assignments
             # according to attribute types
