@@ -39,6 +39,9 @@ import access
 
 from util import niceid, decorators
 
+# Number of random characters added for ID generation
+RAND_SUFFIX_LENGTH = 8
+
 class Classes(types.ModuleType):
     def __init__(self, session):
         types.ModuleType.__init__(self, 'tinykb_%s_classes'
@@ -267,9 +270,9 @@ def _init_base_classes(o):
         '''
         def __init__(self, name, superclass, attributes=[], notes=None,
                      explicit_id=None):
-            suffix = '_' + niceid.generate()
+            suffix = '_' + niceid.generate(length=RAND_SUFFIX_LENGTH)
             if explicit_id is None:
-                clean_id = niceid.niceid(name, extra_chars=0)
+                clean_id = niceid.niceid(name, extra_chars=RAND_SUFFIX_LENGTH)
                 # FIXME: check uniqueness!
                 self.id = '%s%s' % (clean_id, suffix)
             else:
@@ -317,6 +320,10 @@ def _init_base_classes(o):
             self.bind_to_table()
             if cache_get(self.id, Session.object_session(self)) is None:
                 cache_add(self)
+
+            # Reconstruct table suffix
+            suffix_chars = RAND_SUFFIX_LENGTH + 1 # Also count "_" character
+            self._table_suffix = self.table[-suffix_chars:]
 
         sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
@@ -777,7 +784,8 @@ def _init_base_classes(o):
         def __init__(self, class_, name, notes=None, explicit_id=None,
                      _rebind_session=None):
             if explicit_id is None:
-                self.id = niceid.niceid(name) # FIXME: check uniqueness!
+                # FIXME: check uniqueness!
+                self.id = niceid.niceid(name, extra_chars=RAND_SUFFIX_LENGTH)
             else:
                 self.id = explicit_id
 
