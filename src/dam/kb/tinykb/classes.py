@@ -1130,10 +1130,6 @@ def _init_base_classes(o):
         if target.is_bound() and hasattr(target, '_new_attributes'):
             if value in target._new_attributes:
                 target._new_attributes.remove(value)
-        value._class_id = None
-        value._class_root_id = None
-        value._multivalue_table = None
-        # FIXME: decide what to do if a MV table is "orphaned" by attr removal
 
     event.listen(KBClass.attributes, 'remove',
                  kbclass_remove_attribute, propagate=True, retval=False)
