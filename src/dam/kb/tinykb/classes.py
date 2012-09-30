@@ -303,16 +303,18 @@ def _init_base_classes(o):
                 inherited_attr_ids = [a.id
                                       for a in superclass.all_attributes()]
 
+            # When created from scratch, no table on DB should exists
+            # NOTE: these must be set up before adding attributes, since
+            # the event handlers require a properly-configured KBClass instance
+            self._sqlalchemy_table = None
+            self.additional_sqlalchemy_tables = []
+
             for a in attributes:
                 if a.id in inherited_attr_ids:
                     raise RuntimeError('Cannot redefine inherited attribute'
                                        ' "%s"' % (a.id, ))
                 self.attributes.append(a)
             self.notes = notes
-
-            ## When created from scratch, no table on DB should exists
-            self._sqlalchemy_table = None
-            self.additional_sqlalchemy_tables = []
 
         @orm.reconstructor
         def __init_on_load__(self):
