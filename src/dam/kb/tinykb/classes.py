@@ -1098,6 +1098,7 @@ def _init_base_classes(o):
     # the 'attributes' list
     # FIXME: it should happen automatically, shouldn't it?
     def kbclass_remove_attribute(target, value, _initiator):
+        assert(isinstance(value, o._attributes.Attribute))
         # Remove the attribute from the list marked for addition
         if target.is_bound() and hasattr(target, '_new_attributes'):
             if value in target._new_attributes:
