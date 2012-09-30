@@ -307,7 +307,7 @@ def class_post(request, ws_id, class_id):
                 return new_attr_obj
             new_attrs.append(new_attr_obj)
         for a in new_attrs:
-            cls.add_attribute(a)
+            cls.attributes.append(a)
             
         # FIXME: here we should handle removed_attr_ids, too
 

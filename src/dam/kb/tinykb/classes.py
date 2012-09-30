@@ -399,23 +399,6 @@ def _init_base_classes(o):
         def is_bound(self):
             return self._sqlalchemy_table is not None
 
-        def add_attribute(self, attr):
-            '''
-            Add an attribute to the KB class.
-
-            :type  attr: :py:class:`orm.attributes.Attribute`
-            :param attr: the attribute to be added
-            '''
-            if attr.id in [a.id for a in self.all_attributes()]:
-                raise RuntimeError('Cannot add already existing attribute'
-                                   ' "%s"' % (attr.id, ))
-
-            self.attributes.append(attr)
-            
-            if not hasattr(self, '_new_attributes'):
-                self._new_attributes = []
-            self._new_attributes.append(attr)
-            
         def all_attributes(self):
             '''
             Return all the class attributes, including the ones of
@@ -1074,6 +1057,17 @@ def _init_base_classes(o):
                                'since it is still bound to table "%s"'
                                % (value.id,
                                   value._sqlalchemy_mv_table.name))        
+
+        if value.id in [a.id for a in target.all_attributes()]:
+            raise RuntimeError('Cannot append already existing attribute'
+                               ' "%s"' % (value.id, ))
+
+        # Also mark the new attribute for addition, if necessary
+        if target.is_bound():
+            if not hasattr(target, '_new_attributes'):
+                target._new_attributes = []
+            target._new_attributes.append(value)
+
         value._class_id = target.id
         value._class_root_id = target._root_id
 
@@ -1104,6 +1098,10 @@ def _init_base_classes(o):
     # the 'attributes' list
     # FIXME: it should happen automatically, shouldn't it?
     def kbclass_remove_attribute(target, value, _initiator):
+        # Remove the attribute from the list marked for addition
+        if target.is_bound() and hasattr(target, '_new_attributes'):
+            if value in target._new_attributes:
+                target._new_attributes.remove(value)
         assert(isinstance(value, o._attributes.Attribute))
         value._class_id = None
         value._class_root_id = None
@@ -1143,9 +1141,10 @@ def _init_base_classes(o):
             attrs_ddl_lst = [d for l in attr_nested_lst for d in l] # Flatten
             schema.extend_object_table(table.name, attrs_ddl_lst, connection)
 
-            for a in target._new_attributes:
-                props = a.mapper_properties()
-                pyclass_mapper.add_properties(props)
+            if hasattr(target, '_new_attributes'):
+                for a in target._new_attributes:
+                    props = a.mapper_properties()
+                    pyclass_mapper.add_properties(props)
 
             # FIXME: maybe it is not necessary, but it should do no harm
             # Update SQLAlchemy mappers configuration
@@ -1161,8 +1160,7 @@ def _init_base_classes(o):
     event.listen(KBClass, 'after_update', kbclass_after_update, propagate=True)
 
     # Cleanup new attributes
-    def kbclass_after_insert(_mapper, _connection, target):
-        if hasattr(target, '_new_attributes'):
-            # New attributes are only meaningful after KB class updates
-            del target._new_attributes
+    def kbclass_after_insert(mapper, connection, target):
+        # We need to manage new attributes
+        kbclass_after_update(mapper, connection, target)
     event.listen(KBClass, 'after_insert', kbclass_after_insert, propagate=True)
