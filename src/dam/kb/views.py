@@ -254,8 +254,8 @@ def class_post(request, ws_id, class_id):
         new_attr_ids = client_attrs - existing_all_attrs
         removed_attr_ids = existing_all_attrs - client_attrs
 
-        if ses.has_references(cls) and not ((len(new_attr_ids) == 0)
-                                            or (len(removed_attr_ids) == 0)):
+        if ses.has_references(cls) and ((len(new_attr_ids) > 0)
+                                        or (len(removed_attr_ids) > 0)):
             return HttpResponseBadRequest('Cannot add/remove attributes '
                                           'to/from a class which is already '
                                           'referenced in the knowledge base')
