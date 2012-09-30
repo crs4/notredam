@@ -211,6 +211,53 @@ class Schema(object):
                                                    attrs_ddl)
         return newtable
 
+    def remove_object_attrs(self, table_name, attr_ids,
+                            parent_table_name, valid_attrs_ddl, connection):
+        '''
+        Extend the given table with new columns.
+
+        :type  table_name: string
+        :param table_name: table to be extended
+        
+        :type  attr_ids: list of strings
+        :param attr_ids: IDs to be removed
+
+        :type  parent_table_name: string
+        :param parent_table_name: name of the parent table, referred to the
+                                  object parent class, and used in foreign
+                                  key references
+        
+        :type  valid_attrs_ddl: list of SQLAlchemy DDL objects
+        :param valid_attrs_ddl: surviving fields of the object table
+        
+        :type  connection: SQLALchemy connection
+        :param connection: used for interacting with the SQL DB
+        
+        # :rtype: SQLAlchemy table
+        # :returns: an updated SQLAlchemy table object
+        '''
+
+        from alembic.migration import MigrationContext
+        from alembic.operations import Operations
+
+        ctx = MigrationContext.configure(connection)
+        op = Operations(ctx)
+
+        # FIXME: streamline the following internal API
+        # We are assuming that the table already exists in the metadata
+        table = self._get_or_build_object_table(table_name, None, None)
+        
+        for col_id in attr_ids:
+            op.drop_column(table.name, col_id)
+            # FIXME: here we should update the metadata table as well!
+            # However, there does not seem to be a standard API to do it...
+        
+        self._metadata.remove(table)
+        newtable = self._get_or_build_object_table(table.name,
+                                                   parent_table_name,
+                                                   valid_attrs_ddl)
+        return newtable
+
     def create_attr_tables(self, add_tables, engine):
         # '''
         # Create additional tables for storing KB object attributes
