@@ -1105,7 +1105,6 @@ def _init_base_classes(o):
         if target.is_bound() and hasattr(target, '_new_attributes'):
             if value in target._new_attributes:
                 target._new_attributes.remove(value)
-        assert(isinstance(value, o._attributes.Attribute))
         value._class_id = None
         value._class_root_id = None
         value._multivalue_table = None
@@ -1137,7 +1136,6 @@ def _init_base_classes(o):
 
             target.additional_sqlalchemy_tables += schema.create_attr_tables(
                 add_tables, connection)
-            print '----', target.additional_sqlalchemy_tables
 
             # Extend the SQL object table
             attr_nested_lst = [a.ddl() for a in target._new_attributes]
