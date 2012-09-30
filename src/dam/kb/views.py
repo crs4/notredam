@@ -309,7 +309,10 @@ def class_post(request, ws_id, class_id):
         for a in new_attrs:
             cls.attributes.append(a)
             
-        # FIXME: here we should handle removed_attr_ids, too
+        # Let's now handle deleted attributes
+        removed_attrs = [a for a in cls.attributes if a.id in removed_attr_ids]
+        for a in removed_attrs:
+            cls.attributes.remove(a)
 
         ses.add(cls)
         ses.commit()
