@@ -532,6 +532,20 @@ def _init_base_classes(o):
         o._pyclass_gen_lock = threading.RLock()
 
         @decorators.synchronized(o._pyclass_gen_lock)
+        def _forget_python_class(self):
+            '''
+            Forget the Python class associated to this KBClass, in
+            order to rebuild it at the next request
+            '''
+            if hasattr(self, '_cached_pyclass_ref'):
+                del self._cached_pyclass_ref
+
+            # Also cleanup the cache (just in case)
+            c = cache_get(self.id, None)
+            if (c is not None) and hasattr(c, '_cached_pyclass_ref'):
+                del c._cached_pyclass_ref
+
+        @decorators.synchronized(o._pyclass_gen_lock)
         def _make_or_get_python_class(self, _session=None):
             '''
             The Python class associated to a KB class.  This property
@@ -1101,6 +1115,17 @@ def _init_base_classes(o):
     # FIXME: it should happen automatically, shouldn't it?
     def kbclass_remove_attribute(target, value, _initiator):
         assert(isinstance(value, o._attributes.Attribute))
+
+        # Also mark the new attribute for removal, if necessary
+        if target.is_bound():
+            if (not hasattr(target, '_new_attributes')
+                or (value not in target._new_attributes)):
+                # Do not mark for removal attributes which were just
+                # pending addition --- they are handled below
+                if not hasattr(target, '_del_attributes'):
+                    target._del_attributes = []
+                target._del_attributes.append(value)
+
         # Remove the attribute from the list marked for addition
         if target.is_bound() and hasattr(target, '_new_attributes'):
             if value in target._new_attributes:
@@ -1121,8 +1146,44 @@ def _init_base_classes(o):
 
     # Look for new attributes, and sync cache when a KB class is updated
     def kbclass_after_update(_mapper, connection, target):
+        assert(target.is_bound()) # Should be always true after INSERT
+        if hasattr(target, '_del_attributes'):
+            pyclass = target.python_class
+            pyclass_mapper = pyclass.__sql_mapper__()
+            assert(pyclass_mapper is not None)
+            table = pyclass_mapper.local_table
+            assert(table.name == target.table)
+
+            # FIXME: we would like to update class mapping/instrumentation
+            # Since it does not seem to be possible, we rebuild the mapping
+            # from scratch
+            from sqlalchemy.orm.instrumentation import unregister_class
+            unregister_class(pyclass)
+
+            parent_table_name = target._get_parent_table()
+            valid_attrs_ddl = target._get_attributes_ddl()
+            t = schema.remove_object_attrs(table.name,
+                                           [a.id for a in target._del_attributes
+                                            if not (a.multivalued)],
+                                           parent_table_name,
+                                           valid_attrs_ddl,
+                                           connection)
+            # FIXME: TODO: handle MV tables "orphaned" by attr removal
+
+            # Update the SQLAlchemy table of the KBClass objects
+            target._sqlalchemy_table = t
+            # Also update the cache (just in case)
+            c = cache_get(target.id, None)
+            if c is not None:
+                c._sqlalchemy_table = t
+
+            # Finally, force rebuilding of the python class on next request
+            target._forget_python_class()
+
+            del target._del_attributes
+            
         if hasattr(target, '_new_attributes'):
-            assert(target.is_bound()) # Should be always true after INSERT
+            # Re-read table and Python class, in case they were changed above
             pyclass = target.python_class
             pyclass_mapper = pyclass.__sql_mapper__()
             assert(pyclass_mapper is not None)
