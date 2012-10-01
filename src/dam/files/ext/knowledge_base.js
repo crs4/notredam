@@ -479,12 +479,12 @@ function get_grid_insert_value(value, type, title){
 	return grid_value
 }
 
-function check_add_class(add_class, record_value){
-	if (!add_class){
+function check_add_class(add_class, add_attribute, record_value){
+	if (!add_class && !add_attribute){
 		record_value.disabled = true;
 	}
 }
-function add_option(value, attribute_detail_panel, data, insert_value, add_class){
+function add_option(value, attribute_detail_panel, data, insert_value, add_class, add_attribute){
 	//initializing
 	attribute_detail_panel.removeAll();
 	var min_number_value = null;
@@ -524,9 +524,9 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: default_v,
 	        allowBlank:true
 		});
-		check_add_class(add_class, min_number);
-		check_add_class(add_class, max_number);
-		check_add_class(add_class, default_value);
+		check_add_class(add_class, add_attribute, min_number);
+		check_add_class(add_class, add_attribute, max_number);
+		check_add_class(add_class, add_attribute, default_value);
 		attribute_detail_panel.add(min_number);
 		attribute_detail_panel.add(max_number);
 		attribute_detail_panel.add(default_value);
@@ -535,7 +535,7 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			min_number.disable();
 			max_number.disable();
 			default_value.disable();
-			check_add_class(add_class, record_value);
+			check_add_class(add_class, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'date'){
@@ -568,9 +568,9 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: default_v,
 	        allowBlank:true
 		});
-		check_add_class(add_class, min_date);
-		check_add_class(add_class, max_date);
-		check_add_class(add_class, default_value);
+		check_add_class(add_class, add_attribute, min_date);
+		check_add_class(add_class, add_attribute, max_date);
+		check_add_class(add_class, add_attribute, default_value);
 		attribute_detail_panel.add(min_date);
 		attribute_detail_panel.add(max_date);
 		attribute_detail_panel.add(default_value);
@@ -579,7 +579,7 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			min_date.disable();
 			max_date.disable();
 			default_value.disable();
-			check_add_class(add_class, record_value);
+			check_add_class(add_class, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'string' || value == 'uri'){
@@ -593,12 +593,12 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: max_length_value,
 	        allowBlank:false
 		});
-		check_add_class(add_class, max_length);
+		check_add_class(add_class, add_attribute, max_length);
 		attribute_detail_panel.add(max_length);
 		if (insert_value){
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			max_length.disable();
-			check_add_class(add_class, record_value);
+			check_add_class(add_class, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'objref'){
@@ -621,12 +621,12 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 	          }
 			}
 		});
-		check_add_class(add_class, target_class);
+		check_add_class(add_class, add_attribute, target_class);
 		attribute_detail_panel.add(target_class);
 		if (insert_value){//can select only objects.
 			record_value = get_grid_insert_value(data.value, value, 'Select objects references');
 			target_class.disable();
-			check_add_class(add_class, record_value);
+			check_add_class(add_class, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);			
 		}
 	}else if(value == 'bool'){
@@ -647,12 +647,12 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 	        allowBlank:true,
 	        triggerAction: 'all'
 		});
-		check_add_class(add_class, default_value);
+		check_add_class(add_class, add_attribute, default_value);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
 			var record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			default_value.disable();
-			check_add_class(add_class, record_value);
+			check_add_class(add_class, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if(value == 'choice'){
@@ -675,8 +675,8 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: default_v,
 	        allowBlank:true
 		});
-		check_add_class(add_class, choices);
-		check_add_class(add_class, default_value);
+		check_add_class(add_class, add_attribute, choices);
+		check_add_class(add_class, add_attribute, default_value);
 		attribute_detail_panel.add(choices);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
@@ -708,14 +708,14 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 		    });
 			choices.disable();
 			default_value.disable();
-			check_add_class(add_class, record_value);
+			check_add_class(add_class, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 
 	}else if (value == 'date-like-string'){
 		if (insert_value){
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
-			check_add_class(add_class, record_value);
+			check_add_class(add_class, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 
@@ -735,7 +735,7 @@ function isEmpty(obj) {
 	return false;
 }
 
-function add_single_attribute(edit, attributes_grid, insert_value, add_class){
+function add_single_attribute(edit, attributes_grid, insert_value, add_class, add_attribute){
 	var name_textField_value, empty_chekbox_value, empty_chekbox_value, multivalued_chekbox_value, notes_textField_value, title, text_button, max_value_slider;
 	
 	if (edit){
@@ -755,10 +755,9 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class){
 		title = gettext("New attribute");
 		text_button = gettext('Add');
 		max_value_slider = attributes_grid.getStore().getCount();
-		console.log('slider_value');
-		console.log(attributes_grid.getStore().getCount());
 		slider_value = attributes_grid.getStore().getCount();
 	}
+	
 	var name_textField = new Ext.form.TextField({
         fieldLabel: gettext('Name'),
         allowBlank:false,
@@ -784,12 +783,12 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class){
         triggerAction: 'all',
         listeners:{ 
 			select:{ fn:function(combo, ewVal, oldVal){
-				add_option(ewVal.data.id, Ext.getCmp('id_option_attribute_panel'), null, insert_value, add_class);
+				add_option(ewVal.data.id, Ext.getCmp('id_option_attribute_panel'), null, insert_value, add_class, add_attribute);
 			}},
 			render:{fn:function(combo){
 				if (edit){
 					combo.setValue(attributes_grid.getSelectionModel().getSelected().data.type);
-					add_option(attributes_grid.getSelectionModel().getSelected().data.type, Ext.getCmp('id_option_attribute_panel'), attributes_grid.getSelectionModel().getSelected().data, insert_value, add_class);
+					add_option(attributes_grid.getSelectionModel().getSelected().data.type, Ext.getCmp('id_option_attribute_panel'), attributes_grid.getSelectionModel().getSelected().data, insert_value, add_class, add_attribute);
 				}
 			}}
       	}        
@@ -827,7 +826,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class){
         plugins: new Ext.ux.SliderTip()
     });
     
-    if(!add_class){
+    if(!add_class && !add_attribute){
     	order_slider.disabled = true;
     	multivalued_chekbox.disabled = true;
     	empty_chekbox.disabled = true;
@@ -1179,7 +1178,7 @@ function load_detail_class(class_data, id_class, add_class){
             tooltip:'Add a new attribute',
             iconCls:'add_icon',
             handler: function() {
-            	add_single_attribute(false, attributes_grid, false, add_class);
+            	add_single_attribute(false, attributes_grid, false, add_class, true);
         	}
         },'-',{
             text:'Edit',
@@ -1188,7 +1187,7 @@ function load_detail_class(class_data, id_class, add_class){
             iconCls:'edit_icon',
             disabled:true,
             handler: function() {
-        		add_single_attribute(true, attributes_grid, false, add_class);
+        		add_single_attribute(true, attributes_grid, false, add_class, false);
         	}
         },'-',{
             text:'Remove',
@@ -1476,7 +1475,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         listeners: {
             'rowdblclick': function(grid, rowIndex, e){
 		        var record = grid.getStore().getAt(rowIndex);  
-	        	add_single_attribute(true, grid, true, add_class)
+	        	add_single_attribute(true, grid, true, add_class, false)
             }
         },
     	height: 220
