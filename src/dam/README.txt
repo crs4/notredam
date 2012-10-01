@@ -1,3 +1,12 @@
+Trunk Version
+========================
+INSTALLATION AND UPGRADE
+========================
+
+Please note: since 2012-10-01, NotreDAM requires alembic 0.3.6
+(http://pypi.python.org/pypi/alembic).
+
+
 Version 1.0.9
 
 
