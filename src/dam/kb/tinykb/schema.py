@@ -249,9 +249,12 @@ class Schema(object):
         
         for col_id in attr_ids:
             op.drop_column(table.name, col_id)
-            # FIXME: here we should update the metadata table as well!
-            # However, there does not seem to be a standard API to do it...
         
+        # FIXME: here we would like to simply remove a column from Table obj
+        # However, it is not possible, and we have to recreate the whole Table!
+        # Drawback: it will also break the references in ORM mappers which
+        # point to this table with a relationship.  Those mappers will need
+        # to be updated (or recreated) as well!
         self._metadata.remove(table)
         newtable = self._get_or_build_object_table(table.name,
                                                    parent_table_name,
