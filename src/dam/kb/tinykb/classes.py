@@ -537,19 +537,39 @@ def _init_base_classes(o):
             Forget the Python class associated to this KBClass, in
             order to rebuild it at the next request
             '''
+            # We also need to forget the derived python classes
+            for c in self.descendants(depth=1):
+                c._forget_python_class()
+
+            from sqlalchemy.orm.instrumentation import unregister_class
+
             if hasattr(self, '_cached_pyclass_ref'):
+                pyclass = self._cached_pyclass_ref()
+                if pyclass is not None:
+                    unregister_class(pyclass)
                 del self._cached_pyclass_ref
 
             # Also cleanup the cache (just in case)
             c = cache_get(self.id, None)
             if (c is not None) and hasattr(c, '_cached_pyclass_ref'):
+                pyclass = c._cached_pyclass_ref()
+                if pyclass is not None:
+                    unregister_class(pyclass)
                 del c._cached_pyclass_ref
 
         @decorators.synchronized(o._pyclass_gen_lock)
-        def _make_or_get_python_class(self, _session=None):
+        def _make_or_get_python_class(self, _session=None,
+                                      _only_if_cached=False):
             '''
             The Python class associated to a KB class.  This property
             can only be accessed after :py:meth:`realize` was invoked.
+
+            The _session argument will cause the method queries to be
+            bound to the given SQLAlchemy session.
+
+            The _only_if_cached argument, if True, will cause this method
+            to return None if the Python class was not already built and
+            cached.
             '''
             # The class will be built only once, and further calls
             # will always return the same result
@@ -576,7 +596,13 @@ def _init_base_classes(o):
 
             if c is not self:
                 # FIXME: maybe raise a warning here?
-                return c._make_or_get_python_class(_session=_session)
+                return c._make_or_get_python_class(_session=_session,
+                                               _only_if_cached=_only_if_cached)
+
+            # If we are here, all the cache checks failed, and we are
+            # going to build the Python class
+            if _only_if_cached:
+                return None
 
             if not sself.is_bound():
                 sself.bind_to_table()
@@ -1141,24 +1167,16 @@ def _init_base_classes(o):
     event.listen(KBClass, 'after_delete', kbclass_after_delete, propagate=True)
 
     # Look for new attributes, and sync cache when a KB class is updated
+    # Since we are going to fiddle with Python classes, let'acquire the lock
+    @decorators.synchronized(o._pyclass_gen_lock)
     def kbclass_after_update(_mapper, connection, target):
         assert(target.is_bound()) # Should be always true after INSERT
         if hasattr(target, '_del_attributes'):
-            pyclass = target.python_class
-            pyclass_mapper = pyclass.__sql_mapper__()
-            assert(pyclass_mapper is not None)
-            table = pyclass_mapper.local_table
-            assert(table.name == target.table)
-
-            # FIXME: we would like to update class mapping/instrumentation
-            # Since it does not seem to be possible, we rebuild the mapping
-            # from scratch
-            from sqlalchemy.orm.instrumentation import unregister_class
-            unregister_class(pyclass)
+            table_name = target.table
 
             parent_table_name = target._get_parent_table()
             valid_attrs_ddl = target._get_attributes_ddl()
-            t = schema.remove_object_attrs(table.name,
+            t = schema.remove_object_attrs(table_name,
                                            [a.id for a in target._del_attributes
                                             if not (a.multivalued)],
                                            parent_table_name,
@@ -1173,18 +1191,25 @@ def _init_base_classes(o):
             if c is not None:
                 c._sqlalchemy_table = t
 
-            # Finally, force rebuilding of the python class on next request
-            target._forget_python_class()
+            # Let's see whether the Python class already exists, and
+            # needs to be updated as well
+            pyclass = target._make_or_get_python_class(_only_if_cached=True)
+            if pyclass is not None:
+                # FIXME: we would like to update class mapping/instrumentation
+                # Since it does not seem to be possible, we rebuild the mapping
+                # from scratch
+                # FIXME: most likely, it is going to leak memory!
+                # Unfortunately, unused ORM mappers are not properly collected,
+                # possibly due to internal reference loops in SQLAlchemy
+
+                # Forget the Python class, in order to force its
+                # rebuilding on next request
+                target._forget_python_class()
 
             del target._del_attributes
             
         if hasattr(target, '_new_attributes'):
-            # Re-read table and Python class, in case they were changed above
-            pyclass = target.python_class
-            pyclass_mapper = pyclass.__sql_mapper__()
-            assert(pyclass_mapper is not None)
-            table = pyclass_mapper.local_table
-            assert(table.name == target.table)
+            table_name = target.table
 
             # Create additional tables (when needed)
             tbl_nested_lst = [attr.additional_tables()
@@ -1197,24 +1222,29 @@ def _init_base_classes(o):
             # Extend the SQL object table
             attr_nested_lst = [a.ddl() for a in target._new_attributes]
             attrs_ddl_lst = [d for l in attr_nested_lst for d in l] # Flatten
-            schema.extend_object_table(table.name, attrs_ddl_lst, connection)
+            schema.extend_object_table(table_name, attrs_ddl_lst, connection)
 
-            if hasattr(target, '_new_attributes'):
+            # Let's see whether the Python class already exists, and
+            # needs to be updated as well
+            pyclass = target._make_or_get_python_class(_only_if_cached=True)
+            if pyclass is not None:
+                pyclass_mapper = pyclass.__sql_mapper__()
+                assert(pyclass_mapper is not None)
                 for a in target._new_attributes:
                     props = a.mapper_properties()
                     pyclass_mapper.add_properties(props)
 
-            # FIXME: maybe it is not necessary, but it should do no harm
-            # Update SQLAlchemy mappers configuration
-            orm.configure_mappers()
+                # FIXME: maybe it is not necessary, but it should do no harm
+                # Update SQLAlchemy mappers configuration
+                orm.configure_mappers()
 
-            # Finally add event listeners for validating assignments
-            # according to attribute types
-            for a in target._new_attributes:
-                a.make_proxies_and_event_listeners(pyclass)
+                # Finally add event listeners for validating assignments
+                # according to attribute types
+                for a in target._new_attributes:
+                    a.make_proxies_and_event_listeners(pyclass)
 
             del target._new_attributes
-        cache_update(target)
+        cache_update(target) # FIXME: maybe redundant, but it shouldn't hurt
     event.listen(KBClass, 'after_update', kbclass_after_update, propagate=True)
 
     # Cleanup new attributes
