@@ -257,12 +257,22 @@ class Session(object):
         if isinstance(obj_or_cls, self.orm.KBClass):
             self._kb_classes_pending_unrealize.append(obj_or_cls)
 
-    def has_references(self, obj_or_cls):
+    def has_references(self, obj_or_cls, ignore_subclasses=False,
+                       ignore_class_references=False):
         '''
         Check whether the given class is references within the knowledge base
 
         :type  obj_or_cls: :py:class:`orm.KBClass` or :py:class:`orm.KBObject`
         :param obj_or_cls: KB object or class to be checked for references
+        
+        :type  ignore_subclasses: bool
+        :param ignore_subclasses: True if subclasses should be counted as
+                                  references, False otherwise (default)
+
+        :type  ignore_class_references: bool
+        :param ignore_class_references: True if references from other classes
+                                        should be considered, False otherwise
+                                        (default)
         
         :rtype: bool
         :returns: True if references are found, False otherwise
@@ -308,14 +318,21 @@ class Session(object):
                 if obj_refs_cnt > 0:
                     return True
         elif isinstance(obj_or_cls, self.orm.KBClass):
+            # Count class instances (either direct, or through subclasses)
             pyclass = obj_or_cls.python_class
             objs = self.session.query(pyclass)
             if objs.count() > 0:
                 return True
     
+            desc = obj_or_cls.descendants()
+            if (not ignore_subclasses) and (len(desc) > 0):
+                return True
+
             # Check whether the class or one of its descendants
             # appears in an object reference attribute
-            cls_lst = [obj_or_cls] + obj_or_cls.descendants()
+            if ignore_class_references:
+                return False
+            cls_lst = [obj_or_cls] + desc
     
             # FIXME: in_() not yet supported for relationships
             # Check whether it will change in the next versions of SQLAlchemy
