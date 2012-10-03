@@ -421,8 +421,8 @@ def _init_base_attributes(o):
                                          'got "%s"' % (str(value), ))
 
         def __repr__(self):
-            return '<Boolean(class=%s, default=%s)>' % (getattr(self, 'class'),
-                                                        self.default)
+            return ('<Boolean(id=%s, class=%s, default=%s)>'
+                    % (self.id, getattr(self, 'class'), self.default))
 
     o.Boolean = Boolean
 
@@ -498,8 +498,8 @@ def _init_base_attributes(o):
             return int(value)
 
         def __repr__(self):
-            return ('<Integer(class=%s, min=%s, max=%s, default=%s)>'
-                    % (getattr(self, 'class'),
+            return ('<Integer(id=%s, class=%s, min=%s, max=%s, default=%s)>'
+                    % (self.id, getattr(self, 'class'),
                        self.min, self.max, self.default))
 
     o.Integer = Integer
@@ -576,8 +576,8 @@ def _init_base_attributes(o):
             return decimal.Decimal(value)
 
         def __repr__(self):
-            return ('<Real(class=%s, min=%s, max=%s, default=%s)>'
-                    % (getattr(self, 'class'),
+            return ('<Real(id=%s, class=%s, min=%s, max=%s, default=%s)>'
+                    % (self.id, getattr(self, 'class'),
                        self.min, self.max, self.default))
 
     o.Real = Real
@@ -631,8 +631,9 @@ def _init_base_attributes(o):
             return unicode(value)
 
         def __repr__(self):
-            return ("<String(class=%s, length=%d, default='%s')>"
-                    % (getattr(self, 'class'), self.length, self.default))
+            return ("<String(id=%s, class=%s, length=%d, default='%s')>"
+                    % (self.id, getattr(self, 'class'),
+                       self.length, self.default))
 
     o.String = String
 
@@ -718,8 +719,8 @@ def _init_base_attributes(o):
             return value
 
         def __repr__(self):
-            return ('<Date(class=%s, min=%s, max=%s, default=%s)>'
-                    % (getattr(self, 'class'),
+            return ('<Date(id=%s, class=%s, min=%s, max=%s, default=%s)>'
+                    % (self.id, getattr(self, 'class'),
                        self.min, self.max, self.default))
     o.Date = Date
 
@@ -752,8 +753,9 @@ def _init_base_attributes(o):
             return unicode(value)
 
         def __repr__(self):
-            return ("<Uri(class=%s, length=%d, default='%s')>"
-                    % (getattr(self, 'class'), self.length, self.default))
+            return ("<Uri(id=%s, class=%s, length=%d, default='%s')>"
+                    % (self.id, getattr(self, 'class'),
+                       self.length, self.default))
 
     o.Uri = Uri
 
@@ -833,8 +835,9 @@ def _init_base_attributes(o):
             return value
 
         def __repr__(self):
-            return ("<Choice(class=%s, choices=%s, default='%s')>"
-                    % (getattr(self, 'class'), self.choices, self.default))
+            return ("<Choice(id=%s, class=%s, choices=%s, default='%s')>"
+                    % (self.id, getattr(self, 'class'),
+                       self.choices, self.default))
 
     o.Choice = Choice
 
@@ -944,8 +947,8 @@ def _init_base_attributes(o):
             return value
 
         def __repr__(self):
-            return ("<ObjectReference(class=%s, target_class=%s)>"
-                    % (getattr(self, 'class'), self.target))
+            return ("<ObjectReference(id=%s, class=%s, target_class=%s)>"
+                    % (self.id, getattr(self, 'class'), self.target))
 
     o.ObjectReference = ObjectReference
 
@@ -1002,8 +1005,9 @@ def _init_base_attributes(o):
             return u'%s%d-%02d-%02d' % (sign, year, month, day)
 
         def __repr__(self):
-            return ("<Uri(class=%s, length=%d, default='%s')>"
-                    % (getattr(self, 'class'), self.length, self.default))
+            return ("<DateLikeString(id=%s, class=%s, length=%d, default='%s')>"
+                    % (self.id, getattr(self, 'class'),
+                       self.length, self.default))
 
     o.DateLikeString = DateLikeString
 
