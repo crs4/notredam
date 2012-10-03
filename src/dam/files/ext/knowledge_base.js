@@ -479,8 +479,8 @@ function get_grid_insert_value(value, type, title){
 	return grid_value
 }
 
-function check_add_class(add_class, add_attribute, record_value){
-	if (!add_class && !add_attribute){
+function check_add_class(add_class, insert_value, add_attribute, record_value){
+	if (!add_class && !add_attribute && !insert_value){
 		record_value.disabled = true;
 	}
 }
@@ -524,9 +524,9 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: default_v,
 	        allowBlank:true
 		});
-		check_add_class(add_class, add_attribute, min_number);
-		check_add_class(add_class, add_attribute, max_number);
-		check_add_class(add_class, add_attribute, default_value);
+		check_add_class(add_class, insert_value, add_attribute, min_number);
+		check_add_class(add_class, insert_value, add_attribute, max_number);
+		check_add_class(add_class, insert_value, add_attribute, default_value);
 		attribute_detail_panel.add(min_number);
 		attribute_detail_panel.add(max_number);
 		attribute_detail_panel.add(default_value);
@@ -535,7 +535,7 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			min_number.disable();
 			max_number.disable();
 			default_value.disable();
-			check_add_class(add_class, add_attribute, record_value);
+			check_add_class(add_class, insert_value, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'date'){
@@ -568,9 +568,9 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: default_v,
 	        allowBlank:true
 		});
-		check_add_class(add_class, add_attribute, min_date);
-		check_add_class(add_class, add_attribute, max_date);
-		check_add_class(add_class, add_attribute, default_value);
+		check_add_class(add_class, insert_value, add_attribute, min_date);
+		check_add_class(add_class, insert_value, add_attribute, max_date);
+		check_add_class(add_class, insert_value, add_attribute, default_value);
 		attribute_detail_panel.add(min_date);
 		attribute_detail_panel.add(max_date);
 		attribute_detail_panel.add(default_value);
@@ -579,7 +579,7 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			min_date.disable();
 			max_date.disable();
 			default_value.disable();
-			check_add_class(add_class, add_attribute, record_value);
+			check_add_class(add_class, insert_value, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'string' || value == 'uri'){
@@ -593,12 +593,12 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: max_length_value,
 	        allowBlank:false
 		});
-		check_add_class(add_class, add_attribute, max_length);
+		check_add_class(add_class, insert_value, add_attribute, max_length);
 		attribute_detail_panel.add(max_length);
 		if (insert_value){
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			max_length.disable();
-			check_add_class(add_class, add_attribute, record_value);
+			check_add_class(add_class, insert_value, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if (value == 'objref'){
@@ -621,12 +621,12 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 	          }
 			}
 		});
-		check_add_class(add_class, add_attribute, target_class);
+		check_add_class(add_class, insert_value, add_attribute, target_class);
 		attribute_detail_panel.add(target_class);
 		if (insert_value){//can select only objects.
 			record_value = get_grid_insert_value(data.value, value, 'Select objects references');
 			target_class.disable();
-			check_add_class(add_class, add_attribute, record_value);
+			check_add_class(add_class, insert_value, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);			
 		}
 	}else if(value == 'bool'){
@@ -647,12 +647,12 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 	        allowBlank:true,
 	        triggerAction: 'all'
 		});
-		check_add_class(add_class, add_attribute, default_value);
+		check_add_class(add_class, insert_value, add_attribute, default_value);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
 			var record_value = get_grid_insert_value(data.value, value, 'Insert values');
 			default_value.disable();
-			check_add_class(add_class, add_attribute, record_value);
+			check_add_class(add_class, insert_value, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 	}else if(value == 'choice'){
@@ -675,8 +675,8 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 			value: default_v,
 	        allowBlank:true
 		});
-		check_add_class(add_class, add_attribute, choices);
-		check_add_class(add_class, add_attribute, default_value);
+		check_add_class(add_class, insert_value, add_attribute, choices);
+		check_add_class(add_class, insert_value, add_attribute, default_value);
 		attribute_detail_panel.add(choices);
 		attribute_detail_panel.add(default_value);
 		if (insert_value){
@@ -708,14 +708,14 @@ function add_option(value, attribute_detail_panel, data, insert_value, add_class
 		    });
 			choices.disable();
 			default_value.disable();
-			check_add_class(add_class, add_attribute, record_value);
+			check_add_class(add_class, insert_value, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 
 	}else if (value == 'date-like-string'){
 		if (insert_value){
 			record_value = get_grid_insert_value(data.value, value, 'Insert values');
-			check_add_class(add_class, add_attribute, record_value);
+			check_add_class(add_class, insert_value, add_attribute, record_value);
 			attribute_detail_panel.add(record_value);
 		}
 
@@ -826,7 +826,11 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
         plugins: new Ext.ux.SliderTip()
     });
     
-    if(!add_class && !add_attribute){
+    if(!add_class && !add_attribute && insert_value == false){
+    	console.log("dentro");
+    	console.log(add_class);
+    	console.log(add_attribute);
+    	console.log(insert_value);
     	order_slider.disabled = true;
     	multivalued_chekbox.disabled = true;
     	empty_chekbox.disabled = true;
@@ -1107,13 +1111,14 @@ function load_detail_class(class_data, id_class, add_class){
 		singleSelect: true,
 		listeners:{
 			rowselect: {fn:function(sm){
-				Ext.getCmp('id_remove_attributes_class').enable();
 				Ext.getCmp('id_movedown_attributes_class').enable();
 				Ext.getCmp('id_moveup_attributes_class').enable();
 				if (sm.getSelected().data.inherited == false ){
 					Ext.getCmp('id_edit_attributes_class').enable();
+					Ext.getCmp('id_remove_attributes_class').enable();
 				}else{
 					Ext.getCmp('id_edit_attributes_class').disable();
+					Ext.getCmp('id_remove_attributes_class').disable();
 				}
 
 			}},
@@ -1475,7 +1480,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
         listeners: {
             'rowdblclick': function(grid, rowIndex, e){
 		        var record = grid.getStore().getAt(rowIndex);  
-	        	add_single_attribute(true, grid, true, add_class, false)
+	        	add_single_attribute(true, grid, true, false, false)
             }
         },
     	height: 220
