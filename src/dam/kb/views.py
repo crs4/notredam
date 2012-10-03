@@ -246,6 +246,9 @@ def class_post(request, ws_id, class_id):
             return HttpResponseBadRequest(str(e))
 
         # Let's now handle class attribute updates
+        # FIXME: handle case-insensitivity and id normalization here!
+        # Otherwise, we may get confused and try to add an attribute with
+        # an already used ID
         attrs_dict = cls_dict.get('attributes')
         client_attrs = set(attrs_dict.keys())
         existing_attrs = set(a.id for a in cls.attributes)

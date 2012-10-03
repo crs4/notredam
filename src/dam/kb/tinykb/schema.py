@@ -148,6 +148,15 @@ class Schema(object):
 
         return newtable
 
+    def remove_object_table(self, table):
+        '''
+        Remove an object table from the collection of known tables.
+
+        :type  table: SQLAlchemy table
+        :param table: table to be removed
+        '''
+        self._metadata.remove(table)
+
     def extend_object_table(self, table_name, attrs_ddl, connection):
         '''
         Extend the given table with new columns.
@@ -211,8 +220,7 @@ class Schema(object):
                                                    attrs_ddl)
         return newtable
 
-    def remove_object_attrs(self, table_name, attr_ids,
-                            parent_table_name, valid_attrs_ddl, connection):
+    def remove_object_attrs(self, table_name, attr_ids, connection):
         '''
         Extend the given table with new columns.
 
@@ -221,14 +229,6 @@ class Schema(object):
         
         :type  attr_ids: list of strings
         :param attr_ids: IDs to be removed
-
-        :type  parent_table_name: string
-        :param parent_table_name: name of the parent table, referred to the
-                                  object parent class, and used in foreign
-                                  key references
-        
-        :type  valid_attrs_ddl: list of SQLAlchemy DDL objects
-        :param valid_attrs_ddl: surviving fields of the object table
         
         :type  connection: SQLALchemy connection
         :param connection: used for interacting with the SQL DB
@@ -249,18 +249,16 @@ class Schema(object):
         
         for col_id in attr_ids:
             op.drop_column(table.name, col_id)
-        
-        # FIXME: here we would like to simply remove a column from Table obj
-        # However, it is not possible, and we have to recreate the whole Table!
-        # Drawback: it will also break the references in ORM mappers which
-        # point to this table with a relationship.  Those mappers will need
-        # to be updated (or recreated) as well!
-        self._metadata.remove(table)
-        newtable = self._get_or_build_object_table(table.name,
-                                                   parent_table_name,
-                                                   valid_attrs_ddl)
-        return newtable
 
+        # FIXME: here we would like to simply remove a column from Table obj
+        # However, it is not possible, and we would have to recreate the whole
+        # Table!
+        # Drawback: it would also break the references in ORM mappers which
+        # point to this table via inheritance or relationships.  Those mappers
+        # will need to be updated (or recreated) as well!
+        # Thus, we expect our caller to update/rebuild all the related ORM
+        # machinery.
+        
     def create_attr_tables(self, add_tables, engine):
         # '''
         # Create additional tables for storing KB object attributes
@@ -292,6 +290,16 @@ class Schema(object):
         # ''' 
         newtables = self._build_attr_tables(add_tables)
         return newtables
+
+    def remove_attr_tables(self, tables):
+        '''
+        Remove the given attribute tables from the collection of known tables.
+
+        :type  table: list of SQLAlchemy tables
+        :param table: tables to be removed
+        '''
+        for t in tables:
+            self._metadata.remove(t)
 
     def create_tables(self, connstr_or_engine, tables):
         '''
