@@ -90,10 +90,25 @@ def _init_base_classes(o):
     #   4. KBClass.python_class must first check the cache, and if an
     #      equivalent istance is found, then the actual python class must
     #      be retrieved from there
+    # FIXME: we definitely need some locking on the cache!
     o._kb_class_cache = {}
     def cache_add(cls):
         # The class must not have been cached in advance
         assert(o._kb_class_cache.get(cls.id) is None)
+        # Also cache all the ancestors, in order to keep the cached
+        # classes linked
+        for a in cls.ancestors():
+            cached_a = cache_get(a.id, None)
+            if cached_a is a:
+                # We are done
+                break
+            if cached_a is None:
+                # First time the ancestor enters the cache
+                o._kb_class_cache[a.id] = a
+            else:
+                # Another equivalent KBClass was still cached: let's
+                # substitute it
+                cache_update(a)
         o._kb_class_cache[cls.id] = cls
     o.cache_add = cache_add
 
@@ -112,6 +127,20 @@ def _init_base_classes(o):
     o.cache_get = cache_get
 
     def cache_update(cls):
+        old_cls = o._kb_class_cache.get(cls.id, None)
+        # The class must have been cached in advance
+        assert(old_cls is not None)
+        if old_cls is cls:
+            # Nothing to do here
+            return
+
+        # "Reparent" the Python class.
+        # FIXME: create some internal API here!
+        if hasattr(old_cls,  '_cached_pyclass_ref'):
+            assert(not hasattr(cls, '_cached_pyclass_ref'))
+            pyclass = old_cls._cached_pyclass_ref()
+            cls._cached_pyclass_ref = weakref.ref(pyclass)
+            pyclass.__kb_class__ = cls
         o._kb_class_cache[cls.id] = cls
     o.cache_update = cache_update
 
