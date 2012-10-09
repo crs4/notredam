@@ -426,9 +426,7 @@ def _init_base_classes(o):
             if depth == 0:
                 return []
 
-            children = o.session.session.query(KBClass).filter(
-                and_(KBClass.id != self.id,
-                     KBClass.superclass == self)).all()
+            children = [c for c in self.subclasses if c is not self]
 
             if depth is None:
                 nextdepth = None
