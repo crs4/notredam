@@ -588,12 +588,13 @@ def _init_base_classes(o):
         def _forget_python_class(self, _visited=[]):
             '''
             Forget the Python class associated to this KBClass, in
-            order to rebuild it at the next request
+            order to rebuild it at the next request.  The _visited argument
+            will be enriched with the KB classes visited by the algorithm
             '''
             if self in _visited:
                 # Avoid loops
                 return
-            visited = _visited + [self]
+            _visited.append(self)
 
             if not self.is_bound():
                 # If we are not bound, then no Python class has been built yet
@@ -602,8 +603,7 @@ def _init_base_classes(o):
 
             # We also need to forget the derived python classes
             for c in self.descendants(depth=1):
-                c._forget_python_class(visited)
-                visited.append(c)
+                c._forget_python_class(_visited=_visited)
 
             # ...and we also need to forget the classes which
             # reference to ourselves.
@@ -611,8 +611,8 @@ def _init_base_classes(o):
             # may be recreated under the hood!
             for a in [r for r in self.references
                       if getattr(r, '__class_id') not in [c.id
-                                                          for c in visited]]:
-                getattr(a, 'class')._forget_python_class(visited)
+                                                          for c in _visited]]:
+                getattr(a, 'class')._forget_python_class(_visited=_visited)
 
             from sqlalchemy.orm.instrumentation import unregister_class
 
