@@ -1302,7 +1302,6 @@ def _init_base_classes(o):
                                        [a.id for a in target._del_attributes
                                         if not (a.multivalued)],
                                        connection)
-            # FIXME: TODO: handle MV tables "orphaned" by attr removal
 
             # FIXME: we would like to update class mapping/instrumentation
             # Since it does not seem to be possible, we rebuild the mapping

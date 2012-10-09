@@ -1088,3 +1088,16 @@ def _init_base_attributes(o):
             '__class_id' : schema.class_attribute_uri.c['class'],
             '__class_root_id' : schema.class_attribute_uri.c.class_root
             })
+
+    ###########################################################################
+    # Events
+    ###########################################################################
+
+    def attribute_after_delete(_mapper, connection, target):
+        # Also handle MV tables "orphaned" by attr removal
+        if not target.multivalued:
+            return
+        schema.drop_attr_tables([target._multivalue_table], connection)
+
+    event.listen(Attribute, 'after_delete', attribute_after_delete,
+                 propagate=True)
