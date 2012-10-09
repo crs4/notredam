@@ -303,7 +303,9 @@ def _init_base_attributes(o):
                                                   ondelete='CASCADE'),
                                        nullable=False),
                                 Column('order', sa.types.Integer,
-                                       nullable=False),
+                                       nullable=False,
+                                       default=0,
+                                       server_default=_server_default(0)),
                                 *raw_ddl_pk, **kwargs)
 
                 # When this table constructor closure is executed, it will
@@ -400,7 +402,8 @@ def _init_base_attributes(o):
         def _raw_ddl(self):
             return [Column(self.column_name(), sa.types.Boolean,
                            nullable=self.maybe_empty and not self.multivalued,
-                           default=self.default)]
+                           default=self.default,
+                           server_default=_server_default(self.default))]
 
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
@@ -454,7 +457,8 @@ def _init_base_attributes(o):
             colname = self.column_name()
             ret = [Column(colname, sa.types.Integer,
                           nullable=self.maybe_empty and not self.multivalued,
-                          default=self.default)]
+                          default=self.default,
+                          server_default=_server_default(self.default))]
             if self.min is not None:
                 ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
                                            name=('%sobject_%s_attr_%s_min_constr'
@@ -533,7 +537,8 @@ def _init_base_attributes(o):
             ret = [Column(colname,
                           sa.types.Numeric(precision=self.precision),
                           nullable=self.maybe_empty and not self.multivalued,
-                          default=self.default)]
+                          default=self.default,
+                          server_default=_server_default(self.default))]
             if self.min is not None:
                 ret.append(CheckConstraint('"%s" >= %d' % (colname, self.min),
                                            name=('%sobject_%s_attr_%s_min_constr'
@@ -605,7 +610,8 @@ def _init_base_attributes(o):
             colname = self.column_name()
             return [Column(colname, sa.types.String(self.length),
                            nullable=self.maybe_empty and not self.multivalued,
-                           default=self.default)]
+                           default=self.default,
+                           server_default=_server_default(self.default))]
 
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
@@ -665,7 +671,8 @@ def _init_base_attributes(o):
             colname = self.column_name()
             ret = [Column(colname, sa.types.Date,
                           nullable=self.maybe_empty and not self.multivalued,
-                          default=self.default)]
+                          default=self.default,
+                          server_default=_server_default(self.default))]
             if self.min is not None:
                 ret.append(CheckConstraint('"%s" >= \'%s\'' % (colname,
                                                                self.min),
@@ -813,7 +820,8 @@ def _init_base_attributes(o):
                                                    self._class_id,
                                                    self.id))),
                            nullable=self.maybe_empty and not self.multivalued,
-                           default=self.default)]
+                           default=self.default,
+                           server_default=_server_default(self.default))]
 
         def validate(self, target, value):
             # Let's use the SQLAlchemy session of the target
@@ -1101,3 +1109,26 @@ def _init_base_attributes(o):
 
     event.listen(Attribute, 'after_delete', attribute_after_delete,
                  propagate=True)
+
+###############################################################################
+# Utility functions
+###############################################################################
+def _server_default(value):
+    if value is None:
+        return None
+    # Return a value suitable to be used as server-side default
+    if isinstance(value, bool):
+        return (value and '1' or '0')
+    elif isinstance(value, int):
+        return str(value)
+    elif isinstance(value, long):
+        return str(value)
+    elif isinstance(value, float):
+        return str(value)
+    elif isinstance(value, decimal.Decimal):
+        return str(value)
+    elif isinstance(value, basestring):
+        return value
+    else:
+        raise RuntimeError('BUG: unsupported value for server-side default: '
+                           '%s (type: %s)' % (unicode(value), type(value)))
