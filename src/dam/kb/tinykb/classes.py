@@ -356,6 +356,12 @@ def _init_base_classes(o):
             suffix_chars = RAND_SUFFIX_LENGTH + 1 # Also count "_" character
             self._table_suffix = self.table[-suffix_chars:]
 
+            # Update the read-only, non-SQL-mapped copies of class
+            # name and ID, accessible even when the class is not bound
+            # to a session (in other cases, an event listener takes care)
+            self._name = self.name
+            self._id = self.id
+
         sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
         # FIXME: __del__ makes this class end up in GC's 'garbage' list
@@ -610,7 +616,7 @@ def _init_base_classes(o):
             # NOTE: avoid re-visiting classes, or their SQLAlchemy tables
             # may be recreated under the hood!
             for a in [r for r in self.references
-                      if getattr(r, '__class_id') not in [c.id
+                      if getattr(r, '__class_id') not in [c._id
                                                           for c in _visited]]:
                 getattr(a, 'class')._forget_python_class(_visited=_visited)
 
@@ -767,7 +773,7 @@ def _init_base_classes(o):
             return (kb_cls is self) or (self > kb_cls)
 
         def __repr__(self):
-            return "<KBClass('%s', '%s')>" % (self.name, self.id)
+            return "<KBClass('%s', '%s')>" % (self._name, self._id)
 
     o.KBClass = KBClass
 
@@ -828,7 +834,7 @@ def _init_base_classes(o):
                 return acc[0].access
 
         def __repr__(self):
-            return "<KBRootClass('%s', '%s')>" % (self.name, self.id)
+            return "<KBRootClass('%s', '%s')>" % (self._name, self._id)
 
     o.KBRootClass = KBRootClass
 
@@ -1159,6 +1165,17 @@ def _init_base_classes(o):
             target._is_root = (target.id == value.id)
 
     event.listen(KBClass.superclass, 'set', kbclass_update_superclass_attrs,
+                 propagate=True, retval=False)
+
+    # Update read-only name and ID copies when the corresponding SQL-mapped
+    # fields are changed
+    def kbclass_set_name(target, value, _oldvalue, _initiator):
+        target._name = value
+    event.listen(KBClass.name, 'set', kbclass_set_name,
+                 propagate=True, retval=False)
+    def kbclass_set_id(target, value, _oldvalue, _initiator):
+        target._id = value
+    event.listen(KBClass.id, 'set', kbclass_set_id,
                  propagate=True, retval=False)
 
     # Bind an attribute to its owner class when it gets added to the
