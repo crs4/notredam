@@ -350,7 +350,7 @@ def _init_base_classes(o):
         def __init_on_load__(self):
             self._sqlalchemy_table = None
             self.bind_to_table()
-            if cache_get(self.id, Session.object_session(self)) is None:
+            if cache_get(self.id, None) is None:
                 cache_add(self)
 
             # Reconstruct table suffix
