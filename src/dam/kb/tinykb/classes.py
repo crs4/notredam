@@ -481,6 +481,10 @@ def _init_base_classes(o):
             # NOTE: this method will *not* retrieve the actual KB classes
             # from the DB
             session = Session.object_session(self)
+            if session is None:
+                # The KB class is not in the DB yet, and thus there are no
+                # descendants to check
+                return []
             root_id = self._root_id
             desc_query = session.query(schema.class_t.c.id).filter(
                 and_((schema.class_t.c.parent == cls_id),
