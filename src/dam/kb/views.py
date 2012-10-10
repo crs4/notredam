@@ -250,15 +250,22 @@ def class_post(request, ws_id, class_id):
         # Otherwise, we may get confused and try to add an attribute with
         # an already used ID
         attrs_dict = cls_dict.get('attributes')
-        client_attrs = set(attrs_dict.keys())
+        client_attrs = attrs_dict.keys()
+
+        # Normalized version of client attributes
+        n_client_attrs = set(kb_niceid(x, extra_chars=0) for x in client_attrs)
+
+        # Associate normalized attrs with their original version
+        n_client_attr_map = dict(zip(n_client_attrs, client_attrs))
+
         existing_attrs = set(a.id for a in cls.attributes)
         existing_all_attrs = set(a.id for a in cls.all_attributes())
         # Attributes in descendant classes
         desc_attrs = (cls.all_attribute_ids_in_hierarchy()
                       - existing_all_attrs)
         
-        new_attr_ids = client_attrs - existing_all_attrs
-        removed_attr_ids = existing_all_attrs - client_attrs
+        new_attr_ids = n_client_attrs - existing_all_attrs
+        removed_attr_ids = existing_all_attrs - n_client_attrs
 
         if (ses.has_references(cls, ignore_subclasses=True,
                                ignore_class_references=True)
@@ -274,7 +281,7 @@ def class_post(request, ws_id, class_id):
                                           '%s' % (list(bad_attrs), ))
 
         # Only edit attributes belonging to this class, ignoring its ancestors
-        edited_attr_ids = existing_attrs.intersection(client_attrs)
+        edited_attr_ids = existing_attrs.intersection(n_client_attrs)
 
         # FIXME: right now, we only support updating a few fields
         # FIXME: the min, max, default, length attr fields are kludgy!
@@ -298,7 +305,7 @@ def class_post(request, ws_id, class_id):
         for attr_id in edited_attr_ids:
             attr_obj = [a for a in cls.attributes if a.id == attr_id][0]
             # FIXME: kludge to deal with 'default'/'default_field' mismatch
-            attr_dict = attrs_dict[attr_id]
+            attr_dict = attrs_dict[n_client_attr_map[attr_id]]
             if 'default_value' in attr_dict:
                 # Let's mirror the 'default_value' field into 'default'
                 attr_dict['default'] = attr_dict['default_value']
@@ -312,7 +319,7 @@ def class_post(request, ws_id, class_id):
         # Let's now handle new attibutes
         new_attrs = []
         for new_attr_id in new_attr_ids:
-            new_attr_dict = attrs_dict[new_attr_id]
+            new_attr_dict = attrs_dict[n_client_attr_map[new_attr_id]]
             new_attr_obj = _validate_build_attr_obj(new_attr_id, new_attr_dict,
                                                     ses, ws)
             if not isinstance(new_attr_obj, ses.orm.attributes.Attribute):
