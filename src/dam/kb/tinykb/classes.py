@@ -645,11 +645,6 @@ def _init_base_classes(o):
                 return
             _visited.append(self)
 
-            if not self.is_bound():
-                # If we are not bound, then no Python class has been built yet
-                # (and the same goes for our descendants)
-                return
-
             # We also need to forget the derived python classes
             for c in self.descendants(depth=1):
                 c._forget_python_class(_visited=_visited)
