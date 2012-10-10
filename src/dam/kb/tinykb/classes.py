@@ -1306,6 +1306,11 @@ def _init_base_classes(o):
     @decorators.synchronized(o._pyclass_gen_lock)
     def kbclass_after_update(_mapper, connection, target):
         assert(target.is_bound()) # Should be always true after INSERT
+
+        # Ensure that no elements need to be both added and removed
+        assert(len(set(getattr(target, '_new_attributes', [])).intersection(
+                    set(getattr(target, '_del_attributes', [])))) == 0)
+
         if hasattr(target, '_new_attributes'):
             table_name = target.table
 
