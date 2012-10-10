@@ -23,6 +23,7 @@
 #
 #########################################################################
 
+import itertools
 import threading
 import types
 import weakref
@@ -457,6 +458,44 @@ def _init_base_classes(o):
             nested_attrs = [c.attributes for c in classes]
 
             return [d for l in nested_attrs for d in l] # Flatten
+
+        def all_attribute_ids_in_hierarchy(self):
+            '''
+            Return all the attribute IDs used in the hierarchy of that
+            this class belongs to (i.e. its ancestors and descendants).
+
+            :rtype: set of strings
+            :returns: all the class attribute ids
+            '''
+            ids = [a.id for a in self.all_attributes()]
+
+            # Avoid retrieving the descendant classes
+            ids += self._descendant_attribute_ids(self.id)
+            return set(ids)
+
+        def _descendant_attribute_ids(self, cls_id):
+            # Return the attribute IDs used by the descendants of the
+            # given KB class (identified by its ID), assuming that
+            # it shares the same hierarchy of self.
+            #
+            # NOTE: this method will *not* retrieve the actual KB classes
+            # from the DB
+            session = Session.object_session(self)
+            root_id = self._root_id
+            desc_query = session.query(schema.class_t.c.id).filter(
+                and_((schema.class_t.c.parent == cls_id),
+                     (schema.class_t.c.root == root_id),
+                     (schema.class_t.c.id != cls_id)))
+            ids = []
+            for desc_id in itertools.imap(lambda x: x[0],
+                                          desc_query):
+                attr_query = session.query(schema.class_attribute.c.id).join(
+                    schema.class_t).filter(
+                    and_((schema.class_t.c.root == root_id),
+                         (schema.class_t.c.id == desc_id)))
+                desc_ids = [r[0] for r in attr_query.all()]
+                ids += desc_ids + self._descendant_attribute_ids(desc_id)
+            return ids
 
         def _get_parent_table(self):
             if self.superclass is self:
@@ -1192,9 +1231,9 @@ def _init_base_classes(o):
                                % (value.id,
                                   value._sqlalchemy_mv_table.name))        
 
-        if value.id in [a.id for a in target.all_attributes()]:
-            raise RuntimeError('Cannot append already existing attribute'
-                               ' "%s"' % (value.id, ))
+        if value.id in [a for a in target.all_attribute_ids_in_hierarchy()]:
+            raise RuntimeError('Cannot append attribute ID already used in'
+                               ' class hierarchy: "%s"' % (value.id, ))
 
         # Also mark the new attribute for addition, if necessary
         if target.is_bound():
