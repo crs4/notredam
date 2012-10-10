@@ -253,6 +253,9 @@ def class_post(request, ws_id, class_id):
         client_attrs = set(attrs_dict.keys())
         existing_attrs = set(a.id for a in cls.attributes)
         existing_all_attrs = set(a.id for a in cls.all_attributes())
+        # Attributes in descendant classes
+        desc_attrs = (cls.all_attribute_ids_in_hierarchy()
+                      - existing_all_attrs)
         
         new_attr_ids = client_attrs - existing_all_attrs
         removed_attr_ids = existing_all_attrs - client_attrs
@@ -263,6 +266,12 @@ def class_post(request, ws_id, class_id):
             return HttpResponseBadRequest('Cannot add/remove attributes '
                                           'to/from a class which is already '
                                           'referenced in the knowledge base')
+
+        bad_attrs = desc_attrs.intersection(new_attr_ids)
+        if len(bad_attrs) != 0:
+            return HttpResponseBadRequest('Trying to add attributes which '
+                                          'already exist in class hierarchy: '
+                                          '%s' % (list(bad_attrs), ))
 
         # Only edit attributes belonging to this class, ignoring its ancestors
         edited_attr_ids = existing_attrs.intersection(client_attrs)
