@@ -253,10 +253,13 @@ def class_post(request, ws_id, class_id):
         client_attrs = attrs_dict.keys()
 
         # Normalized version of client attributes
-        n_client_attrs = set(kb_niceid(x, extra_chars=0) for x in client_attrs)
+        n_client_attrs = [kb_niceid(x, extra_chars=0) for x in client_attrs]
 
         # Associate normalized attrs with their original version
         n_client_attr_map = dict(zip(n_client_attrs, client_attrs))
+
+        # From now on, we will use n_client_attrs as a set
+        n_client_attrs = set(n_client_attrs)
 
         existing_attrs = set(a.id for a in cls.attributes)
         existing_all_attrs = set(a.id for a in cls.all_attributes())
