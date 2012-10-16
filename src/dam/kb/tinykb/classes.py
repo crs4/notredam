@@ -616,12 +616,14 @@ def _init_base_classes(o):
                 raise
 
         @decorators.synchronized(o._pyclass_realize_lock)
-        def unbind_from_table(self):
+        def unbind_from_table(self, _ignore_if_unbound=False):
             # FIXME: what about unbinding descendant classes as well?
             # At the moment, _forget_python_class() takes care of it
-            if not self.is_bound():
+            if not self.is_bound() and not _ignore_if_unbound:
                 raise AttributeError('Trying to unbind a KB class that was not'
                                      ' bound: %s' % (self, ))
+            if not self.is_bound() and _ignore_if_unbound:
+                return
             table = self._sqlalchemy_table
             add_tables = self.additional_sqlalchemy_tables
 
@@ -665,7 +667,7 @@ def _init_base_classes(o):
                 if pyclass is not None:
                     unregister_class(pyclass)
                 del self._cached_pyclass_ref
-                self.unbind_from_table()
+            self.unbind_from_table(_ignore_if_unbound=True)
 
             # Also cleanup the cache (just in case)
             c = cache_get(self.id, None)
@@ -675,7 +677,7 @@ def _init_base_classes(o):
                 if pyclass is not None:
                     unregister_class(pyclass)
                 del c._cached_pyclass_ref
-                c.unbind_from_table()
+            c.unbind_from_table(_ignore_if_unbound=True)
 
         @decorators.synchronized(o._pyclass_gen_lock)
         def _make_or_get_python_class(self, _session=None,
