@@ -1,0 +1,218 @@
+/*
+*
+* NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+* Email: labcontdigit@sardegnaricerche.it
+* Web: www.notre-dam.org
+*
+* This program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*/
+
+select{
+	font-size:11px;
+}
+.image-tip{
+	padding:4px;
+	height:98px;
+	white-space:nowrap;
+}
+.image-tip img {
+	margin-right:10px;
+	border:2px solid #083772;
+}
+.image-tip b{
+	color: #083772;
+	display: block;
+	margin-bottom: 4px;
+}
+.image-tip span{
+	display: block;
+	margin-bottom: 5px;
+	margin-left: 5px;
+}
+/*
+#images{
+	background: #fff url( ../tree/center-bg.gif ) repeat-x top left;
+	font: 11px Arial, Helvetica, sans-serif;
+}
+#videos{
+	background: #fff url( ../tree/center-bg.gif ) repeat-x top left;
+	font: 11px Arial, Helvetica, sans-serif;
+}
+*/
+.thumb{
+	background: transparent;
+	padding:3px;
+        border: 3px solid transparent;
+        height: 100px;
+        width: 100px;
+        text-align: center;
+        position: relative;
+}
+.thumb img{
+	border:1px solid white;
+        max-height: 100px;
+        max-width: 100px;
+//	height: 60px;
+//	width: 80px;
+}
+
+.thumb span {
+        position: absolute;
+        height: 100px;
+        width: 100px;
+        left: 4px;
+	display: block !important;
+}
+
+.thumb .inprogress{
+	background: transparent url(/files/images/inprogress.png) no-repeat;
+}
+
+.thumb .inprogress_audio{
+	height:32;
+    background: transparent url(/files/images/inprogress_audio.png) no-repeat bottom right;
+}
+
+.watermark{
+    background: transparent;
+    padding:2px;
+        border: 2px solid transparent;
+        height: 55px;
+        width: 55px;
+        text-align: center;
+        position: relative;
+}
+.watermark-wrap{
+    float: left;
+    margin: 2px;
+    margin-right: 0;
+    padding: 3px;
+}
+.x-view-selected .watermark{
+//  background:#8db2e3;
+        border: 2px solid #8db2e3;
+}
+.media_icon{
+    position:absolute; 
+    top:90;
+}
+
+.image_icon{
+	background: transparent url(/files/images/picture.png) no-repeat 100% 0;
+	
+}
+
+.audio_icon{
+	background: transparent url(/files/images/music.png) 100% 0 no-repeat;
+}
+
+.doc_icon{
+	background: transparent url(/files/images/notebook.png) 100% 0 no-repeat;
+}
+
+.video_icon{
+	background: transparent url(/files/images/movies.png) 100% 0  no-repeat;
+}
+
+.thumb .geotagged{
+	background: transparent url(/files/images/tagged_icon.png) no-repeat;
+}
+
+.thumb-wrap{
+	float: left;
+	margin: 4px;
+	margin-right: 0;
+	padding: 5px;
+}
+.thumb-wrap span{
+	display: block;
+	overflow: hidden;
+	text-align: center;
+}
+.x-view-selected .thumb{
+//	background:#8db2e3;
+        border: 3px solid #8db2e3;
+}
+.loading-indicator {
+	font-size:8pt;
+	background-image:url(../../resources/images/default/grid/loading.gif);
+	background-repeat: no-repeat;
+	background-position: left;
+	padding-left:20px;
+	margin:10px;
+}
+.x-dd-drag-proxy .multi-proxy .thumb-img{
+	height: 20px;
+	width: 30px;
+	margin:1px;
+}
+.x-dd-drag-proxy .thumb-img{
+	height: 60px;
+	width: 80px;
+}
+.image-node .x-tree-node-icon{
+    margin-bottom:1px;
+    height:15px;
+}
+.album-node .x-tree-node-icon, .album-btn{
+    background-image:url( ../tree/album.gif ) !important;
+}
+#folders{
+	position:relative;
+}
+
+.thumb span2{
+ 	position: absolute;
+ 	height :32px;
+ 	width:32px;
+ 	left:70px;
+ 	display:block;
+ }
+ 
+ 
+ .thumb .basket_icon{
+ 		background: transparent url(/files/images/ok.gif) no-repeat right top;
+ }
+ 
+ 
+ .thumb-audio{
+        background: transparent url(/files/images/Music_Icon.png) no-repeat center center;
+ }	
+ 	
+/*
+div.thumb-play:hover{
+        background: transparent url(/files/images/play.png) no-repeat bottom center;
+ }  
+*/
+
+
+
+a.myPlayer { 
+  
+    width: 100px; 
+    height:20px;  
+    text-align:center; 
+    
+    margin-top:82; 
+    display: block;
+    
+} 
+ 
+/* play button */ 
+.play { 
+   border: 0px none !important;
+    height:24px;
+   
+} 
+ 
+
+
