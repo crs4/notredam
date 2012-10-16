@@ -23,6 +23,7 @@
 #
 #########################################################################
 
+import itertools
 import threading
 import types
 import weakref
@@ -90,10 +91,25 @@ def _init_base_classes(o):
     #   4. KBClass.python_class must first check the cache, and if an
     #      equivalent istance is found, then the actual python class must
     #      be retrieved from there
+    # FIXME: we definitely need some locking on the cache!
     o._kb_class_cache = {}
     def cache_add(cls):
         # The class must not have been cached in advance
         assert(o._kb_class_cache.get(cls.id) is None)
+        # Also cache all the ancestors, in order to keep the cached
+        # classes linked
+        for a in cls.ancestors():
+            cached_a = cache_get(a.id, None)
+            if cached_a is a:
+                # We are done
+                break
+            if cached_a is None:
+                # First time the ancestor enters the cache
+                o._kb_class_cache[a.id] = a
+            else:
+                # Another equivalent KBClass was still cached: let's
+                # substitute it
+                cache_update(a)
         o._kb_class_cache[cls.id] = cls
     o.cache_add = cache_add
 
@@ -112,6 +128,20 @@ def _init_base_classes(o):
     o.cache_get = cache_get
 
     def cache_update(cls):
+        old_cls = o._kb_class_cache.get(cls.id, None)
+        # The class must have been cached in advance
+        assert(old_cls is not None)
+        if old_cls is cls:
+            # Nothing to do here
+            return
+
+        # "Reparent" the Python class.
+        # FIXME: create some internal API here!
+        if hasattr(old_cls,  '_cached_pyclass_ref'):
+            assert(not hasattr(cls, '_cached_pyclass_ref'))
+            pyclass = old_cls._cached_pyclass_ref()
+            cls._cached_pyclass_ref = weakref.ref(pyclass)
+            pyclass.__kb_class__ = cls
         o._kb_class_cache[cls.id] = cls
     o.cache_update = cache_update
 
@@ -320,12 +350,18 @@ def _init_base_classes(o):
         def __init_on_load__(self):
             self._sqlalchemy_table = None
             self.bind_to_table()
-            if cache_get(self.id, Session.object_session(self)) is None:
+            if cache_get(self.id, None) is None:
                 cache_add(self)
 
             # Reconstruct table suffix
             suffix_chars = RAND_SUFFIX_LENGTH + 1 # Also count "_" character
             self._table_suffix = self.table[-suffix_chars:]
+
+            # Update the read-only, non-SQL-mapped copies of class
+            # name and ID, accessible even when the class is not bound
+            # to a session (in other cases, an event listener takes care)
+            self._name = self.name
+            self._id = self.id
 
         sqlalchemy_table = property(lambda self: self._sqlalchemy_table)
 
@@ -397,9 +433,7 @@ def _init_base_classes(o):
             if depth == 0:
                 return []
 
-            children = o.session.session.query(KBClass).filter(
-                and_(KBClass.id != self.id,
-                     KBClass.superclass == self)).all()
+            children = [c for c in self.subclasses if c is not self]
 
             if depth is None:
                 nextdepth = None
@@ -424,6 +458,48 @@ def _init_base_classes(o):
             nested_attrs = [c.attributes for c in classes]
 
             return [d for l in nested_attrs for d in l] # Flatten
+
+        def all_attribute_ids_in_hierarchy(self):
+            '''
+            Return all the attribute IDs used in the hierarchy of that
+            this class belongs to (i.e. its ancestors and descendants).
+
+            :rtype: set of strings
+            :returns: all the class attribute ids
+            '''
+            ids = [a.id for a in self.all_attributes()]
+
+            # Avoid retrieving the descendant classes
+            ids += self._descendant_attribute_ids(self.id)
+            return set(ids)
+
+        def _descendant_attribute_ids(self, cls_id):
+            # Return the attribute IDs used by the descendants of the
+            # given KB class (identified by its ID), assuming that
+            # it shares the same hierarchy of self.
+            #
+            # NOTE: this method will *not* retrieve the actual KB classes
+            # from the DB
+            session = Session.object_session(self)
+            if session is None:
+                # The KB class is not in the DB yet, and thus there are no
+                # descendants to check
+                return []
+            root_id = self._root_id
+            desc_query = session.query(schema.class_t.c.id).filter(
+                and_((schema.class_t.c.parent == cls_id),
+                     (schema.class_t.c.root == root_id),
+                     (schema.class_t.c.id != cls_id)))
+            ids = []
+            for desc_id in itertools.imap(lambda x: x[0],
+                                          desc_query):
+                attr_query = session.query(schema.class_attribute.c.id).join(
+                    schema.class_t).filter(
+                    and_((schema.class_t.c.root == root_id),
+                         (schema.class_t.c.id == desc_id)))
+                desc_ids = [r[0] for r in attr_query.all()]
+                ids += desc_ids + self._descendant_attribute_ids(desc_id)
+            return ids
 
         def _get_parent_table(self):
             if self.superclass is self:
@@ -540,12 +616,14 @@ def _init_base_classes(o):
                 raise
 
         @decorators.synchronized(o._pyclass_realize_lock)
-        def unbind_from_table(self):
+        def unbind_from_table(self, _ignore_if_unbound=False):
             # FIXME: what about unbinding descendant classes as well?
             # At the moment, _forget_python_class() takes care of it
-            if not self.is_bound():
+            if not self.is_bound() and not _ignore_if_unbound:
                 raise AttributeError('Trying to unbind a KB class that was not'
                                      ' bound: %s' % (self, ))
+            if not self.is_bound() and _ignore_if_unbound:
+                return
             table = self._sqlalchemy_table
             add_tables = self.additional_sqlalchemy_tables
 
@@ -561,31 +639,26 @@ def _init_base_classes(o):
         def _forget_python_class(self, _visited=[]):
             '''
             Forget the Python class associated to this KBClass, in
-            order to rebuild it at the next request
+            order to rebuild it at the next request.  The _visited argument
+            will be enriched with the KB classes visited by the algorithm
             '''
             if self in _visited:
                 # Avoid loops
                 return
-            visited = _visited + [self]
-
-            if not self.is_bound():
-                # If we are not bound, then no Python class has been built yet
-                # (and the same goes for our descendants)
-                return
+            _visited.append(self)
 
             # We also need to forget the derived python classes
             for c in self.descendants(depth=1):
-                c._forget_python_class(visited)
-                visited.append(c)
+                c._forget_python_class(_visited=_visited)
 
             # ...and we also need to forget the classes which
             # reference to ourselves.
             # NOTE: avoid re-visiting classes, or their SQLAlchemy tables
             # may be recreated under the hood!
             for a in [r for r in self.references
-                      if getattr(r, '__class_id') not in [c.id
-                                                          for c in visited]]:
-                getattr(a, 'class')._forget_python_class(visited)
+                      if getattr(r, '__class_id') not in [c._id
+                                                          for c in _visited]]:
+                getattr(a, 'class')._forget_python_class(_visited=_visited)
 
             from sqlalchemy.orm.instrumentation import unregister_class
 
@@ -594,7 +667,7 @@ def _init_base_classes(o):
                 if pyclass is not None:
                     unregister_class(pyclass)
                 del self._cached_pyclass_ref
-                self.unbind_from_table()
+            self.unbind_from_table(_ignore_if_unbound=True)
 
             # Also cleanup the cache (just in case)
             c = cache_get(self.id, None)
@@ -604,7 +677,7 @@ def _init_base_classes(o):
                 if pyclass is not None:
                     unregister_class(pyclass)
                 del c._cached_pyclass_ref
-                c.unbind_from_table()
+            c.unbind_from_table(_ignore_if_unbound=True)
 
         @decorators.synchronized(o._pyclass_gen_lock)
         def _make_or_get_python_class(self, _session=None,
@@ -740,7 +813,7 @@ def _init_base_classes(o):
             return (kb_cls is self) or (self > kb_cls)
 
         def __repr__(self):
-            return "<KBClass('%s', '%s')>" % (self.name, self.id)
+            return "<KBClass('%s', '%s')>" % (self._name, self._id)
 
     o.KBClass = KBClass
 
@@ -801,7 +874,7 @@ def _init_base_classes(o):
                 return acc[0].access
 
         def __repr__(self):
-            return "<KBRootClass('%s', '%s')>" % (self.name, self.id)
+            return "<KBRootClass('%s', '%s')>" % (self._name, self._id)
 
     o.KBRootClass = KBRootClass
 
@@ -1134,6 +1207,17 @@ def _init_base_classes(o):
     event.listen(KBClass.superclass, 'set', kbclass_update_superclass_attrs,
                  propagate=True, retval=False)
 
+    # Update read-only name and ID copies when the corresponding SQL-mapped
+    # fields are changed
+    def kbclass_set_name(target, value, _oldvalue, _initiator):
+        target._name = value
+    event.listen(KBClass.name, 'set', kbclass_set_name,
+                 propagate=True, retval=False)
+    def kbclass_set_id(target, value, _oldvalue, _initiator):
+        target._id = value
+    event.listen(KBClass.id, 'set', kbclass_set_id,
+                 propagate=True, retval=False)
+
     # Bind an attribute to its owner class when it gets added to the
     # 'attributes' list
     # FIXME: it should happen automatically, shouldn't it?
@@ -1148,9 +1232,9 @@ def _init_base_classes(o):
                                % (value.id,
                                   value._sqlalchemy_mv_table.name))        
 
-        if value.id in [a.id for a in target.all_attributes()]:
-            raise RuntimeError('Cannot append already existing attribute'
-                               ' "%s"' % (value.id, ))
+        if value.id in [a for a in target.all_attribute_ids_in_hierarchy()]:
+            raise RuntimeError('Cannot append attribute ID already used in'
+                               ' class hierarchy: "%s"' % (value.id, ))
 
         # Also mark the new attribute for addition, if necessary
         if target.is_bound():
@@ -1219,6 +1303,11 @@ def _init_base_classes(o):
     @decorators.synchronized(o._pyclass_gen_lock)
     def kbclass_after_update(_mapper, connection, target):
         assert(target.is_bound()) # Should be always true after INSERT
+
+        # Ensure that no elements need to be both added and removed
+        assert(len(set(getattr(target, '_new_attributes', [])).intersection(
+                    set(getattr(target, '_del_attributes', [])))) == 0)
+
         if hasattr(target, '_new_attributes'):
             table_name = target.table
 
@@ -1275,7 +1364,6 @@ def _init_base_classes(o):
                                        [a.id for a in target._del_attributes
                                         if not (a.multivalued)],
                                        connection)
-            # FIXME: TODO: handle MV tables "orphaned" by attr removal
 
             # FIXME: we would like to update class mapping/instrumentation
             # Since it does not seem to be possible, we rebuild the mapping

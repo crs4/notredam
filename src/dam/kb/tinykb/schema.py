@@ -291,6 +291,31 @@ class Schema(object):
         newtables = self._build_attr_tables(add_tables)
         return newtables
 
+    def drop_attr_tables(self, table_names, connection):
+        '''
+        Drop the given attribute tables from the DB (and collection of known
+        tables as well)
+
+        :type  table_names: list of strings
+        :param table_names: names of the tables to be removed
+
+        :type  connection: SQLALchemy connection
+        :param connection: used for interacting with the SQL DB
+        '''
+        assert(isinstance(table_names, list))
+
+        from alembic.migration import MigrationContext
+        from alembic.operations import Operations
+
+        ctx = MigrationContext.configure(connection)
+        op = Operations(ctx)
+
+        for tn in table_names:
+            table = self._get_table(tn, return_none_if_not_found=True)
+            if table is not None:
+                self.remove_attr_tables([table])
+            op.drop_table(tn)
+
     def remove_attr_tables(self, tables):
         '''
         Remove the given attribute tables from the collection of known tables.
@@ -318,6 +343,18 @@ class Schema(object):
     ###########################################################################
     # Internal functions
     ###########################################################################
+
+    def _get_table(self, table_name, return_none_if_not_found=False):
+        for t in self._metadata.sorted_tables:
+            if table_name == t.name:
+                # The table already exists in the metadata
+                return t
+
+        # The table was not found
+        if return_none_if_not_found:
+            return None
+
+        raise RuntimeError('BUG: trying to get an unknown table:', table_name)
 
     def _get_or_build_object_table(self, table_name, parent_table, attrs_ddl):
         # FIXME: this function should be split!
