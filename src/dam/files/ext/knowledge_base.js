@@ -827,10 +827,6 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
     });
     
     if(!add_class && !add_attribute && insert_value == false){
-    	console.log("dentro");
-    	console.log(add_class);
-    	console.log(add_attribute);
-    	console.log(insert_value);
     	order_slider.disabled = true;
     	multivalued_chekbox.disabled = true;
     	empty_chekbox.disabled = true;
@@ -1704,7 +1700,7 @@ function open_knowledgeBase(){
 	});
 	
 /**
- * Tree Panel
+ * Tree Panel Vocabulary on Vocabulary editor.
  */	
 
 	var tree_loader_obj = get_treeLoader_vocabulary();
@@ -1771,6 +1767,12 @@ function open_knowledgeBase(){
 	});
 
 /**
+ * reload vocabulary tree on catalogue.
+ */
+	function load_vocabulary_tree_on_catalogue(){
+		Ext.getCmp('obj_reference_tree_catalogue').getLoader().load(Ext.getCmp('obj_reference_tree_catalogue').root);		
+	}
+/**
  * Content Windows 
  */	
 	var win_knowledge_base = new Ext.Window({
@@ -1790,10 +1792,12 @@ function open_knowledgeBase(){
         buttons	:[{
             text: 'Close',
             handler: function() {
-        	win_knowledge_base.close();
+        		win_knowledge_base.close();
+        		load_vocabulary_tree_on_catalogue()
         	},
         listeners:{
         	beforedestroy:function(){
+        		load_vocabulary_tree_on_catalogue()
         		Ext.getCmp('contextMenuVocabulary').destroy();
         	}
         }
