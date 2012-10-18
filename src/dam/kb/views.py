@@ -567,6 +567,35 @@ def object_delete(request, ws_id, object_id):
 @http_basic_auth
 @login_required
 @permission_required('admin', False)
+def object_catalog_nodes(request, ws_id, object_id):
+    '''
+    GET: return a list of catalog node IDs (i.e. keywords) associated to obj
+    '''
+    return _dispatch(request, {'GET' :  object_catalog_nodes_get},
+                     {'ws_id' : int(ws_id),
+                      'object_id' : object_id})
+
+
+def object_catalog_nodes_get(request, ws_id, object_id):
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+        
+        try:
+            obj = ses.object(object_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
+        
+        nodes = TreeviewNode.objects.filter(kb_object=obj.id)
+        
+        return HttpResponse(simplejson.dumps([n.id for n in nodes]))
+
+
+@http_basic_auth
+@login_required
+@permission_required('admin', False)
 def class_objects(request, ws_id, class_id):
     '''
     GET: return the list of objects belonging to a given KB class.
