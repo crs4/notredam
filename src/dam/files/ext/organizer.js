@@ -1819,8 +1819,38 @@ var search_box = {
    
     
     ]
-    }); 
-        
+    });
+    /**
+     * Vocabulary tree.
+     */	
+	var tree_loader_obj_catalogue = get_treeLoader_vocabulary();
+    var Tree_Obj_Root_catalogue = get_AsyncTreeNode();
+	var tree_obj_reference_catalogue = new Ext.tree.TreePanel({
+		id:'obj_reference_tree_catalogue',
+		title:gettext('Vocabulary tree'),
+        autoDestroy : true,
+		containerScroll: true,
+		autoScroll:true,
+		loader: tree_loader_obj_catalogue,
+        selModel: new Ext.tree.MultiSelectionModel({
+            listeners:{
+                selectionchange: {fn:function(sel, nodes){
+        			//node_selected(sel);
+        			console.log(sel);
+        			console.log(nodes); // TODO richiamare api.
+        		}, buffer: 30}
+            }
+        })
+		
+	});
+	tree_obj_reference_catalogue.setRootNode(Tree_Obj_Root_catalogue);
+	new Ext.tree.TreeSorter(tree_obj_reference_catalogue, {
+	    dir: "ASC",
+	    folderSort: true
+	});
+    /**
+     * End Vocabulary tree.
+     */	
     var viewport = new Ext.Viewport({
            id:'viewport',
             layout:'border',
@@ -1863,14 +1893,14 @@ var search_box = {
                     items:[{
                         id:'west-panel',
                         region:'center',
-                        title:gettext('Catalogue'),
+                        title:gettext(''),
                         width: 200,
                         layoutConfig:{
                             animate:true
                             
                         },
                         layout: 'accordion',    
-                        items: [tree_keywords,  inbox, smart_folders],
+                        items: [tree_keywords, tree_obj_reference_catalogue,  inbox, smart_folders],
                         bbar: { 
                             id :"basket_container",
                             listeners:{
