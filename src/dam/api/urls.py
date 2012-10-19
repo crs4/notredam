@@ -146,5 +146,6 @@ urlpatterns = patterns('',
    url(r'^api/workspace/(?P<ws_id>\d+)/kb/object/?$', 'kb.views.object_index'),
    url(r'^api/workspace/(?P<ws_id>\d+)/kb/object/(?P<object_id>\w+)/?$',
        'kb.views.object_'),
-
+   url(r'^api/workspace/(?P<ws_id>\d+)/kb/object/(?P<object_id>\w+)/catalog_nodes/?$',
+       'kb.views.object_catalog_nodes'),
 )
