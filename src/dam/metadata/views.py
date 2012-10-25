@@ -334,9 +334,8 @@ def save_descriptors(request):
             comp = Component.objects.get(item=item, variant__name=variant_name, workspace=workspace)
             comp.save_rights_value(license, workspace)
         else:
-            logger.debug('descriptor')
             descriptor = MetadataDescriptor.objects.get(pk=int(desc_id))
-            logger.debug('descriptor %s'%descriptor)
+            #logger.debug('descriptor %s'%descriptor)
             if descriptor.name == 'Latitude':
                 Latitude = metadata[m]
             elif descriptor.name == 'Longitude':
@@ -344,8 +343,13 @@ def save_descriptors(request):
             
             logger.debug('ids %s'%ids)        
             if len(ids) == 2:
-                logger.debug(2)
-                MetadataValue.objects.save_descriptor_values(descriptor, items, metadata[m], workspace, variant_name, default_language)
+                try:
+                    MetadataValue.objects.save_descriptor_values(descriptor, items, metadata[m], workspace, variant_name, default_language)
+                except Exception, ex:
+                    logger.debug('Error while saving descriptor %s' % ex )
+                    raise ex
+
+                    
             else:
                 
                 MetadataValue.objects.save_descriptor_structure_values(descriptor, ids[2], items, metadata[m], workspace, variant_name)
