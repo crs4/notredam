@@ -366,6 +366,39 @@ def class_delete(request, ws_id, class_id):
 @http_basic_auth
 @login_required
 @permission_required('admin', False)
+def class_catalog_nodes(request, ws_id, class_id):
+    '''
+    GET: return a list of catalog node IDs (i.e. keywords) associated to
+    objects deriving from the given class
+    '''
+    return _dispatch(request, {'GET' :  class_catalog_nodes_get},
+                     {'ws_id' : int(ws_id),
+                      'class_id' : class_id})
+
+
+def class_catalog_nodes_get(request, ws_id, class_id):
+    with _kb_session() as ses:
+        try:
+            ws = ses.workspace(ws_id)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound('Unknown workspace id: %s' % (ws_id, ))
+        
+        try:
+            cls = ses.class_(class_id, ws=ws)
+        except kb_exc.NotFound:
+            return HttpResponseNotFound()
+
+        objs = ses.objects(class_=cls.python_class, ws=ws)
+        nodes = set()
+        for obj in objs:
+            nodes = nodes.union(TreeviewNode.objects.filter(kb_object=obj.id))
+        
+        return HttpResponse(simplejson.dumps([n.id for n in nodes]))
+
+
+@http_basic_auth
+@login_required
+@permission_required('admin', False)
 def object_index(request, ws_id):
     '''
     GET: return the list of objects defined in the knowledge base.
