@@ -165,14 +165,14 @@ function save_and_close_win_att_class(attributes_grid, insert_value, win_att_cla
 			attributes_grid.getSelectionModel().getSelected().set('target_class',target_class);
 		}else{
     		attributes_grid.store.add(new Attribute({
-    			id			: name_textField.getValue().replace(/ /g, "_"),
-    			name		: name_textField.getValue(),
+    			id			: Ext.getCmp('name_attribute').getValue().replace(/ /g, "_"),
+    			name		: Ext.getCmp('name_attribute').getValue(),
     			default_value: default_value,
-    			order		: order_slider.getValue(),
-    			notes		: notes_textField.getValue(),
-    			type		: type_combo.getValue(),
-    			multivalued : multivalued_chekbox.getValue(),
-    			maybe_empty : empty_chekbox.getValue(),
+    			order		: Ext.getCmp('slider_order').getValue(),
+    			notes		: Ext.getCmp('id_notes_attribute').getValue(),
+    			type		: Ext.getCmp('type_comb_class').getValue(),
+    			multivalued : Ext.getCmp('id_multivalued_chekbox').getValue(),
+    			maybe_empty : Ext.getCmp('id_empty_chekbox').getValue(),
     			min			: min_value,
     			max			: max_value,
     			length		: max_length,
@@ -202,6 +202,8 @@ function save_and_close_win_att_class(attributes_grid, insert_value, win_att_cla
 			}
 		}
 	}
+	console.log(' Riga 205: win_att_class');
+	console.log(win_att_class);
 	win_att_class.close();
 }
 
@@ -996,7 +998,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
             text: text_button,
             type: 'submit',
             handler: function(){
-        		save_and_close_win_att_class(attributes_grid, insert_value);
+        		save_and_close_win_att_class(attributes_grid, insert_value, win_att_class);
         	}
         }]
     });
@@ -1026,9 +1028,11 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 	        modal	: true,
 	      	items	:[attribute_detail_panel]
 	    });
-	if (multivalued_chekbox.checked == false){
+		
+	if (multivalued_chekbox.checked == false && edit){
 		console.log('OKK Multivalued false');
 		console.log(win_att_class);
+		console.log(edit);
 		win_att_class.show();
 		
 		if(Ext.getCmp('id_record_value').getStore().getCount() > 0){ //edit (remove and add)
