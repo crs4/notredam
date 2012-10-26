@@ -98,8 +98,118 @@ function get_AsyncTreeNode(){
     });
 }
 
+function save_and_close_win_att_class(attributes_grid, insert_value, win_att_class){
+	
+	console.log('save and close win att class');
+	console.log(Ext.getCmp('attribute_grid_id'));
+	console.log(attributes_grid);
+	
+	if (!insert_value){ // class scope
+		var Attribute = Ext.data.Record.create([{
+		    name: 'id'
+		},{
+		    name: 'name'
+		},{
+		    name: 'default_value'
+		},{
+		    name: 'order'
+		},{
+		    name: 'notes'
+		},{
+		    name: 'type'
+		},{
+		    name: 'multivalued'
+		},{
+		    name: 'maybe_empty'
+		},{
+		    name: 'min'
+		},{
+		    name: 'max'
+		},{
+		    name: 'length'
+		},{
+		    name: 'choices'
+		},{
+		    name: 'target_class'
+		}]);
+		
+		if (Ext.getCmp('type_comb_class').getValue() == 'date'){//fit date format
+			if (Ext.getCmp('id_min').getValue()){min_value = Ext.getCmp('id_min').getValue().format('Y-m-d');}else{min_value = null;}
+    		if (Ext.getCmp('id_max').getValue()){max_value = Ext.getCmp('id_max').getValue().format('Y-m-d');}else{max_value = null;}
+			if (Ext.getCmp('id_default_value').getValue()){default_value = Ext.getCmp('id_default_value').getValue().format('Y-m-d');}else{default_value = null;}
+		}else{
+			if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue();}else{min_value = null;}
+    		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue();}else{max_value = null;}
+			if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue();}else{default_value = null;}
+		}
+		if (Ext.getCmp('id_max_length')){max_length = Ext.getCmp('id_max_length').getValue();}else{max_length = null;}
+		if (Ext.getCmp('id_choices')){//string list
+			choices = Ext.getCmp('id_choices').getValue().split(',');
+			if (choices[choices.length-1] == ""){
+				delete(choices[choices.length-1]);
+				choices.splice(choices.length-1, 1);
+			}
+		}else{choices = null;}
+		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
+		if (this.text == gettext('Apply')){
+			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
+			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
+			attributes_grid.getSelectionModel().getSelected().set('order',order_slider.getValue());
+			attributes_grid.getSelectionModel().getSelected().set('notes',notes_textField.getValue());
+			attributes_grid.getSelectionModel().getSelected().set('type',type_combo.getValue());
+			attributes_grid.getSelectionModel().getSelected().set('multivalued',multivalued_chekbox.getValue());
+			attributes_grid.getSelectionModel().getSelected().set('maybe_empty',empty_chekbox.getValue());
+			attributes_grid.getSelectionModel().getSelected().set('min',min_value);
+			attributes_grid.getSelectionModel().getSelected().set('max',max_value);
+			attributes_grid.getSelectionModel().getSelected().set('length',max_length);
+			attributes_grid.getSelectionModel().getSelected().set('target_class',target_class);
+		}else{
+    		attributes_grid.store.add(new Attribute({
+    			id			: name_textField.getValue().replace(/ /g, "_"),
+    			name		: name_textField.getValue(),
+    			default_value: default_value,
+    			order		: order_slider.getValue(),
+    			notes		: notes_textField.getValue(),
+    			type		: type_combo.getValue(),
+    			multivalued : multivalued_chekbox.getValue(),
+    			maybe_empty : empty_chekbox.getValue(),
+    			min			: min_value,
+    			max			: max_value,
+    			length		: max_length,
+    			choices		: choices,
+    			target_class: target_class
+    		}));
+		}
+	}else{ //obj scope
+		if(attributes_grid.getSelectionModel().getSelected().data.type == 'choice'){//case where choice is multivalued
+			var txt = "";
+			for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
+				txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name + ',';
+			}
+			txt = txt.substring(0,txt.length-1);
+			attributes_grid.getSelectionModel().getSelected().set('value',txt);
+		}else if(Ext.getCmp('id_multivalued_chekbox').getValue() == true){//case where multivalued true
+			var txt = new Array();
+			for(i=0; i < Ext.getCmp('id_record_value').getStore().getCount(); i++){
+				txt.push(Ext.getCmp('id_record_value').getStore().getAt(i).data.name);
+			}
+			attributes_grid.getSelectionModel().getSelected().set('value',txt);
+		}else if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//objref multivalued false
+			if (Ext.getCmp('id_record_value').getStore().getCount() == 1){
+				attributes_grid.getSelectionModel().getSelected().set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);
+			}else{
+				attributes_grid.getSelectionModel().getSelected().set('value', null);
+			}
+		}
+	}
+	win_att_class.close();
+}
 
-function show_win_single_attribute_date_string(year_value, month_value, day_value, check_period, title){
+function close_window_insert_attribute(){
+	Ext.getCmp('id_win_add_attribute').close();
+}
+
+function show_win_single_attribute_date_string(year_value, month_value, day_value, check_period, title, close_window, attributes_grid, win_att_class){
 	var win_select_class_target = new Ext.Window({
         id		:'id_win_define_date_string',
 		layout	: 'form',
@@ -132,6 +242,9 @@ function show_win_single_attribute_date_string(year_value, month_value, day_valu
 	        	}else{
 	        		Ext.Msg.alert('Warning', 'You have to insert some value.');
 	        	}
+				if(close_window){
+					save_and_close_win_att_class(attributes_grid, true, win_att_class);
+				}
         	}
         },{
             text: 'Close',
@@ -139,6 +252,9 @@ function show_win_single_attribute_date_string(year_value, month_value, day_valu
 				check_add_button_add_option();
 				check_remove_button_add_option();
         		win_select_class_target.close();
+        		if(close_window){
+					save_and_close_win_att_class(attributes_grid, true, win_att_class);
+        		}
         	}
         }]
     });
@@ -148,7 +264,7 @@ function show_win_single_attribute_date_string(year_value, month_value, day_valu
 
 
 
-function show_win_single_attribute(params, title){
+function show_win_single_attribute(params, title, close_window, attributes_grid, win_att_class){
 	var win_select_class_target = new Ext.Window({
         id		:'id_win_select_class_target',
 		layout	: 'form',
@@ -177,6 +293,9 @@ function show_win_single_attribute(params, title){
 	        		Ext.getCmp('id_record_value').store.add(new Attribute({name: Ext.getCmp('id_record_value_single_box').getValue()}));
 	        	}
 	        	win_select_class_target.close();
+        		if(close_window){
+					save_and_close_win_att_class(attributes_grid, true, win_att_class);
+        		}
         	}
         },{
             text: 'Close',
@@ -184,6 +303,9 @@ function show_win_single_attribute(params, title){
 				check_add_button_add_option();
 				check_remove_button_add_option();
         		win_select_class_target.close();
+        		if(close_window){
+					save_and_close_win_att_class(attributes_grid, true, win_att_class);
+        		}
         	}
         }]
     });
@@ -302,8 +424,122 @@ function check_remove_button_add_option(){
 	}
 }
 
-function get_grid_insert_value(value, type, title){
+function logic_to_insert_single_value(type, close_window, attributes_grid, win_att_class){
+	
+	if (type == 'objref'){
+		view_tree_vocabulary_to_obj_ref('id_record_value', Ext.getCmp('id_multivalued_chekbox').getValue());
+	}else if (type == 'bool'){
+		var record_value = new Ext.form.ComboBox({
+			id  : 'id_record_value_single_box',
+	        store: get_TF_store(), // end of Ext.data.SimpleStore
+	        fieldLabel: gettext('Select value ..'),
+	        width: 130,
+	        emptyText: gettext('Select ..'),
+	        displayField: 'name',
+	        valueField: 'id',
+	        mode: 'local',
+	        editable: false,
+	        allowBlank:true,
+	        triggerAction: 'all'
+		});
+		show_win_single_attribute(record_value, 'Insert Value', close_window, attributes_grid, win_att_class);
+	}else if (type == 'string' || type == 'uri'){
+		var record_value = new Ext.form.TextField({
+			name: 'Insert value',
+			id  : 'id_record_value_single_box',
+			fieldLabel: gettext('Insert value'),
+	        allowBlank:true
+		});
+		show_win_single_attribute(record_value, 'Insert Value', close_window, attributes_grid, win_att_class);
+	}else if (type == 'date'){
+		var record_value = new Ext.form.DateField({
+			name: 'Insert value',
+			id  : 'id_record_value_single_box',
+			fieldLabel: gettext('Insert value'),
+			format: 'Y-m-d',
+	        allowBlank:true
+		});
+		show_win_single_attribute(record_value, 'Insert Value', close_window, attributes_grid, win_att_class);
+	}else if(type == 'int'){
+		var record_value = new Ext.form.NumberField({
+			name: 'Insert value',
+			id  : 'id_record_value_single_box',
+			fieldLabel: gettext('Insert value'),
+	        allowBlank:true
+		});
+		show_win_single_attribute(record_value, 'Insert Value', close_window, attributes_grid, win_att_class);
 
+
+	}else if(type == 'date-like-string'){ 
+
+		var year_value = new Ext.form.NumberField({
+			name: 'Insert value',
+			id  : 'id_year_value',
+			fieldLabel: gettext('Insert year'),
+	        allowBlank:false
+		});
+
+		var month_value = new Ext.form.ComboBox({
+			id  : 'id_month_value',
+	        store: new Ext.data.SimpleStore({
+	            fields: ['id','name'],
+	            data: [
+	              ["01","01"],["02","02"],["03","03"],["04","04"],["05","05"],["06","06"],["07","07"],["08","08"],["09","09"],["10","10"],["11","11"],["12","12"]]
+	        }), // end of Ext.data.SimpleStore
+	        fieldLabel: gettext('Select month'),
+	        width: 130,
+	        emptyText: gettext('Select ..'),
+	        displayField: 'name',
+	        valueField: 'id',
+	        mode: 'local',
+	        editable: false,
+	        allowBlank:false,
+	        triggerAction: 'all'
+		});
+
+		var day_value = new Ext.form.ComboBox({
+			id  : 'id_day_value',
+	        store: new Ext.data.SimpleStore({
+	            fields: ['id','name'],
+	            data: [
+	              ["01","01"],["02","02"],["03","03"],["04","04"],["05","05"],["06","06"],["07","07"],["08","08"],["09","09"],["10","10"],
+	              ["11","11"],["12","12"],["13","13"],["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],["19","19"],["20","20"],
+	              ["21","21"],["22","22"],["23","23"],["24","24"],["25","25"],["26","26"],["27","27"],["28","28"],["29","29"],["30","30"],
+	              ["31","31"]]
+	        }), // end of Ext.data.SimpleStore
+	        fieldLabel: gettext('Select day'),
+	        width: 130,
+	        emptyText: gettext('Select ..'),
+	        displayField: 'name',
+	        valueField: 'id',
+	        mode: 'local',
+	        editable: false,
+	        allowBlank:false,
+	        triggerAction: 'all'
+		});
+
+		var check_period = new Ext.form.RadioGroup({
+			id  : 'id_check_period',
+			columns: 1,
+			fieldLabel: 'Choise period',
+			items:[
+                    {boxLabel: 'After Christ', name: 'rb-cristo', inputValue: '+', checked: true},
+                    {boxLabel: 'Before Christ', name: 'rb-cristo', inputValue: '-'} 
+            ]
+		});
+
+    	show_win_single_attribute_date_string(year_value, month_value, day_value, check_period, 'Insert Value', close_window, attributes_grid, win_att_class);
+
+
+
+	}
+	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//FIXME getStore().getCount() not update in realtime
+		Ext.getCmp('id_add_attributes_class').disable();
+	}
+}
+
+function get_grid_insert_value(value, type, title){
+	console.log('get_grid_insert_value');
 	var store_grid = get_store_grid_insert(value);
 	var sm = new Ext.grid.CheckboxSelectionModel({
 		singleSelect: true,
@@ -334,121 +570,13 @@ function get_grid_insert_value(value, type, title){
         bbar:[{
             text:'Add',
             id: 'id_add_attributes_class',
-            tooltip:'Add a new attribute',
+            tooltip:'Add a new value',
             iconCls:'add_icon',
             handler: function() {
-            	if (type == 'objref'){
-            		view_tree_vocabulary_to_obj_ref('id_record_value', Ext.getCmp('id_multivalued_chekbox').getValue());
-            	}else if (type == 'bool'){
-        			var record_value = new Ext.form.ComboBox({
-        				id  : 'id_record_value_single_box',
-        		        store: get_TF_store(), // end of Ext.data.SimpleStore
-        		        fieldLabel: gettext('Select value ..'),
-        		        width: 130,
-        		        emptyText: gettext('Select ..'),
-        		        displayField: 'name',
-        		        valueField: 'id',
-        		        mode: 'local',
-        		        editable: false,
-        		        allowBlank:true,
-        		        triggerAction: 'all'
-        			});
-        			show_win_single_attribute(record_value, 'Insert Value');
-            	}else if (type == 'string' || type == 'uri'){
-        			var record_value = new Ext.form.TextField({
-        				name: 'Insert value',
-        				id  : 'id_record_value_single_box',
-        				fieldLabel: gettext('Insert value'),
-        		        allowBlank:true
-        			});
-        			show_win_single_attribute(record_value, 'Insert Value');
-            	}else if (type == 'date'){
-        			var record_value = new Ext.form.DateField({
-        				name: 'Insert value',
-        				id  : 'id_record_value_single_box',
-        				fieldLabel: gettext('Insert value'),
-        				format: 'Y-m-d',
-        		        allowBlank:true
-        			});
-        			show_win_single_attribute(record_value, 'Insert Value');
-            	}else if(type == 'int'){
-        			var record_value = new Ext.form.NumberField({
-        				name: 'Insert value',
-        				id  : 'id_record_value_single_box',
-        				fieldLabel: gettext('Insert value'),
-        		        allowBlank:true
-        			});
-    				show_win_single_attribute(record_value, 'Insert Value');
-
-
-            	}else if(type == 'date-like-string'){ 
-
-            		var year_value = new Ext.form.NumberField({
-        				name: 'Insert value',
-        				id  : 'id_year_value',
-        				fieldLabel: gettext('Insert year'),
-        		        allowBlank:false
-        			});
-
-        			var month_value = new Ext.form.ComboBox({
-        				id  : 'id_month_value',
-        		        store: new Ext.data.SimpleStore({
-        		            fields: ['id','name'],
-        		            data: [
-        		              ["01","01"],["02","02"],["03","03"],["04","04"],["05","05"],["06","06"],["07","07"],["08","08"],["09","09"],["10","10"],["11","11"],["12","12"]]
-        		        }), // end of Ext.data.SimpleStore
-        		        fieldLabel: gettext('Select month'),
-        		        width: 130,
-        		        emptyText: gettext('Select ..'),
-        		        displayField: 'name',
-        		        valueField: 'id',
-        		        mode: 'local',
-        		        editable: false,
-        		        allowBlank:false,
-        		        triggerAction: 'all'
-        			});
-
-        			var day_value = new Ext.form.ComboBox({
-        				id  : 'id_day_value',
-        		        store: new Ext.data.SimpleStore({
-        		            fields: ['id','name'],
-        		            data: [
-        		              ["01","01"],["02","02"],["03","03"],["04","04"],["05","05"],["06","06"],["07","07"],["08","08"],["09","09"],["10","10"],
-        		              ["11","11"],["12","12"],["13","13"],["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],["19","19"],["20","20"],
-        		              ["21","21"],["22","22"],["23","23"],["24","24"],["25","25"],["26","26"],["27","27"],["28","28"],["29","29"],["30","30"],
-        		              ["31","31"]]
-        		        }), // end of Ext.data.SimpleStore
-        		        fieldLabel: gettext('Select day'),
-        		        width: 130,
-        		        emptyText: gettext('Select ..'),
-        		        displayField: 'name',
-        		        valueField: 'id',
-        		        mode: 'local',
-        		        editable: false,
-        		        allowBlank:false,
-        		        triggerAction: 'all'
-        			});
-
-        			var check_period = new Ext.form.RadioGroup({
-        				id  : 'id_check_period',
-        				columns: 1,
-        				fieldLabel: 'Choise period',
-        				items:[
-        	                    {boxLabel: 'After Christ', name: 'rb-cristo', inputValue: '+', checked: true},
-        	                    {boxLabel: 'Before Christ', name: 'rb-cristo', inputValue: '-'} 
-        	            ]
-        			});
-
-                	show_win_single_attribute_date_string(year_value, month_value, day_value, check_period, 'Insert Value');
-
-
-
-            	}
-            	if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//FIXME getStore().getCount() not update in realtime
-            		Ext.getCmp('id_add_attributes_class').disable();
-            	}
-        	}
-        },'-',{
+        		logic_to_insert_single_value(type, false, false, false);
+        	
+        		}
+        	},'-',{
             text:'Remove',
             id: 'id_remove_attributes_class',
             tooltip:'Remove the selected item',
@@ -486,6 +614,7 @@ function check_add_class(add_class, insert_value, add_attribute, record_value){
 }
 function add_option(value, attribute_detail_panel, data, insert_value, add_class, add_attribute){
 	//initializing
+	console.log('add_option');
 	attribute_detail_panel.removeAll();
 	var min_number_value = null;
 	var max_number_value = null;
@@ -867,106 +996,8 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
             text: text_button,
             type: 'submit',
             handler: function(){
-        		if (!insert_value){ // class scope
-        			var Attribute = Ext.data.Record.create([{
-	        		    name: 'id'
-	        		},{
-	        		    name: 'name'
-	        		},{
-	        		    name: 'default_value'
-	        		},{
-	        		    name: 'order'
-	        		},{
-	        		    name: 'notes'
-	        		},{
-	        		    name: 'type'
-	        		},{
-	        		    name: 'multivalued'
-	        		},{
-	        		    name: 'maybe_empty'
-	        		},{
-	        		    name: 'min'
-	        		},{
-	        		    name: 'max'
-	        		},{
-	        		    name: 'length'
-	        		},{
-	        		    name: 'choices'
-	        		},{
-	        		    name: 'target_class'
-	        		}]);
-	        		
-        			if (type_combo.getValue() == 'date'){//fit date format
-        				if (Ext.getCmp('id_min').getValue()){min_value = Ext.getCmp('id_min').getValue().format('Y-m-d');}else{min_value = null;}
-    	        		if (Ext.getCmp('id_max').getValue()){max_value = Ext.getCmp('id_max').getValue().format('Y-m-d');}else{max_value = null;}
-            			if (Ext.getCmp('id_default_value').getValue()){default_value = Ext.getCmp('id_default_value').getValue().format('Y-m-d');}else{default_value = null;}
-        			}else{
-        				if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue();}else{min_value = null;}
-    	        		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue();}else{max_value = null;}
-            			if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue();}else{default_value = null;}
-        			}
-	        		if (Ext.getCmp('id_max_length')){max_length = Ext.getCmp('id_max_length').getValue();}else{max_length = null;}
-	        		if (Ext.getCmp('id_choices')){//string list
-	        			choices = Ext.getCmp('id_choices').getValue().split(',');
-	        			if (choices[choices.length-1] == ""){
-	        				delete(choices[choices.length-1]);
-	        				choices.splice(choices.length-1, 1);
-	        			}
-	        		}else{choices = null;}
-	        		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
-	        		if (this.text == gettext('Apply')){
-	        			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
-	        			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
-	        			attributes_grid.getSelectionModel().getSelected().set('order',order_slider.getValue());
-	        			attributes_grid.getSelectionModel().getSelected().set('notes',notes_textField.getValue());
-	        			attributes_grid.getSelectionModel().getSelected().set('type',type_combo.getValue());
-	        			attributes_grid.getSelectionModel().getSelected().set('multivalued',multivalued_chekbox.getValue());
-	        			attributes_grid.getSelectionModel().getSelected().set('maybe_empty',empty_chekbox.getValue());
-	        			attributes_grid.getSelectionModel().getSelected().set('min',min_value);
-	        			attributes_grid.getSelectionModel().getSelected().set('max',max_value);
-	        			attributes_grid.getSelectionModel().getSelected().set('length',max_length);
-	        			attributes_grid.getSelectionModel().getSelected().set('target_class',target_class);
-	        		}else{
-		        		attributes_grid.store.add(new Attribute({
-		        			id			: name_textField.getValue().replace(/ /g, "_"),
-		        			name		: name_textField.getValue(),
-		        			default_value: default_value,
-		        			order		: order_slider.getValue(),
-		        			notes		: notes_textField.getValue(),
-		        			type		: type_combo.getValue(),
-		        			multivalued : multivalued_chekbox.getValue(),
-		        			maybe_empty : empty_chekbox.getValue(),
-		        			min			: min_value,
-		        			max			: max_value,
-		        			length		: max_length,
-		        			choices		: choices,
-		        			target_class: target_class
-		        		}));
-	        		}
-        		}else{ //obj scope
-        			if(attributes_grid.getSelectionModel().getSelected().data.type == 'choice'){//case where choice is multivalued
-        				var txt = "";
-        				for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
-        					txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name + ',';
-        				}
-        				txt = txt.substring(0,txt.length-1);
-        				attributes_grid.getSelectionModel().getSelected().set('value',txt);
-        			}else if(Ext.getCmp('id_multivalued_chekbox').getValue() == true){//case where multivalued true
-        				var txt = new Array();
-        				for(i=0; i < Ext.getCmp('id_record_value').getStore().getCount(); i++){
-        					txt.push(Ext.getCmp('id_record_value').getStore().getAt(i).data.name);
-        				}
-        				attributes_grid.getSelectionModel().getSelected().set('value',txt);
-        			}else if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//objref multivalued false
-        				if (Ext.getCmp('id_record_value').getStore().getCount() == 1){
-        					attributes_grid.getSelectionModel().getSelected().set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);
-        				}else{
-        					attributes_grid.getSelectionModel().getSelected().set('value', null);
-        				}
-    				}
-        		}
-        		win_att_class.close();
-            }
+        		save_and_close_win_att_class(attributes_grid, insert_value);
+        	}
         }]
     });
 	
@@ -981,21 +1012,38 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		title = gettext('Insert value for this attribute');
 		Ext.getCmp('attribute_detail_panel').buttons[0].text=gettext('Done');
 	}
-    
-	var win_att_class = new Ext.Window({
-        id		:'id_win_add_attribute',
-		layout	: 'fit',
-		resizable : false,
-		defaults: {               // defaults are applied to items, not the container
-		    autoScroll:true
-		},
-        width	: 500,
-        height	: 450,
-        title	: title,
-        modal	: true,
-      	items	:[attribute_detail_panel]
-    });
-    win_att_class.show();  
+	console.log(multivalued_chekbox);
+		var win_att_class = new Ext.Window({
+	        id		:'id_win_add_attribute',
+			layout	: 'fit',
+			resizable : false,
+			defaults: {               // defaults are applied to items, not the container
+			    autoScroll:true
+			},
+	        width	: 500,
+	        height	: 450,
+	        title	: title,
+	        modal	: true,
+	      	items	:[attribute_detail_panel]
+	    });
+	if (multivalued_chekbox.checked == false){
+		console.log('OKK Multivalued false');
+		console.log(win_att_class);
+		win_att_class.show();
+		
+		if(Ext.getCmp('id_record_value').getStore().getCount() > 0){ //edit (remove and add)
+			Ext.getCmp('id_record_value').getSelectionModel().selectFirstRow()
+			var sel=Ext.getCmp('id_record_value').getSelectionModel().getSelected();
+			Ext.getCmp('id_record_value').store.remove(sel);
+	    	check_remove_button_add_option();
+	    	check_add_button_add_option();
+		}
+		console.log(Ext.getCmp('attribute_detail_panel').buttons[0]);
+    	logic_to_insert_single_value(attributes_grid.getSelectionModel().getSelected().data.type, true, attributes_grid, win_att_class);
+		
+	}else{
+	    win_att_class.show();
+	}
 }
 
 function moveSelectedRow(grid, direction) {
