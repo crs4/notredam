@@ -1311,7 +1311,7 @@ contextMenuShow = function(node_menu,e){
     // set up the Album tree
     
 
-    var tree_keywords =create_tree(gettext('Keywords'), 'keywords_tree');
+    var tree_keywords =create_tree(gettext('Catalogue Tree'), 'keywords_tree');
 
     
         var root_keywords = new Ext.tree.AsyncTreeNode({
