@@ -1844,7 +1844,6 @@ var search_box = {
     	        				catalog_nodes = JSON.parse(response.responseText);
     	        				// impossible to use API (/api/workspace/{id}/get_items/) because error : {"error class": "MissingAPIKey", "error message": "missing api key", "error code": 400}
     	        			    var baseParams = {complex_query:{nodes:[], condition:'or'}};
-    	        			    console.log(catalog_nodes.length);
     	        			    if (catalog_nodes.length > 0){
     	        			        for (i=0;i<catalog_nodes.length;i++){
     	        			            baseParams.complex_query.nodes.push({id:catalog_nodes[i], negated: false});
@@ -1852,7 +1851,6 @@ var search_box = {
 	        			            var media_tab = Ext.getCmp('media_tabs').getActiveTab();
 	        			            media_tab.getSearch().setValue('');
     	        			        baseParams.complex_query = Ext.encode(baseParams.complex_query);
-    	        			        console.log(baseParams);
     	        			        set_query_on_store(baseParams);
     	        			    }
     	                    },

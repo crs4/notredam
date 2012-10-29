@@ -596,7 +596,6 @@ var treeAction = function(tree_action){
             waitMsg: gettext('Saving...'),
             success: function(form, action) {
                 if(!sel_node.length) {
-            		console.log(tree_loader);
             		if((tree_action.text == gettext('Add')) || (tree_action.text == gettext('Object'))){
         				tree_loader.clearOnLoad = false;
 	                    tree_loader.baseParams = {last_added: true, child: Ext.getCmp('node_label_obj').getValue()};
@@ -768,8 +767,6 @@ var treeAction = function(tree_action){
         }
    //console.log('----------------tree_action.text ' + tree_action.text); 
     if (tree_action.text == gettext("Delete")){
-        console.log("Delete");
-        console.log(sel_node);
     	var _delete_node = function(btn){
             if(btn == 'yes'){
                 Ext.Ajax.request({
@@ -799,7 +796,6 @@ var treeAction = function(tree_action){
             		url:'/get_representative_url/',
             		params:{representative_item:item[0]},
             	success: function(response){
-            			console.log(response);
             			sel_node.attributes.representative_item = response.responseText;
             			Ext.MessageBox.alert(gettext('Success'), gettext('Item associated.'));
             	}
@@ -833,12 +829,6 @@ var treeAction = function(tree_action){
     else if (tree_action.text == gettext("Object") || 
     		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-category') ||
     		(tree_action.text == gettext("Edit") && sel_node.attributes.iconCls == 'object-keyword')){
-    	console.log('selNode: ');
-    	console.log(sel_node);
-    	console.log('selNode.attributes.text');
-    	console.log(sel_node.attributes.text);
-    	console.log('tree_action.text');
-    	console.log(tree_action.text);
     	var fields = [];
     	var node_id, type;
         var height_form= 95;
@@ -963,12 +953,7 @@ var treeAction = function(tree_action){
             listeners:{
                 afterrender: function() {
                     var node_l = Ext.getCmp('node_label_obj');
-                    console.log('node_l');
-                    console.log(node_l);
-                 	console.log('0');
                 	Ext.getCmp('obj_reference_tree').getSelectionModel().select(Ext.getCmp('obj_reference_tree').getRootNode());
-                	console.log('1');
-
                     if(node_l) {
                         node_l.focus(false, 100);
                     }
@@ -978,8 +963,6 @@ var treeAction = function(tree_action){
     win.show();
     }
     else{    	
-    	console.log('tree_action.text: '+tree_action.text);
-    	console.log(sel_node.attributes);
         var fields = []; 
         if  (tree_action.text == gettext("Add") || tree_action.text == gettext("Category") || tree_action.text == gettext("Keyword") ||  tree_action.text == gettext("Edit")){
 	        

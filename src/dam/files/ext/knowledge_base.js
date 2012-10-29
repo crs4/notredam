@@ -100,10 +100,6 @@ function get_AsyncTreeNode(){
 
 function save_and_close_win_att_class(attributes_grid, insert_value, win_att_class){
 	
-	console.log('save and close win att class');
-	console.log(Ext.getCmp('attribute_grid_id'));
-	console.log(attributes_grid);
-	
 	if (!insert_value){ // class scope
 		var Attribute = Ext.data.Record.create([{
 		    name: 'id'
@@ -202,8 +198,6 @@ function save_and_close_win_att_class(attributes_grid, insert_value, win_att_cla
 			}
 		}
 	}
-	console.log(' Riga 205: win_att_class');
-	console.log(win_att_class);
 	win_att_class.close();
 }
 
@@ -541,7 +535,6 @@ function logic_to_insert_single_value(type, close_window, attributes_grid, win_a
 }
 
 function get_grid_insert_value(value, type, title){
-	console.log('get_grid_insert_value');
 	var store_grid = get_store_grid_insert(value);
 	var sm = new Ext.grid.CheckboxSelectionModel({
 		singleSelect: true,
@@ -616,7 +609,6 @@ function check_add_class(add_class, insert_value, add_attribute, record_value){
 }
 function add_option(value, attribute_detail_panel, data, insert_value, add_class, add_attribute){
 	//initializing
-	console.log('add_option');
 	attribute_detail_panel.removeAll();
 	var min_number_value = null;
 	var max_number_value = null;
@@ -1014,7 +1006,6 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		title = gettext('Insert value for this attribute');
 		Ext.getCmp('attribute_detail_panel').buttons[0].text=gettext('Done');
 	}
-	console.log(multivalued_chekbox);
 		var win_att_class = new Ext.Window({
 	        id		:'id_win_add_attribute',
 			layout	: 'fit',
@@ -1030,9 +1021,6 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 	    });
 		
 	if (multivalued_chekbox.checked == false && edit){
-		console.log('OKK Multivalued false');
-		console.log(win_att_class);
-		console.log(edit);
 		win_att_class.show();
 		
 		if(Ext.getCmp('id_record_value').getStore().getCount() > 0){ //edit (remove and add)
@@ -1042,7 +1030,6 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 	    	check_remove_button_add_option();
 	    	check_add_button_add_option();
 		}
-		console.log(Ext.getCmp('attribute_detail_panel').buttons[0]);
     	logic_to_insert_single_value(attributes_grid.getSelectionModel().getSelected().data.type, true, attributes_grid, win_att_class);
 		
 	}else{
