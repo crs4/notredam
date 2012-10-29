@@ -1847,7 +1847,7 @@ var search_box = {
     	        			    console.log(catalog_nodes.length);
     	        			    if (catalog_nodes.length > 0){
     	        			        for (i=0;i<catalog_nodes.length;i++){
-    	        			            baseParams.complex_query.nodes.push({id:catalog_nodes[i], negated: 'negated'});
+    	        			            baseParams.complex_query.nodes.push({id:catalog_nodes[i], negated: false});
     	        			        }
 	        			            var media_tab = Ext.getCmp('media_tabs').getActiveTab();
 	        			            media_tab.getSearch().setValue('');
