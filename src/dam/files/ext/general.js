@@ -535,6 +535,9 @@ function get_final_node_path(node){
 	var root = node.getOwnerTree().getRootNode();
     var path = node.getPath('text') + '/';
     var title = node.getOwnerTree().title;
+    if (node.getOwnerTree().title == 'Catalogue Tree'){//FIXME 
+    	title = 'Keywords';
+    }
 //    path = path.replace('/' + root.text, node.attributes.type + ':');
     path = path.replace('/' + root.text, title + ':');
     return path;
