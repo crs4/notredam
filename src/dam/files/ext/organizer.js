@@ -1844,7 +1844,7 @@ var search_box = {
     	        				catalog_nodes = JSON.parse(response.responseText);
     	        				// impossible to use API (/api/workspace/{id}/get_items/) because error : {"error class": "MissingAPIKey", "error message": "missing api key", "error code": 400}
     	        			    var baseParams = {complex_query:{nodes:[], condition:'or'}};
-    	        			    if (catalog_nodes.length > 0){
+    	        			    if (catalog_nodes.length >= 0){
     	        			        for (i=0;i<catalog_nodes.length;i++){
     	        			            baseParams.complex_query.nodes.push({id:catalog_nodes[i], negated: false});
     	        			        }
