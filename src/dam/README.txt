@@ -3,13 +3,12 @@ Trunk Version
 INSTALLATION AND UPGRADE
 ========================
 
-Please note: since 2012-10-01, NotreDAM requires alembic 0.3.6
-(http://pypi.python.org/pypi/alembic).
-
+Please note: since 2012-10-22, NotreDAM requires:
+ - alembic 0.4 (http://pypi.python.org/pypi/alembic);
+ - SQLAlchemy-0.7.9 (http://www.sqlalchemy.org).
+ 
 
 Version 1.0.9
-
-
 ========================
 INSTALLATION AND UPGRADE
 ========================
