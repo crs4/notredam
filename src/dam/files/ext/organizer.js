@@ -15,6 +15,16 @@
 *    GNU General Public License for more details.
 *
 */
+
+var ws_pref_store = new Ext.data.JsonStore({
+             url: '/get_ws_settings/',
+             id: 'ws_prefereneces',
+             autoLoad: true,
+             root: 'prefs',
+             fields:['id', 'name', 'caption','name_component','type','value','choices']
+        });
+ws_pref_store.load();
+
 var task;
 function set_status_bar_busy(){
 	var sb = Ext.getCmp('dam_statusbar');
@@ -672,7 +682,6 @@ var createStore = function(config) {
 };
 
 var createView = function(config) {
-	
 	var tpl = createTemplate(config.panel_id, config.media_type);
            
     return new Ext.DataView(Ext.apply({
@@ -832,7 +841,8 @@ function createMediaPanel(config, autoLoad) {
 	
 	var store = createStore({	        
         url: '/load_items/',
-        autoLoad: autoLoad,
+        //autoLoad: autoLoad,
+        autoLoad: false,
         panel_id: panel_id,
         listeners:{
         	load: function(){
@@ -842,18 +852,17 @@ function createMediaPanel(config, autoLoad) {
         			failed: 0
         		};
         		update_task_status(data);
-        		
+   		
         	}
         }
         
 	});
 	
 	store.on('beforeload', function(store, options){
-				var media_type = Ext.getCmp(this.panel_id).getMediaTypes();						
-				options.params.media_type = media_type;				
-			}
-			
-		)
+                    var media_type = Ext.getCmp(this.panel_id).getMediaTypes();
+                    options.params.media_type = media_type;				
+
+         });
 	var view = createView({
 	    store: store,	   
 	    panel_id: panel_id,
@@ -872,7 +881,7 @@ function createMediaPanel(config, autoLoad) {
     	Ext.form.TextField.superclass.setValue.call(this, value);
     	
     	if (value == '')
-    		setTabTitle(gettext('All Items'), panel_id);
+    		setTabTitle(gettext('4 All Items'), panel_id);
     	else
     		setTabTitle(value, panel_id);    	
     }
@@ -911,6 +920,40 @@ function createMediaPanel(config, autoLoad) {
 	    	}
 	    }
 	});
+
+        // added to have a selection of item, according to user's preferences on a workspace
+        // from here
+	var exhibition = new Ext.BoxComponent({
+	    autoEl: {
+			tag:'a',
+			href: 'javascript:void(0)',
+			children: [{
+					tag: 'img',
+			        src: "/files/images/lev1_arrow.gif",
+			        cls: "trigger"
+			}]
+		},
+		
+	    listeners:{
+	    	afterrender:function(){
+	    		this.getEl().on('click', function(){
+                                //pref_ws_store is defined in general.js and set in preferences.js   
+	    			if (ws_pref_store.find('name', 'exhibition') > -1) {
+	    			    exhibition_keyword = ws_pref_store.query('name', 'exhibition').items[0].data.value;
+                                    if (exhibition_keyword != '') {
+                                        setTabTitle(exhibition_keyword, panel_id);
+	                                do_search(exhibition_keyword);
+                                    }
+                                }
+	    			
+	    		});
+	    	
+	    	}
+	    }
+	});
+        // to here
+
+
 	
 	function capitalize(str){
 		try{
@@ -946,7 +989,6 @@ function createMediaPanel(config, autoLoad) {
 					}
 					if (current_tab.getComponent(0).getStore().lastOptions)
 						current_tab.getComponent(0).getStore().reload();
-					
 					current_tab.getComponent(0).tpl = createTemplate(current_tab.id, current_tab.getMediaTypes());
 					
 					
@@ -1058,7 +1100,7 @@ function createMediaPanel(config, autoLoad) {
   	});
 	
 	
-	var p = new Ext.Panel(Ext.apply({
+	var p = new Ext.Panel(Ext.apply({ 
 		id: panel_id,
 		ctCls: 'empty',		
 		media_type_query:'input.' + panel_id + '_filter',  
@@ -1157,6 +1199,7 @@ function createMediaPanel(config, autoLoad) {
 		      ' ',		     
 		      search, 
 		      trigger,
+		      exhibition,
 //		      ' ',		      
 		      show_all,
             
