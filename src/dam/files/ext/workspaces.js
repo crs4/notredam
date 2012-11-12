@@ -17,16 +17,16 @@
 */
 
 var ws_store = new Ext.data.JsonStore({
-            url: '/get_workspaces/',
-            id:'store_workspaces',
+    url: '/get_workspaces/',
+    id:'store_workspaces',
 //            autoLoad: true,
 //            totalProperty: 'totalCount',
-            root: 'workspaces',
-            idProperty: 'pk',
-            fields:[{name:'pk', type:'int'}, 'name', 'description', 'root_id',  'inbox_root_id', 'media_type']
-        });
+    root: 'workspaces',
+    idProperty: 'pk',
+    fields:[{name:'pk', type:'int'}, 'name', 'description', 'root_id',  'inbox_root_id', 'media_type']
+});
 
-        
+
 var ws_state_store = new Ext.data.JsonStore({
         url: '/get_states/',
         id:'ws_state_store',

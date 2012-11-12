@@ -929,8 +929,9 @@ function createMediaPanel(config, autoLoad) {
 			href: 'javascript:void(0)',
 			children: [{
 					tag: 'img',
-			        src: "/files/images/lev1_arrow.gif",
-			        cls: "trigger"
+			        src: "/files/images/blue_home.png",
+			        cls: "trigger",
+                                tooltip: 'Homepage'
 			}]
 		},
 		
@@ -943,6 +944,9 @@ function createMediaPanel(config, autoLoad) {
                                     if (exhibition_keyword != '') {
                                         setTabTitle(exhibition_keyword, panel_id);
 	                                do_search(exhibition_keyword);
+                                    } else {
+                                        setTabTitle('All Items', panel_id);
+	                                do_search('');
                                     }
                                 }
 	    			

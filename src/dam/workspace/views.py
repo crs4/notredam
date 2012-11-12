@@ -720,7 +720,6 @@ def load_items(request, view_type=None, unlimited=False):
                 
             items_info.append(tmp)
         
-        
 #        for item in items:
 #            thumb_url,thumb_ready = _get_thumb_url(item, workspace)
 #            logger.debug('thumb_url,thumb_ready %s, %s'%(thumb_url,thumb_ready))
@@ -767,6 +766,7 @@ def load_items(request, view_type=None, unlimited=False):
 #                
 #            item_dict.append(item_info)
         
+        logger.info('items_info: %s' % items_info) 
         res_dict = {"items": items_info, "totalCount": str(total_count)}       
         resp = simplejson.dumps(res_dict)
 
@@ -888,6 +888,7 @@ def upload_status(request):
                 logger.debug('process target not found for item %s'%item_id)
                 continue
 
+        logger.info('resp: %s' % resp) 
 
        
         resp = simplejson.dumps(resp)
@@ -996,7 +997,7 @@ def get_status(request):
                 continue
 
 
-       
+        logger.info('resp: %s' % resp)       
         resp = simplejson.dumps(resp)
         return HttpResponse(resp)
     except Exception,ex:

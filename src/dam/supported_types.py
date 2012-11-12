@@ -9,6 +9,7 @@ logger = logging.getLogger('dam')
 
 supported_types  = {
    'audio/flac': ['.flac'],
+   'audio/app': ['.exe'],
    'audio/midi': ['.mid', '.midi', '.midi', '.kar', '.mid'],
    'audio/mpeg': ['.mp3', '.mpega', '.mp2', '.mpga', '.vob'],       # no aac here
    'audio/ogg': ['.oga', '.ogg', '.spx'],

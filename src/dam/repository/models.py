@@ -569,7 +569,7 @@ class Item(AbstractItem):
     
         return caption
         
-    def get_info(self, workspace,  caption = None, default_language = None, check_deleted = False, fullscreen_caption = None):        
+    def get_info(self, workspace,  caption = None, default_language = None, check_deleted = False, fullscreen_caption = None):
         from dam.geo_features.models import GeoInfo
         if caption and default_language: 
             caption = self._get_caption(caption, default_language)
