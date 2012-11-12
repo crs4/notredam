@@ -863,7 +863,6 @@ store_tabs = new Ext.data.JsonStore({
 
 function do_search(v){
 	if(v.length < 1){
-        
         clear_other_selections();
         
         set_query_on_store({});
@@ -878,13 +877,25 @@ function do_search(v){
 };
 
 function create_tabs(ws_id, media_type){
-	
+	var tab_name = 'All Items';
+        var my_query = '';
 	if (!media_type)
 		var media_type = ['image', 'audio', 'video', 'doc'];
+  
+	if (ws_pref_store.find('name', 'exhibition') > -1) {
+                       exhibition_keyword = ws_pref_store.query('name', 'exhibition').items[0].data.value;
+                                    if (exhibition_keyword != '') {
+                                        tab_name = exhibition_keyword;
+                                        my_query = exhibition_keyword;
+                                    }
+          }
+
+
 	
-	return {name: 'All Items', 
+	return {name: tab_name, 
    		workspace: ws_id, 
    		active: true, 
+                query: my_query,
    		loaded: false, 
    		new_tab: false, 
    		media_type: media_type
