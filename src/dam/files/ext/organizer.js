@@ -881,7 +881,7 @@ function createMediaPanel(config, autoLoad) {
     	Ext.form.TextField.superclass.setValue.call(this, value);
     	
     	if (value == '')
-    		setTabTitle(gettext('4 All Items'), panel_id);
+    		setTabTitle(gettext('All Items'), panel_id);
     	else
     		setTabTitle(value, panel_id);    	
     }
@@ -930,8 +930,7 @@ function createMediaPanel(config, autoLoad) {
 			children: [{
 					tag: 'img',
 			        src: "/files/images/blue_home.png",
-			        cls: "trigger",
-                                tooltip: 'Homepage'
+			        cls: "trigger"
 			}]
 		},
 		
@@ -943,6 +942,7 @@ function createMediaPanel(config, autoLoad) {
 	    			    exhibition_keyword = ws_pref_store.query('name', 'exhibition').items[0].data.value;
                                     if (exhibition_keyword != '') {
                                         setTabTitle(exhibition_keyword, panel_id);
+   			                Ext.getCmp('media_tabs').getActiveTab().getSearch().setValue('');
 	                                do_search(exhibition_keyword);
                                     } else {
                                         setTabTitle('All Items', panel_id);
