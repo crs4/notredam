@@ -884,10 +884,10 @@ function create_tabs(ws_id, media_type){
   
 	if (ws_pref_store.find('name', 'exhibition') > -1) {
                        exhibition_keyword = ws_pref_store.query('name', 'exhibition').items[0].data.value;
-                                    if (exhibition_keyword != '') {
+                                    if ((exhibition_keyword != '') && (exhibition_keyword != "''")) {
                                         tab_name = exhibition_keyword;
                                         my_query = exhibition_keyword;
-                                    }
+                                    } 
           }
 
 
