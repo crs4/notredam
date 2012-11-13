@@ -940,7 +940,7 @@ function createMediaPanel(config, autoLoad) {
                                 //pref_ws_store is defined in general.js and set in preferences.js   
 	    			if (ws_pref_store.find('name', 'exhibition') > -1) {
 	    			    exhibition_keyword = ws_pref_store.query('name', 'exhibition').items[0].data.value;
-                                    if (exhibition_keyword != '') {
+                                    if ((exhibition_keyword != '') && (exhibition_keyword != "''")) {
                                         setTabTitle(exhibition_keyword, panel_id);
    			                Ext.getCmp('media_tabs').getActiveTab().getSearch().setValue('');
 	                                do_search(exhibition_keyword);
