@@ -1262,7 +1262,7 @@ def _setup_kb_root_class_visibility(request, ses, cls, cls_dict, curr_ws):
     if curr_ws not in owner_ws_list:
         return HttpResponseBadRequest(('Root class representation does not'
                                        + ' report the current workspace (%d)'
-                                       + ' as owner') % (ws_id, ))
+                                       + ' as owner') % (curr_ws, ))
         
     # Finally, remove the workspace visibilities which were not
     # mentioned in the class dictionary
