@@ -302,7 +302,7 @@ def _init_base_classes(o):
                      explicit_id=None):
             suffix = '_' + niceid.generate(length=RAND_SUFFIX_LENGTH)
             if explicit_id is None:
-                clean_id = niceid.niceid(name, extra_chars=RAND_SUFFIX_LENGTH)
+                clean_id = niceid.niceid(name, extra_chars=0)
                 # FIXME: check uniqueness!
                 self.id = '%s%s' % (clean_id, suffix)
             else:
