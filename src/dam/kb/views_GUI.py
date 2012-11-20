@@ -127,6 +127,8 @@ def get_nodes_real_obj(request):
    }]
     '''
     parent = request.POST.get('node',  'root')
+    print "\n\n\n\n"
+    print parent
     if parent == 'root_obj_tree':
         result = _get_root_tree(request,request.session['workspace'].pk)
     else:
