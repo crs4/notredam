@@ -1832,12 +1832,11 @@ function open_knowledgeBase(){
             text: 'Close',
             handler: function() {
         		win_knowledge_base.close();
-        		load_vocabulary_tree_on_catalogue()
         	},
         listeners:{
         	beforedestroy:function(){
-        		load_vocabulary_tree_on_catalogue()
         		Ext.getCmp('contextMenuVocabulary').destroy();
+        		load_vocabulary_tree_on_catalogue()
         	}
         }
         }]
