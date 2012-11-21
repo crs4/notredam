@@ -1718,7 +1718,7 @@ function init_contextMenuVocabulary(){
 		text: gettext('Reload node'),
 		listeners:{
 			click: function(item){
-				Ext.getCmp('obj_reference_tree').getLoader().load(Ext.getCmp('obj_reference_tree').getNodeById(item.parentMenu.contextNode.attributes.id))
+				Ext.getCmp('obj_reference_tree').getLoader().load(Ext.getCmp('obj_reference_tree').getNodeById(item.parentMenu.contextNode.attributes.id));
 			}
 		}
 	});
