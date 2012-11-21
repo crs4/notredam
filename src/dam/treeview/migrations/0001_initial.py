@@ -3,6 +3,7 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
+import settings
 
 class Migration(SchemaMigration):
 
@@ -21,7 +22,9 @@ class Migration(SchemaMigration):
         db.send_create_signal('treeview', ['Category'])
 
         # Adding model 'Node'
-        db.create_table('node', (
+        using_mysql = (settings.DATABASES['default']['ENGINE']
+                       == 'django.db.backends.mysql')
+        node_fields = [
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('label', self.gf('django.db.models.fields.CharField')(max_length=200)),
             ('parent', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='children', null=True, to=orm['treeview.Node'])),
@@ -35,9 +38,26 @@ class Migration(SchemaMigration):
             ('is_drop_target', self.gf('django.db.models.fields.BooleanField')(default=True)),
             ('editable', self.gf('django.db.models.fields.BooleanField')(default=True)),
             ('workspace', self.gf('django.db.models.fields.related.ForeignKey')(related_name='tree_nodes', to=orm['workspace.DAMWorkspace'])),
-            ('associate_ancestors', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('kb_object', self.gf('django.db.models.fields.related.ForeignKey')(default=None, related_name='catalog_nodes', null=True, blank=True, to=orm['kb.Object'])),
-        ))
+            ('associate_ancestors', self.gf('django.db.models.fields.BooleanField')(default=False))
+            ]
+
+        # FIXME: ugly kludge for dealing with MySQL quirks
+        # We need to force the node.kb_object_id field to use ASCII encoding,
+        # in order to be useable as a reference to kb_object.id with InnoDB.
+        # However, there appears to be no way to do it using the
+        # Django model API.  Thus, we check whether MySQL is in use
+        # --- and if it is the case, we will take care of the
+        # node.kb_object_id field, emitting some custom SQL after the 'node'
+        # table is created.
+        if not using_mysql:
+            node_fields.append(('kb_object', self.gf('django.db.models.fields.related.ForeignKey')(default=None, related_name='catalog_nodes', null=True, blank=True, to=orm['kb.Object'])))
+        db.create_table('node', node_fields)
+        if using_mysql:
+            db.execute('ALTER TABLE node ADD COLUMN kb_object_id VARCHAR(128) '
+                       'CHARACTER SET ascii DEFAULT NULL')
+            db.execute('ALTER TABLE node '
+                       'ADD CONSTRAINT kb_object_id_refs_id_ff54beb '
+                       'FOREIGN KEY (kb_object_id) REFERENCES kb_object(id)')
         db.send_create_signal('treeview', ['Node'])
 
         # Adding M2M table for field items on 'Node'
