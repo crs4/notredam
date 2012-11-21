@@ -81,16 +81,32 @@ def _get_child_cls_obj(request,ws_id, parent):
     
     try:
         with views_kb._kb_session() as ses:
+            
             ws = ses.workspace(ws_id)
             cls_dicts = [views_kb._kbclass_to_dict(o, ses) for o in ses.classes(ws=ws, parent=parent, recurse=False)]
             cls = ses.class_(parent, ws=ws)
             logger.info("cls_dicts")
             logger.info(cls_dicts)
-            objs = ses.objects(class_=cls.python_class, ws=ws, recurse=False)
+            logger.info("PARENTTTT")
+            logger.info(parent)
+
+            #objs = ses.objects(class_=cls.python_class, ws=ws, recurse=False)
+            objs = ses.objects(class_=cls.python_class)
+            
+            logger.info("objs")
+            logger.info(objs)
             obj_dicts = [views_kb._kbobject_to_dict(o, ses) for o in objs]
+            
+            #--- FIXME:some problem with objs = ses.objects(class_=cls.python_class, ws=ws, recurse=False) --
             logger.info("obj_dicts")
             logger.info(obj_dicts)
-                
+            objs_bis = []
+            for o in obj_dicts:
+                print str(o['class_id']) 
+                print str(parent)
+                if (str(o['class_id']) == str(parent)):
+                    objs_bis.append(o)
+            #---
         for c in cls_dicts:
             if len(c['subclasses'])>0:
                 tmp = _put_right_value_leaf(c, False)
@@ -98,7 +114,7 @@ def _get_child_cls_obj(request,ws_id, parent):
                 tmp = _put_right_value_leaf(c, False)
             result.append(tmp)
             
-        for o in obj_dicts:
+        for o in objs_bis:
             tmp = {'text' : o['name'],  
                    'id': o['id'], 
                    'leaf': True,
