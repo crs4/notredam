@@ -47,7 +47,9 @@ import re
 DATE_LIKE_RE = re.compile(
     '^(?P<s>[\+-]?)(?P<y>\d{1,9})-(?P<m>\d{2})-(?P<d>\d{2})$')
 
-
+# List of reserved attribute IDs.
+# FIXME: reserved IDs depend on KBObject def. and SQLAlchemy properties
+RESERVED_IDS = ['id', 'class', 'class_root', 'name', 'notes']
 
 class Attributes(types.ModuleType):
     def __init__(self, classes):
@@ -74,8 +76,24 @@ class Attributes(types.ModuleType):
         _init_base_attributes(self)
 
         self.__all__ = ['Attribute', 'Boolean', 'Integer', 'Real', 'Choice',
-                        'String', 'Date', 'Uri', 'ObjectReference']
+                        'String', 'Date', 'Uri', 'ObjectReference',
+                        'is_valid_id']
 
+    def is_valid_id(_self, id_):
+        '''
+        Check whether the given ID can be used for a KB class attribute.
+        
+        :type  id_: string
+        :param id_: identifier to be checked
+        
+        :rtype: bool
+        :returns: True if the id is valid, False otherwise
+        '''
+        safe_id = niceid(id_, 0)
+        
+        return ((id_ == safe_id) and (id_[0] != '_')
+                and (id_ not in RESERVED_IDS))
+    
     classes = property(lambda self: self._classes_ref())
     '''
     The knowledge base classes with which the attributes are bound
@@ -140,6 +158,9 @@ def _init_base_attributes(o):
                 self.id = id_
             else:
                 self.id = niceid(name, 0) # FIXME: should we add random chars?
+
+            assert(o.is_valid_id(self.id))
+
             self.name = name
             self.maybe_empty = maybe_empty
             self.multivalued = multivalued
