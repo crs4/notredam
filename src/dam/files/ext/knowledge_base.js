@@ -1713,12 +1713,22 @@ function init_contextMenuVocabulary(){
 			}
 		}
 	});
+	var reload_node = new Ext.menu.Item({
+		id: 'id_reload_tree_cls_obj', 
+		text: gettext('Reload node'),
+		listeners:{
+			click: function(item){
+				Ext.getCmp('obj_reference_tree').getLoader().load(Ext.getCmp('obj_reference_tree').getNodeById(item.parentMenu.contextNode.attributes.id))
+			}
+		}
+	});
 	var contextMenuVocabulary = new Ext.menu.Menu({
 		id:'contextMenuVocabulary',
 		autoDestroy : true,
 		items:[
 		    add_node,
-		    delete_node
+		    delete_node,
+		    reload_node
 		]
 	});
 	return contextMenuVocabulary
@@ -1765,6 +1775,8 @@ function open_knowledgeBase(){
 					if (Ext.getCmp('obj_reference_tree').getSelectionModel().isSelected() == true || (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0)){
 						c.find('text',gettext('Add'))[0].disable();
 						c.find('text',gettext('Delete'))[0].disable();
+						c.find('text',gettext('Reload node'))[0].disable();
+						
 					}else{
 						if (node.attributes.leaf == true){
 							c.find('text',gettext('Add'))[0].disable();
@@ -1772,6 +1784,7 @@ function open_knowledgeBase(){
 							c.find('text',gettext('Add'))[0].enable();
 						}
 						c.find('text',gettext('Delete'))[0].enable();
+						c.find('text',gettext('Reload node'))[0].enable();
 					}
 		            c.contextNode = node;
 		            c.showAt(e.getXY());

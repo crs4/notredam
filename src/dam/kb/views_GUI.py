@@ -78,15 +78,18 @@ def _get_child_cls_obj(request,ws_id, parent):
     logger.debug("_get_child_cls_obj")
     result = []
     spr = []
+    
     try:
         with views_kb._kb_session() as ses:
             ws = ses.workspace(ws_id)
             cls_dicts = [views_kb._kbclass_to_dict(o, ses) for o in ses.classes(ws=ws, parent=parent, recurse=False)]
             cls = ses.class_(parent, ws=ws)
+            logger.info("cls_dicts")
+            logger.info(cls_dicts)
             objs = ses.objects(class_=cls.python_class, ws=ws, recurse=False)
             obj_dicts = [views_kb._kbobject_to_dict(o, ses) for o in objs]
-            logger.debug("obj_dicts")
-            logger.debug(obj_dicts)
+            logger.info("obj_dicts")
+            logger.info(obj_dicts)
                 
         for c in cls_dicts:
             if len(c['subclasses'])>0:
@@ -127,8 +130,6 @@ def get_nodes_real_obj(request):
    }]
     '''
     parent = request.POST.get('node',  'root')
-    print "\n\n\n\n"
-    print parent
     if parent == 'root_obj_tree':
         result = _get_root_tree(request,request.session['workspace'].pk)
     else:
