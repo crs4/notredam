@@ -676,7 +676,8 @@ Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
 					tbar: [{
 						id:'rendition_select',
 						xtype: 'select',
-						values: this.values					
+						values: this.values,
+						allowBlank: false					
 					}],
 					bbar: new Ext.PagingToolbar({
 				        store: store,       // grid and PagingToolbar using same store
@@ -702,11 +703,11 @@ Ext.extend(Ext.ux.WatermarkBrowseButton, Ext.Button, {
 				    	text: 'Select',
 				    	handler: function(){
 				    		var selected = Ext.getCmp('wm_dataview').getSelectedRecords();
-				    		if (selected.length > 0 && Ext.getCmp('wm_id').isValid()){
+				    		if (selected.length > 0 && Ext.getCmp('rendition_select').isValid()){
 				    			var rendition = Ext.getCmp('rendition_select').getValue();
 				    			
 							Ext.Ajax.request({
-							    url: String.format('/get_watermarks/{0}/{1}', selected[0].data._id, rendition),
+							    url: String.format('/get_resource_uri/{0}/{1}', selected[0].data._id, rendition),
                                                             success: function(response){
 							        Ext.getCmp('wm_id').setValue(response.responseText);
 								wm_win.close();	
