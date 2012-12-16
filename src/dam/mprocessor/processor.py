@@ -34,58 +34,57 @@ import os
 import datetime
 import re
 from twisted.internet import reactor, defer
-from mediadart.utils import default_start_mqueue
-
 
 from django.db.models import Q
 from json import loads
-from mediadart.mqueue.mqserver import MQServer
 from config import Configurator
 from . import log
 from dam.mprocessor.models import Process, ProcessTarget
 from dam.mprocessor.pipeline import DAG
 from dam.mprocessor.schedule import Schedule
 
+from celery.task import task as celery_task
+
 class BatchError(Exception):
     pass
 
-#
-# This class can be only a singleton (option only_one_server=True) to ensure that
-# only one process is active in mediadart at the same time.
-#
-class MProcessor(MQServer):
-    def wake_process(self, restarting):
-        running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
-        log.info("Running processes: %d" % len(running_processes))
-        if running_processes:
-            if restarting:
-                log.info("Restarting process %s" % (running_processes[0].pk))
-                return running_processes[0]    # rerun a running process, some actions
+def wake_process(restarting):
+    running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
+    log.info("Running processes: %d" % len(running_processes))
+    if running_processes:
+        if restarting:
+            log.info("Restarting process %s" % (running_processes[0].pk))
+            return running_processes[0]    # rerun a running process, some actions
                                                # will be repeated
-            else:
-                log.info("Process %s already running, doing nothing" % (running_processes[0].pk))
-                return None                    # a process is already running, do nothing
         else:
-            waiting_processes = Process.objects.filter(start_date=None)
-            log.info("Number of waiting processes: %d" % len(waiting_processes))
-            if waiting_processes:
-                log.info("running the waiting process %s" % (waiting_processes[0].pk))
-                return waiting_processes[0]
-            else:
-                log.info("No waiting process: doing nothing")
-                return None
+            log.info("Process %s already running, doing nothing" % (running_processes[0].pk))
+            return None                    # a process is already running, do nothing
+    else:
+        waiting_processes = Process.objects.filter(start_date=None)
+        log.info("Number of waiting processes: %d" % len(waiting_processes))
+        if waiting_processes:
+            log.info("running the waiting process %s" % (waiting_processes[0].pk))
+            return waiting_processes[0]
+        else:
+            log.info("No waiting process: doing nothing")
+            return None
 
-    def mq_run(self, process_id="", restarting=False):
-        """Run a waiting process.
+@celery_task
+def run(process_id="", restarting=False):
+    """Run a waiting process.
         
-           This method tries to run a waiting process and schedules itself to run again
-           when the process ends so that the queue of waiting processes can be emptied
-           """
-        process = self.wake_process(restarting)
-        if process:
-            d = Batch(process).run()
-            d.addCallback(self.mq_run)
-        return 'ok'
+    This task tries to run a waiting process and schedules itself to
+    run again when the process ends so that the queue of waiting
+    processes can be emptied
+    """
+    _lowlevel_run(process_id=process_id, restarting=restarting)
+
+def _lowlevel_run(process_id="", restarting=False):
+    process = wake_process(restarting)
+    if process:
+        d = Batch(process).run()
+        d.addCallback(_lowlevel_run)
+    return 'ok'
 
 class Batch:
     def __init__(self, process):
@@ -277,10 +276,6 @@ class Batch:
             #log.debug('_handle_err: rescheduling') #d
             reactor.callLater(0, self._iterate)
         item.save()
-
-
-def start_server():
-    default_start_mqueue(MProcessor, [])
 
 ##############################################################################################
 # 
