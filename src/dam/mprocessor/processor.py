@@ -40,7 +40,7 @@ from mediadart.utils import default_start_mqueue
 from django.db.models import Q
 from json import loads
 from mediadart.mqueue.mqserver import MQServer
-from mediadart.config import Configurator
+from config import Configurator
 from mediadart import log
 from dam.mprocessor.models import Process, ProcessTarget
 from dam.mprocessor.pipeline import DAG
