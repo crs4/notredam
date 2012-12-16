@@ -25,7 +25,6 @@ from dam.variants.models import Variant
 from dam.repository.models import Item, Component
 from django.contrib.contenttypes.models import ContentType
 from twisted.internet import defer, reactor
-#from mediadart import log
 
 import logging
 log = logging.getLogger('dam')

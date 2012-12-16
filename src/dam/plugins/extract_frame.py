@@ -22,7 +22,7 @@ from dam.core.dam_repository.models import Type
 from dam.plugins.common.utils import resize_image
 from dam.plugins.extract_frame_idl import inspect
 from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 def run(workspace, 
         item_id, 

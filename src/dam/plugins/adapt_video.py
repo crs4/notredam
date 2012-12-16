@@ -23,7 +23,7 @@ from dam.plugins.common.adapter import Adapter
 from dam.plugins.common.utils import resize_image
 from dam.plugins.adapt_video_idl import inspect
 from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 def run(workspace,            # workspace object
         item_id,              # item pk
@@ -99,10 +99,10 @@ class AdaptVideo(Adapter):
 #  possible that the local filename in a remote computer is different.
 #  
 #  To specify that an argument is a filename, prefix the relative path to the 
-#  (local) repository root (mediadart option cache_dir) with file://
+#  (local) repository root (MProcessor option cache_dir) with file://
 #
 #  To specify that an argument is a output filename, prefix the relative path to the 
-#  (local) repository root (mediadart option cache_dir) with outfile://
+#  (local) repository root (MProcessor option cache_dir) with outfile://
 #
 #  Parameters are specified in the cmdline with python syntax
 #
