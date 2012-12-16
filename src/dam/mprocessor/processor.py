@@ -41,7 +41,7 @@ from django.db.models import Q
 from json import loads
 from mediadart.mqueue.mqserver import MQServer
 from config import Configurator
-from mediadart import log
+from . import log
 from dam.mprocessor.models import Process, ProcessTarget
 from dam.mprocessor.pipeline import DAG
 from dam.mprocessor.schedule import Schedule
