@@ -1,6 +1,5 @@
 from json import dumps
 from django.db import models
-from mediadart.storage import new_id
 from django.contrib.auth.models import User
 from mediadart.mqueue.mqclient_async import Proxy
 from django.utils import simplejson
