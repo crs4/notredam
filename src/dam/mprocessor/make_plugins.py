@@ -100,7 +100,7 @@ if __name__=='__main__':
 
     header = """
 from random import random
-from mediadart import log
+from dam.mprocessor import log
 from twisted.internet import defer, reactor
 from twisted.python.failure import Failure
 
