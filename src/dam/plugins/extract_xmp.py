@@ -3,7 +3,7 @@ from time import strptime
 import re
 from twisted.internet import reactor, defer
 
-from mediadart import log
+from mprocessor import log
 from mediadart.mqueue.mqclient_twisted import Proxy
 
 from django.core.management import setup_environ

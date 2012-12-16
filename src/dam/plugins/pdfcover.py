@@ -21,7 +21,7 @@ from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.pdfcover_idl import inspect
 from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 def run(workspace, 
         item_id, 

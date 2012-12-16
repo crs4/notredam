@@ -27,7 +27,7 @@ from dam.preferences.views import get_metadata_default_language
 from dam.plugins.common.utils import save_type #, get_flv_duration
 from dam.plugins.extract_basic_idl import inspect
 from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 
 

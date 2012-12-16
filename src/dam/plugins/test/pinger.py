@@ -1,6 +1,6 @@
 import os
 from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 from mediadart.mqueue.mqclient_twisted import Proxy
 
 # This is due to a bug in Django 1.1

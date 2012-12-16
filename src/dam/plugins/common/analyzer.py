@@ -5,7 +5,7 @@ from dam.variants.models import Variant
 from dam.repository.models import get_storage_file_name
 from dam.plugins.common.utils import get_source_rendition
 from dam.plugins.common.cmdline import splitstring, import_cmd
-from mediadart import log
+from mprocessor import log
 from mediadart.storage import Storage
 from mediadart.mqueue.mqclient_twisted import Proxy
 
