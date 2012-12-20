@@ -1,4 +1,5 @@
 import os, time
+from twisted.internet import reactor
 from twisted.python.failure import Failure
 from dam.core.dam_repository.models import Type
 from dam.variants.models import Variant
@@ -6,7 +7,7 @@ from dam.repository.models import get_storage_file_name
 from dam.plugins.common.utils import get_source_rendition
 from dam.plugins.common.cmdline import splitstring, import_cmd
 from mprocessor import log
-from mediadart.mqueue.mqclient_twisted import Proxy
+import dam.mprocessor.servers.generic_cmd
 
 
 class Adapter:
@@ -63,7 +64,8 @@ class Adapter:
             if self.fake:
                 log.debug('######### Command line:\n%s' % str(args))
             else:
-                proxy = Proxy(self.md_server)
-                d = proxy.call(self.remote_exe, args, self.env)
+                d = reactor.callLater(
+                    generic_cmd.call.delay(self.remote_exe, args,
+                                           self.env).get())
                 d.addCallbacks(self.handle_result, self.handle_error)
         return self.deferred    # if executed stand alone
