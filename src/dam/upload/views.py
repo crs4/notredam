@@ -48,7 +48,7 @@ from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
 #from dam.mprocessor.models import MAction
 from md5sum import md5
-from mediadart.storage import Storage
+from mprocessor.storage import Storage
 from urllib import unquote
 
 import logging

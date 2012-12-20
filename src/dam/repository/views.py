@@ -118,7 +118,7 @@ def delete_watermark(request):
     return HttpResponse(simplejson.dumps({'success': True}))  
 
 def get_variant_url(request, item_ID, variant_name):
-    from mediadart.storage import Storage
+    from mprocessor.storage import Storage
     from django.views.generic.simple import redirect_to
     
     try:
