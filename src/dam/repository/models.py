@@ -33,7 +33,7 @@ from django.utils.encoding import smart_str
 
 logger = logging.getLogger('dam')
 
-from mediadart.storage import Storage
+from mprocessor.storage import Storage
 
 from uuid import uuid4
 
