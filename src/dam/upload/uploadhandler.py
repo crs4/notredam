@@ -18,7 +18,7 @@ class StorageUploadedFile(UploadedFile):
         from mediadart.storage import new_id
         from django.conf import settings
         res_id = new_id()
-        fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
+        fpath = os.path.join(settings.MPROCESSOR_STORAGE, res_id)
         file = open(fpath, 'wb')
         super(StorageUploadedFile, self).__init__(file, name, content_type, size, charset)
 

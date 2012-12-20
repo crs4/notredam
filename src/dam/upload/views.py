@@ -270,7 +270,7 @@ def _create_variant(file_name, uri, media_type, item, workspace, variant):
 def _get_filepath(file_name):
     fname, ext = os.path.splitext(file_name)
     res_id = new_id() + ext
-    fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
+    fpath = os.path.join(settings.MPROCESSOR_STORAGE, res_id)
     
     return fpath, res_id
 
@@ -375,7 +375,7 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
                 continue
                 
             final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
-            final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
+            final_path = os.path.join(settings.MPROCESSOR_STORAGE, final_filename)
             upload_filename = os.path.basename(original_filename)
             
             tmp = upload_filename.split('_')
@@ -568,7 +568,7 @@ def _upload_variant(item, variant, workspace, user, file_name, file):
         res_id = item.ID
         
         final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)    
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+        final_path = os.path.join(settings.MPROCESSOR_STORAGE, final_file_name)
         logger.debug('before move')
         
         if hasattr(file, 'file_name'):
