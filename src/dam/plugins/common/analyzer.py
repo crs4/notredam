@@ -7,7 +7,7 @@ from dam.plugins.common.utils import get_source_rendition
 from dam.plugins.common.cmdline import splitstring, import_cmd
 from mprocessor import log
 from mprocessor.storage import Storage
-from mediadart.mqueue.mqclient_twisted import Proxy
+# FIXMEEEE from mediadart.mqueue.mqclient_twisted import Proxy
 
 
 class Analyzer:
