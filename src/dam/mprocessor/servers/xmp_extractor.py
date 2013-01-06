@@ -1,20 +1,14 @@
 from libxmp import XMPFiles
-from twisted.internet import reactor
-from mediadart import log
-from mediadart.config import Configurator
-from mediadart.storage import Storage
-from mediadart.mqueue.mqserver import MQServer, RPCError
-from mediadart.utils import default_start_mqueue
+from mprocessor import log
+from mprocessor.config import Configurator
+from mprocessor.storage import Storage
 
 
-class XMPExtractor(MQServer):
-    _id = 'urn:uuid:a7da26e7-f37b-4c88-a80a-3f46b58f1fa9'   # required by jsonrpc
-
+class XMPExtractor(object):
     def __init__(self):
-        MQServer.__init__(self)
         self._fc = Storage()
 
-    def mq_extract(self, infile):
+    def extract(self, infile):
         """ extract the requested feature and returns a dictionary of extracted features """
         infile = self._fc.abspath(infile)
         d = {}
@@ -31,16 +25,11 @@ class XMPExtractor(MQServer):
         except:
             pass
         return d
-        
-def start_server():
-    default_start_mqueue(XMPExtractor, [])
 
-if __name__=='__main__':
-    import sys
-    start_server(
-        '127.0.0.1',
-        5672,
-        'guest',
-        'guest',
-        )
-    reactor.run()
+###############################################################################
+# Celery task setup
+from celery.task import task as celery_task
+_SERVER_SINGLETON = XMPExtractor()
+@celery_task
+def extract(infile):
+    return _SERVER_SINGLETON.extract(infile)
