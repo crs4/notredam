@@ -33,7 +33,6 @@
 import os
 import datetime
 import re
-from twisted.internet import reactor, defer
 
 from django.db.models import Q
 from json import loads
@@ -82,8 +81,8 @@ def run(process_id="", restarting=False):
 def _lowlevel_run(process_id="", restarting=False):
     process = wake_process(restarting)
     if process:
-        d = Batch(process).run()
-        d.addCallback(_lowlevel_run)
+        Batch(process).run()
+        _lowlevel_run()
     return 'ok'
 
 class Batch:
@@ -98,7 +97,6 @@ class Batch:
         self.scripts = self._get_scripts(self.pipeline)
         self.all_targets_read = False      # True when all targets have been read
         self.gameover = False              # True when all targets are done
-        self.deferred = None               # used to signal end of batch job
         self.outstanding = 0               # number of not yet answered requests
         self.cur_batch = 0                 # index in batch
         self.cur_task = 0                  # index in tasks
@@ -108,13 +106,11 @@ class Batch:
     def run(self):
         "Start the iteration initializing state so that the iteration starts correctly"
         log.debug('### Running process %s' % str(self.process.pk))
-        self.deferred = defer.Deferred()
         self.process.start_date = datetime.datetime.now()
         self.process.save()
         self.process.targets = ProcessTarget.objects.filter(process=self.process).count()
         self.tasks = []
-        reactor.callLater(0, self._iterate)
-        return self.deferred
+        self._iterate()
 
     def stop(self, seconds_offset=0):
         log.info('stopping process %s' % self.process.pk)
@@ -122,7 +118,6 @@ class Batch:
         self.process.end_date = when
         self.process.save()
         self.gameover = True
-        self.deferred.callback(None)
 
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
         #log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled)) #d
@@ -242,18 +237,16 @@ class Batch:
                 params.update(item_params.get(x.match(action).group(), {}))
                 self.outstanding += 1
                 #params = {u'source_variant_name': u'original'}
-                d = method(self.process.workspace, item.target_id, **params)
+                res = method(self.process.workspace, item.target_id, **params)
+                self._handle_ok(res, item, schedule, action, params)
             except Exception, e:
                 log.error('ERROR in %s: %s %s' % (str(method), type(e), str(e)))
                 self._handle_err(str(e), item, schedule, action, params)
-            else:
-                d.addCallbacks(self._handle_ok, self._handle_err, 
-                    callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
         # If _get_action did not find anything and there are no more targets, no action
         # will be available until an action completes and allows more actions to go ready.
         if self.outstanding < self.max_outstanding and (action or not self.all_targets_read):
             #log.debug('_iterate: rescheduling') #d
-            reactor.callLater(0, self._iterate)
+            self._iterate()
 
     def _handle_ok(self, result, item, schedule, action, params):
         #log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result)) #d
@@ -261,7 +254,7 @@ class Batch:
         schedule.done(action)
         if self.outstanding < self.max_outstanding:
             #log.debug('_handle_ok: rescheduling') #d
-            reactor.callLater(0, self._iterate)
+            self._iterate()
         self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
 
@@ -274,7 +267,7 @@ class Batch:
             self._update_item_stats(item, a, "cancelled on failed %s" % action, 0, 0, 1)
         if self.outstanding < self.max_outstanding:
             #log.debug('_handle_err: rescheduling') #d
-            reactor.callLater(0, self._iterate)
+            self._iterate()
         item.save()
 
 ##############################################################################################
@@ -301,7 +294,6 @@ class Batch_test:
         when = datetime.datetime.now() + datetime.timedelta(seconds=seconds_offset)
         self.process.start_date = when
         self.process.save()
-        return defer.Deferred()   # never used
 
     def stop(self, seconds_offset=0):
         log.info('stopping process %s' % self.process.pk)
@@ -309,7 +301,6 @@ class Batch_test:
         self.process.end_date = when
         self.process.save()
         self.gameover = True
-        #self.deferred.callback('done')
 
 
 class fake_config:
@@ -333,7 +324,6 @@ def end_test(result, process):
     gameover = True
     print_stats(process, False)
     log.debug('end of test %s' % result)
-    reactor.callLater(3, reactor.stop)
 
 def print_stats(process, redo=True):
     if process.targets == 0:
@@ -345,7 +335,7 @@ def print_stats(process, redo=True):
     pt = ProcessTarget.objects.filter(process=process, actions_todo=0, actions_failed=0)
     print >>sys.stderr, 'Process stats: completed successfully: %s' % ' '.join([x.target_id for x in pt])
     if not gameover and redo:
-        reactor.callLater(1, print_stats, process)
+        print_stats(process)
 
 def test():
     global Configurator
