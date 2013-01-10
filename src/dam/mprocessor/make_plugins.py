@@ -95,6 +95,8 @@ pipeline2 = {
 
 
 if __name__=='__main__':
+    # FIXME: twisted stuff needs to be removed from the following code
+
     import sys
     from random import random
 
@@ -105,7 +107,6 @@ from twisted.internet import defer, reactor
 from twisted.python.failure import Failure
 
 """
-
     def main(failures):
         keys = pipeline.keys()
         keys.sort()

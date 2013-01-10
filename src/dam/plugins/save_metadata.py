@@ -23,25 +23,16 @@ from django.db.models.loading import get_models
 get_models()
 
 
-from twisted.internet import defer, reactor
 from dam.repository.models import Item
 
-def save_metadata(deferred, item, metadata_namespace, metadata_name, metadata_value):
-    try:
-        item.set_metadata(metadata_namespace, metadata_name, metadata_value)
-        deferred.callback('ok')
-    except Exception, ex:
-        deferred.errback('error: %s'%ex)
-    finally:
-        return deferred
+def save_metadata(item, metadata_namespace, metadata_name, metadata_value):
+    item.set_metadata(metadata_namespace, metadata_name, metadata_value)
         
 
 def run(workspace, item_id, metadata_namespace, metadata_name, metadata_value):
-
     item = Item.objects.get(pk = item_id)
-    deferred = defer.Deferred()
-    reactor.callLater(0, save_metadata, deferred, item, metadata_namespace, metadata_name, metadata_value)
-    return deferred
+    save_metadata(item, metadata_namespace, metadata_name, metadata_value)
+
 
 def test():
     print 'test'
@@ -54,19 +45,6 @@ def test():
         metadata_value = ['test1', 'test2']
             )
     d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-        
-    reactor.callWhenRunning(test)
-    reactor.run()
-
-    
-    
-    
 
     
     

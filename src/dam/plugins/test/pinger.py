@@ -1,5 +1,4 @@
 import os
-from twisted.internet import defer, reactor
 from mprocessor import log
 from mediadart.mqueue.mqclient_twisted import Proxy
 
@@ -17,54 +16,33 @@ from dam.plugins.adapt_audio_idl import inspect
 
 
 def run(workspace, target):
-    deferred = defer.Deferred()
-    ping_method = Proxy('Adapter').ping
-    pinger = Pinger(deferred, ping_method)
-    reactor.callLater(0, pinger.execute)
-    return deferred
+    ping_method = FIXME  # Was: Proxy('Adapter').ping
+    pinger = Pinger(ping_method)
+    result = pinger.execute()
+    return result
 
 
 class Pinger:
-    def __init__(self, deferred, method):
-        self.deferred = deferred
+    def __init__(self, method):
         self.method = method
 
     def ok(self, result):
-        self.deferred.callback(result)
+        return result
 
     def ko(self, result):
-        self.deferred.errback(result)
+        pass
 
     def execute(self):
-        d = self.method()
-        d.addCallbacks(self.ok, self.ko)
-        
+        try:
+            result = self.method()
+            return self.ok(result)
+        except:
+            self.ko(None)
+            raise
 
 #
-# Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
+# Stand alone test
 #
-from dam.repository.models import Item
-from dam.workspace.models import DAMWorkspace
-
 def test():
     print 'test'
-    d = run( )
-    d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    
-    reactor.callWhenRunning(test)
-    reactor.run()
-
-    
-    
-    
-
-    
-    
-    
+    print run()

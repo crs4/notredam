@@ -1,25 +1,19 @@
 import os
 import inspect
-from twisted.internet import reactor
 from mx.DateTime.Parser import DateTimeFromString
 from datetime import datetime
-from mediadart import log
-from mediadart.config import Configurator
-from mediadart.storage import Storage
-from mediadart.mqueue.mqserver import MQServer, RPCError
-from mediadart.utils import default_start_mqueue
+from mprocessor import log
+from mprocessor.config import Configurator
+from mprocessor.storage import Storage
 from libxmp import XMPFiles, XMPError, files, XMPMeta
 from libxmp.consts import *
 
-class XMPEmbedder(MQServer):
-
-    _id = 'urn:uuid:ca2f31b2-4a77-416e-8e99-64d91a1134e8' #  got new with python utils.py
+class XMPEmbedder(object):
 
     def __init__(self):
-        MQServer.__init__(self)
         self._fc = Storage()
 
-    def mq_metadata_synch(self, component_id, changes):
+    def metadata_synch(self, component_id, changes):
 
         # get xmp 
         
@@ -172,16 +166,11 @@ class XMPEmbedder(MQServer):
         xmpfile.close_file()
 
         return True
-        
-def start_server():
-    default_start_mqueue(XMPEmbedder, [])
 
-if __name__=='__main__':
-    import sys
-    start_server(
-        '127.0.0.1',
-        5672,
-        'guest',
-        'guest',
-        )
-    reactor.run()
+###############################################################################
+# Celery task setup
+from celery.task import task as celery_task
+_SERVER_SINGLETON = XMPEmbedder()
+@celery_task
+def metadata_synch(component_id, changes):
+    return _SERVER_SINGLETON.metadata_synch(component_id, changes):

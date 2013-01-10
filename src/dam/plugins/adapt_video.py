@@ -22,7 +22,6 @@ from dam.core.dam_repository.models import Type
 from dam.plugins.common.adapter import Adapter
 from dam.plugins.common.utils import resize_image
 from dam.plugins.adapt_video_idl import inspect
-from twisted.internet import defer, reactor
 from mprocessor import log
 
 def run(workspace,            # workspace object
@@ -32,10 +31,9 @@ def run(workspace,            # workspace object
         output_preset,        # CMD_<output_preset> must be one of the gstreamer pipelines below
         **preset_params       # additional parameters (see pipeline for explanation)
         ):
-    deferred = defer.Deferred()
-    adapter = AdaptVideo(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, adapter.execute, output_variant_name, output_preset,  **preset_params)
-    return deferred
+    adapter = AdaptVideo(workspace, item_id, source_variant_name)
+    result = adapter.execute(output_variant_name, output_preset,  **preset_params)
+    return result
 
 
 class AdaptVideo(Adapter):
@@ -339,7 +337,6 @@ CMD_THEORA = {
 #
 # Stand alone test: need to provide a compatible database (item must be an item with a audio comp.)
 #
-from twisted.internet import defer, reactor
 from dam.repository.models import Item
 from dam.workspace.models import DAMWorkspace
 
@@ -362,13 +359,3 @@ def test():
                 },   # per esempio
             )
     d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    reactor.callWhenRunning(test)
-    reactor.run()
-

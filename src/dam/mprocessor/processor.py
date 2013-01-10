@@ -221,6 +221,7 @@ class Batch:
             return
         action, task = self._get_action()
         if action:
+            log.debug('processing action: "%s"' % (action, ))
             item, schedule = task['item'], task['schedule']
             method, params = self.scripts[action]
             try:
