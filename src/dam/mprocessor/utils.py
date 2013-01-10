@@ -1,9 +1,11 @@
 import os
+import sys
 import types
-from twisted.internet import defer, reactor, protocol
-from twisted.python.failure import Failure
-from twisted.internet import defer, reactor
-from twisted.web.client import HTTPClientFactory
+from subprocess import PIPE, Popen
+from threading  import Thread
+from Queue import Queue, Empty
+
+from twisted.web.client import HTTPClientFactory # FIXME: to be removed
 from . import log
 
 def normpath(path):
@@ -16,9 +18,30 @@ def normpath(path):
 class RunProcError(Exception): 
     pass
 
-class RunProc(protocol.ProcessProtocol):
+MAX_BUFFER_SIZE = 8*1024
+def _enqueue_data_and_close(fd, queue, logging=False):
+    if logging:
+        log.debug('starting enqueuing thread')
+
+    while True:
+        data = fd.read(MAX_BUFFER_SIZE)
+        if data == '':
+            # Signal EOF by enqueuing None
+            if logging:
+                log.debug('EOF reached')
+            queue.put(None)
+            break
+        if logging:
+            log.debug('enqueuing %d bytes' % (len(data), ))
+        queue.put(data)
+
+    if logging:
+        log.debug('closing file descriptor and terminating enqueuing thread')
+    fd.close()
+
+class RunProc(object):
     """
-    Wrapper for calling an external process in a twisted-approved way.
+    Wrapper for calling an external process.
 
     Parameters:
         exe: name of the executable
@@ -48,76 +71,51 @@ class RunProc(protocol.ProcessProtocol):
             log.debug('starting: %s %s' % (self.exe, ' '.join(self.argv)))
             if self._log > 1:
                 log.debug('Environment: %s' % self.env)
-        # spawn the process at low priority
-        self._proc = reactor.spawnProcess(self, 'nice', ['nice', '-n', '20', 'ionice', '-n', '7', '-t', self.exe] + self.argv, env=self.env)
-        if self._proc is None:
-            raise RunProcError('failed to launch %s' % self._script.exe )
-        else:
-            self.pid = str(self._proc.pid) or 'unavailable'
-        if self._log > 1:
-            log.debug('started proc %s' % (self.pid))
+
         self._cb = cb     # called with the bytes received
         self._cbargv = cbargv  # additional arguments passed to the callback
+
+        # spawn the process at low priority
+        # FIXME: handle (unlikely) "nice" launch failure here
+        self._proc = Popen(['nice', '-n', '20', 'ionice', '-n', '7', '-t',
+                            self.exe] + self.argv, stdout=PIPE, env=self.env)
+        self._queue = Queue()
+
+        self.pid = self._proc.pid
+        if self._log:
+            log.debug('started subprocess - pid: %d' % (self.pid, ))
+
+        self._iothread = Thread(target=_enqueue_data_and_close,
+                                args=(self._proc.stdout, self._queue,
+                                      self._log))
+        self._iothread.start()
+        
+        while True:
+            data = self._queue.get()
+            if data is not None:
+                if self._log:
+                    log.debug('dequeued %d bytes' % (len(data), ))
+                if self._cb is not None:
+                    self._cb(data, *self._cbargv)
+            self._queue.task_done()
+            if data is None:
+                # End of file reached --- see _enqueue_data_and_close()
+                if self._log:
+                    log.debug('received EOF - not waiting for more data')
+                break
+
+        # After the queue ends closed and the loop above
+        # terminates, let's wait for the subprocess to end
+        self._proc.wait()
+
+        if self._proc.returncode != 0:
+            raise RunProcError('error executing "%s %s" (return code: %s)'
+                               % (self.exe, ''.join(self.argv),
+                                  self._proc.returncode))
+        elif self._log:
+            log.debug('subprocess at pid %d terminated correctly'
+                      % (self.pid, ))
         return self
-
-    def __init__(self):
-        self.__stdout = ""
-        self.__stderr = ""
-        self._max_stdout = 8*1024
-        self._max_stderr = 8*1024
-        self.__requests = []
-
-    def getResult(self):
-        """
-        Return a Deferred which will fire with the result of L{parseChunks}
-        when the child process exits.
-        """
-        d = defer.Deferred()
-        self.__requests.append(d)
-        return d
-
-    def _fireResultDeferreds(self, result):
-        """
-        Callback all Deferreds returned up until now by L{getResult}
-        with the given result object.
-        """
-        requests = self.__requests
-        self.__requests = None
-        for d in requests:
-            d.callback(result)
-
-    def _fireErrorDeferreds(self, result):
-        """
-        Callback all Deferreds returned up until now by L{getResult}
-        with the given result object.
-        """
-        requests = self.__requests
-        self.__requests = None
-        for d in requests:
-            d.errback(Failure(result))
-
-    def outReceived(self, data):
-        """
-        Accumulate output from the child process in a list.
-        """
-        if self._cb:
-            self._cb(data, *self._cbargv)
-        else:
-            self.__stdout = self.__stdout[-self._max_stdout:] + data
-
-    def errReceived(self, data):
-        log.error('proc %s(echoing stderr): %s' % (self.pid, data.strip()))
-        self.__stderr = self.__stderr[-self._max_stderr:] + data
-
-    def processEnded(self, reason):
-        """
-        Handle process termination by parsing all received output and firing
-        any waiting Deferreds.
-        """
-        if reason.value.exitCode == 0:
-            self._fireResultDeferreds({'exitCode':0, 'data':''.join(self.__stdout)})
-        else:
-            self._fireErrorDeferreds({'exitCode':reason.value.exitCode, 'data':self.__stderr})
 
 def doHTTP(url, data='', method='POST', headers = {}, followRedirect=False):
     factory = HTTPClientFactory(url=str(url), method=method, postdata=data,

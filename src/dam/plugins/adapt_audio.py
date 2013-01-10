@@ -21,7 +21,6 @@ from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.common.adapter import Adapter
 from dam.plugins.adapt_audio_idl import inspect
-from twisted.internet import defer, reactor
 from mprocessor import log
 
 
@@ -32,10 +31,10 @@ def run(workspace,            # workspace object
         output_preset,        # CMD_<output_preset> must be one of the gstreamer pipelines below
         **preset_params):     # additional parameters (see pipeline for explanation)
 
-    deferred = defer.Deferred()
-    adapter = AdaptAudio(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, adapter.execute, output_variant_name, output_preset,  **preset_params)
-    return deferred
+    adapter = AdaptAudio(workspace, item_id, source_variant_name)
+    result = adapter.execute(output_variant_name, output_preset,
+			     **preset_params)
+    return result
 
 class AdaptAudio(Adapter):
     remote_exe = 'gst-launch-0.10'
@@ -159,7 +158,6 @@ def sink_video(cmdline):
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
 #
 from dam.repository.models import Item
-from twisted.internet import defer, reactor
 from dam.workspace.models import DAMWorkspace
 
 def test():
@@ -177,21 +175,3 @@ def test():
                 },   # per esempio
             )
     d.addBoth(print_result)
-    
-
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    reactor.callWhenRunning(test)
-    reactor.run()
-
-    
-    
-    
-
-    
-    
-    

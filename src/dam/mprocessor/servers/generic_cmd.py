@@ -121,7 +121,16 @@ class GenericCmdline(object):
         for tmpfile, outfile in tmpfile_map.items():
             move(tmpfile, outfile)
         # if the script has no return value, return the name of the generated files
-        if not result['data']:
+
+        # Try to access result['data'], and return a dictionary with a 'data'
+        # field in case it does not work or it's empty
+        # FIXME: just for retro-compatibility.  What the heck is going on here?
+        try:
+            _x = result['data']
+            if not _x:
+                raise Exception('FIXME: just to trigger "except" below')
+        except:
+            result = {}
             result['data'] = stdout[0] #"%s" % ':'.join(tmpfile_map.values())
         return result
 
@@ -162,11 +171,13 @@ class GenericCmdline(object):
             cb_func = self.accumulate_stdout
 
         log.debug('Executing RunProc')
-        r = RunProc.run(self.exe, args, env, cb=cb_func, cbargv=cb_arg, do_log=1)
-        d =  r.getResult()
-        d.addCallback(self._cb_done, tmpfile_map, stdout)
-        d.addErrback(self._cb_err,   tmpfile_map)
-        return d
+        try:
+            result = RunProc.run(self.exe, args, env, cb=cb_func, cbargv=cb_arg, do_log=1)
+            result = self._cb_done(result, tmpfile_map, stdout)
+        except Exception as e:
+            result = self._cb_err({'data' : ''}, tmpfile_map)
+            raise
+        return result
 
 ###############################################################################
 # Celery task setup

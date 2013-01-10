@@ -46,7 +46,7 @@ class Analyzer:
             args = splitstring(self.cmdline)
         except Exception, e:
             log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
-            self.deferred.errback(e)
+            raise
         else:
             if self.fake:
                 log.debug('######### Command line:\n%s' % str(args))
