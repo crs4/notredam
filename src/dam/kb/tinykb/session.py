@@ -414,7 +414,7 @@ class Session(object):
             self.session.commit()
             for cls in updated_classes:
                 self.orm.cache_update(cls)
-        except sqlalchemy.exc.IntegrityError:
+        except:
             self.session.rollback()
             raise
 
