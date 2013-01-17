@@ -25,15 +25,15 @@ import os.path
 from django.contrib import admin
 admin.autodiscover()
 
-from dam.settings import MEDIADART_STORAGE
+from dam.settings import MPROCESSOR_STORAGE
 
 urlpatterns = patterns('', 
     (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
     #(r'^admin/(.*)', admin.site.root), 
      (r'^admin/', include(admin.site.urls)),
     (r'^files/(?P<path>.*)$', 'django.views.static.serve', {'document_root': os.path.join(ROOT_PATH, 'files')}), 
-#    (r'^storage/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIADART_STORAGE}), 
-#    (r'^storage/(?P<path>.*)/download$', 'django.views.static.serve', {'document_root': MEDIADART_STORAGE}), 
+#    (r'^storage/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MPROCESSOR_STORAGE}), 
+#    (r'^storage/(?P<path>.*)/download$', 'django.views.static.serve', {'document_root': MPROCESSOR_STORAGE}), 
     
     (r'^', include('dam.application.urls')),
     (r'^', include('dam.geo_features.urls')),

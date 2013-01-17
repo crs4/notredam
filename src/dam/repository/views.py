@@ -118,7 +118,7 @@ def delete_watermark(request):
     return HttpResponse(simplejson.dumps({'success': True}))  
 
 def get_variant_url(request, item_ID, variant_name):
-    from mediadart.storage import Storage
+    from mprocessor.storage import Storage
     from django.views.generic.simple import redirect_to
     
     try:
@@ -144,9 +144,9 @@ def get_variant_url(request, item_ID, variant_name):
 #@login_required
 def get_resource(request, resource_name):
     from django.views.static import serve
-    from settings import MEDIADART_STORAGE
+    from settings import MPROCESSOR_STORAGE
     download = request.GET.get('download')
-    response = serve(request, resource_name, document_root = MEDIADART_STORAGE)
+    response = serve(request, resource_name, document_root = MPROCESSOR_STORAGE)
     if download: # downloading of single resources from subpanel on the right   
         # the following is to provide a resource name other than the one in repository
         comp = Component.objects.filter(uri = resource_name)
