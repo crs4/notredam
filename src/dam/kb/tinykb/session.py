@@ -404,8 +404,16 @@ class Session(object):
         for c in new_kb_cls:
             if not c.is_bound():
                 c.realize()
+
+        # Also reflect updates to the cache
+        updated_classes = [c for c in self.session.dirty
+                           if isinstance(c, self.orm.KBClass)
+                           and self.session.is_modified(c)]
+
         try:
             self.session.commit()
+            for cls in updated_classes:
+                self.orm.cache_update(cls)
         except sqlalchemy.exc.IntegrityError:
             self.session.rollback()
             raise
