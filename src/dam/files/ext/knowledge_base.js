@@ -69,7 +69,16 @@ function get_TF_store(){
           [true,"True"],[false,"False"]]
     });
 }
-
+function get_CHOICE_store(choices){
+	var data = [];
+	for(i=0;i<choices.length;i++){
+		data[i]=[choices[i],choices[i]]
+	}
+	return new Ext.data.SimpleStore({
+        fields: ['id','name'],
+        data: data
+    });
+}
 var ws_admin_store = new Ext.data.JsonStore({
 	    url: '/kb/get_workspaces_with_edit_vocabulary/',
 	    id:'id_ws_admin_store',
@@ -100,105 +109,109 @@ function get_AsyncTreeNode(){
 
 function save_and_close_win_att_class(attributes_grid, insert_value, win_att_class){
 	
-	if (!insert_value){ // class scope
-		var Attribute = Ext.data.Record.create([{
-		    name: 'id'
-		},{
-		    name: 'name'
-		},{
-		    name: 'default_value'
-		},{
-		    name: 'order'
-		},{
-		    name: 'notes'
-		},{
-		    name: 'type'
-		},{
-		    name: 'multivalued'
-		},{
-		    name: 'maybe_empty'
-		},{
-		    name: 'min'
-		},{
-		    name: 'max'
-		},{
-		    name: 'length'
-		},{
-		    name: 'choices'
-		},{
-		    name: 'target_class'
-		}]);
-		
-		if (Ext.getCmp('type_comb_class').getValue() == 'date'){//fit date format
-			if (Ext.getCmp('id_min').getValue()){min_value = Ext.getCmp('id_min').getValue().format('Y-m-d');}else{min_value = null;}
-    		if (Ext.getCmp('id_max').getValue()){max_value = Ext.getCmp('id_max').getValue().format('Y-m-d');}else{max_value = null;}
-			if (Ext.getCmp('id_default_value').getValue()){default_value = Ext.getCmp('id_default_value').getValue().format('Y-m-d');}else{default_value = null;}
-		}else{
-			if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue();}else{min_value = null;}
-    		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue();}else{max_value = null;}
-			if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue();}else{default_value = null;}
-		}
-		if (Ext.getCmp('id_max_length')){max_length = Ext.getCmp('id_max_length').getValue();}else{max_length = null;}
-		if (Ext.getCmp('id_choices')){//string list
-			choices = Ext.getCmp('id_choices').getValue().split(',');
-			if (choices[choices.length-1] == ""){
-				delete(choices[choices.length-1]);
-				choices.splice(choices.length-1, 1);
-			}
-		}else{choices = null;}
-		if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
-		if (this.text == gettext('Apply')){
-			attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
-			attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
-			attributes_grid.getSelectionModel().getSelected().set('order',order_slider.getValue());
-			attributes_grid.getSelectionModel().getSelected().set('notes',notes_textField.getValue());
-			attributes_grid.getSelectionModel().getSelected().set('type',type_combo.getValue());
-			attributes_grid.getSelectionModel().getSelected().set('multivalued',multivalued_chekbox.getValue());
-			attributes_grid.getSelectionModel().getSelected().set('maybe_empty',empty_chekbox.getValue());
-			attributes_grid.getSelectionModel().getSelected().set('min',min_value);
-			attributes_grid.getSelectionModel().getSelected().set('max',max_value);
-			attributes_grid.getSelectionModel().getSelected().set('length',max_length);
-			attributes_grid.getSelectionModel().getSelected().set('target_class',target_class);
-		}else{
-    		attributes_grid.store.add(new Attribute({
-    			id			: Ext.getCmp('name_attribute').getValue().replace(/ /g, "_"),
-    			name		: Ext.getCmp('name_attribute').getValue(),
-    			default_value: default_value,
-    			order		: Ext.getCmp('slider_order').getValue(),
-    			notes		: Ext.getCmp('id_notes_attribute').getValue(),
-    			type		: Ext.getCmp('type_comb_class').getValue(),
-    			multivalued : Ext.getCmp('id_multivalued_chekbox').getValue(),
-    			maybe_empty : Ext.getCmp('id_empty_chekbox').getValue(),
-    			min			: min_value,
-    			max			: max_value,
-    			length		: max_length,
-    			choices		: choices,
-    			target_class: target_class
-    		}));
-		}
-	}else{ //obj scope
-		if(attributes_grid.getSelectionModel().getSelected().data.type == 'choice'){//case where choice is multivalued
-			var txt = "";
-			for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
-				txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name + ',';
-			}
-			txt = txt.substring(0,txt.length-1);
-			attributes_grid.getSelectionModel().getSelected().set('value',txt);
-		}else if(Ext.getCmp('id_multivalued_chekbox').getValue() == true){//case where multivalued true
-			var txt = new Array();
-			for(i=0; i < Ext.getCmp('id_record_value').getStore().getCount(); i++){
-				txt.push(Ext.getCmp('id_record_value').getStore().getAt(i).data.name);
-			}
-			attributes_grid.getSelectionModel().getSelected().set('value',txt);
-		}else if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//objref multivalued false
-			if (Ext.getCmp('id_record_value').getStore().getCount() == 1){
-				attributes_grid.getSelectionModel().getSelected().set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);
+	if (Ext.getCmp('name_attribute').getValue() != null && Ext.getCmp('name_attribute').getValue().length>0){
+		if (!insert_value){ // class scope
+			var Attribute = Ext.data.Record.create([{
+			    name: 'id'
+			},{
+			    name: 'name'
+			},{
+			    name: 'default_value'
+			},{
+			    name: 'order'
+			},{
+			    name: 'notes'
+			},{
+			    name: 'type'
+			},{
+			    name: 'multivalued'
+			},{
+			    name: 'maybe_empty'
+			},{
+			    name: 'min'
+			},{
+			    name: 'max'
+			},{
+			    name: 'length'
+			},{
+			    name: 'choices'
+			},{
+			    name: 'target_class'
+			}]);
+			
+			if (Ext.getCmp('type_comb_class').getValue() == 'date'){//fit date format
+				if (Ext.getCmp('id_min').getValue()){min_value = Ext.getCmp('id_min').getValue().format('Y-m-d');}else{min_value = null;}
+	    		if (Ext.getCmp('id_max').getValue()){max_value = Ext.getCmp('id_max').getValue().format('Y-m-d');}else{max_value = null;}
+				if (Ext.getCmp('id_default_value').getValue()){default_value = Ext.getCmp('id_default_value').getValue().format('Y-m-d');}else{default_value = null;}
 			}else{
-				attributes_grid.getSelectionModel().getSelected().set('value', null);
+				if (Ext.getCmp('id_min')){min_value = Ext.getCmp('id_min').getValue();}else{min_value = null;}
+	    		if (Ext.getCmp('id_max')){max_value = Ext.getCmp('id_max').getValue();}else{max_value = null;}
+				if (Ext.getCmp('id_default_value')){default_value = Ext.getCmp('id_default_value').getValue();}else{default_value = null;}
+			}
+			if (Ext.getCmp('id_max_length')){max_length = Ext.getCmp('id_max_length').getValue();}else{max_length = null;}
+			if (Ext.getCmp('id_choices')){//string list
+				choices = Ext.getCmp('id_choices').getValue().split(',');
+				if (choices[choices.length-1] == ""){
+					delete(choices[choices.length-1]);
+					choices.splice(choices.length-1, 1);
+				}
+			}else{choices = null;}
+			if (Ext.getCmp('id_target_class')){target_class = Ext.getCmp('id_target_class').getValue()}else{target_class = null;}
+			if (this.text == gettext('Apply')){
+				attributes_grid.getSelectionModel().getSelected().set('name',name_textField.getValue());
+				attributes_grid.getSelectionModel().getSelected().set('default_value',default_value);
+				attributes_grid.getSelectionModel().getSelected().set('order',order_slider.getValue());
+				attributes_grid.getSelectionModel().getSelected().set('notes',notes_textField.getValue());
+				attributes_grid.getSelectionModel().getSelected().set('type',type_combo.getValue());
+				attributes_grid.getSelectionModel().getSelected().set('multivalued',multivalued_chekbox.getValue());
+				attributes_grid.getSelectionModel().getSelected().set('maybe_empty',empty_chekbox.getValue());
+				attributes_grid.getSelectionModel().getSelected().set('min',min_value);
+				attributes_grid.getSelectionModel().getSelected().set('max',max_value);
+				attributes_grid.getSelectionModel().getSelected().set('length',max_length);
+				attributes_grid.getSelectionModel().getSelected().set('target_class',target_class);
+			}else{
+	    		attributes_grid.store.add(new Attribute({
+	    			id			: Ext.getCmp('name_attribute').getValue().replace(/ /g, "_"),
+	    			name		: Ext.getCmp('name_attribute').getValue(),
+	    			default_value: default_value,
+	    			//order		: Ext.getCmp('slider_order').getValue(),
+	    			notes		: Ext.getCmp('id_notes_attribute').getValue(),
+	    			type		: Ext.getCmp('type_comb_class').getValue(),
+	    			multivalued : Ext.getCmp('id_multivalued_chekbox').getValue(),
+	    			maybe_empty : Ext.getCmp('id_empty_chekbox').getValue(),
+	    			min			: min_value,
+	    			max			: max_value,
+	    			length		: max_length,
+	    			choices		: choices,
+	    			target_class: target_class
+	    		}));
+			}
+		}else{ //obj scope
+			if(Ext.getCmp('type_comb_class').getValue() == 'choice'){//case where choice is multivalued
+				var txt = "";
+				for(i=0; i < Ext.getCmp('id_record_value').getSelectionModel().getSelections().length; i++){
+					txt = txt + Ext.getCmp('id_record_value').getSelectionModel().getSelections()[i].data.name + ',';
+				}
+				txt = txt.substring(0,txt.length-1);
+				attributes_grid.getStore().getAt(attributes_grid.getSelectionModel().getSelectedCell()[0]).set('value',txt);
+			}else if(Ext.getCmp('id_multivalued_chekbox').getValue() == true){//case where multivalued true
+				var txt = new Array();
+				for(i=0; i < Ext.getCmp('id_record_value').getStore().getCount(); i++){
+					txt.push(Ext.getCmp('id_record_value').getStore().getAt(i).data.name);
+				}
+				attributes_grid.getStore().getAt(attributes_grid.getSelectionModel().getSelectedCell()[0]).set('value',txt);
+			}else if (Ext.getCmp('id_multivalued_chekbox').getValue() == false){//objref multivalued false
+				if (Ext.getCmp('id_record_value').getStore().getCount() == 1){
+					attributes_grid.getStore().getAt(attributes_grid.getSelectionModel().getSelectedCell()[0]).set('value', Ext.getCmp('id_record_value').getStore().getAt(0).data.name);
+				}else{
+					attributes_grid.getStore().getAt(attributes_grid.getSelectionModel().getSelectedCell()[0]).set('value', null);
+				}
 			}
 		}
+		win_att_class.close();
+	}else{
+    	Ext.Msg.alert('Error', 'Not present the name of the attribute!');        	
 	}
-	win_att_class.close();
 }
 
 function close_window_insert_attribute(){
@@ -858,18 +871,18 @@ function isEmpty(obj) {
 	return false;
 }
 
-function add_single_attribute(edit, attributes_grid, insert_value, add_class, add_attribute){
+function add_single_attribute(edit, attributes_grid, insert_value, add_class, add_attribute, record){
 	var name_textField_value, empty_chekbox_value, empty_chekbox_value, multivalued_chekbox_value, notes_textField_value, title, text_button, max_value_slider;
 	
 	if (edit){
-		name_textField_value = attributes_grid.getSelectionModel().getSelected().data.name;
-		empty_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.maybe_empty;
-		multivalued_chekbox_value = attributes_grid.getSelectionModel().getSelected().data.multivalued;
-		notes_textField_value = attributes_grid.getSelectionModel().getSelected().data.notes;
+		name_textField_value = record.data.name;
+		empty_chekbox_value = record.data.maybe_empty;
+		multivalued_chekbox_value = record.data.multivalued;
+		notes_textField_value = record.data.notes;
 		title = gettext("Edit attribute");
 		text_button = gettext('Apply');
-		max_value_slider = attributes_grid.getStore().getCount()-1;
-		slider_value = attributes_grid.getSelectionModel().getSelected().data.order;
+		//max_value_slider = attributes_grid.getStore().getCount()-1;
+		slider_value = record.data.order;
 	}else{
 		name_textField_value = null;
 		empty_chekbox_value = false;
@@ -877,8 +890,8 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		notes_textField_value = null;
 		title = gettext("New attribute");
 		text_button = gettext('Add');
-		max_value_slider = attributes_grid.getStore().getCount();
-		slider_value = attributes_grid.getStore().getCount();
+		//max_value_slider = attributes_grid.getStore().getCount();
+		//slider_value = attributes_grid.getStore().getCount();
 	}
 	
 	var name_textField = new Ext.form.TextField({
@@ -910,8 +923,8 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 			}},
 			render:{fn:function(combo){
 				if (edit){
-					combo.setValue(attributes_grid.getSelectionModel().getSelected().data.type);
-					add_option(attributes_grid.getSelectionModel().getSelected().data.type, Ext.getCmp('id_option_attribute_panel'), attributes_grid.getSelectionModel().getSelected().data, insert_value, add_class, add_attribute);
+					combo.setValue(record.data.type);
+					add_option(record.data.type, Ext.getCmp('id_option_attribute_panel'), record.data, insert_value, add_class, add_attribute);
 				}
 			}}
       	}        
@@ -938,7 +951,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
         value: notes_textField_value, 
         id:'id_notes_attribute'
     });
-    var order_slider = new Ext.slider.SingleSlider({
+   /* var order_slider = new Ext.slider.SingleSlider({
     	id:'slider_order',
         width: 130,
         increment: 1,
@@ -948,7 +961,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
         hidden: true,
         plugins: new Ext.ux.SliderTip()
     });
-    
+    */
     if(!add_class && !add_attribute && insert_value == false){
     	order_slider.disabled = true;
     	multivalued_chekbox.disabled = true;
@@ -971,7 +984,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
           		  			xtype: 'spacer',
           		  			height: 10
                 		}
-                		,order_slider]
+                		/*,order_slider*/]
         	},{
         		columnWidth:.5,
                 layout: 'form',
@@ -1001,8 +1014,8 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		empty_chekbox.disable();
 		multivalued_chekbox.disable();
 		notes_textField.disable();
-		order_slider.setValue(attributes_grid.getSelectionModel().getSelected().data.order);
-		order_slider.disable();
+		//order_slider.setValue(record.data.order);
+		//order_slider.disable();
 		title = gettext('Insert value for this attribute');
 		Ext.getCmp('attribute_detail_panel').buttons[0].text=gettext('Done');
 	}
@@ -1030,7 +1043,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 	    	check_remove_button_add_option();
 	    	check_add_button_add_option();
 		}
-    	logic_to_insert_single_value(attributes_grid.getSelectionModel().getSelected().data.type, true, attributes_grid, win_att_class);
+    	logic_to_insert_single_value(record.data.type, true, attributes_grid, win_att_class);
 		
 	}else{
 	    win_att_class.show();
@@ -1299,95 +1312,99 @@ function load_detail_class(class_data, id_class, add_class){
             type: 'submit',
             handler: function(){
         		var my_form = this.findParentByType('form');
-        		params = {};
-        		params['name'] = name_textField.getValue();
-        		params['notes'] = notes_textField.getValue();
-        		if (id_textField.getValue()){
-        			params['id'] = id_textField.getValue();
-        		}
-        		if(id_class != 'root_obj_tree'){
-        			params['superclass'] = superclass_textField.getValue();
-        		}
-        		params['workspaces'] = {};
-        		//owner for current ws, read-write others
-        		//FIXME who is the owner?
-        		for (i=0; i < ws_admin_grid.getSelectionModel().getSelections().length; i++){
-        			if (ws_admin_grid.getSelectionModel().getSelections()[i].data.pk == ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk){ //owner
-        				params['workspaces'][ws_admin_grid.getSelectionModel().getSelections()[i].data.pk] = "owner";
-        			}else{
-        				params['workspaces'][ws_admin_grid.getSelectionModel().getSelections()[i].data.pk] = "read-write";
-        			}
-        		}
-        		var attribute;
-        		params['attributes'] = {};
-        		for (i=0; i < Ext.getCmp('attribute_grid_id').getStore().getCount(); i++){
-        			attribute = Ext.getCmp('attribute_grid_id').getStore().getAt(i).data;
-        			params['attributes'][attribute.id] = {
-        				'name': attribute.name,
-        				'type': attribute.type,
-        				'multivalued': attribute.multivalued,
-        				'maybe_empty': attribute.maybe_empty,
-        				'default_value': (isEmpty(attribute.default_value)) ? null : attribute.default_value,
-        				'order': attribute.order,
-        				'notes': attribute.notes
-        			};
-        			if (attribute.type == 'int' || attribute.type == 'date'){
-        				params['attributes'][attribute.id]['min'] = (isEmpty(attribute.min)) ? null : attribute.min;
-        				params['attributes'][attribute.id]['max'] = (isEmpty(attribute.max)) ? null : attribute.max;
-        			}else if (attribute.type == 'string' || attribute.type == 'uri'){
-        				params['attributes'][attribute.id]['length'] = (isEmpty(attribute.length)) ? null : attribute.length;
-        			}else if (attribute.type == 'choice'){ 
-        				params['attributes'][attribute.id]['choices'] = (isEmpty(attribute.choices)) ? null : attribute.choices;
-        			}else if (attribute.type == 'objref'){ 
-        				params['attributes'][attribute.id]['target_class'] = attribute.target_class; // it is mandatory
-        			}
-        		}
-	        	if(add_class){ 
-	        		Ext.Ajax.request({
-	        			url:url_submit,
-	        			jsonData: params,
-	        			method: method_request,
-	        			headers: {'Content-Type': 'application/json;charset=utf-8'},
-	                    clientValidation: true,
-	                    waitMsg: 'Saving...',
-	                    success: function(response){
-	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	        				//console.log(id_class);
-	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload());
-	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
-	        				//console.log(Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath()));
-	        				//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
-	        				Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload();
-	        				Ext.Msg.alert('Status', 'Changes saved successfully.');
-	                    	Ext.getCmp('details_panel_class').removeAll();
-	                    },
-	                    failure:function(response){
-	                    	Ext.Msg.alert('Failure', response.responseText);
-	                    }
-	        		});
+        		if (name_textField.getValue != null && name_textField.getValue().length>0){
+	        		params = {};
+	        		params['name'] = name_textField.getValue();
+	        		params['notes'] = notes_textField.getValue();
+	        		if (id_textField.getValue()){
+	        			params['id'] = id_textField.getValue();
+	        		}
+	        		if(id_class != 'root_obj_tree'){
+	        			params['superclass'] = superclass_textField.getValue();
+	        		}
+	        		params['workspaces'] = {};
+	        		//owner for current ws, read-write others
+	        		//FIXME who is the owner?
+	        		for (i=0; i < ws_admin_grid.getSelectionModel().getSelections().length; i++){
+	        			if (ws_admin_grid.getSelectionModel().getSelections()[i].data.pk == ws_store.getAt(ws_store.findBy(find_current_ws_record)).data.pk){ //owner
+	        				params['workspaces'][ws_admin_grid.getSelectionModel().getSelections()[i].data.pk] = "owner";
+	        			}else{
+	        				params['workspaces'][ws_admin_grid.getSelectionModel().getSelections()[i].data.pk] = "read-write";
+	        			}
+	        		}
+	        		var attribute;
+	        		params['attributes'] = {};
+	        		for (i=0; i < Ext.getCmp('attribute_grid_id').getStore().getCount(); i++){
+	        			attribute = Ext.getCmp('attribute_grid_id').getStore().getAt(i).data;
+	        			params['attributes'][attribute.id] = {
+	        				'name': attribute.name,
+	        				'type': attribute.type,
+	        				'multivalued': attribute.multivalued,
+	        				'maybe_empty': attribute.maybe_empty,
+	        				'default_value': (isEmpty(attribute.default_value)) ? null : attribute.default_value,
+	        				'order': attribute.order,
+	        				'notes': attribute.notes
+	        			};
+	        			if (attribute.type == 'int' || attribute.type == 'date'){
+	        				params['attributes'][attribute.id]['min'] = (isEmpty(attribute.min)) ? null : attribute.min;
+	        				params['attributes'][attribute.id]['max'] = (isEmpty(attribute.max)) ? null : attribute.max;
+	        			}else if (attribute.type == 'string' || attribute.type == 'uri'){
+	        				params['attributes'][attribute.id]['length'] = (isEmpty(attribute.length)) ? null : attribute.length;
+	        			}else if (attribute.type == 'choice'){ 
+	        				params['attributes'][attribute.id]['choices'] = (isEmpty(attribute.choices)) ? null : attribute.choices;
+	        			}else if (attribute.type == 'objref'){ 
+	        				params['attributes'][attribute.id]['target_class'] = attribute.target_class; // it is mandatory
+	        			}
+	        		}
+		        	if(add_class){ 
+		        		Ext.Ajax.request({
+		        			url:url_submit,
+		        			jsonData: params,
+		        			method: method_request,
+		        			headers: {'Content-Type': 'application/json;charset=utf-8'},
+		                    clientValidation: true,
+		                    waitMsg: 'Saving...',
+		                    success: function(response){
+		        				//Ext.getCmp('obj_reference_tree').root.reload();
+		        				//console.log(id_class);
+		        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload());
+		        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
+		        				//console.log(Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath()));
+		        				//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(id_class).getPath());
+		        				Ext.getCmp('obj_reference_tree').getNodeById(id_class).reload();
+		        				Ext.Msg.alert('Status', 'Changes saved successfully.');
+		                    	Ext.getCmp('details_panel_class').removeAll();
+		                    },
+		                    failure:function(response){
+		                    	Ext.Msg.alert('Failure', response.responseText);
+		                    }
+		        		});
+	        		}else{
+		        		Ext.Ajax.request({
+		        			url:url_submit,
+		        			jsonData: params,
+		        			method: method_request,
+		        			headers: {'Content-Type': 'application/json;charset=utf-8'},
+		                    clientValidation: true,
+		                    waitMsg: 'Saving...',
+		                    success: function(response){
+		        				//Ext.getCmp('obj_reference_tree').root.reload();
+		                		if(params['superclass'] != ""){
+		                			Ext.getCmp('obj_reference_tree').getNodeById(params['superclass']).reload();
+		                		}else{
+		                			Ext.getCmp('obj_reference_tree').getNodeById('root_obj_tree').reload();
+		                		}
+		                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+		                    	Ext.getCmp('details_panel_class').removeAll();
+		                    },
+		                    failure:function(response){
+		                    	Ext.Msg.alert('Failure', response.responseText);
+		                    }
+		        		});
+	        		}
         		}else{
-	        		Ext.Ajax.request({
-	        			url:url_submit,
-	        			jsonData: params,
-	        			method: method_request,
-	        			headers: {'Content-Type': 'application/json;charset=utf-8'},
-	                    clientValidation: true,
-	                    waitMsg: 'Saving...',
-	                    success: function(response){
-	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	                		if(params['superclass'] != ""){
-	                			Ext.getCmp('obj_reference_tree').getNodeById(params['superclass']).reload();
-	                		}else{
-	                			Ext.getCmp('obj_reference_tree').getNodeById('root_obj_tree').reload();
-	                		}
-	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-	                    	Ext.getCmp('details_panel_class').removeAll();
-	                    },
-	                    failure:function(response){
-	                    	Ext.Msg.alert('Failure', response.responseText);
-	                    }
-	        		});
-        		}
+	            	Ext.Msg.alert('Error', 'Not present the name of the class!');        	
+	            }
         }
         },{
             text: gettext('Cancel'),
@@ -1490,35 +1507,88 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
     });
 	fields.push(notes_textField);
     //attributes
-    var attributes_grid = new Ext.grid.GridPanel({
+    var attributes_grid = new Ext.grid.EditorGridPanel({
         id:'attribute_grid_obj_id',
     	store: store_attributes_grid_obj,
         title:gettext('Attributes'),
-        sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
-        cm: new Ext.grid.ColumnModel([
-                                {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id', hidden:true},
-                                {id:'name',header: "Name", width: 80, sortable: true, dataIndex: 'name'},
-                                {id:'type',header: "Type", width: 50, sortable: true, dataIndex: 'type'},
-                                {id:'multivalued',header: "Multivalued", width: 50, sortable: true, dataIndex: 'multivalued'},
-                                {id:'maybe_empty',header: "Empty", width: 50, sortable: true, dataIndex: 'maybe_empty'},
-                                {id:'value',header: "Value", width: 90, dataIndex: 'value'},
-                                {id:'default_value',header: "Default", width: 70, sortable: true, dataIndex: 'default_value'},
-                                {id:'choices',header: "Choices", width: 50, sortable: true, dataIndex: 'choices'},
-                                {id:'target_class',header: "Target class", width: 50, sortable: true, dataIndex: 'target_class'},
-                                {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'},
-                                {id:'min',header: "Min", width: 60, sortable: false, dataIndex: 'min'},
-                                {id:'max',header: "Max", width: 60, sortable: false, dataIndex: 'max'},
-                                {id:'length',header: "Length", width: 60, sortable: false, dataIndex: 'length'},
-                                {id:'notes',header: "Notes", width: 150, sortable: false, dataIndex: 'notes'}
-                                
-        ]),
-        listeners: {
-            'rowdblclick': function(grid, rowIndex, e){
-		        var record = grid.getStore().getAt(rowIndex);  
-	        	add_single_attribute(true, grid, true, false, false)
-            }
-        },
-    	height: 220
+        //sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
+        cm: new Ext.grid.ColumnModel({
+        	columns:[
+                {id:'id',header: "id", width: 30, sortable: true, dataIndex: 'id', hidden:true},
+                {id:'name',header: "Name", width: 80, sortable: true, dataIndex: 'name'},
+                {id:'type',header: "Type", width: 50, sortable: true, dataIndex: 'type'},
+                {id:'multivalued',header: "Multivalued", width: 50, sortable: true, dataIndex: 'multivalued'},
+                {id:'maybe_empty',header: "Empty", width: 50, sortable: true, dataIndex: 'maybe_empty'},
+                {id:'value',header: "Value", width: 90, dataIndex: 'value', editor: new Ext.form.TextField({allowBlank: false})},
+                {id:'default_value',header: "Default", width: 70, sortable: true, dataIndex: 'default_value'},
+                {id:'choices',header: "Choices", width: 50, sortable: true, dataIndex: 'choices'},
+                {id:'target_class',header: "Target class", width: 50, sortable: true, dataIndex: 'target_class'},
+                {id:'order',header: "Order", width: 50, sortable: true, dataIndex: 'order'},
+                {id:'min',header: "Min", width: 60, sortable: false, dataIndex: 'min'},
+                {id:'max',header: "Max", width: 60, sortable: false, dataIndex: 'max'},
+                {id:'length',header: "Length", width: 60, sortable: false, dataIndex: 'length'},
+                {id:'notes',header: "Notes", width: 150, sortable: false, dataIndex: 'notes'}
+                ]
+        }),
+    	height: 220,
+    	clicksToEdit:1,
+    	listeners:{
+    	 cellclick: function(grid, rowIndex, columnIndex) {
+    	  // Get the Record for the row
+    	        var record = grid.getStore().getAt(rowIndex);
+    	        // Get field name for the column
+    	        var fieldName = grid.getColumnModel().getDataIndex(columnIndex);
+    	        if (record.data.type == 'objref' || record.data.multivalued == true){
+    	        	add_single_attribute(true, grid, true, false, false, record);
+    	        }else if (record.data.multivalued == false){
+	    	        var col = Ext.getCmp('attribute_grid_obj_id').getSelectionModel().getSelectedCell()[1];
+	    	        switch(record.data.type) { 
+	    	        case 'bool': 
+	    	        	Ext.getCmp('attribute_grid_obj_id').getColumnModel().setEditor(col,new Ext.form.ComboBox({
+	    	        		store: get_TF_store(), // end of Ext.data.SimpleStore
+	    	    	        fieldLabel: gettext('Select value ..'),
+	    	    	        width: 130,
+	    	    	        emptyText: gettext('Select ..'),
+	    	    	        displayField: 'name',
+	    	    	        valueField: 'id',
+	    	    	        mode: 'local',
+	    	    	        editable: false,
+	    	    	        allowBlank:true,
+	    	    	        triggerAction: 'all'
+	    	    	        }));
+	    	        break;  
+	    	        case 'int': 
+	    	        	Ext.getCmp('attribute_grid_obj_id').getColumnModel().setEditor(col,new Ext.form.NumberField());
+	    	        break; 
+	    	        case 'date': 
+	    	        	Ext.getCmp('attribute_grid_obj_id').getColumnModel().setEditor(col,new Ext.form.DateField({format: 'Y-m-d', altFormat:'Y-m-d'}));
+	    	        break;  
+	    	        case 'choice': 
+	    	        	Ext.getCmp('attribute_grid_obj_id').getColumnModel().setEditor(col,new Ext.form.ComboBox({
+	    	        		store: get_CHOICE_store(record.data.choices), // end of Ext.data.SimpleStore
+	    	    	        fieldLabel: gettext('Select value ..'),
+	    	    	        width: 130,
+	    	    	        emptyText: gettext('Select ..'),
+	    	    	        displayField: 'name',
+	    	    	        valueField: 'id',
+	    	    	        mode: 'local',
+	    	    	        editable: false,
+	    	    	        triggerAction: 'all'
+	    	    	        }));
+	      	        break;  
+	    	        case 'string': 
+	    	        	Ext.getCmp('attribute_grid_obj_id').getColumnModel().setEditor(col,new Ext.form.TextField());
+	      	        break; 
+	    	        case 'uri':
+	    	        	Ext.getCmp('attribute_grid_obj_id').getColumnModel().setEditor(col,new Ext.form.TextField());
+	      	        break;  
+	    	        case 'date-like-string': 
+	    	        	Ext.getCmp('attribute_grid_obj_id').getColumnModel().setEditor(col,new Ext.form.TextField());
+	      	        break;  
+	    	        }
+    	        }
+    	 }
+    	}
     });
     fields.push(attributes_grid);
     var details_panel_obj = new Ext.FormPanel({
@@ -1545,85 +1615,101 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
             text: gettext('Save'),
             type: 'submit',
             handler: function(){
-        		params = {};
-        		params['name'] = name_textField.getValue();
-        		params['notes'] = notes_textField.getValue();
-
-        		if (id_textField.getValue()){
-        			params['id'] = id_textField.getValue();
-        		}
-        		params['class_id'] = class_id_textField.getValue();
-        		var attribute;
-        		params['attributes'] = {};
-        		for (var i=0; i < Ext.getCmp('attribute_grid_obj_id').getStore().getCount(); i++){
-            		attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
-            		if (attribute.multivalued == true){//list of type
-        				if (attribute.type == 'choice'){
-        					params['attributes'][attribute.id] = [];
-		        			choices = attribute.value.split(',');
-		        			if (choices[choices.length-1] == ""){
-		        				delete(choices[choices.length-1]);
-		        				choices.splice(choices.length-1, 1);
-		        			}
-	        				params['attributes'][attribute.id] = choices;
-        				}else{
-        					if (attribute.value != null){
-            					params['attributes'][attribute.id] = attribute.value;
-        					}else {
-        						params['attributes'][attribute.id] = [];
-        					}
-        				}
-        			}else{//only one value
-    					if (attribute.value != null){
-    						params['attributes'][attribute.id] = attribute.value;
-    					}else if(attribute.default_value != null ){
-    						params['attributes'][attribute.id] = attribute.default_value;
-    					}else if(attribute.maybe_empty == true){
-    						params['attributes'][attribute.id] = null;
-    					}
-            		}
-        		}
-        		if (add_obj){
-	        		Ext.Ajax.request({
-	        			url:url_submit,
-	        			jsonData: params,
-	        			method: method_request,
-	        			headers: {'Content-Type': 'application/json;charset=utf-8'},
-	                    clientValidation: true,
-	                    waitMsg: 'Saving...',
-	                    success: function(response){
-	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
-	                    	//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
-	                    	Ext.getCmp('obj_reference_tree').getNodeById(class_id).reload();
-	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-	                    	Ext.getCmp('details_panel_obj').removeAll();
-	                    },
-	                    failure:function(response){
-	                    	Ext.Msg.alert('Failure', response.responseText);
-	                    }
-	        		});
-        		}else{
-	        		Ext.Ajax.request({
-	        			url:url_submit,
-	        			jsonData: params,
-	        			method: method_request,
-	        			headers: {'Content-Type': 'application/json;charset=utf-8'},
-	                    clientValidation: true,
-	                    waitMsg: 'Saving...',
-	                    success: function(response){
-	        				//Ext.getCmp('obj_reference_tree').root.reload();
-	                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
-	                    	Ext.getCmp('obj_reference_tree').getNodeById(params['class_id']).reload();
-	                    	Ext.getCmp('details_panel_obj').removeAll();
-	                    	update_tree_catalog(params);
-	                    },
-	                    failure:function(response){
-	                    	Ext.Msg.alert('Failure', response.responseText);
-	                    }
-	        		});
-        		}
-            }
+    			if (name_textField.getValue() != null && name_textField.getValue().length >0){
+	        		params = {};
+	        		params['name'] = name_textField.getValue();
+	        		params['notes'] = notes_textField.getValue();
+	        		if (id_textField.getValue()){
+	        			params['id'] = id_textField.getValue();
+	        		}
+	        		params['class_id'] = class_id_textField.getValue();
+	        		var attribute;
+	        		params['attributes'] = {};
+	        		for (var i=0; i < Ext.getCmp('attribute_grid_obj_id').getStore().getCount(); i++){
+	            		attribute = Ext.getCmp('attribute_grid_obj_id').getStore().getAt(i).data;
+	            		if (attribute.multivalued == true){//list of type
+	        				if (attribute.type == 'choice'){
+	        					params['attributes'][attribute.id] = [];
+			        			choices = attribute.value.split(',');
+			        			if (choices[choices.length-1] == ""){
+			        				delete(choices[choices.length-1]);
+			        				choices.splice(choices.length-1, 1);
+			        			}
+		        				params['attributes'][attribute.id] = choices;
+	        				}else{
+	        					if (attribute.value != null){
+	            					params['attributes'][attribute.id] = attribute.value;
+	        					}else {
+	        						params['attributes'][attribute.id] = [];
+	        					}
+	        				}
+	        			}else{//only one value
+	    					if (attribute.value != null){
+	    						params['attributes'][attribute.id] = attribute.value;
+	    					}else if(attribute.default_value != null ){
+	    						params['attributes'][attribute.id] = attribute.default_value;
+	    					}else if(attribute.maybe_empty == true){
+	    						params['attributes'][attribute.id] = null;
+	    					}
+	    					if (attribute.type == 'date' && params['attributes'][attribute.id]!="" && params['attributes'][attribute.id]!=null){
+	    						params['attributes'][attribute.id] = params['attributes'][attribute.id].format('Y-m-d');
+	            			}else if (attribute.type == 'date'){
+	            				params['attributes'][attribute.id] = null;
+	            			}
+	    					if (params['attributes'][attribute.id]!= null)
+	    						if (params['attributes'][attribute.id].length>0){
+			    					if (attribute.type == 'int'){
+			    						params['attributes'][attribute.id] = parseInt(params['attributes'][attribute.id]);
+			            			}else if (attribute.type == 'bool'){
+			            				params['attributes'][attribute.id] = params['attributes'][attribute.id].toLowerCase()=="true"?true:false;
+			            			}
+	    						}
+	            		}
+	        		}
+	        		if (add_obj){
+		        		Ext.Ajax.request({
+		        			url:url_submit,
+		        			jsonData: params,
+		        			method: method_request,
+		        			headers: {'Content-Type': 'application/json;charset=utf-8'},
+		                    clientValidation: true,
+		                    waitMsg: 'Saving...',
+		                    success: function(response){
+		        				//Ext.getCmp('obj_reference_tree').root.reload();
+		        				//console.log(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
+		                    	//Ext.getCmp('obj_reference_tree').expandPath(Ext.getCmp('obj_reference_tree').getNodeById(class_id).getPath());
+		                    	Ext.getCmp('obj_reference_tree').getNodeById(class_id).reload();
+		                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+		                    	Ext.getCmp('details_panel_obj').removeAll();
+		                    },
+		                    failure:function(response){
+		                    	Ext.Msg.alert('Failure', response.responseText);
+		                    }
+		        		});
+	        		}else{
+		        		Ext.Ajax.request({
+		        			url:url_submit,
+		        			jsonData: params,
+		        			method: method_request,
+		        			headers: {'Content-Type': 'application/json;charset=utf-8'},
+		                    clientValidation: true,
+		                    waitMsg: 'Saving...',
+		                    success: function(response){
+		        				//Ext.getCmp('obj_reference_tree').root.reload();
+		                    	Ext.Msg.alert('Status', 'Changes saved successfully.');
+		                    	Ext.getCmp('obj_reference_tree').getNodeById(params['class_id']).reload();
+		                    	Ext.getCmp('details_panel_obj').removeAll();
+		                    	update_tree_catalog(params);
+		                    },
+		                    failure:function(response){
+		                    	Ext.Msg.alert('Failure', response.responseText);
+		                    }
+		        		});
+	        		}
+	            }else{
+	            	Ext.Msg.alert('Error', 'Not present the name of the object!');        	
+	            }
+        	}
         }]
     });
 	if (ws_permissions_store.find('name', 'admin') < 0 && ws_permissions_store.find('name', 'edit_vocabulary') < 0){
