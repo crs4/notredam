@@ -20,8 +20,7 @@ from dam.plugins.common.adapter import Adapter
 from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.pdfcover_idl import inspect
-from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 def run(workspace, 
         item_id, 
@@ -30,15 +29,13 @@ def run(workspace,
         output_extension,  # extension (with the '.') or "same_as_source"
         max_size = 0,          # largest dimension
         ):
-    deferred = defer.Deferred()
-    adapter = PdfCover(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, adapter.execute, output_variant_name, output_extension,
+    adapter = PdfCover(workspace, item_id, source_variant_name)
+    result = adapter.execute(output_variant_name, output_extension,
         max_size=max_size)
-    return deferred
+    return result
 
 class PdfCover(Adapter):
     remote_exe = 'convert'
-    md_server = "LowLoad"
 
     def get_cmdline(self, output_variant_name, output_extension, max_size):
         global pipe1, pipe2
@@ -65,7 +62,6 @@ pipe2 = '-density 300 "file://%(infile)s[0]" "outfile://%(outfile)s"'
 #
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
 #
-from twisted.internet import defer, reactor
 from dam.repository.models import Item
 from dam.workspace.models import DAMWorkspace
 
@@ -81,21 +77,3 @@ def test():
             max_size=400,
             )
     d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    
-    reactor.callWhenRunning(test)
-    reactor.run()
-
-    
-    
-    
-
-    
-    
-    

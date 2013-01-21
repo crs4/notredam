@@ -37,7 +37,7 @@ from dam.preferences.models import DAMComponentSetting
 
 from dam.core.dam_workspace.decorators import permission_required
 
-from mediadart.storage import Storage
+from mprocessor.storage import Storage
 
 import logging
 logger = logging.getLogger('dam')

@@ -1,6 +1,5 @@
 import random
 import os
-#from mediadart import log
 
 class DAGError(Exception):
     pass

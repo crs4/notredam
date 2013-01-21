@@ -21,8 +21,7 @@ from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.common.utils import resize_image
 from dam.plugins.extract_frame_idl import inspect
-from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 def run(workspace, 
         item_id, 
@@ -39,11 +38,10 @@ def run(workspace,
     @param thumb_size: desired (width, height) of the thumbnail (aspect ratio is preserved)
     @param thumb_pos: approximate position (percent of total length)
     """
-    deferred = defer.Deferred()
-    adapter = ExtractFrame(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, adapter.execute, output_variant_name, output_extension,
+    adapter = ExtractFrame(workspace, item_id, source_variant_name)
+    result = adapter.execute(output_variant_name, output_extension,
                       frame_w=frame_w, frame_h=frame_h, position=position)
-    return deferred
+    return result
 
 #
 # The command line to be executed remotely
@@ -73,7 +71,6 @@ class ExtractFrame(Adapter):
 #
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
 #
-from twisted.internet import defer, reactor
 from dam.repository.models import Item
 from dam.workspace.models import DAMWorkspace
 
@@ -91,21 +88,3 @@ def test():
             position = '62.8',
             )
     d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    
-    reactor.callWhenRunning(test)
-    reactor.run()
-
-    
-    
-    
-
-    
-    
-    
