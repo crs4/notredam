@@ -478,6 +478,7 @@ def _init_base_attributes(o):
             colname = self.column_name()
             ret = [Column(colname, sa.types.Integer,
                           nullable=self.maybe_empty and not self.multivalued,
+                          autoincrement=False,
                           default=self.default,
                           server_default=_server_default(self.default))]
             if self.min is not None:
