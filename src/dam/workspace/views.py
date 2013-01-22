@@ -39,9 +39,9 @@ from dam.core.dam_repository.models import Type
 #from dam.mprocessor.models import Task
 from dam.settings import GOOGLE_KEY, DATABASES
 from dam.application.views import NOTAVAILABLE
-from dam.preferences.models import DAMComponentSetting
+from dam.preferences.models import DAMComponentSetting, DAMComponent
 from dam.metadata.models import MetadataProperty
-from dam.preferences.views import get_metadata_default_language
+from dam.preferences.views import get_metadata_default_language, get_ws_homepage_prefs
 from dam.mprocessor.models import Pipeline, Process, ProcessTarget
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
@@ -252,6 +252,7 @@ def get_workspaces(request):
         logger.exception(ex)
         raise ex
 
+
 def _search_complex_query(complex_query,  items):
     
     if complex_query['condition'] == 'and':
@@ -394,13 +395,22 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
         items = items.filter(type__name__in = media_type).distinct()
         
     query = query_dict.get('query')
-    order_by = query_dict.get('order_by',  'creation_time')
-    order_mode = query_dict.get('order_mode',  'decrescent')
-    show_deleted = query_dict.has_key('show_deleted')
-    
-    items = filter_by_date('creation_time', query_dict, items)
-    items = filter_by_date('last_update', query_dict, items, workspace)
+    logger.info('query: %s' % query) 
+    logger.info('query_dict: %s' % query_dict) 
+    #order_by = query_dict.get('order_by',  'creation_time')
+    #order_mode = query_dict.get('order_mode',  'descending')
+    #order_by = query_dict.get('order_by',  'dc_title')
+    #order_mode = query_dict.get('order_mode',  'ascending')
+    ws_homepage, ws_ordering_criteria, ws_order_mode = get_ws_homepage_prefs(workspace)
 
+    show_deleted = query_dict.has_key('show_deleted')
+    if query_dict.has_key('order_by') and query_dict.has_key('order_mode'): 
+        ws_ordering_criteria = query_dict.get('order_by')
+        ws_order_mode = query_dict.get('order_mode')
+        #items = filter_by_date('creation_time', query_dict, items)
+        if (ws_ordering_criteria == 'creation_time'):
+            items = filter_by_date('last_update', query_dict, items, workspace)
+            logger.info('filter by date items: %s' % items)
     #items = filter_by_date('creation_time', {'creation_time<=': '10/10/2011 18:10:10', 'creation_time>=':'10/10/2011 15:0:0'}, items)
     #items = filter_by_date('last_update', {'last_update<=': '10/10/2011 17:0:0', 'last_update>=': '10/10/2011 15:0:0'  }, items, workspace)
     
@@ -600,15 +610,15 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
     
     items = items.distinct()       
     property = None    
-    if order_by:        
-        if order_by == 'creation_time':
+    if ws_ordering_criteria:        
+        if ws_ordering_criteria == 'creation_time':
             pass
         
-        elif order_by == 'size':            
+        elif ws_ordering_criteria == 'size':            
             items = items.extra(select={order_by: 'select size from component, variants_variant where item_id = item.id and variants_variant.name == "original" '})
         
         else:
-            property_namespace, property_field_name = order_by.split('_')
+            property_namespace, property_field_name = ws_ordering_criteria.split('_')
                 
             try:
                 property = MetadataProperty.objects.get(namespace__prefix__iexact = property_namespace,  field_name__iexact = property_field_name)
@@ -621,13 +631,13 @@ def _search(query_dict,  items, media_type = None, start =0, limit=30,  workspac
 #                TODO: change when gui multilanguage ready
                 language_selected = 'en-US' 
                 logger.debug('------------- items.query %s'%items.query)
-                items = items.extra(select=SortedDict([(order_by, 'select distinct value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s')]),  select_params = (str(property.id),  language_selected))
+                items = items.extra(select=SortedDict([(ws_ordering_criteria, 'select distinct value from metadata_metadatavalue where object_id = item.id and schema_id = %s  and language=%s')]),  select_params = (str(property.id),  language_selected))
                 logger.debug('------------- items.query %s'%items.query)
                 
-        if order_mode == 'decrescent':
-            items = items.order_by('-%s'%order_by)
+        if ws_order_mode == 'descending':
+            items = items.order_by('-%s'%ws_ordering_criteria)
         else:
-            items = items.order_by('%s'%order_by)
+            items = items.order_by('%s'%ws_ordering_criteria)
     
     total_count = items.count()
     
@@ -664,6 +674,7 @@ def _search_items(request, workspace, media_type, start = 0, limit = 30):
 @login_required
 def load_items(request, view_type=None, unlimited=False):
     logger.debug('******************** load_items')
+    logger.debug('request POST inside* load_items %s' % request.POST )
     from datetime import datetime
     try:
         user = request.user
