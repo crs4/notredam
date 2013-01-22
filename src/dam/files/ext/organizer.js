@@ -25,6 +25,15 @@ var ws_pref_store = new Ext.data.JsonStore({
         });
 ws_pref_store.load();
 
+var ws_homepage_pref_store = new Ext.data.JsonStore({
+             url: '/get_homepage_prefs/',
+             id: 'homepage_prefs',
+             autoLoad: true,
+             root: 'homepage',
+             fields:['homepage', 'ordering_criteria', 'order_mode']
+        });
+ws_homepage_pref_store.load();
+
 var task;
 function set_status_bar_busy(){
 	var sb = Ext.getCmp('dam_statusbar');
@@ -923,7 +932,7 @@ function createMediaPanel(config, autoLoad) {
 
         // added to have a selection of item, according to user's preferences on a workspace
         // from here
-	var exhibition = new Ext.BoxComponent({
+	var homepage = new Ext.BoxComponent({
 	    autoEl: {
 			tag:'a',
 			href: 'javascript:void(0)',
@@ -938,12 +947,12 @@ function createMediaPanel(config, autoLoad) {
 	    	afterrender:function(){
 	    		this.getEl().on('click', function(){
                                 //pref_ws_store is defined in general.js and set in preferences.js   
-	    			if (ws_pref_store.find('name', 'exhibition') > -1) {
-	    			    exhibition_keyword = ws_pref_store.query('name', 'exhibition').items[0].data.value;
-                                    if ((exhibition_keyword != '') && (exhibition_keyword != "''")) {
-                                        setTabTitle(exhibition_keyword, panel_id);
+	    			if (ws_pref_store.find('name', 'homepage') > -1) {
+	    			    homepage_keyword = ws_pref_store.query('name', 'homepage').items[0].data.value;
+                                    if ((homepage_keyword != '') && (homepage_keyword != "''")) {
+                                        setTabTitle(homepage_keyword, panel_id);
    			                Ext.getCmp('media_tabs').getActiveTab().getSearch().setValue('');
-	                                do_search(exhibition_keyword);
+	                                do_search(homepage_keyword);
                                     } else {
                                         setTabTitle('All Items', panel_id);
 	                                do_search('');
@@ -1062,11 +1071,11 @@ function createMediaPanel(config, autoLoad) {
            
              if(this.iconCls == 'sort_asc'){
                     this.setIconClass('sort_desc');
-                    this.order_mode = 'decrescent';
+                    this.order_mode = 'descending';
                 }
             else{
                 this.setIconClass('sort_asc');
-                this.order_mode = 'crescent';
+                this.order_mode = 'ascending';
             }
             this.sort();
         }
@@ -1203,7 +1212,7 @@ function createMediaPanel(config, autoLoad) {
 		      ' ',		     
 		      search, 
 		      trigger,
-		      exhibition,
+		      homepage,
 //		      ' ',		      
 		      show_all,
             
