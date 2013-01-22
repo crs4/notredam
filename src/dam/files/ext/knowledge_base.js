@@ -882,7 +882,7 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		title = gettext("Edit attribute");
 		text_button = gettext('Apply');
 		//max_value_slider = attributes_grid.getStore().getCount()-1;
-		slider_value = record.data.order;
+		//slider_value = record.data.order;
 	}else{
 		name_textField_value = null;
 		empty_chekbox_value = false;
@@ -1161,7 +1161,9 @@ function load_detail_class(class_data, id_class, add_class){
 			rowselect: {fn:function(sm){
 				Ext.getCmp('id_movedown_attributes_class').enable();
 				Ext.getCmp('id_moveup_attributes_class').enable();
-				if (sm.getSelected().data.inherited == false ){
+				console.log(sm.getSelected().data);
+				console.log(sm.getSelected().data.inherited);
+				if (sm.getSelected().data.inherited == false || sm.getSelected().data.inherited == undefined){
 					Ext.getCmp('id_edit_attributes_class').enable();
 					Ext.getCmp('id_remove_attributes_class').enable();
 				}else{
@@ -1201,7 +1203,7 @@ function load_detail_class(class_data, id_class, add_class){
 		}
 		var method_request='PUT';
 	}
-
+	
 	var attributes_grid = new Ext.grid.GridPanel({
     	id: 'attribute_grid_id',
         store: store_attributes_grid,
@@ -1231,7 +1233,7 @@ function load_detail_class(class_data, id_class, add_class){
             tooltip:'Add a new attribute',
             iconCls:'add_icon',
             handler: function() {
-            	add_single_attribute(false, attributes_grid, false, add_class, true);
+            	add_single_attribute(false, attributes_grid, false, add_class, true, null);
         	}
         },'-',{
             text:'Edit',
@@ -1240,7 +1242,7 @@ function load_detail_class(class_data, id_class, add_class){
             iconCls:'edit_icon',
             disabled:true,
             handler: function() {
-        		add_single_attribute(true, attributes_grid, false, add_class, false);
+        		add_single_attribute(true, attributes_grid, false, add_class, false, attributes_grid.getStore(attributes_grid.getSelectionModel().getSelected()).data.items[0]);
         	}
         },'-',{
             text:'Remove',
