@@ -22,7 +22,7 @@ class WrongItemWorkspace(Exception):
 	pass
 
 class State(models.Model):
-	name = models.CharField(max_length=256)
+	name = models.CharField(max_length=255)
 	workspace = models.ForeignKey('workspace.DAMWorkspace')
 	
 	class Meta:

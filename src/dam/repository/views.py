@@ -158,3 +158,10 @@ def get_resource(request, resource_name):
         
     
     return response
+
+@login_required
+def get_resource_uri(request, item_id, variant_name):	
+    workspace = request.session.get('workspace')
+    item = Item.objects.get(_id = item_id, workspaceitem__workspace = workspace)
+    component = Component.objects.get(item = item, variant__name = variant_name)
+    return HttpResponse(component.uri)

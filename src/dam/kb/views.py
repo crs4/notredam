@@ -129,6 +129,10 @@ def class_index_put(request, ws_id):
 
         attrs = []
         for (attr_id, a) in json_attrs.iteritems():
+            attr_id = kb_niceid(attr_id, extra_chars=0)
+            if not ses.orm.attributes.is_valid_id(attr_id):
+                return HttpResponseBadRequest('Invalid attribute ID: "%s"'
+                                              % (attr_id, ))
             attr_obj = _validate_build_attr_obj(attr_id, a, ses, ws)
             if not isinstance(attr_obj, ses.orm.attributes.Attribute):
                 # Attribute build failed - we have been returned an error
@@ -193,7 +197,9 @@ def class_get(request, ws_id, class_id):
             cls = ses.class_(class_id, ws=ws)
         except kb_exc.NotFound:
             return HttpResponseNotFound()
-
+        
+        print _kbclass_to_dict(cls, ses)
+        
         return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls, ses)))
 
 
@@ -316,6 +322,9 @@ def class_post(request, ws_id, class_id):
         # Let's now handle new attibutes
         new_attrs = []
         for new_attr_id in new_attr_ids:
+            if not ses.orm.attributes.is_valid_id(new_attr_id):
+                return HttpResponseBadRequest('Invalid attribute ID: "%s"'
+                                              % (new_attr_id, ))
             new_attr_dict = attrs_dict[n_client_attr_map[new_attr_id]]
             new_attr_obj = _validate_build_attr_obj(new_attr_id, new_attr_dict,
                                                     ses, ws)
@@ -652,6 +661,8 @@ def class_objects_get(request, ws_id, class_id):
 
         objs = ses.objects(class_=cls.python_class)
         obj_dicts = [_kbobject_to_dict(o, ses) for o in objs]
+        
+        print obj_dicts
 
         return HttpResponse(simplejson.dumps(obj_dicts))
 
@@ -1262,7 +1273,7 @@ def _setup_kb_root_class_visibility(request, ses, cls, cls_dict, curr_ws):
     if curr_ws not in owner_ws_list:
         return HttpResponseBadRequest(('Root class representation does not'
                                        + ' report the current workspace (%d)'
-                                       + ' as owner') % (ws_id, ))
+                                       + ' as owner') % (curr_ws, ))
         
     # Finally, remove the workspace visibilities which were not
     # mentioned in the class dictionary

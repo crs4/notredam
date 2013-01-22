@@ -140,8 +140,9 @@ def _init_base_classes(o):
         if hasattr(old_cls,  '_cached_pyclass_ref'):
             assert(not hasattr(cls, '_cached_pyclass_ref'))
             pyclass = old_cls._cached_pyclass_ref()
-            cls._cached_pyclass_ref = weakref.ref(pyclass)
-            pyclass.__kb_class__ = cls
+            if pyclass is not None: # The referenced class may have expired
+                cls._cached_pyclass_ref = weakref.ref(pyclass)
+                pyclass.__kb_class__ = cls
         o._kb_class_cache[cls.id] = cls
     o.cache_update = cache_update
 
@@ -302,7 +303,7 @@ def _init_base_classes(o):
                      explicit_id=None):
             suffix = '_' + niceid.generate(length=RAND_SUFFIX_LENGTH)
             if explicit_id is None:
-                clean_id = niceid.niceid(name, extra_chars=RAND_SUFFIX_LENGTH)
+                clean_id = niceid.niceid(name, extra_chars=0)
                 # FIXME: check uniqueness!
                 self.id = '%s%s' % (clean_id, suffix)
             else:
