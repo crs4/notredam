@@ -40,13 +40,14 @@ def get_metadata_default_language(user, workspace=None):
     list_of_languages = comma_separated_languages.split(',')
     return list_of_languages[0]
 
+
+
 @login_required
 def get_lang_pref(request):
     """
     Returns the list of available metadata languages chosen by the given user
     """
     workspace = request.session['workspace']
-    
     user = User.objects.get(pk=request.session['_auth_user_id'])
     component=DAMComponent.objects.get(name__iexact='User Interface')
     setting=DAMComponentSetting.objects.get(component=component, name__iexact='supported_languages')
@@ -122,6 +123,41 @@ def save_system_pref(request):
         logger.exception(ex)
         raise ex    
 
+def get_ws_homepage_prefs(ws):
+    """
+    Returns ws settings about homepage (name for homepage search, ordering_criteria, order_mode)
+    """
+    ws_homepage = ''
+    ws_ordering_criteria = ''
+    ws_order_mode = ''
+    try:
+        component = DAMComponent.objects.get(name__iexact='Homepage')
+    except DAMComponent.DoesNotExist:
+        return ws_homepage, ws_ordering_criteria, ws_order_mode
+    try:
+        setting = DAMComponentSetting.objects.filter(component=component)
+        homepage_setting = DAMComponentSetting.objects.get(component=component, name__iexact='homepage')
+        ws_homepage = homepage_setting.get_ws_preference(ws).value
+        ordering_criteria_setting = DAMComponentSetting.objects.get(component=component, name__iexact='ordering_criteria')
+        ws_ordering_criteria = ordering_criteria_setting.get_ws_preference(ws).value[1:-1].replace(':', '_')
+        order_mode_setting = DAMComponentSetting.objects.get(component=component, name__iexact='order_mode')
+        ws_order_mode = order_mode_setting.get_ws_preference(ws).value
+    except DAMComponentSetting.DoesNotExist:
+        pass
+    return ws_homepage, ws_ordering_criteria, ws_order_mode
+
+@login_required
+def get_homepage_prefs(request):
+    """
+    Returns json resp with ws settings about homepage (name for homepage search, ordering_criteria, order_mode)
+    """
+    workspace = request.session['workspace']
+    homepage, ordering_criteria, order_mode = get_ws_homepage_prefs(workspace)
+    resp['homepage'] = {'homepage':homepage,'ordering_criteria':ordering_criteria, 'order_mode':order_mode}
+    return HttpResponse(simplejson.dumps(resp))
+
+
+
 @login_required
 def save_ws_pref(request):
     """
@@ -137,6 +173,19 @@ def save_ws_pref(request):
     except Exception,  ex:
         logger.exception(ex)
         raise ex 
+
+def _get_ws_settings(workspace):
+    ws_settings = {'prefs':[]}
+    try:
+        settings = DAMComponentSetting.objects.filter(setting_level='W')
+    except DAMComponentSetting.DoesNotExist:
+        return ws_settings
+        
+    for s in settings:
+        choices = [[c.name, c.description] for c in s.choices.all()]
+        value = s.get_user_setting_by_level(workspace)
+        ws_settings['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': s.component.name,  'type': s.type,  'value': value,  'choices':choices})
+    return ws_settings
     
 @login_required
 def get_ws_settings(request):
@@ -144,13 +193,8 @@ def get_ws_settings(request):
     Get workspace settings
     """
     workspace = request.session.get('workspace')
-    settings = DAMComponentSetting.objects.filter(setting_level='W')
-    data = {'prefs':[]}
-    for s in settings:
-        choices = [[c.name, c.description] for c in s.choices.all()]
-        value = s.get_user_setting_by_level(workspace)
-        data['prefs'].append({'id': 'pref__%d'%s.id, 'name':s.name,'caption': s.caption,'name_component': s.component.name,  'type': s.type,  'value': value,  'choices':choices})
-    return HttpResponse(simplejson.dumps(data))    
+    ws_settings = _get_ws_settings(workspace)
+    return HttpResponse(simplejson.dumps(ws_settings))    
 
 @login_required
 def account_prefs(request):
