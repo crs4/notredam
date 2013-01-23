@@ -360,9 +360,10 @@ def _init_base_attributes(o):
             # times.  We'll react to the 'set' event, unless the attribute
             # is multivalued (in this case, we'll react to 'append')
             if not self.multivalued:
+                validator = self.validator()
                 event.listen(getattr(cls, self.id), 'set',
-                             lambda target, val, _oldval, _init: (
-                                 self.validate(target, val)),
+                             lambda _target, val, _oldval, _init: (
+                                 validator(val)),
                              propagate=True, retval=True)
                 return
 
@@ -382,30 +383,24 @@ def _init_base_attributes(o):
             setattr(cls, self.id,
                     sa_proxy.association_proxy(hidden_id, 'value'))
 
+            validator = self.validator()
             event.listen(self._mvclass.value, 'set',
-                         lambda target, val, _oldval,_init:self.validate(target,
-                                                                         val),
+                         lambda _target, val, _oldval,_init: validator(val),
                          propagate=True, retval=True)
 
-        def validate(self, target, value):
+        def validator(self):
             '''
-            Check whether the given value is compatible with the KB attribute
+            Return a validation closure  that checks  whether the given value
+            (i.e. the closure argument) is compatible with the KB attribute
             type and configuration, and thus whether it could be safely
             assigned/appended to the corresponding field of a Python
             object.
 
-            :type target:  Python object
-            :param target: the SQL-mapped object receiving the value
-
-            :type value:  Python term
-            :param value: the value to check
-
-            :rtype: Python term
-            :returns: the given value, possibly with some ad-hoc type casting
-                      (for better compatibility with the attribute)
-
-            :raises: :py:exc:`errors.ValidationError` in case of validation
-                     failure
+            :rtype: Python function
+            :returns: A closure taking one argument (the value to check),
+                      returning the value to be assigned, and
+                      raising a :py:exc:`errors.ValidationError` in case
+                      of validation failure
             '''
             raise NotImplementedError
 
@@ -432,23 +427,22 @@ def _init_base_attributes(o):
                            default=self.default,
                            server_default=_server_default(self.default))]
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
-                return value
-            if isinstance(value, bool):
-                return value
-            elif isinstance(value, int) and value in (0, 1):
-                return bool(value)
-            raise kb_exc.ValidationError('expected a boolean-like value, '
-                                         'got "%s"' % (str(value), ))
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                if isinstance(value, bool):
+                    return value
+                elif isinstance(value, int) and value in (0, 1):
+                    return bool(value)
+                raise kb_exc.ValidationError('expected a boolean-like value, '
+                                             'got "%s"' % (str(value), ))
+
+            return validator_fun
 
         def __repr__(self):
             return ('<Boolean(id=%s, class=%s, default=%s)>'
@@ -501,33 +495,34 @@ def _init_base_attributes(o):
                                                     self.id))))
             return ret
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            min_v = self.min
+            max_v = self.max
+            
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                if not (isinstance(value, int) or isinstance(value, long)
+                        or (isinstance(value, decimal.Decimal)
+                            and value == int(value))):
+                    raise kb_exc.ValidationError(('expected an integer-like '
+                                                  'value, got "%s" (type: %s)')
+                                                 % (str(value), type(value)))
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
-                return value
-            if not (isinstance(value, int) or isinstance(value, long)
-                    or (isinstance(value, decimal.Decimal)
-                     and value == int(value))):
-                raise kb_exc.ValidationError(('expected an integer-like value,'
-                                              + ' got "%s" (type: %s)')
-                                             % (str(value), type(value)))
+                in_range = ((min_v is None or (value >= min_v))
+                            and (max_v is None or (value <= max_v)))
+                if not in_range:
+                    str_min = (min_v is None and '-Inf') or str(min_v)
+                    str_max = (max_v is None and 'Inf') or str(max_v)
+                    raise kb_exc.ValidationError('Value %d is out of [%s,%s]'
+                                                 ' range'
+                                                 % (value, str_min, str_max))
+                return int(value)
 
-            in_range = ((sself.min is None or (value >= sself.min))
-                        and (sself.max is None or (value <= sself.max)))
-            if not in_range:
-                str_min = (sself.min is None and '-Inf') or str(sself.min)
-                str_max = (sself.max is None and 'Inf') or str(sself.max)
-                raise kb_exc.ValidationError('Value %d is out of [%s,%s] range'
-                                             % (value, str_min, str_max))
-
-            return int(value)
+            return validator_fun
 
         def __repr__(self):
             return ('<Integer(id=%s, class=%s, min=%s, max=%s, default=%s)>'
@@ -581,32 +576,34 @@ def _init_base_attributes(o):
                                                     self.id))))
             return ret
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            min_v = self.min
+            max_v = self.max
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
-                return value
-            if not (isinstance(value, float) or isinstance(value,
-                                                           decimal.Decimal)):
-                raise kb_exc.ValidationError(('expected a float-like value, '
-                                              + 'got "%s"')
-                                             % (str(value), ))
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                if not ((isinstance(value, float)
+                         or isinstance(value, decimal.Decimal))):
+                            raise kb_exc.ValidationError(('expected a '
+                                                          'float-like value, '
+                                                          'got "%s"')
+                                                         % (str(value), ))
 
-            in_range = ((sself.min is None or (value >= sself.min))
-                        and (sself.max is None or (value <= sself.max)))
-            if not in_range:
-                str_min = (sself.min is None and '-Inf') or str(sself.min)
-                str_max = (sself.max is None and 'Inf') or str(sself.max)
-                raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
-                                             % (value, str_min, str_max))
+                in_range = ((min_v is None or (value >= min_v))
+                            and (max_v is None or (value <= max_v)))
+                if not in_range:
+                    str_min = (min_v is None and '-Inf') or str(min_v)
+                    str_max = (max_v is None and 'Inf') or str(max_v)
+                    raise kb_exc.ValidationError('value %f is out of [%s,%s]'
+                                                 ' range'
+                                                 % (value, str_min, str_max))
+                return decimal.Decimal(value)
 
-            return decimal.Decimal(value)
+            return validator_fun
 
         def __repr__(self):
             return ('<Real(id=%s, class=%s, min=%s, max=%s, default=%s)>'
@@ -641,28 +638,27 @@ def _init_base_attributes(o):
                            default=self.default,
                            server_default=_server_default(self.default))]
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            length = self.length
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
-                return value
-            if not (isinstance(value, str) or isinstance(value, unicode)):
-                raise kb_exc.ValidationError(('expected a string-like value, '
-                                              + 'got "%s"')
-                                             % (str(value), ))
-            if len(value) > sself.length:
-                raise kb_exc.ValidationError('string length (%d chars) is '
-                                             'above the maximum limit '
-                                             '(%d chars)'
-                                             % (len(value), sself.length))
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                if not (isinstance(value, str) or isinstance(value, unicode)):
+                    raise kb_exc.ValidationError(('expected a string-like '
+                                                  'value, got "%s"')
+                                                 % (str(value), ))
+                if len(value) > length:
+                    raise kb_exc.ValidationError('string length (%d chars) is '
+                                                 'above the maximum limit '
+                                                 '(%d chars)'
+                                                 % (len(value), length))
+                return unicode(value)
 
-            return unicode(value)
+            return validator_fun
 
         def __repr__(self):
             return ("<String(id=%s, class=%s, length=%d, default='%s')>"
@@ -718,40 +714,41 @@ def _init_base_attributes(o):
             return ret
 
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            min_v = self.min
+            max_v = self.max
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                if (isinstance(value, str) or isinstance(value, unicode)):
+                    try:
+                        dt = datetime.datetime.strptime(value, '%Y-%m-%d')
+                        value = datetime.date(dt.year, dt.month, dt.day)
+                    except ValueError, e:
+                        raise kb_exc.ValidationError('cannot parse date: %s'
+                                                     % unicode(e))
+                elif isinstance(value, datetime.datetime):
+                    value = datetime.date(value.year, value.month, value.day)
+                elif not isinstance(value, datetime.date):
+                    raise kb_exc.ValidationError(('expected a date-like value, '
+                                                  + 'got "%s"')
+                                                 % (unicode(value), ))
+
+                in_range = ((min_v is None or (value >= min_v))
+                            and (max_v is None or (value <= max_v)))
+                if not in_range:
+                    str_min = (min_v is None and '-Inf') or unicode(min_v)
+                    str_max = (max_v is None and 'Inf') or unicode(max_v)
+                    raise kb_exc.ValidationError('value %f is out of [%s,%s] '
+                                                 'range'
+                                                 % (value, str_min, str_max))
                 return value
-            if (isinstance(value, str) or isinstance(value, unicode)):
-                try:
-                    dt = datetime.datetime.strptime(value, '%Y-%m-%d')
-                    value = datetime.date(dt.year, dt.month, dt.day)
-                except ValueError, e:
-                    raise kb_exc.ValidationError('cannot parse date: %s'
-                                                 % unicode(e))
-            elif isinstance(value, datetime.datetime):
-                value = datetime.date(value.year, value.month, value.day)
-            elif not isinstance(value, datetime.date):
-                raise kb_exc.ValidationError(('expected a date-like value, '
-                                              + 'got "%s"')
-                                             % (unicode(value), ))
 
-            in_range = ((sself.min is None or (value >= sself.min))
-                        and (sself.max is None or (value <= sself.max)))
-            if not in_range:
-                str_min = (sself.min is None and '-Inf') or unicode(sself.min)
-                str_max = (sself.max is None and 'Inf') or unicode(sself.max)
-                raise kb_exc.ValidationError('value %f is out of [%s,%s] range'
-                                             % (value, str_min, str_max))
-
-            return value
+            return validator_fun
 
         def __repr__(self):
             return ('<Date(id=%s, class=%s, min=%s, max=%s, default=%s)>'
@@ -764,28 +761,29 @@ def _init_base_attributes(o):
         Integer KB class attribute.  Inherits from :py:class:`String`, and
         shares its constructor arguments.
         '''
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            length = self.length
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
-                return value
-            if not (isinstance(value, str) or isinstance(value, unicode)):
-                raise kb_exc.ValidationError(('expected a URI-like value, '
-                                              + 'got "%s"')
-                                             % (str(value), ))
-            if len(value) > sself.length:
-                raise kb_exc.ValidationError(('URI length (%d chars) is above '
-                                              + 'the maximum limit (%d chars)')
-                                             % (len(value), sself.length))
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                if not (isinstance(value, str) or isinstance(value, unicode)):
+                    raise kb_exc.ValidationError(('expected a URI-like value, '
+                                                  + 'got "%s"')
+                                                 % (str(value), ))
+                if len(value) > length:
+                    raise kb_exc.ValidationError(('URI length (%d chars) '
+                                                  'is above the maximum '
+                                                  'limit (%d chars)')
+                                                 % (len(value), length))
 
-            # FIXME: actually perform URI validation
-            return unicode(value)
+                # FIXME: actually perform URI validation
+                return unicode(value)
+
+            return validator_fun
 
         def __repr__(self):
             return ("<Uri(id=%s, class=%s, length=%d, default='%s')>"
@@ -851,24 +849,24 @@ def _init_base_attributes(o):
                            default=self.default,
                            server_default=_server_default(self.default))]
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            list_of_choices = self._list_of_choices
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                value = unicode(value)
+                if value not in list_of_choices:
+                    raise kb_exc.ValidationError('"%s" is not a valid '
+                                                 'choice among %s'
+                                                 % (value,
+                                                    unicode(list_of_choices)))
                 return value
-            value = unicode(value)
-            if value not in sself._list_of_choices:
-                raise kb_exc.ValidationError('"%s" is not a valid choice among'
-                                             ' %s'
-                                             % (value,
-                                                unicode(sself._list_of_choices)))
-            return value
+
+            return validator_fun
 
         def __repr__(self):
             return ("<Choice(id=%s, class=%s, choices=%s, default='%s')>"
@@ -959,28 +957,27 @@ def _init_base_attributes(o):
                                                           == target_table.c.id),
                                              remote_side=target_table.c.id)}
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            target_pyclass = self.target._make_or_get_python_class()
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+
+                if not isinstance(value, target_pyclass):
+                    raise kb_exc.ValidationError(('expected a value of '
+                                                  'type "%s" '
+                                                  '(or descendants), got "%s" '
+                                                  + '(of type %s)')
+                                                 % (unicode(target_pyclass),
+                                                    unicode(value),
+                                                    unicode(type(value))))
                 return value
 
-            target_pyclass = sself.target._make_or_get_python_class(
-                _session=sess)
-            if not isinstance(value, target_pyclass):
-                raise kb_exc.ValidationError(('expected a value of type "%s" '
-                                              + '(or descendants), got "%s" '
-                                              + '(of type %s)')
-                                             % (unicode(target_pyclass),
-                                                unicode(value),
-                                                unicode(type(value))))
-            return value
+            return validator_fun
 
         def __repr__(self):
             return ("<ObjectReference(id=%s, class=%s, target_class=%s)>"
@@ -1001,44 +998,46 @@ def _init_base_attributes(o):
                             maybe_empty=maybe_empty, default=default,
                             order=order, multivalued=multivalued, notes=notes)
 
-        def validate(self, target, value):
-            # Let's use the SQLAlchemy session of the target
-            sess = sa_orm.Session.object_session(target)
-            if sess is not None:
-                sself = sess.merge(self)
-                sess.add(sself)
-            else:
-                sself = self
+        def validator(self):
+            # Cache some values to avoid queries at validation time
+            maybe_empty = self.maybe_empty
+            multivalued = self.multivalued
+            length = self.length
 
-            if sself.maybe_empty and not sself.multivalued and value is None:
-                return value
-            if not (isinstance(value, str) or isinstance(value, unicode)):
-                raise kb_exc.ValidationError(('expected a date-like string, '
-                                              + 'got "%s"')
-                                             % (str(value), ))
-            if len(value) > sself.length:
-                raise kb_exc.ValidationError(('Date length (%d chars) is above '
-                                              + 'the maximum limit (%d chars)')
-                                             % (len(value), sself.length))
+            def validator_fun(value):
+                if maybe_empty and not multivalued and value is None:
+                    return value
+                if not (isinstance(value, str) or isinstance(value, unicode)):
+                    raise kb_exc.ValidationError(('expected a date-like '
+                                                  'string, got "%s"')
+                                                 % (str(value), ))
+                if len(value) > length:
+                    raise kb_exc.ValidationError(('Date length (%d chars) '
+                                                  'is above the maximum '
+                                                  'limit (%d chars)')
+                                                 % (len(value), length))
 
-            is_valid = False
-            match = DATE_LIKE_RE.match(value)
-            if match is not None:
-                (sign, year, month, day) = match.group('s', 'y', 'm', 'd')
-                (year, month, day) = (int(year), int(month), int(day))
-                if (month > 0) and (month < 13) and (day > 0) and (day < 32):
-                    is_valid = True
+                is_valid = False
+                match = DATE_LIKE_RE.match(value)
+                if match is not None:
+                    (sign, year, month, day) = match.group('s', 'y', 'm', 'd')
+                    (year, month, day) = (int(year), int(month), int(day))
+                    if ((month > 0) and (month < 13) and (day > 0)
+                        and (day < 32)):
+                        is_valid = True
 
-            if not is_valid:
-                raise kb_exc.ValidationError(('"%s" does not appear to be '
-                                              'a valid date')
-                                             % (value, ))
+                    if not is_valid:
+                        raise kb_exc.ValidationError(('"%s" does not appear '
+                                                      'to be a valid date')
+                                                     % (value, ))
 
-            # Let's normalize a bit more, i.e. by stripping redundant
-            # zero's and the leading "+" sign
-            if sign == '+':
-                sign = ''
-            return u'%s%d-%02d-%02d' % (sign, year, month, day)
+                    # Let's normalize a bit more, i.e. by stripping redundant
+                    # zero's and the leading "+" sign
+                    if sign == '+':
+                        sign = ''
+                    return u'%s%d-%02d-%02d' % (sign, year, month, day)
+
+                return validator_fun
 
         def __repr__(self):
             return ("<DateLikeString(id=%s, class=%s, length=%d, default='%s')>"
