@@ -230,13 +230,19 @@ def _init_base_attributes(o):
                                        'cannot be called before '
                                        'Attribute.additional_tables()')
 
+                # Compute some information now, to avoid queries when
+                # representing the MVClass below
+                cached_cls = str(cls)
+                cached_id = self.id
+
                 class MVClass(object):
                     def __init__(self2, value):
                         self2.value = value
 
                     def __repr__(self2):
                         return ('<MVClass for %s.%s: object=%s, value=%s>'
-                                % (cls, self.id, self2.object, self2.value))
+                                % (cached_cls, cached_id, self2.object,
+                                   self2.value))
 
                 mapper(MVClass, mvtable,
                        properties=self._mvtable_mapper_properties())
