@@ -882,12 +882,12 @@ function create_tabs(ws_id, media_type){
 	if (!media_type)
 		var media_type = ['image', 'audio', 'video', 'doc'];
   
-	if (ws_pref_store.find('name', 'exhibition') > -1) {
-                       exhibition_keyword = ws_pref_store.query('name', 'exhibition').items[0].data.value;
-                                    if (exhibition_keyword != '') {
-                                        tab_name = exhibition_keyword;
-                                        my_query = exhibition_keyword;
-                                    }
+	if (ws_pref_store.find('name', 'homepage') > -1) {
+                       homepage_keyword = ws_pref_store.query('name', 'homepage').items[0].data.value;
+                                    if ((homepage_keyword != '') && (homepage_keyword != "''")) {
+                                        tab_name = homepage_keyword;
+                                        my_query = homepage_keyword;
+                                    } 
           }
 
 
