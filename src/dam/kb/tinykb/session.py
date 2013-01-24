@@ -406,9 +406,13 @@ class Session(object):
                 c.realize()
 
         # Also reflect updates to the cache
-        updated_classes = [c for c in self.session.dirty
-                           if isinstance(c, self.orm.KBClass)
-                           and self.session.is_modified(c)]
+        updated_classes = set(c for c in self.session.dirty
+                              if isinstance(c, self.orm.KBClass)
+                              and self.session.is_modified(c))
+        # Also update classes whose attributes have been modified
+        updated_classes = updated_classes.union(
+            getattr(a, 'class') for a in self.session.dirty
+            if isinstance(a, self.orm.attributes.Attribute))
 
         try:
             self.session.commit()
