@@ -366,9 +366,5 @@ def test():
         d.addBoth(end_test, process)
     except Exception, e:
         log.error("Fatal initialization error: %s" % str(e))
-        reactor.stop()
+        raise
     print_stats(process)
-
-if __name__=='__main__':
-    reactor.callWhenRunning(test)
-    reactor.run()
