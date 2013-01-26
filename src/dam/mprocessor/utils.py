@@ -1,11 +1,11 @@
 import os
 import sys
+import urllib
 import types
 from subprocess import PIPE, Popen
 from threading  import Thread
 from Queue import Queue, Empty
 
-from twisted.web.client import HTTPClientFactory # FIXME: to be removed
 from . import log
 
 def normpath(path):
@@ -117,8 +117,8 @@ class RunProc(object):
                       % (self.pid, ))
         return self
 
-def doHTTP(url, data='', method='POST', headers = {}, followRedirect=False):
-    factory = HTTPClientFactory(url=str(url), method=method, postdata=data,
-               headers=headers, followRedirect=followRedirect)
-    reactor.connectTCP(factory.host, factory.port, factory)
-    return factory
+def doHTTP(url):
+    # Open the given HTTP URL using 'GET' method, and return all data
+    with urllib.urlopen(url) as f:
+        ret = f.read()
+    return ret
