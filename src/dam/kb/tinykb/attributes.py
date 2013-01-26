@@ -315,12 +315,11 @@ def _init_base_attributes(o):
                         break
                 if mvt is None:
                     raw_ddl = self._raw_ddl()
-                    # We will configure a primary key composed by all
-                    # the columns of the multivalue table.  It will ensure
-                    # uniqueness and (if necessary) allow external references
-                    pk_cols = (['object'] # See table definition below
-                               + [c.name for c in raw_ddl
-                                  if isinstance(c, Column)])
+                    # We will configure a primary key composed by the
+                    # KB object reference and the index (order) of the value.
+                    # It will ensure uniqueness and (if necessary)
+                    # allow external references
+                    pk_cols = ['object', 'order']
                     raw_ddl_pk = raw_ddl + [PrimaryKeyConstraint(*pk_cols)]
                     mvt = Table(self._multivalue_table, metadata,
                                 Column('object', kb_schema.KeyString,
