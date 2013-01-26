@@ -214,6 +214,9 @@ class DAMComponentSetting(models.Model):
                 pref = None
         except WSSetting.DoesNotExist:
             pref = None
+        except WSSetting.MultipleObjectsReturned:
+            prefs = WSSetting.objects.filter(component_setting=self, user=obj)
+            pref = prefs[0]
 
         return pref
 
