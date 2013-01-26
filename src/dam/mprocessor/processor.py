@@ -35,6 +35,7 @@ import datetime
 import re
 
 from django.db.models import Q
+from django.db import transaction
 from json import loads
 from config import Configurator
 from . import log
@@ -78,6 +79,7 @@ def run(process_id="", restarting=False):
     """
     _lowlevel_run(process_id=process_id, restarting=restarting)
 
+@transaction.commit_on_success
 def _lowlevel_run(process_id="", restarting=False):
     process = wake_process(restarting)
     if process:
