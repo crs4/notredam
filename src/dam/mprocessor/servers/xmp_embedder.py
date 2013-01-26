@@ -173,4 +173,4 @@ from celery.task import task as celery_task
 _SERVER_SINGLETON = XMPEmbedder()
 @celery_task
 def metadata_synch(component_id, changes):
-    return _SERVER_SINGLETON.metadata_synch(component_id, changes):
+    return _SERVER_SINGLETON.metadata_synch(component_id, changes)
