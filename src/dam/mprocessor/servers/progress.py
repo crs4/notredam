@@ -1,5 +1,4 @@
 import re
-from twisted.internet.error import ConnectionDone
 from dam.mprocessor import log
 from dam.mprocessor.utils import doHTTP
 
@@ -25,9 +24,6 @@ class ProgressReport:
             pass
 
         def log_err(failure):
-            if hasattr(failure, 'check'):
-                if failure.check(ConnectionDone):
-                    return
             log.error('Error in sending update notifications: %s' % str(failure))
 
         g = self.re.search(data)
@@ -37,6 +33,10 @@ class ProgressReport:
         completion = g.group(1)
         log.debug('Progress report to %s: completion at %s%%' % (self.url, completion))
         url='%s/%s' % (self.url, completion)
-        f = doHTTP(url, method='GET')
-        f.deferred.addCallbacks(log_ok, log_err)
+        try:
+            data = doHTTP(url)
+            log_ok(data)
+        except e:
+            log_err(e)
+            raise
 
