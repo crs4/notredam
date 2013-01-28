@@ -1,10 +1,9 @@
 import mimetypes
 from time import strptime
 import re
-from twisted.internet import reactor, defer
 
-from mediadart import log
-from mediadart.mqueue.mqclient_twisted import Proxy
+from mprocessor import log
+from dam.mprocessor.servers import xmp_extractor
 
 from django.core.management import setup_environ
 import dam.settings as settings
@@ -36,11 +35,8 @@ class ExtractError(Exception):
 
 # Entry point
 def run(workspace, item_id, source_variant_name):
-    deferred = defer.Deferred()
-    worker = ExtractXMP(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, worker.extract_xmp)
-    return deferred
-
+    worker = ExtractXMP(workspace, item_id, source_variant_name)
+    return worker.extract_xmp()
 
 ##
 ## This class executes a series of extract operations, accumulating the results and saving them all.
@@ -48,9 +44,7 @@ def run(workspace, item_id, source_variant_name):
 ## are saved, and an error is returned.
 ##
 class ExtractXMP:
-    def __init__(self, deferred, workspace, item_id, variant_name):
-        self.deferred = deferred
-        self.proxy = Proxy('XMPExtractor')
+    def __init__(self, workspace, item_id, variant_name):
         self.workspace = workspace
         self.item = Item.objects.get(pk = item_id)
         self.item, self.component = get_source_rendition(item_id, variant_name, workspace)
@@ -118,9 +112,6 @@ class ExtractXMP:
                         metadata_list.append(x)
         return metadata_list, delete_list
 
-    def _cb_error(self, failure):
-        self.deferred.errback(failure)
-
     def _cb_xmp_ok(self, features):
         try:
             ctype_component = ContentType.objects.get_for_model(self.component)
@@ -130,14 +121,12 @@ class ExtractXMP:
             metadata_default_language = get_metadata_default_language(user)
         except Exception, e:
             log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
-            self.deferred.errback(e)
             return
 
         try:
             save_type(ctype, self.component)
         except Exception, e:
             log.error("Failed to save component format as DC:Format: %s" % (str(e)))
-            self.deferred.errback(e)
             return
 
         try:
@@ -154,7 +143,6 @@ class ExtractXMP:
                 x.save()
         except Exception, e:
             log.error('Error in %s: %s %s' % (self.__class__.__name__, type(e), str(e)))
-            self.deferred.errback(e)
             return
 
         if latitude != None and longitude != None:
@@ -162,13 +150,10 @@ class ExtractXMP:
                 GeoInfo.objects.save_geo_coords(self.component.item, latitude,longitude)
             except Exception, ex:
                 log.debug( 'ex while saving latitude and longitude in dam db: %s'% ex)
-        self.deferred.callback('ok')
 
     def extract_xmp(self):
-        d = self.proxy.extract(self.component.uri)
-        d.addCallbacks(self._cb_xmp_ok, self._cb_error)
-        return d
-        
+        features = xmp_extractor.extract.delay(self.component.uri).get()
+        self._cb_xmp_ok(features)
 
 def test():
     print 'test'
@@ -182,17 +167,6 @@ def test():
     print 'addBoth'
     d.addBoth(print_result)
     print 'dopo addBoth'
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    
-    reactor.callWhenRunning(test)
-    reactor.run()
-
     
     
     
