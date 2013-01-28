@@ -46,7 +46,7 @@ from dam.mprocessor.utils import RunProc
 
 from dam.mprocessor.servers.progress import get_progress_cb
 
-class MediadartError(Exception):
+class MProcessorError(Exception):
     pass
 
 UNIQUE_LEN = 8
@@ -82,7 +82,7 @@ class GenericCmdline(object):
             arg = str(arg).strip()
             cleaned = None
             if arg.startswith('..') or arg.startswith(os.sep):
-                raise MediadartError('invalid argument %s' % arg)
+                raise MProcessorError('invalid argument %s' % arg)
             elif arg.startswith('file://'):
                 filename = arg[7:]
                 if filename:
@@ -94,7 +94,7 @@ class GenericCmdline(object):
                 if filename:
                     outfile = str(self._fc.abspath(filename))       # strip outfile:// 
                     if not self._overwrite and os.path.exists(outfile):
-                        raise MediadartError('ERROR: %s exists' % outfile)
+                        raise MProcessorError('ERROR: %s exists' % outfile)
                     cleaned = os.path.join(os.path.normpath(os.path.dirname(outfile)),
                                            unique() + os.path.basename(outfile))
                     outfile_map[cleaned] = outfile
@@ -158,9 +158,9 @@ class GenericCmdline(object):
         args, tmpfile_map = self.__process_args(args)
         #log.debug('####### args: %s' % args)
         if b_require_output and not tmpfile_map:
-            raise MediadartError('No output files specified among the arguments')
+            raise MProcessorError('No output files specified among the arguments')
         if progress_url and not self.progress_regex:
-            raise MediadartError('No configuration for progress report found (option %s/%s)' %
+            raise MProcessorError('No configuration for progress report found (option %s/%s)' %
                 (self.cfgsection, 'progress_regex'))
         elif progress_url:
             cb_func = get_progress_cb(progress_url, 'gstreamer-progressreport')
