@@ -21,7 +21,8 @@ from dam.repository.models import get_storage_file_name
 from dam.core.dam_repository.models import Type
 from dam.plugins.common.adapter import Adapter
 from dam.plugins.adapt_audio_idl import inspect
-from mprocessor import log
+from twisted.internet import defer, reactor
+from mediadart import log
 
 
 def run(workspace,            # workspace object
@@ -31,10 +32,10 @@ def run(workspace,            # workspace object
         output_preset,        # CMD_<output_preset> must be one of the gstreamer pipelines below
         **preset_params):     # additional parameters (see pipeline for explanation)
 
-    adapter = AdaptAudio(workspace, item_id, source_variant_name)
-    result = adapter.execute(output_variant_name, output_preset,
-			     **preset_params)
-    return result
+    deferred = defer.Deferred()
+    adapter = AdaptAudio(deferred, workspace, item_id, source_variant_name)
+    reactor.callLater(0, adapter.execute, output_variant_name, output_preset,  **preset_params)
+    return deferred
 
 class AdaptAudio(Adapter):
     remote_exe = 'gst-launch-0.10'
@@ -83,10 +84,10 @@ class AdaptAudio(Adapter):
 #  possible that the local filename in a remote computer is different.
 #  
 #  To specify that an argument is a filename, prefix the relative path to the 
-#  (local) repository root (mprocessor option cache_dir) with file://
+#  (local) repository root (mediadart option cache_dir) with file://
 #
 #  To specify that an argument is a output filename, prefix the relative path to the 
-#  (local) repository root (mprocessor option cache_dir) with outfile://
+#  (local) repository root (mediadart option cache_dir) with outfile://
 #
 #  Parameters are specified in the cmdline with python syntax
 #
@@ -158,6 +159,7 @@ def sink_video(cmdline):
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
 #
 from dam.repository.models import Item
+from twisted.internet import defer, reactor
 from dam.workspace.models import DAMWorkspace
 
 def test():
@@ -175,3 +177,21 @@ def test():
                 },   # per esempio
             )
     d.addBoth(print_result)
+    
+
+def print_result(result):
+    print 'print_result', result
+    reactor.stop()
+
+if __name__ == "__main__":
+    from twisted.internet import reactor
+    reactor.callWhenRunning(test)
+    reactor.run()
+
+    
+    
+    
+
+    
+    
+    

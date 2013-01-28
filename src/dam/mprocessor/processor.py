@@ -33,59 +33,59 @@
 import os
 import datetime
 import re
+from twisted.internet import reactor, defer
+from mediadart.utils import default_start_mqueue
+
 
 from django.db.models import Q
-from django.db import transaction
 from json import loads
-from config import Configurator
-from . import log
+from mediadart.mqueue.mqserver import MQServer
+from mediadart.config import Configurator
+from mediadart import log
 from dam.mprocessor.models import Process, ProcessTarget
 from dam.mprocessor.pipeline import DAG
 from dam.mprocessor.schedule import Schedule
 
-from celery.task import task as celery_task
-
 class BatchError(Exception):
     pass
 
-def wake_process(restarting):
-    running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
-    log.info("Running processes: %d" % len(running_processes))
-    if running_processes:
-        if restarting:
-            log.info("Restarting process %s" % (running_processes[0].pk))
-            return running_processes[0]    # rerun a running process, some actions
+#
+# This class can be only a singleton (option only_one_server=True) to ensure that
+# only one process is active in mediadart at the same time.
+#
+class MProcessor(MQServer):
+    def wake_process(self, restarting):
+        running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
+        log.info("Running processes: %d" % len(running_processes))
+        if running_processes:
+            if restarting:
+                log.info("Restarting process %s" % (running_processes[0].pk))
+                return running_processes[0]    # rerun a running process, some actions
                                                # will be repeated
+            else:
+                log.info("Process %s already running, doing nothing" % (running_processes[0].pk))
+                return None                    # a process is already running, do nothing
         else:
-            log.info("Process %s already running, doing nothing" % (running_processes[0].pk))
-            return None                    # a process is already running, do nothing
-    else:
-        waiting_processes = Process.objects.filter(start_date=None)
-        log.info("Number of waiting processes: %d" % len(waiting_processes))
-        if waiting_processes:
-            log.info("running the waiting process %s" % (waiting_processes[0].pk))
-            return waiting_processes[0]
-        else:
-            log.info("No waiting process: doing nothing")
-            return None
+            waiting_processes = Process.objects.filter(start_date=None)
+            log.info("Number of waiting processes: %d" % len(waiting_processes))
+            if waiting_processes:
+                log.info("running the waiting process %s" % (waiting_processes[0].pk))
+                return waiting_processes[0]
+            else:
+                log.info("No waiting process: doing nothing")
+                return None
 
-@celery_task
-def run(process_id="", restarting=False):
-    """Run a waiting process.
+    def mq_run(self, process_id="", restarting=False):
+        """Run a waiting process.
         
-    This task tries to run a waiting process and schedules itself to
-    run again when the process ends so that the queue of waiting
-    processes can be emptied
-    """
-    _lowlevel_run(process_id=process_id, restarting=restarting)
-
-@transaction.commit_on_success
-def _lowlevel_run(process_id="", restarting=False):
-    process = wake_process(restarting)
-    if process:
-        Batch(process).run()
-        _lowlevel_run()
-    return 'ok'
+           This method tries to run a waiting process and schedules itself to run again
+           when the process ends so that the queue of waiting processes can be emptied
+           """
+        process = self.wake_process(restarting)
+        if process:
+            d = Batch(process).run()
+            d.addCallback(self.mq_run)
+        return 'ok'
 
 class Batch:
     def __init__(self, process):
@@ -99,6 +99,7 @@ class Batch:
         self.scripts = self._get_scripts(self.pipeline)
         self.all_targets_read = False      # True when all targets have been read
         self.gameover = False              # True when all targets are done
+        self.deferred = None               # used to signal end of batch job
         self.outstanding = 0               # number of not yet answered requests
         self.cur_batch = 0                 # index in batch
         self.cur_task = 0                  # index in tasks
@@ -108,11 +109,13 @@ class Batch:
     def run(self):
         "Start the iteration initializing state so that the iteration starts correctly"
         log.debug('### Running process %s' % str(self.process.pk))
+        self.deferred = defer.Deferred()
         self.process.start_date = datetime.datetime.now()
         self.process.save()
         self.process.targets = ProcessTarget.objects.filter(process=self.process).count()
         self.tasks = []
-        self._iterate()
+        reactor.callLater(0, self._iterate)
+        return self.deferred
 
     def stop(self, seconds_offset=0):
         log.info('stopping process %s' % self.process.pk)
@@ -120,6 +123,7 @@ class Batch:
         self.process.end_date = when
         self.process.save()
         self.gameover = True
+        self.deferred.callback(None)
 
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
         #log.debug('_update_item_stats: item=%s action=%s success=%s, failure=%s, cancelled=%s' % (item.target_id, action, success, failure, cancelled)) #d
@@ -223,7 +227,6 @@ class Batch:
             return
         action, task = self._get_action()
         if action:
-            log.debug('processing action: "%s"' % (action, ))
             item, schedule = task['item'], task['schedule']
             method, params = self.scripts[action]
             try:
@@ -240,16 +243,18 @@ class Batch:
                 params.update(item_params.get(x.match(action).group(), {}))
                 self.outstanding += 1
                 #params = {u'source_variant_name': u'original'}
-                res = method(self.process.workspace, item.target_id, **params)
-                self._handle_ok(res, item, schedule, action, params)
+                d = method(self.process.workspace, item.target_id, **params)
             except Exception, e:
                 log.error('ERROR in %s: %s %s' % (str(method), type(e), str(e)))
                 self._handle_err(str(e), item, schedule, action, params)
+            else:
+                d.addCallbacks(self._handle_ok, self._handle_err, 
+                    callbackArgs=[item, schedule, action, params], errbackArgs=[item, schedule, action, params])
         # If _get_action did not find anything and there are no more targets, no action
         # will be available until an action completes and allows more actions to go ready.
         if self.outstanding < self.max_outstanding and (action or not self.all_targets_read):
             #log.debug('_iterate: rescheduling') #d
-            self._iterate()
+            reactor.callLater(0, self._iterate)
 
     def _handle_ok(self, result, item, schedule, action, params):
         #log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result)) #d
@@ -257,7 +262,7 @@ class Batch:
         schedule.done(action)
         if self.outstanding < self.max_outstanding:
             #log.debug('_handle_ok: rescheduling') #d
-            self._iterate()
+            reactor.callLater(0, self._iterate)
         self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
 
@@ -270,8 +275,12 @@ class Batch:
             self._update_item_stats(item, a, "cancelled on failed %s" % action, 0, 0, 1)
         if self.outstanding < self.max_outstanding:
             #log.debug('_handle_err: rescheduling') #d
-            self._iterate()
+            reactor.callLater(0, self._iterate)
         item.save()
+
+
+def start_server():
+    default_start_mqueue(MProcessor, [])
 
 ##############################################################################################
 # 
@@ -297,6 +306,7 @@ class Batch_test:
         when = datetime.datetime.now() + datetime.timedelta(seconds=seconds_offset)
         self.process.start_date = when
         self.process.save()
+        return defer.Deferred()   # never used
 
     def stop(self, seconds_offset=0):
         log.info('stopping process %s' % self.process.pk)
@@ -304,6 +314,7 @@ class Batch_test:
         self.process.end_date = when
         self.process.save()
         self.gameover = True
+        #self.deferred.callback('done')
 
 
 class fake_config:
@@ -327,6 +338,7 @@ def end_test(result, process):
     gameover = True
     print_stats(process, False)
     log.debug('end of test %s' % result)
+    reactor.callLater(3, reactor.stop)
 
 def print_stats(process, redo=True):
     if process.targets == 0:
@@ -338,7 +350,7 @@ def print_stats(process, redo=True):
     pt = ProcessTarget.objects.filter(process=process, actions_todo=0, actions_failed=0)
     print >>sys.stderr, 'Process stats: completed successfully: %s' % ' '.join([x.target_id for x in pt])
     if not gameover and redo:
-        print_stats(process)
+        reactor.callLater(1, print_stats, process)
 
 def test():
     global Configurator
@@ -368,5 +380,9 @@ def test():
         d.addBoth(end_test, process)
     except Exception, e:
         log.error("Fatal initialization error: %s" % str(e))
-        raise
+        reactor.stop()
     print_stats(process)
+
+if __name__=='__main__':
+    reactor.callWhenRunning(test)
+    reactor.run()

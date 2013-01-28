@@ -1,4 +1,4 @@
-from . import log
+from mediadart import log
 
 class Schedule:
     """

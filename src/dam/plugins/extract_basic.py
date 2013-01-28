@@ -26,15 +26,19 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.preferences.views import get_metadata_default_language
 from dam.plugins.common.utils import save_type #, get_flv_duration
 from dam.plugins.extract_basic_idl import inspect
-from mprocessor import log
+from twisted.internet import defer, reactor
+from mediadart import log
 
 
 
 def run(workspace,             # workspace object
         item_id,               # item pk
         source_variant_name):  # name of the source variant (a string)
-    adapter = ExtractBasic(workspace, item_id, source_variant_name)
-    return adapter.execute()
+
+    deferred = defer.Deferred()
+    adapter = ExtractBasic(deferred, workspace, item_id, source_variant_name)
+    reactor.callLater(0, adapter.execute)
+    return deferred
 
 
 class ExtractBasic(Analyzer):
@@ -262,6 +266,7 @@ class Parser(ContentHandler):
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
 #
 from dam.repository.models import Item
+from twisted.internet import defer, reactor
 from dam.workspace.models import DAMWorkspace
 
 def test():
