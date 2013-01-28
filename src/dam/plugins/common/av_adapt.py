@@ -4,7 +4,7 @@
 import os
 from json import loads
 from twisted.python.failure import Failure
-from mprocessor import log
+from mediadart import log
 
 from dam.variants.models import Variant    
 from dam.plugins.common.utils import get_source_rendition
@@ -46,7 +46,7 @@ class AdaptAV:
                 item_id,         # item pk
                 source_variant,  # name of the variant
                 output_variant,  # name of the variat
-                output_preset,   # a mime type or a MProcessor PRESET
+                output_preset,   # a mime type or a Mediadart PRESET
                 **preset_params  # additional parameters (see adapter server for explanation)
                 ):
 

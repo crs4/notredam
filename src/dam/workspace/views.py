@@ -1194,7 +1194,7 @@ def download_renditions(request):
     
     if renditions and items:
         suffix = '.' + compression_type
-        tmp = tempfile.mkstemp(prefix='archive-', suffix= suffix, dir= settings.MPROCESSOR_STORAGE)[1]
+        tmp = tempfile.mkstemp(prefix='archive-', suffix= suffix, dir= settings.MEDIADART_STORAGE)[1]
         
         if compression_type == 'zip':            
             import zipfile
@@ -1210,7 +1210,7 @@ def download_renditions(request):
             for rendition in renditions:
                 try:
                     c = Component.objects.get(item__pk = item,  variant__pk = rendition)
-                    file = os.path.join(settings.MPROCESSOR_STORAGE, c.uri)
+                    file = os.path.join(settings.MEDIADART_STORAGE, c.uri)
                     my_file_name = ''
                     try:
                         file_name = os.path.splitext(c.item.get_file_name())[0]                       

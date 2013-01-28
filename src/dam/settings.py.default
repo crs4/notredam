@@ -35,7 +35,7 @@ REMOVE_OLD_PROCESSES= True
 CONFIRM_REGISTRATION = True
 from mediadart.config import Configurator
 c = Configurator()
-MPROCESSOR_STORAGE = c.get('STORAGE', 'cache_dir')
+MEDIADART_STORAGE = c.get('STORAGE', 'cache_dir')
 STORAGE_SERVER_URL= '/storage/'
 
 

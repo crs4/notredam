@@ -1,19 +1,20 @@
+Trunk Version
 ========================
 INSTALLATION AND UPGRADE
 ========================
 
-Requirements:
+Please note: since 2012-10-22, NotreDAM requires:
+ - alembic 0.4 (http://pypi.python.org/pypi/alembic);
+ - SQLAlchemy-0.7.9 (http://www.sqlalchemy.org).
+ 
 
- - Django 1.3 (http://www.djangoproject.com)
- - South 0.7.3 (http://south.aeracode.org)
- - alembic 0.4.1 (http://pypi.python.org/pypi/alembic)
- - SQLAlchemy 0.7.9 (http://www.sqlalchemy.org)
- - Celery 2.4.6 (http://www.celeryproject.org/)
- - MediaInfo 0.7.61 (http://mediainfo.sf.net/)
-
+Version 1.0.9
 ========================
 INSTALLATION AND UPGRADE
 ========================
+
+Please note: since version 1.08rc2, NotreDAM requires South 0.7.3
+(http://south.aeracode.org/).
 
     -----------------------------
     Setting up a new installation
@@ -38,14 +39,12 @@ INSTALLATION AND UPGRADE
 
         2. execute the following four commands:
 
-               # Rename initial data files, thus avoiding reload by 'syncdb'
-	       find . -type f -name initial_data.json -exec mv {} {}.excl \;
+	       find . -type f -name "initial_data.json" -exec rm {} \;
                python manage.py syncdb --noinput
-
                python manage.py migrate --fake treeview 0001
                python manage.py migrate --no-initial-data
 
-	3. add SAFE_MODE=False to your settings.py
+	3. add SAFE_MODE=False to the your settings.py
 
     That's it!  Your old installation is now upgraded.
 

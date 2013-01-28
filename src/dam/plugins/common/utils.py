@@ -1,6 +1,6 @@
 import mimetypes
 from struct import unpack
-from mprocessor import log
+from mediadart import log
 from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.repository.models import Item, Component
 from dam.supported_types import mime_types_by_type
