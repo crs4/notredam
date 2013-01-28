@@ -6,9 +6,10 @@ Requirements:
 
  - Django 1.3 (http://www.djangoproject.com)
  - South 0.7.3 (http://south.aeracode.org)
- - alembic 0.4 (http://pypi.python.org/pypi/alembic)
+ - alembic 0.4.1 (http://pypi.python.org/pypi/alembic)
  - SQLAlchemy 0.7.9 (http://www.sqlalchemy.org)
  - Celery 2.4.6 (http://www.celeryproject.org/)
+ - MediaInfo 0.7.61 (http://mediainfo.sf.net/)
 
 ========================
 INSTALLATION AND UPGRADE
@@ -44,7 +45,7 @@ INSTALLATION AND UPGRADE
                python manage.py migrate --fake treeview 0001
                python manage.py migrate --no-initial-data
 
-	3. add SAFE_MODE=False to the your settings.py
+	3. add SAFE_MODE=False to your settings.py
 
     That's it!  Your old installation is now upgraded.
 
