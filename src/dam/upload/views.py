@@ -32,6 +32,7 @@ import shutil, os
 from django.conf import settings
 
 #from dam.scripts.models import Pipeline
+from dam.mprocessor import processor
 from dam.mprocessor.models import Pipeline, Process
 from dam.repository.models import Item, Component, Watermark, new_id, get_storage_file_name
 from dam.core.dam_repository.models import Type, MimeError
@@ -48,7 +49,7 @@ from dam.eventmanager.models import EventRegistration
 from dam.preferences.views import get_metadata_default_language
 #from dam.mprocessor.models import MAction
 from md5sum import md5
-from mediadart.storage import Storage
+from mprocessor.storage import Storage
 from urllib import unquote
 
 import logging
@@ -270,7 +271,7 @@ def _create_variant(file_name, uri, media_type, item, workspace, variant):
 def _get_filepath(file_name):
     fname, ext = os.path.splitext(file_name)
     res_id = new_id() + ext
-    fpath = os.path.join(settings.MEDIADART_STORAGE, res_id)
+    fpath = os.path.join(settings.MPROCESSOR_STORAGE, res_id)
     
     return fpath, res_id
 
@@ -283,8 +284,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
 
        Find all the pipelines associated to the trigger;
        Associates each item to all pipelines that accept that type of item;
-       Launches all pipes;
-       Returns the list of process_id launched;
+       Returns the list of process_id to be launched;
     """
     logger.debug('############### run pipelines')
     assigned_items = set()
@@ -309,8 +309,7 @@ def _run_pipelines(items, trigger, user, workspace, params = {}):
     
     for process in process_pipe.values():
         ret.append(process)
-        logger.debug('*****************running process %s'%process.pk)
-        process.run()
+        logger.debug('*****************added process %s'%process.pk)
     
     #for pipe in Pipeline.objects.filter(triggers__name=trigger, workspace = workspace):
         #process = None
@@ -375,7 +374,7 @@ def _create_items(dir_name, variant_name, user, workspace, make_copy=True, recur
                 continue
                 
             final_filename = get_storage_file_name(res_id, workspace.pk, variant.name, media_type.ext)
-            final_path = os.path.join(settings.MEDIADART_STORAGE, final_filename)
+            final_path = os.path.join(settings.MPROCESSOR_STORAGE, final_filename)
             upload_filename = os.path.basename(original_filename)
             
             tmp = upload_filename.split('_')
@@ -568,7 +567,7 @@ def _upload_variant(item, variant, workspace, user, file_name, file):
         res_id = item.ID
         
         final_file_name = get_storage_file_name(res_id, workspace.pk, variant.name, ext)    
-        final_path = os.path.join(settings.MEDIADART_STORAGE, final_file_name)
+        final_path = os.path.join(settings.MPROCESSOR_STORAGE, final_file_name)
         logger.debug('before move')
         
         if hasattr(file, 'file_name'):
@@ -709,6 +708,7 @@ def guess_media_type (file):
 
     return media_type
 
+@transaction.commit_manually
 def upload_session_finished(request):
     try:
         from treeview.models import Node
@@ -744,6 +744,13 @@ def upload_session_finished(request):
             item_in_progress = 0
             for process in processes:
                 item_in_progress += process.processtarget_set.all().count()
+
+            # Actually launch all processes added by import_dir() (after
+            # committing the transaction, to make new data visible by the
+            # MProcessor)
+            transaction.commit()
+            _async_res = processor.run.delay()
+
             try:
                 os.rmdir(tmp_dir)
             except Exception, ex:
@@ -751,11 +758,14 @@ def upload_session_finished(request):
  
             return HttpResponse(simplejson.dumps({'success': True, 'uploads_success': item_in_progress, 'inbox': inbox_label}))
         else:
+            transaction.rollback()
             return HttpResponse(simplejson.dumps({'success': False}))
     except Exception, ex:
+        transaction.rollback()
         logger.exception(ex)
         
 @login_required
+@transaction.commit_manually
 def upload_archive(request):
     try:
         import tempfile
@@ -781,8 +791,16 @@ def upload_archive(request):
         logger.debug('extracted')
         import_dir(extracting_dir, request.user, request.session['workspace'], make_copy = True, recursive = True, force_generation = False, link = False, remove_orphans=False)
         shutil.rmtree(extracting_dir, True)
+
+        # Actually launch all processes added by import_dir() (after
+        # committing the transaction, to make new data visible by the
+        # MProcessor)
+        transaction.commit()
+        _async_res = processor.run.delay()
+
         return HttpResponse(simplejson.dumps({'success': True}))
 
     except Exception, ex:
+        transaction.rollback()
         logger.exception(ex)
         raise ex
