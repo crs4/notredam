@@ -120,11 +120,13 @@ TBD='___undefined___'   # this is the value of parameters for which there is no 
 __video_decoder = """
   filesrc location="file://%(in_filename)s" ! decodebin name=decode ! queue 
   ! ffmpegcolorspace ! video/x-raw-rgb, bpp=24 
-  ! watermark filename="file://%(watermark_filename)s" top=%(watermark_top)s left=%(watermark_left)s 
   ! ffmpegcolorspace ! videoscale 
   ! video/x-raw-rgb, width=%(video_width)s, height=%(video_height)s 
   ! videorate ! video/x-raw-rgb, bpp=24, framerate=%(video_framerate)s ! ffmpegcolorspace 
 """
+# FIXME: re-add the following watermark settings to video pipeline above
+#  ! watermark filename="file://%(watermark_filename)s" top=%(watermark_top)s left=%(watermark_left)s 
+
 
 # filesink
 __encoder = ' ! progressreport name=report ! filesink location="outfile://%(out_filename)s"'
