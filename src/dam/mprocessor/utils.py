@@ -110,7 +110,7 @@ class RunProc(object):
 
         if self._proc.returncode != 0:
             raise RunProcError('error executing "%s %s" (return code: %s)'
-                               % (self.exe, ''.join(self.argv),
+                               % (self.exe, ' '.join(self.argv),
                                   self._proc.returncode))
         elif self._log:
             log.debug('subprocess at pid %d terminated correctly'
