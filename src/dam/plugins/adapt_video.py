@@ -109,7 +109,8 @@ class AdaptVideo(Adapter):
 #
 ###################################################################################
 
-
+# Must match the corresponding default value in GStreamer watermarking filter
+WATERMARK_DEFAULT_NULL_FILENAME = '__NONE__'
 
 TBD='___undefined___'   # this is the value of parameters for which there is no default
 
@@ -123,10 +124,8 @@ __video_decoder = """
   ! ffmpegcolorspace ! videoscale 
   ! video/x-raw-rgb, width=%(video_width)s, height=%(video_height)s 
   ! videorate ! video/x-raw-rgb, bpp=24, framerate=%(video_framerate)s ! ffmpegcolorspace 
+  ! watermark filename="file://%(watermark_filename)s" top=%(watermark_top)s left=%(watermark_left)s 
 """
-# FIXME: re-add the following watermark settings to video pipeline above
-#  ! watermark filename="file://%(watermark_filename)s" top=%(watermark_top)s left=%(watermark_left)s 
-
 
 # filesink
 __encoder = ' ! progressreport name=report ! filesink location="outfile://%(out_filename)s"'
@@ -167,7 +166,7 @@ CMD_MATROSKA_MPEG4_AAC = {
     'defaults': {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -192,7 +191,7 @@ CMD_MP4_H264_AACLOW = {
     'defaults': {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -217,7 +216,7 @@ CMD_FLV = {
     'defaults': {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -242,7 +241,7 @@ CMD_AVI = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -267,7 +266,7 @@ CMD_MPEGTS = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -292,7 +291,7 @@ CMD_FLV_H264_AAC = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -318,7 +317,7 @@ CMD_THEORA = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
