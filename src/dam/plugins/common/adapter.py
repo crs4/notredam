@@ -1,5 +1,4 @@
 import os, time
-from twisted.python.failure import Failure
 from dam.core.dam_repository.models import Type
 from dam.variants.models import Variant
 from dam.repository.models import get_storage_file_name
