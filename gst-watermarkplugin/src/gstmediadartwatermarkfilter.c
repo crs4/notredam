@@ -46,6 +46,8 @@
 GST_DEBUG_CATEGORY_STATIC (gst_mediadartwatermarkfilter_debug);
 #define GST_CAT_DEFAULT gst_mediadartwatermarkfilter_debug
 
+#define WATERMARK_DEFAULT_NULL_FILENAME "__NONE__"
+
 uint state, last_second, current_second;
 SDL_Surface * image = NULL;
 gint top, left;
@@ -126,7 +128,8 @@ gst_mediadartwatermarkfilter_class_init (GstMediadartWatermarkFilterClass * klas
 
   g_object_class_install_property (gobject_class, ARG_FILENAME,
       g_param_spec_string ("filename", "Filename", "Image Filename",
-          NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          WATERMARK_DEFAULT_NULL_FILENAME,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 	
   g_object_class_install_property (gobject_class, ARG_TOP,
 	  g_param_spec_int ("top", "Top", "Watermark Top Position",
@@ -188,15 +191,22 @@ gst_mediadartwatermarkfilter_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
   GstMediadartWatermarkFilter *filter = GST_MEDIADARTWATERMARKFILTER (object);
+  const gchar *filename = NULL;
 
   switch (prop_id) {
     case ARG_SILENT:
       filter->silent = g_value_get_boolean (value);
       break;
     case ARG_FILENAME:
-			//g_print("Setting filename %s \n", g_value_get_string (value));	
-      image = IMG_Load(g_value_get_string (value));
-//       filter->filename = g_value_get_string (value);
+			//g_print("Setting filename %s \n", g_value_get_string (value));
+      filename = g_value_get_string(value);
+      // FIXME: we are lenient, allowing prefixes to the NULL filename.  OK?
+      if (g_str_has_suffix(filename, WATERMARK_DEFAULT_NULL_FILENAME)) {
+          image = NULL;
+      } else {
+          image = IMG_Load(filename);
+	  // filter->filename = g_value_get_string (value);
+      }
       break;
 	  case ARG_TOP:
 			//g_print("In top");
