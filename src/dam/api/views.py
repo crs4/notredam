@@ -71,7 +71,6 @@ import os.path
 from mimetypes import guess_type
 
 from django.template.loader import render_to_string
-from twisted.test.test_jelly import SimpleJellyTest
 
 def _check_parent(values):
     if  Node.objects.get(pk = values['parent_id']).depth  == 0:
