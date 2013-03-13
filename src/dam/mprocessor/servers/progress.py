@@ -26,6 +26,9 @@ class ProgressReport:
         def log_err(failure):
             log.error('Error in sending update notifications: %s' % str(failure))
 
+        print '****************** progress search on data:'
+        print data
+        print '******************'
         g = self.re.search(data)
         if not g:
             #log.debug('progress: no completion in %s' % data)
