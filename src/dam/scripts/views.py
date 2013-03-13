@@ -80,7 +80,7 @@ def get_rotation_script(request):
 @login_required
 def get_actions(request):  
     import os, settings
-    from mediadart.config import Configurator
+    from mprocessor.config import Configurator
     workspace = request.session.get('workspace')
     
     c = Configurator()
