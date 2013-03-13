@@ -1,4 +1,3 @@
-from mediadart.mqueue.mqclient_twisted import Proxy
 from dam.core.dam_metadata.models import XMPStructure
 from dam.plugins.embed_xmp_idl import inspect
 from dam.variants.models import Variant
@@ -20,7 +19,6 @@ def run(workspace, item_id, source_variant_name):
 class EmbedXMP:
     def __init__(self, workspace, item_id, variant_name):
         self.workspace = workspace
-        self.proxy = Proxy('XMPEmbedder') 
         self.item = Item.objects.get(pk = item_id)
         self.item, self.component = get_source_rendition(item_id, variant_name, workspace)
 
