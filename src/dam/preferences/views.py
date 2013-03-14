@@ -144,6 +144,8 @@ def get_ws_homepage_prefs(ws):
         ws_order_mode = order_mode_setting.get_ws_preference(ws).value
     except DAMComponentSetting.DoesNotExist:
         pass
+    except AttributeError:
+        pass
     return ws_homepage, ws_ordering_criteria, ws_order_mode
 
 @login_required
