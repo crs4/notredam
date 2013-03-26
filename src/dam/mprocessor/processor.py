@@ -108,17 +108,19 @@ class Batch:
     def run(self):
         "Start the iteration initializing state so that the iteration starts correctly"
         log.debug('### Running process %s' % str(self.process.pk))
-        self.process.start_date = datetime.datetime.now()
-        self.process.save()
+        with transaction.commit_on_success():
+            self.process.start_date = datetime.datetime.now()
+            self.process.save()
         self.process.targets = ProcessTarget.objects.filter(process=self.process).count()
         self.tasks = []
         self._iterate()
 
     def stop(self, seconds_offset=0):
         log.info('stopping process %s' % self.process.pk)
-        when = datetime.datetime.now() + datetime.timedelta(seconds=seconds_offset)
-        self.process.end_date = when
-        self.process.save()
+        with transaction.commit_on_success():
+            when = datetime.datetime.now() + datetime.timedelta(seconds=seconds_offset)
+            self.process.end_date = when
+            self.process.save()
         self.gameover = True
 
     def _update_item_stats(self, item, action, result, success, failure, cancelled):
