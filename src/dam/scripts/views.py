@@ -252,7 +252,9 @@ def _script_monitor(workspace):
                  'items_completed': items_completed,
                  'progress':progress,
                  'type': ','.join([trigger.name for trigger in process.pipeline.triggers.all()]),                 
-                 'start_date': process.start_date.strftime("%d/%m/%y %I:%M:%S"),
+                 'start_date': ((process.start_date is not None)
+                                and process.start_date.strftime("%d/%m/%y %I:%M:%S")
+                                or None),
                  'launched_by': process.launched_by.username,
                  'items_failed': items_failed
                  }
