@@ -25,6 +25,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.utils import simplejson
+from django.db import transaction
 from dam.basket.models import Basket
 from dam.repository.models import Item, Component
 from dam.core.dam_workspace.decorators import permission_required, membership_required
@@ -43,6 +44,7 @@ from dam.preferences.models import DAMComponentSetting, DAMComponent
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language, get_ws_homepage_prefs
 from dam.mprocessor.models import Pipeline, Process, ProcessTarget
+from dam.mprocessor import processor
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
 from dam.upload.views import _run_pipelines
@@ -133,6 +135,7 @@ def _remove_items(request, ws, items):
         
 @login_required
 @permission_required('add_item', False)
+@transaction.commit_manually
 def add_items_to_ws(request):
     try:
         item_ids = request.POST.getlist('item_id')
@@ -169,8 +172,15 @@ def add_items_to_ws(request):
         
         resp = simplejson.dumps({'success': True, 'errors': []})
 
+        # Actually launch all processes added by _run_pipelines() (after
+        # committing the transaction, to make new data visible by the
+        # MProcessor)
+        transaction.commit()
+        _async_res = processor.run.delay()
+
         return HttpResponse(resp)
     except Exception,  ex:
+        transaction.rollback()
         logger.exception(ex)
         raise ex
 
