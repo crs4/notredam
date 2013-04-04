@@ -302,6 +302,9 @@ class Item(AbstractItem):
 
         
         for c in self.component_set.filter(workspace__in = workspaces).exclude(variant__name = 'original'):                
+            if c is None:
+                # The component may be None e.g. when an upload fails
+                continue
             try:
                 os.remove(c.get_file_path())
             except Exception, err:
