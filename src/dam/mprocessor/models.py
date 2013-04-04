@@ -1,8 +1,6 @@
 from json import dumps
 from django.db import models
-from mediadart.storage import new_id
 from django.contrib.auth.models import User
-from mediadart.mqueue.mqclient_async import Proxy
 from django.utils import simplejson
 from dam.core.dam_repository.models import Type
 import logging
@@ -98,7 +96,8 @@ class Process(models.Model):
         return self.end_date is not None
 
     def run(self):
-        Proxy('MProcessor').run()        
+        import processor # Imported here to avoid circular imports
+        async_res = processor.run.delay()
 
 def new_processor(pipeline_name, user, workspace):
     "utility function to create a process associated to a given pipeline"

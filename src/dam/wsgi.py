@@ -31,7 +31,6 @@ sys.stdout = sys.stderr
 
 (parent_dir, _tail) = os.path.split(os.path.dirname(__file__))
 sys.path.append(parent_dir)
-sys.path.append('/opt/mediadart') # FIXME: hardcoded path
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dam.settings'
 
