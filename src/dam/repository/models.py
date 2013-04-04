@@ -302,13 +302,17 @@ class Item(AbstractItem):
 
         
         for c in self.component_set.filter(workspace__in = workspaces).exclude(variant__name = 'original'):                
-            if c is None:
+            if (c is None) or (c.uri is None):
                 # The component may be None e.g. when an upload fails
                 continue
             try:
                 os.remove(c.get_file_path())
+            except OSError, err:
+                # Let's be lenient when a removal fails
+                logger.debug('Warning: OSError during os.remove() of file component %s - err: %d - %s' % (c.get_file_path(), err.errno, err.strerror))
+                pass
             except Exception, err:
-                logger.debug('Error during os remove  of file component %s - err: %s' % (c.get_file_path(),err))
+                logger.debug('Unexpected error during os.remove() of file component %s - err: %s' % (c.get_file_path(),err))
                 raise
             try:
                 c.delete()
