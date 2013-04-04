@@ -45,7 +45,7 @@ class ExtractBasic(Analyzer):
     cmd_doc_basic   = '"file://%(infile)s"'
     regex  = r'(?P<filename>[^ \[]*)(?P<frame>\[\d+\]){0,1}\s(?P<type>[\w._-]+)\s' \
              r'(?P<width>\d+)x(?P<height>\d+)\s' \
-             r'(?P<wcrop>\d+)x(?P<hcrop>\d+)\+(?P<wcropoff>\d+)\+(?P<hcropoff>\d+)\s' \
+             r'(?P<wcrop>\d+)x(?P<hcrop>\d+)[\+-](?P<wcropoff>\d+)[\+-](?P<hcropoff>\d+)\s' \
              r'(?P<depth>\d+)-(?P<depth_unit>\w+)\s'
     RE = None
 
