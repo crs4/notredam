@@ -26,19 +26,15 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.preferences.views import get_metadata_default_language
 from dam.plugins.common.utils import save_type #, get_flv_duration
 from dam.plugins.extract_basic_idl import inspect
-from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 
 
 def run(workspace,             # workspace object
         item_id,               # item pk
         source_variant_name):  # name of the source variant (a string)
-
-    deferred = defer.Deferred()
-    adapter = ExtractBasic(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, adapter.execute)
-    return deferred
+    adapter = ExtractBasic(workspace, item_id, source_variant_name)
+    return adapter.execute()
 
 
 class ExtractBasic(Analyzer):
@@ -259,40 +255,3 @@ class Parser(ContentHandler):
 #        log.error('<<<<<<<<<<<<< Error while computing flv duration: %s' % e)
 #        duration = 0
 #
-
-
-####################################################################
-#
-# Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
-#
-from dam.repository.models import Item
-from twisted.internet import defer, reactor
-from dam.workspace.models import DAMWorkspace
-
-def test():
-    print 'test'
-    item = Item.objects.get(pk=6)
-    workspace = DAMWorkspace.objects.get(pk = 1)
-    d = run(workspace,
-            item.pk,
-            source_variant_name = 'original',
-            )
-    d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    reactor.callWhenRunning(test)
-    reactor.run()
-
-    
-    
-    
-
-    
-    
-    
-        

@@ -22,8 +22,7 @@ from dam.core.dam_repository.models import Type
 from dam.plugins.common.adapter import Adapter
 from dam.plugins.common.utils import resize_image
 from dam.plugins.adapt_video_idl import inspect
-from twisted.internet import defer, reactor
-from mediadart import log
+from mprocessor import log
 
 def run(workspace,            # workspace object
         item_id,              # item pk
@@ -32,10 +31,9 @@ def run(workspace,            # workspace object
         output_preset,        # CMD_<output_preset> must be one of the gstreamer pipelines below
         **preset_params       # additional parameters (see pipeline for explanation)
         ):
-    deferred = defer.Deferred()
-    adapter = AdaptVideo(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, adapter.execute, output_variant_name, output_preset,  **preset_params)
-    return deferred
+    adapter = AdaptVideo(workspace, item_id, source_variant_name)
+    result = adapter.execute(output_variant_name, output_preset,  **preset_params)
+    return result
 
 
 class AdaptVideo(Adapter):
@@ -99,10 +97,10 @@ class AdaptVideo(Adapter):
 #  possible that the local filename in a remote computer is different.
 #  
 #  To specify that an argument is a filename, prefix the relative path to the 
-#  (local) repository root (mediadart option cache_dir) with file://
+#  (local) repository root (MProcessor option cache_dir) with file://
 #
 #  To specify that an argument is a output filename, prefix the relative path to the 
-#  (local) repository root (mediadart option cache_dir) with outfile://
+#  (local) repository root (MProcessor option cache_dir) with outfile://
 #
 #  Parameters are specified in the cmdline with python syntax
 #
@@ -111,7 +109,8 @@ class AdaptVideo(Adapter):
 #
 ###################################################################################
 
-
+# Must match the corresponding default value in GStreamer watermarking filter
+WATERMARK_DEFAULT_NULL_FILENAME = '__NONE__'
 
 TBD='___undefined___'   # this is the value of parameters for which there is no default
 
@@ -122,10 +121,10 @@ TBD='___undefined___'   # this is the value of parameters for which there is no 
 __video_decoder = """
   filesrc location="file://%(in_filename)s" ! decodebin name=decode ! queue 
   ! ffmpegcolorspace ! video/x-raw-rgb, bpp=24 
-  ! watermark filename="file://%(watermark_filename)s" top=%(watermark_top)s left=%(watermark_left)s 
   ! ffmpegcolorspace ! videoscale 
   ! video/x-raw-rgb, width=%(video_width)s, height=%(video_height)s 
   ! videorate ! video/x-raw-rgb, bpp=24, framerate=%(video_framerate)s ! ffmpegcolorspace 
+  ! watermark filename="file://%(watermark_filename)s" top=%(watermark_top)s left=%(watermark_left)s 
 """
 
 # filesink
@@ -167,7 +166,7 @@ CMD_MATROSKA_MPEG4_AAC = {
     'defaults': {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -192,7 +191,7 @@ CMD_MP4_H264_AACLOW = {
     'defaults': {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -217,7 +216,7 @@ CMD_FLV = {
     'defaults': {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -242,7 +241,7 @@ CMD_AVI = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -267,7 +266,7 @@ CMD_MPEGTS = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -292,7 +291,7 @@ CMD_FLV_H264_AAC = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -318,7 +317,7 @@ CMD_THEORA = {
     'defaults' : {
         'in_filename': TBD,
         'out_filename': TBD,
-        'watermark_filename':'' ,
+        'watermark_filename': WATERMARK_DEFAULT_NULL_FILENAME,
         'watermark_top':'0' ,
         'watermark_left':'0' ,
         'video_width':'320' ,
@@ -339,7 +338,6 @@ CMD_THEORA = {
 #
 # Stand alone test: need to provide a compatible database (item must be an item with a audio comp.)
 #
-from twisted.internet import defer, reactor
 from dam.repository.models import Item
 from dam.workspace.models import DAMWorkspace
 
@@ -362,13 +360,3 @@ def test():
                 },   # per esempio
             )
     d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    reactor.callWhenRunning(test)
-    reactor.run()
-

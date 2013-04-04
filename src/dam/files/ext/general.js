@@ -1128,14 +1128,10 @@ var scripts_jsonstore = new Ext.data.JsonStore({
 			var run_scripts_menu = Ext.getCmp('run_scripts_menu');
 			var edit_scripts_menu = Ext.getCmp('edit_scripts_menu');
                         if (run_scripts_menu) {
-                        if (run_scripts_menu.length > 0) {
-			    run_scripts_menu.removeAll();
-                            }
+            			    run_scripts_menu.removeAll();
                         }
                         if (edit_scripts_menu) {
-                            if (edit_scripts_menu.length > 0) {
-			    edit_scripts_menu.removeAll();
-                           }
+                		    edit_scripts_menu.removeAll();
                         }
 			Ext.each(records, function(record){
 				run_scripts_menu.add({

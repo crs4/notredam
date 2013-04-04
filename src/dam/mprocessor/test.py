@@ -2,7 +2,7 @@ from twisted.internet import reactor
 
 from json import dumps
 from dam.workspace.models import DAMWorkspace as Workspace
-from mediadart.config import Configurator
+from config import Configurator
 from dam.mprocessor.models import Process, ProcessTarget,Pipeline, TriggerEvent
 from dam.mprocessor.pipeline import DAG
 from dam.mprocessor.processor import Batch

@@ -155,6 +155,7 @@ def get_homepage_prefs(request):
     """
     workspace = request.session['workspace']
     homepage, ordering_criteria, order_mode = get_ws_homepage_prefs(workspace)
+    resp = {}
     resp['homepage'] = {'homepage':homepage,'ordering_criteria':ordering_criteria, 'order_mode':order_mode}
     return HttpResponse(simplejson.dumps(resp))
 

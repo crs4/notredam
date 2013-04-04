@@ -23,7 +23,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from dam.mprocessor.models import ProcessTarget
 from dam.core.dam_repository.models import AbstractItem, AbstractComponent
-from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MEDIADART_STORAGE
+from dam.settings import SERVER_PUBLIC_ADDRESS, STORAGE_SERVER_URL, MPROCESSOR_STORAGE
 from dam.metadata.models import *
 
 import os, datetime, urlparse, time, re, settings, logging
@@ -33,7 +33,7 @@ from django.utils.encoding import smart_str
 
 logger = logging.getLogger('dam')
 
-from mediadart.storage import Storage
+from mprocessor.storage import Storage
 
 from uuid import uuid4
 
@@ -723,7 +723,7 @@ class Component(AbstractComponent):
     media_type = property(fget=_get_media_type)
     
     def get_file_path(self):
-        return os.path.join(MEDIADART_STORAGE, self.uri)
+        return os.path.join(MPROCESSOR_STORAGE, self.uri)
     
     def get_url(self, full_address = False):
         """
