@@ -307,8 +307,12 @@ class Item(AbstractItem):
                 continue
             try:
                 os.remove(c.get_file_path())
+            except OSError, err:
+                # Let's be lenient when a removal fails
+                logger.debug('Warning: OSError during os.remove() of file component %s - err: %d - %s' % (c.get_file_path(), err.errno, err.strerror))
+                pass
             except Exception, err:
-                logger.debug('Error during os remove  of file component %s - err: %s' % (c.get_file_path(),err))
+                logger.debug('Unexpected error during os.remove() of file component %s - err: %s' % (c.get_file_path(),err))
                 raise
             try:
                 c.delete()
