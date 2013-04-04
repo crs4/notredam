@@ -309,11 +309,12 @@ class Item(AbstractItem):
                 os.remove(c.get_file_path())
             except Exception, err:
                 logger.debug('Error during os remove  of file component %s - err: %s' % (c.get_file_path(),err))
-                #pass # maybe file does not exist
+                raise
             try:
                 c.delete()
             except Exception, err:
                 logger.debug('Error while removing component %s  - err: %s' % (c,err))
+                raise
         try:      
             ws_items = self.workspaceitem_set.filter(workspace__in = workspaces)
             for ws_item in ws_items:
