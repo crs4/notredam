@@ -881,6 +881,8 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		notes_textField_value = record.data.notes;
 		title = gettext("Edit attribute");
 		text_button = gettext('Apply');
+		//max_value_slider = attributes_grid.getStore().getCount()-1;
+		//slider_value = record.data.order;
 	}else{
 		name_textField_value = null;
 		empty_chekbox_value = false;
@@ -888,6 +890,8 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		notes_textField_value = null;
 		title = gettext("New attribute");
 		text_button = gettext('Add');
+		//max_value_slider = attributes_grid.getStore().getCount();
+		//slider_value = attributes_grid.getStore().getCount();
 	}
 	
 	var name_textField = new Ext.form.TextField({
@@ -1023,6 +1027,22 @@ function add_single_attribute(edit, attributes_grid, insert_value, add_class, ad
 		
 
 		win_att_class.show();
+/*		if (multivalued_chekbox.checked == false && edit){
+		win_att_class.show();
+
+		if(text_button == gettext('Apply')){ //edit (remove and add)
+			//Ext.getCmp('id_record_value').getSelectionModel().selectFirstRow()
+			var sel=attributes_grid.getSelectionModel().getSelected();
+			attributes_grid.store.remove(sel);
+	    	//check_remove_button_add_option();
+	    	//check_add_button_add_option();
+		}
+    	//logic_to_insert_single_value(record.data.type, true, attributes_grid, win_att_class);
+		
+	}else{
+	    win_att_class.show();
+	}
+	*/
 }
 
 function moveSelectedRow(grid, direction) {
@@ -1215,7 +1235,7 @@ function load_detail_class(class_data, id_class, add_class){
             iconCls:'edit_icon',
             disabled:true,
             handler: function() {
-       			add_single_attribute(true, attributes_grid, false, add_class, false, attributes_grid.getSelectionModel().getSelections()[0]);
+        		add_single_attribute(true, attributes_grid, false, add_class, false, attributes_grid.getSelectionModel().getSelections()[0]);
         	}
         },'-',{
             text:'Remove',

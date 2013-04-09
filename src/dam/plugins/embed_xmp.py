@@ -1,5 +1,3 @@
-from twisted.internet import reactor, defer
-from mediadart.mqueue.mqclient_twisted import Proxy
 from dam.core.dam_metadata.models import XMPStructure
 from dam.plugins.embed_xmp_idl import inspect
 from dam.variants.models import Variant
@@ -8,21 +6,19 @@ from dam.plugins.common.utils import get_source_rendition
 import logging
 log = logging.getLogger('dam')
 
+from dam.mprocessor.servers.xmp_embedder import metadata_synch
 
 
 # Entry point
 def run(workspace, item_id, source_variant_name):
-    deferred = defer.Deferred()
-    embedder = EmbedXMP(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, embedder.execute)
-    return deferred
+    embedder = EmbedXMP(workspace, item_id, source_variant_name)
+    result = embedder.execute()
+    return result
 
 
 class EmbedXMP:
-    def __init__(self, deferred, workspace, item_id, variant_name):
-        self.deferred = deferred
+    def __init__(self, workspace, item_id, variant_name):
         self.workspace = workspace
-        self.proxy = Proxy('XMPEmbedder') 
         self.item = Item.objects.get(pk = item_id)
         self.item, self.component = get_source_rendition(item_id, variant_name, workspace)
 
@@ -70,17 +66,12 @@ class EmbedXMP:
     def _cb_embed_reset_xmp(self, result):
         if result:
             self._reset_modified_flag()
-        self.deferred.callback(result)
         return result
-
-    def _cb_error(self, failure):
-        self.deferred.errback(failure)
-        return failure
 
     def execute(self):
         metadata_dict = self._synchronize_metadata()
-        d = self.proxy.metadata_synch(self.component.uri, metadata_dict)
-        d.addCallbacks(self._cb_embed_reset_xmp, self._cb_error)
+        result = metadata_synch.delay(self.component.uri, metadata_dict).get()
+        return self._cb_embed_reset_xmp(result)
         return d
        
         
