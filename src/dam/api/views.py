@@ -867,7 +867,7 @@ class WorkspaceResource(ModResource):
             try:
                 resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, language, deletion_info = show_deleted, keywords_list = get_keywords))
             except Exception,ex:
-                logger.info(ex)
+                logger.debug(ex)
     
         resp['totalCount'] = total_count
         json_resp = json.dumps(resp)
@@ -1270,7 +1270,7 @@ class ItemResource(ModResource):
 
         if metadata:
             tmp['metadata'] = {}    
-        if str(metadata[0]) == '*':
+        if len(metadata)>0 and str(metadata[0]) == '*':
 
                 all_item_metadata = MetadataValue.objects.filter(item = item)
                 #logger.debug('all_item_metadata: %s' % all_item_metadata)
