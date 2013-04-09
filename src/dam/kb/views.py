@@ -39,6 +39,7 @@ import tinykb.access as kb_access
 import tinykb.session as kb_ses
 import tinykb.errors as kb_exc
 from tinykb.util.niceid import niceid as kb_niceid
+from tinykb.util.niceid import generate as kb_niceid_generate
 import util
 from decorators import http_basic_auth
 
@@ -131,8 +132,11 @@ def class_index_put(request, ws_id):
         for (attr_id, a) in json_attrs.iteritems():
             attr_id = kb_niceid(attr_id, extra_chars=0)
             if not ses.orm.attributes.is_valid_id(attr_id):
-                return HttpResponseBadRequest('Invalid attribute ID: "%s"'
-                                              % (attr_id, ))
+                # If a class attribute ID is only composed e.g. by
+                # non-ASCII characters and whitespaces, its normalized
+                # version will be non-valid.  In this case, we use a
+                # random ID.
+                attr_id = kb_niceid_generate()
             attr_obj = _validate_build_attr_obj(attr_id, a, ses, ws)
             if not isinstance(attr_obj, ses.orm.attributes.Attribute):
                 # Attribute build failed - we have been returned an error
@@ -260,6 +264,13 @@ def class_post(request, ws_id, class_id):
 
         # Normalized version of client attributes
         n_client_attrs = [kb_niceid(x, extra_chars=0) for x in client_attrs]
+        # If a new  attribute ID is only composed e.g. by
+        # non-ASCII characters and whitespaces, its normalized
+        # version will be non-valid.  In this case, we use a
+        # random ID.
+        for i in xrange(len(n_client_attrs)):
+            if not ses.orm.attributes.is_valid_id(n_client_attrs[i]):
+                n_client_attrs[i] = kb_niceid_generate()
 
         # Associate normalized attrs with their original version
         n_client_attr_map = dict(zip(n_client_attrs, client_attrs))
