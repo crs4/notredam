@@ -1223,13 +1223,14 @@ def download_renditions(request):
                     file = os.path.join(settings.MPROCESSOR_STORAGE, c.uri)
                     my_file_name = ''
                     try:
-                        file_name = os.path.splitext(c.item.get_file_name())[0]                       
-                        ext = os.path.splitext(c.item.get_file_name())[1]                       
+                        file_name = os.path.splitext(c.item.get_file_name())[0]
+                        ext = os.path.splitext(c.uri)[1]                       
                         my_file_name =  file_name + '_' +  c.variant.name +  ext 
-                    except:
+                    except Exception,ex:
+                        logger.exception(ex)
                         my_file_name = c.item.get_file_name() + '_' +  c.variant.name
                     #file_name = c.uri 
-
+                    
                     
                     archive.write(file, my_file_name)
 
