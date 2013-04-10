@@ -1,0 +1,256 @@
+
+
+
+/*
+*
+* NotreDAM, Copyright (C) 2009, Sardegna Ricerche.
+* Email: labcontdigit@sardegnaricerche.it
+* Web: www.notre-dam.org
+*
+* This program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*/
+
+
+
+.basket_pressed {
+    font-weight:bold; 
+    background-color:  #aaaaaa;
+ }
+
+
+
+	html, body {
+        font:normal 11px arial,helvetica,tahoma,sans-serif;
+        margin:0;
+        padding:0;
+        border:0 none;
+        overflow:hidden;
+        height:100%;
+    }
+	p {
+	    margin:5px;
+	}
+
+    
+    .ws_over{
+    cursor:pointer !important
+    }
+    
+    #current_ws{
+    color:#15428B;
+    font-weight:bold; 
+    font-family:tahoma,arial,helvetica;
+    font-size:14px
+    
+    }
+    #basic_form_panel{
+        padding-top: 10px;
+    }
+    
+    .keyword{
+    background-image: url(/files/images/keyword.png) !important;
+    margin-top:-1px !important;
+    }
+    
+    .collection{
+        margin-top:-3px !important;
+    }
+
+    .x-tree-node-collapsed .object-class{
+    background-image: url(/files/images/object-class-folder.gif) !important;
+    }
+    
+    .x-tree-node-expanded .object-class{
+    background-image: url(/files/images/object-class-folder-open.gif) !important;
+    }
+    
+    .x-tree-node-leaf .object-class{
+    background-image: url(/files/images/object-class-folder.gif) !important;
+    }
+
+    .x-tree-node-collapsed .object-category{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-expanded .object-category{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-leaf .object-category{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+
+    .x-tree-node-collapsed .object-keyword{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-expanded .object-keyword{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-leaf .object-keyword{
+    background-image: url(/files/images/icons/fam/application_view_list.png) !important;
+    }
+    
+    .x-tree-node-collapsed .category{
+    background-image: url(/files/images/keyword-folder.gif) !important;
+    }
+    
+    .x-tree-node-expanded .category{
+    background-image: url(/files/images/keyword-folder-open.gif) !important;
+    }
+    
+    .x-tree-node-leaf .category{
+    background-image: url(/files/images/keyword-folder.gif) !important;
+    }
+    
+    .new_keyword{
+    background-image: url(/files/images/new_keyword.png) !important;
+    }
+    .no_keyword{
+    background-image: url(/files/images/no_keyword.png) !important;
+    }
+    
+    .work_in_progress  {
+        background-image: url(/files/images/warning.gif) !important;
+        background-repeat: no-repeat;
+        background-position: right;        
+    }
+    
+    .source_variant td{
+        font-style: italic !important;
+    }
+    
+    .variant_notfound td{
+    background-image: url(/files/images/notfound.png) !important;
+        background-repeat: no-repeat;
+        background-position: right;        
+    }
+    
+    .container_position_watermarking {
+    background: url(/files/images/img06.jpg) no-repeat;
+    width: 150px;
+    height: 116px;
+    float: left;
+    /*left:0px !important;*/
+    margin-top: 20px;
+    
+    margin-bottom: 20px;
+    border: 3px double #104166;
+    border-top-color: #104166;
+    border-bottom-color: #104166;
+}
+
+.position_watermarking {
+    width: 48px;
+    height: 37px;
+    border: solid 1px;
+    border-color: #ccc #999 #666 #ccc;
+    float: left;
+}
+
+.position_watermarking:hover {
+    background-color: yellow !important;
+    opacity: 0.8 !important;
+}
+.tri_state_cb{
+    background-color:#C0C0C0; 
+}
+
+.midstate_cb{
+/*    
+
+    height: 13;
+    width:10;
+    z-index: 10;
+    background-color:grey;
+    position:absolute;
+  
+    margin-left: 2px; 
+    opacity:0.5;
+*/
+  padding: 5px 2px 0px 1px; 
+}
+
+.variant_button{
+    height:16px;
+    width:16px;
+    visibility:hidden;
+}
+
+.variant_button:hover:{
+    visibility:visible;
+}
+
+
+// basket
+.thumb span2{
+ 	position: absolute;
+ 	height :32px;
+ 	width:32px;
+ 	left:180px;
+ 	display:block;
+ }
+ 
+ 
+ .thumb .basket_icon{
+ 		background: transparent url(/files/images/b.png) no-repeat right top;
+ }
+ 	
+.trigger {
+    background-image: url(/files/ext/resources/images/default/form/search-trigger.gif);
+    height:20px;
+    width:17px;
+}
+
+
+.custom-tb {
+    background-image: url(None) !important;
+    background-color:transparent !important;
+    border-width:0px !important;
+}
+    
+.switch-ws-button button{
+    font-size:13 !important;
+    color: #15428B !important;
+    font-weight: bold !important;
+    height: 18px !important;
+    
+    
+}
+
+.sort_asc {
+    background-repeat: no-repeat !important;
+    background-image: url(/files/ext/resources/images/default/grid/col-move-top.gif) !important;
+}
+
+.sort_desc {
+    background-repeat: no-repeat !important;
+    background-image: url(/files/ext/resources/images/default/grid/col-move-bottom.gif)  !important;
+}
+
+
+.permalink{
+    padding-top:10px;
+}
+
+.permalink input{
+    height: 17px;
+    width: 250px; 
+    font-size: 10px;
+}
+
+.list-variant dt em{
+ 	-moz-user-select: text!important;
+  	-khtml-user-select: text!important;
+}
+ 
