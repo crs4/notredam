@@ -850,7 +850,7 @@ class WorkspaceResource(ModResource):
         workspace = Workspace.objects.get(pk = workspace_id)
         
         variants = request.GET.getlist('renditions')
-        logger.info('variants %s'%variants)
+        variants = eval(variants[0])
         
         items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)        
         
@@ -1303,20 +1303,18 @@ class ItemResource(ModResource):
                     #logger.error('skipping %s'%ex)
                     pass
                 
-        logger.info('variants %s'%variants)
         if variants: 
             tmp['renditions'] = {}
             
         for variant in variants: 
             try:                
-                logger.info("variant : %s" %(variant))                
-                logger.info("item : %s" %(item.pk))                
-                logger.info("workspace : %s" %(workspace))                
-                component = Component.objects.get(item = item,  workspace__pk = int(workspace),  variant__name = variant) 
-                logger.info("component : %s" %(component.get_url()))                
+                logger.debug("variant : %s" %(variant))                
+                logger.debug("item : %s" %(item.pk))                
+                logger.debug("workspace pk : %s" %(workspace.pk))                
+                component = Component.objects.get(item = item,  workspace__pk = workspace.pk,  variant__name = variant) 
                 url  = component.get_url()
                 tmp['renditions'][variant] = {'url':url}                
-                logger.info("variant : %s" %(tmp['renditions'][variant]))                
+                logger.debug("variant : %s" %(tmp['renditions'][variant]))                
                 if rendition_file_name:
                     tmp['renditions'][variant]['file_name'] = component.file_name                
             except Exception, ex:
