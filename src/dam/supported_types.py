@@ -33,12 +33,13 @@ supported_types  = {
    'video/dv' : ['.dv'],
    'video/flv': ['.flv'],
    'video/mp4': ['.mp4', '.mxf'],
-   'video/mpeg': ['.m1v', '.mpa', '.mpg', '.mpe', '.mpeg', '.mod'],
+   'video/mpeg': ['.mpg', '.m1v', '.mpa', '.mpv', '.mpe', '.mpeg', '.mod'],
    'video/ogg': ['.ogg'],
+   'video/quicktime': ['.mov'],
    'video/ts': ['.ts'],
    'video/x-m4v': ['.m4v','.mts'],
-   'video/x-matroska': ['.mpv', '.mkv','.vob'],
-   'video/x-msvideo': ['.avi', '.mov'],
+   'video/x-matroska': ['.mkv','.vob'],
+   'video/x-msvideo': ['.avi'],
 
 }
 
