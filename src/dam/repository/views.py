@@ -27,6 +27,7 @@ from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.treeview.models import Node
 
+import os
 import logging
 logger = logging.getLogger('dam')
 
@@ -149,11 +150,10 @@ def get_resource(request, resource_name):
     response = serve(request, resource_name, document_root = MPROCESSOR_STORAGE)
     if download: # downloading of single resources from subpanel on the right   
         # the following is to provide a resource name other than the one in repository
-        comp = Component.objects.filter(uri = resource_name)
-        original_file_name = comp[0].item.get_file_name()
-        variant_name = comp[0].variant.name
-        download_file_name = original_file_name.replace('.', ('_' + variant_name + '.'))
-        #logger.info('download file name inside get_resource: %s' % resource_name)
+        c = Component.objects.filter(uri = resource_name)
+        file_name = os.path.splitext(c[0].item.get_file_name())[0]
+        ext = os.path.splitext(c[0].uri)[1]
+        download_file_name =  file_name + '_' +  c[0].variant.name +  ext
         response['Content-Disposition'] = 'attachment; filename=%s'%download_file_name
         
     
