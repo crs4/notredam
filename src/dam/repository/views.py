@@ -152,6 +152,7 @@ def get_resource(request, resource_name):
         # the following is to provide a resource name other than the one in repository
         c = Component.objects.filter(uri = resource_name)
         file_name = os.path.splitext(c[0].item.get_file_name())[0]
+        file_name = file_name.replace(' ', '_')
         ext = os.path.splitext(c[0].uri)[1]
         download_file_name =  file_name + '_' +  c[0].variant.name +  ext
         response['Content-Disposition'] = 'attachment; filename=%s'%download_file_name
