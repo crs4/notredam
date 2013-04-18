@@ -220,46 +220,43 @@ class Batch:
     def _iterate(self):
         """ Run the actions listed in schedule on the items returned by _new_batch """
         #log.debug('_iterate: oustanding=%s' % self.outstanding) #d
-        if self.gameover:
-            log.debug('_iterate: gameover')
-            return
-        action, task = self._get_action()
-        if action:
-            log.debug('processing action: "%s"' % (action, ))
-            item, schedule = task['item'], task['schedule']
-            method, params = self.scripts[action]
-            try:
-                item_params = loads(item.params)
-
-                # tmp bug fixing starts here
-                for k in params.keys():
-                    if params[k] == '' and (k in item_params[action]):
-                        params[k] = item_params[action][k]
-                # tmp bug fixing ends here
-
-                params.update(item_params.get('*', {}))
-                x = re.compile('^[a-z_]+' ) # cut out digits from action name
-                params.update(item_params.get(x.match(action).group(), {}))
-                self.outstanding += 1
-                #params = {u'source_variant_name': u'original'}
-                res = method(self.process.workspace, item.target_id, **params)
-                self._handle_ok(res, item, schedule, action, params)
-            except Exception, e:
-                log.error('ERROR in %s: %s %s' % (str(method), type(e), str(e)))
-                self._handle_err(str(e), item, schedule, action, params)
-        # If _get_action did not find anything and there are no more targets, no action
-        # will be available until an action completes and allows more actions to go ready.
-        if self.outstanding < self.max_outstanding and (action or not self.all_targets_read):
-            #log.debug('_iterate: rescheduling') #d
-            self._iterate()
+        while True:
+            if self.gameover:
+                log.debug('_iterate: gameover')
+                return
+            action, task = self._get_action()
+            if action:
+                log.debug('processing action: "%s"' % (action, ))
+                item, schedule = task['item'], task['schedule']
+                method, params = self.scripts[action]
+                try:
+                    item_params = loads(item.params)
+    
+                    # tmp bug fixing starts here
+                    for k in params.keys():
+                        if params[k] == '' and (k in item_params[action]):
+                            params[k] = item_params[action][k]
+                    # tmp bug fixing ends here
+    
+                    params.update(item_params.get('*', {}))
+                    x = re.compile('^[a-z_]+' ) # cut out digits from action name
+                    params.update(item_params.get(x.match(action).group(), {}))
+                    self.outstanding += 1
+                    #params = {u'source_variant_name': u'original'}
+                    res = method(self.process.workspace, item.target_id, **params)
+                    self._handle_ok(res, item, schedule, action, params)
+                except Exception, e:
+                    log.error('ERROR in %s: %s %s' % (str(method), type(e), str(e)))
+                    self._handle_err(str(e), item, schedule, action, params)
+            # If _get_action did not find anything and there are no more targets, no action
+            # will be available until an action completes and allows more actions to go ready.
+            if not (self.outstanding < self.max_outstanding and (action or not self.all_targets_read)):
+                break
 
     def _handle_ok(self, result, item, schedule, action, params):
         #log.info("_handle_ok: target %s: action %s: %s" % (item.target_id, action, result)) #d
         self.outstanding -= 1
         schedule.done(action)
-        if self.outstanding < self.max_outstanding:
-            #log.debug('_handle_ok: rescheduling') #d
-            self._iterate()
         self._update_item_stats(item, action, result, 1, 0, 0)
         item.save()
 
@@ -270,9 +267,6 @@ class Batch:
         self._update_item_stats(item, action, str(result), 0, 1, 0)
         for a in cancelled:
             self._update_item_stats(item, a, "cancelled on failed %s" % action, 0, 0, 1)
-        if self.outstanding < self.max_outstanding:
-            #log.debug('_handle_err: rescheduling') #d
-            self._iterate()
         item.save()
 
 ##############################################################################################
