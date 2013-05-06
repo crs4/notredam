@@ -16,10 +16,12 @@
 #
 #########################################################################
 
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseServerError
 from django.utils import simplejson
 from django.contrib.auth.decorators import login_required
 from dam.mprocessor.models import *
+from dam.mprocessor import processor
 from dam.eventmanager.models import Event, EventRegistration
 from dam.workspace.models import Workspace
 from dam.core.dam_repository.models import Type
@@ -60,6 +62,7 @@ def get_scripts(request):
     return HttpResponse(simplejson.dumps(resp))
 
 @login_required
+@transaction.commit_manually
 def get_rotation_script(request):
     workspace = request.session.get('workspace')
     r_script = Pipeline.objects.filter(workspace = workspace, name = 'image renditions').distinct()
@@ -70,6 +73,12 @@ def get_rotation_script(request):
     params = {'adapt_image':{'rotation': int(rotation)}}
     try:
         _run_pipelines(items, triggers_name, request.user, workspace, params)
+
+        # Actually launch all processes added by _run_pipelines() (after
+        # committing the transaction, to make new data visible by the
+        # MProcessor)
+        transaction.commit()
+        _async_res = processor.run.delay()
     except Exception, ex:
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'success': False}))
