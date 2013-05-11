@@ -604,8 +604,8 @@ def damadmin_save_user(request):
         except:
             return HttpResponse(simplejson.dumps({'success': False}))
         
-        add_ws_permission = Permission.objects.get(codename='add_workspace')
-
+        add_ws_permission = Permission.objects.get(content_type__name='workspace',codename='add_workspace')
+        
         user.user_permissions.add(add_ws_permission)
         user.save()
 
