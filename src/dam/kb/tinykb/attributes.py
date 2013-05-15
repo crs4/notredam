@@ -934,7 +934,13 @@ def _init_base_attributes(o):
                                                colname)),
                                    primaryjoin=(obj_table.c[colname]
                                                 == target_table.c.id),
-                                   remote_side=[target_table.c.id])}
+                                   remote_side=[target_table.c.id],
+                                   # FIXME: foreign_keys should be redundant
+                                   # However, without it, SQLAlchemy seems
+                                   # to get confused when KB object tables
+                                   # are extended with ObjectReference fields
+                                   # (see NotreDAM issue #89)
+                                   foreign_keys=[obj_table.c[colname]])}
 
         # Override the default internal method, configuring a KB object
         # relationship for the 'value' attribute of the multivalue table
