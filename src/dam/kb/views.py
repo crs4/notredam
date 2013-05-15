@@ -202,8 +202,6 @@ def class_get(request, ws_id, class_id):
         except kb_exc.NotFound:
             return HttpResponseNotFound()
         
-        print _kbclass_to_dict(cls, ses)
-        
         return HttpResponse(simplejson.dumps(_kbclass_to_dict(cls, ses)))
 
 
@@ -673,8 +671,6 @@ def class_objects_get(request, ws_id, class_id):
         objs = ses.objects(class_=cls.python_class)
         obj_dicts = [_kbobject_to_dict(o, ses) for o in objs]
         
-        print obj_dicts
-
         return HttpResponse(simplejson.dumps(obj_dicts))
 
 
@@ -1198,15 +1194,18 @@ def _assert_update_object_attrs(obj, obj_dict, ses):
                     curr_obj_id = getattr(obj, a.id)
                     if (val == curr_obj_id):
                         # Nothing to be done here
-                        break
+                        continue
                     else:
-                        try:
-                            new_obj = ses.object(val)
-                        except kb_exc.NotFound:
-                            raise ValueError('Unknown object id reference: %s'
-                                             % val)
-                    # Actually perform the assignment
-                    setattr(obj, a.id, new_obj)
+                        if val is None:
+                            new_obj = None
+                        else:
+                            try:
+                                new_obj = ses.object(val)
+                            except kb_exc.NotFound:
+                                raise ValueError('Unknown object id '
+                                                 'reference: "%s"' % (val, ))
+                        # Actually perform the assignment
+                        setattr(obj, a.id, new_obj)
                 else:
                     # Simple case: just update the attribute
                     setattr(obj, a.id, val)
