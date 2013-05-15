@@ -1484,7 +1484,7 @@ var smart_folders = new Ext.Panel({
                     
                     if (selected){
                         var query = selected.data.label ;
-                        search.setValue( gettext('SmartFolders:') + ' "' + query+ '"');
+                        search.setValue( gettext('SmartFolders:') + '"' + query+ '"');
                         view.old_selected = selected;
                         store.load({
                             params: {
