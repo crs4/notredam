@@ -1633,7 +1633,6 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	        					}
 	        				}
 	        			}else{//only one value
-	        				console.log(attribute)
 	    					if (attribute.value != null){
 	    						params['attributes'][attribute.id] = attribute.value;
 	    					}else if(attribute.default_value != null && attribute.default_value != ""){
