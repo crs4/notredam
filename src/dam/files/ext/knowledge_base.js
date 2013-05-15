@@ -1604,7 +1604,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
             text: gettext('Save'),
             type: 'submit',
             handler: function(){
-    			if (name_textField.getValue() != null && name_textField.getValue().length >0){
+        		if (name_textField.getValue() != null && name_textField.getValue().length >0){
 	        		params = {};
 	        		params['name'] = name_textField.getValue();
 	        		params['notes'] = notes_textField.getValue();
@@ -1635,7 +1635,7 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	        			}else{//only one value
 	    					if (attribute.value != null){
 	    						params['attributes'][attribute.id] = attribute.value;
-	    					}else if(attribute.default_value != null ){
+	    					}else if(attribute.default_value != null && attribute.default_value != ""){
 	    						params['attributes'][attribute.id] = attribute.default_value;
 	    					}else if(attribute.maybe_empty == true){
 	    						params['attributes'][attribute.id] = null;
@@ -1645,8 +1645,8 @@ function load_detail_obj(obj_data, obj_id, add_obj, class_id){
 	            			}else if (attribute.type == 'date'){
 	            				params['attributes'][attribute.id] = null;
 	            			}
-	    					if (params['attributes'][attribute.id]!= null)
-	    						if (params['attributes'][attribute.id].length>0){
+	    					if (params['attributes'][attribute.id]!= null){
+	    						if (params['attributes'][attribute.id].length>0)
 			    					if (attribute.type == 'int'){
 			    						params['attributes'][attribute.id] = parseInt(params['attributes'][attribute.id]);
 			            			}else if (attribute.type == 'bool'){
