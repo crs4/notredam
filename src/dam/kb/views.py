@@ -1196,13 +1196,16 @@ def _assert_update_object_attrs(obj, obj_dict, ses):
                         # Nothing to be done here
                         continue
                     else:
-                        try:
-                            new_obj = ses.object(val)
-                        except kb_exc.NotFound:
-                            raise ValueError('Unknown object id reference: %s'
-                                             % val)
-                    # Actually perform the assignment
-                    setattr(obj, a.id, new_obj)
+                        if val is None:
+                            new_obj = None
+                        else:
+                            try:
+                                new_obj = ses.object(val)
+                            except kb_exc.NotFound:
+                                raise ValueError('Unknown object id '
+                                                 'reference: "%s"' % (val, ))
+                        # Actually perform the assignment
+                        setattr(obj, a.id, new_obj)
                 else:
                     # Simple case: just update the attribute
                     setattr(obj, a.id, val)
