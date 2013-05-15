@@ -1198,7 +1198,7 @@ def _assert_update_object_attrs(obj, obj_dict, ses):
                     curr_obj_id = getattr(obj, a.id)
                     if (val == curr_obj_id):
                         # Nothing to be done here
-                        break
+                        continue
                     else:
                         try:
                             new_obj = ses.object(val)
