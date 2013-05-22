@@ -732,12 +732,14 @@ def _init_base_classes(o):
             if not sself.is_root():
                 parent_class = sself.superclass._make_or_get_python_class(
                     _session=_session)
+                parent_table = sself.superclass.sqlalchemy_table
                 init_method = lambda instance, name, notes=None, explicit_id=None, _rebind_session=None:(
                     parent_class.__init__(instance, name, notes=notes,
                                           explicit_id=explicit_id,
                                           _rebind_session=_rebind_session))
             else:
                 parent_class = KBObject
+                parent_table = schema.object_t
                 init_method = lambda instance, name, notes=None, explicit_id=None, _rebind_session=None:(
                     parent_class.__init__(instance, instance.__kb_class__,
                                           name, notes=notes,
@@ -771,6 +773,10 @@ def _init_base_classes(o):
 
             m = mapper(newclass, sself._sqlalchemy_table,
                        inherits=parent_class,
+                       inherit_condition=(
+                         sself._sqlalchemy_table.c.id
+                         == parent_table.c.id
+                       ),
                        polymorphic_identity=sself.id,
                        properties = mapper_props)
 
