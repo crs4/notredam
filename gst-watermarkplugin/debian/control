@@ -1,0 +1,12 @@
+Source: gst-watermarkplugin
+Section: video
+Priority: extra
+Maintainer: Alceste Scalas <Alceste Scalas <alceste@crs4.it>>
+Build-Depends: debhelper (>= 8.0.0), autotools-dev
+Standards-Version: 3.9.2
+Homepage: http://notredam.org/
+
+Package: gst-watermarkplugin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: GST watermarking plugin, used by NotreDAM

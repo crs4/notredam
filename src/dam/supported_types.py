@@ -8,14 +8,17 @@ logger = logging.getLogger('dam')
 # This dictionary lists all the types supported by Notredam
 
 supported_types  = {
-   'audio/flac': ['.flac'],
    'audio/app': ['.exe'],
+   'audio/flac': ['.flac'],
    'audio/midi': ['.mid', '.midi', '.midi', '.kar', '.mid'],
    'audio/mpeg': ['.mp3', '.mpega', '.mp2', '.mpga', '.vob'],       # no aac here
    'audio/ogg': ['.oga', '.ogg', '.spx'],
+   'audio/x-aiff' : ['.aiff'],
    'audio/x-m4a': ['.m4a', '.aac'],
    'audio/x-ms-wma': ['.wma'],
+   'audio/x-pn-realaudio' : ['.rm'],
    'audio/x-wav': ['.wav'],
+   'doc/pdf': ['.pdf'],
    'image/gif': ['.gif'],
    'image/jpeg': ['.jpg', '.jpe', '.jpeg'],
    'image/png': ['.png'],
@@ -24,21 +27,19 @@ supported_types  = {
    'image/x-canon-cr2': ['.cr2'],
    'image/x-ms-bmp': ['.bmp'],
    'image/x-nikon-nef': ['.nef'],
+   'image/x-photoshop' : ['.psd'],
    'image/x-portable-graymap': ['.pgm'],
    'image/x-portable-pixmap': ['.ppm'],
-   'doc/pdf': ['.pdf'],
+   'video/dv' : ['.dv'],
    'video/flv': ['.flv'],
    'video/mp4': ['.mp4', '.mxf'],
-   'video/mpeg': ['.m1v', '.mpa', '.mpg', '.mpe', '.mpeg', '.mod'],
+   'video/mpeg': ['.mpg', '.m1v', '.mpa', '.mpv', '.mpe', '.mpeg', '.mod'],
    'video/ogg': ['.ogg'],
+   'video/quicktime': ['.mov'],
    'video/ts': ['.ts'],
    'video/x-m4v': ['.m4v','.mts'],
-   'video/x-matroska': ['.mpv', '.mkv','.vob'],
-   'video/x-msvideo': ['.avi', '.mov'],
-   'video/dv' : ['.dv'],
-   'audio/x-pn-realaudio' : ['.rm'],
-   'audio/x-aiff' : ['.aiff'],
-   'image/x-photoshop' : ['.psd'],
+   'video/x-matroska': ['.mkv','.vob'],
+   'video/x-msvideo': ['.avi'],
 
 }
 

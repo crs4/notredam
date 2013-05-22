@@ -25,6 +25,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.utils import simplejson
+from django.db import transaction
 from dam.basket.models import Basket
 from dam.repository.models import Item, Component
 from dam.core.dam_workspace.decorators import permission_required, membership_required
@@ -43,6 +44,7 @@ from dam.preferences.models import DAMComponentSetting, DAMComponent
 from dam.metadata.models import MetadataProperty
 from dam.preferences.views import get_metadata_default_language, get_ws_homepage_prefs
 from dam.mprocessor.models import Pipeline, Process, ProcessTarget
+from dam.mprocessor import processor
 from dam.eventmanager.models import Event, EventRegistration
 from dam.appearance.models import Theme
 from dam.upload.views import _run_pipelines
@@ -133,6 +135,7 @@ def _remove_items(request, ws, items):
         
 @login_required
 @permission_required('add_item', False)
+@transaction.commit_manually
 def add_items_to_ws(request):
     try:
         item_ids = request.POST.getlist('item_id')
@@ -169,8 +172,15 @@ def add_items_to_ws(request):
         
         resp = simplejson.dumps({'success': True, 'errors': []})
 
+        # Actually launch all processes added by _run_pipelines() (after
+        # committing the transaction, to make new data visible by the
+        # MProcessor)
+        transaction.commit()
+        _async_res = processor.run.delay()
+
         return HttpResponse(resp)
     except Exception,  ex:
+        transaction.rollback()
         logger.exception(ex)
         raise ex
 
@@ -1194,7 +1204,7 @@ def download_renditions(request):
     
     if renditions and items:
         suffix = '.' + compression_type
-        tmp = tempfile.mkstemp(prefix='archive-', suffix= suffix, dir= settings.MEDIADART_STORAGE)[1]
+        tmp = tempfile.mkstemp(prefix='archive-', suffix= suffix, dir= settings.MPROCESSOR_STORAGE)[1]
         
         if compression_type == 'zip':            
             import zipfile
@@ -1210,16 +1220,17 @@ def download_renditions(request):
             for rendition in renditions:
                 try:
                     c = Component.objects.get(item__pk = item,  variant__pk = rendition)
-                    file = os.path.join(settings.MEDIADART_STORAGE, c.uri)
+                    file = os.path.join(settings.MPROCESSOR_STORAGE, c.uri)
                     my_file_name = ''
                     try:
-                        file_name = os.path.splitext(c.item.get_file_name())[0]                       
-                        ext = os.path.splitext(c.item.get_file_name())[1]                       
+                        file_name = os.path.splitext(c.item.get_file_name())[0]
+                        ext = os.path.splitext(c.uri)[1]                       
                         my_file_name =  file_name + '_' +  c.variant.name +  ext 
-                    except:
+                    except Exception,ex:
+                        logger.exception(ex)
                         my_file_name = c.item.get_file_name() + '_' +  c.variant.name
                     #file_name = c.uri 
-
+                    
                     
                     archive.write(file, my_file_name)
 
