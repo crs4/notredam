@@ -71,7 +71,6 @@ import os.path
 from mimetypes import guess_type
 
 from django.template.loader import render_to_string
-from twisted.test.test_jelly import SimpleJellyTest
 
 def _check_parent(values):
     if  Node.objects.get(pk = values['parent_id']).depth  == 0:
@@ -851,7 +850,7 @@ class WorkspaceResource(ModResource):
         workspace = Workspace.objects.get(pk = workspace_id)
         
         variants = request.GET.getlist('renditions')
-        logger.info('variants %s'%variants)
+        variants = eval(variants[0])
         
         items = Item.objects.filter(workspaceitem__workspace__pk = workspace_id)        
         
@@ -868,7 +867,7 @@ class WorkspaceResource(ModResource):
             try:
                 resp['items'].append(item_res._get_item_info(item, workspace, variants, metadata, language, deletion_info = show_deleted, keywords_list = get_keywords))
             except Exception,ex:
-                logger.info(ex)
+                logger.debug(ex)
     
         resp['totalCount'] = total_count
         json_resp = json.dumps(resp)
@@ -1271,7 +1270,7 @@ class ItemResource(ModResource):
 
         if metadata:
             tmp['metadata'] = {}    
-        if str(metadata[0]) == '*':
+        if len(metadata)>0 and str(metadata[0]) == '*':
 
                 all_item_metadata = MetadataValue.objects.filter(item = item)
                 #logger.debug('all_item_metadata: %s' % all_item_metadata)
@@ -1304,20 +1303,18 @@ class ItemResource(ModResource):
                     #logger.error('skipping %s'%ex)
                     pass
                 
-        logger.info('variants %s'%variants)
         if variants: 
             tmp['renditions'] = {}
             
         for variant in variants: 
             try:                
-                logger.info("variant : %s" %(variant))                
-                logger.info("item : %s" %(item.pk))                
-                logger.info("workspace : %s" %(workspace))                
-                component = Component.objects.get(item = item,  workspace__pk = int(workspace),  variant__name = variant) 
-                logger.info("component : %s" %(component.get_url()))                
+                logger.debug("variant : %s" %(variant))                
+                logger.debug("item : %s" %(item.pk))                
+                logger.debug("workspace pk : %s" %(workspace.pk))                
+                component = Component.objects.get(item = item,  workspace__pk = workspace.pk,  variant__name = variant) 
                 url  = component.get_url()
                 tmp['renditions'][variant] = {'url':url}                
-                logger.info("variant : %s" %(tmp['renditions'][variant]))                
+                logger.debug("variant : %s" %(tmp['renditions'][variant]))                
                 if rendition_file_name:
                     tmp['renditions'][variant]['file_name'] = component.file_name                
             except Exception, ex:

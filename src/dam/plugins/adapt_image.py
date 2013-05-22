@@ -24,8 +24,6 @@ from dam.metadata.models import MetadataProperty, MetadataValue
 from dam.variants.models import Variant
 from dam.repository.models import Item, Component
 from django.contrib.contenttypes.models import ContentType
-from twisted.internet import defer, reactor
-#from mediadart import log
 
 import logging
 log = logging.getLogger('dam')
@@ -50,13 +48,12 @@ def run(workspace,              # workspace object
         rotation = 0,           # image rotation in sexagesimal degrees
         ):
 
-    deferred = defer.Deferred()
-    adapter = AdaptImage(deferred, workspace, item_id, source_variant_name)
-    reactor.callLater(0, adapter.execute, output_variant_name, output_extension,
+    adapter = AdaptImage(workspace, item_id, source_variant_name)
+    result = adapter.execute(output_variant_name, output_extension,
         actions=actions, resize_h=resize_h, resize_w=resize_w, crop_w=crop_w,
         crop_h=crop_h, crop_x=crop_x, crop_y=crop_y, crop_ratio=crop_ratio, 
         pos_x_percent=pos_x_percent, pos_y_percent=pos_y_percent, wm_id=wm_id, rotation=rotation)
-    return deferred
+    return result
 
 
 class AdaptImage(Adapter):
@@ -121,7 +118,6 @@ class AdaptImage(Adapter):
 #
 # Stand alone test: need to provide a compatible database (item 2 must be an item with a audio comp.)
 #
-from twisted.internet import defer, reactor
 from dam.repository.models import Item
 from dam.workspace.models import DAMWorkspace
 
@@ -146,21 +142,3 @@ def test():
             pos_y_percent = '0',
             wm_id = 'aba2c175b12f43f39bb87948285df6ef_1_thumbnail.jpg')
     d.addBoth(print_result)
-    
-def print_result(result):
-    print 'print_result', result
-    reactor.stop()
-
-if __name__ == "__main__":
-    from twisted.internet import reactor
-    
-    reactor.callWhenRunning(test)
-    reactor.run()
-
-    
-    
-    
-
-    
-    
-    
