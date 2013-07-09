@@ -44,6 +44,10 @@ from sqlalchemy.dialects import mysql
 KeyString = String(128).with_variant(mysql.VARCHAR(128, charset='ascii'),
                                      'mysql')
 
+# Let's ensure that InnoDB and UTF-8 encoding are used in MySQL.
+table_extras = {'mysql_engine'  : 'InnoDB',
+                'mysql_charset' : 'utf8'}
+
 # Admissible values for classes and catalog entries visibility in
 # workspaces
 access_enum = [kb_access.OWNER, kb_access.READ_ONLY, kb_access.READ_WRITE,
@@ -369,7 +373,8 @@ class Schema(object):
                                        onupdate='CASCADE',
                                        ondelete='CASCADE'),
                             primary_key=True),
-                     *attrs_ddl)
+                     *attrs_ddl,
+                     **table_extras)
 
     def _build_attr_tables(self, add_tables):
         '''
@@ -468,13 +473,15 @@ def _init_base_schema(o, metadata, prefix):
     # DAM user (managed by Django)
     o.user = Table('auth_user', metadata,
                    Column('id', Integer, primary_key=True),
-                   Column('username', String(30), nullable=False)
+                   Column('username', String(30), nullable=False),
+                   **table_extras
                    )
 
     # DAM item (managed by Django)
     o.item = Table('item', metadata,
                    Column('id', Integer, primary_key=True),
                    # FIXME: possibly consider other fields here
+                   **table_extras
                    )
 
     # DAM workspaces (managed by Django, which also causes the funny name)
@@ -486,6 +493,7 @@ def _init_base_schema(o, metadata, prefix):
                                           onupdate='CASCADE',
                                           ondelete='RESTRICT'),
                                nullable=False),
+                        **table_extras
                         )
 
     # Item visibility in different workspaces
@@ -511,7 +519,8 @@ def _init_base_schema(o, metadata, prefix):
     #                           # redundant, and only required by Django
     #                           # model)
     #                           UniqueConstraint('damworkspace_id', 'item_id',
-    #                                            name=_p+'workspace_items_actual_pkey_constr')
+    #                                            name=_p+'workspace_items_actual_pkey_constr'),
+    #                           **table_extras
     #                           )
 
     # User-defined class for real-world objects
@@ -550,7 +559,8 @@ def _init_base_schema(o, metadata, prefix):
                       # and vice versa:   (root = id) <=> (parent = id)
                       CheckConstraint('((NOT (root = id)) OR (parent = id))'
                                       ' AND ((NOT (parent = id)) OR (root = id))',
-                                      name=_p+'class_root_iff_no_parent_constr')
+                                      name=_p+'class_root_iff_no_parent_constr'),
+                      **table_extras
                       )
 
     # Class visibility in workspaces
@@ -582,13 +592,15 @@ def _init_base_schema(o, metadata, prefix):
                                # Ensure that we only give visibility to
                                # root classes
                                CheckConstraint('class = class_root',
-                                               name=_p+'class_visibility_parent_root_constr')
+                                               name=_p+'class_visibility_parent_root_constr'),
+                               **table_extras
                                )
 
     # Known attribute types
     o.attribute_type = Table(_p+'attribute_type', metadata,
                              Column('name', KeyString, primary_key=True),
-                             Column('notes', String(4096))
+                             Column('notes', String(4096)),
+                             **table_extras
                              )
 
     # Generic class attributes
@@ -614,7 +626,8 @@ def _init_base_schema(o, metadata, prefix):
                               ForeignKeyConstraint(['class', 'class_root'],
                                                    [_p+'class.id', _p+'class.root'],
                                                    onupdate='CASCADE',
-                                                   ondelete='CASCADE')
+                                                   ondelete='CASCADE'),
+                              **table_extras
                               )
 
     ###########################################################################
@@ -637,6 +650,7 @@ def _init_base_schema(o, metadata, prefix):
                                                          _p+'class_attribute.id'],
                                                         onupdate='CASCADE',
                                                         ondelete='CASCADE'),
+                                   **table_extras
                                    )
 
 
@@ -663,7 +677,8 @@ def _init_base_schema(o, metadata, prefix):
                                                   name=_p+'class_attr_int_min_constr'),
                                   CheckConstraint('"max" IS NULL '
                                                   'OR ("default" <= "max")',
-                                                  name=_p+'class_attr_int_max_constr')
+                                                  name=_p+'class_attr_int_max_constr'),
+                                  **table_extras
                                   )
 
     o.class_attribute_real = Table(_p+'class_attribute_real', metadata,
@@ -696,7 +711,8 @@ def _init_base_schema(o, metadata, prefix):
                                                    name=_p+'class_attr_real_min_constr'),
                                    CheckConstraint('"max" IS NULL '
                                                    'OR ("default" <= "max")',
-                                                   name=_p+'class_attr_real_max_constr')
+                                                   name=_p+'class_attr_real_max_constr'),
+                                   **table_extras
                                    )
 
     o.class_attribute_string = Table(_p+'class_attribute_string', metadata,
@@ -719,7 +735,8 @@ def _init_base_schema(o, metadata, prefix):
                                                           ondelete='CASCADE'),
 
                                      CheckConstraint('length >= 0',
-                                                     name=_p+'class_attr_string_length_gt0_constr')
+                                                     name=_p+'class_attr_string_length_gt0_constr'),
+                                     **table_extras
                                      )
 
     o.class_attribute_date = Table(_p+'class_attribute_date', metadata,
@@ -746,7 +763,8 @@ def _init_base_schema(o, metadata, prefix):
                                                    name=_p+'class_attr_date_min_constr'),
                                    CheckConstraint('"max" IS NULL '
                                                    'OR ("default" <= "max")',
-                                                   name=_p+'class_attr_date_max_constr')
+                                                   name=_p+'class_attr_date_max_constr'),
+                                   **table_extras
                                    )
 
     o.class_attribute_uri = Table(_p+'class_attribute_uri', metadata,
@@ -769,7 +787,8 @@ def _init_base_schema(o, metadata, prefix):
                                                        ondelete='CASCADE'),
 
                                   CheckConstraint('length >= 0',
-                                                  name=_p+'class_attr_uri_length_gt0_constr')
+                                                  name=_p+'class_attr_uri_length_gt0_constr'),
+                                  **table_extras
                                   )
 
     o.class_attribute_choice = Table(_p+'class_attribute_choice', metadata,
@@ -797,7 +816,8 @@ def _init_base_schema(o, metadata, prefix):
                                      # default choice is somehow contained
                                      # in the JSON list of strings
                                      CheckConstraint("choices LIKE '%\"' || \"default\" || '\"%'",
-                                                     name=_p+'class_attr_string_length_gt0_constr')
+                                                     name=_p+'class_attr_string_length_gt0_constr'),
+                                     **table_extras
                                      )
 
     o.class_attribute_objref = Table(_p+'class_attribute_objref', metadata,
@@ -825,7 +845,8 @@ def _init_base_schema(o, metadata, prefix):
                                                           [_p+'class.id',
                                                            _p+'class.root'],
                                                           onupdate='CASCADE',
-                                                          ondelete='RESTRICT')
+                                                          ondelete='RESTRICT'),
+                                     **table_extras
                                      )
 
     # Objects registry
@@ -847,7 +868,8 @@ def _init_base_schema(o, metadata, prefix):
                        ForeignKeyConstraint(['class', 'class_root'],
                                             [_p+'class.id', _p+'class.root'],
                                             onupdate='CASCADE',
-                                            ondelete='RESTRICT')
+                                            ondelete='RESTRICT'),
+                       **table_extras
                        )
 
     # An entry in the catalog
@@ -908,7 +930,8 @@ def _init_base_schema(o, metadata, prefix):
     #                                         ' OR (parent = id))'
     #                                         'AND ((NOT (parent = id))'
     #                                         '     OR (root = id))',
-    #                                         name=_p+'catalog_root_iff_no_parent_constr')
+    #                                         name=_p+'catalog_root_iff_no_parent_constr'),
+    #                         **table_extras
     #                         )
 
     # Class visibility in workspaces
@@ -964,7 +987,8 @@ def _init_base_schema(o, metadata, prefix):
     #                                   # root catalog entries
     #                                   CheckConstraint('catalog_entry'
     #                                                   ' = catalog_entry_root',
-    #                                                   name=_p+'catalog_parent_root_constr')
+    #                                                   name=_p+'catalog_parent_root_constr'),
+    #                                   **table_extras
     #                                   )
 
     # Cataloging information.  Only associate items and catalog entries when:
@@ -1014,7 +1038,8 @@ def _init_base_schema(o, metadata, prefix):
     #                                           [_p+'class_visibility.workspace',
     #                                            _p+'class_visibility.class_root'],
     #                                           onupdate='CASCADE',
-    #                                           ondelete='RESTRICT')
+    #                                           ondelete='RESTRICT'),
+    #                      **table_extras
     #                      )
 
     ###########################################################################
