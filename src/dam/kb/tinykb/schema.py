@@ -577,8 +577,7 @@ def _init_base_schema(o, metadata, prefix):
                                                     [_p+'class.id',
                                                      _p+'class.root'],
                                                     onupdate='CASCADE',
-                                                    ondelete='RESTRICT'),
-
+                                                    ondelete='CASCADE'),
 
                                # Ensure that we only give visibility to
                                # root classes
