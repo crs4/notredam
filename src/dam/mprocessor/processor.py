@@ -71,7 +71,7 @@ def wake_processes(restarting):
             log.info("No waiting process: doing nothing")
         return waiting_processes
 
-@celery_task
+@celery_task # FIXME: better to ensure this task has concurrency level 1!
 def run(process_id="", restarting=False):
     """Run a waiting process.
         
