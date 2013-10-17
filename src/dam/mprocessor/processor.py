@@ -48,26 +48,28 @@ from celery.task import task as celery_task
 class BatchError(Exception):
     pass
 
-def wake_process(restarting):
+def wake_processes(restarting):
     running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
+    running_processes = [p.pk for p in running_processes]
     log.info("Running processes: %d" % len(running_processes))
     if running_processes:
         if restarting:
-            log.info("Restarting process %s" % (running_processes[0].pk))
-            return running_processes[0]    # rerun a running process, some actions
-                                               # will be repeated
+            log.info("Restarting processes %s" % (running_processes,))
+            return running_processes    # rerun running processes, some actions
+                                        # will be repeated
         else:
-            log.info("Process %s already running, doing nothing" % (running_processes[0].pk))
-            return None                    # a process is already running, do nothing
+            log.info("Processes %s already running, doing nothing"
+                     % (running_processes,))
+            return []         # Some process is already running, do nothing
     else:
         waiting_processes = Process.objects.filter(start_date=None)
+        waiting_processes = [p.pk for p in waiting_processes]
         log.info("Number of waiting processes: %d" % len(waiting_processes))
         if waiting_processes:
-            log.info("running the waiting process %s" % (waiting_processes[0].pk))
-            return waiting_processes[0]
+            log.info("running the waiting processes %s" % (waiting_processes,))
         else:
             log.info("No waiting process: doing nothing")
-            return None
+        return waiting_processes
 
 @celery_task
 def run(process_id="", restarting=False):
@@ -81,14 +83,18 @@ def run(process_id="", restarting=False):
 
 @transaction.commit_on_success
 def _lowlevel_run(process_id="", restarting=False):
-    process = wake_process(restarting)
-    if process:
-        Batch(process).run()
-        _lowlevel_run()
+    process_pks = wake_processes(restarting)
+    for p in process_pks:
+        _async_res = run_batch.delay(p, restarting)
     return 'ok'
 
+@celery_task
+def run_batch(process_pk, restarting=False):
+    Batch(process_pk).run(restarting)
+
 class Batch:
-    def __init__(self, process):
+    def __init__(self, process_pk):
+        process = Process.objects.get(pk=process_pk)
         self.cfg = Configurator()
         self.max_outstanding = self.cfg.getint('MPROCESSOR', 'max_outstanding')
         self.batch_size = self.cfg.getint('MPROCESSOR', 'batch_size') # how many items to load
@@ -105,10 +111,20 @@ class Batch:
         self.totals = {'update':0, 'passed':0, 'failed':0, 'targets': 0, None: 0} 
         self.results = {}
 
-    def run(self):
+    def run(self, restarting=False):
         "Start the iteration initializing state so that the iteration starts correctly"
-        log.debug('### Running process %s' % str(self.process.pk))
         with transaction.commit_on_success():
+            if self.process.start_date is not None:
+                if not restarting:
+                    raise BatchError('Process %s already started on %s'
+                                     % (str(self.process.pk),
+                                        str(self.process.start_date)))
+                else:
+                    log.debug('### Restarting process %s (prev. start: %s)'
+                              % (str(self.process.pk),
+                                 str(self.process.start_date)))
+            else:
+                log.debug('### Running process %s' % str(self.process.pk))
             self.process.start_date = datetime.datetime.now()
             self.process.save()
         self.process.targets = ProcessTarget.objects.filter(process=self.process).count()
