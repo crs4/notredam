@@ -123,7 +123,7 @@ Ext.ux.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
         if (!this.singleSelect) {
         	this.fileInput.set({multiple: ''});
         }
-        this.fileInput.set({accept: '.gif'});
+        this.fileInput.set({accept: '.'});
     },
     
     reset : function(){
