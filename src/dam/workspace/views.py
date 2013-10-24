@@ -176,7 +176,7 @@ def add_items_to_ws(request):
         # committing the transaction, to make new data visible by the
         # MProcessor)
         transaction.commit()
-        _async_res = processor.run.delay()
+        processor.run()
 
         return HttpResponse(resp)
     except Exception,  ex:

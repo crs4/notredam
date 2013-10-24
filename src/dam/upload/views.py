@@ -749,7 +749,7 @@ def upload_session_finished(request):
             # committing the transaction, to make new data visible by the
             # MProcessor)
             transaction.commit()
-            _async_res = processor.run.delay()
+            processor.run()
 
             try:
                 os.rmdir(tmp_dir)
@@ -796,7 +796,7 @@ def upload_archive(request):
         # committing the transaction, to make new data visible by the
         # MProcessor)
         transaction.commit()
-        _async_res = processor.run.delay()
+        processor.run()
 
         return HttpResponse(simplejson.dumps({'success': True}))
 

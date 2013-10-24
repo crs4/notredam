@@ -33,6 +33,7 @@
 import os
 import datetime
 import re
+import threading
 
 from django.db.models import Q
 from django.db import transaction
@@ -43,54 +44,49 @@ from dam.mprocessor.models import Process, ProcessTarget
 from dam.mprocessor.pipeline import DAG
 from dam.mprocessor.schedule import Schedule
 
+from dam.kb.tinykb.util import decorators # FIXME: move somewhere else?
+
 from celery.task import task as celery_task
 
 class BatchError(Exception):
     pass
 
-def wake_processes(restarting):
-    running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
-    running_processes = [p.pk for p in running_processes]
-    log.info("Running processes: %d" % len(running_processes))
-    if running_processes:
-        if restarting:
-            log.info("Restarting processes %s" % (running_processes,))
-            return running_processes    # rerun running processes, some actions
-                                        # will be repeated
-        else:
-            log.info("Processes %s already running, doing nothing"
-                     % (running_processes,))
-            return []         # Some process is already running, do nothing
-    else:
-        waiting_processes = Process.objects.filter(start_date=None)
-        waiting_processes = [p.pk for p in waiting_processes]
-        log.info("Number of waiting processes: %d" % len(waiting_processes))
-        if waiting_processes:
-            log.info("running the waiting processes %s" % (waiting_processes,))
-        else:
-            log.info("No waiting process: doing nothing")
-        return waiting_processes
+# Guard for process scheduling
+_process_run_lock = threading.RLock()
 
-@celery_task # FIXME: better to ensure this task has concurrency level 1!
-def run(process_id="", restarting=False):
-    """Run a waiting process.
-        
-    This task tries to run a waiting process and schedules itself to
-    run again when the process ends so that the queue of waiting
-    processes can be emptied
-    """
-    _lowlevel_run(process_id=process_id, restarting=restarting)
-
+@decorators.synchronized(_process_run_lock)
 @transaction.commit_on_success
-def _lowlevel_run(process_id="", restarting=False):
-    process_pks = wake_processes(restarting)
-    for p in process_pks:
-        _async_res = run_batch.delay(p, restarting)
+def run(restarting=False):
+    """Run waiting process.
+        
+    This task tries to run all the waiting processes.
+
+    If restarting=True, processes that were started in the past and
+    did not terminate will be run again (useful e.g. in case of crash
+    recovery).
+    """
+    if restarting:
+        running_processes = Process.objects.filter(Q(end_date=None) & ~Q(start_date=None))
+        log.info("Number of running processes: %d" % len(running_processes))
+        for p in running_processes:
+            log.info("Restarting processes %s" % (p.pk, ))
+            p.start_date = datetime.datetime.now()
+            p.save()
+            _async_res = run_batch.delay(p.pk)
+
+    waiting_processes = Process.objects.filter(start_date=None)
+    log.info("Number of waiting processes: %d" % len(waiting_processes))
+    for p in waiting_processes:
+        log.info("Running the waiting processes %s" % (p.pk, ))
+        p.start_date = datetime.datetime.now()
+        p.save()
+        _async_res = run_batch.delay(p.pk)
+
     return 'ok'
 
 @celery_task
-def run_batch(process_pk, restarting=False):
-    Batch(process_pk).run(restarting)
+def run_batch(process_pk):
+    Batch(process_pk).run()
 
 class Batch:
     def __init__(self, process_pk):
@@ -111,22 +107,9 @@ class Batch:
         self.totals = {'update':0, 'passed':0, 'failed':0, 'targets': 0, None: 0} 
         self.results = {}
 
-    def run(self, restarting=False):
+    def run(self):
         "Start the iteration initializing state so that the iteration starts correctly"
-        with transaction.commit_on_success():
-            if self.process.start_date is not None:
-                if not restarting:
-                    raise BatchError('Process %s already started on %s'
-                                     % (str(self.process.pk),
-                                        str(self.process.start_date)))
-                else:
-                    log.debug('### Restarting process %s (prev. start: %s)'
-                              % (str(self.process.pk),
-                                 str(self.process.start_date)))
-            else:
-                log.debug('### Running process %s' % str(self.process.pk))
-            self.process.start_date = datetime.datetime.now()
-            self.process.save()
+        log.debug('### Running batch for process %s' % (str(self.process.pk),))
         self.process.targets = ProcessTarget.objects.filter(process=self.process).count()
         self.tasks = []
         self._iterate()

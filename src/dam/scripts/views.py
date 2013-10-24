@@ -78,7 +78,7 @@ def get_rotation_script(request):
         # committing the transaction, to make new data visible by the
         # MProcessor)
         transaction.commit()
-        _async_res = processor.run.delay()
+        processor.run()
     except Exception, ex:
         logger.exception(ex)
         return HttpResponse(simplejson.dumps({'success': False}))
