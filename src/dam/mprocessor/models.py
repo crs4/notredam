@@ -97,7 +97,7 @@ class Process(models.Model):
 
     def run(self):
         import processor # Imported here to avoid circular imports
-        async_res = processor.run.delay()
+        processor.run()
 
 def new_processor(pipeline_name, user, workspace):
     "utility function to create a process associated to a given pipeline"
