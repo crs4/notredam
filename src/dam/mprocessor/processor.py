@@ -260,7 +260,7 @@ class Batch:
         item.save()
 
     def _handle_err(self, result, item, schedule, action, params):
-        log.error('_handle_err action %s on target_id=%s: %s' % (action, item.target_id, str(result)))
+        log.error('_handle_err action %s on target_id=%s: %s (params: %s)' % (action, item.target_id, str(result), str(params)))
         self.outstanding -= 1
         cancelled = schedule.fail(action)
         self._update_item_stats(item, action, str(result), 0, 1, 0)
