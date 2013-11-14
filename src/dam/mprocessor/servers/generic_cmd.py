@@ -184,7 +184,6 @@ class GenericCmdline(object):
 from celery.task import task as celery_task
 _SERVER_SINGLETON = GenericCmdline()
 @celery_task
-
 def call(cmd, args, env={}, progress_url=None):
     return _SERVER_SINGLETON.call(cmd=cmd, args=args, env=env,
                                   progress_url=progress_url)
