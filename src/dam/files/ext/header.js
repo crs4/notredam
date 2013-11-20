@@ -27,3 +27,6 @@ Ext.onReady(function(){
    });
 
 });
+Ext.data.Connection.disableCaching = false;
+Ext.data.proxy.Server.prototype.noCache = false;
+Ext.Ajax.disableCaching = false;
