@@ -26,6 +26,7 @@ from dam.repository.models import Item, Component, Watermark
 from dam.workspace.models import DAMWorkspace as Workspace
 from dam.core.dam_workspace.decorators import permission_required
 from dam.treeview.models import Node
+import time
 
 import os
 import logging
@@ -129,6 +130,11 @@ def get_variant_url(request, item_ID, variant_name):
         try:
             component = Component.objects.get(item___id = item_ID, workspace = workspace, variant__name = variant_name)
             url =  component.get_url()
+#to avoid browser cache problem issue 93
+            dc = time.time()/1000.0
+            dc = "%.6f" %dc
+            url = url+'?dc'+dc.split('.')[0]+dc.split('.')[1]
+
                         
         except Component.DoesNotExist, ex:
             return HttpResponseNotFound()
