@@ -68,6 +68,11 @@ function update_task_status(data){
 		    
 		    if (data.process_in_progress == 0) {
 		        _set_ok();
+
+		        var media_tabs = Ext.getCmp('media_tabs').getActiveTab();
+		        view = media_tabs.getComponent(0);
+		        view.getStore().reload();
+		        view.refresh();
 		    }
 		    else {
 		
