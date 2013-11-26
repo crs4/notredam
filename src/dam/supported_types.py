@@ -30,7 +30,7 @@ supported_types  = {
    'image/x-photoshop' : ['.psd'],
    'image/x-portable-graymap': ['.pgm'],
    'image/x-portable-pixmap': ['.ppm'],
-   'image/postscript': ['.eps'],
+   'image/postscript': ['.eps', '.ai'],
    'video/dv' : ['.dv'],
    'video/flv': ['.flv'],
    'video/mp4': ['.mp4', '.mxf'],
