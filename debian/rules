@@ -45,7 +45,7 @@ clean:
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k  --exclude ./dam/batch_processor.py.orig --exclude ./dam/logger.py.orig --exclude ./dam/files/ext/resources/css/ext-all.css.orig
+	dh_clean -k --exclude ./dam/files/ext/resources/css/ext-all.css.orig
 	dh_installdirs
 
 	# Add here commands to install the package into debian/dam.
@@ -56,18 +56,16 @@ install: build
 	cp -R $(CURDIR)/src/dam/* $(CURDIR)/debian/notredam/opt/notredam/dam/
 
 	cp $(CURDIR)/debian/notredam/opt/notredam/dam/settings.py.default $(CURDIR)/debian/notredam/opt/notredam/dam/settings.py
-	chmod 777 $(CURDIR)/debian/notredam/opt/notredam/dam/settings.py
+	chmod 644 $(CURDIR)/debian/notredam/opt/notredam/dam/settings.py
 
 	mv $(CURDIR)/debian/notredam/opt/notredam/dam/notredam.py $(CURDIR)/debian/notredam/opt/notredam/
-	chmod 777 $(CURDIR)/debian/notredam/opt/notredam/notredam.py
+	chmod 755 $(CURDIR)/debian/notredam/opt/notredam/notredam.py
 
-	mkdir $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ -p
-	#cp -R $(CURDIR)/src/xmp_worker/xmp $(CURDIR)/debian/notredam/opt/mediadart/mediadart/ 
+	mv $(CURDIR)/debian/notredam/opt/notredam/dam/celeryconfig.py.default $(CURDIR)/debian/notredam/opt/notredam/celeryconfig.py
+	chmod 644 $(CURDIR)/debian/notredam/opt/notredam/celeryconfig.py
 
-	mkdir -p $(CURDIR)/debian/notredam/etc/mediadart
-	cp $(CURDIR)/src/dam/001-notredam.cfg  $(CURDIR)/debian/notredam/etc/mediadart/
-
- 
+	mkdir -p $(CURDIR)/debian/notredam/etc/notredam
+	cp $(CURDIR)/src/dam/mprocessor/mprocessor.cfg  $(CURDIR)/debian/notredam/etc/notredam/
 
 # Build architecture-independent files here.
 binary-indep: build install
