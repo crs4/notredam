@@ -34,13 +34,14 @@ def check_installed():
 check_installed()
 
 def _run(cmdline,  file_name,  stdout = None):
+    kill_proc(file_name)
+
     if stdout is None:
         stdout = open(os.devnull, "w")
     
     p = subprocess.Popen(cmdline, stdout = stdout,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'})
 #    p = subprocess.Popen(cmdline,  stdout=stdout, )
     path = os.path.join(INSTALLATIONPATH,  file_name  + '.pid',  )
-    kill_proc(file_name)
     
     f = open(path, 'w')
     f.write(str(p.pid))
@@ -54,9 +55,11 @@ def check_db_created():
         import config
         if config.DATABASES['default']['ENGINE']== 'django.db.backends.mysql':
             print 'INSERT MYSQL ROOT PASSWORD'
-            subprocess.call(['mysql',  '-uroot',  '-p', '-e', "create user %s identified by '%s'; GRANT ALL on *.* to '%s'"%(config.DATABASES['default']['USER'], config.DATABASES['default']['PASSWORD'], config.DATABASES['default']['USER'])])
-            subprocess.call(['mysql',  '-u%s'%config.DATABASES['default']['USER'], '-p%s'%config.DATABASES['default']['PASSWORD'],  '-e', 'create database %s character set latin1;'%config.DATABASES['default']['NAME']])
+            subprocess.call(['mysql',  '-uroot',  '-p', '-e', "create user '%s'@'localhost' identified by '%s'; GRANT ALL on *.* to '%s'@'localhost'"%(config.DATABASES['default']['USER'], config.DATABASES['default']['PASSWORD'], config.DATABASES['default']['USER'])])
+            subprocess.call(['mysql',  '-u%s'%config.DATABASES['default']['USER'], '-p%s'%config.DATABASES['default']['PASSWORD'],  '-e', 'create database %s character set utf8;'%config.DATABASES['default']['NAME']])
         p = subprocess.Popen(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'syncdb',  '--noinput'], stdout = None,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'})
+        p.wait();
+        p = subprocess.Popen(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'migrate'], stdout = None,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'})
         p.wait();
         subprocess.call(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'loaddata',  '/opt/notredam/dam/initial_data.json'])
         f = open(installed,  'w')
@@ -70,8 +73,11 @@ def run(runserver,  address):
             _run(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'runserver',    '--noreload',  address],  'server',  stdout)             
         else:
             _run(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'runserver', '--noreload'],  'server', stdout )        
-            
-        print 'running server'
+        
+        stdout = open(os.path.join(INSTALLATIONPATH,  'log/celery.log'),  'w')
+        _run(['/usr/bin/celeryd',  '-c',  '4'],  'celery',  stdout)
+
+        print 'running server (and Celery)'
 
 def kill_proc(name):    
     
@@ -94,6 +100,10 @@ def stop():
     server_stopped = kill_proc('server')
     if server_stopped:
         print 'server stopped'
+
+    celery_stopped = kill_proc('celery')
+    if celery_stopped:
+        print 'Celery stopped'
     
     
 def main():
