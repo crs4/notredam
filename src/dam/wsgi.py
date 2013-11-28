@@ -32,7 +32,6 @@ sys.stdout = sys.stderr
 (parent_dir, _tail) = os.path.split(os.path.dirname(__file__))
 sys.path.append(parent_dir)
 
-os.environ['PYTHONPATH'] = '/home/clem/notredam/src'
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dam.settings'
 
 import django.core.handlers.wsgi
