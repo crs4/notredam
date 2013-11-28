@@ -33,13 +33,13 @@ def check_installed():
 
 check_installed()
 
-def _run(cmdline,  file_name,  stdout = None):
+def _run(cmdline,  file_name,  stdout = None, cwd = None):
     kill_proc(file_name)
 
     if stdout is None:
         stdout = open(os.devnull, "w")
     
-    p = subprocess.Popen(cmdline, stdout = stdout,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'})
+    p = subprocess.Popen(cmdline, stdout = stdout,  stderr=subprocess.STDOUT, env= {'PYTHONPATH':'/opt/notredam/', 'HOME':os.getenv('HOME'), 'DJANGO_SETTINGS_MODULE':'dam.settings'}, cwd=cwd)
 #    p = subprocess.Popen(cmdline,  stdout=stdout, )
     path = os.path.join(INSTALLATIONPATH,  file_name  + '.pid',  )
     
@@ -75,7 +75,8 @@ def run(runserver,  address):
             _run(['/usr/bin/python',  '/opt/notredam/dam/manage.py',  'runserver', '--noreload'],  'server', stdout )        
         
         stdout = open(os.path.join(INSTALLATIONPATH,  'log/celery.log'),  'w')
-        _run(['/usr/bin/celeryd',  '-c',  '4'],  'celery',  stdout)
+        _run(['/usr/bin/celeryd',  '-c',  '4'],  'celery',  stdout,
+             cwd='/opt/notredam/dam')
 
         print 'running server (and Celery)'
 
