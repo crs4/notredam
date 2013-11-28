@@ -1,3 +1,9 @@
+notredam (2.0.0) stable; urgency=low
+
+  * New upstream version
+
+ -- NotreDAM staff <labcontdigit@sardegnaricerche.it>  Thu, 28 Nov 2013 11:28:49 +0100
+
 notredam (1.0.9) stable; urgency=high
 
   * Added required libraries dependencies (mediainfo, django-south)
