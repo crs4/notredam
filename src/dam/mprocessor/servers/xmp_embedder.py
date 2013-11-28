@@ -2,11 +2,11 @@ import os
 import inspect
 from mx.DateTime.Parser import DateTimeFromString
 from datetime import datetime
-from mprocessor import log
-from mprocessor.config import Configurator
-from mprocessor.storage import Storage
-from libxmp import XMPFiles, XMPError, files, XMPMeta
-from libxmp.consts import *
+from dam.mprocessor import log
+from dam.mprocessor.config import Configurator
+from dam.mprocessor.storage import Storage
+from dam.libxmp import XMPFiles, XMPError, files, XMPMeta
+from dam.libxmp.consts import *
 
 class XMPEmbedder(object):
 
