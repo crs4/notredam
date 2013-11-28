@@ -65,7 +65,7 @@ def get_scripts(request):
 @transaction.commit_manually
 def get_rotation_script(request):
     workspace = request.session.get('workspace')
-    r_script = Pipeline.objects.filter(workspace = workspace, name = 'image renditions').distinct()
+    # r_script = Pipeline.objects.filter(workspace = workspace, name = 'image renditions').distinct()
     triggers_name = 'upload'
     items = request.POST.getlist('items')
     items = Item.objects.filter(pk__in = items)
